@@ -1,4 +1,5 @@
 import React from "react";
+import { BarChart3 } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -19,6 +20,22 @@ const formatShort = (value) => {
 };
 
 function Charts({ data = [], type = "bar", dataKey = "revenue", secondaryKey }) {
+  const hasData = Array.isArray(data) && data.length > 0;
+
+  if (!hasData) {
+    return (
+      <div className="sa-chart sa-chart--empty">
+        <div className="sa-empty-state">
+          <span className="sa-empty-state-icon">
+            <BarChart3 size={28} />
+          </span>
+          <b>No Data Available</b>
+          <p>Charts will appear once revenue and user data is collected across clinics.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="sa-chart">
       <ResponsiveContainer width="100%" height="100%">

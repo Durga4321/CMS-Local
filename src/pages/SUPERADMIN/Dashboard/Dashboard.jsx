@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Building2, IndianRupee, ShieldCheck, UserCheck, Users } from "lucide-react";
+import { Activity, Building2, IndianRupee, ShieldCheck, UserCheck, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../../components/superadmin/Header";
 import DashboardCards from "../../../components/superadmin/DashboardCards";
@@ -130,7 +130,15 @@ function Dashboard() {
                 </div>
                 <span>{activity.time}</span>
               </div>
-            )) : <div className="sa-state">No recent activities available.</div>}
+            )) : (
+              <div className="sa-empty-state">
+                <span className="sa-empty-state-icon">
+                  <Activity size={28} />
+                </span>
+                <b>No Recent Activities</b>
+                <p>There are currently no Super Admin actions, logins, or system events to show.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

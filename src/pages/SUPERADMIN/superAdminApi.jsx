@@ -140,6 +140,124 @@ const formatDateTime = (value) => {
   });
 };
 
+const getTimestamp = (value) => {
+  if (!value) return 0;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+};
+
+const normalizeString = (value) => String(value || "").trim().toLowerCase();
+
+const isUserLoginMatch = (user = {}, log = {}) => {
+  const userEmail = normalizeString(pick(user, ["email", "emailAddress"]));
+  const userName = normalizeString(pick(user, ["name", "fullName", "userName", "displayName"]));
+  const logEmail = normalizeString(pick(log, ["email", "emailAddress", "userEmail"]));
+  const logUser = normalizeString(pick(log, ["user", "userName", "name"]));
+
+  if (userEmail && (logEmail === userEmail || logUser === userEmail)) return true;
+  if (userName && (logUser === userName || logEmail === userName)) return true;
+  return false;
+};
+
+const findMostRecentLogin = (user = {}, logs = []) => {
+  let latestTime = 0;
+  let latestValue = "";
+
+  for (const log of logs) {
+    if (!isUserLoginMatch(user, log)) continue;
+
+    const timestampRaw = pick(log, ["timestampRaw", "timestamp", "createdAt", "date", "loginTime", "time"]);
+    const time = getTimestamp(timestampRaw);
+
+    if (time > latestTime) {
+      latestTime = time;
+      latestValue = timestampRaw;
+    }
+  }
+
+  return latestValue;
+};
+
+const compactAddressParts = (parts = []) =>
+  parts
+    .map((part) => String(part || "").trim())
+    .filter(Boolean);
+
+const continentNames = new Set([
+  "africa",
+  "antarctica",
+  "asia",
+  "australia",
+  "europe",
+  "north america",
+  "south america",
+]);
+
+const formatClinicAddress = (clinic = {}) => {
+  const streetLine = pick(clinic, [
+    "street",
+    "Street",
+    "addressLine1",
+    "AddressLine1",
+  ]);
+  const rawAddress = pick(clinic, [
+    "address",
+    "Address",
+    "clinicAddress",
+    "ClinicAddress",
+    "location",
+  ]);
+  const city = pick(clinic, ["city", "City", "town", "Town", "locality", "Locality"]);
+  const state = pick(clinic, ["state", "State", "province", "Province", "region", "Region"]);
+  const country = pick(clinic, ["country", "Country"]);
+  const postalCode = pick(clinic, ["postalCode", "PostalCode", "zipCode", "ZipCode", "pinCode", "PinCode"]);
+  const hasStructuredLocation = city || state || country || postalCode;
+  const street = streetLine || (hasStructuredLocation ? "" : rawAddress);
+
+  const structuredParts = compactAddressParts([
+    street,
+    city,
+    state,
+    country && !continentNames.has(String(country).trim().toLowerCase()) ? country : "",
+    postalCode,
+  ]);
+
+  if (structuredParts.length > 1) {
+    return structuredParts.join(", ");
+  }
+
+  const fallbackAddress = String(rawAddress || streetLine || "").trim();
+  const rawParts = compactAddressParts(fallbackAddress.split(","));
+
+  if (rawParts.length > 1 && continentNames.has(rawParts[0].toLowerCase())) {
+    return rawParts.slice(1).join(", ");
+  }
+
+  return rawParts.length ? rawParts.join(", ") : fallbackAddress;
+};
+
+const formatLastActive = (user = {}) => {
+  const activityValue = pick(
+    user,
+    [
+      "lastActive",
+      "lastActiveAt",
+      "lastActivity",
+      "lastActivityAt",
+      "lastLogin",
+      "lastLoginAt",
+      "lastSeen",
+      "lastSeenAt",
+      "loginTime",
+      "updatedAt",
+      "modifiedAt",
+    ],
+    ""
+  );
+
+  return formatDateTime(activityValue) || "Never Logged In";
+};
+
 const readJson = async (response) => {
   if (response.status === 204) return null;
 
@@ -216,10 +334,13 @@ const superAdminRequestFirst = async (paths, options = {}) => {
 export const normalizeClinic = (clinic = {}) => ({
   id: pick(clinic, ["id", "clinicId", "clinicID", "hospitalId", "hospitalID", "_id"]),
   name: pick(clinic, ["name", "clinicName", "clinic_name"]),
-  address: pick(clinic, ["address", "clinicAddress", "location"]),
+  type: pick(clinic, ["type", "clinicType", "ClinicType", "category"], "General"),
+  address: formatClinicAddress(clinic),
   contactNumber: pick(clinic, ["contactNumber", "phone", "phoneNumber", "mobile", "contact"]),
   email: pick(clinic, ["email", "clinicEmail"]),
   status: normalizeStatus(pick(clinic, ["status", "isActive", "active"], "Active")),
+  createdDate: formatDateTime(pick(clinic, ["createdDate", "createdAt", "createdOn", "CreatedDate", "CreatedAt"], "")),
+  updatedDate: formatDateTime(pick(clinic, ["updatedDate", "updatedAt", "modifiedAt", "UpdatedDate", "UpdatedAt"], "")),
   revenue: toNumber(pick(clinic, ["revenue", "totalRevenue"], 0)),
   users: toNumber(pick(clinic, ["users", "userCount", "totalUsers"], 0)),
   raw: clinic,
@@ -275,9 +396,10 @@ const buildAdminPayload = (admin = {}, { includeBlankPassword = true } = {}) => 
 
 export const normalizeActivity = (activity = {}, index = 0) => ({
   id: pick(activity, ["id", "activityId", "_id"], index),
-  title: pick(activity, ["title", "event", "action"], "Activity"),
-  detail: pick(activity, ["detail", "description", "message"], ""),
-  time: formatDateTime(pick(activity, ["time", "createdAt", "timestamp"], "")),
+  title: pick(activity, ["title", "event", "action", "activity"], "Activity"),
+  detail: pick(activity, ["detail", "description", "message", "module", "user"], ""),
+  time: formatDateTime(pick(activity, ["time", "createdAt", "timestamp", "date"], "")),
+  sortTime: getTimestamp(pick(activity, ["time", "createdAt", "timestamp", "date"], "")),
 });
 
 export const normalizeRevenuePoint = (point = {}, index = 0) => ({
@@ -289,16 +411,22 @@ export const normalizeRevenuePoint = (point = {}, index = 0) => ({
 export const normalizeAuditLog = (log = {}) => ({
   id: pick(log, ["id", "logId", "_id"]),
   user: pick(log, ["user", "userName", "name", "email"], "System"),
+  userEmail: pick(log, ["email", "emailAddress", "userEmail"]),
   action: pick(log, ["action", "activity", "message", "description"]),
+  timestampRaw: pick(log, ["timestamp", "createdAt", "date"]),
   timestamp: formatDateTime(pick(log, ["timestamp", "createdAt", "date"])),
+  sortTime: getTimestamp(pick(log, ["timestamp", "createdAt", "date"])),
   module: pick(log, ["module", "moduleName", "category"], "Audit"),
 });
 
 export const normalizeLoginLog = (log = {}, index = 0) => ({
   id: pick(log, ["id", "logId", "_id"], `login-${index}`),
   user: pick(log, ["user", "userName", "name", "email", "emailAddress"], "Unknown user"),
+  userEmail: pick(log, ["email", "emailAddress", "userEmail"]),
   action: pick(log, ["action", "activity", "message", "description"], "Logged in"),
+  timestampRaw: pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"]),
   timestamp: formatDateTime(pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"])),
+  sortTime: getTimestamp(pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"])),
   module: "Login",
   ipAddress: pick(log, ["ipAddress", "ip", "clientIp"], ""),
   role: pick(log, ["role", "roleName", "userRole"], ""),
@@ -538,7 +666,7 @@ export const normalizeUser = (user = {}, index = 0) => ({
   type: pick(user, ["type", "userType", "role", "roleName"], "User"),
   role: pick(user, ["role", "roleName", "type", "userType"], "User"),
   status: normalizeStatus(pick(user, ["status", "isActive", "active"], "Active")),
-  lastActive: formatDateTime(pick(user, ["lastActive", "lastLogin", "lastSeen", "updatedAt"], "")),
+  lastActive: formatLastActive(user),
   phone: pick(user, ["phone", "phoneNumber", "mobile", "contactNumber"]),
   mobileNumber: pick(user, ["mobileNumber", "mobile", "phoneNumber", "phone"]),
   isDeleted: isDeletedRecord(user),
@@ -613,20 +741,33 @@ export const fetchClinics = async () =>
 export const fetchClinic = async (id) =>
   normalizeClinic(await superAdminRequest(`${SUPER_ADMIN_API.clinics}/${id}`));
 
-export const saveClinic = async (clinic, id) =>
-  superAdminRequest(id ? `${SUPER_ADMIN_API.clinics}/${id}` : SUPER_ADMIN_API.clinics, {
+export const saveClinic = async (clinic, id) => {
+  const result = await superAdminRequest(id ? `${SUPER_ADMIN_API.clinics}/${id}` : SUPER_ADMIN_API.clinics, {
     method: id ? "PUT" : "POST",
     body: clinic,
   });
+  recordSuperAdminActivity(
+    id ? "Updated clinic" : "Created clinic",
+    "Clinics",
+    pick(clinic, ["ClinicName", "name"], id || "Clinic record")
+  );
+  return result;
+};
 
-export const deleteClinic = async (id) =>
-  superAdminRequest(`${SUPER_ADMIN_API.clinics}/${id}`, { method: "DELETE" });
+export const deleteClinic = async (id) => {
+  const result = await superAdminRequest(`${SUPER_ADMIN_API.clinics}/${id}`, { method: "DELETE" });
+  recordSuperAdminActivity("Deleted clinic", "Clinics", `Clinic ID ${id}`);
+  return result;
+};
 
-export const updateClinicStatus = async (id, status) =>
-  superAdminRequest(`${SUPER_ADMIN_API.clinics}/${id}/status`, {
+export const updateClinicStatus = async (id, status) => {
+  const result = await superAdminRequest(`${SUPER_ADMIN_API.clinics}/${id}/status`, {
     method: "PATCH",
     body: { status },
   });
+  recordSuperAdminActivity("Updated clinic status", "Clinics", `Clinic ID ${id} marked ${status}`);
+  return result;
+};
 
 export const fetchAdmins = async () =>
   asArray(await superAdminRequest(SUPER_ADMIN_API.admins)).map(normalizeAdmin);
@@ -634,17 +775,27 @@ export const fetchAdmins = async () =>
 export const fetchAdmin = async (id) =>
   normalizeAdmin(await superAdminRequest(`${SUPER_ADMIN_API.admins}/${id}`));
 
-export const createClinicAdmin = async (admin) =>
-  superAdminRequest(SUPER_ADMIN_API.createClinicAdmin, {
+export const createClinicAdmin = async (admin) => {
+  const result = await superAdminRequest(SUPER_ADMIN_API.createClinicAdmin, {
     method: "POST",
     body: buildAdminPayload(admin),
   });
+  recordSuperAdminActivity("Created clinic admin", "Admins", pick(admin, ["name", "fullName", "email"], "Admin record"));
+  return result;
+};
 
-export const saveAdmin = async (admin, id) =>
-  superAdminRequest(id ? `${SUPER_ADMIN_API.admins}/${id}` : SUPER_ADMIN_API.admins, {
+export const saveAdmin = async (admin, id) => {
+  const result = await superAdminRequest(id ? `${SUPER_ADMIN_API.admins}/${id}` : SUPER_ADMIN_API.admins, {
     method: id ? "PUT" : "POST",
     body: buildAdminPayload(admin, { includeBlankPassword: !id }),
   });
+  recordSuperAdminActivity(
+    id ? "Updated admin" : "Created admin",
+    "Admins",
+    pick(admin, ["name", "fullName", "email"], id || "Admin record")
+  );
+  return result;
+};
 
 const getEntityId = (item = {}) =>
   pick(item, ["id", "doctorId", "receptionistId", "userId", "_id"], "");
@@ -825,8 +976,11 @@ export const syncAdminStaffClinic = async ({
   return { updated: results.length };
 };
 
-export const deleteAdmin = async (id) =>
-  superAdminRequest(`${SUPER_ADMIN_API.admins}/${id}`, { method: "DELETE" });
+export const deleteAdmin = async (id) => {
+  const result = await superAdminRequest(`${SUPER_ADMIN_API.admins}/${id}`, { method: "DELETE" });
+  recordSuperAdminActivity("Deleted admin", "Admins", `Admin ID ${id}`);
+  return result;
+};
 
 export const fetchNotifications = async () => {
   const localNotifications = readLocalList(LOCAL_NOTIFICATIONS_KEY).map(normalizeNotification);
@@ -854,10 +1008,12 @@ export const createNotification = async (notification) => {
   prependLocalItem(LOCAL_NOTIFICATIONS_KEY, localNotification);
 
   try {
-    return await superAdminRequest(SUPER_ADMIN_API.notifications, {
+    const result = await superAdminRequest(SUPER_ADMIN_API.notifications, {
       method: "POST",
       body: notification,
     });
+    recordSuperAdminActivity("Created notification", "Notifications", pick(notification, ["title", "subject"], "Notification"));
+    return result;
   } catch (error) {
     return localNotification;
   }
@@ -869,6 +1025,47 @@ export const recordAuditLog = (log) =>
     timestamp: new Date().toISOString(),
     ...log,
   });
+
+const recordSuperAdminActivity = (action, module, detail = "") =>
+  recordAuditLog({
+    action,
+    module,
+    description: detail,
+    user: localStorage.getItem("userName") || localStorage.getItem("adminName") || "Super Admin",
+  });
+
+const toDashboardActivity = (activity, index = 0) => ({
+  id: activity.id || `activity-${index}`,
+  title: activity.title || activity.action || "Activity",
+  detail: activity.detail || activity.description || activity.module || activity.user || "System activity recorded.",
+  time: activity.time || activity.timestamp || "",
+  sortTime: activity.sortTime || 0,
+});
+
+const auditLogToDashboardActivity = (log, index = 0) => ({
+  id: log.id || `audit-${index}`,
+  title: log.action || "System activity",
+  detail: [log.module, log.user].filter(Boolean).join(" - ") || "Super Admin activity recorded.",
+  time: log.timestamp || "",
+  sortTime: log.sortTime || 0,
+});
+
+const buildDashboardActivities = (...activityGroups) => {
+  const seen = new Set();
+
+  return activityGroups
+    .flat()
+    .filter(Boolean)
+    .map((activity, index) => toDashboardActivity(activity, index))
+    .filter((activity) => {
+      const key = [activity.title, activity.detail, activity.time].join("|");
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((left, right) => right.sortTime - left.sortTime)
+    .slice(0, 8);
+};
 
 export const createAuditLog = async (log) =>
   superAdminRequest(SUPER_ADMIN_API.auditLogs, {
@@ -932,78 +1129,153 @@ export const fetchRoleNames = async () =>
 export const fetchRole = async (id) =>
   normalizeRole(await superAdminRequest(`${SUPER_ADMIN_API.roles}/${id}`));
 
-export const saveRole = async (role, id) =>
-  superAdminRequest(id ? `${SUPER_ADMIN_API.roles}/${id}` : SUPER_ADMIN_API.roles, {
+export const saveRole = async (role, id) => {
+  const result = await superAdminRequest(id ? `${SUPER_ADMIN_API.roles}/${id}` : SUPER_ADMIN_API.roles, {
     method: id ? "PUT" : "POST",
     body: buildRolePayload(role),
   });
+  recordSuperAdminActivity(
+    id ? "Updated role" : "Created role",
+    "Roles & Permissions",
+    pick(role, ["roleName", "name"], id || "Role record")
+  );
+  return result;
+};
 
-export const deleteRole = async (id) =>
-  superAdminRequest(`${SUPER_ADMIN_API.roles}/${id}`, { method: "DELETE" });
+export const deleteRole = async (id) => {
+  const result = await superAdminRequest(`${SUPER_ADMIN_API.roles}/${id}`, { method: "DELETE" });
+  recordSuperAdminActivity("Deleted role", "Roles & Permissions", `Role ID ${id}`);
+  return result;
+};
 
-export const updateRolePermissions = async (id, role) =>
-  superAdminRequest(`${SUPER_ADMIN_API.roles}/${id}/permissions`, {
+export const updateRolePermissions = async (id, role) => {
+  const result = await superAdminRequest(`${SUPER_ADMIN_API.roles}/${id}/permissions`, {
     method: "PUT",
     body: buildRolePayload(role),
   });
+  recordSuperAdminActivity("Updated role permissions", "Roles & Permissions", pick(role, ["roleName", "name"], `Role ID ${id}`));
+  return result;
+};
 
-export const fetchUsers = async () =>
-  asArray(await superAdminRequest(SUPER_ADMIN_API.users))
+export const fetchUsers = async () => {
+  const [usersResult, loginResult] = await Promise.allSettled([
+    superAdminRequest(SUPER_ADMIN_API.users),
+    superAdminRequest(SUPER_ADMIN_API.loginHistory),
+  ]);
+
+  if (usersResult.status !== "fulfilled") {
+    throw usersResult.reason;
+  }
+
+  const users = asArray(usersResult.value)
     .map(normalizeUser)
     .filter((user) => !user.isDeleted);
+
+  let loginLogs =
+    loginResult.status === "fulfilled"
+      ? asArray(loginResult.value).map(normalizeLoginLog)
+      : [];
+
+  if (!loginLogs.length) {
+    try {
+      loginLogs = (await fetchAuditLogs()).filter(
+        (log) =>
+          String(log.module).toLowerCase() === "login" ||
+          /logged in/i.test(String(log.action))
+      );
+    } catch {
+      loginLogs = loginLogs;
+    }
+  }
+
+  return users.map((user) => {
+    const lastLoginRaw = findMostRecentLogin(user, loginLogs);
+    return lastLoginRaw
+      ? { ...user, lastActive: formatDateTime(lastLoginRaw) }
+      : user;
+  });
+};
 
 export const fetchUser = async (id) =>
   normalizeUser(await superAdminRequest(`${SUPER_ADMIN_API.users}/${id}`));
 
-export const saveUser = async (user, id) =>
-  superAdminRequest(id ? `${SUPER_ADMIN_API.users}/${id}` : SUPER_ADMIN_API.users, {
+export const saveUser = async (user, id) => {
+  const result = await superAdminRequest(id ? `${SUPER_ADMIN_API.users}/${id}` : SUPER_ADMIN_API.users, {
     method: id ? "PUT" : "POST",
     body: buildUserPayload(user, { includeBlankPassword: !id }),
   });
+  recordSuperAdminActivity(
+    id ? "Updated user" : "Created user",
+    "Users",
+    pick(user, ["name", "fullName", "email"], id || "User record")
+  );
+  return result;
+};
 
-export const deleteUser = async (id) =>
-  superAdminRequest(`${SUPER_ADMIN_API.users}/${id}`, { method: "DELETE" });
+export const deleteUser = async (id) => {
+  const result = await superAdminRequest(`${SUPER_ADMIN_API.users}/${id}`, { method: "DELETE" });
+  recordSuperAdminActivity("Deleted user", "Users", `User ID ${id}`);
+  return result;
+};
 
-export const updateUserStatus = async (id, status) =>
-  superAdminRequest(`${SUPER_ADMIN_API.users}/${id}/status`, {
+export const updateUserStatus = async (id, status) => {
+  const result = await superAdminRequest(`${SUPER_ADMIN_API.users}/${id}/status`, {
     method: "PUT",
     body: { status },
   });
+  recordSuperAdminActivity("Updated user status", "Users", `User ID ${id} marked ${status}`);
+  return result;
+};
 
 export const fetchSettings = async () =>
   normalizeSettings(await superAdminRequest(SUPER_ADMIN_API.settings));
 
-export const updateGeneralSettings = async (settings) =>
-  superAdminRequest(SUPER_ADMIN_API.settingsGeneral, {
+export const updateGeneralSettings = async (settings) => {
+  const result = await superAdminRequest(SUPER_ADMIN_API.settingsGeneral, {
     method: "PUT",
     body: settings,
   });
+  recordSuperAdminActivity("Updated general settings", "Settings", "General platform settings");
+  return result;
+};
 
-export const updateEmailSettings = async (settings) =>
-  superAdminRequest(SUPER_ADMIN_API.settingsEmail, {
+export const updateEmailSettings = async (settings) => {
+  const result = await superAdminRequest(SUPER_ADMIN_API.settingsEmail, {
     method: "PUT",
     body: settings,
   });
+  recordSuperAdminActivity("Updated email settings", "Settings", "Email configuration");
+  return result;
+};
 
-export const updateSmsSettings = async (settings) =>
-  superAdminRequest(SUPER_ADMIN_API.settingsSms, {
+export const updateSmsSettings = async (settings) => {
+  const result = await superAdminRequest(SUPER_ADMIN_API.settingsSms, {
     method: "PUT",
     body: settings,
   });
+  recordSuperAdminActivity("Updated SMS settings", "Settings", "SMS configuration");
+  return result;
+};
 
-export const updatePaymentSettings = async (settings) =>
-  superAdminRequest(SUPER_ADMIN_API.settingsPayment, {
+export const updatePaymentSettings = async (settings) => {
+  const result = await superAdminRequest(SUPER_ADMIN_API.settingsPayment, {
     method: "PUT",
     body: settings,
   });
+  recordSuperAdminActivity("Updated payment settings", "Settings", "Payment configuration");
+  return result;
+};
 
 export const fetchDashboardData = async () => {
-  const [dashboard, summary, reportsSummary, revenueTrend, userActivity, billing] = await Promise.allSettled([
+  const [dashboard, summary, reportsSummary, revenueTrend, userActivity, dashboardActivities, auditLogs, loginHistory, billing] = await Promise.allSettled([
     superAdminRequestFirst([SUPER_ADMIN_API.dashboard, SUPER_ADMIN_API.dashboardCompat]),
     superAdminRequestFirst([SUPER_ADMIN_API.dashboardSummary, SUPER_ADMIN_API.dashboardSummaryCompat]),
     superAdminRequest(SUPER_ADMIN_API.reportsSummary),
     superAdminRequest(SUPER_ADMIN_API.reportsRevenueTrend),
     superAdminRequest(SUPER_ADMIN_API.reportsUserActivity),
+    superAdminRequest(SUPER_ADMIN_API.activities),
+    superAdminRequest(SUPER_ADMIN_API.auditLogs),
+    superAdminRequest(SUPER_ADMIN_API.loginHistory),
     superAdminRequest(SUPER_ADMIN_API.billing),
   ]);
 
@@ -1013,7 +1285,14 @@ export const fetchDashboardData = async () => {
     ...(summary.status === "fulfilled" ? asObject(summary.value) : {}),
   };
   const revenueData = revenueTrend.status === "fulfilled" ? revenueTrend.value : [];
-  const activityData = userActivity.status === "fulfilled" ? userActivity.value : [];
+  const reportActivityRows = userActivity.status === "fulfilled" ? asArray(userActivity.value).map(normalizeActivity) : [];
+  const dashboardActivityRows =
+    dashboardActivities.status === "fulfilled" ? asArray(dashboardActivities.value).map(normalizeActivity) : [];
+  const auditActivityRows =
+    auditLogs.status === "fulfilled" ? asArray(auditLogs.value).map(normalizeAuditLog).map(auditLogToDashboardActivity) : [];
+  const loginActivityRows =
+    loginHistory.status === "fulfilled" ? asArray(loginHistory.value).map(normalizeLoginLog).map(auditLogToDashboardActivity) : [];
+  const localActivityRows = readLocalList(LOCAL_AUDIT_LOGS_KEY).map(normalizeAuditLog).map(auditLogToDashboardActivity);
   const billingRows = billing.status === "fulfilled" ? asArray(billing.value) : [];
   const totalRevenue = billingRows.reduce((sum, item) => sum + getBillingAmount(item), 0);
   const nextSummary = {
@@ -1027,13 +1306,22 @@ export const fetchDashboardData = async () => {
     revenueData: asArray(revenueData).length
       ? asArray(revenueData).map(normalizeRevenuePoint)
       : buildRevenueChart(billingRows),
-    activities: asArray(activityData).map(normalizeActivity),
+    activities: buildDashboardActivities(
+      localActivityRows,
+      dashboardActivityRows,
+      auditActivityRows,
+      loginActivityRows,
+      reportActivityRows
+    ),
     error:
       dashboard.status === "rejected" &&
       summary.status === "rejected" &&
       reportsSummary.status === "rejected" &&
       revenueTrend.status === "rejected" &&
       userActivity.status === "rejected" &&
+      dashboardActivities.status === "rejected" &&
+      auditLogs.status === "rejected" &&
+      loginHistory.status === "rejected" &&
       billing.status === "rejected"
         ? dashboard.reason.message
         : "",

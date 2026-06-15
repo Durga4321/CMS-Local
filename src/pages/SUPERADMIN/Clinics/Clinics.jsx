@@ -89,6 +89,17 @@ function Clinics() {
       ),
     },
   ];
+  const clinicDetailFields = [
+    { key: "id", label: "Clinic ID" },
+    { key: "name", label: "Clinic Name" },
+    { key: "type", label: "Clinic Type" },
+    { key: "address", label: "Address" },
+    { key: "contactNumber", label: "Contact Number" },
+    { key: "email", label: "Email" },
+    { key: "status", label: "Status" },
+    { key: "createdDate", label: "Created Date" },
+    { key: "updatedDate", label: "Updated Date" },
+  ];
 
   return (
     <>
@@ -124,7 +135,7 @@ function Clinics() {
         <div className="sa-form-card" style={{ marginTop: 16 }}>
           <Header
             title="View Clinic"
-            subtitle={selectedClinic.id}
+            subtitle={selectedClinic.id ? `Clinic ID: ${selectedClinic.id}` : ""}
             action={
               <button className="sa-btn" onClick={() => setSelectedClinic(null)}>
                 Close
@@ -132,10 +143,10 @@ function Clinics() {
             }
           />
           <div className="sa-form-grid">
-            {["name", "address", "contactNumber", "email", "status"].map((key) => (
-              <div className="sa-form-field" key={key}>
-                <label>{key === "contactNumber" ? "Contact Number" : key.replace(/^\w/, (letter) => letter.toUpperCase())}</label>
-                <input value={selectedClinic[key]} readOnly />
+            {clinicDetailFields.map((field) => (
+              <div className="sa-form-field" key={field.key}>
+                <label>{field.label}</label>
+                <input value={selectedClinic[field.key] || "-"} readOnly />
               </div>
             ))}
           </div>

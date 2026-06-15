@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Save } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../../components/superadmin/Header";
-import { fetchClinic, saveClinic } from "../superAdminApi";
+import { fetchClinic, fetchClinics, saveClinic } from "../superAdminApi";
 import { useToast } from "../../../components/ToastProvider";
 import {
   onlyAlpha,
@@ -22,24 +22,50 @@ const emptyClinic = {
   status: "Active",
 };
 
+const continentNames = new Set([
+  "africa",
+  "antarctica",
+  "asia",
+  "australia",
+  "europe",
+  "north america",
+  "south america",
+]);
+
 const parseAddressParts = (address = "") => {
   const parts = String(address)
     .split(",")
     .map((part) => part.trim().replace(/\b\d{5,6}\b/g, "").trim())
     .filter(Boolean);
   const postalMatch = String(address).match(/\b\d{5,6}\b/);
-  const countryIndex = parts.findIndex((part) =>
-    /^(india|bharat|usa|united states|uk|united kingdom)$/i.test(part)
-  );
-  const country = countryIndex >= 0 ? parts[countryIndex] : parts[parts.length - 1] || "India";
-  const state = countryIndex > 0 ? parts[countryIndex - 1] : parts[parts.length - 2] || "";
 
   return {
-    city: parts[1] || parts[0] || "",
-    state,
-    country,
+    street: parts[0] || "",
+    city: parts[1] || "",
+    state: parts[2] || "",
+    country: parts[3] || "",
     postalCode: postalMatch?.[0] || "",
   };
+};
+
+const validateAddressFormat = (address = "") => {
+  const requiredMessage = validateRequired(address, "Address");
+  if (requiredMessage) return requiredMessage;
+
+  const parts = String(address)
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length < 4) {
+    return "Address must follow Street, City, State, Country format.";
+  }
+
+  if (continentNames.has(parts[3].toLowerCase())) {
+    return "Country must be a valid country, not a continent.";
+  }
+
+  return "";
 };
 
 const buildClinicPayload = (form) => {
@@ -47,7 +73,7 @@ const buildClinicPayload = (form) => {
   const phoneNumber = form.contactNumber.trim();
   const email = form.email.trim();
   const address = form.address.trim();
-  const { city, country, postalCode, state } = parseAddressParts(address);
+  const { city, country, postalCode, state, street } = parseAddressParts(address);
   const isActive = form.status === "Active";
 
   return {
@@ -64,6 +90,8 @@ const buildClinicPayload = (form) => {
     Address: address,
     ClinicAddress: address,
     address,
+    Street: street,
+    street,
     City: city,
     city,
     State: state,
@@ -115,6 +143,25 @@ function ClinicForm({ mode }) {
     };
   }, [id, mode]);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadClinics = async () => {
+      try {
+        const result = await fetchClinics();
+        if (active) setClinics(result);
+      } catch {
+        /* ignore validation list error until submit */
+      }
+    };
+
+    loadClinics();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const handleChange = (event) => {
     const { name, value } = event.target;
     let nextValue = value;
@@ -138,7 +185,7 @@ function ClinicForm({ mode }) {
       contactNumber: validateMobile(form.contactNumber, "Contact number"),
       email: validateGmail(form.email),
       status: validateSelected(form.status, "a status"),
-      address: validateRequired(form.address, "Address"),
+      address: validateAddressFormat(form.address),
     };
 
     Object.keys(nextErrors).forEach((key) => {
@@ -154,6 +201,33 @@ function ClinicForm({ mode }) {
     if (!validateForm()) {
       setError("Please fix the highlighted fields.");
       toast.error("Please fix the highlighted fields.");
+      return;
+    }
+
+    const trimmedContact = form.contactNumber.trim();
+    const duplicateClinic = clinics.find((existingClinic) => {
+      const existingContact = String(
+        existingClinic.contactNumber ||
+        existingClinic.phone ||
+        existingClinic.phoneNumber ||
+        existingClinic.mobile ||
+        existingClinic.contact ||
+        ""
+      ).trim();
+      const existingId = String(existingClinic.id || existingClinic.clinicId || existingClinic._id || "");
+      const currentId = String(id || "");
+
+      return (
+        existingContact === trimmedContact &&
+        (mode !== "edit" || existingId !== currentId)
+      );
+    });
+
+    if (duplicateClinic) {
+      const message = "Contact number already exists for another clinic.";
+      setFieldErrors((current) => ({ ...current, contactNumber: message }));
+      setError(message);
+      toast.error(message);
       return;
     }
 

@@ -76,6 +76,16 @@ export const validateGmail = (value, label = "Email") => {
     : `${label} must be a valid @gmail.com address.`;
 };
 
+export const validateEmailCom = (value, label = "Email") => {
+  const required = validateRequired(value, label);
+  if (required) return required;
+  const text = String(value || "").trim();
+  // basic email format check then ensure domain ends with .com
+  const basicEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!basicEmail.test(text)) return `${label} must be a valid email address.`;
+  return text.toLowerCase().endsWith('.com') ? '' : `${label} must use a .com domain.`;
+};
+
 export const validateMobile = (value, label = "Mobile number") => {
   const required = validateRequired(value, label);
   if (required) return required;
