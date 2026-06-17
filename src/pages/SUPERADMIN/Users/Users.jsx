@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Eye, Pencil, Plus, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
+import { Eye, Pencil, Plus, ToggleLeft, ToggleRight, Trash2, X } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
@@ -15,6 +15,7 @@ import {
   validateMobile,
   validateEmailCom,
 } from "../../../utils/validation";
+import { formatTitleCase } from "../../../utils/format";
 
 const emptyUser = {
   name: "",
@@ -67,6 +68,19 @@ function Users() {
     setError("");
   };
 
+  const openUserDetails = async (user) => {
+    setSelectedUser(user);
+    setShowForm(false);
+    setEditingUserId("");
+    setError("");
+
+    try {
+      setSelectedUser({ ...user, ...(await fetchUser(user.id)) });
+    } catch {
+      setSelectedUser(user);
+    }
+  };
+
   const openEditForm = async (user) => {
     setEditingUserId(user.id);
     setSelectedUser(null);
@@ -92,7 +106,11 @@ function Users() {
     const nextValue = ["phone", "mobileNumber"].includes(name)
       ? onlyIndianMobileValue(value)
       : value;
-    setForm((current) => ({ ...current, [name]: nextValue }));
+    setForm((current) => ({
+      ...current,
+      [name]: nextValue,
+      ...(name === "mobileNumber" ? { phone: nextValue } : {}),
+    }));
   };
 
   const handleSubmit = async (event) => {
@@ -107,7 +125,6 @@ function Users() {
       return;
     }
 
-    const phoneError = form.phone ? validateMobile(form.phone, "Phone") : "";
     const mobileError = form.mobileNumber
       ? validateMobile(form.mobileNumber, "Mobile number")
       : "";
@@ -119,8 +136,8 @@ function Users() {
       return;
     }
 
-    if (phoneError || mobileError) {
-      setError(phoneError || mobileError);
+    if (mobileError) {
+      setError(mobileError);
       return;
     }
 
@@ -164,7 +181,7 @@ function Users() {
   };
 
   const handleDelete = async (user) => {
-    const confirmed = window.confirm(`Delete ${user.name || "this user"}?`);
+    const confirmed = window.confirm(`Delete ${formatTitleCase(user.name) || "this user"}?`);
     if (!confirmed) return;
 
     setError("");
@@ -183,7 +200,11 @@ function Users() {
   };
 
   const columns = [
-    { key: "name", label: "User" },
+    {
+      key: "name",
+      label: "User",
+      render: (user) => formatTitleCase(user.name) || "-",
+    },
     { key: "email", label: "Email", width: "minmax(170px, 1.2fr)" },
     { key: "clinic", label: "Clinic" },
     { key: "type", label: "Type", width: "minmax(90px, 0.6fr)" },
@@ -204,7 +225,7 @@ function Users() {
       width: "minmax(112px, 0.7fr)",
       render: (user) => (
         <div className="sa-actions">
-          <button className="sa-icon-btn" onClick={() => setSelectedUser(user)} title="User details">
+          <button className="sa-icon-btn" onClick={() => openUserDetails(user)} title="User details">
             <Eye size={15} />
           </button>
           <button className="sa-icon-btn" onClick={() => openEditForm(user)} title="Edit user">
@@ -243,100 +264,6 @@ function Users() {
         onFilterChange={setStatus}
       />
 
-      {showForm ? (
-        <form className="sa-form-card" style={{ marginBottom: 16 }} onSubmit={handleSubmit} noValidate>
-          <h3>{editingUserId ? "Edit User" : "Create User"}</h3>
-          {error ? <div className="sa-state sa-state--error">{error}</div> : null}
-          <div className="sa-form-grid">
-            <div className="sa-form-field">
-              <label>Name</label>
-              <input name="name" value={form.name} onChange={handleChange} required />
-            </div>
-            <div className="sa-form-field">
-              <label>Email</label>
-              <input type="email" name="email" value={form.email} onChange={handleChange} required />
-            </div>
-            <div className="sa-form-field">
-              <label>Clinic</label>
-              <input name="clinic" value={form.clinic} onChange={handleChange} />
-            </div>
-            <div className="sa-form-field">
-              <label>Hospital ID</label>
-              <input
-                name="hospitalId"
-                type="number"
-                value={form.hospitalId}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="sa-form-field">
-              <label>Clinic ID</label>
-              <input
-                name="clinicId"
-                type="number"
-                value={form.clinicId}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="sa-form-field">
-              <label>Type</label>
-              <select
-                name="type"
-                value={form.type}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    type: event.target.value,
-                    role: event.target.value,
-                  }))
-                }
-              >
-                <option>Patient</option>
-                <option>Doctor</option>
-                <option>Clinic Admin</option>
-                <option>Receptionist</option>
-              </select>
-            </div>
-            <div className="sa-form-field">
-              <label>Role</label>
-              <input name="role" value={form.role} onChange={handleChange} />
-            </div>
-            <div className="sa-form-field">
-              <label>Status</label>
-              <select name="status" value={form.status} onChange={handleChange}>
-                <option>Active</option>
-                <option>Inactive</option>
-              </select>
-            </div>
-            <div className="sa-form-field">
-              <label>Phone</label>
-              <input name="phone" value={form.phone} onChange={handleChange} />
-            </div>
-            <div className="sa-form-field">
-              <label>Mobile Number</label>
-              <input name="mobileNumber" value={form.mobileNumber} onChange={handleChange} />
-            </div>
-            <div className="sa-form-field">
-              <label>Password</label>
-              <input
-                name="password"
-                type="password"
-                value={form.password}
-                onChange={handleChange}
-                autoComplete="new-password"
-                required={!editingUserId}
-              />
-            </div>
-          </div>
-          <div className="sa-page-actions" style={{ marginTop: 14 }}>
-            <button type="button" className="sa-btn" onClick={closeForm}>Close</button>
-            <button className="sa-btn sa-btn-primary" disabled={saving}>
-              {saving ? "Saving..." : "Save User"}
-            </button>
-          </div>
-        </form>
-      ) : null}
-
       <DataTable
         columns={columns}
         rows={rows}
@@ -345,32 +272,159 @@ function Users() {
         emptyMessage="No users match your filters."
       />
 
-      {selectedUser ? (
-        <div className="sa-form-card" style={{ marginTop: 16 }}>
-          <Header
-            title="User Details"
-            subtitle={selectedUser.id ? `User ID: ${selectedUser.id}` : ""}
-            action={<button className="sa-btn" onClick={() => setSelectedUser(null)}>Close</button>}
-          />
-          <div className="sa-form-grid">
-            {[
-              "name",
-              "email",
-              "clinic",
-              "hospitalId",
-              "clinicId",
-              "type",
-              "role",
-              "status",
-              "phone",
-              "mobileNumber",
-              "lastActive",
-            ].map((key) => (
-              <div className="sa-form-field" key={key}>
-                <label>{key.replace(/^\w/, (letter) => letter.toUpperCase())}</label>
-                <input value={selectedUser[key] || "-"} readOnly />
+      {showForm ? (
+        <div className="sa-modal-backdrop" role="presentation" onMouseDown={closeForm}>
+          <div
+            className="sa-modal sa-modal--wide"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sa-user-form-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <form className="sa-form-card sa-modal-card" onSubmit={handleSubmit} noValidate>
+              <div className="sa-modal-header">
+                <div>
+                  <h3 id="sa-user-form-title">{editingUserId ? "Edit User" : "Create User"}</h3>
+                  <p>Manage user profile, access type, and status.</p>
+                </div>
+                <button type="button" className="sa-icon-btn" onClick={closeForm} title="Close">
+                  <X size={16} />
+                </button>
               </div>
-            ))}
+              {error ? <div className="sa-state sa-state--error">{error}</div> : null}
+              <div className="sa-form-grid">
+                <div className="sa-form-field">
+                  <label>Name</label>
+                  <input name="name" value={form.name} onChange={handleChange} required />
+                </div>
+                <div className="sa-form-field">
+                  <label>Email</label>
+                  <input type="email" name="email" value={form.email} onChange={handleChange} required />
+                </div>
+                <div className="sa-form-field">
+                  <label>Clinic</label>
+                  <input name="clinic" value={form.clinic} onChange={handleChange} />
+                </div>
+                <div className="sa-form-field">
+                  <label>Hospital ID</label>
+                  <input
+                    name="hospitalId"
+                    type="number"
+                    value={form.hospitalId}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="sa-form-field">
+                  <label>Clinic ID</label>
+                  <input
+                    name="clinicId"
+                    type="number"
+                    value={form.clinicId}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="sa-form-field">
+                  <label>Type</label>
+                  <select
+                    name="type"
+                    value={form.type}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        type: event.target.value,
+                        role: event.target.value,
+                      }))
+                    }
+                  >
+                    <option>Patient</option>
+                    <option>Doctor</option>
+                    <option>Clinic Admin</option>
+                    <option>Receptionist</option>
+                  </select>
+                </div>
+                <div className="sa-form-field">
+                  <label>Role</label>
+                  <input name="role" value={form.role} onChange={handleChange} />
+                </div>
+                <div className="sa-form-field">
+                  <label>Status</label>
+                  <select name="status" value={form.status} onChange={handleChange}>
+                    <option>Active</option>
+                    <option>Inactive</option>
+                  </select>
+                </div>
+                <div className="sa-form-field">
+                  <label>Mobile Number</label>
+                  <input name="mobileNumber" value={form.mobileNumber} onChange={handleChange} />
+                </div>
+                <div className="sa-form-field">
+                  <label>Password</label>
+                  <input
+                    name="password"
+                    type="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    autoComplete="new-password"
+                    required={!editingUserId}
+                  />
+                </div>
+              </div>
+              <div className="sa-page-actions" style={{ marginTop: 14 }}>
+                <button type="button" className="sa-btn" onClick={closeForm}>Close</button>
+                <button className="sa-btn sa-btn-primary" disabled={saving}>
+                  {saving ? "Saving..." : "Save User"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {selectedUser ? (
+        <div className="sa-modal-backdrop" role="presentation" onMouseDown={() => setSelectedUser(null)}>
+          <div
+            className="sa-modal sa-modal--wide"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sa-user-details-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="sa-form-card sa-modal-card">
+              <div className="sa-modal-header">
+                <div>
+                  <h3 id="sa-user-details-title">User Details</h3>
+                  <p>{selectedUser.id || "Selected user"}</p>
+                </div>
+                <button className="sa-icon-btn" onClick={() => setSelectedUser(null)} title="Close">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="sa-form-grid">
+                {[
+                  "name",
+                  "email",
+                  "clinic",
+                  "hospitalId",
+                  "clinicId",
+                  "type",
+                  "role",
+                  "status",
+                  "mobileNumber",
+                  "lastActive",
+                ].map((key) => (
+                  <div className="sa-form-field" key={key}>
+                    <label>{key.replace(/^\w/, (letter) => letter.toUpperCase())}</label>
+                    <input value={key === "name" ? formatTitleCase(selectedUser[key]) : selectedUser[key] || ""} readOnly />
+                  </div>
+                ))}
+              </div>
+              <div className="sa-page-actions" style={{ marginTop: 14 }}>
+                <button className="sa-btn" onClick={() => setSelectedUser(null)}>Close</button>
+                <button className="sa-btn sa-btn-primary" onClick={() => openEditForm(selectedUser)}>
+                  Edit User
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       ) : null}

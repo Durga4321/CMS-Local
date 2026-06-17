@@ -36,3 +36,18 @@ export const formatCompactIndianCurrency = (value) => {
     maximumFractionDigits: 0,
   });
 };
+
+export const formatTitleCase = (value = "") =>
+  String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/\b[\p{L}\p{N}]+(?:['-][\p{L}\p{N}]+)*/gu, (word) =>
+      word
+        .split(/([']|-)/)
+        .map((part) =>
+          part === "'" || part === "-"
+            ? part
+            : part.charAt(0).toUpperCase() + part.slice(1)
+        )
+        .join("")
+    );

@@ -314,6 +314,11 @@
   overflow-wrap: anywhere;
 }
 
+.sa-table-cell--nowrap {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
 .sa-badge {
   min-width: 72px;
   height: 28px;
@@ -375,6 +380,71 @@
 
 .sa-form-card {
   padding: 18px;
+}
+
+.sa-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.46);
+}
+
+.sa-modal {
+  width: min(880px, 100%);
+  overflow: visible;
+}
+
+.sa-modal--wide {
+  width: min(940px, 100%);
+}
+
+.sa-modal-card {
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+  max-height: calc(100vh - 36px);
+}
+
+.sa-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.sa-modal-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.sa-modal-header p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.sa-modal .sa-form-grid {
+  gap: 10px 14px;
+}
+
+.sa-modal .sa-form-field {
+  gap: 4px;
+}
+
+.sa-modal .sa-form-field label {
+  font-size: 12px;
+}
+
+.sa-modal .sa-form-field input,
+.sa-modal .sa-form-field select,
+.sa-modal .sa-form-field textarea {
+  min-height: 38px;
+  border-radius: 8px;
 }
 
 .sa-form-subtitle {
@@ -557,6 +627,12 @@
   }
 }
 
+@media (min-width: 900px) {
+  .sa-modal .sa-form-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 720px) {
   .sa-page-header,
   .sa-search-filter {
@@ -573,5 +649,18 @@
   .sa-page-actions,
   .sa-btn {
     width: 100%;
+  }
+
+  .sa-modal-backdrop {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .sa-modal {
+    width: 100%;
+  }
+
+  .sa-modal-header {
+    align-items: center;
   }
 }

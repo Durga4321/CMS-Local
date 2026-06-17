@@ -51,7 +51,7 @@ function AuditLogs() {
   }, [auditLogs, search, module]);
 
   const columns = [
-    { key: "user", label: "User" },
+    { key: "user", label: "User", width: "minmax(220px, 1.2fr)", cellClassName: "sa-table-cell--nowrap" },
     { key: "action", label: "Action", width: "minmax(240px, 1.6fr)" },
     { key: "timestamp", label: "Timestamp", width: "minmax(170px, 1fr)" },
     { key: "module", label: "Module" },

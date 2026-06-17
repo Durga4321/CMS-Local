@@ -112,6 +112,7 @@ function ClinicForm({ mode }) {
   const toast = useToast();
   const { id } = useParams();
   const [form, setForm] = useState(emptyClinic);
+  const [clinics, setClinics] = useState([]);
   const [loading, setLoading] = useState(mode === "edit");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");

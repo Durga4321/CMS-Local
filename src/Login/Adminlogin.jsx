@@ -147,6 +147,32 @@ const loginRequestBodies = (email, password) => [
     AdminEmail: email,
     AdminPassword: password,
   },
+  {
+    email,
+    password,
+    role: 'Doctor',
+  },
+  {
+    Email: email,
+    Password: password,
+    Role: 'Doctor',
+  },
+  {
+    doctorEmail: email,
+    doctorPassword: password,
+  },
+  {
+    DoctorEmail: email,
+    DoctorPassword: password,
+  },
+  {
+    userName: email,
+    password,
+  },
+  {
+    UserName: email,
+    Password: password,
+  },
 ];
 
 const clearStoredSession = () => {

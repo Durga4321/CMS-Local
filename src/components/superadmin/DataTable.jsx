@@ -38,7 +38,10 @@ function DataTable({
             key={getRowKey ? getRowKey(row) : row.id || index}
           >
             {columns.map((column) => (
-              <div className="sa-table-cell" key={column.key}>
+              <div
+                className={`sa-table-cell${column.cellClassName ? ` ${column.cellClassName}` : ""}`}
+                key={column.key}
+              >
                 {column.render ? column.render(row) : row[column.key] || "-"}
               </div>
             ))}

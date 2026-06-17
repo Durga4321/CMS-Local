@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Eye, Plus, Trash2 } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
@@ -356,6 +356,9 @@ function Admins() {
       width: "minmax(112px, 0.7fr)",
       render: (admin) => (
         <div className="sa-actions">
+          <button className="sa-icon-btn" onClick={() => setSelectedAdmin(admin)} title="View admin">
+            <Eye size={15} />
+          </button>
           <button className="sa-icon-btn" onClick={() => handleDelete(admin)} title="Delete admin">
             <Trash2 size={15} />
           </button>
