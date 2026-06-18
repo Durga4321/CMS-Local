@@ -55,7 +55,8 @@ window.fetch = (input, init = {}) => {
   const token =
     localStorage.getItem("token") ||
     localStorage.getItem("adminToken") ||
-    localStorage.getItem("doctorToken");
+    localStorage.getItem("doctorToken") ||
+    localStorage.getItem("receptionistToken");
 
   const requestHeaders =
     typeof Request !== "undefined" &&
@@ -74,9 +75,11 @@ window.fetch = (input, init = {}) => {
     "true"
   );
 
+  const hasAuthorization = headers.has("Authorization");
+
   if (isPublicAuthRequest(input)) {
     headers.delete("Authorization");
-  } else if (token) {
+  } else if (token && !hasAuthorization) {
     headers.set(
       "Authorization",
       `Bearer ${token}`

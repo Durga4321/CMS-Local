@@ -65,8 +65,10 @@ function ReceptionBilling() {
   const navigate = useNavigate();
   const toast = useToast();
   const amountFormatTimers = useRef({});
+  const messageTimer = useRef(null);
   const [appointments, setAppointments] = useState([]);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [invoice, setInvoice] = useState(null);
   const [showInvoiceActions, setShowInvoiceActions] = useState(false);
@@ -91,6 +93,7 @@ function ReceptionBilling() {
       })
       .catch((error) => {
         setMessage(error.message);
+        setMessageType("error");
         toast.error(error.message || "Unable to load billing details.");
       });
   }, []);
@@ -102,8 +105,32 @@ function ReceptionBilling() {
       Object.values(timers).forEach((timerId) => {
         window.clearTimeout(timerId);
       });
+      if (messageTimer.current) {
+        window.clearTimeout(messageTimer.current);
+      }
     };
   }, []);
+
+  const clearMessageTimer = () => {
+    if (messageTimer.current) {
+      window.clearTimeout(messageTimer.current);
+      messageTimer.current = null;
+    }
+  };
+
+  const showMessage = (text, type = "error", { autoHide = false } = {}) => {
+    clearMessageTimer();
+    setMessage(text);
+    setMessageType(type);
+
+    if (autoHide) {
+      messageTimer.current = window.setTimeout(() => {
+        setMessage("");
+        setMessageType("");
+        messageTimer.current = null;
+      }, 2000);
+    }
+  };
 
   const selectedAppointment = useMemo(() => {
     return appointments.find(
@@ -139,7 +166,7 @@ function ReceptionBilling() {
     event.preventDefault();
     if (!validateForm()) {
       const text = "Please fix the highlighted fields.";
-      setMessage(text);
+      showMessage(text, "error");
       toast.error(text);
       return;
     }
@@ -175,11 +202,10 @@ function ReceptionBilling() {
           "-",
       });
       setShowInvoiceActions(false);
-      const text = invoiceData?.message || "Invoice generated successfully.";
-      setMessage(text);
-      toast.success(text);
+      const text = invoiceData?.message || "Bill generated successfully";
+      showMessage(text, "success", { autoHide: true });
     } catch (error) {
-      setMessage(error.message);
+      showMessage(error.message, "error");
       toast.error(error.message || "Unable to generate invoice.");
       setInvoice(null);
       setShowInvoiceActions(false);
@@ -199,6 +225,8 @@ function ReceptionBilling() {
     setForm((prev) => ({ ...prev, [name]: nextValue }));
     setFieldErrors((prev) => ({ ...prev, [name]: "" }));
     setMessage("");
+    setMessageType("");
+    clearMessageTimer();
 
     if (isAmountField && nextValue && !String(nextValue).endsWith(".")) {
       amountFormatTimers.current[name] = window.setTimeout(() => {
@@ -235,7 +263,7 @@ function ReceptionBilling() {
     const printWindow = window.open("", "_blank", "width=760,height=920");
     if (!printWindow) {
       const text = "Please allow popups to download the invoice PDF.";
-      setMessage(text);
+      showMessage(text, "error");
       toast.error(text);
       return;
     }
@@ -359,7 +387,7 @@ function ReceptionBilling() {
         </button>
       </div>
 
-      {message ? <div className={`rc-alert ${invoice ? "" : "error"}`}>{message}</div> : null}
+      {message ? <div className={`rc-alert ${messageType}`}>{message}</div> : null}
 
       <div className="rc-billing-stats">
         <div className="rc-billing-stat">
