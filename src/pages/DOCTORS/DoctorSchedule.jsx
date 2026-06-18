@@ -72,6 +72,26 @@ const minutesToTime = (value) =>
 
 const formatTimeForApi = (value) => `${normalizeTime(value, "00:00")}:00`;
 
+const isTodayDate = (value) => value === toDateInputValue(new Date());
+
+const isCompletedSlot = (slotEnd, date) => {
+  if (!isTodayDate(date)) return false;
+
+  const endMinutes = timeToMinutes(slotEnd);
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  return endMinutes <= nowMinutes;
+};
+
+const getSlotStatus = (slot) => String(slot?.status || "").trim().toLowerCase();
+
+const isTimeOutSlot = (slot) => {
+  const status = getSlotStatus(slot);
+  return status === "time out" || status === "timeout" || status === "completed";
+};
+
+const isBookedSlot = (slot) => getSlotStatus(slot) === "booked" || slot?.isBooked;
+
 const resolveScheduleTimes = ({
   workStart,
   workEnd,
@@ -623,6 +643,18 @@ function Schedule() {
                   0,
                   5
                 );
+                const isBooked = isBookedSlot(slot);
+                const isCompleted = !isBooked && (isTimeOutSlot(slot) || isCompletedSlot(slotEnd, previewDate));
+                const statusClass = isBooked
+                  ? "booked"
+                  : isCompleted
+                    ? "completed"
+                    : "available";
+                const statusLabel = isBooked
+                  ? "Booked"
+                  : isCompleted
+                    ? "Time Out"
+                    : "Available";
 
                 return (
                   <div className="slot" key={`${slotStart}-${slotEnd}-${index}`}>
@@ -630,8 +662,8 @@ function Schedule() {
                       {slotStart}
                       {slotEnd ? ` - ${slotEnd}` : ""}
                     </span>
-                    <span className={slot.isBooked ? "booked" : "available"}>
-                      {slot.isBooked ? "Booked" : "Available"}
+                    <span className={statusClass}>
+                      {statusLabel}
                     </span>
                   </div>
                 );

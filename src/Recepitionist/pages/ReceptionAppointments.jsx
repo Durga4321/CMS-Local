@@ -7,6 +7,49 @@ import { getReceptionistProfile } from "../receptionSession";
 
 const getSlotStart = (slot) => String(slot || "").split(" - ")[0].trim();
 
+const getSlotEnd = (slot) => String(slot || "").split(" - ")[1]?.trim() || "";
+
+const getMinutesFromTime = (value) => {
+  const match = String(value || "").match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+
+  return Number(match[1]) * 60 + Number(match[2]);
+};
+
+const isToday = (date) => {
+  const today = new Date();
+  const [year, month, day] = String(date || "").split("-").map(Number);
+
+  return (
+    today.getFullYear() === year &&
+    today.getMonth() + 1 === month &&
+    today.getDate() === day
+  );
+};
+
+const isCompletedSlot = (slotLabel, date) => {
+  if (!isToday(date)) return false;
+
+  const slotEndMinutes = getMinutesFromTime(getSlotEnd(slotLabel));
+  if (slotEndMinutes === null) return false;
+
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  return slotEndMinutes <= nowMinutes;
+};
+
+const getSlotStatus = (slot) => String(slot?.status || "").trim().toLowerCase();
+
+const isTimeOutSlot = (slot) => {
+  const status = getSlotStatus(slot);
+  return status === "time out" || status === "timeout" || status === "completed";
+};
+
+const isBookedSlot = (slot) => {
+  const status = getSlotStatus(slot);
+  return status === "booked" || slot?.isBooked;
+};
+
 const getRecordHospitalId = (record = {}) =>
   record.hospitalId ??
   record.HospitalId ??
@@ -276,17 +319,22 @@ function ReceptionAppointments() {
               availableSlots.map((slot) => {
                 const label = parseSlotLabel(slot);
                 const slotStart = getSlotStart(label);
-                const isBooked = Boolean(slot?.isBooked || bookedSlots.has(slotStart));
+                const isBooked = Boolean(isBookedSlot(slot) || bookedSlots.has(slotStart));
+                const isCompleted = isTimeOutSlot(slot) || isCompletedSlot(label, form.date);
                 const isSelected = selectedSlot && getSlotStart(selectedSlot) === slotStart;
                 return (
                   <button
                     type="button"
                     key={label}
-                    disabled={isBooked}
-                    className={`${isSelected ? "selected" : ""}${isBooked ? " booked" : ""}`}
+                    disabled={isBooked || isCompleted}
+                    className={[
+                      isSelected ? "selected" : "",
+                      isBooked ? "booked" : "",
+                      isCompleted ? "completed" : "",
+                    ].filter(Boolean).join(" ")}
                     onClick={() => setSelectedSlot(label)}
                   >
-                    {label} - {isBooked ? "BOOKED" : "AVAILABLE"}
+                    {label} - {isCompleted ? "TIME OUT" : isBooked ? "BOOKED" : "AVAILABLE"}
                   </button>
                 );
               })

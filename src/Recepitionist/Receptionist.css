@@ -526,6 +526,12 @@
   color: #f00;
 }
 
+.rc-alert.success {
+  color: #16803a;
+  border-color: #b9e7c8;
+  background: #f0fff5;
+}
+
 .rc-billing-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -666,10 +672,88 @@
   padding: 20px;
 }
 
+.rc-modal-compact {
+  width: min(640px, 100%);
+  padding: 18px;
+}
+
+.rc-modal-compact h3 {
+  margin: 0 0 14px;
+  font-size: 18px;
+}
+
+.rc-modal-compact .rc-form-grid {
+  gap: 10px;
+}
+
+.rc-modal-compact .rc-form-grid label {
+  gap: 5px;
+}
+
+.rc-modal-compact .rc-form-grid input,
+.rc-modal-compact .rc-form-grid select {
+  height: 34px;
+}
+
+.rc-modal-compact .rc-form-grid textarea {
+  min-height: 66px;
+}
+
+.rc-modal-compact .rc-modal-actions {
+  margin-top: 12px;
+}
+
+.rc-file-upload {
+  min-width: 0;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d7dfeb;
+  border-radius: 8px;
+  background: #fff;
+  padding: 4px;
+}
+
+.rc-file-upload input {
+  display: none;
+}
+
+.rc-file-upload-btn {
+  height: 26px;
+  flex: 0 0 auto;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 5px !important;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: #e6f7f6;
+  color: #087d7d;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  cursor: pointer;
+}
+
+.rc-file-upload > span {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .rc-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.rc-form-field-full {
+  grid-column: 1 / -1;
 }
 
 .rc-booking-form,
@@ -727,6 +811,10 @@
   font-weight: 600;
 }
 
+.rc-field-message.success {
+  color: #16803a;
+}
+
 .rc-form-grid textarea {
   min-height: 84px;
   padding: 10px 12px;
@@ -763,6 +851,13 @@
 .rc-slots button.booked {
   background: #f1f4f7;
   color: #687589;
+}
+
+.rc-slots button.completed {
+  background: #f4f4f5;
+  border-color: #d4d4d8;
+  color: #71717a;
+  cursor: not-allowed;
 }
 
 .rc-patient-summary,

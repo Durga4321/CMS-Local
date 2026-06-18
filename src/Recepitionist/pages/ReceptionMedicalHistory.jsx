@@ -7,6 +7,7 @@ import {
   Pencil,
   RefreshCw,
   Trash2,
+  Upload,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { parseList, requestJson } from "../receptionApi";
@@ -18,12 +19,19 @@ const emptyForm = {
   chronicDiseases: "",
   currentMedications: "",
   surgeries: "",
+  appointmentId: "",
 };
 
 const getHistoryId = (record) =>
   record?.id || record?.medicalHistoryId || record?.historyId || "";
 
 const getPatientId = (record) => record?.patientId || record?.patient?.id || "";
+
+const getAppointmentId = (appointment) =>
+  appointment?.appointmentId ?? appointment?.id ?? appointment?.appointment?.id ?? "";
+
+const getAppointmentPatientId = (appointment) =>
+  appointment?.patientId ?? appointment?.patient?.id ?? appointment?.appointment?.patientId ?? "";
 
 const getPatientName = (record, patientsById) => {
   const patientId = String(getPatientId(record));
@@ -39,8 +47,10 @@ function ReceptionMedicalHistory() {
   const navigate = useNavigate();
   const [histories, setHistories] = useState([]);
   const [patients, setPatients] = useState([]);
+  const [appointments, setAppointments] = useState([]);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [documentFile, setDocumentFile] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -50,6 +60,15 @@ function ReceptionMedicalHistory() {
   );
 
   const rows = useMemo(() => [...histories].reverse(), [histories]);
+
+  const selectedPatientAppointments = useMemo(() => {
+    const patientId = String(form.patientId || "").trim();
+    if (!patientId) return [];
+
+    return appointments.filter(
+      (appointment) => String(getAppointmentPatientId(appointment)).trim() === patientId
+    );
+  }, [appointments, form.patientId]);
 
   const loadPatients = useCallback(async () => {
     const data = await requestJson("Patient");
@@ -100,12 +119,22 @@ function ReceptionMedicalHistory() {
     }
   }, [loadPatients]);
 
+  const fetchAppointments = useCallback(async () => {
+    try {
+      setAppointments(parseList(await requestJson("Appointment")));
+    } catch {
+      setAppointments([]);
+    }
+  }, []);
+
   useEffect(() => {
+    fetchAppointments();
     fetchPatients().then((nextPatients) => fetchHistories(nextPatients));
-  }, [fetchHistories, fetchPatients]);
+  }, [fetchAppointments, fetchHistories, fetchPatients]);
 
   const openAdd = () => {
     setForm(emptyForm);
+    setDocumentFile(null);
     setModal("add");
     setMessage("");
   };
@@ -118,7 +147,9 @@ function ReceptionMedicalHistory() {
       chronicDiseases: record?.chronicDiseases || "",
       currentMedications: record?.currentMedications || "",
       surgeries: record?.surgeries || "",
+      appointmentId: "",
     });
+    setDocumentFile(null);
     setModal("edit");
     setMessage("");
   };
@@ -131,9 +162,30 @@ function ReceptionMedicalHistory() {
       chronicDiseases: record?.chronicDiseases || "",
       currentMedications: record?.currentMedications || "",
       surgeries: record?.surgeries || "",
+      appointmentId: "",
     });
+    setDocumentFile(null);
     setModal("view");
     setMessage("");
+  };
+
+  const uploadDocument = async () => {
+    if (!documentFile) return;
+
+    const appointmentId = Number(
+      form.appointmentId || getAppointmentId(selectedPatientAppointments[0])
+    );
+    if (!appointmentId) {
+      throw new Error("No appointment found for the selected patient.");
+    }
+
+    const data = new FormData();
+    data.append("file", documentFile);
+
+    await requestJson(`Appointment/${appointmentId}/documents`, {
+      method: "POST",
+      body: data,
+    });
   };
 
   const saveHistory = async (event) => {
@@ -159,8 +211,11 @@ function ReceptionMedicalHistory() {
         body: JSON.stringify(body),
       });
 
+      await uploadDocument();
       setModal(null);
+      setDocumentFile(null);
       await fetchHistories();
+      setMessage(documentFile ? "Medical history and document saved successfully." : "");
     } catch (error) {
       setMessage(error.message || "Unable to save medical history.");
     }
@@ -264,7 +319,7 @@ function ReceptionMedicalHistory() {
         <div className="rc-modal-backdrop" onClick={() => setModal(null)}>
           <form
             noValidate
-            className="rc-modal"
+            className="rc-modal rc-modal-compact"
             onSubmit={saveHistory}
             onClick={(event) => event.stopPropagation()}
           >
@@ -282,7 +337,11 @@ function ReceptionMedicalHistory() {
                   value={form.patientId || ""}
                   disabled={modal === "view"}
                   onChange={(event) =>
-                    setForm((prev) => ({ ...prev, patientId: event.target.value }))
+                    setForm((prev) => ({
+                      ...prev,
+                      patientId: event.target.value,
+                      appointmentId: "",
+                    }))
                   }
                 >
                   <option value="">Select patient</option>
@@ -301,7 +360,11 @@ function ReceptionMedicalHistory() {
                   value={form.patientId || ""}
                   disabled={modal === "view"}
                   onChange={(event) =>
-                    setForm((prev) => ({ ...prev, patientId: event.target.value }))
+                    setForm((prev) => ({
+                      ...prev,
+                      patientId: event.target.value,
+                      appointmentId: "",
+                    }))
                   }
                 />
               </label>
@@ -322,6 +385,24 @@ function ReceptionMedicalHistory() {
                   />
                 </label>
               ))}
+              {modal !== "view" ? (
+                <label className="rc-document-field rc-form-field-full">
+                  <span>Document</span>
+                  <div className="rc-file-upload">
+                    <label className="rc-file-upload-btn" htmlFor="medical-history-document">
+                      <Upload size={14} /> Choose file
+                    </label>
+                    <span title={documentFile?.name || ""}>
+                      {documentFile?.name || "No file selected"}
+                    </span>
+                    <input
+                      id="medical-history-document"
+                      type="file"
+                      onChange={(event) => setDocumentFile(event.target.files?.[0] || null)}
+                    />
+                  </div>
+                </label>
+              ) : null}
             </div>
             <div className="rc-modal-actions">
               <button type="button" className="rc-btn ghost" onClick={() => setModal(null)}>
@@ -329,7 +410,7 @@ function ReceptionMedicalHistory() {
               </button>
               {modal !== "view" ? (
                 <button type="submit" className="rc-btn primary">
-                  <HeartPulse size={16} /> Save
+                  {documentFile ? <Upload size={16} /> : <HeartPulse size={16} />} Save
                 </button>
               ) : null}
             </div>

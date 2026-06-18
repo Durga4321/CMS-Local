@@ -180,7 +180,7 @@ function Admins() {
   };
 
   const openEditForm = async (admin) => {
-    setSelectedAdmin(admin);
+    setSelectedAdmin(null);
     setEditingAdminId(admin.id);
     setForm({
       fullName: admin.name || "",
@@ -385,6 +385,9 @@ function Admins() {
         <div className="sa-actions">
           <button className="sa-icon-btn" onClick={() => setSelectedAdmin(admin)} title="View admin">
             <Eye size={15} />
+          </button>
+          <button className="sa-icon-btn" onClick={() => openEditForm(admin)} title="Edit admin">
+            <Pencil size={15} />
           </button>
           <button className="sa-icon-btn" onClick={() => handleDelete(admin)} title="Delete admin">
             <Trash2 size={15} />

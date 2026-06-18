@@ -168,6 +168,12 @@
   font-size: 14px;
 }
 
+.completed {
+  color: #71717a;
+  font-weight: 600;
+  font-size: 14px;
+}
+
 .slots-msg {
   color: #6b7280;
   text-align: center;

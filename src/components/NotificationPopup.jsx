@@ -61,6 +61,12 @@ const saveReadNotificationKey = (notification) => {
 const isSentNotification = (notification = {}) =>
   String(notification.status || "").toLowerCase() === "sent";
 
+const isReadNotification = (notification = {}) =>
+  String(notification.status || "").toLowerCase() === "read";
+
+const isVisibleNotification = (notification = {}) =>
+  isSentNotification(notification) || isReadNotification(notification);
+
 const matchesTargetUsers = (notification = {}, role = "") => {
   const target = String(notification.targetUsers || "all clinics").trim().toLowerCase();
   const r = normalizeRole(role);
@@ -104,12 +110,13 @@ function NotificationPopup({ isSuperAdmin = false }) {
     try {
       const items = await fetchNotifications();
       const readKeys = new Set(readNotificationKeys());
-      const filtered = items.filter(
-        (item) =>
-          isSentNotification(item) &&
-          matchesTargetUsers(item, role) &&
-          !readKeys.has(getNotificationKey(item))
-      );
+      const filtered = items
+        .filter((item) => isVisibleNotification(item) && matchesTargetUsers(item, role))
+        .map((item) =>
+          readKeys.has(getNotificationKey(item)) && !isReadNotification(item)
+            ? { ...item, status: "Read" }
+            : item
+        );
       setNotifications(filtered);
     } catch (requestError) {
       setError(requestError.message || "Unable to load notifications.");
@@ -146,7 +153,7 @@ function NotificationPopup({ isSuperAdmin = false }) {
   }, []);
 
   const visibleNotifications = notifications;
-  const notificationCount = visibleNotifications.length;
+  const notificationCount = visibleNotifications.filter((item) => !isReadNotification(item)).length;
 
   const handleToggle = () => {
     setOpen((current) => !current);
@@ -206,13 +213,18 @@ function NotificationPopup({ isSuperAdmin = false }) {
                     key={item.id}
                     className={`notification-item-button ${activeNotification?.id === item.id ? "is-active" : ""}`}
                     onClick={async () => {
-                      setActiveNotification(item);
+                      const readItem = { ...item, status: "Read" };
+                      setActiveNotification(readItem);
                       saveReadNotificationKey(item);
                       try {
                         if (item.id) await markNotificationRead(item.id);
                       } catch {}
                       setNotifications((current) =>
-                        current.filter((n) => getNotificationKey(n) !== getNotificationKey(item))
+                        current.map((n) =>
+                          getNotificationKey(n) === getNotificationKey(item)
+                            ? { ...n, status: "Read" }
+                            : n
+                        )
                       );
                     }}
                   >
@@ -226,7 +238,7 @@ function NotificationPopup({ isSuperAdmin = false }) {
                   </button>
                 ))}
                 {!visibleNotifications.length ? (
-                  <div className="notification-empty">No unread notifications.</div>
+                  <div className="notification-empty">No notifications available.</div>
                 ) : null}
               </div>
 
