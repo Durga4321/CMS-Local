@@ -103,6 +103,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   padding: 18px 24px;
   border-bottom: 1px solid #f1f5f9;
 }
@@ -112,6 +113,35 @@
   font-size: 16px;
   font-weight: 700;
   color: #0f172a;
+}
+
+.dd-queue-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dd-search {
+  height: 34px;
+  min-width: 220px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  color: #94a3b8;
+}
+
+.dd-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #0f172a;
+  font-size: 13px;
 }
 
 .dd-refresh-btn {
@@ -260,9 +290,106 @@
 
 .dd-view-all:hover { text-decoration: underline; }
 
+.dd-notes-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(15, 23, 42, 0.35);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.dd-notes-modal {
+  width: min(560px, 100%);
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 20px 56px rgba(15, 23, 42, 0.18);
+  padding: 18px;
+}
+
+.dd-notes-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+.dd-notes-head h3,
+.dd-notes-head p {
+  margin: 0;
+}
+
+.dd-notes-head p {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.dd-notes-head button {
+  border: 0;
+  background: #f8fafc;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.dd-notes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dd-notes-grid div,
+.dd-notes-empty {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 12px;
+}
+
+.dd-notes-grid span {
+  display: block;
+  margin-bottom: 6px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.dd-notes-grid strong {
+  color: #0f172a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dd-notes-wide {
+  grid-column: 1 / -1;
+}
+
+.dd-notes-empty {
+  color: #64748b;
+  text-align: center;
+}
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
   .dd-stats { grid-template-columns: 1fr; }
+
+  .dd-queue-header,
+  .dd-queue-tools {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dd-search {
+    min-width: 0;
+  }
 
   .dd-thead,
   .dd-row {

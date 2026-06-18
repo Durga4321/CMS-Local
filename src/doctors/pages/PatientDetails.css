@@ -402,6 +402,53 @@
   font-size: 14px;
 }
 
+.pd-doc-list {
+  display: grid;
+  gap: 12px;
+}
+
+.pd-doc-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pd-doc-card strong,
+.pd-doc-card span {
+  display: block;
+}
+
+.pd-doc-card strong {
+  color: #0f172a;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.pd-doc-card span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.pd-doc-card a {
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pd-doc-muted {
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 @media (max-width: 900px) {
   .pd-toprow,
   .pd-info-row,

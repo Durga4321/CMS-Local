@@ -144,6 +144,7 @@
 
 /* ── Search ── */
 .rx-search-bar {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -164,11 +165,57 @@
 }
 .rx-search-input::placeholder { color: #94a3b8; }
 
+.rx-medicine-results {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 10;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+}
+
+.rx-medicine-results button {
+  width: 100%;
+  border: 0;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.rx-medicine-results button:hover {
+  background: #f8fafc;
+}
+
+.rx-medicine-results strong {
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.rx-medicine-results span {
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 /* ── Medicine table ── */
 .rx-table-wrap {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.rx-table-wrap::-webkit-scrollbar {
+  display: none;
 }
 
 .rx-thead,

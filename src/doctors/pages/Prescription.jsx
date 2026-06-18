@@ -87,11 +87,31 @@ const normalizeMedicines = (medicines) =>
   (Array.isArray(medicines) ? medicines : []).map((medicine) => ({
     id: medicine.id || Date.now() + Math.random(),
     medicineName: medicine.medicineName || medicine.medicine || "",
+    brandName: medicine.brandName || medicine.brand || medicine.brand_name || "",
     dosage: medicine.dosage || "",
     frequency: medicine.frequency || "",
     duration: medicine.duration || "",
     notes: medicine.notes || "",
   }));
+
+const getMedicineLabel = (medicine = {}) => {
+  const name = medicine.medicineName || medicine.medicine || medicine.name || "";
+  const brand = medicine.brandName || medicine.brand || medicine.brand_name || "";
+  return [name, brand ? `(${brand})` : ""].filter(Boolean).join(" ").trim();
+};
+
+const extractMedicineOptions = (prescriptions = []) => {
+  const options = new Map();
+
+  prescriptions.forEach((prescription) => {
+    normalizeMedicines(prescription?.medicines).forEach((medicine) => {
+      const label = getMedicineLabel(medicine);
+      if (label) options.set(label.toLowerCase(), { ...medicine, label });
+    });
+  });
+
+  return Array.from(options.values()).sort((a, b) => a.label.localeCompare(b.label));
+};
 
 const getValidationMessages = (data) => {
   if (!data?.errors || typeof data.errors !== "object") return [];
@@ -112,6 +132,13 @@ const parseJsonText = (text) => {
   } catch {
     return {};
   }
+};
+
+const parseList = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.items)) return data.items;
+  return [];
 };
 
 const getResponseMessage = (data, text, fallback) =>
@@ -146,6 +173,8 @@ function Prescription() {
   const [message, setMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [diagnosisOptions, setDiagnosisOptions] = useState([]);
+  const [medicineSearch, setMedicineSearch] = useState("");
+  const [medicineOptions, setMedicineOptions] = useState([]);
 
   useEffect(() => {
     let isActive = true;
@@ -259,6 +288,16 @@ function Prescription() {
           savedPrescription = await prescriptionResponse.json();
         }
 
+        const allPrescriptionsResponse = await fetch(PRESCRIPTION_API, {
+          headers,
+        }).catch(() => null);
+
+        if (allPrescriptionsResponse?.ok) {
+          setMedicineOptions(
+            extractMedicineOptions(parseList(await allPrescriptionsResponse.json()))
+          );
+        }
+
         setAppointment(
           normalizeAppointment(normalizedAppointment, {
             patientId: savedConsultation?.patientId || routeState.patientId,
@@ -283,6 +322,12 @@ function Prescription() {
 
         const existingMedicines = normalizeMedicines(savedPrescription?.medicines);
         setMedicines(existingMedicines.length ? existingMedicines : [createMedicine()]);
+        setMedicineOptions((prev) =>
+          extractMedicineOptions([
+            { medicines: existingMedicines },
+            ...prev.map((item) => ({ medicines: [item] })),
+          ])
+        );
       } catch (err) {
         console.error(err);
         setError(err.message || "Unable to load prescription.");
@@ -325,6 +370,126 @@ function Prescription() {
 
   const addMedicine = () =>
     setMedicines((prev) => [...prev, createMedicine()]);
+
+  const filteredMedicineOptions = useMemo(() => {
+    const query = medicineSearch.trim().toLowerCase();
+    if (!query) return medicineOptions.slice(0, 8);
+
+    return medicineOptions
+      .filter((medicine) =>
+        [
+          medicine.label,
+          medicine.medicineName,
+          medicine.brandName,
+          medicine.dosage,
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(query))
+      )
+      .slice(0, 8);
+  }, [medicineOptions, medicineSearch]);
+
+  const selectMedicine = (medicine) => {
+    const nextMedicine = {
+      ...createMedicine(),
+      medicineName: medicine.medicineName || medicine.label || "",
+      dosage: medicine.dosage || "",
+      frequency: medicine.frequency || "",
+      duration: medicine.duration || "",
+      notes: medicine.notes || "",
+    };
+
+    setMedicines((prev) => {
+      const emptyIndex = prev.findIndex((item) => !item.medicineName.trim());
+      if (emptyIndex === -1) return [...prev, nextMedicine];
+      return prev.map((item, index) => (index === emptyIndex ? nextMedicine : item));
+    });
+    setMedicineSearch("");
+  };
+
+  const buildPrescriptionHtml = () => {
+    const rows = (validMedicines.length ? validMedicines : medicines)
+      .map(
+        (medicine) => `
+          <tr>
+            <td>${medicine.medicineName || emptyValue}</td>
+            <td>${medicine.dosage || emptyValue}</td>
+            <td>${medicine.frequency || emptyValue}</td>
+            <td>${medicine.duration || emptyValue}</td>
+          </tr>`
+      )
+      .join("");
+
+    return `
+      <!doctype html>
+      <html>
+        <head>
+          <title>Prescription - ${appointment?.patientName || "Patient"}</title>
+          <style>
+            body { font-family: Arial, sans-serif; color: #0f172a; padding: 32px; }
+            .slip { max-width: 760px; margin: 0 auto; border: 1px solid #d9e1ec; border-radius: 10px; padding: 28px; }
+            .center { text-align: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px; }
+            h1 { margin: 0; font-size: 22px; }
+            .muted { color: #64748b; font-size: 13px; margin: 4px 0; }
+            .rx { font-size: 28px; font-weight: 800; font-style: italic; margin: 18px 0 10px; }
+            .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 14px 0; font-size: 13px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+            th, td { border-bottom: 1px solid #e2e8f0; padding: 10px; text-align: left; }
+            th { color: #475569; font-size: 12px; }
+            .footer { margin-top: 22px; display: flex; justify-content: space-between; gap: 24px; }
+            .signature { text-align: right; }
+          </style>
+        </head>
+        <body>
+          <main class="slip">
+            <div class="center">
+              <h1>${hospitalName}</h1>
+              <p class="muted">Patient prescription</p>
+              <p class="muted">Token: ${appointment?.tokenNumber || emptyValue}</p>
+            </div>
+            <div class="rx">Rx</div>
+            <section class="grid">
+              <div><b>Patient:</b> ${appointment?.patientName || emptyValue}</div>
+              <div><b>PID:</b> ${appointment?.patientCode || emptyValue}</div>
+              <div><b>Age / Gender:</b> ${appointment?.age || emptyValue} Y / ${appointment?.gender || emptyValue}</div>
+              <div><b>Date:</b> ${toDateInput(appointment?.date) || new Date().toISOString().slice(0, 10)}</div>
+            </section>
+            <table>
+              <thead><tr><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+            <section class="footer">
+              <div>
+                <p><b>Instructions:</b> ${instructions || "No instructions added."}</p>
+                <p><b>Follow-Up Date:</b> ${followUp || emptyValue}</p>
+              </div>
+              <div class="signature">
+                <p><b>Dr. ${doctorName}</b></p>
+                <p>${appointment?.doctorSpecialization || "Consultant"}</p>
+                <p>Diagnosis: ${diagnosis || consultation?.diagnosis || emptyValue}</p>
+              </div>
+            </section>
+          </main>
+        </body>
+      </html>
+    `;
+  };
+
+  const printPrescription = () => {
+    const printWindow = window.open("", "_blank", "width=820,height=960");
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    printWindow.document.write(buildPrescriptionHtml());
+    printWindow.document.write("<script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); };</script>");
+    printWindow.document.close();
+  };
+
+  const downloadPrescription = () => {
+    printPrescription();
+  };
 
   const submitPrescription = async () => {
     setFieldErrors({});
@@ -508,9 +673,28 @@ function Prescription() {
 
           <div className="rx-field">
             <label className="rx-label">Medicine</label>
-            <div className="rx-search-bar">
+            <div className="rx-search-bar rx-search-bar--with-list">
               <Search size={15} className="rx-search-icon" />
-              <input className="rx-search-input" placeholder="Search medicine..." />
+              <input
+                className="rx-search-input"
+                value={medicineSearch}
+                onChange={(event) => setMedicineSearch(event.target.value)}
+                placeholder="Search medicine or brand..."
+              />
+              {medicineSearch && filteredMedicineOptions.length > 0 ? (
+                <div className="rx-medicine-results">
+                  {filteredMedicineOptions.map((medicine) => (
+                    <button
+                      type="button"
+                      key={medicine.label}
+                      onClick={() => selectMedicine(medicine)}
+                    >
+                      <strong>{medicine.medicineName || medicine.label}</strong>
+                      {medicine.brandName ? <span>{medicine.brandName}</span> : null}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -626,10 +810,10 @@ function Prescription() {
               >
                 {submitting ? "Submitting..." : "Submit Prescription"}
               </button>
-              <button className="rx-btn-icon" type="button" onClick={() => window.print()}>
+              <button className="rx-btn-icon" type="button" onClick={printPrescription}>
                 <Printer size={16} /> Print
               </button>
-              <button className="rx-btn-icon" type="button" onClick={() => window.print()}>
+              <button className="rx-btn-icon" type="button" onClick={downloadPrescription}>
                 <Download size={16} /> Download PDF
               </button>
             </div>

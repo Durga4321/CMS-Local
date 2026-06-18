@@ -8,7 +8,9 @@ import {
   FileText,
   Play,
   RefreshCw,
+  Search,
   Timer,
+  X,
 } from "lucide-react";
 import "./DoctorDashboard.css";
 import { apiUrl } from "../../config/api";
@@ -20,6 +22,7 @@ import {
 
 const DASHBOARD_API = apiUrl("Doctor/dashboard");
 const APPOINTMENTS_API = apiUrl("Appointment");
+const CONSULTATION_API = apiUrl("Consultation");
 
 const STATUS_CLASS = {
   waiting: "status--waiting",
@@ -157,6 +160,9 @@ function DoctorDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [notes, setNotes] = useState(null);
+  const [notesLoading, setNotesLoading] = useState(false);
 
   const fetchDashboard = useCallback(async ({ silent = false } = {}) => {
     try {
@@ -217,6 +223,25 @@ function DoctorDashboard() {
     [dashboard]
   );
 
+  const filteredPatients = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return patients;
+
+    return patients.filter((patient) =>
+      [
+        patient.tokenNumber,
+        patient.patientName,
+        patient.ageGender,
+        patient.time,
+        patient.status,
+        patient.raw?.patientCode,
+        patient.raw?.chiefComplaints,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query))
+    );
+  }, [patients, search]);
+
   const stats = [
     {
       id: "appt",
@@ -273,6 +298,43 @@ function DoctorDashboard() {
     });
   };
 
+  const openNotes = async (patient) => {
+    setNotes({
+      patient,
+      consultation: null,
+      error: "",
+    });
+
+    if (!patient.appointmentId) return;
+
+    try {
+      setNotesLoading(true);
+      const token = getAuthToken();
+      const headers = { "ngrok-skip-browser-warning": "true" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const response = await fetch(
+        `${CONSULTATION_API}/appointment/${patient.appointmentId}`,
+        { headers }
+      );
+
+      if (!response.ok) {
+        throw new Error("No consultation notes found.");
+      }
+
+      const consultation = await response.json();
+      setNotes({ patient, consultation, error: "" });
+    } catch (requestError) {
+      setNotes({
+        patient,
+        consultation: null,
+        error: requestError.message || "Unable to load notes.",
+      });
+    } finally {
+      setNotesLoading(false);
+    }
+  };
+
   if (loading) {
     return <div className="dd-state-card">Loading doctor dashboard...</div>;
   }
@@ -306,15 +368,25 @@ function DoctorDashboard() {
       <div className="dd-queue-card">
         <div className="dd-queue-header">
           <h3 className="dd-queue-title">Today's Patient Queue</h3>
-          <button
-            className="dd-refresh-btn"
-            type="button"
-            onClick={() => fetchDashboard({ silent: true })}
-            disabled={refreshing}
-          >
-            <RefreshCw size={14} className={refreshing ? "dd-spin" : ""} />
-            {refreshing ? "Refreshing" : "Refresh"}
-          </button>
+          <div className="dd-queue-tools">
+            <div className="dd-search">
+              <Search size={14} />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search queue..."
+              />
+            </div>
+            <button
+              className="dd-refresh-btn"
+              type="button"
+              onClick={() => fetchDashboard({ silent: true })}
+              disabled={refreshing}
+            >
+              <RefreshCw size={14} className={refreshing ? "dd-spin" : ""} />
+              {refreshing ? "Refreshing" : "Refresh"}
+            </button>
+          </div>
         </div>
 
         <div className="dd-table">
@@ -327,8 +399,8 @@ function DoctorDashboard() {
             <span>Action</span>
           </div>
 
-          {patients.length > 0 ? (
-            patients.map((patient) => (
+          {filteredPatients.length > 0 ? (
+            filteredPatients.map((patient) => (
               <div
                 className="dd-row"
                 key={patient.appointmentId || patient.tokenNumber}
@@ -352,7 +424,12 @@ function DoctorDashboard() {
                   >
                     <Eye size={15} />
                   </button>
-                  <button className="dd-act-btn" type="button" title="View notes">
+                  <button
+                    className="dd-act-btn"
+                    type="button"
+                    title="View notes"
+                    onClick={() => openNotes(patient)}
+                  >
                     <FileText size={15} />
                   </button>
                   <button
@@ -367,16 +444,52 @@ function DoctorDashboard() {
               </div>
             ))
           ) : (
-            <div className="dd-empty-row">No patients in today's queue.</div>
+            <div className="dd-empty-row">No patients match your search.</div>
           )}
         </div>
 
         <div className="dd-queue-footer">
           <span>
-            Showing {patients.length} of {dashboard?.totalAppointments ?? 0} patients
+            Showing {filteredPatients.length} of {dashboard?.totalAppointments ?? 0} patients
           </span>
         </div>
       </div>
+
+      {notes ? (
+        <div className="dd-notes-backdrop" onClick={() => setNotes(null)}>
+          <div className="dd-notes-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="dd-notes-head">
+              <div>
+                <h3>Consultation Notes</h3>
+                <p>{notes.patient.patientName} | Appointment #{notes.patient.appointmentId}</p>
+              </div>
+              <button type="button" onClick={() => setNotes(null)} aria-label="Close notes">
+                <X size={16} />
+              </button>
+            </div>
+            {notesLoading ? (
+              <div className="dd-notes-empty">Loading notes...</div>
+            ) : notes.error ? (
+              <div className="dd-notes-empty">{notes.error}</div>
+            ) : (
+              <div className="dd-notes-grid">
+                <div>
+                  <span>Complaints</span>
+                  <strong>{notes.patient.raw?.chiefComplaints || notes.patient.raw?.complaint || "-"}</strong>
+                </div>
+                <div>
+                  <span>Diagnosis</span>
+                  <strong>{notes.consultation?.diagnosis || "-"}</strong>
+                </div>
+                <div className="dd-notes-wide">
+                  <span>Clinical Notes</span>
+                  <strong>{notes.consultation?.clinicalNotes || notes.consultation?.notes || "-"}</strong>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

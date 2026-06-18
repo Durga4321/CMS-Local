@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { FileText, Printer, Upload } from "lucide-react";
+import { FileText, Printer } from "lucide-react";
 import "./PatientDetails.css";
 import { apiUrl } from "../../config/api";
 import {
@@ -63,6 +63,27 @@ const parseList = (data) => {
   if (Array.isArray(data?.history)) return data.history;
   return [];
 };
+
+const getDocumentUrl = (document) => {
+  const value =
+    document?.url ||
+    document?.documentUrl ||
+    document?.fileUrl ||
+    document?.path ||
+    document?.downloadUrl ||
+    "";
+
+  if (!value) return "";
+  if (/^https?:\/\//i.test(value)) return value;
+  return apiUrl(String(value).replace(/^\/?api\/?/i, ""));
+};
+
+const getDocumentName = (document, index) =>
+  document?.fileName ||
+  document?.name ||
+  document?.documentName ||
+  document?.title ||
+  `Document ${index + 1}`;
 
 const getAppointmentId = (record) =>
   record?.appointmentId || record?.id || record?.appointment?.id || "";
@@ -287,6 +308,29 @@ const fetchPrescriptionsForVisits = async (visits, headers) => {
   }
 };
 
+const fetchDocumentsForVisits = async (visits, headers) => {
+  const visitsWithAppointments = visits.filter((visit) => visit.appointmentId);
+  if (!visitsWithAppointments.length) return [];
+
+  const results = await Promise.all(
+    visitsWithAppointments.map((visit) =>
+      fetch(apiUrl(`Overview/${visit.appointmentId}/documents`), { headers })
+        .then(async (response) => {
+          if (!response.ok) return [];
+          return parseList(await response.json()).map((document) => ({
+            ...document,
+            appointmentId: visit.appointmentId,
+            visitDate: visit.date,
+            doctorName: visit.doctorName,
+          }));
+        })
+        .catch(() => [])
+    )
+  );
+
+  return results.flat();
+};
+
 const getPrescriptionDisplayDate = (prescription) =>
   prescription.visitDate ||
   prescription.appointmentDate ||
@@ -315,6 +359,7 @@ function PatientDetails() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [patient, setPatient] = useState(null);
   const [medicalHistory, setMedicalHistory] = useState(null);
+  const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -411,6 +456,10 @@ function PatientDetails() {
 
         const prescriptionsFromAppointments =
           await fetchPrescriptionsForVisits(scopedVisits, headers);
+        const documentsFromAppointments = await fetchDocumentsForVisits(
+          scopedVisits,
+          headers
+        );
         const fallbackPrescriptions = getPrescriptionsForVisits(
           overviewPatient.pastPrescriptions,
           scopedVisits
@@ -430,6 +479,7 @@ function PatientDetails() {
             ? formatDate(oldestVisit.date)
             : emptyValue,
         });
+        setDocuments(documentsFromAppointments);
       } catch (err) {
         console.error(err);
         setError(err.message || "Unable to load patient details.");
@@ -484,6 +534,84 @@ function PatientDetails() {
     });
   };
 
+  const printHistory = () => {
+    const printWindow = window.open("", "_blank", "width=820,height=960");
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const visitsHtml = patient.previousVisits.length
+      ? patient.previousVisits
+          .map(
+            (visit) => `
+              <tr>
+                <td>${formatDate(visit.date)}</td>
+                <td>${visit.doctorName || emptyValue}</td>
+                <td>${visit.symptoms || emptyValue}</td>
+                <td>${visit.bloodPressure || emptyValue}</td>
+                <td>${visit.status || emptyValue}</td>
+              </tr>`
+          )
+          .join("")
+      : `<tr><td colspan="5">No previous visits found.</td></tr>`;
+
+    const prescriptionsHtml = patient.pastPrescriptions.length
+      ? patient.pastPrescriptions
+          .map(
+            (prescription) => `
+              <section class="block">
+                <h3>${prescription.diagnosis || "Diagnosis not recorded"}</h3>
+                <p>${prescription.instructions || "No instructions recorded"}</p>
+                <p><b>Date:</b> ${formatDate(getPrescriptionDisplayDate(prescription))}</p>
+              </section>`
+          )
+          .join("")
+      : `<p>No past prescriptions found.</p>`;
+
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>Patient History - ${patient.name}</title>
+          <style>
+            body { font-family: Arial, sans-serif; color: #0f172a; padding: 28px; }
+            h1 { margin: 0 0 8px; }
+            h2 { margin-top: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+            .meta { color: #475569; margin: 3px 0; }
+            .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 16px; }
+            .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; }
+            .card span { display: block; color: #64748b; font-size: 12px; margin-bottom: 4px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+            th, td { border-bottom: 1px solid #e2e8f0; padding: 8px; text-align: left; }
+            .block { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin: 10px 0; }
+          </style>
+        </head>
+        <body>
+          <h1>Patient History</h1>
+          <p class="meta"><b>${patient.name}</b> | PID: ${patient.patientCode}</p>
+          <p class="meta">${patient.age} Years / ${patient.gender} | Blood Group: ${patient.bloodGroup}</p>
+          <p class="meta">Phone: ${patient.phone} | Email: ${patient.email}</p>
+          <h2>Medical History</h2>
+          <div class="grid">
+            ${overview
+              .map((item) => `<div class="card"><span>${item.label}</span><b>${item.value || emptyValue}</b></div>`)
+              .join("")}
+          </div>
+          <h2>Previous Visits</h2>
+          <table>
+            <thead><tr><th>Date</th><th>Doctor</th><th>Complaints</th><th>BP</th><th>Status</th></tr></thead>
+            <tbody>${visitsHtml}</tbody>
+          </table>
+          <h2>Prescriptions</h2>
+          ${prescriptionsHtml}
+          <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); };</script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   useEffect(() => {
     if (!loading && (error || !patient)) {
       navigate("/doctor/dashboard", { replace: true });
@@ -535,13 +663,10 @@ function PatientDetails() {
         </div>
 
         <div className="pd-action-btns">
-          <button className="pd-action-btn" type="button">
+          <button className="pd-action-btn" type="button" onClick={() => setActiveTab("Documents")}>
             <FileText size={15} /> View Reports
           </button>
-          <button className="pd-action-btn" type="button">
-            <Upload size={15} /> Upload Document
-          </button>
-          <button className="pd-action-btn" type="button" onClick={() => window.print()}>
+          <button className="pd-action-btn" type="button" onClick={printHistory}>
             <Printer size={15} /> Print History
           </button>
         </div>
@@ -615,10 +740,44 @@ function PatientDetails() {
       )}
 
       {activeTab === "Documents" && (
-        <div className="pd-tab-placeholder">
-          <p>No documents uploaded for this patient.</p>
-        </div>
+        <DocumentsPanel documents={documents} />
       )}
+    </div>
+  );
+}
+
+function DocumentsPanel({ documents }) {
+  if (!documents.length) {
+    return (
+      <div className="pd-tab-placeholder">
+        <p>No documents uploaded for this patient.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pd-doc-list">
+      {documents.map((document, index) => {
+        const url = getDocumentUrl(document);
+        return (
+          <div className="pd-doc-card" key={document.id || `${document.appointmentId}-${index}`}>
+            <div>
+              <strong>{getDocumentName(document, index)}</strong>
+              <span>
+                Appointment #{document.appointmentId || emptyValue}
+                {document.visitDate ? ` | ${formatDate(document.visitDate)}` : ""}
+              </span>
+            </div>
+            {url ? (
+              <a href={url} target="_blank" rel="noreferrer">
+                View Document
+              </a>
+            ) : (
+              <span className="pd-doc-muted">No file link</span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
