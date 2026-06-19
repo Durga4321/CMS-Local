@@ -11,7 +11,9 @@ import {
   updateUserStatus,
 } from "../superAdminApi";
 import {
+  onlyAlpha,
   onlyIndianMobileValue,
+  validateAlpha,
   validateMobile,
   validateEmailCom,
 } from "../../../utils/validation";
@@ -137,9 +139,16 @@ function Users() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    const nextValue = ["phone", "mobileNumber"].includes(name)
-      ? onlyIndianMobileValue(value)
-      : value;
+    let nextValue = value;
+
+    if (name === "name") {
+      nextValue = onlyAlpha(value);
+    }
+
+    if (["phone", "mobileNumber"].includes(name)) {
+      nextValue = onlyIndianMobileValue(value);
+    }
+
     setForm((current) => ({
       ...current,
       [name]: nextValue,
@@ -153,11 +162,17 @@ function Users() {
 
     if (!requireAdminPermission(permission, denyPermission)) return;
 
-    if (!form.name.trim() || !form.email.trim() || (!editingUserId && !form.password)) {
+    const nameError = validateAlpha(form.name, "Name");
+    if (nameError) {
+      setError(nameError);
+      return;
+    }
+
+    if (!form.email.trim() || (!editingUserId && !form.password)) {
       setError(
         editingUserId
-          ? "Name and email are required."
-          : "Name, email, and password are required."
+          ? "Email is required."
+          : "Email and password are required."
       );
       return;
     }

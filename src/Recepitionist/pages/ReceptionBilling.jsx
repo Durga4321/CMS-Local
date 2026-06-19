@@ -51,6 +51,33 @@ const getInvoiceStatus = (invoice) =>
 const getAppointmentId = (appointment) =>
   appointment?.appointmentId ?? appointment?.id ?? "";
 
+const getAppointmentStatus = (appointment = {}) =>
+  String(
+    appointment.status ??
+    appointment.appointmentStatus ??
+    appointment.billingStatus ??
+    appointment.paymentStatus ??
+    ""
+  )
+    .trim()
+    .toLowerCase();
+
+const isBillableAppointment = (appointment = {}) => {
+  const status = getAppointmentStatus(appointment);
+  return !["completed", "complete", "cancelled", "canceled", "billed", "paid"].includes(status);
+};
+
+const getInvoiceAmounts = ({ invoice, form, selectedAppointment, total }) => ({
+  consultation:
+    invoice?.consultationCharge ??
+    invoice?.consultationCharges ??
+    selectedAppointment?.consultationCharge ??
+    0,
+  medicine: invoice?.medicineCharge ?? invoice?.medicineCharges ?? form.medicineCharges ?? 0,
+  lab: invoice?.labCharge ?? invoice?.labCharges ?? form.labCharges ?? 0,
+  total: invoice?.totalAmount ?? invoice?.total ?? total,
+});
+
 const getLatestInvoice = (data) => {
   const invoices = parseList(data);
   return invoices.sort((a, b) => {
@@ -83,11 +110,11 @@ function ReceptionBilling() {
     Promise.all([requestJson("Billing/appointments"), requestJson("Billing")])
       .then((data) => {
         const [appointmentsData, invoicesData] = data;
-        const list = parseList(appointmentsData);
+        const list = parseList(appointmentsData).filter(isBillableAppointment);
         setAppointments(list);
         setForm((prev) => ({
           ...prev,
-          appointmentId: String(getAppointmentId(list[0])),
+          appointmentId: String(getAppointmentId(list[0]) || ""),
         }));
         setInvoice(getLatestInvoice(invoicesData));
       })
@@ -254,11 +281,12 @@ function ReceptionBilling() {
     const doctorName = invoice.doctorName || "-";
     const status = getInvoiceStatus(invoice);
     const paymentMode = invoice.paymentMode || form.paymentMode || "-";
-    const consultationCharge =
-      invoice.consultationCharge ?? invoice.consultationCharges ?? selectedAppointment?.consultationCharge;
-    const medicineCharge = invoice.medicineCharge ?? invoice.medicineCharges ?? form.medicineCharges;
-    const labCharge = invoice.labCharge ?? invoice.labCharges ?? form.labCharges;
-    const grandTotal = invoice.totalAmount || invoice.total || total;
+    const invoiceAmounts = getInvoiceAmounts({
+      invoice,
+      form,
+      selectedAppointment,
+      total,
+    });
 
     const printWindow = window.open("", "_blank", "width=760,height=920");
     if (!printWindow) {
@@ -355,12 +383,12 @@ function ReceptionBilling() {
                 <tr><th>Charge</th><th>Amount</th></tr>
               </thead>
               <tbody>
-                <tr><td>Consultation</td><td>${escapeHtml(formatCurrency(consultationCharge))}</td></tr>
-                <tr><td>Medicine</td><td>${escapeHtml(formatCurrency(medicineCharge))}</td></tr>
-                <tr><td>Lab</td><td>${escapeHtml(formatCurrency(labCharge))}</td></tr>
+                <tr><td>Consultation</td><td>${escapeHtml(formatCurrency(invoiceAmounts.consultation))}</td></tr>
+                <tr><td>Medicine</td><td>${escapeHtml(formatCurrency(invoiceAmounts.medicine))}</td></tr>
+                <tr><td>Lab</td><td>${escapeHtml(formatCurrency(invoiceAmounts.lab))}</td></tr>
               </tbody>
             </table>
-            <div class="total"><span>Total</span><span>${escapeHtml(formatCurrency(grandTotal))}</span></div>
+            <div class="total"><span>Total</span><span>${escapeHtml(formatCurrency(invoiceAmounts.total))}</span></div>
           </main>
           <script>
             window.onload = () => {
@@ -374,6 +402,13 @@ function ReceptionBilling() {
     printWindow.document.close();
     setShowInvoiceActions(false);
   };
+
+  const invoiceAmounts = getInvoiceAmounts({
+    invoice,
+    form,
+    selectedAppointment,
+    total,
+  });
 
   return (
     <section className="rc-page">
@@ -510,6 +545,9 @@ function ReceptionBilling() {
               {invoice?.patientName || selectedAppointment?.patientName || selectedAppointment?.patient?.name || "-"}
             </strong>
             <span>{invoice ? "Invoice generated" : "No invoice generated yet"}</span>
+            {invoice ? (
+              <span>Status: {getInvoiceStatus(invoice)}</span>
+            ) : null}
           </div>
           <div className="rc-invoice-meta">
             <div className="rc-invoice-file">
@@ -531,18 +569,23 @@ function ReceptionBilling() {
                 </div>
               ) : null}
             </div>
-            <div>
+            <div className="rc-invoice-lines">
               <p>
-                Status <b>{invoice ? getInvoiceStatus(invoice) : "Pending"}</b>
+                <span>Consultation</span>
+                <b>{formatCurrency(invoiceAmounts.consultation)}</b>
               </p>
               <p>
-                Total <b>{formatCurrency(invoice?.totalAmount || invoice?.total || total)}</b>
+                <span>Medicine</span>
+                <b>{formatCurrency(invoiceAmounts.medicine)}</b>
               </p>
-              {invoice?.paymentMode ? (
-                <p>
-                  Payment <b>{invoice.paymentMode}</b>
-                </p>
-              ) : null}
+              <p>
+                <span>Lab</span>
+                <b>{formatCurrency(invoiceAmounts.lab)}</b>
+              </p>
+              <p className="rc-invoice-total-row">
+                <span>Total</span>
+                <b>{formatCurrency(invoiceAmounts.total)}</b>
+              </p>
             </div>
           </div>
         </div>

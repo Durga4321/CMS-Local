@@ -7,6 +7,7 @@ import {
   fetchNotificationTargetOptions,
   fetchNotifications,
 } from "../superAdminApi";
+import { validateSelected, validateText } from "../../../utils/validation";
 
 const defaultTargetOptions = [
   { value: "All Active Users", label: "All Active Users" },
@@ -27,6 +28,7 @@ function Notifications() {
   const [targetOptions, setTargetOptions] = useState(defaultTargetOptions);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const loadNotifications = async () => {
     setLoading(true);
@@ -59,11 +61,25 @@ function Notifications() {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
+    setFieldErrors((current) => ({ ...current, [name]: "" }));
+    setError("");
   };
 
   const handleSubmit = async () => {
-    if (!form.title.trim() || !form.message.trim()) {
-      setError("Title and message are required.");
+    const nextErrors = {
+      title: validateText(form.title, "Title"),
+      targetUsers: validateSelected(form.targetUsers, "target users"),
+      message: validateText(form.message, "Message"),
+    };
+
+    Object.keys(nextErrors).forEach((key) => {
+      if (!nextErrors[key]) delete nextErrors[key];
+    });
+
+    setFieldErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length) {
+      setError("Please fix the highlighted fields.");
       return;
     }
 
@@ -73,6 +89,7 @@ function Notifications() {
     try {
       await createNotification({ ...form, status: "Sent" });
       setForm(emptyNotification);
+      setFieldErrors({});
       setShowForm(false);
       await loadNotifications();
     } catch (requestError) {
@@ -106,12 +123,19 @@ function Notifications() {
                 value={form.title}
                 onChange={handleChange}
                 placeholder="Notification title"
+                className={fieldErrors.title ? "is-invalid" : ""}
                 required
               />
+              {fieldErrors.title ? <span className="sa-field-error">{fieldErrors.title}</span> : null}
             </div>
             <div className="sa-form-field">
               <label>Target Users</label>
-              <select name="targetUsers" value={form.targetUsers} onChange={handleChange}>
+              <select
+                name="targetUsers"
+                value={form.targetUsers}
+                onChange={handleChange}
+                className={fieldErrors.targetUsers ? "is-invalid" : ""}
+              >
                 {targetOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.count !== undefined
@@ -120,6 +144,7 @@ function Notifications() {
                   </option>
                 ))}
               </select>
+              {fieldErrors.targetUsers ? <span className="sa-field-error">{fieldErrors.targetUsers}</span> : null}
             </div>
             <div className="sa-form-field sa-form-field-full">
               <label>Message</label>
@@ -128,8 +153,10 @@ function Notifications() {
                 value={form.message}
                 onChange={handleChange}
                 placeholder="Write the notification message"
+                className={fieldErrors.message ? "is-invalid" : ""}
                 required
               />
+              {fieldErrors.message ? <span className="sa-field-error">{fieldErrors.message}</span> : null}
             </div>
           </div>
           <div className="sa-page-actions" style={{ marginTop: 14 }}>

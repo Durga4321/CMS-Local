@@ -13,6 +13,7 @@ import {
 } from "../../../utils/address";
 import {
   onlyAlpha,
+  onlyAddressText,
   onlyIndianMobileValue,
   validateAlpha,
   validateGmail,
@@ -153,7 +154,16 @@ function ClinicForm({ mode }) {
   };
 
   const handleAddressChange = (name, value) => {
-    const nextValue = name === "pincode" ? onlyPincodeValue(value) : value;
+    let nextValue = value;
+
+    if (name === "pincode") {
+      nextValue = onlyPincodeValue(value);
+    } else if (["city", "state", "country"].includes(name)) {
+      nextValue = onlyAlpha(value);
+    } else {
+      nextValue = onlyAddressText(value);
+    }
+
     setForm((current) => {
       const addressParts = {
         ...(current.addressParts || emptyAddressParts),
@@ -175,13 +185,14 @@ function ClinicForm({ mode }) {
   };
 
   const validateForm = () => {
+    const addressParts = form.addressParts || emptyAddressParts;
     const nextErrors = {
       name: validateAlpha(form.name, "Clinic name"),
       contactNumber: validateMobile(form.contactNumber, "Contact number"),
       email: validateGmail(form.email),
       status: validateSelected(form.status, "a status"),
       ...Object.fromEntries(
-        Object.entries(validateAddressParts(form.addressParts, "Address")).map(
+        Object.entries(validateAddressParts(addressParts, "Address")).map(
           ([key, value]) => [key === "address" ? "address" : `address.${key}`, value]
         )
       ),
@@ -280,7 +291,7 @@ function ClinicForm({ mode }) {
               value={form.contactNumber}
               onChange={handleChange}
               inputMode="numeric"
-              pattern="^(?!([0-9])\1{9})[6-9][0-9]{9}$"
+              pattern="^(?!([0-9])\\1{9})[6-9][0-9]{9}$"
               maxLength={10}
               placeholder="10-digit Indian mobile number"
               title="Enter a 10-digit Indian mobile number starting with 6-9 and not all identical digits"

@@ -13,6 +13,7 @@ import {
   saveRole,
   updateRolePermissions,
 } from "../superAdminApi";
+import { onlyAlpha, validateAlpha } from "../../../utils/validation";
 
 const permissionOptions = ["View", "Create", "Edit", "Delete"];
 const DEFAULT_SYSTEM_ROLES = ["Admin", "Doctor", "Patient", "Receptionist"];
@@ -218,7 +219,10 @@ function RolesPermissions() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
+    const nextValue = ["name", "roleName", "module"].includes(name)
+      ? onlyAlpha(value)
+      : value;
+    setForm((current) => ({ ...current, [name]: nextValue }));
   };
 
   const handlePermissionChange = (permission) => {
@@ -236,13 +240,15 @@ function RolesPermissions() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!form.name.trim() && !form.roleName.trim()) {
-      setError("Role name is required.");
+    const roleNameError = validateAlpha(form.roleName || form.name, "Role name");
+    if (roleNameError) {
+      setError(roleNameError);
       return;
     }
 
-    if (!form.module.trim()) {
-      setError("Module is required.");
+    const moduleError = validateAlpha(form.module, "Module");
+    if (moduleError) {
+      setError(moduleError);
       return;
     }
 

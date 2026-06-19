@@ -260,7 +260,7 @@ const AdminLogin = () => {
 
   const validate = () => {
     const newErrors = {};
-    const emailError = validateGmail(email, 'Email ID');
+    const emailError = validateGmail(email, 'Email ID', { strict: false });
     if (emailError) newErrors.email = emailError;
 
     if (!password) {

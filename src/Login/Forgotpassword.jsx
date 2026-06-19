@@ -32,7 +32,7 @@ const ForgotPassword = () => {
 
   const handleNext = async (e) => {
     e.preventDefault();
-    const emailError = validateGmail(email, 'Email ID');
+    const emailError = validateGmail(email, 'Email ID', { strict: false });
     if (emailError) {
       setError(emailError);
       toast.error(emailError);
