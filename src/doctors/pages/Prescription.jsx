@@ -153,6 +153,69 @@ const toPositiveId = (value) => {
   return Number.isInteger(id) && id > 0 ? id : null;
 };
 
+const buildCompletedAppointmentBody = (appointment = {}, appointmentId) => ({
+  ...appointment,
+  id: appointment.id || appointmentId,
+  appointmentId,
+  status: "Completed",
+  Status: "Completed",
+});
+
+const updateAppointmentStatus = async ({ appointmentId, appointment, headers }) => {
+  const requests = [
+    {
+      url: `${APPOINTMENTS_API}/${appointmentId}/status`,
+      options: {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ status: "Completed", Status: "Completed" }),
+      },
+    },
+    {
+      url: `${APPOINTMENTS_API}/${appointmentId}`,
+      options: {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ status: "Completed", Status: "Completed" }),
+      },
+    },
+    {
+      url: `${APPOINTMENTS_API}/${appointmentId}`,
+      options: {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(buildCompletedAppointmentBody(appointment, appointmentId)),
+      },
+    },
+  ];
+
+  let lastError = "Unable to update appointment status.";
+
+  for (const request of requests) {
+    let response = null;
+
+    try {
+      response = await fetch(request.url, request.options);
+    } catch (error) {
+      lastError = error.message || lastError;
+      continue;
+    }
+
+    if (!response) continue;
+
+    const responseText = await response.text().catch(() => "");
+    const data = parseJsonText(responseText);
+
+    if (response.ok) {
+      return data;
+    }
+
+    lastError = getResponseMessage(data, responseText, lastError);
+  }
+
+  throw new Error(lastError);
+};
+
 function Prescription() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -583,13 +646,23 @@ function Prescription() {
         );
       }
 
+      const appointmentStatusResult = await updateAppointmentStatus({
+        appointmentId,
+        appointment,
+        headers,
+      });
+      const completedStatus =
+        appointmentStatusResult.appointmentStatus ||
+        appointmentStatusResult.status ||
+        "Completed";
       const text = data.message || "Prescription submitted.";
+      setAppointment((prev) => ({ ...prev, status: completedStatus }));
       setMessage(text);
       toast.success(text);
       navigate("/doctor/completion", {
         state: {
           message: data.message,
-          appointmentStatus: data.appointmentStatus,
+          appointmentStatus: completedStatus,
           appointmentId: appointment.appointmentId,
           patientName: appointment.patientName,
         },
