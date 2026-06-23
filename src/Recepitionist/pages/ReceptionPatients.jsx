@@ -11,6 +11,9 @@ import {
   validateAddressParts,
 } from "../../utils/address";
 import {
+  fetchPincodeLocation,
+} from "../../utils/pincodeLocation";
+import {
   getDistrictsForState,
   INDIA_COUNTRY,
   INDIAN_STATES,
@@ -120,6 +123,7 @@ function ReceptionPatients() {
   const [form, setForm] = useState(emptyForm);
   const [message, setMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [areaOptions, setAreaOptions] = useState([]);
 
   const fetchPatients = () =>
     requestJson("Patient")
@@ -137,7 +141,15 @@ function ReceptionPatients() {
   }, []);
 
   const rows = useMemo(() => [...patients].reverse(), [patients]);
-  const selectedDistricts = getDistrictsForState(form.addressParts?.state);
+  const selectedDistricts = Array.from(
+    new Set([
+      ...getDistrictsForState(form.addressParts?.state),
+      form.addressParts?.city,
+    ].filter(Boolean))
+  );
+  const visibleAreaOptions = Array.from(
+    new Set([form.addressParts?.area, ...areaOptions].filter(Boolean))
+  );
 
   const openAdd = () => {
     setForm(emptyForm);
@@ -178,6 +190,17 @@ function ReceptionPatients() {
 
       if (name === "state" && previousParts.state !== nextValue) {
         addressParts.city = "";
+        addressParts.area = "";
+        addressParts.pincode = "";
+      }
+
+      if (name === "city" && previousParts.city !== nextValue) {
+        addressParts.area = "";
+        addressParts.pincode = "";
+      }
+
+      if (name === "pincode") {
+        addressParts.area = "";
       }
 
       return {
@@ -191,9 +214,64 @@ function ReceptionPatients() {
       address: "",
       [`address.${name}`]: "",
       ...(name === "state" ? { "address.city": "" } : {}),
+      ...(name === "city" ? { "address.pincode": "", "address.area": "" } : {}),
     }));
     setMessage("");
   };
+
+  useEffect(() => {
+    const pincode = form.addressParts?.pincode || "";
+    if (pincode.length !== 6 || modal === "view") {
+      setAreaOptions([]);
+      return undefined;
+    }
+
+    let active = true;
+    fetchPincodeLocation(pincode)
+      .then((location) => {
+        if (!active) return;
+        setAreaOptions(location.areaOptions);
+        setForm((prev) => {
+          const previousParts = prev.addressParts || emptyAddressParts;
+          if (previousParts.pincode !== pincode) return prev;
+
+          const addressParts = {
+            ...previousParts,
+            area: previousParts.area || location.area,
+            city: location.city || previousParts.city,
+            state: location.state || previousParts.state,
+            streetVillage: previousParts.streetVillage || location.village || location.area,
+            country: location.country || INDIA_COUNTRY,
+            pincode,
+          };
+
+          return {
+            ...prev,
+            addressParts,
+            address: buildAddress(addressParts),
+          };
+        });
+        setFieldErrors((prev) => ({
+          ...prev,
+          "address.pincode": "",
+          "address.area": "",
+          "address.city": "",
+          "address.state": "",
+        }));
+      })
+      .catch((lookupError) => {
+        if (!active) return;
+        setAreaOptions([]);
+        setFieldErrors((prev) => ({
+          ...prev,
+          "address.pincode": lookupError.message || "Unable to fetch pincode location.",
+        }));
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [form.addressParts?.pincode, modal]);
 
   const updateField = (name, value) => {
     let nextValue = value;
@@ -491,6 +569,26 @@ function ReceptionPatients() {
                     </select>
                     {fieldErrors["address.state"] ? (
                       <small className="rc-field-error">{fieldErrors["address.state"]}</small>
+                    ) : null}
+                  </label>
+
+                  <label>
+                    <span>Area</span>
+                    <select
+                      value={form.addressParts?.area || ""}
+                      disabled={modal === "view" || !visibleAreaOptions.length}
+                      className={fieldErrors["address.area"] ? "is-invalid" : ""}
+                      onChange={(event) => updateAddressField("area", event.target.value)}
+                    >
+                      <option value="">Select Area</option>
+                      {visibleAreaOptions.map((area) => (
+                        <option key={area} value={area}>
+                          {area}
+                        </option>
+                      ))}
+                    </select>
+                    {fieldErrors["address.area"] ? (
+                      <small className="rc-field-error">{fieldErrors["address.area"]}</small>
                     ) : null}
                   </label>
 

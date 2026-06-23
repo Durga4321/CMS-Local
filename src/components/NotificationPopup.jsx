@@ -70,6 +70,15 @@ const getStatusLabel = (notification = {}) =>
 const isVisibleNotification = (notification = {}) =>
   isSentNotification(notification) || isReadNotification(notification);
 
+const ADMIN_ROLES = ["admin", "clinicadmin"];
+const ACTIVE_USER_ROLES = [
+  ...ADMIN_ROLES,
+  "doctor",
+  "receptionist",
+  "user",
+  "patient",
+];
+
 const matchesTargetUsers = (notification = {}, role = "") => {
   const target = String(notification.targetUsers || "all active users").trim().toLowerCase();
   const r = normalizeRole(role);
@@ -77,11 +86,11 @@ const matchesTargetUsers = (notification = {}, role = "") => {
   if (!target) return true;
 
   if (target.includes("all active user") || target === "active users") {
-    return ["user", "patient"].includes(r);
+    return ACTIVE_USER_ROLES.includes(r);
   }
 
   if (target.includes("admin")) {
-    return ["admin", "clinicadmin"].includes(r);
+    return ADMIN_ROLES.includes(r);
   }
 
   if (target.includes("doctor")) {

@@ -12,6 +12,9 @@ import {
   validateAddressParts,
 } from "../../../utils/address";
 import {
+  fetchPincodeLocation,
+} from "../../../utils/pincodeLocation";
+import {
   getDistrictsForState,
   INDIA_COUNTRY,
   INDIAN_STATES,
@@ -89,7 +92,28 @@ function ClinicForm({ mode }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
-  const selectedDistricts = getDistrictsForState(form.addressParts?.state);
+  const [areaOptions, setAreaOptions] = useState([]);
+  const selectedDistricts = Array.from(
+    new Set([
+      ...getDistrictsForState(form.addressParts?.state),
+      form.addressParts?.city,
+    ].filter(Boolean))
+  );
+  const visibleAreaOptions = Array.from(
+    new Set(
+      [form.addressParts?.area, ...areaOptions]
+        .filter(Boolean)
+        .map((area) => String(area).trim())
+    )
+  );
+
+  useEffect(() => {
+    const addressParts = form.addressParts || emptyAddressParts;
+    const nextAddress = buildAddress(addressParts);
+    if (form.address !== nextAddress) {
+      setForm((current) => ({ ...current, address: nextAddress }));
+    }
+  }, [form.addressParts]);
 
   useEffect(() => {
     let active = true;
@@ -165,9 +189,9 @@ function ClinicForm({ mode }) {
     if (name === "pincode") {
       nextValue = onlyPincodeValue(value);
     } else if (["city", "state", "country"].includes(name)) {
-      nextValue = onlyAlpha(value);
+      nextValue = onlyAlpha(value).trim();
     } else {
-      nextValue = onlyAddressText(value);
+      nextValue = onlyAddressText(value).trim();
     }
 
     setForm((current) => {
@@ -180,6 +204,17 @@ function ClinicForm({ mode }) {
 
       if (name === "state" && previousParts.state !== nextValue) {
         addressParts.city = "";
+        addressParts.area = "";
+        addressParts.pincode = "";
+      }
+
+      if (name === "city" && previousParts.city !== nextValue) {
+        addressParts.area = "";
+        addressParts.pincode = "";
+      }
+
+      if (name === "pincode") {
+        addressParts.area = "";
       }
 
       return {
@@ -193,9 +228,64 @@ function ClinicForm({ mode }) {
       address: "",
       [`address.${name}`]: "",
       ...(name === "state" ? { "address.city": "" } : {}),
+      ...(name === "city" ? { "address.pincode": "", "address.area": "" } : {}),
     }));
     setError("");
   };
+
+  useEffect(() => {
+    const pincode = form.addressParts?.pincode || "";
+    if (pincode.length !== 6) {
+      setAreaOptions([]);
+      return undefined;
+    }
+
+    let active = true;
+    fetchPincodeLocation(pincode)
+      .then((location) => {
+        if (!active) return;
+        setAreaOptions(location.areaOptions);
+        setForm((current) => {
+          const previousParts = current.addressParts || emptyAddressParts;
+          if (previousParts.pincode !== pincode) return current;
+
+          const addressParts = {
+            ...previousParts,
+            area: previousParts.area || location.area,
+            city: location.city || previousParts.city,
+            state: location.state || previousParts.state,
+            streetVillage: previousParts.streetVillage || location.village || location.area,
+            country: location.country || INDIA_COUNTRY,
+            pincode,
+          };
+
+          return {
+            ...current,
+            addressParts,
+            address: buildAddress(addressParts),
+          };
+        });
+        setFieldErrors((current) => ({
+          ...current,
+          "address.pincode": "",
+          "address.area": "",
+          "address.city": "",
+          "address.state": "",
+        }));
+      })
+      .catch((lookupError) => {
+        if (!active) return;
+        setAreaOptions([]);
+        setFieldErrors((current) => ({
+          ...current,
+          "address.pincode": lookupError.message || "Unable to fetch pincode location.",
+        }));
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [form.addressParts?.pincode]);
 
   const validateForm = () => {
     const addressParts = form.addressParts || emptyAddressParts;
@@ -371,6 +461,27 @@ function ClinicForm({ mode }) {
                 </select>
                 {fieldErrors["address.state"] ? (
                   <span className="sa-field-error">{fieldErrors["address.state"]}</span>
+                ) : null}
+              </div>
+
+              <div className="sa-form-field">
+                <label>Area</label>
+                <select
+                  value={form.addressParts?.area || ""}
+                  onChange={(event) => handleAddressChange("area", event.target.value)}
+                  className={fieldErrors["address.area"] ? "is-invalid" : ""}
+                  disabled={!visibleAreaOptions.length}
+                  required
+                >
+                  <option value="">Select Area</option>
+                  {visibleAreaOptions.map((area) => (
+                    <option key={area} value={area}>
+                      {area}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors["address.area"] ? (
+                  <span className="sa-field-error">{fieldErrors["address.area"]}</span>
                 ) : null}
               </div>
 

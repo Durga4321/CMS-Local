@@ -3,6 +3,7 @@ import { INDIA_COUNTRY } from "./indianLocations";
 
 export const emptyAddressParts = {
   streetVillage: "",
+  area: "",
   city: "",
   state: "",
   country: INDIA_COUNTRY,
@@ -13,24 +14,63 @@ export const onlyPincodeValue = (value) =>
   String(value ?? "").replace(/\D/g, "").slice(0, 6);
 
 export const parseAddress = (address = "") => {
-  const parts = String(address)
+  const raw = String(address || "").trim();
+  const parts = raw
     .split(",")
     .map((part) => part.trim())
     .filter(Boolean);
-  const pincodeMatch = String(address).match(/\b\d{5,6}\b/);
+
+  const pincodeMatch = raw.match(/\b\d{5,6}\b/);
+  const pincode = pincodeMatch?.[0] || "";
+  const normalized = [...parts];
+
+  if (normalized.length && /^\d{5,6}$/u.test(normalized[normalized.length - 1])) {
+    normalized.pop();
+  }
+
+  if (
+    normalized.length &&
+    String(normalized[normalized.length - 1]).trim().toLowerCase() ===
+      INDIA_COUNTRY.toLowerCase()
+  ) {
+    normalized.pop();
+  }
+
+  let streetVillage = "";
+  let area = "";
+  let city = "";
+  let state = "";
+
+  if (normalized.length >= 4) {
+    streetVillage = normalized.slice(0, normalized.length - 3).join(", ");
+    area = normalized[normalized.length - 3] || "";
+    city = normalized[normalized.length - 2] || "";
+    state = normalized[normalized.length - 1] || "";
+  } else if (normalized.length === 3) {
+    streetVillage = normalized[0] || "";
+    city = normalized[1] || "";
+    state = normalized[2] || "";
+  } else if (normalized.length === 2) {
+    streetVillage = normalized[0] || "";
+    city = normalized[1] || "";
+  } else if (normalized.length === 1) {
+    streetVillage = normalized[0] || "";
+  }
 
   return {
-    streetVillage: parts[0]?.replace(/\b\d{5,6}\b/g, "").trim() || "",
-    city: parts[1]?.replace(/\b\d{5,6}\b/g, "").trim() || "",
-    state: parts[2]?.replace(/\b\d{5,6}\b/g, "").trim() || "",
+    streetVillage: streetVillage.replace(/\b\d{5,6}\b/g, "").trim() || "",
+    area: area.replace(/\b\d{5,6}\b/g, "").trim() || "",
+    city: city.replace(/\b\d{5,6}\b/g, "").trim() || "",
+    state: state.replace(/\b\d{5,6}\b/g, "").trim() || "",
     country: INDIA_COUNTRY,
-    pincode: pincodeMatch?.[0] || parts[4] || "",
+    pincode,
   };
 };
 
 export const buildAddress = (parts = {}) =>
   [
     parts.streetVillage,
+    parts.area,
     parts.city,
     parts.state,
     parts.country,
@@ -44,6 +84,7 @@ export const validateAddressParts = (parts = {}, label = "Address") => {
   const errors = {};
   const fields = [
     ["streetVillage", "Street/Village name"],
+    ["area", "Area"],
     ["city", "City"],
     ["state", "State"],
     ["country", "Country"],
