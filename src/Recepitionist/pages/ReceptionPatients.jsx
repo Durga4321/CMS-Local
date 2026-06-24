@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Eye, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { parseList, requestJson } from "../receptionApi";
@@ -125,7 +125,7 @@ function ReceptionPatients() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [areaOptions, setAreaOptions] = useState([]);
 
-  const fetchPatients = () =>
+  const fetchPatients = useCallback(() =>
     requestJson("Patient")
       .then((data) => {
         setPatients(parseList(data).filter((patient) => !isDeletedPatient(patient)));
@@ -134,11 +134,12 @@ function ReceptionPatients() {
       .catch((error) => {
         setMessage(error.message);
         toast.error(error.message || "Unable to load patients.");
-      });
+      }),
+  [toast]);
 
   useEffect(() => {
     fetchPatients();
-  }, []);
+  }, [fetchPatients]);
 
   const rows = useMemo(() => [...patients].reverse(), [patients]);
   const selectedDistricts = Array.from(

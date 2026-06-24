@@ -271,7 +271,7 @@
 
 // export default RevenueReport;
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 import "./RevenueReport.css";
 
@@ -400,15 +400,7 @@ function RevenueReport() {
 
   // ================= LOAD =================
 
-  useEffect(() => {
-    fetchDoctors();
-
-    fetchRevenue();
-  }, []);
-
-  // ================= FETCH DOCTORS =================
-
-  const fetchDoctors = async () => {
+  const fetchDoctors = useCallback(async () => {
     try {
       const response = await fetch(DOCTOR_API, {
         headers: {
@@ -417,32 +409,20 @@ function RevenueReport() {
       });
 
       const result = await response.json();
-
       setDoctors(parseList(result));
     } catch (error) {
       console.log(error);
     }
-  };
+  }, []);
 
-  // ================= FETCH REVENUE =================
-
-  const fetchRevenue = async () => {
+  const fetchRevenue = useCallback(async () => {
     try {
       setLoading(true);
 
       const params = new URLSearchParams();
-
-      if (doctorId) {
-        params.set("doctorId", String(doctorId));
-      }
-
-      if (fromDate) {
-        params.set("fromDate", fromDate);
-      }
-
-      if (toDate) {
-        params.set("toDate", toDate);
-      }
+      if (doctorId) params.set("doctorId", String(doctorId));
+      if (fromDate) params.set("fromDate", fromDate);
+      if (toDate) params.set("toDate", toDate);
 
       const query = params.toString();
       const url = query ? `${REPORT_API}?${query}` : REPORT_API;
@@ -458,45 +438,49 @@ function RevenueReport() {
 
       if (reportRows.length) {
         setData(reportRows);
-        return;
-      }
+      } else {
+        const billingResponse = await fetch(BILLING_API, {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          },
+        });
 
-      const billingResponse = await fetch(BILLING_API, {
-        headers: {
-          "ngrok-skip-browser-warning": "true",
-        },
-      });
-
-      if (!billingResponse.ok) {
-        setData([]);
-        return;
-      }
-
-      const billingResult = await billingResponse.json();
-      const billingRows = parseList(billingResult).filter((row) => {
-        if (doctorId && String(pick(row, ["doctorId", "DoctorId"], "")) !== String(doctorId)) {
-          return false;
+        if (!billingResponse.ok) {
+          setData([]);
+          return;
         }
 
-        const value = getRowDate(row);
-        const date = value ? new Date(value) : null;
+        const billingResult = await billingResponse.json();
+        const billingRows = parseList(billingResult).filter((row) => {
+          if (doctorId && String(pick(row, ["doctorId", "DoctorId"], "")) !== String(doctorId)) {
+            return false;
+          }
 
-        if (date && !Number.isNaN(date.getTime())) {
-          if (fromDate && date < new Date(fromDate)) return false;
-          if (toDate && date > new Date(toDate)) return false;
-        }
+          const value = getRowDate(row);
+          const date = value ? new Date(value) : null;
 
-        return true;
-      });
+          if (date && !Number.isNaN(date.getTime())) {
+            if (fromDate && date < new Date(fromDate)) return false;
+            if (toDate && date > new Date(toDate)) return false;
+          }
 
-      setData(buildRevenueFromBilling(billingRows));
+          return true;
+        });
+
+        setData(buildRevenueFromBilling(billingRows));
+      }
     } catch (error) {
       console.log(error);
       setData([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [doctorId, fromDate, toDate]);
+
+  useEffect(() => {
+    fetchDoctors();
+    fetchRevenue();
+  }, [fetchDoctors, fetchRevenue]);
 
   // ================= EXPORT CSV =================
 

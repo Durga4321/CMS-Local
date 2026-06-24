@@ -123,7 +123,7 @@ function ReceptionBilling() {
         setMessageType("error");
         toast.error(error.message || "Unable to load billing details.");
       });
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     const timers = amountFormatTimers.current;

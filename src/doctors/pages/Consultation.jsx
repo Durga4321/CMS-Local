@@ -26,6 +26,18 @@ const CONSULTATION_API = apiUrl("Consultation");
 
 const emptyValue = "-";
 
+const DEFAULT_COMPLAINT_OPTIONS = [
+  "Fever",
+  "Cough",
+  "Headache",
+  "Abdominal pain",
+  "Chest pain",
+  "Back pain",
+  "Nausea",
+  "Vomiting",
+  "Other",
+];
+
 const getInitials = (name) =>
   String(name || "P")
     .split(" ")
@@ -98,7 +110,7 @@ const getFallbackAppointment = (appointments) =>
 function Consultation() {
   const navigate = useNavigate();
   const location = useLocation();
-  const routeState = location.state || {};
+  const routeState = React.useMemo(() => location.state || {}, [location.state]);
 
   const [step, setStep] = useState(1);
   const [appointment, setAppointment] = useState(null);
@@ -108,8 +120,9 @@ function Consultation() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [diagnosisOptions, setDiagnosisOptions] = useState([]);
+  const [complaintOptions, setComplaintOptions] = useState(DEFAULT_COMPLAINT_OPTIONS);
   const [form, setForm] = useState({
-    complaints: "",
+    complaintsChoice: "",
     diagnosis: "",
     bp: "",
     sugar: "",
@@ -235,11 +248,13 @@ function Consultation() {
           }
         }
 
+        const appointmentComplaint = hydratedAppointment.chiefComplaints || "";
+
         setAppointment(hydratedAppointment);
         setOverview(patientOverview);
         setStep(getStepFromStatus(hydratedAppointment.status));
         setForm({
-          complaints: hydratedAppointment.chiefComplaints || "",
+          complaintsChoice: "",
           diagnosis: savedConsultation?.diagnosis || "",
           bp: hydratedAppointment.bloodPressure || "",
           sugar: hydratedAppointment.sugarLevel || "",
@@ -249,6 +264,14 @@ function Consultation() {
           resp: hydratedAppointment.respiratoryRate || "",
           notes: savedConsultation?.clinicalNotes || "",
         });
+        // ensure any existing complaint is present in the dropdown
+        if (appointmentComplaint) {
+          setComplaintOptions((prev) =>
+            prev.some((option) => option === appointmentComplaint)
+              ? prev
+              : mergeDiagnosisOption(prev, appointmentComplaint)
+          );
+        }
       } catch (err) {
         console.error(err);
         setError(err.message || "Unable to load consultation.");
@@ -258,7 +281,7 @@ function Consultation() {
     };
 
     loadConsultation();
-  }, [routeState.appointmentId, routeState.patientId]);
+  }, [routeState]);
 
   const patient = useMemo(() => {
     if (!appointment) return null;
@@ -303,16 +326,22 @@ function Consultation() {
       };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
+      const requestBody = {
+        appointmentId: Number(appointment.appointmentId),
+        patientId: Number(appointment.patientId),
+        doctorId: appointment.doctorId || appointment.doctor?.id || undefined,
+        diagnosis: form.diagnosis.trim(),
+        clinicalNotes: form.notes.trim(),
+      };
+
+      if (form.complaintsChoice.trim()) {
+        requestBody.chiefComplaints = form.complaintsChoice.trim();
+      }
+
       const response = await fetch(CONSULTATION_API, {
         method: "POST",
         headers,
-        body: JSON.stringify({
-          appointmentId: Number(appointment.appointmentId),
-          patientId: Number(appointment.patientId),
-          doctorId: appointment.doctorId || appointment.doctor?.id || undefined,
-          diagnosis: form.diagnosis.trim(),
-          clinicalNotes: form.notes.trim(),
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json().catch(() => ({}));
@@ -450,13 +479,27 @@ function Consultation() {
         <section className="cn-form-panel">
           <div className="cn-field">
             <label className="cn-label">Chief Complaints / Symptoms *</label>
-            <textarea
-              className="cn-textarea"
-              name="complaints"
-              value={form.complaints}
-              onChange={handleChange}
-              rows={3}
-            />
+            <select
+              className="cn-input"
+              name="complaintsChoice"
+              value={form.complaintsChoice}
+              onChange={(e) => {
+                const value = e.target.value;
+                setForm((prev) => ({
+                  ...prev,
+                  complaintsChoice: value,
+                }));
+              }}
+            >
+              <option value="" disabled>
+                -- Select complaint --
+              </option>
+              {complaintOptions.map((opt) => (
+                <option value={opt} key={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="cn-field">

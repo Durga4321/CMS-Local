@@ -57,6 +57,80 @@ const prependLocalItem = (key, item) => {
   return item;
 };
 
+<<<<<<< HEAD
+const readLocalRoleOverrides = () => {
+  try {
+    const value = JSON.parse(localStorage.getItem(LOCAL_ROLE_OVERRIDES_KEY) || "{}");
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeLocalRoleOverrides = (overrides) => {
+  localStorage.setItem(LOCAL_ROLE_OVERRIDES_KEY, JSON.stringify(overrides));
+};
+
+const getRoleStorageKeys = (role = {}) =>
+  Array.from(
+    new Set(
+      ["id", "roleId", "_id", "roleName", "name", "key"]
+        .map((field) => String(role?.[field] || "").trim())
+        .filter(Boolean)
+    )
+  );
+
+const applyRoleOverrides = (role = {}) => {
+  const overrides = readLocalRoleOverrides();
+  const override = getRoleStorageKeys(role)
+    .map((key) => overrides[key])
+    .find(Boolean);
+
+  return override ? { ...role, ...override } : role;
+};
+
+const saveRoleOverride = (role = {}, override = {}) => {
+  const keys = getRoleStorageKeys(role);
+  if (!keys.length) return;
+
+  const overrides = readLocalRoleOverrides();
+  const roleName = String(pick(role, ["roleName", "name"], "")).trim();
+  const nextOverride = {
+    ...(roleName ? { roleName, name: roleName } : {}),
+    ...override,
+  };
+  const nextOverrides = { ...overrides };
+
+  keys.forEach((key) => {
+    nextOverrides[key] = {
+      ...nextOverrides[key],
+      ...nextOverride,
+    };
+  });
+
+  writeLocalRoleOverrides(nextOverrides);
+};
+
+const deleteRoleOverride = (role = {}) => {
+  const keys = getRoleStorageKeys(role);
+  if (!keys.length) return;
+
+  const overrides = readLocalRoleOverrides();
+  let changed = false;
+
+  keys.forEach((key) => {
+    if (key in overrides) {
+      delete overrides[key];
+      changed = true;
+    }
+  });
+
+  if (!changed) return;
+  writeLocalRoleOverrides(overrides);
+};
+
+=======
+>>>>>>> 3a773edca39851290fa99a2865bb9be81082f3f5
 const asArray = (value) => {
   if (Array.isArray(value)) return value;
   if (!value || typeof value !== "object") return [];

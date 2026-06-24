@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
@@ -53,7 +53,7 @@ function RolesPermissions() {
       .trim()
       .toLowerCase();
 
-  const mergeAdminRows = (adminRows = [], userRows = []) => {
+  const mergeAdminRows = useCallback((adminRows = [], userRows = []) => {
     const rows = new Map();
 
     adminRows.forEach((admin) => {
@@ -86,9 +86,9 @@ function RolesPermissions() {
       });
 
     return Array.from(rows.values());
-  };
+  }, []);
 
-  const loadRoles = async () => {
+  const loadRoles = useCallback(async () => {
     setLoading(true);
     setError("");
 
@@ -111,11 +111,11 @@ function RolesPermissions() {
     setAdmins(mergeAdminRows(adminRows, userRows));
 
     setLoading(false);
-  };
+  }, [mergeAdminRows]);
 
   useEffect(() => {
     loadRoles();
-  }, []);
+  }, [loadRoles]);
 
   const openCreateForm = () => {
     setEditingRoleId("");
@@ -138,26 +138,6 @@ function RolesPermissions() {
     const adminNames = getRoleAdminNames(role);
     if (adminNames.length > 0) return adminNames.length;
     return role.users || 0;
-  };
-
-  const renderRoleAdminNames = (role) => {
-    const adminNames = getRoleAdminNames(role);
-    if (!adminNames.length) return null;
-
-    const visibleNames = adminNames.slice(0, 5);
-    const extraCount = adminNames.length - visibleNames.length;
-
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <div>{`${adminNames.length} admin${adminNames.length !== 1 ? "s" : ""}`}</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12, lineHeight: 1.4, color: "#444" }}>
-          {visibleNames.map((name) => (
-            <span key={name}>{name}</span>
-          ))}
-          {extraCount > 0 ? <span>{`+${extraCount} more`}</span> : null}
-        </div>
-      </div>
-    );
   };
 
   const openEditForm = async (role) => {

@@ -275,7 +275,7 @@ function Prescription() {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
-  const routeState = location.state || {};
+  const routeState = React.useMemo(() => location.state || {}, [location.state]);
 
   const [appointment, setAppointment] = useState(null);
   const [consultation, setConsultation] = useState(routeState.consultation || null);
@@ -455,7 +455,7 @@ function Prescription() {
     };
 
     loadPrescription();
-  }, [routeState.appointmentId, routeState.patientId]);
+  }, [routeState]);
 
   const hospitalName = getClinicDisplayName({}, "Clinic Name");
   const doctorName = localStorage.getItem("doctorName") || appointment?.doctorName || "Doctor";

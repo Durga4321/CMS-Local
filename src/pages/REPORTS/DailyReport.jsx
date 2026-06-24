@@ -121,6 +121,7 @@
 
 
 import React, {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -168,12 +169,7 @@ function DailyReport() {
 
   // ================= LOAD DOCTORS =================
 
-  useEffect(() => {
-    fetchDoctors();
-    fetchReport();
-  }, []);
-
-  const fetchDoctors = async () => {
+  const fetchDoctors = useCallback(async () => {
 
     try {
 
@@ -196,66 +192,50 @@ function DailyReport() {
 
       console.log(error);
     }
-  };
+  }, []);
 
-  // ================= FETCH REPORT =================
+  const fetchReport = useCallback(async () => {
 
-  const fetchReport =
-    async () => {
+    try {
 
-      try {
+      setLoading(true);
 
-        setLoading(true);
+      let url =
+        `${REPORT_API}?doctorId=${doctorId}`;
 
-        let url =
-          `${REPORT_API}?doctorId=${doctorId}`;
-
-        if (fromDate) {
-          url += `&fromDate=${fromDate}`;
-        }
-
-        if (toDate) {
-          url += `&toDate=${toDate}`;
-        }
-
-        const response = await fetch(
-          url,
-          {
-            headers: {
-              "ngrok-skip-browser-warning":
-                "true",
-            },
-          }
-        );
-
-        const result =
-          await response.json();
-
-        console.log(
-          "REPORT:",
-          result
-        );
-
-        // REMOVE EMPTY DAYS
-
-        const filtered =
-          result.filter(
-            (x) =>
-              x.appointments > 0 ||
-              x.completed > 0
-          );
-
-        setData(filtered);
-
-      } catch (error) {
-
-        console.log(error);
-
-      } finally {
-
-        setLoading(false);
+      if (fromDate) {
+        url += `&fromDate=${fromDate}`;
       }
-    };
+
+      if (toDate) {
+        url += `&toDate=${toDate}`;
+      }
+
+      const response = await fetch(
+        url,
+        {
+          headers: {
+            "ngrok-skip-browser-warning":
+              "true",
+          },
+        }
+      );
+
+      const result =
+        await response.json();
+
+      setData(result);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [doctorId, fromDate, toDate]);
+
+  useEffect(() => {
+    fetchDoctors();
+    fetchReport();
+  }, [fetchDoctors, fetchReport]);
 
   // ================= MAX VALUE =================
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { Bell, ChevronRight, Search } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import NotificationPopup from "../components/NotificationPopup";
 import UserProfileMenu from "../profile/UserProfileMenu";

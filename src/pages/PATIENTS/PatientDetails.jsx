@@ -1,4 +1,5 @@
 import React, {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -294,11 +295,7 @@ function PatientDetails() {
 
   // ================= LOAD PATIENT =================
 
-  useEffect(() => {
-    fetchPatient();
-  }, [id]);
-
-  const fetchPatient = async () => {
+  const fetchPatient = useCallback(async () => {
 
     try {
 
@@ -462,7 +459,11 @@ function PatientDetails() {
 
       setLoading(false);
     }
-  };
+  }, [id, location]);
+
+  useEffect(() => {
+    fetchPatient();
+  }, [fetchPatient]);
 
   // ================= INITIALS =================
 

@@ -69,7 +69,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 import {
-  Bell,
   Menu,
   Search,
 } from "lucide-react";
@@ -194,10 +193,6 @@ function Topbar({ onMenu }) {
     };
   }, [isSuperAdmin]);
 
-  const openNotifications = () => {
-    // keep for compatibility if needed
-  };
-
   return (
 
     <header className="topbar">
@@ -261,7 +256,7 @@ function Topbar({ onMenu }) {
       {/* RIGHT */}
 
       <div className="topbar-right">
-        <NotificationPopup isSuperAdmin={isSuperAdmin} />
+        <NotificationPopup isSuperAdmin={isSuperAdmin} activityCount={activityCount} />
 
         <UserProfileMenu roleType="admin" />
 

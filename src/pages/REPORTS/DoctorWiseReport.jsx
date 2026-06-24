@@ -128,6 +128,7 @@
 
 import React,
 {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -186,17 +187,7 @@ function DoctorWiseReport() {
 
   // ================= LOAD =================
 
-  useEffect(() => {
-
-    fetchDoctors();
-
-    fetchReport();
-
-  }, []);
-
-  // ================= FETCH DOCTORS =================
-
-  const fetchDoctors =
+  const fetchDoctors = useCallback(
     async () => {
 
       try {
@@ -221,11 +212,11 @@ function DoctorWiseReport() {
 
         console.log(error);
       }
-    };
+    },
+    []
+  );
 
-  // ================= FETCH REPORT =================
-
-  const fetchReport =
+  const fetchReport = useCallback(
     async () => {
 
       try {
@@ -255,16 +246,22 @@ function DoctorWiseReport() {
           await response.json();
 
         setData(result);
-
       } catch (error) {
-
         console.log(error);
-
       } finally {
-
         setLoading(false);
       }
-    };
+    },
+    [doctorId, fromDate, toDate]
+  );
+
+  useEffect(() => {
+
+    fetchDoctors();
+
+    fetchReport();
+
+  }, [fetchDoctors, fetchReport]);
 
   // ================= EXPORT CSV =================
 
