@@ -168,6 +168,13 @@
   box-shadow: 0 0 0 3px rgba(15, 157, 157, 0.12);
 }
 
+.doctor-settings-card input[readonly] {
+  background: #f8fafc;
+  color: #475569;
+  cursor: not-allowed;
+  font-weight: 800;
+}
+
 .doctor-settings-toggles {
   display: grid;
   gap: 10px;

@@ -8,6 +8,7 @@ import {
   getAuthToken,
   getLoggedInDoctor,
 } from "../utils/doctorSession";
+import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 
 const APPOINTMENTS_API = apiUrl("Appointment");
 
@@ -32,17 +33,7 @@ const formatTime = (value) => {
   return `${String(displayHour).padStart(2, "0")}:${minuteValue.padStart(2, "0")} ${suffix}`;
 };
 
-const formatDate = (value) => {
-  if (!value) return "-";
-  if (!String(value).includes("T")) return value;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-};
+const formatDate = (value) => formatDateMMDDYYYY(value, "-");
 
 const normalizeQueue = (queue) =>
   (Array.isArray(queue) ? queue : []).map((item) => ({
@@ -102,7 +93,7 @@ function DoctorAppointments() {
   const filteredAppointments = useMemo(() => {
     if (filter === "all") return normalizedAppointments;
     if (filter === "today") {
-      const todayStr = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+      const todayStr = formatDateMMDDYYYY(new Date(), "-");
       return normalizedAppointments.filter(a => a.date === todayStr);
     }
     return normalizedAppointments.filter(a => String(a.status).toLowerCase().replace(/\s+/g, '') === filter);

@@ -14,6 +14,7 @@ import {
 
 import AppointmentModal from "./AppointmentModal";
 import { apiUrl } from "../../config/api";
+import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 
 // ================= API =================
 
@@ -31,23 +32,7 @@ const getDateKey = (value) => {
   return String(value).split("T")[0];
 };
 
-const formatDate = (value) => {
-  const dateKey = getDateKey(value);
-
-  if (!dateKey)
-    return emptyValue;
-
-  const date = new Date(`${dateKey}T00:00:00`);
-
-  if (Number.isNaN(date.getTime()))
-    return dateKey;
-
-  return date.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-};
+const formatDate = (value) => formatDateMMDDYYYY(getDateKey(value), emptyValue);
 
 const formatTime = (value) => {
   if (!value)

@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import "./Receptionists.css";
 import { apiUrl } from "../../config/api";
-import PasswordField from "../../components/PasswordField";
 import { useToast } from "../../components/ToastProvider";
 import {
   onlyAlpha,
@@ -19,17 +18,11 @@ import {
   validateAlpha,
   validateGmail,
   validateMobile,
-  validateStrongPassword,
 } from "../../utils/validation";
 import {
   getClinicDisplayName,
   getStoredClinicName,
 } from "../../utils/clinicDisplay";
-import {
-  hasAdminPermission,
-  requireAdminPermission,
-} from "../../utils/adminPermissions";
-
 const RECEPTIONIST_API = apiUrl("Receptionist");
 
 const getAuthToken = () =>
@@ -60,7 +53,6 @@ const getEmptyForm = () => ({
   name: "",
   email: "",
   phone: "",
-  password: "",
 });
 
 const parseReceptionistsResponse = (data) => {
@@ -116,9 +108,6 @@ const parseErrorMessage = async (response, fallback) => {
 
 function Receptionists() {
   const toast = useToast();
-  const canCreate = hasAdminPermission("Create");
-  const canEdit = hasAdminPermission("Edit");
-  const canDelete = hasAdminPermission("Delete");
   const [receptionists, setReceptionists] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(true);
@@ -134,11 +123,6 @@ function Receptionists() {
   const hospitalId = getHospitalId();
   const clinicDisplayName =
     getStoredClinicName() || getClinicDisplayName({ hospitalId }, "Clinic");
-  const denyPermission = (message) => {
-    setError(message);
-    toast.error(message);
-  };
-
   const fetchReceptionists = async () => {
     setLoading(true);
     setError("");
@@ -182,8 +166,6 @@ function Receptionists() {
   }, [receptionists, searchText]);
 
   const openAddModal = () => {
-    if (!requireAdminPermission("Create", denyPermission)) return;
-
     setEditingReceptionist(null);
     setForm(getEmptyForm());
     setFieldErrors({});
@@ -193,14 +175,11 @@ function Receptionists() {
   };
 
   const openEditModal = (receptionist) => {
-    if (!requireAdminPermission("Edit", denyPermission)) return;
-
     setEditingReceptionist(receptionist);
     setForm({
       name: receptionist?.name || "",
       email: receptionist?.email || "",
       phone: receptionist?.phone || "",
-      password: "",
     });
     setFieldErrors({});
     setError("");
@@ -247,9 +226,6 @@ function Receptionists() {
     nextErrors.name = validateAlpha(form.name, "Name");
     nextErrors.email = validateGmail(form.email);
     nextErrors.phone = validateMobile(form.phone, "Phone");
-    nextErrors.password = validateStrongPassword(form.password, "Password", {
-      required: !editingReceptionist,
-    });
 
     if (!hospitalId) {
       nextErrors.form = "Clinic not found. Please login again.";
@@ -266,9 +242,6 @@ function Receptionists() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const permission = editingReceptionist ? "Edit" : "Create";
-    if (!requireAdminPermission(permission, denyPermission)) return;
-
     if (!validateForm()) {
       setError("Please fix the highlighted fields.");
       toast.error("Please fix the highlighted fields.");
@@ -283,12 +256,7 @@ function Receptionists() {
       name: form.name.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
-      password: form.password,
       hospitalId,
-      hospitalName: clinicDisplayName,
-      clinicName: clinicDisplayName,
-      adminEmail: localStorage.getItem("adminEmail") || "",
-      adminName: localStorage.getItem("adminName") || "",
     };
 
     try {
@@ -339,7 +307,6 @@ function Receptionists() {
 
   const handleDelete = async (receptionist) => {
     if (!receptionist?.id || deletingId) return;
-    if (!requireAdminPermission("Delete", denyPermission)) return;
 
     const shouldDelete = window.confirm(
       `Delete receptionist ${receptionist.name || ""}?`
@@ -406,8 +373,7 @@ function Receptionists() {
             type="button"
             className="receptionists-primary-button"
             onClick={openAddModal}
-            disabled={!canCreate}
-            title={canCreate ? "Add receptionist" : "Create permission required"}
+            title="Add receptionist"
           >
             <Plus size={16} />
             Add Receptionist
@@ -491,8 +457,8 @@ function Receptionists() {
                   type="button"
                   className="receptionists-action-button"
                   onClick={() => openEditModal(receptionist)}
-                  disabled={!canEdit || isDeleting}
-                  title={canEdit ? "Edit receptionist" : "Edit permission required"}
+                  disabled={isDeleting}
+                  title="Edit receptionist"
                 >
                   <Pencil size={14} />
                 </button>
@@ -501,8 +467,8 @@ function Receptionists() {
                   type="button"
                   className="receptionists-action-button receptionists-action-danger"
                   onClick={() => handleDelete(receptionist)}
-                  disabled={!canDelete || isDeleting}
-                  title={canDelete ? "Delete receptionist" : "Delete permission required"}
+                  disabled={isDeleting}
+                  title="Delete receptionist"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -599,26 +565,6 @@ function Receptionists() {
                 ) : null}
               </div>
 
-              <div className="receptionists-field">
-                <label htmlFor="receptionist-password">Password</label>
-                <PasswordField
-                  id="receptionist-password"
-                  value={form.password}
-                  onChange={(event) => updateField("password", event.target.value)}
-                  className={fieldErrors.password ? "is-invalid" : ""}
-                  placeholder={
-                    editingReceptionist ? "Leave blank if unchanged" : ""
-                  }
-                  disabled={saving}
-                  autoComplete="new-password"
-                />
-                {fieldErrors.password ? (
-                  <span className="receptionists-field-error">
-                    {fieldErrors.password}
-                  </span>
-                ) : null}
-              </div>
-
               {fieldErrors.form ? (
                 <div className="receptionists-error receptionists-form-message">
                   {fieldErrors.form}
@@ -637,7 +583,7 @@ function Receptionists() {
                 <button
                   type="submit"
                   className="receptionists-save-button"
-                  disabled={saving || (editingReceptionist ? !canEdit : !canCreate)}
+                  disabled={saving}
                 >
                   <CheckCircle size={16} />
                   {saving

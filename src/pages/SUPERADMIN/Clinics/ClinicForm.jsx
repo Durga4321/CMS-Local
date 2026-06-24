@@ -12,7 +12,16 @@ import {
   validateAddressParts,
 } from "../../../utils/address";
 import {
+  fetchPincodeLocation,
+} from "../../../utils/pincodeLocation";
+import {
+  getDistrictsForState,
+  INDIA_COUNTRY,
+  INDIAN_STATES,
+} from "../../../utils/indianLocations";
+import {
   onlyAlpha,
+  onlyAddressText,
   onlyIndianMobileValue,
   validateAlpha,
   validateGmail,
@@ -83,6 +92,28 @@ function ClinicForm({ mode }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [areaOptions, setAreaOptions] = useState([]);
+  const selectedDistricts = Array.from(
+    new Set([
+      ...getDistrictsForState(form.addressParts?.state),
+      form.addressParts?.city,
+    ].filter(Boolean))
+  );
+  const visibleAreaOptions = Array.from(
+    new Set(
+      [form.addressParts?.area, ...areaOptions]
+        .filter(Boolean)
+        .map((area) => String(area).trim())
+    )
+  );
+
+  useEffect(() => {
+    const addressParts = form.addressParts || emptyAddressParts;
+    const nextAddress = buildAddress(addressParts);
+    if (form.address !== nextAddress) {
+      setForm((current) => ({ ...current, address: nextAddress }));
+    }
+  }, [form.addressParts]);
 
   useEffect(() => {
     let active = true;
@@ -153,12 +184,38 @@ function ClinicForm({ mode }) {
   };
 
   const handleAddressChange = (name, value) => {
-    const nextValue = name === "pincode" ? onlyPincodeValue(value) : value;
+    let nextValue = value;
+
+    if (name === "pincode") {
+      nextValue = onlyPincodeValue(value);
+    } else if (["city", "state", "country"].includes(name)) {
+      nextValue = onlyAlpha(value).trim();
+    } else {
+      nextValue = onlyAddressText(value).trim();
+    }
+
     setForm((current) => {
+      const previousParts = current.addressParts || emptyAddressParts;
       const addressParts = {
-        ...(current.addressParts || emptyAddressParts),
+        ...previousParts,
         [name]: nextValue,
+        country: INDIA_COUNTRY,
       };
+
+      if (name === "state" && previousParts.state !== nextValue) {
+        addressParts.city = "";
+        addressParts.area = "";
+        addressParts.pincode = "";
+      }
+
+      if (name === "city" && previousParts.city !== nextValue) {
+        addressParts.area = "";
+        addressParts.pincode = "";
+      }
+
+      if (name === "pincode") {
+        addressParts.area = "";
+      }
 
       return {
         ...current,
@@ -170,18 +227,75 @@ function ClinicForm({ mode }) {
       ...current,
       address: "",
       [`address.${name}`]: "",
+      ...(name === "state" ? { "address.city": "" } : {}),
+      ...(name === "city" ? { "address.pincode": "", "address.area": "" } : {}),
     }));
     setError("");
   };
 
+  useEffect(() => {
+    const pincode = form.addressParts?.pincode || "";
+    if (pincode.length !== 6) {
+      setAreaOptions([]);
+      return undefined;
+    }
+
+    let active = true;
+    fetchPincodeLocation(pincode)
+      .then((location) => {
+        if (!active) return;
+        setAreaOptions(location.areaOptions);
+        setForm((current) => {
+          const previousParts = current.addressParts || emptyAddressParts;
+          if (previousParts.pincode !== pincode) return current;
+
+          const addressParts = {
+            ...previousParts,
+            area: previousParts.area || location.area,
+            city: location.city || previousParts.city,
+            state: location.state || previousParts.state,
+            streetVillage: previousParts.streetVillage || location.village || location.area,
+            country: location.country || INDIA_COUNTRY,
+            pincode,
+          };
+
+          return {
+            ...current,
+            addressParts,
+            address: buildAddress(addressParts),
+          };
+        });
+        setFieldErrors((current) => ({
+          ...current,
+          "address.pincode": "",
+          "address.area": "",
+          "address.city": "",
+          "address.state": "",
+        }));
+      })
+      .catch((lookupError) => {
+        if (!active) return;
+        setAreaOptions([]);
+        setFieldErrors((current) => ({
+          ...current,
+          "address.pincode": lookupError.message || "Unable to fetch pincode location.",
+        }));
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [form.addressParts?.pincode]);
+
   const validateForm = () => {
+    const addressParts = form.addressParts || emptyAddressParts;
     const nextErrors = {
       name: validateAlpha(form.name, "Clinic name"),
       contactNumber: validateMobile(form.contactNumber, "Contact number"),
       email: validateGmail(form.email),
       status: validateSelected(form.status, "a status"),
       ...Object.fromEntries(
-        Object.entries(validateAddressParts(form.addressParts, "Address")).map(
+        Object.entries(validateAddressParts(addressParts, "Address")).map(
           ([key, value]) => [key === "address" ? "address" : `address.${key}`, value]
         )
       ),
@@ -317,28 +431,103 @@ function ClinicForm({ mode }) {
           <div className="sa-form-field sa-form-field-full">
             <label>Address</label>
             <div className="sa-form-grid">
-              {[
-                ["streetVillage", "Street/Village Name"],
-                ["city", "City"],
-                ["state", "State"],
-                ["country", "Country"],
-                ["pincode", "Pincode"],
-              ].map(([key, label]) => (
-                <div className="sa-form-field" key={key}>
-                  <label>{label}</label>
-                  <input
-                    value={form.addressParts?.[key] || ""}
-                    onChange={(event) => handleAddressChange(key, event.target.value)}
-                    className={fieldErrors[`address.${key}`] ? "is-invalid" : ""}
-                    inputMode={key === "pincode" ? "numeric" : undefined}
-                    maxLength={key === "pincode" ? 6 : undefined}
-                    required
-                  />
-                  {fieldErrors[`address.${key}`] ? (
-                    <span className="sa-field-error">{fieldErrors[`address.${key}`]}</span>
-                  ) : null}
-                </div>
-              ))}
+              <div className="sa-form-field">
+                <label>Street/Village Name</label>
+                <input
+                  value={form.addressParts?.streetVillage || ""}
+                  onChange={(event) => handleAddressChange("streetVillage", event.target.value)}
+                  className={fieldErrors["address.streetVillage"] ? "is-invalid" : ""}
+                  required
+                />
+                {fieldErrors["address.streetVillage"] ? (
+                  <span className="sa-field-error">{fieldErrors["address.streetVillage"]}</span>
+                ) : null}
+              </div>
+
+              <div className="sa-form-field">
+                <label>State</label>
+                <select
+                  value={form.addressParts?.state || ""}
+                  onChange={(event) => handleAddressChange("state", event.target.value)}
+                  className={fieldErrors["address.state"] ? "is-invalid" : ""}
+                  required
+                >
+                  <option value="">Select State</option>
+                  {INDIAN_STATES.map((state) => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors["address.state"] ? (
+                  <span className="sa-field-error">{fieldErrors["address.state"]}</span>
+                ) : null}
+              </div>
+
+              <div className="sa-form-field">
+                <label>Area</label>
+                <select
+                  value={form.addressParts?.area || ""}
+                  onChange={(event) => handleAddressChange("area", event.target.value)}
+                  className={fieldErrors["address.area"] ? "is-invalid" : ""}
+                  disabled={!visibleAreaOptions.length}
+                  required
+                >
+                  <option value="">Select Area</option>
+                  {visibleAreaOptions.map((area) => (
+                    <option key={area} value={area}>
+                      {area}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors["address.area"] ? (
+                  <span className="sa-field-error">{fieldErrors["address.area"]}</span>
+                ) : null}
+              </div>
+
+              <div className="sa-form-field">
+                <label>City/District</label>
+                <select
+                  value={form.addressParts?.city || ""}
+                  onChange={(event) => handleAddressChange("city", event.target.value)}
+                  className={fieldErrors["address.city"] ? "is-invalid" : ""}
+                  disabled={!form.addressParts?.state}
+                  required
+                >
+                  <option value="">Select City/District</option>
+                  {selectedDistricts.map((district) => (
+                    <option key={district} value={district}>
+                      {district}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors["address.city"] ? (
+                  <span className="sa-field-error">{fieldErrors["address.city"]}</span>
+                ) : null}
+              </div>
+
+              <div className="sa-form-field">
+                <label>Country</label>
+                <input value={INDIA_COUNTRY} disabled readOnly />
+                {fieldErrors["address.country"] ? (
+                  <span className="sa-field-error">{fieldErrors["address.country"]}</span>
+                ) : null}
+              </div>
+
+              <div className="sa-form-field">
+                <label>Pincode</label>
+                <input
+                  value={form.addressParts?.pincode || ""}
+                  onChange={(event) => handleAddressChange("pincode", event.target.value)}
+                  className={fieldErrors["address.pincode"] ? "is-invalid" : ""}
+                  inputMode="numeric"
+                  maxLength={6}
+                  required
+                />
+                {fieldErrors["address.pincode"] ? (
+                  <span className="sa-field-error">{fieldErrors["address.pincode"]}</span>
+                ) : null}
+              </div>
               <div className="sa-form-field sa-form-field-full">
                 <label>Final Address</label>
                 <textarea value={buildAddress(form.addressParts)} readOnly />

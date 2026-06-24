@@ -11,16 +11,13 @@ import {
   updateUserStatus,
 } from "../superAdminApi";
 import {
+  onlyAlpha,
   onlyIndianMobileValue,
+  validateAlpha,
   validateMobile,
   validateEmailCom,
 } from "../../../utils/validation";
 import { formatTitleCase } from "../../../utils/format";
-import {
-  hasAdminPermission,
-  requireAdminPermission,
-  ADMIN_PERMISSION_DENIED_MESSAGE,
-} from "../../../utils/adminPermissions";
 
 const emptyUser = {
   name: "",
@@ -55,13 +52,6 @@ function Users() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const canCreate = hasAdminPermission("Create");
-  const canEdit = hasAdminPermission("Edit");
-  const canDelete = hasAdminPermission("Delete");
-
-  const denyPermission = (message = ADMIN_PERMISSION_DENIED_MESSAGE) => {
-    setError(message);
-  };
 
   const loadUsers = async () => {
     setLoading(true);
@@ -81,8 +71,6 @@ function Users() {
   }, []);
 
   const openCreateForm = () => {
-    if (!requireAdminPermission("Create", denyPermission)) return;
-
     setEditingUserId("");
     setSelectedUser(null);
     setForm(emptyUser);
@@ -114,8 +102,6 @@ function Users() {
       return;
     }
 
-    if (!requireAdminPermission("Edit", denyPermission)) return;
-
     setEditingUserId(user.id);
     setSelectedUser(null);
     setForm({ ...emptyUser, ...user });
@@ -137,9 +123,16 @@ function Users() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    const nextValue = ["phone", "mobileNumber"].includes(name)
-      ? onlyIndianMobileValue(value)
-      : value;
+    let nextValue = value;
+
+    if (name === "name") {
+      nextValue = onlyAlpha(value);
+    }
+
+    if (["phone", "mobileNumber"].includes(name)) {
+      nextValue = onlyIndianMobileValue(value);
+    }
+
     setForm((current) => ({
       ...current,
       [name]: nextValue,
@@ -149,15 +142,18 @@ function Users() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const permission = editingUserId ? "Edit" : "Create";
 
-    if (!requireAdminPermission(permission, denyPermission)) return;
+    const nameError = validateAlpha(form.name, "Name");
+    if (nameError) {
+      setError(nameError);
+      return;
+    }
 
-    if (!form.name.trim() || !form.email.trim() || (!editingUserId && !form.password)) {
+    if (!form.email.trim() || (!editingUserId && !form.password)) {
       setError(
         editingUserId
-          ? "Name and email are required."
-          : "Name, email, and password are required."
+          ? "Email is required."
+          : "Email and password are required."
       );
       return;
     }
@@ -228,8 +224,6 @@ function Users() {
       return;
     }
 
-    if (!requireAdminPermission("Delete", denyPermission)) return;
-
     const confirmed = window.confirm(`Delete ${formatTitleCase(user.name) || "this user"}?`);
     if (!confirmed) return;
 
@@ -292,8 +286,8 @@ function Users() {
           <button
             className="sa-icon-btn"
             onClick={() => openEditForm(user)}
-            disabled={!canUseRowActions || !canEdit}
-            title={!canUseRowActions ? disabledTitle : canEdit ? "Edit user" : "Edit permission required"}
+            disabled={!canUseRowActions}
+            title={canUseRowActions ? "Edit user" : disabledTitle}
           >
             <Pencil size={15} />
           </button>
@@ -308,8 +302,8 @@ function Users() {
           <button
             className="sa-icon-btn"
             onClick={() => handleDelete(user)}
-            disabled={!canUseRowActions || !canDelete}
-            title={!canUseRowActions ? disabledTitle : canDelete ? "Delete user" : "Delete permission required"}
+            disabled={!canUseRowActions}
+            title={canUseRowActions ? "Delete user" : disabledTitle}
           >
             <Trash2 size={15} />
           </button>
@@ -330,8 +324,7 @@ function Users() {
           <button
             className="sa-btn sa-btn-primary"
             onClick={openCreateForm}
-            disabled={!canCreate}
-            title={canCreate ? "Create user" : "Create permission required"}
+            title="Create user"
           >
             <Plus size={16} />
             Create User
@@ -457,7 +450,7 @@ function Users() {
                 <button type="button" className="sa-btn" onClick={closeForm}>Close</button>
                 <button
                   className="sa-btn sa-btn-primary"
-                  disabled={saving || (editingUserId ? !canEdit : !canCreate)}
+                  disabled={saving}
                 >
                   {saving ? "Saving..." : "Save User"}
                 </button>
@@ -510,7 +503,7 @@ function Users() {
                 <button
                   className="sa-btn sa-btn-primary"
                   onClick={() => openEditForm(selectedUser)}
-                  disabled={!isManageableAdminUser(selectedUser) || !canEdit}
+                  disabled={!isManageableAdminUser(selectedUser)}
                 >
                   Edit User
                 </button>

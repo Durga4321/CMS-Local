@@ -197,7 +197,8 @@ function DoctorSettings() {
                 type="number"
                 min="0"
                 value={settings.consultationFee}
-                onChange={(event) => updateField("consultationFee", event.target.value)}
+                readOnly
+                aria-readonly="true"
                 className={fieldErrors.consultationFee ? "is-invalid" : ""}
               />
               {fieldErrors.consultationFee ? (

@@ -49,6 +49,31 @@
   color: #15803d;
 }
 
+.rx-clinic-banner {
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.rx-clinic-banner span {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.rx-clinic-banner strong {
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 900;
+  text-align: right;
+}
+
 /* ── Stepper (reuse same style) ── */
 .rx-stepper {
   display: flex;
@@ -221,11 +246,11 @@
 .rx-thead,
 .rx-row {
   display: grid;
-  grid-template-columns: minmax(160px, 1.7fr) minmax(100px, 0.9fr) minmax(120px, 1fr) minmax(100px, 0.9fr) minmax(120px, 1fr) 56px;
+  grid-template-columns: minmax(160px, 1.6fr) minmax(110px, 0.9fr) minmax(84px, 0.65fr) minmax(120px, 1fr) minmax(100px, 0.85fr) minmax(130px, 1fr) 56px;
   align-items: center;
   padding: 11px 16px;
   gap: 12px;
-  min-width: 860px;
+  min-width: 980px;
 }
 
 .rx-thead {

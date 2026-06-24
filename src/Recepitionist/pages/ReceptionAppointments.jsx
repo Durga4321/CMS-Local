@@ -177,6 +177,13 @@ function ReceptionAppointments() {
     );
   }, [appointments, form.date, form.doctorId]);
 
+  const visibleSlots = useMemo(() => {
+    return availableSlots.filter((slot) => {
+      const label = parseSlotLabel(slot);
+      return !(isTimeOutSlot(slot) || isCompletedSlot(label, form.date));
+    });
+  }, [availableSlots, form.date]);
+
   useEffect(() => {
     if (!form.doctorId || !form.date) {
       setAvailableSlots([]);
@@ -315,26 +322,24 @@ function ReceptionAppointments() {
           <div className="rc-slots">
             {slotLoading ? (
               <div className="rc-slot-loading">Loading slots...</div>
-            ) : availableSlots.length > 0 ? (
-              availableSlots.map((slot) => {
+            ) : visibleSlots.length > 0 ? (
+              visibleSlots.map((slot) => {
                 const label = parseSlotLabel(slot);
                 const slotStart = getSlotStart(label);
                 const isBooked = Boolean(isBookedSlot(slot) || bookedSlots.has(slotStart));
-                const isCompleted = isTimeOutSlot(slot) || isCompletedSlot(label, form.date);
                 const isSelected = selectedSlot && getSlotStart(selectedSlot) === slotStart;
                 return (
                   <button
                     type="button"
                     key={label}
-                    disabled={isBooked || isCompleted}
+                    disabled={isBooked}
                     className={[
                       isSelected ? "selected" : "",
                       isBooked ? "booked" : "",
-                      isCompleted ? "completed" : "",
                     ].filter(Boolean).join(" ")}
                     onClick={() => setSelectedSlot(label)}
                   >
-                    {label} - {isCompleted ? "TIME OUT" : isBooked ? "BOOKED" : "AVAILABLE"}
+                    {label} - {isBooked ? "BOOKED" : "AVAILABLE"}
                   </button>
                 );
               })

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./layout/AppLayout";
@@ -39,33 +39,12 @@ import RevenueReport from "./pages/REPORTS/RevenueReport";
 import DoctorWiseReport from "./pages/REPORTS/DoctorWiseReport";
 import "./pages/SUPERADMIN/SuperAdmin.css";
 import { ToastProvider } from "./components/ToastProvider";
-import { hasAdminPermission, isCurrentUserSuperAdmin } from "./utils/adminPermissions";
 
-const usePermissionRefresh = () => {
-  const [, setVersion] = useState(0);
+const normalizeRole = (role = "") =>
+  String(role || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
 
-  useEffect(() => {
-    const refresh = () => setVersion((version) => version + 1);
-    const refreshWhenVisible = () => {
-      if (!document.hidden) refresh();
-    };
-
-    window.addEventListener("storage", refresh);
-    window.addEventListener("focus", refresh);
-    document.addEventListener("visibilitychange", refreshWhenVisible);
-
-    return () => {
-      window.removeEventListener("storage", refresh);
-      window.removeEventListener("focus", refresh);
-      document.removeEventListener("visibilitychange", refreshWhenVisible);
-    };
-  }, []);
-};
-
-const PermissionRoute = ({ permission, children }) => {
-  usePermissionRefresh();
-  return hasAdminPermission(permission) ? children : <Navigate to="/dashboard" replace />;
-};
+const isCurrentUserSuperAdmin = () =>
+  normalizeRole(localStorage.getItem("adminRole") || localStorage.getItem("userRole")) === "superadmin";
 
 const SuperAdminRoute = ({ children }) =>
   isCurrentUserSuperAdmin() ? children : <Navigate to="/dashboard" replace />;
@@ -97,10 +76,10 @@ function App() {
 
           {/* MODULES */}
           <Route path="doctors" element={<Doctors />} />
-          <Route path="doctors/add" element={<PermissionRoute permission="Create"><AddDoctor /></PermissionRoute>} />
+          <Route path="doctors/add" element={<AddDoctor />} />
           <Route path="doctors/register" element={<Navigate to="/doctors/add" replace />} />
-          <Route path="doctors/schedule" element={<PermissionRoute permission="Edit"><DoctorSchedule /></PermissionRoute>} />
-          <Route path="DoctorSchedule/schedule" element={<PermissionRoute permission="Edit"><Doctorschedulepage /></PermissionRoute>} />
+          <Route path="doctors/schedule" element={<DoctorSchedule />} />
+          <Route path="DoctorSchedule/schedule" element={<Doctorschedulepage />} />
           <Route path="receptionists" element={<Receptionists />} />
 
           {/* ✅ PATIENTS */}
@@ -108,7 +87,7 @@ function App() {
           <Route path="patients/:id" element={<PatientDetails />} /> {/* ✅ IMPORTANT */}
 
           <Route path="appointments" element={<Appointments />} />
-          <Route path="appointments/new" element={<PermissionRoute permission="Create"><NewAppointment /></PermissionRoute>} />
+          <Route path="appointments/new" element={<NewAppointment />} />
 
           <Route path="reports" element={<Reports />} />
           <Route path="reports/daily" element={<DailyReport />} />

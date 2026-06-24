@@ -309,6 +309,10 @@
   padding: 18px;
 }
 
+.dd-patient-modal {
+  width: min(620px, 100%);
+}
+
 .dd-notes-head {
   display: flex;
   align-items: flex-start;
@@ -375,6 +379,13 @@
 .dd-notes-empty {
   color: #64748b;
   text-align: center;
+}
+
+.dd-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 /* ── Responsive ── */

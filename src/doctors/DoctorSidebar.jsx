@@ -27,7 +27,7 @@ const getInitials = (name) =>
 
 function DoctorSidebar() {
   const doctorName = localStorage.getItem("doctorName") || "Doctor";
-  const hospitalName = getClinicDisplayName({}, "Hospital System");
+  const hospitalName = getClinicDisplayName({}, "Clinic Name");
   const displayName = `Dr. ${doctorName}`.replace(/^Dr\.\s*Dr\./i, "Dr.");
 
   return (
@@ -41,8 +41,8 @@ function DoctorSidebar() {
           </svg>
         </div>
         <div>
-          <p className="dr-brand-name">CMS</p>
-          <p className="dr-brand-sub">{hospitalName}</p>
+          <p className="dr-brand-sub">Clinic Name</p>
+          <p className="dr-brand-name">{hospitalName}</p>
         </div>
       </div>
 

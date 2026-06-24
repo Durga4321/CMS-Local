@@ -15,6 +15,7 @@ import {
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { useToast } from "../../components/ToastProvider";
 import { validateDate, validateRequired } from "../../utils/validation";
+import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 
 const STEPS = [
   "Waiting",
@@ -28,11 +29,64 @@ const CONSULTATION_API = apiUrl("Consultation");
 const PRESCRIPTION_API = apiUrl("Prescription");
 
 const emptyValue = "-";
+const DEFAULT_MEDICINE_OPTIONS = [
+  "Paracetamol",
+  "Ibuprofen",
+  "Amoxicillin",
+  "Azithromycin",
+  "Cetirizine",
+  "Pantoprazole",
+  "Metformin",
+  "Amlodipine",
+];
+const DEFAULT_DIAGNOSIS_OPTIONS = [
+  "Fever",
+  "Upper respiratory infection",
+  "Gastritis",
+  "Hypertension",
+  "Diabetes follow-up",
+  "Migraine",
+  "Allergic rhinitis",
+  "Back pain",
+];
+const DOSAGE_OPTIONS = ["1 Tablet", "1/2 Tablet", "2 Tablets", "5 ml", "10 ml", "1 Capsule", "1 Sachet"];
+const FREQUENCY_OPTIONS = [
+  "1-0-1",
+  "1-1-1",
+  "0-0-1",
+  "0-1-1",
+  "1-0-0",
+  "0-1-0",
+  "1-1-0",
+  "0-0-0-1",
+  "1-1-1-1",
+  "Every 4 hours",
+  "Every 6 hours",
+  "Every 8 hours",
+  "SOS",
+];
+const NOTE_OPTIONS = [
+  "After food",
+  "Before food",
+  "With water",
+  "At bedtime",
+  "Morning only",
+  "Avoid driving",
+  "Complete full course",
+];
+const INSTRUCTION_OPTIONS = [
+  "Take medicines after food and complete the full course.",
+  "Drink plenty of water and take adequate rest.",
+  "Avoid oily and spicy food.",
+  "Return immediately if symptoms worsen.",
+  "Continue current diet and medication plan.",
+];
 
 const createMedicine = () => ({
   id: Date.now() + Math.random(),
   medicineName: "",
   dosage: "",
+  quantity: "",
   frequency: "",
   duration: "",
   notes: "",
@@ -89,6 +143,7 @@ const normalizeMedicines = (medicines) =>
     medicineName: medicine.medicineName || medicine.medicine || "",
     brandName: medicine.brandName || medicine.brand || medicine.brand_name || "",
     dosage: medicine.dosage || "",
+    quantity: medicine.quantity || medicine.qty || "",
     frequency: medicine.frequency || "",
     duration: medicine.duration || "",
     notes: medicine.notes || "",
@@ -151,6 +206,69 @@ const getResponseMessage = (data, text, fallback) =>
 const toPositiveId = (value) => {
   const id = Number(value);
   return Number.isInteger(id) && id > 0 ? id : null;
+};
+
+const buildCompletedAppointmentBody = (appointment = {}, appointmentId) => ({
+  ...appointment,
+  id: appointment.id || appointmentId,
+  appointmentId,
+  status: "Completed",
+  Status: "Completed",
+});
+
+const updateAppointmentStatus = async ({ appointmentId, appointment, headers }) => {
+  const requests = [
+    {
+      url: `${APPOINTMENTS_API}/${appointmentId}/status`,
+      options: {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ status: "Completed", Status: "Completed" }),
+      },
+    },
+    {
+      url: `${APPOINTMENTS_API}/${appointmentId}`,
+      options: {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ status: "Completed", Status: "Completed" }),
+      },
+    },
+    {
+      url: `${APPOINTMENTS_API}/${appointmentId}`,
+      options: {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(buildCompletedAppointmentBody(appointment, appointmentId)),
+      },
+    },
+  ];
+
+  let lastError = "Unable to update appointment status.";
+
+  for (const request of requests) {
+    let response = null;
+
+    try {
+      response = await fetch(request.url, request.options);
+    } catch (error) {
+      lastError = error.message || lastError;
+      continue;
+    }
+
+    if (!response) continue;
+
+    const responseText = await response.text().catch(() => "");
+    const data = parseJsonText(responseText);
+
+    if (response.ok) {
+      return data;
+    }
+
+    lastError = getResponseMessage(data, responseText, lastError);
+  }
+
+  throw new Error(lastError);
 };
 
 function Prescription() {
@@ -339,7 +457,7 @@ function Prescription() {
     loadPrescription();
   }, [routeState]);
 
-  const hospitalName = getClinicDisplayName({}, "CMS");
+  const hospitalName = getClinicDisplayName({}, "Clinic Name");
   const doctorName = localStorage.getItem("doctorName") || appointment?.doctorName || "Doctor";
 
   const validMedicines = useMemo(
@@ -348,6 +466,7 @@ function Prescription() {
         .map((medicine) => ({
           medicineName: medicine.medicineName.trim(),
           dosage: medicine.dosage.trim(),
+          quantity: String(medicine.quantity || "").trim(),
           frequency: medicine.frequency.trim(),
           duration: medicine.duration.trim(),
           notes: medicine.notes.trim(),
@@ -355,6 +474,27 @@ function Prescription() {
         .filter((medicine) => medicine.medicineName),
     [medicines]
   );
+
+  const medicineSelectOptions = useMemo(() => {
+    const options = new Set(DEFAULT_MEDICINE_OPTIONS);
+    medicineOptions.forEach((medicine) => {
+      const label = medicine.medicineName || medicine.label;
+      if (label) options.add(label);
+    });
+    medicines.forEach((medicine) => {
+      if (medicine.medicineName) options.add(medicine.medicineName);
+    });
+    return Array.from(options).sort((a, b) => a.localeCompare(b));
+  }, [medicineOptions, medicines]);
+
+  const diagnosisSelectOptions = useMemo(() => {
+    const options = new Set(DEFAULT_DIAGNOSIS_OPTIONS);
+    diagnosisOptions.forEach((option) => {
+      if (option) options.add(option);
+    });
+    if (diagnosis) options.add(diagnosis);
+    return Array.from(options).sort((a, b) => a.localeCompare(b));
+  }, [diagnosis, diagnosisOptions]);
 
   const updateMedicine = (id, field, value) =>
     setMedicines((prev) =>
@@ -394,6 +534,7 @@ function Prescription() {
       ...createMedicine(),
       medicineName: medicine.medicineName || medicine.label || "",
       dosage: medicine.dosage || "",
+      quantity: medicine.quantity || "",
       frequency: medicine.frequency || "",
       duration: medicine.duration || "",
       notes: medicine.notes || "",
@@ -414,6 +555,7 @@ function Prescription() {
           <tr>
             <td>${medicine.medicineName || emptyValue}</td>
             <td>${medicine.dosage || emptyValue}</td>
+            <td>${medicine.quantity || emptyValue}</td>
             <td>${medicine.frequency || emptyValue}</td>
             <td>${medicine.duration || emptyValue}</td>
           </tr>`
@@ -452,16 +594,16 @@ function Prescription() {
               <div><b>Patient:</b> ${appointment?.patientName || emptyValue}</div>
               <div><b>PID:</b> ${appointment?.patientCode || emptyValue}</div>
               <div><b>Age / Gender:</b> ${appointment?.age || emptyValue} Y / ${appointment?.gender || emptyValue}</div>
-              <div><b>Date:</b> ${toDateInput(appointment?.date) || new Date().toISOString().slice(0, 10)}</div>
+              <div><b>Date:</b> ${formatDateMMDDYYYY(appointment?.date || new Date())}</div>
             </section>
             <table>
-              <thead><tr><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th></tr></thead>
+              <thead><tr><th>Medicine</th><th>Dosage</th><th>Qty</th><th>Frequency</th><th>Duration</th></tr></thead>
               <tbody>${rows}</tbody>
             </table>
             <section class="footer">
               <div>
                 <p><b>Instructions:</b> ${instructions || "No instructions added."}</p>
-                <p><b>Follow-Up Date:</b> ${followUp || emptyValue}</p>
+                <p><b>Follow-Up Date:</b> ${formatDateMMDDYYYY(followUp, emptyValue)}</p>
               </div>
               <div class="signature">
                 <p><b>Dr. ${doctorName}</b></p>
@@ -583,13 +725,23 @@ function Prescription() {
         );
       }
 
+      const appointmentStatusResult = await updateAppointmentStatus({
+        appointmentId,
+        appointment,
+        headers,
+      });
+      const completedStatus =
+        appointmentStatusResult.appointmentStatus ||
+        appointmentStatusResult.status ||
+        "Completed";
       const text = data.message || "Prescription submitted.";
+      setAppointment((prev) => ({ ...prev, status: completedStatus }));
       setMessage(text);
       toast.success(text);
       navigate("/doctor/completion", {
         state: {
           message: data.message,
-          appointmentStatus: data.appointmentStatus,
+          appointmentStatus: completedStatus,
           appointmentId: appointment.appointmentId,
           patientName: appointment.patientName,
         },
@@ -642,6 +794,11 @@ function Prescription() {
         ))}
       </div>
 
+      <div className="rx-clinic-banner">
+        <span>Clinic Name</span>
+        <strong>{hospitalName}</strong>
+      </div>
+
       {error ? <div className="rx-inline-error">{error}</div> : null}
       {message ? <div className="rx-inline-success">{message}</div> : null}
 
@@ -649,26 +806,25 @@ function Prescription() {
         <div className="rx-form-panel">
           <div className="rx-field">
             <label className="rx-label">Diagnosis *</label>
-            <input
+            <select
               className="rx-input"
-              list="prescription-diagnosis-options"
               value={diagnosis}
               onChange={(event) => {
                 setDiagnosis(event.target.value);
                 setFieldErrors((prev) => ({ ...prev, diagnosis: "" }));
                 setError("");
               }}
-              placeholder="Diagnosis from consultation"
-              autoComplete="off"
-            />
+            >
+              <option value="">Select diagnosis</option>
+              {diagnosisSelectOptions.map((item) => (
+                <option value={item} key={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
             {fieldErrors.diagnosis ? (
               <small className="rx-field-error">{fieldErrors.diagnosis}</small>
             ) : null}
-            <datalist id="prescription-diagnosis-options">
-              {diagnosisOptions.map((item) => (
-                <option value={item} key={item} />
-              ))}
-            </datalist>
           </div>
 
           <div className="rx-field">
@@ -702,6 +858,7 @@ function Prescription() {
             <div className="rx-thead">
               <span>Medicine</span>
               <span>Dosage</span>
+              <span>Quantity</span>
               <span>Frequency</span>
               <span>Duration</span>
               <span>Notes</span>
@@ -709,30 +866,59 @@ function Prescription() {
             </div>
             {medicines.map((medicine) => (
               <div className="rx-row" key={medicine.id}>
-                <input
+                <select
                   className="rx-cell-input rx-med-name"
                   value={medicine.medicineName}
                   onChange={(event) =>
                     updateMedicine(medicine.id, "medicineName", event.target.value)
                   }
-                  placeholder="Medicine name"
-                />
-                <input
+                >
+                  <option value="">Select medicine</option>
+                  {medicineSelectOptions.map((option) => (
+                    <option value={option} key={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                <select
                   className="rx-cell-input"
                   value={medicine.dosage}
                   onChange={(event) =>
                     updateMedicine(medicine.id, "dosage", event.target.value)
                   }
-                  placeholder="1 Tablet"
-                />
+                >
+                  <option value="">Dosage</option>
+                  {DOSAGE_OPTIONS.map((option) => (
+                    <option value={option} key={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
                 <input
+                  className="rx-cell-input"
+                  type="number"
+                  min="1"
+                  inputMode="numeric"
+                  value={medicine.quantity}
+                  onChange={(event) =>
+                    updateMedicine(medicine.id, "quantity", event.target.value)
+                  }
+                  placeholder="Qty"
+                />
+                <select
                   className="rx-cell-input rx-freq"
                   value={medicine.frequency}
                   onChange={(event) =>
                     updateMedicine(medicine.id, "frequency", event.target.value)
                   }
-                  placeholder="Twice Daily"
-                />
+                >
+                  <option value="">Frequency</option>
+                  {FREQUENCY_OPTIONS.map((option) => (
+                    <option value={option} key={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
                 <input
                   className="rx-cell-input"
                   value={medicine.duration}
@@ -741,14 +927,20 @@ function Prescription() {
                   }
                   placeholder="5 Days"
                 />
-                <input
+                <select
                   className="rx-cell-input"
                   value={medicine.notes}
                   onChange={(event) =>
                     updateMedicine(medicine.id, "notes", event.target.value)
                   }
-                  placeholder="After food"
-                />
+                >
+                  <option value="">Notes</option>
+                  {NOTE_OPTIONS.map((option) => (
+                    <option value={option} key={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
                 <span>
                   <button
                     className="rx-del-btn"
@@ -768,12 +960,20 @@ function Prescription() {
 
           <div className="rx-field">
             <label className="rx-label">Instructions</label>
-            <textarea
-              className="rx-textarea"
+            <select
+              className="rx-input"
               value={instructions}
               onChange={(event) => setInstructions(event.target.value)}
-              rows={3}
-            />
+            >
+              {INSTRUCTION_OPTIONS.map((option) => (
+                <option value={option} key={option}>
+                  {option}
+                </option>
+              ))}
+              {instructions && !INSTRUCTION_OPTIONS.includes(instructions) ? (
+                <option value={instructions}>{instructions}</option>
+              ) : null}
+            </select>
           </div>
 
           <div className="rx-field rx-field--half">
@@ -845,7 +1045,7 @@ function Prescription() {
                 {appointment?.gender || emptyValue}
               </p>
               <p>
-                <b>Date:</b> {toDateInput(appointment?.date) || new Date().toISOString().slice(0, 10)}
+                <b>Date:</b> {formatDateMMDDYYYY(appointment?.date || new Date())}
               </p>
             </div>
             <table className="rx-slip-table">
@@ -853,6 +1053,7 @@ function Prescription() {
                 <tr>
                   <th>Medicines</th>
                   <th>Dosage</th>
+                  <th>Qty</th>
                   <th>Frequency</th>
                   <th>Duration</th>
                 </tr>
@@ -862,6 +1063,7 @@ function Prescription() {
                   <tr key={`${medicine.medicineName}-${index}`}>
                     <td>{medicine.medicineName || emptyValue}</td>
                     <td>{medicine.dosage || emptyValue}</td>
+                    <td>{medicine.quantity || emptyValue}</td>
                     <td>{medicine.frequency || emptyValue}</td>
                     <td>{medicine.duration || emptyValue}</td>
                   </tr>
@@ -872,7 +1074,7 @@ function Prescription() {
               <i>{instructions || "No instructions added."}</i>
             </p>
             <p className="rx-slip-followup">
-              Follow-Up Date: {followUp || emptyValue}
+              Follow-Up Date: {formatDateMMDDYYYY(followUp, emptyValue)}
             </p>
             <div className="rx-slip-signature">
               <p>

@@ -7,7 +7,6 @@ import {
   Trash2,
   Calendar,
   X,
-  Camera,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AuthImage, {
@@ -29,10 +28,6 @@ import {
 } from "../../utils/validation";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { formatIndianCurrency } from "../../utils/format";
-import {
-  hasAdminPermission,
-  requireAdminPermission,
-} from "../../utils/adminPermissions";
 
 const DOCTORS_API_URL =
   apiUrl("Doctor");
@@ -167,7 +162,7 @@ const validateEditForm = (form) => {
     integer: true,
   });
   errors.fees = validateNumeric(form.fees, "Fees");
-  errors.email = validateGmail(form.email);
+  errors.email = validateGmail(form.email, 'Email', { strict: false });
   errors.phone = validateMobile(form.phone, "Phone");
   errors.password = validateStrongPassword(form.password, "Password", {
     required: false,
@@ -227,14 +222,6 @@ function Doctors() {
   const navigate = useNavigate();
   const toast = useToast();
   const editImageInputRef = useRef(null);
-  const canCreate = hasAdminPermission("Create");
-  const canEdit = hasAdminPermission("Edit");
-  const canDelete = hasAdminPermission("Delete");
-  const denyPermission = (message) => {
-    setError(message);
-    toast.error(message);
-  };
-
   const [searchText, setSearchText] = useState("");
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -252,9 +239,9 @@ function Doctors() {
 
   const [toggleLoadingId, setToggleLoadingId] = useState(null);
   const [deleteLoadingId, setDeleteLoadingId] = useState(null);
+  const clinicName = getClinicDisplayName({}, "Clinic");
 
   const openAddDoctor = () => {
-    if (!requireAdminPermission("Create", denyPermission)) return;
     navigate("/doctors/add");
   };
 
@@ -394,7 +381,6 @@ function Doctors() {
 
   const openEditDoctor = (doctor) => {
     if (!doctor?.id) return;
-    if (!requireAdminPermission("Edit", denyPermission)) return;
 
     if (editImagePreview.startsWith("blob:")) {
       URL.revokeObjectURL(editImagePreview);
@@ -488,10 +474,6 @@ function Doctors() {
     event.preventDefault();
 
     if (!editingDoctor?.id) return;
-    if (!requireAdminPermission("Edit", (message) => {
-      setEditError(message);
-      toast.error(message);
-    })) return;
 
     const validationErrors = {
       ...validateEditForm(editForm),
@@ -521,7 +503,6 @@ function Doctors() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify(requestBody),
       });
@@ -548,7 +529,6 @@ function Doctors() {
 
   const handleToggleDoctorStatus = async (doctor) => {
     if (!doctor?.id) return;
-    if (!requireAdminPermission("Edit", denyPermission)) return;
 
     const nextIsActive = !getDoctorIsActive(doctor);
 
@@ -595,7 +575,6 @@ function Doctors() {
 
   const handleDeleteDoctor = async (doctorId) => {
     if (!doctorId) return;
-    if (!requireAdminPermission("Delete", denyPermission)) return;
 
     const shouldDelete = window.confirm("Delete this doctor?");
     if (!shouldDelete) return;
@@ -648,8 +627,7 @@ function Doctors() {
           <button
             className="doctors-btn doctors-btn-light"
             onClick={() => navigate("/doctors/schedule")}
-            disabled={!canEdit}
-            title={canEdit ? "Manage schedule" : "Edit permission required"}
+            title="Manage schedule"
           >
             <Calendar size={16} /> Manage Schedule
           </button>
@@ -657,12 +635,16 @@ function Doctors() {
           <button
             className="doctors-btn doctors-btn-primary"
             onClick={openAddDoctor}
-            disabled={!canCreate}
-            title={canCreate ? "Add doctor" : "Create permission required"}
+            title="Add doctor"
           >
             <Plus size={16} /> Add Doctor
           </button>
         </div>
+      </div>
+
+      <div className="doctors-clinic-banner">
+        <span>Clinic Name</span>
+        <strong>{clinicName}</strong>
       </div>
 
       <div className="doctors-search-bar">
@@ -682,7 +664,7 @@ function Doctors() {
           <span>Name</span>
           <span>Specialization</span>
           <span>Experience</span>
-          <span>Fees</span>
+          <span className="doctors-fee-heading">Doctor Fees</span>
           <span>Contact</span>
           <span>Status</span>
           <span>Available Time</span>
@@ -758,8 +740,8 @@ function Doctors() {
                   type="button"
                   className="doctors-status-button"
                   onClick={() => handleToggleDoctorStatus(doc)}
-                  disabled={!canEdit || !doc.id || isStatusUpdating || isDeleting}
-                  title={canEdit ? "Toggle status" : "Edit permission required"}
+                  disabled={!doc.id || isStatusUpdating || isDeleting}
+                  title="Toggle status"
                 >
                   <span
                     className={`doctors-status ${isActive ? "doctors-status-active" : "doctors-status-inactive"
@@ -783,8 +765,8 @@ function Doctors() {
                   type="button"
                   className="doctors-action-icon"
                   onClick={() => openEditDoctor(doc)}
-                  disabled={!canEdit || !doc.id || isDeleting}
-                  title={canEdit ? "Edit doctor" : "Edit permission required"}
+                  disabled={!doc.id || isDeleting}
+                  title="Edit doctor"
                 >
                   <Pencil size={14} />
                 </button>
@@ -793,8 +775,8 @@ function Doctors() {
                   type="button"
                   className="doctors-action-icon doctors-action-icon-delete"
                   onClick={() => handleDeleteDoctor(doc.id)}
-                  disabled={!canDelete || !doc.id || isDeleting || isStatusUpdating}
-                  title={canDelete ? "Delete doctor" : "Delete permission required"}
+                  disabled={!doc.id || isDeleting || isStatusUpdating}
+                  title="Delete doctor"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -838,23 +820,7 @@ function Doctors() {
                       display: "flex",
                     }}
                   />
-                  <button
-                    type="button"
-                    className="doctor-edit-image-btn"
-                    onClick={() => editImageInputRef.current?.click()}
-                    aria-label="Upload doctor image"
-                  >
-                    <Camera size={14} />
-                  </button>
                 </div>
-                <input
-                  ref={editImageInputRef}
-                  type="file"
-                  name="Image"
-                  accept="image/*"
-                  className="doctor-edit-image-input"
-                  onChange={handleEditImageChange}
-                />
               </div>
 
               <div className="doctor-edit-grid">
@@ -912,7 +878,7 @@ function Doctors() {
                 </div>
 
                 <div className="doctor-edit-field">
-                  <label htmlFor="edit-fees">Fees</label>
+                  <label htmlFor="edit-fees">Doctor Fees</label>
                   <input
                     id="edit-fees"
                     name="fees"
@@ -921,7 +887,7 @@ function Doctors() {
                     step="0.01"
                     value={editForm.fees}
                     onChange={handleEditFieldChange}
-                    className={editFieldErrors.fees ? "is-invalid" : ""}
+                    className={`doctor-edit-fee-input${editFieldErrors.fees ? " is-invalid" : ""}`}
                     aria-invalid={Boolean(editFieldErrors.fees)}
                   />
                   {editFieldErrors.fees ? (
@@ -1030,7 +996,7 @@ function Doctors() {
                 <button
                   type="submit"
                   className="doctor-edit-save"
-                  disabled={savingEdit || !canEdit}
+                  disabled={savingEdit}
                 >
                   {savingEdit ? "Saving..." : "Save Changes"}
                 </button>

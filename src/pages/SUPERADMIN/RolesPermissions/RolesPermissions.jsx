@@ -9,10 +9,10 @@ import {
   fetchRole,
   fetchRoles,
   fetchUsers,
-  persistRoleOverride,
   saveRole,
   updateRolePermissions,
 } from "../superAdminApi";
+import { onlyAlpha, validateAlpha } from "../../../utils/validation";
 
 const permissionOptions = ["View", "Create", "Edit", "Delete"];
 const DEFAULT_SYSTEM_ROLES = ["Admin", "Doctor", "Patient", "Receptionist"];
@@ -36,20 +36,6 @@ const getRoleKey = (role = {}) => role.id || role.key || role.roleName || role.n
 
 const isAdminRole = (role = {}) =>
   String(role.roleName || role.name || "").trim().toLowerCase() === "admin";
-
-const persistAdminRolePermissions = (role = {}) => {
-  if (!isAdminRole(role)) return;
-
-  const permissions = withViewPermission(role.permissions);
-  const normalizedRole = {
-    ...role,
-    name: "admin",
-    roleName: "admin",
-    permissions,
-  };
-
-  persistRoleOverride(normalizedRole, { permissions, permissionsSynced: true });
-};
 
 function RolesPermissions() {
   const [showForm, setShowForm] = useState(false);
@@ -114,7 +100,6 @@ function RolesPermissions() {
 
     if (rolesResult.status === "fulfilled") {
       const loadedRoles = rolesResult.value;
-      loadedRoles.forEach(persistAdminRolePermissions);
       setRoles(loadedRoles);
     } else {
       setRoles([]);
@@ -198,7 +183,10 @@ function RolesPermissions() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
+    const nextValue = ["name", "roleName", "module"].includes(name)
+      ? onlyAlpha(value)
+      : value;
+    setForm((current) => ({ ...current, [name]: nextValue }));
   };
 
   const handlePermissionChange = (permission) => {
@@ -216,13 +204,15 @@ function RolesPermissions() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!form.name.trim() && !form.roleName.trim()) {
-      setError("Role name is required.");
+    const roleNameError = validateAlpha(form.roleName || form.name, "Role name");
+    if (roleNameError) {
+      setError(roleNameError);
       return;
     }
 
-    if (!form.module.trim()) {
-      setError("Module is required.");
+    const moduleError = validateAlpha(form.module, "Module");
+    if (moduleError) {
+      setError(moduleError);
       return;
     }
 
@@ -289,14 +279,9 @@ function RolesPermissions() {
         getRoleKey(item) === roleKey ? { ...item, permissions: nextPermissions } : item
       )
     );
-    persistAdminRolePermissions({ ...role, permissions: nextPermissions });
-
     if (role.canPersistPermissions === false || !role.id) {
-      persistRoleOverride(role, {
-        permissions: nextPermissions,
-        permissionsSynced: true,
-      });
       setUpdatingPermission("");
+      setError("Backend role id is unavailable, so permissions cannot sync to other systems.");
       return;
     }
 
@@ -307,10 +292,6 @@ function RolesPermissions() {
       });
       await loadRoles();
     } catch (requestError) {
-      persistRoleOverride(role, {
-        permissions: nextPermissions,
-        permissionsSynced: true,
-      });
       setError(requestError.message || "Unable to update permissions.");
       setRoles((currentRoles) =>
         currentRoles.map((item) =>

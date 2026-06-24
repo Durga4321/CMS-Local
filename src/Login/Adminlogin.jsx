@@ -4,6 +4,7 @@ import clinicBg from '../assests/clinic-bg.jpg';
 import './styles/Auth.css';
 import { apiUrl } from '../config/api';
 import { recordAuditLog } from '../pages/SUPERADMIN/superAdminApi';
+import { fetchAndStoreRolePermissions } from '../utils/authorization';
 import { useToast } from '../components/ToastProvider';
 import { validateGmail } from '../utils/validation';
 
@@ -218,7 +219,7 @@ const clearStoredSession = () => {
     'doctorName',
     'hospitalId',
     'hospitalName',
-    'adminPermissions',
+    'superadmin_role_overrides',
   ].forEach((key) => localStorage.removeItem(key));
 };
 
@@ -260,7 +261,7 @@ const AdminLogin = () => {
 
   const validate = () => {
     const newErrors = {};
-    const emailError = validateGmail(email, 'Email ID');
+    const emailError = validateGmail(email, 'Email ID', { strict: false });
     if (emailError) newErrors.email = emailError;
 
     if (!password) {
@@ -375,7 +376,6 @@ const AdminLogin = () => {
       clearStoredSession();
       localStorage.setItem('token', token);
       localStorage.setItem('userRole', role);
-      localStorage.removeItem('adminPermissions');
       localStorage.setItem('hospitalId', String(hospitalId));
       localStorage.setItem('hospitalName', clinicName);
       localStorage.setItem('clinicName', clinicName);
@@ -392,6 +392,9 @@ const AdminLogin = () => {
         localStorage.setItem('adminRole', 'superadmin');
         localStorage.setItem('adminEmail', loginEmail);
         localStorage.setItem('adminName', displayName);
+        try {
+          await fetchAndStoreRolePermissions('superadmin');
+        } catch {}
         toast.success('Login successful');
         navigate('/superadmin/dashboard', { replace: true });
         return;
@@ -422,6 +425,9 @@ const AdminLogin = () => {
       localStorage.setItem('adminRole', role);
       localStorage.setItem('adminEmail', loginEmail);
       localStorage.setItem('adminName', displayName);
+      try {
+        await fetchAndStoreRolePermissions(role);
+      } catch {}
       toast.success('Login successful');
       navigate('/dashboard', { replace: true });
     } catch {

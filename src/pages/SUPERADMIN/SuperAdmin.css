@@ -177,9 +177,28 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
+  width: 100%;
   padding: 12px;
   border: 1px solid #eef2f7;
   border-radius: 8px;
+}
+
+.sa-notification-item {
+  background: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.sa-notification-item:hover,
+.sa-notification-item:focus-visible {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+  outline: 0;
+}
+
+.sa-notification-item > div {
+  min-width: 0;
 }
 
 .sa-activity-item span {
@@ -201,6 +220,61 @@
   color: #64748b;
   font-size: 12px;
   line-height: 1.4;
+}
+
+.sa-notification-item p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.sa-notification-detail {
+  margin-bottom: 12px;
+  padding: 16px;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.sa-notification-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.sa-notification-detail-header b {
+  display: block;
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.sa-notification-detail-header span {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.sa-notification-close {
+  border: 0;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 6px;
+}
+
+.sa-notification-detail p {
+  margin: 0;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .sa-empty-state {

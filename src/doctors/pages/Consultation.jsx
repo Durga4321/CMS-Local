@@ -11,6 +11,7 @@ import {
   fetchDiagnosisOptions,
   mergeDiagnosisOption,
 } from "../utils/diagnosisOptions";
+import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 
 const STEPS = [
   "Waiting",
@@ -46,19 +47,7 @@ const getInitials = (name) =>
     .slice(0, 2)
     .toUpperCase() || "P";
 
-const getDisplayDate = (value) => {
-  if (!value) return emptyValue;
-  if (!String(value).includes("T")) return value;
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-};
+const getDisplayDate = (value) => formatDateMMDDYYYY(value, emptyValue);
 
 const normalizeAppointment = (item, fallback = {}) => {
   if (!item) return null;

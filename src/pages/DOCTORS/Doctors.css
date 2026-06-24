@@ -25,6 +25,32 @@
   color: #667085;
 }
 
+.doctors-clinic-banner {
+  margin: 16px 0 14px;
+  border: 1px solid #99d4d9;
+  border-radius: 12px;
+  background: #e4f7f8;
+  color: #0f6f76;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.doctors-clinic-banner span {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.doctors-clinic-banner strong {
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 900;
+  text-align: right;
+}
+
 .doctors-header-actions {
   display: flex;
   gap: 12px;
@@ -195,6 +221,13 @@
 
 .doctors-fee {
   font-weight: 800;
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.doctors-fee-heading {
+  justify-content: flex-end;
+  text-align: right;
 }
 
 .doctors-contact-cell {
@@ -437,6 +470,11 @@
 .doctor-edit-field select.is-invalid {
   border-color: #dc2626;
   background: #fffafa;
+}
+
+.doctor-edit-field .doctor-edit-fee-input {
+  text-align: right;
+  font-weight: 800;
 }
 
 .doctor-edit-field-error {

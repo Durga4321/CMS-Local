@@ -7,6 +7,11 @@ import {
   updatePaymentSettings,
   updateSmsSettings,
 } from "../superAdminApi";
+import {
+  validateEmailCom,
+  validateNumeric,
+  validateText,
+} from "../../../utils/validation";
 
 const tabs = ["General Settings", "Email Settings", "SMS Settings", "Payment Settings"];
 
@@ -66,6 +71,12 @@ const defaultSettings = {
 
 const timezones = ["Asia/Kolkata", "UTC", "Asia/Dubai", "Europe/London", "America/New_York"];
 const currencies = ["INR", "USD", "AED", "EUR", "GBP"];
+const humanReadableSettingsFields = new Set([
+  "appName",
+  "name",
+  "provider",
+  "notes",
+]);
 
 const fieldsBySection = {
   general: [
@@ -162,12 +173,46 @@ function Settings() {
 
   const handleSave = async (event) => {
     event.preventDefault();
-    const requiredField = fieldsBySection[activeSection].find(
-      (field) => field.required && !String(activeSettings[field.name] || "").trim()
-    );
+    const requiredField = fieldsBySection[activeSection].find((field) => {
+      if (!field.required) return false;
+      return !String(activeSettings[field.name] || "").trim();
+    });
 
     if (requiredField) {
       setError(`${requiredField.label} is required.`);
+      setSuccess("");
+      return;
+    }
+
+    const textField = fieldsBySection[activeSection].find((field) => {
+      if (field.type === "select" || field.type === "password" || !activeSettings[field.name]) {
+        return false;
+      }
+
+      if (field.type === "email") {
+        return Boolean(validateEmailCom(activeSettings[field.name], field.label));
+      }
+
+      if (field.type === "number") {
+        return Boolean(validateNumeric(activeSettings[field.name], field.label));
+      }
+
+      if (!humanReadableSettingsFields.has(field.name)) return false;
+
+      return Boolean(validateText(activeSettings[field.name], field.label));
+    });
+
+    if (textField) {
+      const value = activeSettings[textField.name];
+      const message =
+        textField.type === "email"
+          ? validateEmailCom(value, textField.label)
+          : textField.type === "number"
+            ? validateNumeric(value, textField.label)
+            : humanReadableSettingsFields.has(textField.name)
+              ? validateText(value, textField.label)
+              : "";
+      setError(message);
       setSuccess("");
       return;
     }

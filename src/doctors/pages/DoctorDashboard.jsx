@@ -163,6 +163,7 @@ function DoctorDashboard() {
   const [search, setSearch] = useState("");
   const [notes, setNotes] = useState(null);
   const [notesLoading, setNotesLoading] = useState(false);
+  const [patientOverview, setPatientOverview] = useState(null);
 
   const fetchDashboard = useCallback(async ({ silent = false } = {}) => {
     try {
@@ -279,7 +280,11 @@ function DoctorDashboard() {
 
   const openPatient = (patient) => {
     if (!patient.patientId) return;
+    setPatientOverview(patient);
+  };
 
+  const openFullPatientDetails = (patient) => {
+    if (!patient?.patientId) return;
     navigate(`/doctor/patient-details/${patient.patientId}`, {
       state: {
         patient: patient.raw,
@@ -487,6 +492,52 @@ function DoctorDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      ) : null}
+
+      {patientOverview ? (
+        <div className="dd-notes-backdrop" onClick={() => setPatientOverview(null)}>
+          <div className="dd-notes-modal dd-patient-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="dd-notes-head">
+              <div>
+                <h3>Patient Overview</h3>
+                <p>{patientOverview.patientName} | Appointment #{patientOverview.appointmentId}</p>
+              </div>
+              <button type="button" onClick={() => setPatientOverview(null)} aria-label="Close patient overview">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="dd-notes-grid">
+              <div>
+                <span>Token</span>
+                <strong>{patientOverview.tokenNumber || "-"}</strong>
+              </div>
+              <div>
+                <span>Age / Gender</span>
+                <strong>{patientOverview.ageGender || "-"}</strong>
+              </div>
+              <div>
+                <span>Time</span>
+                <strong>{patientOverview.time || "-"}</strong>
+              </div>
+              <div>
+                <span>Status</span>
+                <strong>{patientOverview.status || "-"}</strong>
+              </div>
+              <div className="dd-notes-wide">
+                <span>Complaints</span>
+                <strong>{patientOverview.raw?.chiefComplaints || patientOverview.raw?.complaint || "-"}</strong>
+              </div>
+            </div>
+            <div className="dd-modal-actions">
+              <button type="button" className="dd-refresh-btn" onClick={() => openFullPatientDetails(patientOverview)}>
+                Open Full Details
+              </button>
+              <button type="button" className="dd-refresh-btn" onClick={() => startConsultation(patientOverview)}>
+                Start Consultation
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

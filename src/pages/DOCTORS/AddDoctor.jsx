@@ -215,15 +215,11 @@
 
 import React, { useEffect, useState } from "react";
 import "./Modal.css";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
-import {
-  ADMIN_PERMISSION_DENIED_MESSAGE,
-  hasAdminPermission,
-  requireAdminPermission,
-} from "../../utils/adminPermissions";
+import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import {
   onlyAlpha,
   onlyIndianMobileValue,
@@ -350,7 +346,7 @@ const uniqueByValue = (options) => {
 function AddDoctor() {
   const navigate = useNavigate();
   const toast = useToast();
-  const canCreate = hasAdminPermission("Create");
+  const clinicName = getClinicDisplayName({}, "Clinic");
 
   const [form, setForm] = useState({
     name: "",
@@ -498,7 +494,7 @@ function AddDoctor() {
         max: 99,
       }),
       fees: validateNumeric(form.fees, "Fees"),
-      email: validateGmail(form.email),
+      email: validateGmail(form.email, 'Email', { strict: false }),
       phone: validateMobile(form.phone, "Phone"),
     };
 
@@ -512,11 +508,6 @@ function AddDoctor() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
-    if (!requireAdminPermission("Create", setError)) {
-      toast.error(ADMIN_PERMISSION_DENIED_MESSAGE);
-      return;
-    }
 
     if (!validateForm()) {
       setError("Please fix the highlighted fields.");
@@ -543,7 +534,6 @@ function AddDoctor() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify(body),
       });
@@ -564,10 +554,6 @@ function AddDoctor() {
     }
   };
 
-  if (!canCreate) {
-    return <Navigate to="/doctors" replace />;
-  }
-
   return (
     <div className="add-doctor-page">
       <div className="add-doctor-card">
@@ -584,6 +570,11 @@ function AddDoctor() {
         <div className="add-doctor-header">
           <h2>Add Doctor</h2>
           <p>Enter doctor details below.</p>
+        </div>
+
+        <div className="add-doctor-clinic-banner">
+          <span>Clinic Name</span>
+          <strong>{clinicName}</strong>
         </div>
 
         <form className="add-doctor-form" onSubmit={handleSubmit} noValidate>
@@ -674,14 +665,14 @@ function AddDoctor() {
             </div>
 
             <div className="add-doctor-input-group">
-              <label>Consultation Fee</label>
+              <label>Doctor Fees</label>
               <input
                 name="fees"
                 type="text"
                 inputMode="decimal"
                 value={form.fees}
                 onChange={handleChange}
-                className={fieldErrors.fees ? "is-invalid" : ""}
+                className={`add-doctor-fee-input${fieldErrors.fees ? " is-invalid" : ""}`}
                 required
               />
               {fieldErrors.fees ? (

@@ -50,6 +50,7 @@ function Sidebar() {
   const profile = getRoleProfile("admin");
   const profileName = profile.name;
   const profileSub = isSuperAdmin ? "Super Admin" : getClinicDisplayName(profile, "Admin");
+  const brandName = isSuperAdmin ? "CMS" : getClinicDisplayName(profile, "CMS");
 
   return (
     <aside className="sidebar">
@@ -60,7 +61,7 @@ function Sidebar() {
           <HeartPulse size={18} />
         </div>
         <div>
-          <h3>CMS</h3>
+          <h3>{brandName}</h3>
           <span>{isSuperAdmin ? "Super Admin Console" : "Admin Console"}</span>
         </div>
       </div>

@@ -548,10 +548,6 @@ import {
 } from "lucide-react";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
-import {
-  hasAdminPermission,
-  requireAdminPermission,
-} from "../../utils/adminPermissions";
 
 /* ================= API ================= */
 
@@ -562,7 +558,6 @@ const API =
 
 function Doctorschedulepage() {
   const toast = useToast();
-  const canEditSchedule = hasAdminPermission("Edit");
 
   /* SETTINGS */
 
@@ -697,10 +692,6 @@ function Doctorschedulepage() {
   /* ================= SAVE SETTINGS ================= */
 
   const saveSettings = async () => {
-    if (!requireAdminPermission("Edit", (message) => toast.error(message))) {
-      return;
-    }
-
     try {
 
       await fetch(API, {
@@ -743,10 +734,6 @@ function Doctorschedulepage() {
   /* ================= ADD HOLIDAY ================= */
 
   const addHoliday = async () => {
-    if (!requireAdminPermission("Create", (message) => toast.error(message))) {
-      return;
-    }
-
     if (
       !newHoliday.name ||
       !newHoliday.date
@@ -798,10 +785,6 @@ function Doctorschedulepage() {
   const editHoliday = (
     holiday
   ) => {
-    if (!requireAdminPermission("Edit", (message) => toast.error(message))) {
-      return;
-    }
-
     setEditingId(
       holiday.id
     );
@@ -816,10 +799,6 @@ function Doctorschedulepage() {
 
   const updateHoliday =
     async () => {
-      if (!requireAdminPermission("Edit", (message) => toast.error(message))) {
-        return;
-      }
-
       try {
 
         await fetch(
@@ -865,10 +844,6 @@ function Doctorschedulepage() {
 
   const removeHoliday =
     async (id) => {
-      if (!requireAdminPermission("Delete", (message) => toast.error(message))) {
-        return;
-      }
-
       try {
 
         await fetch(
@@ -893,8 +868,6 @@ function Doctorschedulepage() {
     };
 
   return (
-    !canEditSchedule ? null :
-
     <div className="schedule-page">
 
       {/* HEADER */}

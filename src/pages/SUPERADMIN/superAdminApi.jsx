@@ -38,8 +38,6 @@ export const SUPER_ADMIN_API = {
 
 const LOCAL_NOTIFICATIONS_KEY = "superadmin_notifications";
 const LOCAL_AUDIT_LOGS_KEY = "superadmin_audit_logs";
-const LOCAL_ROLE_OVERRIDES_KEY = "superadmin_role_overrides";
-
 const readLocalList = (key) => {
   try {
     const value = JSON.parse(localStorage.getItem(key) || "[]");
@@ -59,6 +57,7 @@ const prependLocalItem = (key, item) => {
   return item;
 };
 
+<<<<<<< HEAD
 const readLocalRoleOverrides = () => {
   try {
     const value = JSON.parse(localStorage.getItem(LOCAL_ROLE_OVERRIDES_KEY) || "{}");
@@ -130,6 +129,8 @@ const deleteRoleOverride = (role = {}) => {
   writeLocalRoleOverrides(overrides);
 };
 
+=======
+>>>>>>> 3a773edca39851290fa99a2865bb9be81082f3f5
 const asArray = (value) => {
   if (Array.isArray(value)) return value;
   if (!value || typeof value !== "object") return [];
@@ -603,29 +604,78 @@ export const normalizeLoginLog = (log = {}, index = 0) => ({
   role: getAuditRole(log),
 });
 
+const normalizeNotificationTarget = (target = "") => {
+  const value = String(target || "All Active Users").trim();
+  const normalized = value.toLowerCase();
+
+  if (normalized.includes("admin")) return "Active Admins";
+  return "All Active Users";
+};
+
+const getNotificationTarget = (notification = {}) => {
+  const targetValues = [
+    notification.targetUsers,
+    notification.audience,
+    notification.target,
+    notification.recipient,
+    notification.targetAudience,
+    notification.userType,
+    notification.role,
+    notification.targetRole,
+    notification.recipientType,
+    notification.sendTo,
+  ].filter(hasValue);
+
+  if (targetValues.some((value) => String(value).toLowerCase().includes("admin"))) {
+    return "Active Admins";
+  }
+
+  return normalizeNotificationTarget(targetValues[0] || "All Active Users");
+};
+
 export const normalizeNotification = (notification = {}) => ({
   id: pick(notification, ["id", "notificationId", "_id"]),
   title: pick(notification, ["title", "subject"], "Notification"),
   message: pick(notification, ["message", "body", "description"]),
-  targetUsers: pick(notification, ["targetUsers", "audience", "target", "recipient"], "All Active Users"),
+  targetUsers: getNotificationTarget(notification),
   status: normalizeNotificationStatus(notification),
   createdAt: pick(notification, ["createdAt", "createdOn", "date", "timestamp"], ""),
 });
 
-const buildNotificationPayload = (notification = {}) => ({
-  title: String(pick(notification, ["title", "subject"], "")).trim(),
-  message: String(pick(notification, ["message", "body", "description"], "")).trim(),
-  targetUsers: String(pick(notification, ["targetUsers", "audience", "target", "recipient"], "All Active Users")).trim(),
-});
+const getNotificationAudienceCode = (target = "") =>
+  normalizeNotificationTarget(target) === "Active Admins" ? "admins" : "all";
+
+const buildNotificationPayload = (notification = {}) => {
+  const targetUsers = normalizeNotificationTarget(
+    pick(
+      notification,
+      ["targetUsers", "audience", "target", "recipient", "targetAudience", "userType", "role"],
+      "All Active Users"
+    )
+  );
+  const audienceCode = getNotificationAudienceCode(targetUsers);
+
+  return {
+    title: String(pick(notification, ["title", "subject"], "")).trim(),
+    message: String(pick(notification, ["message", "body", "description"], "")).trim(),
+    targetUsers,
+    audience: targetUsers,
+    target: targetUsers,
+    recipient: targetUsers,
+    targetAudience: audienceCode,
+    targetRole: audienceCode,
+    targetType: audienceCode,
+    recipientType: audienceCode,
+    sendTo: audienceCode,
+    userType: audienceCode,
+    role: audienceCode,
+  };
+};
 
 const getNotificationIdentity = (notification = {}) => {
-  const id = String(notification.id || "").trim();
-  if (id && !id.startsWith("local-notification-")) return `id:${id}`;
-
   return [
     notification.title,
     notification.message,
-    notification.targetUsers,
   ]
     .map((value) => String(value || "").trim().toLowerCase())
     .join("|");
@@ -813,7 +863,9 @@ const getBillingDate = (item = {}) =>
   pick(item, ["createdAt", "paidAt", "paymentDate", "invoiceDate", "date", "appointmentDate"], "");
 
 const getMonthLabel = (value) => {
-  const date = value ? new Date(value) : new Date();
+  const text = String(value || "").trim();
+  const monthOnlyMatch = text.match(/^(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*$/i);
+  const date = monthOnlyMatch ? new Date(`${text} 1, ${new Date().getFullYear()}`) : value ? new Date(value) : new Date();
   if (Number.isNaN(date.getTime())) return "Unknown";
   return date.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
 };
@@ -1228,19 +1280,30 @@ export const normalizeRole = (role = {}, index = 0) => {
     };
   }
 
+  const formatPermission = (permission = "") => {
+    const value = String(permission || "").trim().toLowerCase();
+
+    if (value === "view") return "View";
+    if (value === "create") return "Create";
+    if (value === "edit") return "Edit";
+    if (value === "delete") return "Delete";
+    return "";
+  };
   const permissions = pick(role, ["permissions", "permissionNames", "claims"], []);
   const normalizedPermissions = Array.isArray(permissions)
     ? permissions.map((permission) =>
-        typeof permission === "string"
-          ? permission
-          : pick(permission, ["name", "permission", "claimValue", "value"])
+        formatPermission(
+          typeof permission === "string"
+            ? permission
+            : pick(permission, ["name", "permission", "claimValue", "value"])
+        )
       )
     : [];
   const booleanPermissions = [
-    pick(role, ["canView"], false) ? "View" : "",
-    pick(role, ["canCreate"], false) ? "Create" : "",
-    pick(role, ["canEdit"], false) ? "Edit" : "",
-    pick(role, ["canDelete"], false) ? "Delete" : "",
+    pick(role, ["canView", "CanView"], false) ? "View" : "",
+    pick(role, ["canCreate", "CanCreate"], false) ? "Create" : "",
+    pick(role, ["canEdit", "CanEdit"], false) ? "Edit" : "",
+    pick(role, ["canDelete", "CanDelete"], false) ? "Delete" : "",
   ].filter(Boolean);
 
   const id = pick(role, ["id", "roleId", "_id"], "");
@@ -1265,17 +1328,30 @@ export const normalizeRole = (role = {}, index = 0) => {
 
 const buildRolePayload = (role = {}) => {
   const permissions = Array.isArray(role.permissions) ? role.permissions : [];
+  const canView = permissions.includes("View") || pick(role, ["canView", "CanView"], false) === true;
+  const canCreate = permissions.includes("Create") || pick(role, ["canCreate", "CanCreate"], false) === true;
+  const canEdit = permissions.includes("Edit") || pick(role, ["canEdit", "CanEdit"], false) === true;
+  const canDelete = permissions.includes("Delete") || pick(role, ["canDelete", "CanDelete"], false) === true;
   const roleName = String(pick(role, ["roleName", "name"], "")).trim();
   const module = String(pick(role, ["module"], "")).trim();
 
   return {
     roleName: roleName || "Role",
+    name: roleName || "Role",
     module: module || "General",
+    moduleName: module || "General",
     status: String(pick(role, ["status"], "Active") || "Active"),
-    canView: permissions.includes("View") || pick(role, ["canView"], false) === true,
-    canCreate: permissions.includes("Create") || pick(role, ["canCreate"], false) === true,
-    canEdit: permissions.includes("Edit") || pick(role, ["canEdit"], false) === true,
-    canDelete: permissions.includes("Delete") || pick(role, ["canDelete"], false) === true,
+    permissions,
+    permissionNames: permissions,
+    claims: permissions,
+    canView,
+    canCreate,
+    canEdit,
+    canDelete,
+    CanView: canView,
+    CanCreate: canCreate,
+    CanEdit: canEdit,
+    CanDelete: canDelete,
   };
 };
 
@@ -1651,7 +1727,7 @@ export const fetchNotifications = async () => {
       await superAdminRequest(SUPER_ADMIN_API.notifications)
     ).map(normalizeNotification);
 
-    return mergeNotificationRecords([...localNotifications, ...remoteNotifications]);
+    return mergeNotificationRecords([...remoteNotifications, ...localNotifications]);
   } catch (error) {
     if (localNotifications.length) return localNotifications;
     throw error;
@@ -1659,9 +1735,11 @@ export const fetchNotifications = async () => {
 };
 
 export const fetchNotificationTargetOptions = async () => {
-  const [adminsResult, usersResult] = await Promise.allSettled([
+  const [adminsResult, usersResult, doctorsResult, receptionistsResult] = await Promise.allSettled([
     superAdminRequest(SUPER_ADMIN_API.admins),
     superAdminRequest(SUPER_ADMIN_API.users),
+    superAdminRequest("Doctor"),
+    superAdminRequest("Receptionist"),
   ]);
 
   const counts = {
@@ -1673,13 +1751,23 @@ export const fetchNotificationTargetOptions = async () => {
       usersResult.status === "fulfilled"
         ? asArray(usersResult.value).filter(isActiveRecord).length
         : 0,
+    doctors:
+      doctorsResult.status === "fulfilled"
+        ? asArray(doctorsResult.value).filter(isActiveRecord).length
+        : 0,
+    receptionists:
+      receptionistsResult.status === "fulfilled"
+        ? asArray(receptionistsResult.value).filter(isActiveRecord).length
+        : 0,
   };
+  const allActiveUsersCount =
+    counts.admins + counts.users + counts.doctors + counts.receptionists;
 
   const options = [
     {
       value: "All Active Users",
       label: "All Active Users",
-      count: counts.users,
+      count: allActiveUsersCount,
     },
     { value: "Active Admins", label: "Active Admins", count: counts.admins },
   ];
@@ -1702,8 +1790,8 @@ export const createNotification = async (notification) => {
   );
   const resultObject = asObject(result);
   const savedNotification = normalizeNotification({
-    ...payload,
     ...resultObject,
+    ...payload,
     id: pick(resultObject, ["id", "notificationId", "_id"], `local-notification-${Date.now()}`),
     status,
     createdAt,
@@ -1887,14 +1975,12 @@ export const fetchAuditLogs = async () => {
 export const fetchRoles = async () => {
   try {
     return asArray(await superAdminRequest(SUPER_ADMIN_API.roles))
-      .map(normalizeRole)
-      .map(applyRoleOverrides);
+      .map(normalizeRole);
   } catch (error) {
     const fallbackRoles = asArray(
       await superAdminRequest(SUPER_ADMIN_API.roleNames)
     )
-      .map(normalizeRole)
-      .map(applyRoleOverrides);
+      .map(normalizeRole);
 
     return fallbackRoles;
   }
@@ -1906,14 +1992,14 @@ export const fetchRoleNames = async () =>
   );
 
 export const fetchRole = async (id) =>
-  applyRoleOverrides(normalizeRole(await superAdminRequest(`${SUPER_ADMIN_API.roles}/${id}`)));
+  normalizeRole(await superAdminRequest(`${SUPER_ADMIN_API.roles}/${id}`));
 
 export const saveRole = async (role, id) => {
   const result = await superAdminRequest(id ? `${SUPER_ADMIN_API.roles}/${id}` : SUPER_ADMIN_API.roles, {
     method: id ? "PUT" : "POST",
     body: buildRolePayload(role),
   });
-  deleteRoleOverride(role);
+  localStorage.removeItem("superadmin_role_overrides");
   recordSuperAdminActivity(
     id ? "Updated role" : "Created role",
     "Roles & Permissions",
@@ -1928,17 +2014,19 @@ export const deleteRole = async (id) => {
   return result;
 };
 
-export const persistRoleOverride = (role, override) => {
-  saveRoleOverride(role, override);
-  return role;
-};
-
 export const updateRolePermissions = async (id, role) => {
-  const result = await superAdminRequest(`${SUPER_ADMIN_API.roles}/${id}/permissions`, {
-    method: "PUT",
-    body: buildRolePayload(role),
-  });
-  deleteRoleOverride(role);
+  const payload = buildRolePayload(role);
+  const result = await superAdminRequestFirst(
+    [
+      `${SUPER_ADMIN_API.roles}/${id}`,
+      `${SUPER_ADMIN_API.roles}/${id}/permissions`,
+    ],
+    {
+      method: "PUT",
+      body: payload,
+    }
+  );
+  localStorage.removeItem("superadmin_role_overrides");
   recordSuperAdminActivity("Updated role permissions", "Roles & Permissions", pick(role, ["roleName", "name"], `Role ID ${id}`));
   return result;
 };
