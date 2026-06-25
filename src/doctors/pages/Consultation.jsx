@@ -459,27 +459,9 @@ function Consultation() {
               className="cn-input"
               name="complaintsChoice"
               value={form.complaintsChoice}
-              readOnly
-              placeholder="No complaint entered by receptionist"
-            />
-          </div>
-
-          <div className="cn-field">
-            <label className="cn-label">Diagnosis *</label>
-            <input
-              className="cn-input"
-              name="diagnosis"
-              list="consultation-diagnosis-options"
-              value={form.diagnosis}
               onChange={handleChange}
-              placeholder="Enter diagnosis"
-              autoComplete="off"
+              placeholder="Enter chief complaints or symptoms"
             />
-            <datalist id="consultation-diagnosis-options">
-              {diagnosisOptions.map((diagnosis) => (
-                <option value={diagnosis} key={diagnosis} />
-              ))}
-            </datalist>
           </div>
 
           <div className="cn-vitals-grid">
@@ -513,6 +495,24 @@ function Consultation() {
               rows={3}
               placeholder="Enter clinical notes"
             />
+          </div>
+
+          <div className="cn-field">
+            <label className="cn-label">Diagnosis *</label>
+            <input
+              className="cn-input"
+              name="diagnosis"
+              list="consultation-diagnosis-options"
+              value={form.diagnosis}
+              onChange={handleChange}
+              placeholder="Enter diagnosis"
+              autoComplete="off"
+            />
+            <datalist id="consultation-diagnosis-options">
+              {diagnosisOptions.map((diagnosis) => (
+                <option value={diagnosis} key={diagnosis} />
+              ))}
+            </datalist>
           </div>
 
           <div className="cn-form-actions">

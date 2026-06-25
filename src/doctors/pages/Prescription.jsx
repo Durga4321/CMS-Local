@@ -293,6 +293,8 @@ function Prescription() {
   const [diagnosisOptions, setDiagnosisOptions] = useState([]);
   const [medicineSearch, setMedicineSearch] = useState("");
   const [medicineOptions, setMedicineOptions] = useState([]);
+  const [typedMedicineNames, setTypedMedicineNames] = useState([]);
+  const [isMedicineSearchFocused, setIsMedicineSearchFocused] = useState(false);
 
   useEffect(() => {
     let isActive = true;
@@ -308,6 +310,24 @@ function Prescription() {
     return () => {
       isActive = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("prescriptionTypedMedicineNames");
+    if (!saved) return;
+
+    try {
+      const names = JSON.parse(saved);
+      if (Array.isArray(names)) {
+        setTypedMedicineNames(
+          names
+            .filter((name) => typeof name === "string" && name.trim())
+            .map((name) => name.trim())
+        );
+      }
+    } catch {
+      // ignore invalid persisted data
+    }
   }, []);
 
   useEffect(() => {
@@ -475,9 +495,28 @@ function Prescription() {
     [medicines]
   );
 
+  const combinedMedicineOptions = useMemo(() => {
+    const unique = new Map();
+
+    typedMedicineNames
+      .filter(Boolean)
+      .map((name) => ({ medicineName: name, label: name }))
+      .forEach((item) => {
+        const key = item.label.trim().toLowerCase();
+        if (key) unique.set(key, item);
+      });
+
+    medicineOptions.forEach((item) => {
+      const key = (item.medicineName || item.label || "").trim().toLowerCase();
+      if (key && !unique.has(key)) unique.set(key, item);
+    });
+
+    return Array.from(unique.values());
+  }, [medicineOptions, typedMedicineNames]);
+
   const medicineSelectOptions = useMemo(() => {
     const options = new Set(DEFAULT_MEDICINE_OPTIONS);
-    medicineOptions.forEach((medicine) => {
+    combinedMedicineOptions.forEach((medicine) => {
       const label = medicine.medicineName || medicine.label;
       if (label) options.add(label);
     });
@@ -485,7 +524,7 @@ function Prescription() {
       if (medicine.medicineName) options.add(medicine.medicineName);
     });
     return Array.from(options).sort((a, b) => a.localeCompare(b));
-  }, [medicineOptions, medicines]);
+  }, [combinedMedicineOptions, medicines]);
 
   const diagnosisSelectOptions = useMemo(() => {
     const options = new Set(DEFAULT_DIAGNOSIS_OPTIONS);
@@ -511,11 +550,18 @@ function Prescription() {
   const addMedicine = () =>
     setMedicines((prev) => [...prev, createMedicine()]);
 
-  const filteredMedicineOptions = useMemo(() => {
-    const query = medicineSearch.trim().toLowerCase();
-    if (!query) return medicineOptions.slice(0, 8);
+  const normalizedMedicineSearch = medicineSearch.trim();
+  const lowerMedicineSearch = normalizedMedicineSearch.toLowerCase();
+  const hasExactMedicineMatch = combinedMedicineOptions.some((medicine) => {
+    const label = (medicine.medicineName || medicine.label || "").trim().toLowerCase();
+    return label === lowerMedicineSearch;
+  });
 
-    return medicineOptions
+  const filteredMedicineOptions = useMemo(() => {
+    const query = lowerMedicineSearch;
+    if (!query) return combinedMedicineOptions.slice(0, 8);
+
+    return combinedMedicineOptions
       .filter((medicine) =>
         [
           medicine.label,
@@ -527,7 +573,74 @@ function Prescription() {
           .some((value) => String(value).toLowerCase().includes(query))
       )
       .slice(0, 8);
-  }, [medicineOptions, medicineSearch]);
+  }, [combinedMedicineOptions, lowerMedicineSearch]);
+
+  const showMedicineResults =
+    isMedicineSearchFocused &&
+    (filteredMedicineOptions.length > 0 || normalizedMedicineSearch.length > 0);
+
+  const registerTypedMedicine = (medicineName) => {
+    const name = String(medicineName || "").trim();
+    if (!name) return;
+
+    const normalized = name.toLowerCase();
+    const alreadyStored =
+      typedMedicineNames.some((item) => item.trim().toLowerCase() === normalized) ||
+      medicineOptions.some((medicine) => {
+        const label = (medicine.medicineName || medicine.label || "").trim().toLowerCase();
+        return label === normalized;
+      });
+
+    if (alreadyStored) return;
+
+    const nextMedicine = { medicineName: name, label: name };
+    setMedicineOptions((prev) => [nextMedicine, ...prev]);
+    setTypedMedicineNames((prev) => {
+      const next = [name, ...prev.filter((item) => item.trim().toLowerCase() !== normalized)];
+      localStorage.setItem("prescriptionTypedMedicineNames", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const addTypedMedicine = (query) => {
+    const medicineName = String(query || "").trim();
+    if (!medicineName) return;
+
+    const normalized = medicineName.toLowerCase();
+    const existingMedicine = combinedMedicineOptions.find((medicine) => {
+      const label = (medicine.medicineName || medicine.label || "").trim().toLowerCase();
+      return label === normalized;
+    });
+
+    const nextMedicine = existingMedicine
+      ? existingMedicine
+      : { medicineName, label: medicineName };
+
+    if (!existingMedicine) {
+      setMedicineOptions((prev) => [nextMedicine, ...prev]);
+    }
+
+    selectMedicine(nextMedicine);
+  };
+
+  const handleMedicineSearchKeyDown = (event) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+
+    if (!normalizedMedicineSearch) return;
+    if (hasExactMedicineMatch) {
+      const exactMatch = combinedMedicineOptions.find((medicine) => {
+        const label = (medicine.medicineName || medicine.label || "").trim().toLowerCase();
+        return label === normalizedMedicineSearch.toLowerCase();
+      });
+      if (exactMatch) {
+        selectMedicine(exactMatch);
+        return;
+      }
+    }
+
+    addTypedMedicine(normalizedMedicineSearch);
+  };
 
   const selectMedicine = (medicine) => {
     const nextMedicine = {
@@ -835,20 +948,36 @@ function Prescription() {
                 className="rx-search-input"
                 value={medicineSearch}
                 onChange={(event) => setMedicineSearch(event.target.value)}
+                onKeyDown={handleMedicineSearchKeyDown}
+                onFocus={() => setIsMedicineSearchFocused(true)}
+                onBlur={() => setTimeout(() => setIsMedicineSearchFocused(false), 200)}
                 placeholder="Search medicine or brand..."
+                autoComplete="off"
               />
-              {medicineSearch && filteredMedicineOptions.length > 0 ? (
+              {showMedicineResults ? (
                 <div className="rx-medicine-results">
                   {filteredMedicineOptions.map((medicine) => (
                     <button
                       type="button"
                       key={medicine.label}
+                      onMouseDown={(event) => event.preventDefault()}
                       onClick={() => selectMedicine(medicine)}
                     >
                       <strong>{medicine.medicineName || medicine.label}</strong>
                       {medicine.brandName ? <span>{medicine.brandName}</span> : null}
                     </button>
                   ))}
+                  {normalizedMedicineSearch && !hasExactMedicineMatch ? (
+                    <button
+                      type="button"
+                      className="rx-medicine-results__new"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => addTypedMedicine(medicineSearch)}
+                    >
+                      <strong>Add "{normalizedMedicineSearch}"</strong>
+                      <span>New medicine</span>
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -866,20 +995,17 @@ function Prescription() {
             </div>
             {medicines.map((medicine) => (
               <div className="rx-row" key={medicine.id}>
-                <select
+                <input
                   className="rx-cell-input rx-med-name"
+                  list="prescription-medicine-options"
                   value={medicine.medicineName}
-                  onChange={(event) =>
-                    updateMedicine(medicine.id, "medicineName", event.target.value)
-                  }
-                >
-                  <option value="">Select medicine</option>
-                  {medicineSelectOptions.map((option) => (
-                    <option value={option} key={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    updateMedicine(medicine.id, "medicineName", value);
+                  }}
+                  onBlur={(event) => registerTypedMedicine(event.target.value)}
+                  placeholder="Select or type medicine"
+                />
                 <select
                   className="rx-cell-input"
                   value={medicine.dosage}
@@ -953,6 +1079,12 @@ function Prescription() {
               </div>
             ))}
           </div>
+
+          <datalist id="prescription-medicine-options">
+            {medicineSelectOptions.map((option) => (
+              <option value={option} key={option} />
+            ))}
+          </datalist>
 
           <button className="rx-add-med-btn" type="button" onClick={addMedicine}>
             + Add Medicine
