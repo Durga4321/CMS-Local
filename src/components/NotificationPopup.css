@@ -32,17 +32,19 @@
 }
 
 .notification-dropdown {
-  position: absolute;
-  right: 0;
-  top: 42px;
-  width: 380px;
+  position: fixed;
+  top: 88px;
+  right: 28px;
+  min-width: 380px;
+  width: max-content;
+  max-width: 420px;
   max-height: 440px;
   border-radius: 16px;
   background: #ffffff;
   box-shadow: 0 18px 54px rgba(15, 23, 42, 0.16);
   border: 1px solid #e2e8f0;
   overflow: hidden;
-  z-index: 50;
+  z-index: 9999;
 }
 
 .notification-dropdown-header {
@@ -167,6 +169,22 @@
   cursor: pointer;
   padding: 4px 6px;
   font-size: 12px;
+}
+
+.notification-delete-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid #e6eef6;
+  background: #fff;
+  color: #ef4444;
+  cursor: pointer;
+}
+.notification-delete-icon:hover {
+  background: #fff6f6;
 }
 
 .notification-detail p {

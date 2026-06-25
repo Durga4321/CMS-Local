@@ -288,6 +288,49 @@
   text-align: center;
   color: #64748b;
 }
+  .sa-notification-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .sa-notification-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid #eef2f7;
+    border-radius: 8px;
+    background: #fff;
+  }
+  .sa-notification-item-btn {
+    border: 0;
+    background: transparent;
+    text-align: left;
+    padding: 0;
+  }
+  .sa-btn-ghost {
+    border: 0;
+    background: transparent;
+    color: #ef4444;
+    cursor: pointer;
+  }
+
+  .sa-delete-icon {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid #e6eef6;
+    background: #fff;
+    color: #ef4444;
+    cursor: pointer;
+  }
+  .sa-delete-icon:hover {
+    background: #fff6f6;
+  }
 
 .sa-empty-state-icon {
   width: 64px;

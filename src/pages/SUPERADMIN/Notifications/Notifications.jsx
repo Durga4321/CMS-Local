@@ -6,6 +6,7 @@ import {
   createNotification,
   fetchNotificationTargetOptions,
   fetchNotifications,
+  deleteNotification,
 } from "../superAdminApi";
 import { validateSelected, validateText } from "../../../utils/validation";
 
@@ -35,7 +36,51 @@ function Notifications() {
     setError("");
 
     try {
-      setNotifications(await fetchNotifications());
+      const items = await fetchNotifications();
+
+      // apply same visibility rules as the popup (only show sent/read and matching role)
+      const getCurrentRole = () =>
+        localStorage.getItem("superAdminRole") ||
+        localStorage.getItem("adminRole") ||
+        localStorage.getItem("doctorRole") ||
+        localStorage.getItem("receptionistRole") ||
+        localStorage.getItem("userRole") ||
+        "";
+
+      const normalizeRole = (role = "") => String(role).trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+
+      const matchesTargetUsers = (notification = {}, role = "") => {
+        const target = String(notification.targetUsers || "all active users").trim().toLowerCase();
+        const r = normalizeRole(role);
+
+        if (!target) return true;
+
+        if (target.includes("all active user") || target === "active users") {
+          return ["admin", "clinicadmin", "doctor", "receptionist", "user", "patient"].includes(r);
+        }
+
+        if (target.includes("admin")) return ["admin", "clinicadmin"].includes(r);
+        if (target.includes("doctor")) return r === "doctor";
+        if (target.includes("receptionist") || target.includes("reception")) return r === "receptionist";
+        if (target.includes("user") || target.includes("patient")) return ["user", "patient"].includes(r);
+
+        return true;
+      };
+
+      const isSentNotification = (notification = {}) =>
+        String(notification.status || "").toLowerCase() === "sent";
+
+      const isReadNotification = (notification = {}) =>
+        String(notification.status || "").toLowerCase() === "read";
+
+      const isVisibleNotification = (notification = {}) => isSentNotification(notification) || isReadNotification(notification);
+
+      const role = normalizeRole(getCurrentRole());
+      const isSuper = role === "superadmin";
+
+      const filtered = items.filter((it) => isVisibleNotification(it) && (isSuper || matchesTargetUsers(it, role)));
+
+      setNotifications(filtered);
     } catch (requestError) {
       setError(requestError.message || "Unable to load notifications.");
     } finally {
@@ -172,7 +217,19 @@ function Notifications() {
         <p>Recent messages and delivery status.</p>
         {loading ? <div className="sa-state">Loading notifications...</div> : null}
         {!loading && error && !showForm ? <div className="sa-state sa-state--error">{error}</div> : null}
-        {!loading && !error ? <NotificationPanel items={notifications} /> : null}
+        {!loading && !error ? (
+          <NotificationPanel
+            items={notifications}
+            onDelete={async (item) => {
+              try {
+                if (item.id) await deleteNotification(item.id);
+                setNotifications((current) => current.filter((n) => n.id !== item.id));
+              } catch (err) {
+                setError(err.message || "Unable to delete notification.");
+              }
+            }}
+          />
+        ) : null}
       </div>
     </>
   );

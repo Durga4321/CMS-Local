@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bell, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { fetchNotifications, markNotificationRead } from "../pages/SUPERADMIN/superAdminApi";
+import { fetchNotifications, markNotificationRead, deleteNotification } from "../pages/SUPERADMIN/superAdminApi";
+import { Trash2 } from "lucide-react";
 import "./NotificationPopup.css";
 
 const getCurrentRole = () =>
@@ -127,7 +128,7 @@ function NotificationPopup({ isSuperAdmin = false }) {
       const items = await fetchNotifications();
       const readKeys = new Set(readNotificationKeys());
       const filtered = items
-        .filter((item) => isVisibleNotification(item) && matchesTargetUsers(item, role))
+        .filter((item) => isVisibleNotification(item) && (isSuperAdmin || matchesTargetUsers(item, role)))
         .map((item) =>
           readKeys.has(getNotificationKey(item)) && !isReadNotification(item)
             ? { ...item, status: "Read" }
@@ -274,13 +275,30 @@ function NotificationPopup({ isSuperAdmin = false }) {
                       <div>
                         <h4>{activeNotification.title}</h4>
                       </div>
-                      <button
-                        type="button"
-                        className="notification-close"
-                        onClick={() => setActiveNotification(null)}
-                      >
-                        Close
-                      </button>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <button
+                          type="button"
+                          className="notification-close"
+                          onClick={() => setActiveNotification(null)}
+                        >
+                          Close
+                        </button>
+                        <button
+                          type="button"
+                          className="notification-delete-icon"
+                          onClick={async () => {
+                            try {
+                              if (activeNotification?.id) await deleteNotification(activeNotification.id);
+                              setNotifications((current) => current.filter((n) => getNotificationKey(n) !== getNotificationKey(activeNotification)));
+                              setActiveNotification(null);
+                            } catch {}
+                          }}
+                          aria-label="Delete notification"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                     <p>{activeNotification.message}</p>
                   </>

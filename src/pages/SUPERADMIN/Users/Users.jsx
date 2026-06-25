@@ -190,10 +190,14 @@ function Users() {
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
+    const selectedStatus = String(status || "").trim().toLowerCase();
+
     return users.filter((user) => {
       const matchesSearch = [user.name, user.email, user.clinic, user.type]
         .some((value) => String(value).toLowerCase().includes(query));
-      const matchesStatus = status === "All" || user.status === status;
+      const matchesStatus =
+        selectedStatus === "all" ||
+        String(user.status || "").trim().toLowerCase() === selectedStatus;
       return matchesSearch && matchesStatus;
     });
   }, [search, status, users]);
@@ -204,15 +208,25 @@ function Users() {
       return;
     }
 
-    const nextStatus = user.status === "Active" ? "Inactive" : "Active";
+    const currentStatus = String(user.status || "").trim().toLowerCase();
+    const nextStatus = currentStatus === "active" ? "Inactive" : "Active";
     setError("");
 
     try {
       await updateUserStatus(user.id, nextStatus);
-      await loadUsers();
+      setUsers((currentUsers) =>
+        currentUsers.map((currentUser) =>
+          String(currentUser.id) === String(user.id)
+            ? { ...currentUser, status: nextStatus }
+            : currentUser
+        )
+      );
       if (selectedUser?.id === user.id) {
-        setSelectedUser((current) => current ? { ...current, status: nextStatus } : current);
+        setSelectedUser((current) =>
+          current ? { ...current, status: nextStatus } : current
+        );
       }
+      await loadUsers();
     } catch (requestError) {
       setError(requestError.message || "Unable to update user status.");
     }
@@ -234,7 +248,12 @@ function Users() {
       if (selectedUser?.id === user.id) setSelectedUser(null);
       if (editingUserId === user.id) closeForm();
       setUsers((currentUsers) =>
-        currentUsers.filter((currentUser) => String(currentUser.id) !== String(user.id))
+        currentUsers
+          .filter((currentUser) => String(currentUser.id) !== String(user.id))
+          .map((currentUser) => ({
+            ...currentUser,
+            status: String(currentUser.status || "").trim(),
+          }))
       );
       await loadUsers();
     } catch (requestError) {

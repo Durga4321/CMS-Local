@@ -126,8 +126,19 @@ const toNumber = (value) => {
 
 const normalizeStatus = (value) => {
   if (typeof value === "boolean") return value ? "Active" : "Inactive";
-  const status = String(value || "Active");
+  const status = String(value || "").trim();
+  if (!status) return "Active";
   return status.charAt(0).toUpperCase() + status.slice(1);
+};
+
+const normalizeActiveStatus = (value) => {
+  if (typeof value === "boolean") return value ? "Active" : "Inactive";
+  if (typeof value === "number") return value === 0 ? "Inactive" : "Active";
+
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "true" || normalized === "1") return "Active";
+  if (normalized === "false" || normalized === "0") return "Inactive";
+  return undefined;
 };
 
 const normalizeNotificationStatus = (notification = {}) => {
@@ -150,6 +161,43 @@ const normalizeNotificationStatus = (notification = {}) => {
 
   const status = normalizeStatus(pick(notification, ["status", "state"], "Sent"));
   return status.toLowerCase() === "read" ? "Read" : "Sent";
+};
+
+const normalizeUserStatus = (user = {}) => {
+  if (isDeletedRecord(user)) {
+    return "Inactive";
+  }
+
+  const rawStatus = pick(user, ["status", "Status"], "");
+  const statusValue = normalizeStatus(rawStatus);
+  const activeStatus = normalizeActiveStatus(
+    pick(user, ["isActive", "IsActive", "active", "Active"], undefined)
+  );
+
+  const hasExplicitStatus = hasValue(rawStatus);
+  const normalizedStatusKey = String(statusValue || "").trim().toLowerCase();
+
+  if (normalizedStatusKey === "deleted") {
+    return "Inactive";
+  }
+
+  if (activeStatus === "Inactive") {
+    return "Inactive";
+  }
+
+  if (activeStatus && ["active", "inactive"].includes(normalizedStatusKey)) {
+    return activeStatus;
+  }
+
+  if (hasExplicitStatus) {
+    return statusValue;
+  }
+
+  if (activeStatus) {
+    return activeStatus;
+  }
+
+  return "Active";
 };
 
 const isActiveRecord = (record = {}) => {
@@ -1288,13 +1336,14 @@ const isDeletedRecord = (record = {}) => {
     false
   );
   const status = String(pick(record, ["status", "Status"], "")).trim().toLowerCase();
+  const deletedAt = pick(record, ["deletedAt", "DeletedAt", "deleted_at", "removedAt", "RemovedAt", "removed_at"], "");
 
   return (
     deletedValue === true ||
     deletedValue === 1 ||
     String(deletedValue).toLowerCase() === "true" ||
     status === "deleted" ||
-    hasValue(pick(record, ["deletedAt", "DeletedAt", "removedAt"], ""))
+    hasValue(deletedAt)
   );
 };
 
@@ -1307,7 +1356,7 @@ export const normalizeUser = (user = {}, index = 0) => ({
   clinicId: pick(user, ["clinicId", "ClinicId"], 0),
   type: pick(user, ["type", "userType", "role", "roleName"], "User"),
   role: pick(user, ["role", "roleName", "type", "userType"], "User"),
-  status: normalizeStatus(pick(user, ["status", "isActive", "active"], "Active")),
+  status: normalizeUserStatus(user),
   lastActive: formatLastActive(user),
   phone: pick(user, ["phone", "phoneNumber", "mobile", "contactNumber"]),
   mobileNumber: pick(user, ["mobileNumber", "mobile", "phoneNumber", "phone"]),
@@ -1667,27 +1716,37 @@ export const fetchNotificationTargetOptions = async () => {
     superAdminRequest("Doctor"),
     superAdminRequest("Receptionist"),
   ]);
+  const adminRows =
+    adminsResult.status === "fulfilled" ? asArray(adminsResult.value).filter(isActiveRecord) : [];
+  const userRows =
+    usersResult.status === "fulfilled" ? asArray(usersResult.value).filter(isActiveRecord) : [];
+  const doctorRows =
+    doctorsResult.status === "fulfilled" ? asArray(doctorsResult.value).filter(isActiveRecord) : [];
+  const receptionistRows =
+    receptionistsResult.status === "fulfilled" ? asArray(receptionistsResult.value).filter(isActiveRecord) : [];
+
+  // Build a deduplicated set of active user identities (prefer email, fallback to id)
+  const normalizeIdentity = (row = {}) => {
+    const email = pick(row, ["email", "emailAddress", "adminEmail", "AdminEmail", "doctorEmail", "receptionistEmail"], "") || "";
+    const id = pick(row, ["id", "userId", "adminId", "doctorId", "receptionistId", "_id"], "") || "";
+    const key = (String(email || id) || "").toLowerCase().trim();
+    return key;
+  };
+
+  const unique = new Set();
+  adminRows.forEach((r) => unique.add(normalizeIdentity(r)));
+  userRows.forEach((r) => unique.add(normalizeIdentity(r)));
+  doctorRows.forEach((r) => unique.add(normalizeIdentity(r)));
+  receptionistRows.forEach((r) => unique.add(normalizeIdentity(r)));
 
   const counts = {
-    admins:
-      adminsResult.status === "fulfilled"
-        ? asArray(adminsResult.value).filter(isActiveRecord).length
-        : 0,
-    users:
-      usersResult.status === "fulfilled"
-        ? asArray(usersResult.value).filter(isActiveRecord).length
-        : 0,
-    doctors:
-      doctorsResult.status === "fulfilled"
-        ? asArray(doctorsResult.value).filter(isActiveRecord).length
-        : 0,
-    receptionists:
-      receptionistsResult.status === "fulfilled"
-        ? asArray(receptionistsResult.value).filter(isActiveRecord).length
-        : 0,
+    admins: adminRows.length,
+    users: userRows.length,
+    doctors: doctorRows.length,
+    receptionists: receptionistRows.length,
   };
-  const allActiveUsersCount =
-    counts.admins + counts.users + counts.doctors + counts.receptionists;
+
+  const allActiveUsersCount = Array.from(unique).filter(Boolean).length;
 
   const options = [
     {
@@ -1750,6 +1809,27 @@ export const markNotificationRead = async (id) => {
       return updated.find((n) => n.id === id) || null;
     } catch {
       return null;
+    }
+  }
+};
+
+export const deleteNotification = async (id) => {
+  if (!id) return null;
+
+  try {
+    const result = await superAdminRequest(`${SUPER_ADMIN_API.notifications}/${id}`, {
+      method: "DELETE",
+    });
+    return result;
+  } catch (error) {
+    // fallback: remove local notification
+    try {
+      const local = readLocalList(LOCAL_NOTIFICATIONS_KEY);
+      const updated = local.filter((n) => n.id !== id);
+      writeLocalList(LOCAL_NOTIFICATIONS_KEY, updated);
+      return { id };
+    } catch {
+      throw error;
     }
   }
 };

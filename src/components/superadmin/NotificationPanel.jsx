@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import { Trash2 } from "lucide-react";
 
-function NotificationPanel({ items = [] }) {
+function NotificationPanel({ items = [], onDelete = () => {} }) {
   const [activeNotification, setActiveNotification] = useState(null);
 
   if (!items.length) {
@@ -34,21 +35,33 @@ function NotificationPanel({ items = [] }) {
 
       <div className="sa-notification-list">
         {items.map((item) => (
-          <button
-            className="sa-notification-item"
-            key={getNotificationKey(item)}
-            type="button"
-            onClick={() => setActiveNotification(item)}
-          >
-            <div>
-              <b>{item.title}</b>
-              <p>{item.message}</p>
-              <span>{item.targetUsers}</span>
+          <div className="sa-notification-item" key={getNotificationKey(item)}>
+            <button
+              className="sa-notification-item-btn"
+              type="button"
+              onClick={() => setActiveNotification(item)}
+            >
+              <div>
+                <b>{item.title}</b>
+                <p>{item.message}</p>
+                <span>{item.targetUsers}</span>
+              </div>
+            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span className={`sa-badge ${isRead(item) ? "is-muted" : "is-active"}`}>
+                {isRead(item) ? "Read" : "Unread"}
+              </span>
+              <button
+                type="button"
+                className="sa-delete-icon"
+                onClick={() => onDelete(item)}
+                aria-label="Delete notification"
+                title="Delete"
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
-            <span className={`sa-badge ${isRead(item) ? "is-muted" : "is-active"}`}>
-              {isRead(item) ? "Read" : "Unread"}
-            </span>
-          </button>
+          </div>
         ))}
       </div>
     </>
