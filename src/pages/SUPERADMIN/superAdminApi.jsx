@@ -311,7 +311,83 @@ const getTimestamp = (value) => {
   return Number.isNaN(date.getTime()) ? 0 : date.getTime();
 };
 
+const normalizeUtcDateValue = (value) => {
+  if (!value || typeof value !== "string") return value;
+
+  const text = value.trim();
+  const isIsoDateTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(text);
+  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(text);
+
+  return isIsoDateTime && !hasTimezone ? `${text}Z` : text;
+};
+
+const formatAuditDateTime = (value) => formatDateTime(normalizeUtcDateValue(value));
+
+const getAuditTimestamp = (value) => getTimestamp(normalizeUtcDateValue(value));
+
 const normalizeString = (value) => String(value || "").trim().toLowerCase();
+
+const toBoolean = (value) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+
+  const normalized = normalizeString(value);
+  return normalized === "true" || normalized === "1" || normalized === "yes";
+};
+
+const AUDIT_USER_KEYS = [
+  "userName",
+  "UserName",
+  "user",
+  "User",
+  "name",
+  "Name",
+  "email",
+  "Email",
+  "emailAddress",
+  "EmailAddress",
+  "userEmail",
+  "UserEmail",
+  "adminEmail",
+  "AdminEmail",
+  "doctorEmail",
+  "DoctorEmail",
+  "receptionistEmail",
+  "ReceptionistEmail",
+];
+
+const AUDIT_EMAIL_KEYS = [
+  "email",
+  "Email",
+  "emailAddress",
+  "EmailAddress",
+  "userEmail",
+  "UserEmail",
+  "adminEmail",
+  "AdminEmail",
+  "doctorEmail",
+  "DoctorEmail",
+  "receptionistEmail",
+  "ReceptionistEmail",
+];
+
+const AUDIT_IP_KEYS = [
+  "ipAddress",
+  "IPAddress",
+  "IpAddress",
+  "ip",
+  "IP",
+  "clientIp",
+  "ClientIp",
+  "clientIP",
+  "remoteIp",
+  "RemoteIp",
+  "remoteIP",
+  "userIp",
+  "UserIp",
+  "loginIp",
+  "LoginIp",
+];
 
 const AUDIT_ROLE_KEYS = [
   "role",
@@ -364,10 +440,10 @@ const getAuditRole = (log = {}) => {
 };
 
 const isUserLoginMatch = (user = {}, log = {}) => {
-  const userEmail = normalizeString(pick(user, ["email", "emailAddress"]));
-  const userName = normalizeString(pick(user, ["name", "fullName", "userName", "displayName"]));
-  const logEmail = normalizeString(pick(log, ["email", "emailAddress", "userEmail"]));
-  const logUser = normalizeString(pick(log, ["user", "userName", "name"]));
+  const userEmail = normalizeString(pick(user, AUDIT_EMAIL_KEYS));
+  const userName = normalizeString(pick(user, ["name", "fullName", "userName", "displayName", "adminName", "doctorName", "receptionistName"]));
+  const logEmail = normalizeString(pick(log, AUDIT_EMAIL_KEYS));
+  const logUser = normalizeString(pick(log, AUDIT_USER_KEYS));
 
   if (userEmail && (logEmail === userEmail || logUser === userEmail)) return true;
   if (userName && (logUser === userName || logEmail === userName)) return true;
@@ -382,7 +458,7 @@ const findMostRecentLogin = (user = {}, logs = []) => {
     if (!isUserLoginMatch(user, log)) continue;
 
     const timestampRaw = pick(log, ["timestampRaw", "timestamp", "createdAt", "date", "loginTime", "time"]);
-    const time = getTimestamp(timestampRaw);
+    const time = getAuditTimestamp(timestampRaw);
 
     if (time > latestTime) {
       latestTime = time;
@@ -422,15 +498,19 @@ const formatClinicAddress = (clinic = {}) => {
     "ClinicAddress",
     "location",
   ]);
+  const area = pick(clinic, ["area", "Area", "locality", "Locality", "town", "Town"]);
   const city = pick(clinic, ["city", "City", "town", "Town", "locality", "Locality"]);
   const state = pick(clinic, ["state", "State", "province", "Province", "region", "Region"]);
   const country = pick(clinic, ["country", "Country"]);
   const postalCode = pick(clinic, ["postalCode", "PostalCode", "zipCode", "ZipCode", "pinCode", "PinCode"]);
-  const hasStructuredLocation = city || state || country || postalCode;
-  const street = streetLine || (hasStructuredLocation ? "" : rawAddress);
+  const hasStructuredLocation = area || city || state || country || postalCode;
+  const rawParts = compactAddressParts(String(rawAddress || "").split(","));
+  const streetFromRaw = rawParts.length ? rawParts[0] : "";
+  const street = streetLine || (hasStructuredLocation ? streetFromRaw : rawAddress);
 
   const structuredParts = compactAddressParts([
     street,
+    area,
     city,
     state,
     country && !continentNames.has(String(country).trim().toLowerCase()) ? country : "",
@@ -442,11 +522,13 @@ const formatClinicAddress = (clinic = {}) => {
   }
 
   const fallbackAddress = String(rawAddress || streetLine || "").trim();
-  const rawParts = compactAddressParts(fallbackAddress.split(","));
+  const fallbackParts = compactAddressParts(fallbackAddress.split(","));
 
-  if (rawParts.length > 1 && continentNames.has(rawParts[0].toLowerCase())) {
-    return rawParts.slice(1).join(", ");
+  if (fallbackParts.length > 1 && continentNames.has(fallbackParts[0].toLowerCase())) {
+    return fallbackParts.slice(1).join(", ");
   }
+
+  return fallbackParts.length ? fallbackParts.join(", ") : fallbackAddress;
 
   return rawParts.length ? rawParts.join(", ") : fallbackAddress;
 };
@@ -626,27 +708,33 @@ export const normalizeRevenuePoint = (point = {}, index = 0) => ({
 
 export const normalizeAuditLog = (log = {}) => ({
   id: pick(log, ["id", "logId", "_id"]),
-  user: pick(log, ["user", "userName", "name", "email"], "System"),
-  userEmail: pick(log, ["email", "emailAddress", "userEmail"]),
-  action: pick(log, ["action", "activity", "message", "description"]),
+  userName: pick(log, AUDIT_USER_KEYS, "System"),
+  user: pick(log, AUDIT_USER_KEYS, "System"),
+  userEmail: pick(log, AUDIT_EMAIL_KEYS),
+  action: pick(log, ["action", "systemAction", "activity", "message", "description"]),
+  systemAction: pick(log, ["systemAction", "module", "moduleName", "category"], "Audit"),
+  isLoginActivity: toBoolean(pick(log, ["isLoginActivity"], false)),
   timestampRaw: pick(log, ["timestamp", "createdAt", "date"]),
-  timestamp: formatDateTime(pick(log, ["timestamp", "createdAt", "date"])),
-  sortTime: getTimestamp(pick(log, ["timestamp", "createdAt", "date"])),
-  module: pick(log, ["module", "moduleName", "category"], "Audit"),
-  ipAddress: pick(log, ["ipAddress", "ip", "clientIp"], ""),
+  timestamp: formatAuditDateTime(pick(log, ["timestamp", "createdAt", "date"])),
+  sortTime: getAuditTimestamp(pick(log, ["timestamp", "createdAt", "date"])),
+  module: pick(log, ["module", "moduleName", "category", "systemAction"], "Audit"),
+  ipAddress: pick(log, AUDIT_IP_KEYS, ""),
   role: getAuditRole(log),
 });
 
 export const normalizeLoginLog = (log = {}, index = 0) => ({
   id: pick(log, ["id", "logId", "_id"], `login-${index}`),
-  user: pick(log, ["user", "userName", "name", "email", "emailAddress"], "Unknown user"),
-  userEmail: pick(log, ["email", "emailAddress", "userEmail"]),
-  action: pick(log, ["action", "activity", "message", "description"], "Logged in"),
+  userName: pick(log, AUDIT_USER_KEYS, "Unknown user"),
+  user: pick(log, AUDIT_USER_KEYS, "Unknown user"),
+  userEmail: pick(log, AUDIT_EMAIL_KEYS),
+  action: pick(log, ["action", "systemAction", "activity", "message", "description"], "Logged in"),
+  systemAction: pick(log, ["systemAction", "module", "moduleName", "category"], "Login"),
+  isLoginActivity: true,
   timestampRaw: pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"]),
-  timestamp: formatDateTime(pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"])),
-  sortTime: getTimestamp(pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"])),
+  timestamp: formatAuditDateTime(pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"])),
+  sortTime: getAuditTimestamp(pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"])),
   module: "Login",
-  ipAddress: pick(log, ["ipAddress", "ip", "clientIp"], ""),
+  ipAddress: pick(log, AUDIT_IP_KEYS, ""),
   role: getAuditRole(log),
 });
 
@@ -1463,59 +1551,137 @@ const buildUserPayload = (user = {}, { includeBlankPassword = true } = {}) => {
   return payload;
 };
 
-const normalizeSettingsSection = (section = {}, defaults = {}) => ({
-  ...defaults,
-  ...section,
-  name: pick(section, ["name", "platformName", "senderName", "providerName", "gatewayName"], defaults.name || ""),
-  status: pick(section, ["status", "enabled", "isEnabled"], defaults.status || "Enabled"),
-  notes: pick(section, ["notes", "configurationNotes", "description"], defaults.notes || ""),
-});
+const defaultSettingsPayload = {
+  applicationName: "CMS Platform",
+  generalName: "CMS Platform",
+  supportEmail: "",
+  supportPhone: "",
+  address: "",
+  configurationNotes: "Update settings used across all clinics.",
+  status: "Enabled",
+  emailNotificationsEnabled: true,
+  smsNotificationsEnabled: true,
+};
 
-export const normalizeSettings = (settings = {}) => {
+const asSettingsBoolean = (value, fallback = false) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (!hasValue(value)) return fallback;
+
+  const normalized = normalizeString(value);
+  return normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "enabled";
+};
+
+const buildSettingsPayload = (settings = {}) => {
   const payload = asObject(settings);
-  const general = payload.general || payload.generalSettings || payload;
+  const general = payload.general || payload.generalSettings || {};
   const email = payload.email || payload.emailSettings || {};
   const sms = payload.sms || payload.smsSettings || {};
-  const payment = payload.payment || payload.paymentSettings || {};
 
   return {
-    general: normalizeSettingsSection(general, {
-      appName: pick(general, ["appName", "applicationName", "platformName", "name"], "CMS Platform"),
-      timezone: pick(general, ["timezone", "timeZone", "defaultTimezone"], "Asia/Kolkata"),
-      currency: pick(general, ["currency", "defaultCurrency", "currencyCode"], "INR"),
-      name: "CMS Platform",
-      status: "Enabled",
-      notes: "Update general settings used across all clinics.",
-    }),
-    email: normalizeSettingsSection(email, {
-      name: pick(email, ["name", "senderName", "fromName"], "CMS Notifications"),
-      fromEmail: pick(email, ["fromEmail", "senderEmail", "email"], ""),
-      smtpHost: pick(email, ["smtpHost", "host", "server"], ""),
-      smtpPort: pick(email, ["smtpPort", "port"], "587"),
-      username: pick(email, ["username", "userName", "smtpUsername"], ""),
-      password: pick(email, ["password", "smtpPassword"], ""),
-      status: "Enabled",
-      notes: "Update email settings used across all clinics.",
-    }),
-    sms: normalizeSettingsSection(sms, {
-      name: pick(sms, ["name", "providerName", "gatewayName"], "SMS Provider"),
-      provider: pick(sms, ["provider", "providerName", "gatewayName"], ""),
-      senderId: pick(sms, ["senderId", "senderID", "sender"], ""),
-      apiKey: pick(sms, ["apiKey", "key", "token"], ""),
-      apiSecret: pick(sms, ["apiSecret", "secret"], ""),
-      status: "Enabled",
-      notes: "Update sms settings used across all clinics.",
-    }),
-    payment: normalizeSettingsSection(payment, {
-      name: pick(payment, ["name", "providerName", "gatewayName"], "Payment Gateway"),
-      provider: pick(payment, ["provider", "providerName", "gatewayName"], ""),
-      merchantId: pick(payment, ["merchantId", "merchantID", "accountId"], ""),
-      publicKey: pick(payment, ["publicKey", "keyId", "publishableKey"], ""),
-      secretKey: pick(payment, ["secretKey", "secret", "privateKey"], ""),
-      mode: pick(payment, ["mode", "environment"], "Test"),
-      status: "Enabled",
-      notes: "Update payment settings used across all clinics.",
-    }),
+    applicationName: String(
+      pick(payload, ["applicationName", "appName", "platformName", "name"], pick(general, ["applicationName", "appName", "platformName", "name"], defaultSettingsPayload.applicationName))
+    ).trim(),
+    generalName: String(
+      pick(payload, ["generalName", "name"], pick(general, ["generalName", "name"], defaultSettingsPayload.generalName))
+    ).trim(),
+    supportEmail: String(
+      pick(payload, ["supportEmail", "fromEmail", "senderEmail", "email"], pick(email, ["supportEmail", "fromEmail", "senderEmail", "email"], defaultSettingsPayload.supportEmail))
+    ).trim(),
+    supportPhone: String(
+      pick(payload, ["supportPhone", "phone", "phoneNumber", "mobile", "contactNumber"], defaultSettingsPayload.supportPhone)
+    ).trim(),
+    address: String(pick(payload, ["address", "location"], defaultSettingsPayload.address)).trim(),
+    configurationNotes: String(
+      pick(payload, ["configurationNotes", "notes", "description"], pick(general, ["configurationNotes", "notes", "description"], defaultSettingsPayload.configurationNotes))
+    ).trim(),
+    status: String(
+      pick(payload, ["status"], pick(general, ["status"], defaultSettingsPayload.status))
+    ).trim() || defaultSettingsPayload.status,
+    emailNotificationsEnabled: asSettingsBoolean(
+      pick(payload, ["emailNotificationsEnabled", "emailEnabled", "enableEmailNotifications"], pick(email, ["emailNotificationsEnabled", "enabled", "isEnabled"], defaultSettingsPayload.emailNotificationsEnabled)),
+      defaultSettingsPayload.emailNotificationsEnabled
+    ),
+    smsNotificationsEnabled: asSettingsBoolean(
+      pick(payload, ["smsNotificationsEnabled", "smsEnabled", "enableSmsNotifications"], pick(sms, ["smsNotificationsEnabled", "enabled", "isEnabled"], defaultSettingsPayload.smsNotificationsEnabled)),
+      defaultSettingsPayload.smsNotificationsEnabled
+    ),
+  };
+};
+
+export const normalizeSettings = (settings = {}) => {
+  const payload = buildSettingsPayload({ ...defaultSettingsPayload, ...asObject(settings) });
+
+  return {
+    general: {
+      appName: payload.applicationName,
+      timezone: pick(settings, ["timezone", "timeZone", "defaultTimezone"], "Asia/Kolkata"),
+      currency: pick(settings, ["currency", "defaultCurrency", "currencyCode"], "INR"),
+      name: payload.generalName,
+      status: payload.status,
+      notes: payload.configurationNotes,
+      applicationName: payload.applicationName,
+      generalName: payload.generalName,
+      supportEmail: payload.supportEmail,
+      supportPhone: payload.supportPhone,
+      address: payload.address,
+      configurationNotes: payload.configurationNotes,
+      emailNotificationsEnabled: payload.emailNotificationsEnabled,
+      smsNotificationsEnabled: payload.smsNotificationsEnabled,
+    },
+    email: {
+      name: payload.generalName,
+      fromEmail: payload.supportEmail,
+      smtpHost: pick(settings, ["smtpHost", "host", "server"], ""),
+      smtpPort: pick(settings, ["smtpPort", "port"], "587"),
+      username: pick(settings, ["username", "userName", "smtpUsername"], ""),
+      password: pick(settings, ["password", "smtpPassword"], ""),
+      status: payload.status,
+      notes: payload.configurationNotes,
+      applicationName: payload.applicationName,
+      generalName: payload.generalName,
+      supportEmail: payload.supportEmail,
+      supportPhone: payload.supportPhone,
+      address: payload.address,
+      configurationNotes: payload.configurationNotes,
+      emailNotificationsEnabled: payload.emailNotificationsEnabled,
+      smsNotificationsEnabled: payload.smsNotificationsEnabled,
+    },
+    sms: {
+      name: payload.generalName,
+      provider: pick(settings, ["provider", "providerName", "gatewayName"], ""),
+      senderId: pick(settings, ["senderId", "senderID", "sender"], ""),
+      apiKey: pick(settings, ["apiKey", "key", "token"], ""),
+      apiSecret: pick(settings, ["apiSecret", "secret"], ""),
+      status: payload.status,
+      notes: payload.configurationNotes,
+      applicationName: payload.applicationName,
+      generalName: payload.generalName,
+      supportEmail: payload.supportEmail,
+      supportPhone: payload.supportPhone,
+      address: payload.address,
+      configurationNotes: payload.configurationNotes,
+      emailNotificationsEnabled: payload.emailNotificationsEnabled,
+      smsNotificationsEnabled: payload.smsNotificationsEnabled,
+    },
+    payment: {
+      name: payload.generalName,
+      provider: pick(settings, ["provider", "providerName", "gatewayName"], ""),
+      merchantId: pick(settings, ["merchantId", "merchantID", "accountId"], ""),
+      publicKey: pick(settings, ["publicKey", "keyId", "publishableKey"], ""),
+      secretKey: pick(settings, ["secretKey", "secret", "privateKey"], ""),
+      mode: pick(settings, ["mode", "environment"], "Test"),
+      status: payload.status,
+      notes: payload.configurationNotes,
+      applicationName: payload.applicationName,
+      generalName: payload.generalName,
+      supportEmail: payload.supportEmail,
+      supportPhone: payload.supportPhone,
+      address: payload.address,
+      configurationNotes: payload.configurationNotes,
+      emailNotificationsEnabled: payload.emailNotificationsEnabled,
+      smsNotificationsEnabled: payload.smsNotificationsEnabled,
+    },
   };
 };
 
@@ -1913,13 +2079,41 @@ const getCurrentSessionRole = () =>
   localStorage.getItem("userRole") ||
   "";
 
-export const recordAuditLog = (log) =>
-  prependLocalItem(LOCAL_AUDIT_LOGS_KEY, {
-    id: `local-audit-${Date.now()}`,
-    timestamp: new Date().toISOString(),
-    role: getCurrentSessionRole(),
-    ...log,
-  });
+const buildAuditLogPayload = (log = {}) => {
+  const timestamp = pick(log, ["timestamp", "createdAt", "date"], new Date().toISOString());
+  const module = pick(log, ["module", "moduleName", "category", "systemAction"], "Audit");
+  const role = pick(log, ["role"], getCurrentSessionRole());
+  const isLoginActivity =
+    typeof log.isLoginActivity === "boolean"
+      ? log.isLoginActivity
+      : normalizeString(module) === "login" || normalizeString(pick(log, ["action"], "")).includes("login");
+
+  return {
+    id: Number(pick(log, ["id"], 0)) || 0,
+    userName: pick(log, ["userName", "user", "name", "email", "emailAddress", "userEmail"], "System"),
+    action: pick(log, ["action", "activity", "message", "description"], isLoginActivity ? "Logged in" : "Activity recorded"),
+    systemAction: pick(log, ["systemAction"], module),
+    ipAddress: pick(log, AUDIT_IP_KEYS, ""),
+    isLoginActivity,
+    timestamp,
+    ...(role ? { role } : {}),
+  };
+};
+
+export const recordAuditLog = async (log) => {
+  const payload = buildAuditLogPayload(log);
+
+  try {
+    return await createAuditLog(payload);
+  } catch (error) {
+    return prependLocalItem(LOCAL_AUDIT_LOGS_KEY, {
+      ...payload,
+      id: `local-audit-${Date.now()}`,
+      role: pick(log, ["role"], getCurrentSessionRole()),
+      error: error.message,
+    });
+  }
+};
 
 const recordSuperAdminActivity = (action, module, detail = "") =>
   recordAuditLog({
@@ -1966,7 +2160,7 @@ const buildDashboardActivities = (...activityGroups) => {
 export const createAuditLog = async (log) =>
   superAdminRequest(SUPER_ADMIN_API.auditLogs, {
     method: "POST",
-    body: log,
+    body: buildAuditLogPayload(log),
   });
 
 export const fetchAuditLog = async (id) =>
@@ -1988,41 +2182,154 @@ const addRoleLookupValue = (lookup, key, role) => {
   }
 };
 
-const addRoleLookupUser = (lookup, user = {}) => {
-  const role = pick(user, ["role", "roleName", "type", "userType"], "");
-  addRoleLookupValue(lookup, pick(user, ["email", "emailAddress", "userEmail"], ""), role);
-  addRoleLookupValue(lookup, pick(user, ["name", "fullName", "userName", "displayName"], ""), role);
+const addRoleLookupUser = (lookup, user = {}, fallbackRole = "") => {
+  const role = pick(user, AUDIT_ROLE_KEYS, fallbackRole);
+  addRoleLookupValue(lookup, pick(user, AUDIT_EMAIL_KEYS, ""), role);
+  addRoleLookupValue(lookup, pick(user, AUDIT_USER_KEYS, ""), role);
+  addRoleLookupValue(
+    lookup,
+    pick(user, ["name", "fullName", "displayName", "adminName", "doctorName", "receptionistName"], ""),
+    role
+  );
 };
 
-const buildAuditRoleLookup = ({ users = [], admins = [], loginLogs = [] }) => {
+const addCurrentSessionRoleLookup = (lookup) => {
+  const role = getCurrentSessionRole();
+  const email =
+    localStorage.getItem("adminEmail") ||
+    localStorage.getItem("doctorEmail") ||
+    localStorage.getItem("receptionistEmail") ||
+    localStorage.getItem("userEmail") ||
+    "";
+  const name =
+    localStorage.getItem("adminName") ||
+    localStorage.getItem("doctorName") ||
+    localStorage.getItem("receptionistName") ||
+    localStorage.getItem("userName") ||
+    "";
+
+  addRoleLookupValue(lookup, email, role);
+  addRoleLookupValue(lookup, name, role);
+};
+
+const publicIpProviders = [
+  {
+    url: "https://api.ipify.org?format=json",
+    read: (data) => pick(data, ["ip"], ""),
+  },
+  {
+    url: "https://api64.ipify.org?format=json",
+    read: (data) => pick(data, ["ip"], ""),
+  },
+  {
+    url: "https://ipapi.co/json/",
+    read: (data) => pick(data, ["ip"], ""),
+  },
+  {
+    url: "https://api.my-ip.io/v2/ip.json",
+    read: (data) => pick(data, ["ip"], ""),
+  },
+];
+
+const fetchCurrentIpAddress = async () => {
+  const storedIp = localStorage.getItem("loginIpAddress") || "";
+  if (storedIp) return storedIp;
+
+  for (const provider of publicIpProviders) {
+    try {
+      const response = await fetch(provider.url);
+      if (!response.ok) continue;
+
+      const data = await response.json();
+      const ipAddress = provider.read(data) || pick(data, AUDIT_IP_KEYS, "");
+      if (ipAddress) {
+        localStorage.setItem("loginIpAddress", ipAddress);
+        return ipAddress;
+      }
+    } catch {
+      // Try the next provider.
+    }
+  }
+
+  return "";
+};
+
+const getCurrentSessionIdentity = (ipAddress = "") => ({
+  role: getCurrentSessionRole(),
+  ipAddress: localStorage.getItem("loginIpAddress") || ipAddress,
+  email:
+    localStorage.getItem("adminEmail") ||
+    localStorage.getItem("doctorEmail") ||
+    localStorage.getItem("receptionistEmail") ||
+    localStorage.getItem("userEmail") ||
+    "",
+  name:
+    localStorage.getItem("adminName") ||
+    localStorage.getItem("doctorName") ||
+    localStorage.getItem("receptionistName") ||
+    localStorage.getItem("userName") ||
+    "",
+});
+
+const buildAuditRoleLookup = ({ users = [], admins = [], doctors = [], receptionists = [], loginLogs = [] }) => {
   const lookup = new Map();
 
   users.map(normalizeUser).forEach((user) => addRoleLookupUser(lookup, user));
   admins.map(normalizeAdmin).forEach((admin) => addRoleLookupUser(lookup, admin));
+  doctors.forEach((doctor) => addRoleLookupUser(lookup, doctor, "Doctor"));
+  receptionists.forEach((receptionist) => addRoleLookupUser(lookup, receptionist, "Receptionist"));
+  addCurrentSessionRoleLookup(lookup);
   loginLogs.forEach((log) => {
     addRoleLookupValue(lookup, log.userEmail, log.role);
     addRoleLookupValue(lookup, log.user, log.role);
+    addRoleLookupValue(lookup, log.userName, log.role);
   });
 
   return lookup;
 };
 
-const withAuditRoleFallback = (log, roleLookup) => {
-  if (log.role) return log;
-
+const withAuditRoleFallback = (log, roleLookup, currentIpAddress = "") => {
+  const session = getCurrentSessionIdentity(currentIpAddress);
   const role =
+    log.role ||
     roleLookup.get(normalizeString(log.userEmail)) ||
-    roleLookup.get(normalizeString(log.user));
+    roleLookup.get(normalizeString(log.user)) ||
+    roleLookup.get(normalizeString(log.userName)) ||
+    (isUserLoginMatch(session, log) ? session.role : "");
+  const ipAddress = log.ipAddress || (isUserLoginMatch(session, log) ? session.ipAddress : "");
 
-  return role ? { ...log, role } : log;
+  return {
+    ...log,
+    role: role || log.role,
+    ipAddress,
+  };
+};
+
+const getAuditLogKey = (log = {}) =>
+  String(log.id || [log.userName || log.user, log.action, log.systemAction, log.timestampRaw].join("|"));
+
+const sortAuditLogs = (logs = []) =>
+  [...logs].sort((left, right) => (right.sortTime || 0) - (left.sortTime || 0));
+
+const uniqueAuditLogs = (logs = []) => {
+  const seen = new Set();
+
+  return logs.filter((log) => {
+    const key = getAuditLogKey(log);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 };
 
 export const fetchAuditLogs = async () => {
-  const [auditResult, loginResult, usersResult, adminsResult] = await Promise.allSettled([
+  const [auditResult, loginResult, usersResult, adminsResult, doctorsResult, receptionistsResult] = await Promise.allSettled([
     superAdminRequest(SUPER_ADMIN_API.auditLogs),
     superAdminRequest(SUPER_ADMIN_API.loginHistory),
     superAdminRequest(SUPER_ADMIN_API.users),
     superAdminRequest(SUPER_ADMIN_API.admins),
+    superAdminRequest("Doctor"),
+    superAdminRequest("Receptionist"),
   ]);
 
   const auditLogs =
@@ -2037,17 +2344,51 @@ export const fetchAuditLogs = async () => {
   const roleLookup = buildAuditRoleLookup({
     users: usersResult.status === "fulfilled" ? asArray(usersResult.value) : [],
     admins: adminsResult.status === "fulfilled" ? asArray(adminsResult.value) : [],
+    doctors: doctorsResult.status === "fulfilled" ? asArray(doctorsResult.value) : [],
+    receptionists: receptionistsResult.status === "fulfilled" ? asArray(receptionistsResult.value) : [],
     loginLogs,
   });
-  const logs = [...localLogs, ...loginLogs, ...auditLogs].map((log) =>
-    withAuditRoleFallback(log, roleLookup)
+  const currentIpAddress = await fetchCurrentIpAddress();
+  const remoteLogs = uniqueAuditLogs([...loginLogs, ...auditLogs]).map((log) =>
+    withAuditRoleFallback(log, roleLookup, currentIpAddress)
   );
+  const logs = remoteLogs.length
+    ? remoteLogs
+    : localLogs.map((log) => withAuditRoleFallback(log, roleLookup, currentIpAddress));
 
   if (!logs.length && auditResult.status === "rejected" && loginResult.status === "rejected") {
     throw auditResult.reason;
   }
 
-  return logs;
+  return sortAuditLogs(logs);
+};
+
+export const fetchLoginHistory = async () => {
+  const [loginResult, usersResult, adminsResult, doctorsResult, receptionistsResult] = await Promise.allSettled([
+    superAdminRequest(SUPER_ADMIN_API.loginHistory),
+    superAdminRequest(SUPER_ADMIN_API.users),
+    superAdminRequest(SUPER_ADMIN_API.admins),
+    superAdminRequest("Doctor"),
+    superAdminRequest("Receptionist"),
+  ]);
+
+  if (loginResult.status === "rejected") {
+    throw loginResult.reason;
+  }
+
+  const loginLogs = asArray(loginResult.value).map(normalizeLoginLog);
+  const roleLookup = buildAuditRoleLookup({
+    users: usersResult.status === "fulfilled" ? asArray(usersResult.value) : [],
+    admins: adminsResult.status === "fulfilled" ? asArray(adminsResult.value) : [],
+    doctors: doctorsResult.status === "fulfilled" ? asArray(doctorsResult.value) : [],
+    receptionists: receptionistsResult.status === "fulfilled" ? asArray(receptionistsResult.value) : [],
+    loginLogs,
+  });
+  const currentIpAddress = await fetchCurrentIpAddress();
+
+  return sortAuditLogs(
+    loginLogs.map((log) => withAuditRoleFallback(log, roleLookup, currentIpAddress))
+  );
 };
 
 export const fetchRoles = async () => {
@@ -2182,10 +2523,19 @@ export const updateUserStatus = async (id, status) => {
 export const fetchSettings = async () =>
   normalizeSettings(await superAdminRequest(SUPER_ADMIN_API.settings));
 
+export const updateSettings = async (settings) => {
+  const result = await superAdminRequest(SUPER_ADMIN_API.settings, {
+    method: "PUT",
+    body: buildSettingsPayload(settings),
+  });
+  recordSuperAdminActivity("Updated settings", "Settings", "System settings");
+  return result;
+};
+
 export const updateGeneralSettings = async (settings) => {
   const result = await superAdminRequest(SUPER_ADMIN_API.settingsGeneral, {
     method: "PUT",
-    body: settings,
+    body: buildSettingsPayload(settings),
   });
   recordSuperAdminActivity("Updated general settings", "Settings", "General platform settings");
   return result;
@@ -2194,7 +2544,7 @@ export const updateGeneralSettings = async (settings) => {
 export const updateEmailSettings = async (settings) => {
   const result = await superAdminRequest(SUPER_ADMIN_API.settingsEmail, {
     method: "PUT",
-    body: settings,
+    body: buildSettingsPayload(settings),
   });
   recordSuperAdminActivity("Updated email settings", "Settings", "Email configuration");
   return result;
@@ -2203,7 +2553,7 @@ export const updateEmailSettings = async (settings) => {
 export const updateSmsSettings = async (settings) => {
   const result = await superAdminRequest(SUPER_ADMIN_API.settingsSms, {
     method: "PUT",
-    body: settings,
+    body: buildSettingsPayload(settings),
   });
   recordSuperAdminActivity("Updated SMS settings", "Settings", "SMS configuration");
   return result;
@@ -2212,7 +2562,7 @@ export const updateSmsSettings = async (settings) => {
 export const updatePaymentSettings = async (settings) => {
   const result = await superAdminRequest(SUPER_ADMIN_API.settingsPayment, {
     method: "PUT",
-    body: settings,
+    body: buildSettingsPayload(settings),
   });
   recordSuperAdminActivity("Updated payment settings", "Settings", "Payment configuration");
   return result;

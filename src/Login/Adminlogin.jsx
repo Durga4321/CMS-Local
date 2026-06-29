@@ -121,6 +121,42 @@ const getDisplayName = (authData, claims, email, role) => {
   return 'Admin';
 };
 
+const fetchPublicIp = async () => {
+  const providers = [
+    {
+      url: 'https://api.ipify.org?format=json',
+      read: (data) => getFirstText(data.ip),
+    },
+    {
+      url: 'https://api64.ipify.org?format=json',
+      read: (data) => getFirstText(data.ip),
+    },
+    {
+      url: 'https://ipapi.co/json/',
+      read: (data) => getFirstText(data.ip),
+    },
+    {
+      url: 'https://api.my-ip.io/v2/ip.json',
+      read: (data) => getFirstText(data.ip),
+    },
+  ];
+
+  for (const provider of providers) {
+    try {
+      const response = await fetch(provider.url);
+      if (!response.ok) continue;
+
+      const data = await response.json();
+      const ip = provider.read(data);
+      if (ip) return ip;
+    } catch {
+      // Try the next provider.
+    }
+  }
+
+  return '';
+};
+
 const getLoginIp = async (authData, claims) => {
   const expectedIp = getFirstText(
     authData.ipAddress,
@@ -134,13 +170,7 @@ const getLoginIp = async (authData, claims) => {
 
   if (expectedIp) return expectedIp;
 
-  try {
-    const response = await fetch('https://api.ipify.org?format=json');
-    const data = await response.json();
-    return getFirstText(data.ip, data?.IPAddress, data?.clientIp);
-  } catch {
-    return '';
-  }
+  return fetchPublicIp();
 };
 
 const normalizeRole = (role) =>
@@ -378,12 +408,15 @@ const AdminLogin = () => {
       localStorage.setItem('hospitalId', String(hospitalId));
       localStorage.setItem('hospitalName', clinicName);
       localStorage.setItem('clinicName', clinicName);
-      recordAuditLog({
-        user: loginEmail,
+      localStorage.setItem('loginIpAddress', loginIp);
+      await recordAuditLog({
+        userName: loginEmail,
         action: `${displayName} logged in`,
-        module: 'Login',
+        systemAction: 'Login',
+        isLoginActivity: true,
         role,
         ipAddress: loginIp,
+        timestamp: new Date().toISOString(),
       });
 
       if (normalizedRole === 'superadmin') {

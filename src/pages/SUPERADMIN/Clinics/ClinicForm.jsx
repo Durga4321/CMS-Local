@@ -6,11 +6,12 @@ import { fetchClinic, fetchClinics, saveClinic } from "../superAdminApi";
 import { useToast } from "../../../components/ToastProvider";
 import {
   buildAddress,
+  buildAddressPayload,
   emptyAddressParts,
   onlyPincodeValue,
   parseAddress,
   validateAddressParts,
-} from "../../../utils/address";
+} from "../../../utils/address.jsx";
 import {
   fetchPincodeLocation,
 } from "../../../utils/pincodeLocation";
@@ -38,17 +39,24 @@ const emptyClinic = {
   status: "Active",
 };
 
+const getClinicAddressParts = (clinic = {}) => {
+  if (clinic.addressParts && Object.keys(clinic.addressParts).length) {
+    return {
+      ...emptyAddressParts,
+      ...clinic.addressParts,
+    };
+  }
+
+  return parseAddress(clinic.address || "");
+};
+
 const buildClinicPayload = (form) => {
   const clinicName = form.name.trim();
   const phoneNumber = form.contactNumber.trim();
   const email = form.email.trim();
-  const addressParts = form.addressParts || parseAddress(form.address);
+  const addressParts = getClinicAddressParts(form);
   const address = buildAddress(addressParts);
-  const city = addressParts.city.trim();
-  const country = addressParts.country.trim();
-  const postalCode = addressParts.pincode.trim();
-  const street = addressParts.streetVillage.trim();
-  const state = addressParts.state.trim();
+  const addressPayload = buildAddressPayload(addressParts);
   const isActive = form.status === "Active";
 
   return {
@@ -65,16 +73,7 @@ const buildClinicPayload = (form) => {
     Address: address,
     ClinicAddress: address,
     address,
-    Street: street,
-    street,
-    City: city,
-    city,
-    State: state,
-    state,
-    Country: country,
-    country,
-    PostalCode: postalCode,
-    postalCode,
+    ...addressPayload,
     Status: form.status,
     status: form.status,
     IsActive: isActive,
@@ -130,7 +129,7 @@ function ClinicForm({ mode }) {
           setForm({
             ...emptyClinic,
             ...clinic,
-            addressParts: parseAddress(clinic.address),
+            addressParts: getClinicAddressParts(clinic),
           });
         }
       } catch (requestError) {
@@ -213,7 +212,7 @@ function ClinicForm({ mode }) {
         addressParts.pincode = "";
       }
 
-      if (name === "pincode") {
+      if (name === "pincode" && previousParts.pincode !== nextValue) {
         addressParts.area = "";
       }
 
@@ -254,7 +253,6 @@ function ClinicForm({ mode }) {
             area: previousParts.area || location.area,
             city: location.city || previousParts.city,
             state: location.state || previousParts.state,
-            streetVillage: previousParts.streetVillage || location.village || location.area,
             country: location.country || INDIA_COUNTRY,
             pincode,
           };
@@ -432,6 +430,21 @@ function ClinicForm({ mode }) {
             <label>Address</label>
             <div className="sa-form-grid">
               <div className="sa-form-field">
+                <label>Pincode</label>
+                <input
+                  value={form.addressParts?.pincode || ""}
+                  onChange={(event) => handleAddressChange("pincode", event.target.value)}
+                  className={fieldErrors["address.pincode"] ? "is-invalid" : ""}
+                  inputMode="numeric"
+                  maxLength={6}
+                  required
+                />
+                {fieldErrors["address.pincode"] ? (
+                  <span className="sa-field-error">{fieldErrors["address.pincode"]}</span>
+                ) : null}
+              </div>
+
+              <div className="sa-form-field">
                 <label>Street/Village Name</label>
                 <input
                   value={form.addressParts?.streetVillage || ""}
@@ -441,26 +454,6 @@ function ClinicForm({ mode }) {
                 />
                 {fieldErrors["address.streetVillage"] ? (
                   <span className="sa-field-error">{fieldErrors["address.streetVillage"]}</span>
-                ) : null}
-              </div>
-
-              <div className="sa-form-field">
-                <label>State</label>
-                <select
-                  value={form.addressParts?.state || ""}
-                  onChange={(event) => handleAddressChange("state", event.target.value)}
-                  className={fieldErrors["address.state"] ? "is-invalid" : ""}
-                  required
-                >
-                  <option value="">Select State</option>
-                  {INDIAN_STATES.map((state) => (
-                    <option key={state} value={state}>
-                      {state}
-                    </option>
-                  ))}
-                </select>
-                {fieldErrors["address.state"] ? (
-                  <span className="sa-field-error">{fieldErrors["address.state"]}</span>
                 ) : null}
               </div>
 
@@ -507,25 +500,30 @@ function ClinicForm({ mode }) {
               </div>
 
               <div className="sa-form-field">
-                <label>Country</label>
-                <input value={INDIA_COUNTRY} disabled readOnly />
-                {fieldErrors["address.country"] ? (
-                  <span className="sa-field-error">{fieldErrors["address.country"]}</span>
+                <label>State</label>
+                <select
+                  value={form.addressParts?.state || ""}
+                  onChange={(event) => handleAddressChange("state", event.target.value)}
+                  className={fieldErrors["address.state"] ? "is-invalid" : ""}
+                  required
+                >
+                  <option value="">Select State</option>
+                  {INDIAN_STATES.map((state) => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors["address.state"] ? (
+                  <span className="sa-field-error">{fieldErrors["address.state"]}</span>
                 ) : null}
               </div>
 
               <div className="sa-form-field">
-                <label>Pincode</label>
-                <input
-                  value={form.addressParts?.pincode || ""}
-                  onChange={(event) => handleAddressChange("pincode", event.target.value)}
-                  className={fieldErrors["address.pincode"] ? "is-invalid" : ""}
-                  inputMode="numeric"
-                  maxLength={6}
-                  required
-                />
-                {fieldErrors["address.pincode"] ? (
-                  <span className="sa-field-error">{fieldErrors["address.pincode"]}</span>
+                <label>Country</label>
+                <input value={INDIA_COUNTRY} disabled readOnly />
+                {fieldErrors["address.country"] ? (
+                  <span className="sa-field-error">{fieldErrors["address.country"]}</span>
                 ) : null}
               </div>
               <div className="sa-form-field sa-form-field-full">

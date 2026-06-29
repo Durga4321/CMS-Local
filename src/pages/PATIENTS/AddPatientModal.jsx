@@ -3,10 +3,11 @@ import "./AddPatientModal.css";
 import { useToast } from "../../components/ToastProvider";
 import {
   buildAddress,
+  buildAddressPayload,
   emptyAddressParts,
   onlyPincodeValue,
   validateAddressParts,
-} from "../../utils/address";
+} from "../../utils/address.jsx";
 import {
   fetchPincodeLocation,
 } from "../../utils/pincodeLocation";
@@ -95,7 +96,7 @@ function AddPatientModal({ onClose, onAdd }) {
         addressParts.pincode = "";
       }
 
-      if (name === "pincode") {
+      if (name === "pincode" && previousParts.pincode !== nextValue) {
         addressParts.area = "";
       }
 
@@ -121,7 +122,10 @@ function AddPatientModal({ onClose, onAdd }) {
     if (form.address !== nextAddress) {
       setForm((current) => ({ ...current, address: nextAddress }));
     }
+  }, [form.addressParts]);
 
+  React.useEffect(() => {
+    const addressParts = form.addressParts || emptyAddressParts;
     const pincode = addressParts.pincode || "";
     if (pincode.length !== 6) {
       setAreaOptions([]);
@@ -142,7 +146,6 @@ function AddPatientModal({ onClose, onAdd }) {
             area: previousParts.area || location.area,
             city: location.city || previousParts.city,
             state: location.state || previousParts.state,
-            streetVillage: previousParts.streetVillage || location.village || location.area,
             country: location.country || INDIA_COUNTRY,
             pincode,
           };
@@ -223,6 +226,7 @@ function AddPatientModal({ onClose, onAdd }) {
       emergencyContactName: form.emergencyContactName.trim(),
       emergencyContactPhone: form.emergencyContactPhone.trim(),
       address: buildAddress(form.addressParts),
+      ...buildAddressPayload(form.addressParts),
       age: Number(form.age),
     });
     toast.success("Patient added successfully");
@@ -358,6 +362,20 @@ function AddPatientModal({ onClose, onAdd }) {
               <label>Address</label>
               <div className="add-patient-address-grid">
                 <div className="add-patient-field">
+                  <label>Pincode</label>
+                  <input
+                    value={form.addressParts?.pincode || ""}
+                    onChange={(event) => handleAddressChange("pincode", event.target.value)}
+                    className={fieldErrors["address.pincode"] ? "is-invalid" : ""}
+                    inputMode="numeric"
+                    maxLength={6}
+                  />
+                  {fieldErrors["address.pincode"] ? (
+                    <span className="add-patient-field-error">{fieldErrors["address.pincode"]}</span>
+                  ) : null}
+                </div>
+
+                <div className="add-patient-field">
                   <label>Street/Village Name</label>
                   <input
                     value={form.addressParts?.streetVillage || ""}
@@ -366,25 +384,6 @@ function AddPatientModal({ onClose, onAdd }) {
                   />
                   {fieldErrors["address.streetVillage"] ? (
                     <span className="add-patient-field-error">{fieldErrors["address.streetVillage"]}</span>
-                  ) : null}
-                </div>
-
-                <div className="add-patient-field">
-                  <label>State</label>
-                  <select
-                    value={form.addressParts?.state || ""}
-                    onChange={(event) => handleAddressChange("state", event.target.value)}
-                    className={fieldErrors["address.state"] ? "is-invalid" : ""}
-                  >
-                    <option value="">Select State</option>
-                    {INDIAN_STATES.map((state) => (
-                      <option key={state} value={state}>
-                        {state}
-                      </option>
-                    ))}
-                  </select>
-                  {fieldErrors["address.state"] ? (
-                    <span className="add-patient-field-error">{fieldErrors["address.state"]}</span>
                   ) : null}
                 </div>
 
@@ -429,24 +428,29 @@ function AddPatientModal({ onClose, onAdd }) {
                 </div>
 
                 <div className="add-patient-field">
-                  <label>Country</label>
-                  <input value={INDIA_COUNTRY} disabled readOnly />
-                  {fieldErrors["address.country"] ? (
-                    <span className="add-patient-field-error">{fieldErrors["address.country"]}</span>
+                  <label>State</label>
+                  <select
+                    value={form.addressParts?.state || ""}
+                    onChange={(event) => handleAddressChange("state", event.target.value)}
+                    className={fieldErrors["address.state"] ? "is-invalid" : ""}
+                  >
+                    <option value="">Select State</option>
+                    {INDIAN_STATES.map((state) => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
+                  {fieldErrors["address.state"] ? (
+                    <span className="add-patient-field-error">{fieldErrors["address.state"]}</span>
                   ) : null}
                 </div>
 
                 <div className="add-patient-field">
-                  <label>Pincode</label>
-                  <input
-                    value={form.addressParts?.pincode || ""}
-                    onChange={(event) => handleAddressChange("pincode", event.target.value)}
-                    className={fieldErrors["address.pincode"] ? "is-invalid" : ""}
-                    inputMode="numeric"
-                    maxLength={6}
-                  />
-                  {fieldErrors["address.pincode"] ? (
-                    <span className="add-patient-field-error">{fieldErrors["address.pincode"]}</span>
+                  <label>Country</label>
+                  <input value={INDIA_COUNTRY} disabled readOnly />
+                  {fieldErrors["address.country"] ? (
+                    <span className="add-patient-field-error">{fieldErrors["address.country"]}</span>
                   ) : null}
                 </div>
               </div>

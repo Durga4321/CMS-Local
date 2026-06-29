@@ -80,6 +80,38 @@ export const buildAddress = (parts = {}) =>
     .filter(Boolean)
     .join(", ");
 
+export const buildAddressPayload = (parts = {}) => {
+  const normalized = {
+    ...emptyAddressParts,
+    ...parts,
+    country: String(parts.country || INDIA_COUNTRY).trim() || INDIA_COUNTRY,
+    pincode: onlyPincodeValue(parts.pincode || ""),
+  };
+
+  const streetVillage = String(normalized.streetVillage || "").trim();
+  const area = String(normalized.area || "").trim();
+  const city = String(normalized.city || "").trim();
+  const state = String(normalized.state || "").trim();
+  const country = normalized.country;
+  const pincode = String(normalized.pincode || "").trim();
+
+  return {
+    addressParts: normalized,
+    Street: streetVillage,
+    street: streetVillage,
+    Area: area,
+    area,
+    City: city,
+    city,
+    State: state,
+    state,
+    Country: country,
+    country,
+    PostalCode: pincode,
+    postalCode: pincode,
+  };
+};
+
 export const validateAddressParts = (parts = {}, label = "Address") => {
   const errors = {};
   const fields = [
