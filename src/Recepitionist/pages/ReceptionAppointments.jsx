@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CheckCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "../../components/ToastProvider";
 import { formatToday, parseList, requestJson } from "../receptionApi";
 import { getReceptionistProfile } from "../receptionSession";
@@ -181,7 +181,9 @@ const appendUnit = (value, unit) => {
 
 function ReceptionAppointments() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const toast = useToast();
+  const requestedPatientId = String(searchParams.get("patientId") || "").trim();
   const receptionistHospitalId = String(
     getReceptionistProfile().hospitalId || ""
   ).trim();
@@ -247,7 +249,11 @@ function ReceptionAppointments() {
       setAppointments(parseList(appointmentData));
       setForm((prev) => ({
         ...prev,
-        patientId: prev.patientId || String(nextPatients[0]?.id || ""),
+        patientId: nextPatients.some(
+          (patient) => String(patient.id) === requestedPatientId
+        )
+          ? requestedPatientId
+          : prev.patientId || String(nextPatients[0]?.id || ""),
         doctorId: nextDoctors.some(
           (doctor) => String(getDoctorId(doctor)) === String(prev.doctorId)
         )
@@ -255,7 +261,7 @@ function ReceptionAppointments() {
           : String(getDoctorId(nextDoctors[0]) || ""),
       }));
     });
-  }, [receptionistHospitalId]);
+  }, [receptionistHospitalId, requestedPatientId]);
 
   useEffect(() => {
     refresh();

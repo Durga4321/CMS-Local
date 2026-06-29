@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
+  CalendarPlus,
   Eye,
   FilePlus2,
   HeartPulse,
@@ -9,7 +10,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { parseList, requestJson } from "../receptionApi";
 
 const emptyForm = {
@@ -45,6 +46,9 @@ const getPatientName = (record, patientsById) => {
 
 function ReceptionMedicalHistory() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedPatientId = String(searchParams.get("patientId") || "").trim();
+  const handledPatientHistoryLink = useRef("");
   const [histories, setHistories] = useState([]);
   const [patients, setPatients] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -133,11 +137,28 @@ function ReceptionMedicalHistory() {
   }, [fetchAppointments, fetchHistories, fetchPatients]);
 
   const openAdd = () => {
-    setForm(emptyForm);
+    setForm({
+      ...emptyForm,
+      patientId: requestedPatientId,
+    });
     setDocumentFile(null);
     setModal("add");
     setMessage("");
   };
+
+  useEffect(() => {
+    if (!requestedPatientId || modal || !patients.length) return;
+    if (handledPatientHistoryLink.current === requestedPatientId) return;
+    if (!patients.some((patient) => String(patient.id) === requestedPatientId)) return;
+
+    handledPatientHistoryLink.current = requestedPatientId;
+    setForm({
+      ...emptyForm,
+      patientId: requestedPatientId,
+    });
+    setDocumentFile(null);
+    setModal("add");
+  }, [modal, patients, requestedPatientId]);
 
   const openEdit = (record) => {
     setForm({
@@ -298,11 +319,24 @@ function ReceptionMedicalHistory() {
                 <span>{record.currentMedications || "-"}</span>
                 <span>{record.surgeries || "-"}</span>
                 <span className="rc-row-actions">
-                  <button onClick={() => openView(record)}>
-                    <Eye size={15} /> View
+                  <button
+                    aria-label="View medical history"
+                    onClick={() => openView(record)}
+                  >
+                    <Eye size={15} />
                   </button>
-                  <button onClick={() => openEdit(record)}>
-                    <Pencil size={15} /> Edit
+                  <button
+                    aria-label="Edit medical history"
+                    onClick={() => openEdit(record)}
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    onClick={() =>
+                      navigate(`/reception/appointments?patientId=${getPatientId(record)}`)
+                    }
+                  >
+                    <CalendarPlus size={15} /> Book Appointment
                   </button>
                   <button className="danger" onClick={() => deleteHistory(record)}>
                     <Trash2 size={15} /> Delete
