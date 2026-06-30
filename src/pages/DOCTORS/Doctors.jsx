@@ -28,7 +28,7 @@ import {
   validateMobile,
   validateNumeric,
   validateSelected,
-  validateStrongPassword,
+  validateText,
 } from "../../utils/validation";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { formatIndianCurrency } from "../../utils/format";
@@ -105,8 +105,10 @@ const getDoctorPhone = (doctor = {}) =>
   doctor.phoneNumber ?? doctor.phone ?? doctor.Phone ?? "";
 
 const getInitialEditForm = (doctor = {}) => ({
+
   name: cleanFormValue(doctor.name),
   specialization: cleanFormValue(doctor.specialization),
+  areaofExpertise: cleanFormValue(doctor.areaofExpertise ?? doctor.areaOfExpertise),
   experience:
     doctor.experience !== undefined && doctor.experience !== null
       ? String(doctor.experience)
@@ -117,7 +119,6 @@ const getInitialEditForm = (doctor = {}) => ({
       : "",
   email: cleanFormValue(doctor.email),
   phone: cleanFormValue(getDoctorPhone(doctor)),
-  password: "",
   isActive: getDoctorIsActive(doctor),
 });
 
@@ -170,15 +171,13 @@ const validateEditForm = (form) => {
   const errors = getEmptyEditErrors();
   errors.name = validateAlpha(form.name, "Name");
   errors.specialization = validateAlpha(form.specialization, "Specialization");
+  errors.areaofExpertise = validateText(form.areaofExpertise, "Area of expertise");
   errors.experience = validateNumeric(form.experience, "Experience", {
     integer: true,
   });
   errors.fees = validateNumeric(form.fees, "Fees");
   errors.email = validateGmail(form.email, 'Email', { strict: false });
   errors.phone = validateMobile(form.phone, "Phone");
-  errors.password = validateStrongPassword(form.password, "Password", {
-    required: false,
-  });
   errors.isActive = validateSelected(String(form.isActive), "a status");
 
   Object.keys(errors).forEach((key) => {
@@ -203,6 +202,9 @@ const buildDoctorUpdateBody = ({
   const body = {
     name: cleanFormValue(form.name ?? doctor.name),
     specialization: cleanFormValue(form.specialization ?? doctor.specialization),
+    areaofExpertise: cleanFormValue(
+      form.areaofExpertise ?? doctor.areaofExpertise ?? doctor.areaOfExpertise
+    ),
     experience: String(Number(form.experience ?? doctor.experience ?? 0) || 0),
     qualification: cleanFormValue(form.qualification ?? doctor.qualification),
     consultationFee: Number(form.fees ?? getDoctorFee(doctor) ?? 0) || 0,
@@ -210,11 +212,6 @@ const buildDoctorUpdateBody = ({
     phoneNumber: cleanFormValue(form.phone ?? getDoctorPhone(doctor)),
     isActive: nextIsActive,
   };
-
-  const password = String(form.password ?? "").trim();
-  if (password) {
-    body.password = password;
-  }
 
   const hospitalId = localStorage.getItem("hospitalId") || "";
   const clinicName = getClinicDisplayName({ ...doctor, hospitalId }, "");
@@ -405,7 +402,12 @@ function Doctors() {
     if (!value) return doctors;
 
     return doctors.filter((doctor) =>
-      [doctor.name, doctor.specialization, doctor.email]
+      [
+        doctor.name,
+        doctor.specialization,
+        doctor.areaofExpertise ?? doctor.areaOfExpertise,
+        doctor.email,
+      ]
         .filter(Boolean)
         .some((field) => String(field).toLowerCase().includes(value))
     );
@@ -729,9 +731,9 @@ function Doctors() {
 
       <div className="doctors-table">
         <div className="doctors-thead">
-          <span>Profile</span>
           <span>Name</span>
           <span>Specialization</span>
+          <span>Area of Expertise</span>
           <span>Experience</span>
           <span className="doctors-fee-heading">Doctor Fees</span>
           <span>Contact</span>
@@ -762,30 +764,15 @@ function Doctors() {
 
           return (
             <div className="doctors-row" key={doc.id ?? `${doc.name}-${doc.email}`}>
-              <div className="doctors-profile-cell">
-                {doctorImageUrl ? (
-                  <AuthImage
-                    src={doctorImageUrl}
-                    alt={doc.name || "Doctor"}
-                    className="doctors-profile-image"
-                    fallback={
-                      <div className="doctors-avatar doctors-avatar-large">
-                        {initials}
-                      </div>
-                    }
-                  />
-                ) : (
-                  <div className="doctors-avatar doctors-avatar-large">
-                    {initials}
-                  </div>
-                )}
-              </div>
-
               <div className="doctors-cell doctors-name-cell">
                 <b>{doc.name || "-"}</b>
               </div>
 
               <div className="doctors-cell">{doc.specialization || "-"}</div>
+
+              <div className="doctors-cell">
+                {cleanDisplayText(doc.areaofExpertise ?? doc.areaOfExpertise)}
+              </div>
 
               <div className="doctors-cell">
                 {doc.experience !== undefined && doc.experience !== null
@@ -928,6 +915,23 @@ function Doctors() {
                 </div>
 
                 <div className="doctor-edit-field">
+                  <label htmlFor="edit-areaofExpertise">Area of Expertise</label>
+                  <input
+                    id="edit-areaofExpertise"
+                    name="areaofExpertise"
+                    value={editForm.areaofExpertise}
+                    onChange={handleEditFieldChange}
+                    className={editFieldErrors.areaofExpertise ? "is-invalid" : ""}
+                    aria-invalid={Boolean(editFieldErrors.areaofExpertise)}
+                  />
+                  {editFieldErrors.areaofExpertise ? (
+                    <span className="doctor-edit-field-error">
+                      {editFieldErrors.areaofExpertise}
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="doctor-edit-field">
                   <label htmlFor="edit-experience">Experience</label>
                   <input
                     id="edit-experience"
@@ -1003,25 +1007,6 @@ function Doctors() {
                   {editFieldErrors.email ? (
                     <span className="doctor-edit-field-error">
                       {editFieldErrors.email}
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="doctor-edit-field">
-                  <label htmlFor="edit-password">Password</label>
-                  <input
-                    id="edit-password"
-                    name="password"
-                    type="password"
-                    value={editForm.password}
-                    onChange={handleEditFieldChange}
-                    placeholder="Leave blank if unchanged"
-                    className={editFieldErrors.password ? "is-invalid" : ""}
-                    aria-invalid={Boolean(editFieldErrors.password)}
-                  />
-                  {editFieldErrors.password ? (
-                    <span className="doctor-edit-field-error">
-                      {editFieldErrors.password}
                     </span>
                   ) : null}
                 </div>
