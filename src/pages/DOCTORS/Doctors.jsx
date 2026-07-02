@@ -5,6 +5,8 @@ import {
   Plus,
   Pencil,
   Trash2,
+  ToggleLeft,
+  ToggleRight,
   Calendar,
   X,
 } from "lucide-react";
@@ -803,11 +805,17 @@ function Doctors() {
                     className={`doctors-status ${isActive ? "doctors-status-active" : "doctors-status-inactive"
                       } ${isStatusUpdating ? "doctors-status-updating" : ""}`}
                   >
-                    {isStatusUpdating
-                      ? "Updating..."
-                      : isActive
-                        ? "Active"
-                        : "Inactive"}
+                    {isStatusUpdating ? (
+                      "Updating..."
+                    ) : isActive ? (
+                      <>
+                        <ToggleRight size={14} /> Active
+                      </>
+                    ) : (
+                      <>
+                        <ToggleLeft size={14} /> Inactive
+                      </>
+                    )}
                   </span>
                 </button>
               </div>

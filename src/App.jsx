@@ -28,7 +28,6 @@ import AddDoctor from "./pages/DOCTORS/AddDoctor";
 import DoctorSchedule from "./pages/DOCTORS/DoctorSchedule";
 import Patients from "./pages/PATIENTS/Patients";
 import PatientDetails from "./pages/PATIENTS/PatientDetails";
-
 // Optional
 import Appointments from "./pages/APPOINTMENTS/Appointments";
 import NewAppointment from "./pages/APPOINTMENTS/NewAppointment";
@@ -82,9 +81,8 @@ function App() {
           <Route path="DoctorSchedule/schedule" element={<Doctorschedulepage />} />
           <Route path="receptionists" element={<Receptionists />} />
 
-          {/* ✅ PATIENTS */}
           <Route path="patients" element={<Patients />} />
-          <Route path="patients/:id" element={<PatientDetails />} /> {/* ✅ IMPORTANT */}
+          <Route path="patients/:id" element={<PatientDetails />} />
 
           <Route path="appointments" element={<Appointments />} />
           <Route path="appointments/new" element={<NewAppointment />} />
