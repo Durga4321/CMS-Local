@@ -170,6 +170,8 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
+  width: 100%;
 }
 
 .sa-activity-item,
@@ -177,6 +179,7 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
+  box-sizing: border-box;
   width: 100%;
   padding: 12px;
   border: 1px solid #eef2f7;
@@ -184,10 +187,12 @@
 }
 
 .sa-notification-item {
+  align-items: center;
   background: #ffffff;
   cursor: pointer;
   text-align: left;
   font: inherit;
+  overflow: hidden;
 }
 
 .sa-notification-item:hover,
@@ -197,7 +202,8 @@
   outline: 0;
 }
 
-.sa-notification-item > div {
+.sa-notification-item > div,
+.sa-notification-item-btn {
   min-width: 0;
 }
 
@@ -210,7 +216,9 @@
 
 .sa-activity-item b,
 .sa-notification-item b {
+  display: block;
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .sa-activity-item p,
@@ -225,8 +233,16 @@
 .sa-notification-item p {
   display: -webkit-box;
   overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.sa-notification-item-btn span {
+  display: block;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .sa-notification-detail {
@@ -288,26 +304,20 @@
   text-align: center;
   color: #64748b;
 }
-  .sa-notification-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .sa-notification-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px;
-    border: 1px solid #eef2f7;
-    border-radius: 8px;
-    background: #fff;
-  }
   .sa-notification-item-btn {
+    flex: 1 1 auto;
+    min-width: 0;
     border: 0;
     background: transparent;
     text-align: left;
     padding: 0;
+  }
+  .sa-notification-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
   }
   .sa-btn-ghost {
     border: 0;
@@ -825,5 +835,14 @@
 
   .sa-modal-header {
     align-items: center;
+  }
+
+  .sa-notification-item {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .sa-notification-actions {
+    margin-left: auto;
   }
 }

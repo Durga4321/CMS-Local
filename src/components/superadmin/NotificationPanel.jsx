@@ -47,7 +47,7 @@ function NotificationPanel({ items = [], onDelete = () => {} }) {
                 <span>{item.targetUsers}</span>
               </div>
             </button>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div className="sa-notification-actions">
               <span className={`sa-badge ${isRead(item) ? "is-muted" : "is-active"}`}>
                 {isRead(item) ? "Read" : "Unread"}
               </span>

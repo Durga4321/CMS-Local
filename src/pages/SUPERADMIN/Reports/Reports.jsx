@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { BarChart3, Download, Receipt, Search, Users } from "lucide-react";
+import { BarChart3, Download, IndianRupee, Search, Users } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import Charts from "../../../components/superadmin/Charts";
 import DashboardCards from "../../../components/superadmin/DashboardCards";
@@ -212,7 +212,7 @@ function Reports() {
       {
         label: "Total Revenue",
         value: formatIndianCurrency(reportSummary.totalRevenue),
-        icon: Receipt,
+        icon: IndianRupee,
         tone: "teal",
       },
       {
