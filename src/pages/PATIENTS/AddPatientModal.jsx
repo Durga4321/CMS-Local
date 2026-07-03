@@ -179,6 +179,8 @@ function AddPatientModal({ onClose, onAdd }) {
   }, [form.addressParts?.pincode]);
 
   const validateForm = () => {
+    const phone = String(form.phone || "").trim();
+    const emergencyContactPhone = String(form.emergencyContactPhone || "").trim();
     const nextErrors = {
       name: validateAlpha(form.name, "Name"),
       email: validateGmail(form.email),
@@ -199,6 +201,16 @@ function AddPatientModal({ onClose, onAdd }) {
         )
       ),
     };
+
+    if (
+      !nextErrors.phone &&
+      !nextErrors.emergencyContactPhone &&
+      phone &&
+      phone === emergencyContactPhone
+    ) {
+      nextErrors.emergencyContactPhone =
+        "Emergency contact number must be different from patient phone number.";
+    }
 
     Object.keys(nextErrors).forEach((key) => {
       if (!nextErrors[key]) delete nextErrors[key];

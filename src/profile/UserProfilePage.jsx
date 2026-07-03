@@ -103,6 +103,12 @@ function UserProfilePage({ roleType = "admin" }) {
       return;
     }
 
+    if (form.currentPassword === form.newPassword) {
+      setMessage("New password must be different from current password.");
+      setMessageType("error");
+      return;
+    }
+
     if (form.newPassword !== form.confirmPassword) {
       setMessage("New password and confirm password must match.");
       setMessageType("error");

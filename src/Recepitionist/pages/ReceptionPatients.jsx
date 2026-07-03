@@ -60,6 +60,11 @@ const firstText = (...values) =>
     .map((value) => String(value ?? "").trim())
     .find(Boolean) || "";
 
+const getPatientId = (patient = {}) =>
+  firstText(patient.id, patient.patientId, patient.PatientId, patient.PID);
+
+const normalizePhone = (value) => String(value ?? "").replace(/\D/g, "");
+
 const getPatientAddressParts = (patient = {}) => {
   const parsedAddress = parseAddress(firstText(patient.address, patient.Address));
   const structuredParts =
@@ -474,10 +479,76 @@ function ReceptionPatients() {
     return Object.keys(nextErrors).length === 0;
   };
 
+  const findPatientWithPhone = (phone, currentPatientId = "") => {
+    const normalizedPhone = normalizePhone(phone);
+    const normalizedCurrentId = String(currentPatientId || "").trim();
+
+    if (!normalizedPhone) return null;
+
+    return patients.find((patient) => {
+      const patientId = String(getPatientId(patient) || "").trim();
+      const patientPhone = normalizePhone(patient.phone || patient.Phone);
+
+      return (
+        patientPhone === normalizedPhone &&
+        (!normalizedCurrentId || patientId !== normalizedCurrentId)
+      );
+    });
+  };
+
+  const findPatientUsingPhone = (phone, currentPatientId = "") => {
+    const normalizedPhone = normalizePhone(phone);
+    const normalizedCurrentId = String(currentPatientId || "").trim();
+
+    if (!normalizedPhone) return null;
+
+    return patients.find((patient) => {
+      const patientId = String(getPatientId(patient) || "").trim();
+      const patientPhone = normalizePhone(patient.phone || patient.Phone);
+      const emergencyPhone = normalizePhone(
+        patient.emergencyContactPhone || patient.EmergencyContactPhone
+      );
+
+      return (
+        (!normalizedCurrentId || patientId !== normalizedCurrentId) &&
+        (patientPhone === normalizedPhone || emergencyPhone === normalizedPhone)
+      );
+    });
+  };
+
   const savePatient = async (event) => {
     event.preventDefault();
     if (!validateForm()) {
       const text = "Please fix the highlighted fields.";
+      setMessage(text);
+      toast.error(text);
+      return;
+    }
+
+    if (normalizePhone(form.phone) === normalizePhone(form.emergencyContactPhone)) {
+      const text = "Emergency contact number must be different from patient phone number.";
+      setFieldErrors((prev) => ({ ...prev, emergencyContactPhone: text }));
+      setMessage(text);
+      toast.error(text);
+      return;
+    }
+
+    const duplicatePatient = findPatientWithPhone(form.phone, form.id);
+    if (duplicatePatient) {
+      const text = "This mobile number is already registered for another patient.";
+      setFieldErrors((prev) => ({ ...prev, phone: text }));
+      setMessage(text);
+      toast.error(text);
+      return;
+    }
+
+    const duplicateEmergencyContact = findPatientUsingPhone(
+      form.emergencyContactPhone,
+      form.id
+    );
+    if (duplicateEmergencyContact) {
+      const text = "This emergency contact number is already used in another patient record.";
+      setFieldErrors((prev) => ({ ...prev, emergencyContactPhone: text }));
       setMessage(text);
       toast.error(text);
       return;
