@@ -743,6 +743,9 @@ const normalizeNotificationTarget = (target = "") => {
   const normalized = value.toLowerCase();
 
   if (normalized.includes("admin")) return "Active Admins";
+  if (normalized.includes("active user") || normalized === "active users" || normalized.includes("user"))
+    return "All Active Users";
+
   return "All Active Users";
 };
 
@@ -760,7 +763,11 @@ const getNotificationTarget = (notification = {}) => {
     notification.sendTo,
   ].filter(hasValue);
 
-  if (targetValues.some((value) => String(value).toLowerCase().includes("admin"))) {
+  const candidate = targetValues.find((value) =>
+    String(value || "").toLowerCase().includes("admin")
+  );
+
+  if (candidate) {
     return "Active Admins";
   }
 
@@ -793,9 +800,9 @@ const buildNotificationPayload = (notification = {}) => {
     title: String(pick(notification, ["title", "subject"], "")).trim(),
     message: String(pick(notification, ["message", "body", "description"], "")).trim(),
     targetUsers,
-    audience: targetUsers,
-    target: targetUsers,
-    recipient: targetUsers,
+    audience: audienceCode,
+    target: audienceCode,
+    recipient: audienceCode,
     targetAudience: audienceCode,
     targetRole: audienceCode,
     targetType: audienceCode,
