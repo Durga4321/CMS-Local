@@ -222,7 +222,7 @@
 
 .thead {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: minmax(60px, 0.4fr) 1fr 1fr 1fr;
 
   padding: 18px 24px;
 
@@ -237,7 +237,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: minmax(60px, 0.4fr) 1fr 1fr 1fr;
 
   padding: 18px 24px;
 

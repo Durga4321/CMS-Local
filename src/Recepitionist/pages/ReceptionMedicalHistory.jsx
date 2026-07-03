@@ -298,6 +298,7 @@ function ReceptionMedicalHistory() {
 
         <div className="rc-table">
           <div className="rc-table-head six">
+            <span>S.No.</span>
             <span>Patient</span>
             <span>Allergies</span>
             <span>Chronic Diseases</span>
@@ -310,6 +311,7 @@ function ReceptionMedicalHistory() {
             const patientName = getPatientName(record, patientsById);
             return (
               <div className="rc-table-row six" key={historyId}>
+                <span>{index + 1}</span>
                 <span>
                   <strong>{patientName || `Patient ${getPatientId(record) || "-"}`}</strong>
                   <small>PID: {getPatientId(record) || "-"}</small>

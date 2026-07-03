@@ -78,6 +78,12 @@ function Clinics() {
   }, [clinics, search, status]);
 
   const columns = [
+    {
+      key: "serial",
+      label: "S.No.",
+      width: "minmax(60px, 0.4fr)",
+      render: (_clinic, index) => index + 1,
+    },
     { key: "name", label: "Clinic Name", width: "minmax(140px, 1fr)" },
     { key: "address", label: "Address", width: "minmax(160px, 1.1fr)" },
     { key: "contactNumber", label: "Contact Number", width: "minmax(130px, 0.9fr)" },

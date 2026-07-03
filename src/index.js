@@ -3,6 +3,19 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+// Register service worker for PWA in production builds
+if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const swUrl = `${process.env.PUBLIC_URL || ''}/sw.js`;
+    navigator.serviceWorker.register(swUrl).then((registration) => {
+      // eslint-disable-next-line no-console
+      console.log('ServiceWorker registered: ', registration.scope);
+    }).catch((err) => {
+      // eslint-disable-next-line no-console
+      console.warn('ServiceWorker registration failed: ', err);
+    });
+  });
+}
 
 const originalFetch = window.fetch.bind(window);
 const INVALID_STATIC_TOKENS = new Set(["static-superadmin-token"]);

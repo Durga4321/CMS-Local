@@ -212,6 +212,8 @@ function Patients() {
 
         <div className="patients-thead">
 
+          <span>S.No.</span>
+
           <span>Patient</span>
 
           <span>Phone</span>
@@ -240,7 +242,7 @@ function Patients() {
         {/* ROWS */}
 
         {filteredPatients.map(
-          (patient) => {
+          (patient, index) => {
 
             return (
 
@@ -248,6 +250,7 @@ function Patients() {
                 className="patients-row"
                 key={patient.id}
               >
+                <span>{index + 1}</span>
 
                 {/* INFO */}
 

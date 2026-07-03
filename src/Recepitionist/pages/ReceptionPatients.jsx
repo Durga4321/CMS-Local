@@ -633,14 +633,16 @@ function ReceptionPatients() {
         </div>
         <div className="rc-table">
           <div className="rc-table-head five">
+            <span>S.No.</span>
             <span>PID</span>
             <span>Name</span>
             <span>Phone</span>
             <span>Age</span>
             <span>Actions</span>
           </div>
-          {rows.map((patient) => (
+          {rows.map((patient, index) => (
             <div className="rc-table-row five" key={patient.id}>
+              <span>{index + 1}</span>
               <span>{patient.id}</span>
               <span>{patient.name || "-"}</span>
               <span>{patient.phone || "-"}</span>

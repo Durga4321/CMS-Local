@@ -43,6 +43,18 @@
   color: #6b7280;
 }
 
+.sidebar-close-btn {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar-close-btn { display: block; color: #374151; }
+}
+
 /* NAV */
 .menu-title {
   font-size: 12px;
@@ -167,4 +179,36 @@
   height: 10px;
   background: #0f9d9d;
   border-radius: 50%;
+}
+
+/* Overlay and mobile slide-in */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1050;
+}
+
+.sidebar-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 260px;
+    transform: translateX(-260px);
+    position: fixed;
+    height: 100vh;
+    transition: transform 0.28s ease;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-header h3 { font-size: 15px; }
 }

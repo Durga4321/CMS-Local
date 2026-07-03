@@ -529,6 +529,8 @@ function DoctorWiseReport() {
 
         <div className="thead">
 
+          <span>S.No.</span>
+
           <span>Doctor</span>
 
           <span>Specialization</span>
@@ -545,6 +547,7 @@ function DoctorWiseReport() {
             className="row"
             key={i}
           >
+            <span>{i + 1}</span>
 
             <span>
               Dr. {d.doctorName}

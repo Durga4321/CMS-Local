@@ -259,8 +259,14 @@ function Users() {
 
   const columns = [
     {
+      key: "serial",
+      label: "S.No.",
+      width: "minmax(60px, 0.4fr)",
+      render: (_user, index) => index + 1,
+    },
+    {
       key: "name",
-      label: "User",
+      label: "Name",
       render: (user) => formatTitleCase(user.name) || "-",
     },
     { key: "email", label: "Email", width: "minmax(170px, 1.2fr)" },

@@ -18,3 +18,13 @@
   padding: 15px;
   overflow-y: auto;
 }
+
+@media (max-width: 768px) {
+  .main {
+    margin-left: 0;
+  }
+
+  .content {
+    padding: 12px;
+  }
+}

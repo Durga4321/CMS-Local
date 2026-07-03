@@ -733,6 +733,7 @@ function Doctors() {
 
       <div className="doctors-table">
         <div className="doctors-thead">
+          <span>S.No.</span>
           <span>Name</span>
           <span>Specialization</span>
           <span>Area of Expertise</span>
@@ -748,7 +749,7 @@ function Doctors() {
           <div className="doctors-empty">No doctors found.</div>
         ) : null}
 
-        {filteredDoctors.map((doc) => {
+        {filteredDoctors.map((doc, index) => {
           const doctorImageUrl = getImageUrl(doc);
 
 
@@ -766,6 +767,7 @@ function Doctors() {
 
           return (
             <div className="doctors-row" key={doc.id ?? `${doc.name}-${doc.email}`}>
+              <span>{index + 1}</span>
               <div className="doctors-cell doctors-name-cell">
                 <b>{doc.name || "-"}</b>
               </div>

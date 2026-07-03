@@ -136,6 +136,7 @@
 .receptionists-row {
   display: grid;
   grid-template-columns:
+    minmax(60px, 0.4fr)
     minmax(180px, 1.35fr)
     minmax(180px, 1.25fr)
     minmax(120px, 0.8fr)

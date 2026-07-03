@@ -133,6 +133,12 @@ function Reports() {
   };
 
   const columns = [
+    {
+      key: "serial",
+      label: "S.No.",
+      width: "minmax(60px, 0.4fr)",
+      render: (_item, index) => index + 1,
+    },
     { key: "adminName", label: "Admin" },
     { key: "name", label: "Clinic" },
     {

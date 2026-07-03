@@ -488,6 +488,8 @@ function Appointments() {
 
           <div className="appointments-thead">
 
+            <span>S.No.</span>
+
             <span>Patient</span>
 
             <span>Doctor</span>
@@ -516,12 +518,13 @@ function Appointments() {
           {/* ROWS */}
 
           {filteredAppointments.map(
-            (item) => (
+            (item, index) => (
 
               <div
                 className="appointments-row"
                 key={item.appointmentId}
               >
+                <span>{index + 1}</span>
 
                 {/* PATIENT */}
 

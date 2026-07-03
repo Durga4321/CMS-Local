@@ -7,6 +7,7 @@ function DataTable({
   error = "",
   emptyMessage = "No records found.",
   getRowKey,
+  rowIndexOffset = 0,
 }) {
   const gridTemplateColumns = columns
     .map((column) => column.width || "minmax(0, 1fr)")
@@ -42,7 +43,7 @@ function DataTable({
                 className={`sa-table-cell${column.cellClassName ? ` ${column.cellClassName}` : ""}`}
                 key={column.key}
               >
-                {column.render ? column.render(row) : row[column.key] || "-"}
+                {column.render ? column.render(row, rowIndexOffset + index) : row[column.key] || "-"}
               </div>
             ))}
           </div>

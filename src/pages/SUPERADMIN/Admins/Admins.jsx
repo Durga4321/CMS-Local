@@ -464,6 +464,12 @@ function Admins() {
   };
 
   const columns = [
+    {
+      key: "serial",
+      label: "S.No.",
+      width: "minmax(60px, 0.4fr)",
+      render: (_admin, index) => index + 1,
+    },
     { key: "name", label: "Name" },
     { key: "email", label: "Email", width: "minmax(220px, 1.5fr)", cellClassName: "sa-table-cell--wrap" },
             { key: "assignedClinic", label: "Assigned Clinic" },

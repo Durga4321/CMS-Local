@@ -15,6 +15,7 @@ import {
   ListChecks,
   ShieldCheck,
   UserCog,
+  X,
 } from "lucide-react";
 
 import "./Sidebar.css";
@@ -31,6 +32,17 @@ const items = [
   { to: "/reports", label: "Reports", icon: FileBarChart2 },
 ];
 
+const patientItems = [
+  { to: "/patient/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/patient/profile", label: "My Profile", icon: UserRound },
+  { to: "/patient/book", label: "Book Appointment", icon: Stethoscope },
+  { to: "/patient/appointments", label: "Appointments", icon: CalendarDays },
+  { to: "/patient/history", label: "Medical History", icon: FileBarChart2 },
+  { to: "/patient/prescriptions", label: "Prescriptions", icon: ListChecks },
+  { to: "/patient/billing", label: "Billing & Payments", icon: Building2 },
+  { to: "/patient/notifications", label: "Notifications", icon: Bell },
+];
+
 const superAdminItems = [
   { to: "/superadmin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/superadmin/clinics", label: "Clinics", icon: Building2 },
@@ -43,17 +55,21 @@ const superAdminItems = [
   { to: "/superadmin/notifications", label: "Notifications", icon: Bell },
 ];
 
-function Sidebar() {
+function Sidebar({ open = false, onClose = () => {} }) {
   const location = useLocation();
   const isSuperAdmin = location.pathname.startsWith("/superadmin");
-  const navItems = isSuperAdmin ? superAdminItems : items;
-  const profile = getRoleProfile("admin");
+  const isPatient =
+    location.pathname === "/patient" ||
+    location.pathname.startsWith("/patient/");
+  const navItems = isSuperAdmin ? superAdminItems : isPatient ? patientItems : items;
+  const profile = isPatient ? getRoleProfile('patient') : getRoleProfile("admin");
   const profileName = profile.name;
-  const profileSub = isSuperAdmin ? "Super Admin" : getClinicDisplayName(profile, "Admin");
-  const brandName = isSuperAdmin ? "CMS" : getClinicDisplayName(profile, "CMS");
+  const profileSub = isSuperAdmin ? "Super Admin" : isPatient ? "Patient" : getClinicDisplayName(profile, "Admin");
+  const brandName = isSuperAdmin ? "CMS" : isPatient ? "Patient Portal" : getClinicDisplayName(profile, "CMS");
 
   return (
-    <aside className="sidebar">
+    <>
+      <div className={`sidebar ${open ? 'open' : ''}`}>
 
       {/* HEADER */}
       <div className="sidebar-header">
@@ -64,6 +80,9 @@ function Sidebar() {
           <h3>{brandName}</h3>
           <span>{isSuperAdmin ? "Super Admin Console" : "Admin Console"}</span>
         </div>
+        <button className="sidebar-close-btn" onClick={onClose} aria-label="Close sidebar">
+          <X size={18} />
+        </button>
       </div>
 
       {/* NAV */}
@@ -94,8 +113,9 @@ function Sidebar() {
           </p>
         </div>
       </div>
-
-    </aside>
+      </div>
+      <div className={`sidebar-overlay ${open ? 'visible' : ''}`} onClick={onClose} />
+    </>
   );
 }
 

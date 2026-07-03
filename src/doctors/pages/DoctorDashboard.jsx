@@ -396,6 +396,7 @@ function DoctorDashboard() {
 
         <div className="dd-table">
           <div className="dd-thead">
+            <span>S.No.</span>
             <span>Token No.</span>
             <span>Patient Name</span>
             <span>Age / Gender</span>
@@ -405,11 +406,12 @@ function DoctorDashboard() {
           </div>
 
           {filteredPatients.length > 0 ? (
-            filteredPatients.map((patient) => (
+            filteredPatients.map((patient, index) => (
               <div
                 className="dd-row"
                 key={patient.appointmentId || patient.tokenNumber}
               >
+                <span>{index + 1}</span>
                 <span className="dd-token">{patient.tokenNumber}</span>
                 <span className="dd-name">{patient.patientName}</span>
                 <span className="dd-age">{patient.ageGender}</span>

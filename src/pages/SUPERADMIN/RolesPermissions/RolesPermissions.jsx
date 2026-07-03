@@ -304,6 +304,12 @@ function RolesPermissions() {
   };
 
   const columns = [
+    {
+      key: "serial",
+      label: "S.No.",
+      width: "minmax(60px, 0.4fr)",
+      render: (_role, index) => index + 1,
+    },
     { key: "name", label: "Role" },
     { key: "module", label: "Module" },
     {

@@ -499,6 +499,8 @@ function DailyReport() {
 
         <div className="thead">
 
+          <span>S.No.</span>
+
           <span>Day</span>
 
           <span>Appointments</span>
@@ -513,6 +515,7 @@ function DailyReport() {
             key={i}
             className="row"
           >
+            <span>{i + 1}</span>
 
             <span>{d.day}</span>
 

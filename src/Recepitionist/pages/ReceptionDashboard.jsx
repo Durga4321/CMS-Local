@@ -142,14 +142,16 @@ function ReceptionDashboard() {
         </div>
         <div className="rc-table compact">
           <div className="rc-table-head four">
+            <span>S.No.</span>
             <span>Patient</span>
             <span>Doctor</span>
             <span>Time</span>
             <span>Status</span>
           </div>
           {latest.length ? (
-            latest.map((item) => (
+            latest.map((item, index) => (
               <div className="rc-table-row four" key={item.id || item.appointmentId}>
+                <span>{index + 1}</span>
                 <span>{item.patientName || item.patient?.name || "-"}</span>
                 <span>{item.doctorName || item.doctor?.name || "-"}</span>
                 <span>{item.time || "-"}</span>

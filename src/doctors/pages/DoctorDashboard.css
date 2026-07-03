@@ -182,7 +182,7 @@
 .dd-thead,
 .dd-row {
   display: grid;
-  grid-template-columns: 120px 1.5fr 1fr 1fr 1.2fr 1fr;
+  grid-template-columns: minmax(60px, 0.4fr) 120px 1.5fr 1fr 1fr 1.2fr 1fr;
   align-items: center;
   padding: 12px 24px;
   gap: 12px;

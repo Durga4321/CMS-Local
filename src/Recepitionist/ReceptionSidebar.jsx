@@ -7,6 +7,7 @@ import {
   HeartPulse,
   Stethoscope,
   UserPlus,
+  X,
 } from "lucide-react";
 import { getInitials } from "../profile/sessionProfile";
 import { getReceptionistProfile } from "./receptionSession";
@@ -20,7 +21,7 @@ const items = [
   { to: "/reception/billing", label: "Billing", icon: ClipboardList },
 ];
 
-function ReceptionSidebar() {
+function ReceptionSidebar({ onClose = () => {} }) {
   const profile = getReceptionistProfile();
   const profileName = profile.name || "Receptionist";
   const hospitalName = getClinicDisplayName(profile, "Clinic Name");
@@ -35,6 +36,9 @@ function ReceptionSidebar() {
           <span>Clinic Name</span>
           <strong>{hospitalName}</strong>
         </div>
+        <button className="rc-sidebar-close" onClick={onClose} type="button" aria-label="Close sidebar">
+          <X size={18} />
+        </button>
       </div>
 
       <div className="rc-section-label">Front Desk</div>

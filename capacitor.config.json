@@ -1,0 +1,9 @@
+{
+  "appId": "io.clinic.cms",
+  "appName": "CMS",
+  "webDir": "build",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

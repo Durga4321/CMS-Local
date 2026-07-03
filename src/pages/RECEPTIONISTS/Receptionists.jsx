@@ -512,6 +512,7 @@ function Receptionists() {
 
       <div className="receptionists-table">
         <div className="receptionists-thead">
+          <span>S.No.</span>
           <span>Name</span>
           <span>Email</span>
           <span>Phone</span>
@@ -524,7 +525,7 @@ function Receptionists() {
           <div className="receptionists-empty">No receptionists found.</div>
         ) : null}
 
-        {filteredReceptionists.map((receptionist) => {
+        {filteredReceptionists.map((receptionist, index) => {
           const initials =
             (receptionist.name || "R")
               .split(" ")
@@ -541,6 +542,7 @@ function Receptionists() {
 
           return (
             <div className="receptionists-row" key={receptionist.id}>
+              <span>{index + 1}</span>
               <div className="receptionists-name-cell">
                 <div className="receptionists-avatar">{initials}</div>
                 <div>

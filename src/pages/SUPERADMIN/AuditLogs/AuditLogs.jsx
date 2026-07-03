@@ -63,6 +63,12 @@ function AuditLogs() {
   }, [auditLogs, search, systemAction]);
 
   const columns = [
+    {
+      key: "serial",
+      label: "S.No.",
+      width: "minmax(60px, 0.4fr)",
+      render: (_log, index) => index + 1,
+    },
     { key: "userName", label: "User Name", width: "minmax(170px, 1.25fr)" },
     { key: "action", label: "Action", width: "minmax(180px, 1.2fr)" },
     { key: "systemAction", label: "System Action", width: "minmax(120px, 0.75fr)" },

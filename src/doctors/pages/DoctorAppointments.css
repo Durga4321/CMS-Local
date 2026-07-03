@@ -162,7 +162,7 @@
 
 .da-thead {
   display: grid;
-  grid-template-columns: 140px 120px 2fr 1.5fr 140px 140px;
+  grid-template-columns: minmax(60px, 0.4fr) 140px 120px 2fr 1.5fr 140px 140px;
   gap: 16px;
   padding: 16px 24px;
   background: #f8fafc;
@@ -176,7 +176,7 @@
 
 .da-row {
   display: grid;
-  grid-template-columns: 140px 120px 2fr 1.5fr 140px 140px;
+  grid-template-columns: minmax(60px, 0.4fr) 140px 120px 2fr 1.5fr 140px 140px;
   gap: 16px;
   padding: 16px 24px;
   border-bottom: 1px solid #f1f5f9;

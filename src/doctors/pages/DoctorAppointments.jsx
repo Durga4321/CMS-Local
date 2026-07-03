@@ -177,6 +177,7 @@ function DoctorAppointments() {
       <div className="da-table-card">
         <div className="da-table">
           <div className="da-thead">
+            <span>S.No.</span>
             <span>Date & Time</span>
             <span>Token No.</span>
             <span>Patient Name</span>
@@ -186,8 +187,9 @@ function DoctorAppointments() {
           </div>
 
           {filteredAppointments.length > 0 ? (
-            filteredAppointments.map((patient) => (
+            filteredAppointments.map((patient, index) => (
               <div className="da-row" key={patient.appointmentId || patient.tokenNumber}>
+                <span>{index + 1}</span>
                 <span className="da-datetime">
                   <span className="da-date">{patient.date}</span>
                   <span className="da-time">{patient.time}</span>

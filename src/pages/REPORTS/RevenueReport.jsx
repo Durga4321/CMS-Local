@@ -636,6 +636,7 @@ function RevenueReport() {
 
       <div className="table-card">
         <div className="thead">
+          <span>S.No.</span>
           <span>Month</span>
 
           <span>Revenue</span>
@@ -645,6 +646,7 @@ function RevenueReport() {
 
         {data.map((d, i) => (
           <div className="row" key={i}>
+            <span>{i + 1}</span>
             <span>{d.month}</span>
 
             <span>{formatIndianCurrency(d.revenue)}</span>
