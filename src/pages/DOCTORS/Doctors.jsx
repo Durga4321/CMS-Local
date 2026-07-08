@@ -95,7 +95,25 @@ const cleanDisplayText = (value) => {
   return text && text.toLowerCase() !== "string" ? text : "-";
 };
 
-const getImageUrl = (entity = {}) => String(entity.imageUrl || "").trim();
+const getImageUrl = (entity = {}) => {
+  const candidates = [
+    entity?.imageUrl,
+    entity?.image,
+    entity?.Image,
+    entity?.profileImage,
+    entity?.profileImageUrl,
+    entity?.imagePath,
+  ];
+
+  for (const candidate of candidates) {
+    const text = String(candidate ?? "").trim();
+    if (text && text.toLowerCase() !== "string") {
+      return text;
+    }
+  }
+
+  return "";
+};
 
 const getDoctorDateAddedValue = (doctor = {}) =>
   doctor.dateAdded ??
@@ -148,11 +166,19 @@ const formatPhoneValue = (value) => {
 const getDoctorPhone = (doctor = {}) =>
   doctor.phoneNumber ?? doctor.phone ?? doctor.Phone ?? "";
 
+const getDoctorAreaOfExpertise = (doctor = {}) =>
+  doctor.areaofExpertise ??
+  doctor.areaOfExpertise ??
+  doctor.AreaofExpertise ??
+  doctor.AreaOfExpertise ??
+  doctor.area_of_expertise ??
+  "";
+
 const getInitialEditForm = (doctor = {}) => ({
 
   name: cleanFormValue(doctor.name),
   specialization: cleanFormValue(doctor.specialization),
-  areaofExpertise: cleanFormValue(doctor.areaofExpertise ?? doctor.areaOfExpertise),
+  areaofExpertise: cleanFormValue(getDoctorAreaOfExpertise(doctor)),
   experience:
     doctor.experience !== undefined && doctor.experience !== null
       ? String(doctor.experience)
@@ -256,7 +282,7 @@ const buildDoctorUpdateBody = ({
     name: cleanFormValue(form.name ?? doctor.name),
     specialization: cleanFormValue(form.specialization ?? doctor.specialization),
     areaofExpertise: cleanFormValue(
-      form.areaofExpertise ?? doctor.areaofExpertise ?? doctor.areaOfExpertise
+      form.areaofExpertise ?? getDoctorAreaOfExpertise(doctor)
     ),
     experience: String(Number(form.experience ?? doctor.experience ?? 0) || 0),
     qualification: cleanFormValue(form.qualification ?? doctor.qualification),
@@ -466,7 +492,7 @@ function Doctors() {
         [
           doctor.name,
           doctor.specialization,
-          doctor.areaofExpertise ?? doctor.areaOfExpertise,
+          getDoctorAreaOfExpertise(doctor),
           doctor.email,
         ]
           .filter(Boolean)
@@ -1023,6 +1049,10 @@ function Doctors() {
                       <b>{doc.specialization || "-"}</b>
                     </div>
                     <div>
+                      <span>Area of Expertise</span>
+                      <b>{cleanDisplayText(getDoctorAreaOfExpertise(doc))}</b>
+                    </div>
+                    <div>
                       <span>Exp</span>
                       <b>
                         {doc.experience !== undefined && doc.experience !== null
@@ -1031,11 +1061,12 @@ function Doctors() {
                       </b>
                     </div>
                     <div>
-                      <span>Contact</span>
-                      <b className="doctor-card-contact">
-                        <span><Phone size={13} /> {formatPhoneValue(getDoctorPhone(doc))}</span>
-                        <span><Mail size={10} /> {cleanDisplayText(doc.email)}</span>
-                      </b>
+                      <span>Phone</span>
+                      <b>{formatPhoneValue(getDoctorPhone(doc))}</b>
+                    </div>
+                    <div>
+                      <span>Email</span>
+                      <b>{cleanDisplayText(doc.email)}</b>
                     </div>
                     <div>
                       <span>Status</span>

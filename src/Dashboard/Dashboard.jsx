@@ -263,9 +263,34 @@ function Dashboard() {
           data
         );
 
-        setDashboardData(
-          data
-        );
+        // Merge optional clinic details from the separate endpoint
+        let merged = { ...data };
+        try {
+          const clinicResp = await fetch(`${API}/ClincData`, {
+            headers: {
+              "ngrok-skip-browser-warning": "true",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          });
+
+          if (clinicResp.ok) {
+            const clinicData = await clinicResp.json();
+            // attach under `clinic` and also copy top-level clinicName/contact if present
+            merged = {
+              ...merged,
+              clinic: {
+                ...(merged.clinic || {}),
+                ...clinicData,
+              },
+              clinicName: merged.clinicName || clinicData?.clinicName || merged.clinic?.clinicName,
+            };
+          }
+        } catch (e) {
+          // ignore clinic fetch errors; dashboard still shows whatever it has
+          console.log("Failed to load clinic details:", e.message || e);
+        }
+
+        setDashboardData(merged);
 
       } catch (error) {
 
@@ -361,6 +386,8 @@ function Dashboard() {
 
   const clinicInfo = {
     name:
+      dashboardData?.clinic?.clinicName ||
+      dashboardData?.clinicName ||
       getClinicDisplayName(
         {
           ...dashboardData,
@@ -370,7 +397,7 @@ function Dashboard() {
       ),
     contactNumber:
       pickValue(
-        clinicRecord,
+        dashboardData?.clinic || clinicRecord,
         [
           "contactNumber",
           "phoneNumber",
@@ -391,7 +418,7 @@ function Dashboard() {
       ),
     email:
       pickValue(
-        clinicRecord,
+        dashboardData?.clinic || clinicRecord,
         ["email", "clinicEmail", "hospitalEmail"],
         pickValue(
           dashboardData,
@@ -401,12 +428,12 @@ function Dashboard() {
       ),
     status:
       getClinicStatusText(
-        clinicRecord,
+        dashboardData?.clinic || clinicRecord,
         dashboardData
       ),
     address:
       pickValue(
-        clinicRecord,
+        dashboardData?.clinic || clinicRecord,
         [
           "fullAddress",
           "address",
@@ -676,7 +703,7 @@ function Dashboard() {
 
             <ResponsiveContainer
               width="100%"
-              height="100%"
+              height={240}
             >
 
               <BarChart
@@ -781,7 +808,7 @@ function Dashboard() {
 
             <ResponsiveContainer
               width="100%"
-              height="100%"
+              height={180}
             >
 
               <PieChart>
@@ -912,7 +939,7 @@ function Dashboard() {
 
             <ResponsiveContainer
               width="100%"
-              height="100%"
+              height={240}
             >
 
               <BarChart

@@ -198,15 +198,16 @@
 
 .doctors-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(252px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
   align-items: stretch;
+  --doctor-card-height: 520px;
 }
 
 .doctor-profile-card {
   position: relative;
   min-width: 0;
-  min-height: 430px;
+  min-height: var(--doctor-card-height);
   background: transparent;
   border: none;
   perspective: 1200px;
@@ -223,8 +224,8 @@
 .doctor-card-inner {
   position: relative;
   width: 100%;
-  min-height: 430px;
-  height: 100%;
+  min-height: var(--doctor-card-height);
+  height: var(--doctor-card-height);
   transform-style: preserve-3d;
   transition: transform 0.5s ease;
 }
@@ -236,7 +237,9 @@
 .doctor-card-face {
   position: absolute;
   inset: 0;
-  min-height: 430px;
+  min-height: var(--doctor-card-height);
+  height: 100%;
+  box-sizing: border-box;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   background: #ffffff;
@@ -357,10 +360,10 @@
 .doctor-card-details>div {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(92px, 0.78fr) minmax(0, 1fr);
+  grid-template-columns: minmax(80px, 0.20fr) minmax(0, 1fr);
   align-items: start;
   gap: 10px;
-  padding: 8px 0;
+  padding: 11px 0;
   border-bottom: 1px solid #eef2f7;
 }
 
@@ -390,7 +393,7 @@
 
 .doctor-card-contact span {
   display: inline-flex;
-  align-items: center;
+  align-items: left;
   justify-content: flex-end;
   gap: 5px;
   color: #0f172a;
@@ -444,7 +447,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   background: #ffffff;
-  margin-bottom: 14px;
+  margin-bottom: 0px;
 }
 
 .doctors-table {
@@ -1007,6 +1010,7 @@
 
   .doctors-card-grid {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    --doctor-card-height: 550px;
   }
 
   .doctors-table {
@@ -1038,17 +1042,18 @@
 
   .doctors-card-grid {
     grid-template-columns: 1fr;
+    --doctor-card-height: 610px;
   }
 
   .doctor-profile-card,
   .doctor-card-inner,
   .doctor-card-face {
-    min-height: 500px;
+    min-height: var(--doctor-card-height);
   }
 
   .doctor-card-details>div {
     grid-template-columns: 1fr;
-    gap: 4px;
+    gap: 0px;
   }
 
   .doctor-card-details b,

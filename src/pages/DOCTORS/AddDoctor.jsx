@@ -239,6 +239,9 @@ import {
 const DOCTORS_API_URL =
   apiUrl("Doctor");
 
+const DEFAULT_DOCTOR_IMAGE_URL =
+  "https://posological-bea-subacademically.ngrok-free.dev/images/doctors/c65cac75-3f85-4caa-87db-56cd02670c07.png";
+
 const DOCTOR_SPECIALIZATIONS_API_URL =
   apiUrl("Doctor/specializations");
 
@@ -643,24 +646,31 @@ function AddDoctor() {
       phoneNumber: form.phone.trim(),
       isActive: form.isActive === "true",
     };
+    const requestPayload = {
+      ...body,
+      Name: body.name,
+      Specialization: body.specialization,
+      Experience: body.experience,
+      Qualification: body.qualification,
+      ConsultationFee: body.consultationFee,
+      AreaofExpertise: body.areaofExpertise,
+      Email: body.email,
+      PhoneNumber: body.phoneNumber,
+      IsActive: String(body.isActive),
+      image: DEFAULT_DOCTOR_IMAGE_URL,
+      imageUrl: DEFAULT_DOCTOR_IMAGE_URL,
+      Image: DEFAULT_DOCTOR_IMAGE_URL,
+    };
     const requestOptions = imageFile
       ? (() => {
         const formData = new FormData();
-        appendDoctorFormData(formData, {
-          ...body,
-          Name: body.name,
-          Specialization: body.specialization,
-          Experience: body.experience,
-          Qualification: body.qualification,
-          ConsultationFee: body.consultationFee,
-          AreaofExpertise: body.areaofExpertise,
-          Email: body.email,
-          PhoneNumber: body.phoneNumber,
-          IsActive: String(body.isActive),
-        });
+        appendDoctorFormData(formData, requestPayload);
         formData.append("Image", imageFile);
         return {
           method: "POST",
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          },
           body: formData,
         };
       })()
@@ -668,8 +678,9 @@ function AddDoctor() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(requestPayload),
       };
 
     try {
