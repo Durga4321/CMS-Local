@@ -256,7 +256,8 @@ const AdminLogin = () => {
   const toast = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -268,6 +269,15 @@ const AdminLogin = () => {
     return () => {
       document.body.classList.remove('auth-page-no-scroll');
     };
+  }, []);
+
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('rememberedEmail') || '';
+    const storedRemember = localStorage.getItem('rememberMe') === 'true';
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+    }
+    setRememberMe(storedRemember);
   }, []);
 
   useEffect(() => {
@@ -369,7 +379,7 @@ const AdminLogin = () => {
         );
       const normalizedRole = normalizeRole(role);
 
-      if (!['superadmin', 'admin', 'clinicadmin', 'doctor', 'receptionist'].includes(normalizedRole)) {
+      if (!['superadmin', 'admin', 'clinicadmin', 'doctor', 'receptionist', 'patient'].includes(normalizedRole)) {
         setErrors({
           api: 'Access denied. This account does not have Super Admin, Admin, Doctor, or Receptionist role.',
         });
@@ -400,7 +410,15 @@ const AdminLogin = () => {
         authData.clinic ||
         getClaim(claims, 'HospitalName', 'hospitalName', 'ClinicName', 'clinicName', 'AssignedClinic', 'assignedClinic') ||
         '';
-      const loginIp = await getLoginIp(authData, claims);
+      let loginIp = await getLoginIp(authData, claims);
+      if (!loginIp) {
+        try {
+          // Fallback to a public IP provider if backend didn't supply an IP
+          loginIp = await fetchPublicIp();
+        } catch {
+          loginIp = '';
+        }
+      }
 
       clearStoredSession();
       localStorage.setItem('token', token);
@@ -408,9 +426,19 @@ const AdminLogin = () => {
       localStorage.setItem('hospitalId', String(hospitalId));
       localStorage.setItem('hospitalName', clinicName);
       localStorage.setItem('clinicName', clinicName);
-      localStorage.setItem('loginIpAddress', loginIp);
+      localStorage.setItem('loginIpAddress', loginIp || '');
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', loginEmail);
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        localStorage.removeItem('rememberedEmail');
+        localStorage.setItem('rememberMe', 'false');
+      }
       await recordAuditLog({
-        userName: loginEmail,
+        userName: displayName,
+        user: displayName,
+        userEmail: loginEmail,
+        email: loginEmail,
         action: `${displayName} logged in`,
         systemAction: 'Login',
         isLoginActivity: true,
@@ -453,6 +481,17 @@ const AdminLogin = () => {
         return;
       }
 
+      if (normalizedRole === 'patient') {
+        localStorage.setItem('patientToken', token);
+        localStorage.setItem('patientRole', role);
+        localStorage.setItem('patientEmail', loginEmail);
+        localStorage.setItem('patientName', displayName);
+        localStorage.setItem('patientId', String(authData.patientId || getClaim(claims, 'PatientId') || ''));
+        toast.success('Login successful');
+        navigate('/patient/dashboard', { replace: true });
+        return;
+      }
+
       localStorage.setItem('adminToken', token);
       localStorage.setItem('adminRole', role);
       localStorage.setItem('adminEmail', loginEmail);
@@ -492,7 +531,7 @@ const AdminLogin = () => {
 
         <form className="auth-form" onSubmit={handleLogin} noValidate>
           <div className="form-group">
-            <label htmlFor="email">Email ID</label>
+            <label htmlFor="email">Email Address</label>
             <input
               id="email"
               type="email"
@@ -515,7 +554,7 @@ const AdminLogin = () => {
             <div className="password-wrapper">
               <input
                 id="password"
-                type={showPassword ? 'text' : 'password'}
+                type={passwordVisible ? 'text' : 'password'}
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => {
@@ -529,16 +568,25 @@ const AdminLogin = () => {
               <button
                 type="button"
                 className="password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                onClick={() => setPasswordVisible((prev) => !prev)}
+                aria-label={passwordVisible ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                {passwordVisible ? <EyeIcon /> : <EyeOffIcon />}
               </button>
             </div>
             {errors.password && <span className="error-message">{errors.password}</span>}
           </div>
 
           {errors.api ? <span className="error-message">{errors.api}</span> : null}
+
+              <label className="remember-me-row">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <span>Remember Me</span>
+          </label>
 
           <button type="submit" className="submit-btn" disabled={isLoading}>
             {isLoading ? 'Logging in...' : 'Login'}
@@ -549,6 +597,10 @@ const AdminLogin = () => {
           <Link to="/forgot-password" className="forgot-password-link">
             Forgot Password?
           </Link>
+        </div>
+
+        <div className="auth-register-row">
+          <p className="auth-register">New to CMS? <Link to="/patients/register" className="create-account-btn" role="button">Create account</Link></p>
         </div>
 
         <div className="auth-footer">

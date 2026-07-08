@@ -237,7 +237,7 @@ const normalizeNotificationStatus = (notification = {}) => {
 
 const normalizeUserStatus = (user = {}) => {
   if (isDeletedRecord(user)) {
-    return "Inactive";
+    return "Deleted";
   }
 
   const rawStatus = pick(user, ["status", "Status"], "");
@@ -342,18 +342,16 @@ const AUDIT_USER_KEYS = [
   "User",
   "name",
   "Name",
-  "email",
-  "Email",
-  "emailAddress",
-  "EmailAddress",
-  "userEmail",
-  "UserEmail",
-  "adminEmail",
-  "AdminEmail",
-  "doctorEmail",
-  "DoctorEmail",
-  "receptionistEmail",
-  "ReceptionistEmail",
+  "fullName",
+  "FullName",
+  "displayName",
+  "DisplayName",
+  "adminName",
+  "AdminName",
+  "doctorName",
+  "DoctorName",
+  "receptionistName",
+  "ReceptionistName",
 ];
 
 const AUDIT_EMAIL_KEYS = [
@@ -369,6 +367,33 @@ const AUDIT_EMAIL_KEYS = [
   "DoctorEmail",
   "receptionistEmail",
   "ReceptionistEmail",
+];
+
+const AUDIT_USER_NAME_KEYS = [
+  "name",
+  "Name",
+  "fullName",
+  "FullName",
+  "displayName",
+  "DisplayName",
+  "userName",
+  "UserName",
+  "adminName",
+  "AdminName",
+  "doctorName",
+  "DoctorName",
+  "receptionistName",
+  "ReceptionistName",
+  "user",
+  "User",
+  "actor",
+  "Actor",
+  "performedBy",
+  "PerformedBy",
+  "createdByUser",
+  "CreatedByUser",
+  "person",
+  "Person",
 ];
 
 const AUDIT_IP_KEYS = [
@@ -416,6 +441,19 @@ const pickNestedValue = (source = {}, objectKeys = [], valueKeys = []) => {
   return "";
 };
 
+const isEmailAddress = (value = "") => {
+  const normalized = String(value || "").trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized);
+};
+
+const getAuditNameFromAction = (action = "") => {
+  const text = String(action || "").trim();
+  if (!text) return "";
+
+  const match = text.match(/^([^-@\n]+?)\s+(logged in|logged out|signed in|signed out|created|updated|deleted|removed|added|performed)\b/i);
+  return match ? String(match[1]).trim() : "";
+};
+
 const getAuditRole = (log = {}) => {
   const role =
     pick(log, AUDIT_ROLE_KEYS) ||
@@ -437,6 +475,46 @@ const getAuditRole = (log = {}) => {
     );
 
   return formatRoleLabel(role);
+};
+
+const getAuditUserName = (log = {}) => {
+  const candidateName =
+    String(pick(log, AUDIT_USER_NAME_KEYS)).trim() ||
+    String(
+      pickNestedValue(
+        log,
+        ["user", "User", "actor", "Actor", "performedBy", "PerformedBy", "createdByUser", "CreatedByUser", "admin", "Admin"],
+        AUDIT_USER_NAME_KEYS
+      )
+    ).trim();
+
+  if (candidateName && !isEmailAddress(candidateName)) {
+    return candidateName;
+  }
+
+  const actionName = getAuditNameFromAction(
+    pick(log, ["action", "activity", "message", "description", "systemAction"], "")
+  );
+  if (actionName) {
+    return actionName;
+  }
+
+  const email = getAuditEmail(log);
+  return email || "System";
+};
+
+const getAuditEmail = (log = {}) => {
+  const email =
+    String(pick(log, AUDIT_EMAIL_KEYS)).trim() ||
+    String(
+      pickNestedValue(
+        log,
+        ["user", "User", "actor", "Actor", "performedBy", "PerformedBy", "createdByUser", "CreatedByUser", "admin", "Admin"],
+        AUDIT_EMAIL_KEYS
+      )
+    ).trim();
+
+  return email;
 };
 
 const isUserLoginMatch = (user = {}, log = {}) => {
@@ -706,37 +784,51 @@ export const normalizeRevenuePoint = (point = {}, index = 0) => ({
   invoices: getReportInvoiceCount(point),
 });
 
-export const normalizeAuditLog = (log = {}) => ({
-  id: pick(log, ["id", "logId", "_id"]),
-  userName: pick(log, AUDIT_USER_KEYS, "System"),
-  user: pick(log, AUDIT_USER_KEYS, "System"),
-  userEmail: pick(log, AUDIT_EMAIL_KEYS),
-  action: pick(log, ["action", "systemAction", "activity", "message", "description"]),
-  systemAction: pick(log, ["systemAction", "module", "moduleName", "category"], "Audit"),
-  isLoginActivity: toBoolean(pick(log, ["isLoginActivity"], false)),
-  timestampRaw: pick(log, ["timestamp", "createdAt", "date"]),
-  timestamp: formatAuditDateTime(pick(log, ["timestamp", "createdAt", "date"])),
-  sortTime: getAuditTimestamp(pick(log, ["timestamp", "createdAt", "date"])),
-  module: pick(log, ["module", "moduleName", "category", "systemAction"], "Audit"),
-  ipAddress: pick(log, AUDIT_IP_KEYS, ""),
-  role: getAuditRole(log),
-});
+export const normalizeAuditLog = (log = {}) => {
+  const email = getAuditEmail(log);
+  const userName = getAuditUserName(log);
+  const normalizedEmail = email || (/@/.test(userName) ? userName : "");
 
-export const normalizeLoginLog = (log = {}, index = 0) => ({
-  id: pick(log, ["id", "logId", "_id"], `login-${index}`),
-  userName: pick(log, AUDIT_USER_KEYS, "Unknown user"),
-  user: pick(log, AUDIT_USER_KEYS, "Unknown user"),
-  userEmail: pick(log, AUDIT_EMAIL_KEYS),
-  action: pick(log, ["action", "systemAction", "activity", "message", "description"], "Logged in"),
-  systemAction: pick(log, ["systemAction", "module", "moduleName", "category"], "Login"),
-  isLoginActivity: true,
-  timestampRaw: pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"]),
-  timestamp: formatAuditDateTime(pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"])),
-  sortTime: getAuditTimestamp(pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"])),
-  module: "Login",
-  ipAddress: pick(log, AUDIT_IP_KEYS, ""),
-  role: getAuditRole(log),
-});
+  return {
+    id: pick(log, ["id", "logId", "_id"]),
+    userName,
+    user: userName,
+    userEmail: normalizedEmail,
+    email: normalizedEmail,
+    action: pick(log, ["action", "systemAction", "activity", "message", "description"]),
+    systemAction: pick(log, ["systemAction", "module", "moduleName", "category"], "Audit"),
+    isLoginActivity: toBoolean(pick(log, ["isLoginActivity"], false)),
+    timestampRaw: pick(log, ["timestamp", "createdAt", "date"]),
+    timestamp: formatAuditDateTime(pick(log, ["timestamp", "createdAt", "date"])),
+    sortTime: getAuditTimestamp(pick(log, ["timestamp", "createdAt", "date"])),
+    module: pick(log, ["module", "moduleName", "category", "systemAction"], "Audit"),
+    ipAddress: pick(log, AUDIT_IP_KEYS, ""),
+    role: getAuditRole(log),
+  };
+};
+
+export const normalizeLoginLog = (log = {}, index = 0) => {
+  const email = getAuditEmail(log);
+  const userName = getAuditUserName(log);
+  const normalizedEmail = email || (/@/.test(userName) ? userName : "");
+
+  return {
+    id: pick(log, ["id", "logId", "_id"], `login-${index}`),
+    userName,
+    user: userName,
+    userEmail: normalizedEmail,
+    email: normalizedEmail,
+    action: pick(log, ["action", "systemAction", "activity", "message", "description"], "Logged in"),
+    systemAction: pick(log, ["systemAction", "module", "moduleName", "category"], "Login"),
+    isLoginActivity: true,
+    timestampRaw: pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"]),
+    timestamp: formatAuditDateTime(pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"])),
+    sortTime: getAuditTimestamp(pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"])),
+    module: "Login",
+    ipAddress: pick(log, AUDIT_IP_KEYS, ""),
+    role: getAuditRole(log),
+  };
+};
 
 const normalizeNotificationTarget = (target = "") => {
   const value = String(target || "All Active Users").trim();
@@ -2094,20 +2186,22 @@ const buildAuditLogPayload = (log = {}) => {
   const timestamp = pick(log, ["timestamp", "createdAt", "date"], new Date().toISOString());
   const module = pick(log, ["module", "moduleName", "category", "systemAction"], "Audit");
   const role = pick(log, ["role"], getCurrentSessionRole());
+  const action = pick(log, ["action", "activity", "message", "description"], "Activity recorded");
   const isLoginActivity =
     typeof log.isLoginActivity === "boolean"
       ? log.isLoginActivity
-      : normalizeString(module) === "login" || normalizeString(pick(log, ["action"], "")).includes("login");
+      : normalizeString(module) === "login" || normalizeString(action).includes("login") || normalizeString(action).includes("logout");
 
   return {
     id: Number(pick(log, ["id"], 0)) || 0,
     userName: pick(log, ["userName", "user", "name", "email", "emailAddress", "userEmail"], "System"),
-    action: pick(log, ["action", "activity", "message", "description"], isLoginActivity ? "Logged in" : "Activity recorded"),
+    action,
     systemAction: pick(log, ["systemAction"], module),
     ipAddress: pick(log, AUDIT_IP_KEYS, ""),
     isLoginActivity,
     timestamp,
     ...(role ? { role } : {}),
+    ...(pick(log, ["userEmail", "emailAddress", "email"], "") ? { email: pick(log, ["userEmail", "emailAddress", "email"], "") } : {}),
   };
 };
 
@@ -2204,6 +2298,27 @@ const addRoleLookupUser = (lookup, user = {}, fallbackRole = "") => {
   );
 };
 
+const addEmailLookupValue = (lookup, key, email) => {
+  const normalizedKey = normalizeString(key);
+  const normalizedEmail = String(email || "").trim();
+  if (normalizedKey && normalizedEmail && !lookup.has(normalizedKey)) {
+    lookup.set(normalizedKey, normalizedEmail);
+  }
+};
+
+const addEmailLookupUser = (lookup, user = {}) => {
+  const email = String(pick(user, AUDIT_EMAIL_KEYS, "")).trim();
+  if (!email) return;
+
+  addEmailLookupValue(lookup, email, email);
+  addEmailLookupValue(lookup, pick(user, AUDIT_USER_KEYS, ""), email);
+  addEmailLookupValue(
+    lookup,
+    pick(user, ["name", "fullName", "displayName", "adminName", "doctorName", "receptionistName"], ""),
+    email
+  );
+};
+
 const addCurrentSessionRoleLookup = (lookup) => {
   const role = getCurrentSessionRole();
   const email =
@@ -2221,6 +2336,24 @@ const addCurrentSessionRoleLookup = (lookup) => {
 
   addRoleLookupValue(lookup, email, role);
   addRoleLookupValue(lookup, name, role);
+};
+
+const addCurrentSessionEmailLookup = (lookup) => {
+  const email =
+    localStorage.getItem("adminEmail") ||
+    localStorage.getItem("doctorEmail") ||
+    localStorage.getItem("receptionistEmail") ||
+    localStorage.getItem("userEmail") ||
+    "";
+  const name =
+    localStorage.getItem("adminName") ||
+    localStorage.getItem("doctorName") ||
+    localStorage.getItem("receptionistName") ||
+    localStorage.getItem("userName") ||
+    "";
+
+  addEmailLookupValue(lookup, email, email);
+  addEmailLookupValue(lookup, name, email);
 };
 
 const publicIpProviders = [
@@ -2282,24 +2415,44 @@ const getCurrentSessionIdentity = (ipAddress = "") => ({
     "",
 });
 
-const buildAuditRoleLookup = ({ users = [], admins = [], doctors = [], receptionists = [], loginLogs = [] }) => {
-  const lookup = new Map();
+const buildAuditLookups = ({ users = [], admins = [], doctors = [], receptionists = [], loginLogs = [] }) => {
+  const roleLookup = new Map();
+  const emailLookup = new Map();
 
-  users.map(normalizeUser).forEach((user) => addRoleLookupUser(lookup, user));
-  admins.map(normalizeAdmin).forEach((admin) => addRoleLookupUser(lookup, admin));
-  doctors.forEach((doctor) => addRoleLookupUser(lookup, doctor, "Doctor"));
-  receptionists.forEach((receptionist) => addRoleLookupUser(lookup, receptionist, "Receptionist"));
-  addCurrentSessionRoleLookup(lookup);
-  loginLogs.forEach((log) => {
-    addRoleLookupValue(lookup, log.userEmail, log.role);
-    addRoleLookupValue(lookup, log.user, log.role);
-    addRoleLookupValue(lookup, log.userName, log.role);
+  users.map(normalizeUser).forEach((user) => {
+    addRoleLookupUser(roleLookup, user);
+    addEmailLookupUser(emailLookup, user);
+  });
+  admins.map(normalizeAdmin).forEach((admin) => {
+    addRoleLookupUser(roleLookup, admin);
+    addEmailLookupUser(emailLookup, admin);
+  });
+  doctors.forEach((doctor) => {
+    addRoleLookupUser(roleLookup, doctor, "Doctor");
+    addEmailLookupUser(emailLookup, doctor);
+  });
+  receptionists.forEach((receptionist) => {
+    addRoleLookupUser(roleLookup, receptionist, "Receptionist");
+    addEmailLookupUser(emailLookup, receptionist);
   });
 
-  return lookup;
+  addCurrentSessionRoleLookup(roleLookup);
+  addCurrentSessionEmailLookup(emailLookup);
+
+  loginLogs.forEach((log) => {
+    addRoleLookupValue(roleLookup, log.userEmail, log.role);
+    addRoleLookupValue(roleLookup, log.user, log.role);
+    addRoleLookupValue(roleLookup, log.userName, log.role);
+
+    addEmailLookupValue(emailLookup, log.userEmail, log.userEmail);
+    addEmailLookupValue(emailLookup, log.user, log.userEmail);
+    addEmailLookupValue(emailLookup, log.userName, log.userEmail);
+  });
+
+  return { roleLookup, emailLookup };
 };
 
-const withAuditRoleFallback = (log, roleLookup, currentIpAddress = "") => {
+const withAuditFallback = (log, roleLookup, emailLookup, currentIpAddress = "") => {
   const session = getCurrentSessionIdentity(currentIpAddress);
   const role =
     log.role ||
@@ -2308,11 +2461,20 @@ const withAuditRoleFallback = (log, roleLookup, currentIpAddress = "") => {
     roleLookup.get(normalizeString(log.userName)) ||
     (isUserLoginMatch(session, log) ? session.role : "");
   const ipAddress = log.ipAddress || (isUserLoginMatch(session, log) ? session.ipAddress : "");
+  const email =
+    log.email ||
+    log.userEmail ||
+    emailLookup.get(normalizeString(log.userEmail)) ||
+    emailLookup.get(normalizeString(log.user)) ||
+    emailLookup.get(normalizeString(log.userName)) ||
+    (isEmailAddress(log.userName) ? log.userName : "");
 
   return {
     ...log,
     role: role || log.role,
     ipAddress,
+    email: email || log.email || log.userEmail,
+    userEmail: email || log.userEmail || log.email,
   };
 };
 
@@ -2352,7 +2514,7 @@ export const fetchAuditLogs = async () => {
       ? asArray(loginResult.value).map(normalizeLoginLog)
       : [];
   const localLogs = readLocalList(LOCAL_AUDIT_LOGS_KEY).map(normalizeAuditLog);
-  const roleLookup = buildAuditRoleLookup({
+  const { roleLookup, emailLookup } = buildAuditLookups({
     users: usersResult.status === "fulfilled" ? asArray(usersResult.value) : [],
     admins: adminsResult.status === "fulfilled" ? asArray(adminsResult.value) : [],
     doctors: doctorsResult.status === "fulfilled" ? asArray(doctorsResult.value) : [],
@@ -2361,7 +2523,7 @@ export const fetchAuditLogs = async () => {
   });
   const currentIpAddress = await fetchCurrentIpAddress();
   const remoteLogs = uniqueAuditLogs([...loginLogs, ...auditLogs]).map((log) =>
-    withAuditRoleFallback(log, roleLookup, currentIpAddress)
+    withAuditFallback(log, roleLookup, emailLookup, currentIpAddress)
   );
   const logs = remoteLogs.length
     ? remoteLogs
@@ -2388,7 +2550,7 @@ export const fetchLoginHistory = async () => {
   }
 
   const loginLogs = asArray(loginResult.value).map(normalizeLoginLog);
-  const roleLookup = buildAuditRoleLookup({
+  const { roleLookup, emailLookup } = buildAuditLookups({
     users: usersResult.status === "fulfilled" ? asArray(usersResult.value) : [],
     admins: adminsResult.status === "fulfilled" ? asArray(adminsResult.value) : [],
     doctors: doctorsResult.status === "fulfilled" ? asArray(doctorsResult.value) : [],
@@ -2398,7 +2560,7 @@ export const fetchLoginHistory = async () => {
   const currentIpAddress = await fetchCurrentIpAddress();
 
   return sortAuditLogs(
-    loginLogs.map((log) => withAuditRoleFallback(log, roleLookup, currentIpAddress))
+    loginLogs.map((log) => withAuditFallback(log, roleLookup, emailLookup, currentIpAddress))
   );
 };
 
@@ -2721,9 +2883,27 @@ export const fetchReports = async () => {
       ? enrichReportRows({ rows: revenueRows, clinicRows, adminRows, userRows })
     : buildAdminRevenueRows({ clinicRows, adminRows, userRows });
 
+  // Filter out any rows whose clinic is not present in the clinics list.
+  const clinicLookupIds = new Set(clinicRows.map((c) => String(pick(c, ["id", "clinicId", "HospitalId", "_id"], "")).trim()).filter(Boolean));
+  const clinicLookupNames = new Set(clinicRows.map((c) => String(pick(c, ["name", "Name", "clinicName", "ClinicName", "hospitalName"], "")).trim().toLowerCase()).filter(Boolean));
+
+  const rowsFiltered = rows.filter((r) => {
+    // allow rows when clinics list is empty (fallback) or when row maps to a known clinic id or name
+    if (!clinicRows || clinicRows.length === 0) return true;
+    const rawClinicId = normalizeLookupKey(getReportClinicId(r.raw || r));
+    const normalizedRowId = normalizeLookupKey(r.id || r.clinicId || r.hospitalId || "");
+    const rowName = String(r.name || r.clinicName || r.hospitalName || "").trim().toLowerCase();
+
+    if (rawClinicId && clinicLookupIds.has(rawClinicId)) return true;
+    if (normalizedRowId && clinicLookupIds.has(normalizedRowId)) return true;
+    if (rowName && clinicLookupNames.has(rowName)) return true;
+
+    return false;
+  });
+
   return {
-    rows,
-    chartData: mergeReportChartData({ revenueRows, activityRows, rows }),
+    rows: rowsFiltered,
+    chartData: mergeReportChartData({ revenueRows, activityRows, rowsFiltered }),
     activityRows: activityRows.map(normalizeActivity),
     error:
       summary.status === "rejected" &&

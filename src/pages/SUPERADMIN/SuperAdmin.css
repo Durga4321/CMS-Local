@@ -409,6 +409,10 @@
 
 .sa-table {
   overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .sa-table-head,
@@ -417,19 +421,26 @@
   display: grid;
   column-gap: 12px;
   align-items: center;
-  padding: 13px 14px;
+  padding: 14px 16px;
 }
 
 .sa-table-head {
   border-bottom: 1px solid #dbe3ed;
   color: #111827;
-  font-size: 11px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 700;
+  background: #f8fafc;
+  letter-spacing: 0.02em;
 }
 
 .sa-table-row {
   border-bottom: 1px solid #eef2f7;
-  font-size: 12px;
+  font-size: 13px;
+  color: #1f2937;
+}
+
+.sa-table-row:hover {
+  background: #f8fafc;
 }
 
 .sa-table-row:last-child {
@@ -441,9 +452,51 @@
   overflow-wrap: anywhere;
 }
 
+.sa-table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 0 8px;
+}
+
+.sa-table-summary {
+  color: #475569;
+  font-size: 13px;
+}
+
+.sa-pagination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sa-pagination button.sa-btn {
+  background-color: #e0f2fe;
+  border-color: #bae6fd;
+  color: #0369a1;
+}
+
+.sa-pagination button.sa-btn:disabled {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #94a3b8;
+}
+
+.sa-pagination-label {
+  color: #475569;
+  min-width: 120px;
+  text-align: center;
+}
+
 .sa-table-cell--nowrap {
   white-space: nowrap;
   overflow-wrap: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sa-table-cell--wrap {

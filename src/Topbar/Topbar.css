@@ -1,11 +1,11 @@
 .topbar {
-  height: 76px;
+  height: 82px;
   background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32px;
+  padding: 0 28px 0 20px;
   box-sizing: border-box;
   position: sticky;
   top: 0;
@@ -16,7 +16,7 @@
 .topbar-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   flex: 1;
   min-width: 0;
 }
@@ -34,11 +34,11 @@
   position: relative;
   display: flex;
   align-items: center;
-  background: #f1f5f9;
-  padding: 0 16px;
-  height: 52px;
-  border-radius: 12px;
-  width: min(680px, 100%);
+  background: #f4f7fb;
+  padding: 0 18px;
+  height: 54px;
+  border-radius: 16px;
+  width: min(720px, 100%);
   gap: 10px;
   border: 0;
 }
@@ -52,7 +52,7 @@
   outline: none;
   background: transparent;
   width: 100%;
-  font-size: 16px;
+  font-size: 15px;
   color: #334155;
 }
 
@@ -101,8 +101,8 @@
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 22px;
-  margin-left: 24px;
+  gap: 16px;
+  margin-left: 20px;
   flex-shrink: 0;
 }
 
@@ -111,8 +111,8 @@
   position: relative;
   cursor: pointer;
   color: #0f172a;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   border: 0;
   background: transparent;
   display: grid;
@@ -143,33 +143,38 @@
 .topbar-profile {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
   position: relative;
+  padding: 6px 10px 6px 8px;
+  border: 1px solid #dbe3ed;
+  border-radius: 18px;
+  background: #ffffff;
 }
 
 /* AVATAR */
 .topbar-avatar {
-  width: 36px;
-  height: 36px;
-  background: #0ea5a5;
+  width: 40px;
+  height: 40px;
+  background: #dff3f3;
   color: white;
-  border-radius: 50%;
+  color: #0f766e;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  font-weight: 800;
 }
 
 /* USER TEXT */
 .topbar-user-info p {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   margin: 0;
 }
 
 .topbar-user-info span {
-  font-size: 12px;
+  font-size: 11px;
   color: #64748b;
 }
 

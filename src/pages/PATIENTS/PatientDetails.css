@@ -1,46 +1,62 @@
 .patient-details-page {
-  padding: 14px 10px;
+  padding: 24px;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 
 .patient-back-btn {
   border: none;
   background: transparent;
-  color: #0f172a;
-  padding: 0;
-  margin: 0 0 14px;
-  font-size: 15px;
-  font-weight: 600;
+  color: #0f766e;
+  padding: 8px 10px;
+  margin: 0 0 20px;
+  font-size: 14px;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.16s ease;
+}
+
+.patient-back-btn:hover {
+  background: #f0fdfa;
 }
 
 .patient-details-title {
   margin: 0;
   color: #0f172a;
-  font-size: 30px;
+  font-size: 28px;
   line-height: 1.1;
+  font-weight: 800;
 }
 
 .patient-details-subtitle {
   margin: 6px 0 0;
-  color: #587392;
-  font-size: 16px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .patient-details-grid {
-  margin-top: 14px;
+  margin-top: 24px;
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) minmax(520px, 2fr);
-  gap: 16px;
+  grid-template-columns: minmax(300px, 0.8fr) minmax(500px, 1.2fr);
+  gap: 20px;
 }
 
 .patient-card {
-  border: 1px solid #d8e2ee;
+  border: 1px solid #e2e8f0;
   background: #ffffff;
-  border-radius: 16px;
-  padding: 24px;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  transition: box-shadow 0.16s ease;
+}
+
+.patient-card:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
 }
 
 .patient-profile-card {
@@ -48,52 +64,56 @@
 }
 
 .patient-avatar-big {
-  width: 120px;
-  height: 120px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  margin: 0 auto 20px;
-  background: linear-gradient(160deg, #1d9cbc, #3586ea);
+  margin: 0 auto 18px;
+  background: linear-gradient(135deg, #0f766e, #149ca4);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 46px;
+  font-size: 40px;
   font-weight: 700;
+  border: 3px solid #d7eef1;
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.15);
 }
 
 .patient-profile-card h3 {
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
   color: #0f172a;
+  font-weight: 800;
 }
 
 .patient-profile-card > p {
   margin: 6px 0 0;
-  color: #5f7694;
-  font-size: 16px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .patient-info-list {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #d8e2ee;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .patient-info-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: #0892b8;
-  margin-top: 14px;
-  font-size: 15px;
-}
-
-.patient-info-row:first-child {
-  margin-top: 0;
+  gap: 10px;
+  color: #0f766e;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .patient-info-row span {
   color: #0f172a;
+  font-weight: 700;
 }
 
 .patient-info-row--emergency {
@@ -108,86 +128,108 @@
 }
 
 .patient-emergency-contact .patient-info-label {
-  color: #64748b;
-  font-size: 12px;
+  color: #94a3b8;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 .patient-emergency-contact strong {
   color: #0f172a;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 
 .patient-emergency-contact a {
   width: fit-content;
-  color: #087ea4;
-  font-size: 15px;
+  color: #0f766e;
+  font-size: 14px;
   text-decoration: none;
+  font-weight: 600;
+  transition: color 0.16s ease;
 }
 
 .patient-emergency-contact a:hover {
+  color: #0d5d5b;
   text-decoration: underline;
 }
 
 .patient-tabs {
   display: inline-flex;
-  border-radius: 12px;
-  background: #f1f5f9;
-  padding: 6px;
-  gap: 4px;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 5px;
+  gap: 3px;
 }
 
 .patient-tab {
   border: none;
   background: transparent;
-  color: #5f7694;
-  border-radius: 10px;
-  padding: 10px 16px;
+  color: #64748b;
+  border-radius: 8px;
+  padding: 10px 14px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 15px;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.patient-tab:hover {
+  background: #f0fdfa;
+  color: #0f766e;
 }
 
 .patient-tab-active {
   background: #ffffff;
   color: #0f172a;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
 }
 
 .patient-visit-list {
-  margin-top: 16px;
+  margin-top: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .patient-visit-card {
-  border: 1px solid #d8e2ee;
-  border-radius: 14px;
-  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  background: #ffffff;
+  transition: background 0.16s ease;
+}
+
+.patient-visit-card:hover {
+  background: #f8fafc;
 }
 
 .patient-prescription-list {
-  margin-top: 16px;
+  margin-top: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .patient-prescription-card {
-  border: 1px solid #d8e2ee;
-  border-radius: 14px;
-  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+  background: #ffffff;
+  transition: background 0.16s ease;
+}
+
+.patient-prescription-card:hover {
+  background: #f8fafc;
 }
 
 .patient-prescription-top {
@@ -199,106 +241,132 @@
 
 .patient-prescription-top b {
   color: #0f172a;
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 800;
 }
 
 .patient-prescription-date {
-  color: #5f7694;
-  font-size: 14px;
+  color: #64748b;
+  font-size: 12px;
   white-space: nowrap;
+  font-weight: 600;
 }
 
 .patient-prescription-note {
   margin: 8px 0 0;
-  color: #5f7694;
-  font-size: 15px;
+  color: #64748b;
+  font-size: 13px;
 }
 
 .patient-prescription-instructions {
   margin: 6px 0 0;
-  color: #334155;
-  font-size: 14px;
-  line-height: 1.45;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .patient-medicine-list {
   display: grid;
-  gap: 9px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .patient-medicine-row {
-  padding: 11px 12px;
+  padding: 10px;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #f8fafc;
 }
 
 .patient-medicine-row > strong {
   display: block;
   color: #0f172a;
-  font-size: 15px;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .patient-medicine-details {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 14px;
-  margin-top: 7px;
-  color: #52657d;
-  font-size: 13px;
+  gap: 6px 12px;
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 12px;
 }
 
 .patient-empty-state {
-  margin-top: 16px;
-  color: #64748b;
+  margin-top: 14px;
+  padding: 20px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+  background: #f8fafc;
+  border-radius: 8px;
 }
 
 .patient-visit-card b {
   color: #0f172a;
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .patient-visit-card p {
-  margin: 6px 0 0;
-  color: #5f7694;
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
 }
 
 .patient-visit-status {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  border-radius: 999px;
-  padding: 6px 13px;
-  font-weight: 600;
+  gap: 6px;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .patient-status-dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 
 .patient-visit-status.is-scheduled {
-  color: #0695df;
-  background: #dceff9;
+  color: #2563eb;
+  background: #dbeafe;
 }
 
 .patient-visit-status.is-scheduled .patient-status-dot {
-  background: #0695df;
+  background: #2563eb;
 }
 
 .patient-visit-status.is-completed {
-  color: #1eaa68;
-  background: #def4e9;
+  color: #15803d;
+  background: #dcfce7;
 }
 
 .patient-visit-status.is-completed .patient-status-dot {
-  background: #1eaa68;
+  background: #15803d;
+}
+
+.patient-visit-status.is-cancelled {
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+.patient-visit-status.is-cancelled .patient-status-dot {
+  background: #dc2626;
 }
 
 @media (max-width: 1080px) {
   .patient-details-grid {
     grid-template-columns: 1fr;
+  }
+
+  .patient-details-title {
+    font-size: 24px;
   }
 }

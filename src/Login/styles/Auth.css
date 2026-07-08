@@ -4,17 +4,64 @@
 @import url('./forms.css');
 
 .auth-container {
-  height: 100vh;
   min-height: 100vh;
   width: 100vw;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0.75rem;
+  padding: 1.5rem;
   position: relative;
   overflow: hidden;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   box-sizing: border-box;
+}
+
+.auth-container::before,
+.auth-container::after {
+  max-width: 100%;
+}
+
+.auth-card {
+  position: relative;
+  z-index: 3;
+  background: var(--card-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 2.4rem 2rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-card),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+  animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: calc(100vh - 3rem);
+  overflow: hidden;
+}
+
+.auth-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-card h2,
+.auth-card p.subtitle,
+.success-message,
+.auth-footer,
+.auth-actions-row,
+.auth-register-row {
+  text-align: center;
+}
+
+@media (max-width: 540px) {
+  .auth-container {
+    padding: 1rem;
+  }
+
+  .auth-card {
+    padding: 1.75rem 1.4rem;
+    max-width: 100%;
+  }
 }
 
 body.auth-page-no-scroll {
@@ -154,12 +201,118 @@ body.auth-page-no-scroll {
   text-decoration: underline;
 }
 
+.auth-register-row {
+  margin-top: 0.6rem;
+  text-align: center;
+}
+
+.auth-register {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.create-account-link {
+  color: var(--primary);
+  font-weight: 700;
+  margin-left: 6px;
+  text-decoration: none;
+}
+
+.create-account-link:hover {
+  text-decoration: underline;
+}
+
 .auth-footer {
   margin-top: 1rem;
   text-align: center;
   font-size: 0.74rem;
   color: var(--text-muted);
   letter-spacing: 0.02em;
+}
+
+/* Wide card variant for registration pages */
+.auth-card--wide {
+  /* Narrower, centered card to match the register layout */
+  max-width: 640px;
+  padding: 2rem 2rem;
+  margin: 2rem auto;
+  border-radius: 14px;
+}
+
+/* Register grid used by patient registration (wide card) */
+.register-grid {
+  display: grid;
+  /* Two-column layout on desktop to match reference */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 1.6rem;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .auth-card--wide {
+    max-width: 760px;
+    padding: 1.6rem;
+  }
+
+  .register-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-card--wide {
+    max-width: 420px;
+    padding: 1rem;
+  }
+
+  .register-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Slightly stronger card tint for register page to match first image */
+.auth-card--wide {
+  background: linear-gradient(180deg, rgba(248, 253, 255, 0.92), rgba(236, 251, 250, 0.9));
+  border: 1px solid rgba(255,255,255,0.45);
+}
+
+/* Full-width submit for register */
+.submit-btn--block {
+  display: block;
+  width: 100%;
+  padding: 0.95rem 1rem;
+  font-size: 1rem;
+  border-radius: 12px;
+}
+
+/* Tighter form-group spacing on wide card */
+.auth-card--wide .form-group {
+  margin-bottom: 0.6rem;
+}
+
+/* Ensure subtitle aligns nicely on wide card */
+.auth-card--wide .subtitle {
+  text-align: left;
+}
+
+/* Create account as button */
+.create-account-btn {
+  display: inline-block;
+  min-width: 160px;
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  text-align: center;
+  box-shadow: 0 10px 25px -8px rgba(14,165,164,0.55);
+  transition: transform 0.18s ease, box-shadow 0.2s ease, opacity 0.18s ease;
+}
+
+.create-account-btn:hover {
+  transform: translateY(-2px);
 }
 
 @media (max-width: 480px) {

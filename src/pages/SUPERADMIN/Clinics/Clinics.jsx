@@ -102,27 +102,32 @@ function Clinics() {
       key: "actions",
       label: "Actions",
       width: "minmax(112px, 0.8fr)",
-      render: (clinic) => (
-        <div className="sa-actions">
-          <button className="sa-icon-btn" onClick={() => setSelectedClinic(clinic)} title="View clinic">
-            <Eye size={15} />
-          </button>
-          <button className="sa-icon-btn" onClick={() => navigate(`/superadmin/clinics/edit/${clinic.id}`)} title="Edit clinic">
-            <Pencil size={15} />
-          </button>
-          <button
-            className="sa-icon-btn"
-            onClick={() => toggleClinicStatus(clinic)}
-            disabled={updatingClinicId === clinic.id}
-            title={clinic.status === "Active" ? "Deactivate clinic" : "Activate clinic"}
-          >
-            {clinic.status === "Active" ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
-          </button>
-          <button className="sa-icon-btn" onClick={() => handleDelete(clinic)} title="Delete clinic">
-            <Trash2 size={15} />
-          </button>
-        </div>
-      ),
+      render: (clinic) => {
+        const isActive = String(clinic.status || "").trim().toLowerCase() === "active";
+        const disabledTitle = "Clinic inactive — only status toggle is available";
+
+        return (
+          <div className="sa-actions">
+            <button className="sa-icon-btn" onClick={() => setSelectedClinic(clinic)} disabled={!isActive} title={isActive ? "View clinic" : disabledTitle}>
+              <Eye size={15} />
+            </button>
+            <button className="sa-icon-btn" onClick={() => navigate(`/superadmin/clinics/edit/${clinic.id}`)} disabled={!isActive} title={isActive ? "Edit clinic" : disabledTitle}>
+              <Pencil size={15} />
+            </button>
+            <button
+              className="sa-icon-btn"
+              onClick={() => toggleClinicStatus(clinic)}
+              disabled={updatingClinicId === clinic.id}
+              title={clinic.status === "Active" ? "Deactivate clinic" : "Activate clinic"}
+            >
+              {clinic.status === "Active" ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
+            </button>
+            <button className="sa-icon-btn" onClick={() => handleDelete(clinic)} disabled={!isActive} title={isActive ? "Delete clinic" : disabledTitle}>
+              <Trash2 size={15} />
+            </button>
+          </div>
+        );
+      },
     },
   ];
   const clinicDetailFields = [

@@ -115,6 +115,18 @@ const mergeAdmins = (adminRows = [], userRows = []) => {
   return Array.from(rows.values());
 };
 
+const isAdminClinicPresent = (admin = {}, clinics = []) => {
+  if (!Array.isArray(clinics) || clinics.length === 0) return true;
+  const clinicId = String(getAdminClinicId(admin, clinics) || "").trim();
+  const clinicName = String(getAdminClinicName(admin, clinics) || "").trim().toLowerCase();
+
+  return clinics.some((c) => {
+    const idMatch = String(c.id || "") === clinicId;
+    const nameMatch = String(c.name || "").trim().toLowerCase() === clinicName && clinicName;
+    return idMatch || nameMatch;
+  });
+};
+
 
 function Admins() {
   const toast = useToast();
@@ -394,7 +406,9 @@ function Admins() {
       assignedClinic: getAdminClinicName(admin, clinics),
       phone:
         admin.phone || admin.mobileNumber || admin.raw?.phone || admin.raw?.mobileNumber || "",
-    })).filter((admin) => {
+    }))
+    .filter((admin) => isAdminClinicPresent(admin, clinics))
+    .filter((admin) => {
       const matchesSearch = [admin.name, admin.email, admin.assignedClinic, admin.phone]
         .some((value) => String(value).toLowerCase().includes(query));
       const matchesStatus = status === "All" || admin.status === status;
@@ -488,26 +502,31 @@ function Admins() {
       key: "actions",
       label: "Actions",
       width: "minmax(155px, 1fr)",
-      render: (admin) => (
-        <div className="sa-actions">
-          <button className="sa-icon-btn" onClick={() => setSelectedAdmin(admin)} title="View admin">
-            <Eye size={15} />
-          </button>
-          <button className="sa-icon-btn" onClick={() => openEditForm(admin)} title="Edit admin">
-            <Pencil size={15} />
-          </button>
-          <button
-            className="sa-icon-btn"
-            onClick={() => toggleAdminStatus(admin)}
-            title={admin.status === "Active" ? "Deactivate admin" : "Activate admin"}
-          >
-            {admin.status === "Active" ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
-          </button>
-          <button className="sa-icon-btn" onClick={() => handleDelete(admin)} title="Delete admin">
-            <Trash2 size={15} />
-          </button>
-        </div>
-      ),
+      render: (admin) => {
+        const isActive = String(admin.status || "").trim().toLowerCase() === "active";
+        const disabledTitle = "Record inactive — only status toggle is available";
+
+        return (
+          <div className="sa-actions">
+            <button className="sa-icon-btn" onClick={() => setSelectedAdmin(admin)} disabled={!isActive} title={isActive ? "View admin" : disabledTitle}>
+              <Eye size={15} />
+            </button>
+            <button className="sa-icon-btn" onClick={() => openEditForm(admin)} disabled={!isActive} title={isActive ? "Edit admin" : disabledTitle}>
+              <Pencil size={15} />
+            </button>
+            <button
+              className="sa-icon-btn"
+              onClick={() => toggleAdminStatus(admin)}
+              title={admin.status === "Active" ? "Deactivate admin" : "Activate admin"}
+            >
+              {admin.status === "Active" ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+            </button>
+            <button className="sa-icon-btn" onClick={() => handleDelete(admin)} disabled={!isActive} title={isActive ? "Delete admin" : disabledTitle}>
+              <Trash2 size={15} />
+            </button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -691,7 +710,6 @@ function Admins() {
         <div className="sa-form-card" style={{ marginBottom: 16 }}>
           <Header
             title="View Admin"
-            subtitle={selectedAdmin.id}
             action={
               <button className="sa-btn" onClick={() => setSelectedAdmin(null)}>
                 Close

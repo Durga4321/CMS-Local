@@ -1,34 +1,43 @@
 .add-patient-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.35);
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
   z-index: 3000;
+  animation: fadeIn 0.2s ease;
 }
 
 .add-patient-modal {
-  width: min(620px, 100%);
+  width: min(600px, 100%);
   border-radius: 14px;
-  border: 1px solid #dbe3ed;
+  border: 1px solid #e2e8f0;
   background: #ffffff;
-  padding: 22px;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .add-patient-modal h2 {
   margin: 0;
   color: #0f172a;
+  font-size: 20px;
+  font-weight: 800;
 }
 
 .add-patient-modal > p {
   margin: 6px 0 0;
   color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .add-patient-grid {
-  margin-top: 18px;
+  margin-top: 20px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
@@ -45,8 +54,9 @@
 }
 
 .add-patient-field label {
-  font-size: 14px;
+  font-size: 13px;
   color: #334155;
+  font-weight: 700;
 }
 
 .add-patient-field input,
@@ -55,13 +65,31 @@
   width: 100%;
   height: 42px;
   border-radius: 10px;
-  border: 1px solid #dbe3ed;
-  padding: 0 12px;
+  border: 1px solid #e2e8f0;
+  padding: 10px 12px;
   box-sizing: border-box;
   outline: none;
+  font-size: 13px;
+  color: #0f172a;
+  background: #ffffff;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.add-patient-field textarea {
+  height: 100px;
+  resize: vertical;
+}
+
+.add-patient-field input:focus,
+.add-patient-field select:focus,
+.add-patient-field textarea:focus {
+  border-color: #0f766e;
+  background: #f0fdfa;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
 }
 
 .add-patient-field input.is-invalid,
+.add-patient-field select.is-invalid,
 .add-patient-field textarea.is-invalid {
   border-color: #dc2626;
   background: #fff7f7;
@@ -74,7 +102,7 @@
 }
 
 .add-patient-final-address {
-  min-height: 70px;
+  min-height: 80px;
   padding-top: 10px;
   resize: vertical;
 }
@@ -87,13 +115,18 @@
 }
 
 .add-patient-error {
-  margin: 10px 0 0;
-  color: #e11d48;
-  font-size: 14px;
+  margin: 12px 0 0;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 12px;
+  background: #fff7f7;
+  border: 1px solid #fee2e2;
+  border-radius: 8px;
 }
 
 .add-patient-actions {
-  margin-top: 20px;
+  margin-top: 24px;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
@@ -101,20 +134,50 @@
 
 .add-patient-cancel,
 .add-patient-submit {
+  height: 42px;
   border-radius: 10px;
   padding: 10px 18px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  transition: background 0.16s ease, border-color 0.16s ease;
 }
 
 .add-patient-cancel {
-  border: 1px solid #dbe3ed;
+  border: 1px solid #e2e8f0;
   background: #f8fafc;
-  color: #334155;
+  color: #475569;
+}
+
+.add-patient-cancel:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 .add-patient-submit {
   border: none;
-  background: #1897a8;
+  background: #0f766e;
   color: #ffffff;
+}
+
+.add-patient-submit:hover {
+  background: #0d5d5b;
+  box-shadow: 0 6px 14px rgba(15, 118, 110, 0.2);
+}
+
+.add-patient-submit:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

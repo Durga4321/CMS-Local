@@ -45,11 +45,14 @@ function AuditLogs() {
     [auditLogs]
   );
 
-  const rows = useMemo(() => {
+  const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
     return auditLogs.filter((log) => {
       const matchesSearch = [
         log.userName,
+        log.user,
+        log.userEmail,
+        log.email,
         log.action,
         log.systemAction,
         log.ipAddress,
@@ -62,6 +65,19 @@ function AuditLogs() {
     });
   }, [auditLogs, search, systemAction]);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, systemAction, view, auditLogs]);
+
+  const pagedRows = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredRows.slice(start, start + pageSize);
+  }, [filteredRows, currentPage]);
+
   const columns = [
     {
       key: "serial",
@@ -69,7 +85,18 @@ function AuditLogs() {
       width: "minmax(60px, 0.4fr)",
       render: (_log, index) => index + 1,
     },
-    { key: "userName", label: "User Name", width: "minmax(170px, 1.25fr)" },
+    {
+      key: "userName",
+      label: "User",
+      width: "minmax(170px, 1.25fr)",
+      render: (row) => row.userName || row.user || row.action || "-",
+    },
+    {
+      key: "email",
+      label: "Email Address",
+      width: "minmax(190px, 1.2fr)",
+      render: (row) => row.email || row.userEmail || "-",
+    },
     { key: "action", label: "Action", width: "minmax(180px, 1.2fr)" },
     { key: "systemAction", label: "System Action", width: "minmax(120px, 0.75fr)" },
     { key: "ipAddress", label: "IP Address", width: "minmax(112px, 0.75fr)" },
@@ -121,11 +148,55 @@ function AuditLogs() {
       />
       <DataTable
         columns={columns}
-        rows={rows}
+        rows={pagedRows}
         loading={loading}
         error={error}
+        rowIndexOffset={(currentPage - 1) * pageSize}
         emptyMessage={view === "login" ? "No login history found from the backend." : "No audit logs match your filters."}
       />
+
+      <div className="sa-table-footer">
+        <div className="sa-table-summary">
+          Showing {pagedRows.length} of {filteredRows.length} records
+        </div>
+        <div className="sa-pagination">
+          <button
+            type="button"
+            className="sa-btn"
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+          >
+            First
+          </button>
+          <button
+            type="button"
+            className="sa-btn"
+            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+            disabled={currentPage === 1}
+          >
+            Prev
+          </button>
+          <span className="sa-pagination-label">
+            Page {currentPage} of {pageCount}
+          </span>
+          <button
+            type="button"
+            className="sa-btn"
+            onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}
+            disabled={currentPage === pageCount}
+          >
+            Next
+          </button>
+          <button
+            type="button"
+            className="sa-btn"
+            onClick={() => setCurrentPage(pageCount)}
+            disabled={currentPage === pageCount}
+          >
+            Last
+          </button>
+        </div>
+      </div>
     </>
   );
 }

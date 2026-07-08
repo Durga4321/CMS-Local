@@ -60,6 +60,15 @@ const isInsideDateRange = (row, startDate, endDate) => {
   return (!start || date >= start) && (!end || date <= end);
 };
 
+const isFutureDate = (value) => {
+  if (!value) return false;
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return date > today;
+};
+
 const buildRowsHtml = (rows, columns) =>
   rows
     .map(
@@ -113,6 +122,11 @@ function Reports() {
   const handleFetchData = async () => {
     if (startDate && endDate && startDate > endDate) {
       setError("Start date must be before end date.");
+      return;
+    }
+
+    if (isFutureDate(startDate) || isFutureDate(endDate)) {
+      setError("Future dates are not allowed.");
       return;
     }
 

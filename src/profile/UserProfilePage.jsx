@@ -13,7 +13,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { apiUrl } from "../config/api";
 import { validateStrongPassword } from "../utils/validation";
-import { clearAllSessions, getInitials, getRoleProfile } from "./sessionProfile";
+import { getInitials, getRoleProfile, logoutAndClearSessions } from "./sessionProfile";
 import "./UserProfile.css";
 
 const PASSWORD_REQUIREMENTS = [
@@ -60,8 +60,8 @@ function UserProfilePage({ roleType = "admin" }) {
     setActiveTab(params.get("tab") === "password" ? "password" : "profile");
   }, [location.search]);
 
-  const logout = () => {
-    clearAllSessions();
+  const logout = async () => {
+    await logoutAndClearSessions(roleType);
     navigate("/login", { replace: true });
   };
 

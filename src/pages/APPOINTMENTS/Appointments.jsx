@@ -14,6 +14,7 @@ import {
 
 import AppointmentModal from "./AppointmentModal";
 import { apiUrl } from "../../config/api";
+import { normalizeString } from "../SUPERADMIN/superAdminApi";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 
 // ================= API =================
@@ -171,6 +172,7 @@ function Appointments() {
 
   const [appointments, setAppointments] =
     useState([]);
+  const [clinics, setClinics] = useState([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -223,7 +225,20 @@ function Appointments() {
         );
 
         setAppointments(
-          parseAppointments(data)
+          parseAppointments(data).filter((appt) => {
+            // If clinics list is empty, allow all appointments (fallback)
+            if (!clinics || clinics.length === 0) return true;
+
+            const clinicId = String(appt.clinicId || appt.hospitalId || appt.hospital || "").trim();
+            const clinicName = String(appt.clinicName || appt.hospitalName || appt.clinic || "").trim().toLowerCase();
+
+            const clinicIds = new Set(clinics.map((c) => String(c.id || c.clinicId || c.hospitalId || "").trim()).filter(Boolean));
+            const clinicNames = new Set(clinics.map((c) => String(c.name || c.clinicName || c.hospitalName || "").trim().toLowerCase()).filter(Boolean));
+
+            if (clinicId && clinicIds.has(clinicId)) return true;
+            if (clinicName && clinicNames.has(clinicName)) return true;
+            return false;
+          })
         );
 
       } catch (error) {
@@ -245,6 +260,17 @@ function Appointments() {
 
   useEffect(() => {
     fetchAppointments();
+    // load clinics for filtering
+    (async () => {
+      try {
+        const resp = await fetch(apiUrl("Clinics"), { headers: { "ngrok-skip-browser-warning": "true" } });
+        if (resp.ok) {
+          const body = await resp.json();
+          const list = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
+          setClinics(list.map((c) => ({ id: c.id || c.clinicId || c.hospitalId, name: c.name || c.clinicName || c.hospitalName })));
+        }
+      } catch {}
+    })();
   }, []);
 
   // ================= DOCTOR OPTIONS =================

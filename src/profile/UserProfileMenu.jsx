@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, KeyRound, LogOut, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { clearAllSessions, getInitials, getRoleProfile } from "./sessionProfile";
+import { getInitials, getRoleProfile, logoutAndClearSessions } from "./sessionProfile";
 import "./UserProfile.css";
 
 function UserProfileMenu({ roleType = "admin" }) {
@@ -19,8 +19,8 @@ function UserProfileMenu({ roleType = "admin" }) {
     return () => document.removeEventListener("mousedown", close);
   }, []);
 
-  const logout = () => {
-    clearAllSessions();
+  const logout = async () => {
+    await logoutAndClearSessions(roleType);
     navigate("/login", { replace: true });
   };
 

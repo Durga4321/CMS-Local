@@ -35,11 +35,11 @@ const items = [
 const patientItems = [
   { to: "/patient/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/patient/profile", label: "My Profile", icon: UserRound },
-  { to: "/patient/book", label: "Book Appointment", icon: Stethoscope },
+  { to: "/patient/appointments/book", label: "Book Appointment", icon: Stethoscope },
   { to: "/patient/appointments", label: "Appointments", icon: CalendarDays },
-  { to: "/patient/history", label: "Medical History", icon: FileBarChart2 },
+  { to: "/patient/medical-history", label: "Medical History", icon: FileBarChart2 },
   { to: "/patient/prescriptions", label: "Prescriptions", icon: ListChecks },
-  { to: "/patient/billing", label: "Billing & Payments", icon: Building2 },
+  { to: "/patient/bills", label: "Billing & Payments", icon: Building2 },
   { to: "/patient/notifications", label: "Notifications", icon: Bell },
 ];
 

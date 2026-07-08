@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Eye, Pencil, Plus, ToggleLeft, ToggleRight, Trash2, X } from "lucide-react";
+import { Eye, Pencil, ToggleLeft, ToggleRight, Trash2, X } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
@@ -7,6 +7,7 @@ import {
   deleteUser,
   fetchUser,
   fetchUsers,
+  fetchClinics,
   saveUser,
   updateUserStatus,
 } from "../superAdminApi";
@@ -45,6 +46,7 @@ function Users() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
   const [users, setUsers] = useState([]);
+  const [clinics, setClinics] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingUserId, setEditingUserId] = useState("");
@@ -71,13 +73,28 @@ function Users() {
     loadUsers();
   }, []);
 
-  const openCreateForm = () => {
-    setEditingUserId("");
-    setSelectedUser(null);
-    setForm(emptyUser);
-    setFieldErrors({});
-    setShowForm(true);
-    setError("");
+  useEffect(() => {
+    const loadClinics = async () => {
+      try {
+        setClinics(await fetchClinics());
+      } catch {
+        setClinics([]);
+      }
+    };
+
+    loadClinics();
+  }, []);
+
+  const isUserClinicPresent = (user = {}, clinicsList = []) => {
+    if (!Array.isArray(clinicsList) || clinicsList.length === 0) return true;
+    const clinicId = String(user.clinicId || user.hospitalId || user.hospital || "").trim();
+    const clinicName = String(user.clinic || user.hospitalName || "").trim().toLowerCase();
+
+    return clinicsList.some((c) => {
+      const idMatch = String(c.id || "") === clinicId;
+      const nameMatch = String(c.name || "").trim().toLowerCase() === clinicName && clinicName;
+      return idMatch || nameMatch;
+    });
   };
 
   const openUserDetails = async (user) => {
@@ -189,6 +206,7 @@ function Users() {
     const selectedStatus = String(status || "").trim().toLowerCase();
 
     return users.filter((user) => {
+      if (!isUserClinicPresent(user, clinics)) return false;
       const matchesSearch = [user.name, user.email, user.clinic, user.type]
         .some((value) => String(value).toLowerCase().includes(query));
       const matchesStatus =
@@ -269,9 +287,17 @@ function Users() {
       label: "Name",
       render: (user) => formatTitleCase(user.name) || "-",
     },
-    { key: "email", label: "Email", width: "minmax(170px, 1.2fr)" },
+    {
+      key: "email",
+      label: "Email",
+      width: "minmax(170px, 1.2fr)",
+      cellClassName: "sa-table-cell--nowrap",
+      render: (user) => (
+        <span title={user.email || ""}>{user.email || "-"}</span>
+      ),
+    },
     { key: "clinic", label: "Clinic" },
-    { key: "type", label: "Type", width: "minmax(90px, 0.6fr)" },
+    { key: "role", label: "Role", width: "minmax(90px, 0.6fr)" },
     {
       key: "status",
       label: "Status",
@@ -292,41 +318,46 @@ function Users() {
         <div className="sa-actions">
           {(() => {
             const canUseRowActions = isAdminRoleUser(user);
-            const disabledTitle = "Actions are available only for Admin users";
+            const isActive = String(user.status || "").trim().toLowerCase() === "active";
+            const disabledTitle = "Actions are available only for active Admin users";
+
+            const enableActions = canUseRowActions && isActive;
+            const enableToggle = canUseRowActions;
 
             return (
               <>
-          <button
-            className="sa-icon-btn"
-            onClick={() => openUserDetails(user)}
-            title="User details"
-          >
-            <Eye size={15} />
-          </button>
-          <button
-            className="sa-icon-btn"
-            onClick={() => openEditForm(user)}
-            disabled={!canUseRowActions}
-            title={canUseRowActions ? "Edit user" : disabledTitle}
-          >
-            <Pencil size={15} />
-          </button>
-          <button
-            className="sa-icon-btn"
-            onClick={() => toggleStatus(user)}
-            disabled={!canUseRowActions}
-            title={canUseRowActions ? "Activate or deactivate admin" : disabledTitle}
-          >
-            {user.status === "Active" ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
-          </button>
-          <button
-            className="sa-icon-btn"
-            onClick={() => handleDelete(user)}
-            disabled={!canUseRowActions}
-            title={canUseRowActions ? "Delete user" : disabledTitle}
-          >
-            <Trash2 size={15} />
-          </button>
+                <button
+                  className="sa-icon-btn"
+                  onClick={() => openUserDetails(user)}
+                  disabled={!enableActions}
+                  title={enableActions ? "User details" : disabledTitle}
+                >
+                  <Eye size={15} />
+                </button>
+                <button
+                  className="sa-icon-btn"
+                  onClick={() => openEditForm(user)}
+                  disabled={!enableActions}
+                  title={enableActions ? "Edit user" : disabledTitle}
+                >
+                  <Pencil size={15} />
+                </button>
+                <button
+                  className="sa-icon-btn"
+                  onClick={() => toggleStatus(user)}
+                  disabled={!enableToggle}
+                  title={enableToggle ? "Activate or deactivate admin" : "Actions are available only for Admin users"}
+                >
+                  {user.status === "Active" ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                </button>
+                <button
+                  className="sa-icon-btn"
+                  onClick={() => handleDelete(user)}
+                  disabled={!enableActions}
+                  title={enableActions ? "Delete user" : disabledTitle}
+                >
+                  <Trash2 size={15} />
+                </button>
               </>
             );
           })()}
@@ -340,16 +371,6 @@ function Users() {
       <Header
         title="User Management"
         subtitle={`${rows.length} ${rows.length === 1 ? "User" : "Users"} Found`}
-        action={
-          <button
-            className="sa-btn sa-btn-primary"
-            onClick={openCreateForm}
-            title="Create user"
-          >
-            <Plus size={16} />
-            Create User
-          </button>
-        }
       />
 
       <SearchFilter

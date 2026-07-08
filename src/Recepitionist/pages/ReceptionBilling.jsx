@@ -207,7 +207,19 @@ function ReceptionBilling() {
     Promise.all([fetchBillingAppointments(), requestJson("Billing")])
       .then((data) => {
         const [appointmentsData, invoicesData] = data;
-        const list = parseList(appointmentsData).filter(isBillableAppointment);
+        const all = parseList(appointmentsData).filter(isBillableAppointment);
+        // Restrict billing appointments to receptionist's clinic
+        const allowedClinicId = String(clinicId || "").trim();
+        const allowedClinicName = String(clinicName || "").trim().toLowerCase();
+        const list = all.filter((appt) => {
+          const apptClinicId = String(appt.clinicId || appt.hospitalId || appt.hospital || "").trim();
+          const apptClinicName = String(appt.clinicName || appt.hospitalName || appt.clinic || "").trim().toLowerCase();
+          if (allowedClinicId && (apptClinicId === allowedClinicId)) return true;
+          if (allowedClinicName && (apptClinicName === allowedClinicName)) return true;
+          // if receptionist clinic not set, allow appointment
+          if (!allowedClinicId && !allowedClinicName) return true;
+          return false;
+        });
         setAppointments(list);
         setForm((prev) => ({
           ...prev,
