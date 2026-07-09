@@ -85,18 +85,6 @@ function Users() {
     loadClinics();
   }, []);
 
-  const isUserClinicPresent = (user = {}, clinicsList = []) => {
-    if (!Array.isArray(clinicsList) || clinicsList.length === 0) return true;
-    const clinicId = String(user.clinicId || user.hospitalId || user.hospital || "").trim();
-    const clinicName = String(user.clinic || user.hospitalName || "").trim().toLowerCase();
-
-    return clinicsList.some((c) => {
-      const idMatch = String(c.id || "") === clinicId;
-      const nameMatch = String(c.name || "").trim().toLowerCase() === clinicName && clinicName;
-      return idMatch || nameMatch;
-    });
-  };
-
   const openUserDetails = async (user) => {
     setSelectedUser(user);
     setShowForm(false);
@@ -206,7 +194,6 @@ function Users() {
     const selectedStatus = String(status || "").trim().toLowerCase();
 
     return users.filter((user) => {
-      if (!isUserClinicPresent(user, clinics)) return false;
       const matchesSearch = [user.name, user.email, user.clinic, user.type]
         .some((value) => String(value).toLowerCase().includes(query));
       const matchesStatus =

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import clinicBg from "../../assests/clinic-bg.jpg";
 // Using shared auth styles for registration layout
-import { apiUrl } from "../../config/api";
+import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
 import PasswordField from "../../components/PasswordField";
 import { buildAddress, emptyAddressParts, onlyPincodeValue } from "../../utils/address";
@@ -170,12 +170,11 @@ function PatientRegister() {
   };
 
   const PATIENT_REGISTER_PATHS = [
-    "Auth/register-patient",
-    "Auth/register",
-    "Auth/register-user",
-    "patient-portal/register",
-    "patient/register",
-    "patients/register",
+    PATIENT_API.register,
+    PATIENT_API.registerAlt,
+    PATIENT_API.registerUser,
+    PATIENT_API.patientRegister,
+    PATIENT_API.patientsRegister,
   ];
 
   useEffect(() => {

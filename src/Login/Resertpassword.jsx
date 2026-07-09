@@ -204,7 +204,7 @@ const ResetPassword = () => {
                 onClick={() => setShowNewPassword(!showNewPassword)}
                 aria-label={showNewPassword ? 'Hide password' : 'Show password'}
               >
-                {showNewPassword ? <EyeOffIcon /> : <EyeIcon />}
+                {showNewPassword ? <EyeIcon /> : <EyeOffIcon />}
               </button>
             </div>
             {errors.newPassword && <span className="error-message">{errors.newPassword}</span>}
@@ -231,7 +231,7 @@ const ResetPassword = () => {
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
               >
-                {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                {showConfirmPassword ? <EyeIcon /> : <EyeOffIcon />}
               </button>
             </div>
             {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}

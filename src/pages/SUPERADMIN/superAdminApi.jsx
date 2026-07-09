@@ -739,7 +739,7 @@ const buildAdminPayload = (admin = {}, { includeBlankPassword = true } = {}) => 
   ).trim();
   const password = pick(
     admin,
-    ["password", "temporaryPassword", "Password", "TemporaryPassword", "AdminPassword"],
+    ["password", "Password", "AdminPassword"],
     ""
   );
 
@@ -755,7 +755,6 @@ const buildAdminPayload = (admin = {}, { includeBlankPassword = true } = {}) => 
     ).trim(),
     email: String(pick(admin, ["email", "AdminEmail", "adminEmail"], "")).trim(),
     password,
-    temporaryPassword: pick(admin, ["temporaryPassword", "TemporaryPassword"], password),
     role: pick(admin, ["role", "Role", "AdminRole"], "Admin"),
     hospitalId: Number(pick(admin, ["hospitalId", "clinicId", "assignedClinicId", "HospitalId", "ClinicId"], 0)) || 0,
     sendWelcomeEmail: pick(admin, ["sendWelcomeEmail"], true) !== false,
@@ -763,7 +762,6 @@ const buildAdminPayload = (admin = {}, { includeBlankPassword = true } = {}) => 
 
   if (!includeBlankPassword && !payload.password) {
     delete payload.password;
-    delete payload.temporaryPassword;
   }
 
   return payload;

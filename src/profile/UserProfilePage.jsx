@@ -224,7 +224,7 @@ function UserProfilePage({ roleType = "admin" }) {
                     aria-label={visiblePasswords.currentPassword ? "Hide current password" : "Show current password"}
                     title={visiblePasswords.currentPassword ? "Hide password" : "Show password"}
                   >
-                    {visiblePasswords.currentPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                    {visiblePasswords.currentPassword ? <Eye size={19} /> : <EyeOff size={19} />}
                   </button>
                 </div>
               </label>
@@ -248,7 +248,7 @@ function UserProfilePage({ roleType = "admin" }) {
                     aria-label={visiblePasswords.newPassword ? "Hide new password" : "Show new password"}
                     title={visiblePasswords.newPassword ? "Hide password" : "Show password"}
                   >
-                    {visiblePasswords.newPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                    {visiblePasswords.newPassword ? <Eye size={19} /> : <EyeOff size={19} />}
                   </button>
                 </div>
                 <ul className="profile-password-requirements" aria-label="Password requirements">
@@ -287,7 +287,7 @@ function UserProfilePage({ roleType = "admin" }) {
                     aria-label={visiblePasswords.confirmPassword ? "Hide confirm password" : "Show confirm password"}
                     title={visiblePasswords.confirmPassword ? "Hide password" : "Show password"}
                   >
-                    {visiblePasswords.confirmPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                    {visiblePasswords.confirmPassword ? <Eye size={19} /> : <EyeOff size={19} />}
                   </button>
                 </div>
               </label>

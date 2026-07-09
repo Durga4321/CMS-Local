@@ -9,9 +9,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1.5rem;
+  padding: 2rem 1rem;
   position: relative;
-  overflow: hidden;
+  overflow: auto;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   box-sizing: border-box;
 }
@@ -41,7 +41,7 @@
 
 .auth-form {
   display: grid;
-  gap: 1rem;
+  gap: 1.1rem;
 }
 
 .auth-card h2,
@@ -55,7 +55,7 @@
 
 @media (max-width: 540px) {
   .auth-container {
-    padding: 1rem;
+    padding: 1.2rem 0.9rem;
   }
 
   .auth-card {
@@ -73,11 +73,12 @@ body.auth-page-no-scroll {
   position: absolute;
   inset: 0;
   background-size: cover;
-  background-position: center;
+  background-position: 24% center;
   background-repeat: no-repeat;
   z-index: 0;
   transform: scale(1.05);
-  filter: saturate(1.05);
+  filter: blur(2px) saturate(0.95);
+  opacity: 0.72;
 }
 
 /* Animated colored veil over background */
@@ -85,10 +86,10 @@ body.auth-page-no-scroll {
   position: absolute;
   inset: 0;
   background: linear-gradient(-45deg,
-      rgba(15, 23, 42, 0.55),
-      rgba(19, 78, 74, 0.5),
-      rgba(14, 165, 164, 0.45),
-      rgba(34, 211, 238, 0.4));
+      rgba(15, 23, 42, 0.62),
+      rgba(19, 78, 74, 0.58),
+      rgba(14, 165, 164, 0.5),
+      rgba(34, 211, 238, 0.42));
   background-size: 400% 400%;
   animation: gradientBG 18s ease infinite;
   z-index: 1;
@@ -132,21 +133,21 @@ body.auth-page-no-scroll {
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-lg);
-  padding: 2.1rem 1.75rem;
+  padding: 1.3rem 1.5rem 1.1rem;
   width: 100%;
-  max-width: 390px;
+  max-width: 360px;
   box-shadow: var(--shadow-card),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
   animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  max-height: calc(100vh - 1.5rem);
-  overflow: hidden;
+  max-height: none;
+  overflow: visible;
 }
 
 .auth-logo {
-  width: 50px;
-  height: 50px;
-  margin: 0 auto 1rem;
-  border-radius: 16px;
+  width: 46px;
+  height: 46px;
+  margin: 0 auto 0.8rem;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -157,9 +158,9 @@ body.auth-page-no-scroll {
 }
 
 .auth-card h2 {
-  margin: 0 0 0.4rem 0;
+  margin: 0 0 0.25rem 0;
   color: rgba(15, 23, 42, 0.55);
-  font-size: 1.6rem;
+  font-size: 1.38rem;
   font-weight: 700;
   text-align: center;
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -173,8 +174,8 @@ body.auth-page-no-scroll {
 .auth-card p.subtitle {
   color: var(--text-muted);
   text-align: center;
-  margin: 0 0 1.2rem;
-  font-size: 0.88rem;
+  margin: 0 0 0.95rem;
+  font-size: 0.8rem;
 }
 
 .success-message {
@@ -188,7 +189,7 @@ body.auth-page-no-scroll {
 .forgot-password-link {
   display: block;
   text-align: center;
-  margin-top: 1rem;
+  margin-top: 0.65rem;
   color: var(--primary);
   text-decoration: none;
   font-size: 0.86rem;
@@ -202,13 +203,13 @@ body.auth-page-no-scroll {
 }
 
 .auth-register-row {
-  margin-top: 0.6rem;
+  margin-top: 0.45rem;
   text-align: center;
 }
 
 .auth-register {
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   margin: 0;
 }
 
@@ -224,9 +225,9 @@ body.auth-page-no-scroll {
 }
 
 .auth-footer {
-  margin-top: 1rem;
+  margin-top: 0.65rem;
   text-align: center;
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
   letter-spacing: 0.02em;
 }
@@ -299,8 +300,8 @@ body.auth-page-no-scroll {
 /* Create account as button */
 .create-account-btn {
   display: inline-block;
-  min-width: 160px;
-  padding: 0.6rem 0.9rem;
+  min-width: 132px;
+  padding: 0.48rem 0.7rem;
   border-radius: 10px;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
   color: #fff;
@@ -317,12 +318,12 @@ body.auth-page-no-scroll {
 
 @media (max-width: 480px) {
   .auth-card {
-    padding: 1.4rem 1rem;
-    max-width: 330px;
+    padding: 1.15rem 1rem 1rem;
+    max-width: 320px;
     border-radius: 18px;
   }
 
   .auth-card h2 {
-    font-size: 1.35rem;
+    font-size: 1.28rem;
   }
 }

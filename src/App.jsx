@@ -42,7 +42,7 @@ import DoctorWiseReport from "./pages/REPORTS/DoctorWiseReport";
 import "./pages/SUPERADMIN/SuperAdmin.css";
 import { ToastProvider } from "./components/ToastProvider";
 import { Bell, Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, CreditCard, Download, Edit3, FileText, Heart, Key, Link as LinkIcon, LogOut, Mail, MapPin, Pill, Phone, Search, Stethoscope, Trash2, UserRound, Wallet, X } from "lucide-react";
-import { apiUrl } from "./config/api";
+import { apiUrl, patientApiUrl, PATIENT_API } from "./config/api";
 import { formatIndianCurrency } from "./utils/format";
 // ensure app styles include patient styles
 
@@ -342,32 +342,54 @@ function PatientRoutes() {
   const [prescriptions, setPrescriptions] = useState([]);
   const [bills, setBills] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [dashboardData, setDashboardData] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
-    const headers = token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+    const headers = {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
 
     const fetchData = async () => {
       try {
-        const [pRes, aRes, rxRes, bRes, nRes] = await Promise.all([
-          fetch(apiUrl('patient-portal/profile'), { headers }),
-          fetch(apiUrl('patient-portal/appointments'), { headers }),
-          fetch(apiUrl('patient-portal/prescriptions'), { headers }),
-          fetch(apiUrl('patient-portal/bills'), { headers }),
-          fetch(apiUrl('patient-portal/notifications'), { headers }),
-        ]);
+        const profileUrl = patientApiUrl(PATIENT_API.profile);
+        const profileRes = await fetch(profileUrl, { headers }).catch(() => null);
+        const profileData = profileRes?.ok ? await profileRes.json().catch(() => null) : null;
+        if (profileData) setPatient(profileData);
 
-        const pData = await pRes.json().catch(() => ({}));
-        const aData = await aRes.json().catch(() => ([]));
-        const rxData = await rxRes.json().catch(() => ([]));
-        const bData = await bRes.json().catch(() => ([]));
-        const nData = await nRes.json().catch(() => ([]));
+        const appointmentsUrl = patientApiUrl(PATIENT_API.appointments);
+        const appointmentsRes = await fetch(appointmentsUrl, { headers }).catch(() => null);
+        const appointmentsData = appointmentsRes?.ok ? await appointmentsRes.json().catch(() => []) : [];
+        const appointmentsList = Array.isArray(appointmentsData) ? appointmentsData : (appointmentsData.items || appointmentsData.data || []);
+        setVisits(appointmentsList);
 
-        if (pRes.ok) setPatient(pData);
-        if (aRes.ok) setVisits(Array.isArray(aData) ? aData : aData.items || []);
-        if (rxRes.ok) setPrescriptions(Array.isArray(rxData) ? rxData : rxData.items || []);
-        if (bRes.ok) setBills(Array.isArray(bData) ? bData : bData.items || []);
-        if (nRes.ok) setNotifications(Array.isArray(nData) ? nData : nData.items || []);
+        const prescriptionsUrl = patientApiUrl(PATIENT_API.prescriptions);
+        const prescriptionsRes = await fetch(prescriptionsUrl, { headers }).catch(() => null);
+        if (prescriptionsRes?.ok) {
+          const rxData = await prescriptionsRes.json().catch(() => []);
+          setPrescriptions(Array.isArray(rxData) ? rxData : (rxData.items || rxData.data || []));
+        }
+
+        const billsUrl = patientApiUrl(PATIENT_API.bills);
+        const billsRes = await fetch(billsUrl, { headers }).catch(() => null);
+        if (billsRes?.ok) {
+          const bData = await billsRes.json().catch(() => []);
+          setBills(Array.isArray(bData) ? bData : (bData.items || bData.data || []));
+        }
+
+        const notificationsUrl = patientApiUrl(PATIENT_API.notifications);
+        const notificationsRes = await fetch(notificationsUrl, { headers }).catch(() => null);
+        if (notificationsRes?.ok) {
+          const nData = await notificationsRes.json().catch(() => []);
+          setNotifications(Array.isArray(nData) ? nData : (nData.items || nData.data || []));
+        }
+
+        const dashboardUrl = patientApiUrl(PATIENT_API.dashboard);
+        const dashboardRes = await fetch(dashboardUrl, { headers }).catch(() => null);
+        const dashboardJson = dashboardRes?.ok ? await dashboardRes.json().catch(() => null) : null;
+        if (dashboardJson) setDashboardData(dashboardJson);
       } catch (err) {
         // ignore errors
       }
@@ -489,10 +511,11 @@ function PatientBookingWizardPage({ visits = [] }) {
   const [selectedTime, setSelectedTime] = useState("");
   const [bookingState, setBookingState] = useState("idle");
   const [bookingError, setBookingError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const getValue = (record, path) => {
     if (record == null) return undefined;
-    if (typeof path === 'string') path = path.split('.');
+    if (typeof path === 'string') path = path.replace(/\?\./g, '.').split('.');
     return path.reduce((value, key) => (value && typeof value === 'object' ? value[key] : undefined), record);
   };
 
@@ -507,59 +530,149 @@ function PatientBookingWizardPage({ visits = [] }) {
   const normalizeName = (value) => {
     if (!value && value !== 0) return "";
     if (typeof value === 'string') return value.trim();
-    if (typeof value === 'object') return readFirst(value, ['name', 'clinicName', 'hospitalName', 'title', 'label']);
-    return String(value);
+    if (typeof value === 'object') {
+      const result = readFirst(value, [
+        'name',
+        'departmentName',
+        'specialty',
+        'speciality',
+        'department',
+        'specialization',
+        'clinicName',
+        'hospitalName',
+        'title',
+        'label',
+      ]);
+      if (result === undefined || result === null) return "";
+      return typeof result === 'string' ? result.trim() : String(result).trim();
+    }
+    return String(value).trim();
   };
 
-  const apiHeaders = {
-    'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true',
-    ...(localStorage.getItem('patientToken') || localStorage.getItem('token')
-      ? { Authorization: `Bearer ${localStorage.getItem('patientToken') || localStorage.getItem('token')}` }
-      : {}),
+  const parseApiList = (data) => {
+    if (Array.isArray(data)) return data;
+    if (!data || typeof data !== 'object') return [];
+    if (Array.isArray(data.items)) return data.items;
+    if (Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data.clinics)) return data.clinics;
+    if (Array.isArray(data.doctors)) return data.doctors;
+    if (Array.isArray(data.departments)) return data.departments;
+    if (Array.isArray(data.slots)) return data.slots;
+    if (Array.isArray(data.appointments)) return data.appointments;
+    if (Array.isArray(data.prescriptions)) return data.prescriptions;
+    if (Array.isArray(data.bills)) return data.bills;
+    if (Array.isArray(data.notifications)) return data.notifications;
+    return [];
+  };
+
+  const getApiHeaders = () => {
+    const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
+    return {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
   };
 
   useEffect(() => {
-    const tryFetchList = async (paths) => {
-      for (const path of paths) {
-        try {
-          const res = await fetch(apiUrl(path), { headers: apiHeaders });
-          if (!res.ok) continue;
-          const data = await res.json().catch(() => []);
-          if (Array.isArray(data)) return data;
-          if (Array.isArray(data.items)) return data.items;
-          if (Array.isArray(data.data)) return data.data;
-          if (data.data && Array.isArray(data.data.items)) return data.data.items;
-          if (Array.isArray(data.clinics)) return data.clinics;
-          if (Array.isArray(data.result)) return data.result;
-          if (Array.isArray(data.results)) return data.results;
-        } catch (err) {
-          continue;
-        }
-      }
-      return [];
-    };
-
     const fetchBookingData = async () => {
+      setLoading(true);
       try {
-        const [clinicList, departmentList, doctorList, slotList] = await Promise.all([
-          tryFetchList(['Clinics', 'clinics']),
-          tryFetchList(['patient-portal/departments', 'departments']),
-          tryFetchList(['patient-portal/doctors', 'doctors']),
-          tryFetchList(['patient-portal/slots', 'slots']),
-        ]);
+        const headers = getApiHeaders();
+
+        const clinicsUrl = patientApiUrl(PATIENT_API.clinics);
+        const clinicsRes = await fetch(clinicsUrl, { headers }).catch(() => null);
+        const clinicsData = clinicsRes?.ok ? await clinicsRes.json().catch(() => null) : null;
+        const clinicList = parseApiList(clinicsData);
+
+        const doctorsUrl = patientApiUrl(PATIENT_API.doctors);
+        const doctorsRes = await fetch(doctorsUrl, { headers }).catch(() => null);
+        const doctorsData = doctorsRes?.ok ? await doctorsRes.json().catch(() => null) : null;
+        const doctorList = parseApiList(doctorsData);
 
         setClinics(clinicList);
-        setDepartments(departmentList);
         setDoctors(doctorList);
-        setSlots(slotList);
+
+        const deptMap = new Map();
+        doctorList.forEach((doctor) => {
+          const deptName = normalizeName(readFirst(doctor, ['departmentName', 'specialty', 'speciality', 'department', 'specialization', 'department.name']));
+          const deptId = readId(doctor, ['departmentId', 'specialtyId', 'department.id']);
+          if (deptName && !deptMap.has(deptId || deptName)) {
+            deptMap.set(deptId || deptName, { id: deptId || deptName, name: deptName });
+          }
+        });
+        setDepartments(Array.from(deptMap.values()));
       } catch (err) {
-        // ignore backend fetch failures and fall back to visit-derived options
+        // Silently fail and fall back to visit-derived options
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchBookingData();
   }, []);
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      if (!selectedClinic) {
+        return;
+      }
+
+      const headers = getApiHeaders();
+      const clinicId = selectedClinic.id || selectedClinic.clinicId || selectedClinic.hospitalId;
+      if (!clinicId) {
+        return;
+      }
+
+      try {
+        const departmentsUrl = patientApiUrl(PATIENT_API.clinicDepartments, { clinicId });
+        const response = await fetch(departmentsUrl, { headers }).catch(() => null);
+        const data = response?.ok ? await response.json().catch(() => null) : null;
+        const departmentsList = parseApiList(data);
+        if (departmentsList.length) {
+          setDepartments(departmentsList.map((department) => ({
+            ...department,
+            id: readId(department, ['id', 'departmentId', 'specialtyId']),
+            name: normalizeName(readFirst(department, ['name', 'departmentName', 'specialization', 'specialty', 'title'])),
+            clinicId,
+          })));
+          return;
+        }
+      } catch (err) {
+        // ignore clinic departments fetch failure
+      }
+    };
+
+    fetchDepartments();
+  }, [selectedClinic]);
+
+  useEffect(() => {
+    const fetchSlots = async () => {
+      if (!selectedDoctor || !selectedDate) {
+        setSlots([]);
+        return;
+      }
+
+      const headers = getApiHeaders();
+      const doctorId = selectedDoctor.id || selectedDoctor.doctorId || selectedDoctor.userId;
+      if (!doctorId) {
+        setSlots([]);
+        return;
+      }
+
+      try {
+        const slotsUrl = patientApiUrl(PATIENT_API.doctorSlots, { doctorId });
+        const response = await fetch(`${slotsUrl}?date=${encodeURIComponent(selectedDate)}`, { headers }).catch(() => null);
+        const data = response?.ok ? await response.json().catch(() => null) : null;
+        const slotList = parseApiList(data);
+        setSlots(slotList);
+      } catch (err) {
+        setSlots([]);
+      }
+    };
+
+    fetchSlots();
+  }, [selectedDoctor, selectedDate]);
 
   const clinicOptions = useMemo(() => {
     if (clinics.length) return clinics.map((clinic) => ({
@@ -725,9 +838,11 @@ function PatientBookingWizardPage({ visits = [] }) {
         appointmentDate: selectedDate,
         appointmentTime: selectedTime,
       };
-      const response = await fetch(apiUrl('patient-portal/appointments'), {
+      const headers = getApiHeaders();
+      const appointmentUrl = patientApiUrl(PATIENT_API.appointments);
+      const response = await fetch(appointmentUrl, {
         method: 'POST',
-        headers: apiHeaders,
+        headers,
         body: JSON.stringify(payload),
       });
       if (!response.ok) {
@@ -976,13 +1091,18 @@ function PatientMedicalHistoryPage({ patient, visits = [] }) {
 
   useEffect(() => {
     const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
-    const headers = token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+    const headers = {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
 
     const fetchHistory = async () => {
       setLoadingHistory(true);
       setHistoryError("");
       try {
-        const response = await fetch(apiUrl('patient-portal/medical-history'), { headers });
+        const historyUrl = patientApiUrl(PATIENT_API.medicalHistory);
+        const response = await fetch(historyUrl, { headers });
         if (!response.ok) {
           throw new Error('Unable to load medical history.');
         }

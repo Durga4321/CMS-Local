@@ -20,7 +20,7 @@ function PasswordField({ className = "", wrapperClassName = "", ...props }) {
         title={visible ? "Hide password" : "Show password"}
         disabled={props.disabled}
       >
-        {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+        {visible ? <Eye size={18} /> : <EyeOff size={18} />}
       </button>
     </div>
   );

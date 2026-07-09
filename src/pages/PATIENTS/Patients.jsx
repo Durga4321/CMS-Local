@@ -58,12 +58,18 @@ function Patients() {
 
       setError("");
 
+      const token =
+        localStorage.getItem("token") ||
+        localStorage.getItem("adminToken") ||
+        localStorage.getItem("superAdminToken");
+
       const response = await fetch(
         PATIENT_API_URL,
         {
           headers: {
             "ngrok-skip-browser-warning":
               "true",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
         }
       );
