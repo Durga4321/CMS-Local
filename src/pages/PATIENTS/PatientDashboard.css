@@ -1,9 +1,9 @@
 .patient-dashboard {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   min-width: 0;
-  padding: 12px 0 8px;
+  padding: 14px 0 8px;
   color: #0f172a;
 }
 
@@ -30,17 +30,17 @@
 
 .pd-greeting-title {
   margin: 0;
-  font-size: 32px;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: 0;
 }
 
 .pd-greeting-subtitle {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   max-width: 780px;
   color: #64748b;
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .pd-header-actions {
@@ -78,7 +78,7 @@
 
 .pd-stats-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px;
 }
 
@@ -86,20 +86,20 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  min-height: 98px;
-  padding: 18px;
+  min-height: 92px;
+  padding: 16px;
   border: 1px solid #e2e8f0;
-  border-radius: 20px;
+  border-radius: 10px;
   background: #ffffff;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   text-align: left;
-  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
-  cursor: default;
+  transition: box-shadow 0.16s ease, border-color 0.16s ease;
+  cursor: pointer;
 }
 
 .pd-stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(15, 118, 110, 0.08);
+  border-color: #99f6e4;
+  box-shadow: 0 8px 18px rgba(15, 118, 110, 0.08);
 }
 
 .pd-stat-icon {
@@ -109,7 +109,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
+  border-radius: 10px;
 }
 
 .pd-stat-icon--teal {
@@ -137,25 +137,25 @@
 }
 
 .pd-stat-label {
-  margin: 0;
+  margin: 6px 0 0;
   color: #64748b;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .pd-stat-value {
-  margin: 5px 0 0;
-  font-size: 22px;
+  margin: 0;
+  font-size: 24px;
   line-height: 1.1;
 }
 
 .pd-stat-description {
   display: block;
-  margin-top: 4px;
+  margin-top: 8px;
   color: #64748b;
-  font-size: 12px;
+  font-size: 16px;
   line-height: 1.5;
 }
 
@@ -335,6 +335,10 @@
   background: #ffffff;
 }
 
+.pd-profile-strip > div {
+  min-width: 0;
+}
+
 .pd-profile-strip span {
   display: block;
   margin-bottom: 6px;
@@ -346,7 +350,11 @@
 }
 
 .pd-profile-strip strong {
+  display: block;
   font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .pd-notifications-panel {
@@ -365,6 +373,8 @@
   align-items: flex-start;
   gap: 12px;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 14px;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
@@ -411,6 +421,8 @@
 .pd-notification-body strong {
   font-size: 13px;
   line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .pd-notification-body span {
@@ -489,7 +501,7 @@
 }
 
 .pd-profile-strip--expanded {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
 
 .pd-profile-card {
@@ -545,6 +557,9 @@
   background: #f8fafc;
   color: #334155;
   font-size: 12px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .pd-action-grid {

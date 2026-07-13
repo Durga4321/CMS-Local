@@ -5,11 +5,9 @@ import {
   Calendar,
   ChevronRight,
   Clock,
-  DollarSign,
   FileText,
+  IndianRupee,
   MapPin,
-  MessageSquare,
-  Phone,
   Pill,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -24,16 +22,6 @@ const formatCurrency = (value) =>
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
-
-const getInitials = (name = "") => {
-  const tokens = String(name).trim().split(/\s+/).filter(Boolean);
-  if (!tokens.length) return "P";
-  return tokens
-    .slice(0, 2)
-    .map((token) => token[0])
-    .join("")
-    .toUpperCase();
-};
 
 const toAmount = (value) => {
   const parsed = Number(String(value ?? 0).replace(/[^0-9.-]/g, ""));
@@ -132,13 +120,13 @@ const getSortedUpcomingAppointment = (items = []) => {
   })[0];
 };
 
-function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY_ARRAY, bills = EMPTY_ARRAY, notifications = EMPTY_ARRAY }) {
+function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY_ARRAY, bills = EMPTY_ARRAY }) {
   const navigate = useNavigate();
   const dashboardPatient = patient || {};
   const upcomingAppointment = getSortedUpcomingAppointment(visits);
-  const notificationItems = Array.isArray(notifications) ? notifications : EMPTY_ARRAY;
   const previousVisits = Array.isArray(visits) ? visits.length : 0;
   const prescriptionCount = Array.isArray(prescriptions) ? prescriptions.length : 0;
+  const medicalRecordCount = previousVisits + prescriptionCount;
   const pendingBillsAmount = Array.isArray(bills)
     ? bills.reduce((total, bill) => {
         const status = getBillStatus(bill);
@@ -146,17 +134,38 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
         return isPending ? total + toAmount(bill?.amount ?? bill?.balance ?? bill?.total ?? bill?.dueAmount) : total;
       }, 0)
     : 0;
-  const selectedPatientName = formatInlineValue(dashboardPatient.name, "Patient");
   const selectedPatientId = formatInlineValue(dashboardPatient.patientCode || dashboardPatient.id, "-");
   const selectedPatientPhone = formatInlineValue(dashboardPatient.phone, "Phone not available");
-  const selectedPatientEmail = formatInlineValue(dashboardPatient.email, "Email not available");
-  const selectedPatientGender = formatInlineValue(dashboardPatient.gender, "-");
-  const selectedPatientAge = formatInlineValue(dashboardPatient.age, "-");
   const selectedPatientBloodGroup = formatInlineValue(dashboardPatient.bloodGroup || dashboardPatient.bloodgroup, "-");
-  const selectedPatientAddress = formatInlineValue(dashboardPatient.address, "Address not available");
-  const selectedEmergencyName = formatInlineValue(dashboardPatient.emergencyContactName, "-");
-  const selectedEmergencyPhone = formatInlineValue(dashboardPatient.emergencyContactPhone, "-");
-  const selectedLastVisit = formatInlineValue(formatDateLabel(dashboardPatient.lastVisit), "No visit yet");
+  const appointmentDate = formatDateLabel(getAppointmentDate(upcomingAppointment));
+  const appointmentTime = formatTimeLabel(getAppointmentTime(upcomingAppointment));
+  const appointmentReminderDoctor = formatInlineValue(getDoctorName(upcomingAppointment), "Your");
+  const defaultNotifications = [
+    {
+      id: "upcoming-appointment-reminder",
+      title: "Upcoming Appointment Reminder",
+      message: upcomingAppointment
+        ? `${appointmentReminderDoctor} appointment${appointmentDate ? ` on ${appointmentDate}` : ""}${appointmentTime ? ` at ${appointmentTime}` : ""}.`
+        : "No upcoming appointment is scheduled yet.",
+      date: appointmentDate || "Today",
+      read: false,
+    },
+    {
+      id: "prescription-ready",
+      title: "Prescription Ready",
+      message: prescriptionCount ? `${formatCount(prescriptionCount)} prescription record${prescriptionCount === 1 ? "" : "s"} available to view.` : "No prescription is ready yet.",
+      date: prescriptionCount ? "Ready now" : "Pending",
+      read: prescriptionCount === 0,
+    },
+    {
+      id: "payment-due",
+      title: "Payment due",
+      message: pendingBillsAmount ? `${formatCurrency(pendingBillsAmount)} pending for payment.` : "No payment is due right now.",
+      date: pendingBillsAmount ? "Due" : "Clear",
+      read: pendingBillsAmount === 0,
+    },
+  ];
+  const notificationItems = defaultNotifications;
   const notificationSummary = notificationItems.length ? `${notificationItems.length} updates` : "No notifications yet";
 
   const [selectedNotificationId, setSelectedNotificationId] = useState(notificationItems[0]?.id ?? null);
@@ -165,9 +174,6 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
     setSelectedNotificationId(notificationItems[0]?.id ?? null);
   }, [notificationItems]);
 
-  const selectedNotification = notificationItems.find((item) => item.id === selectedNotificationId) || notificationItems[0];
-  const appointmentDate = formatDateLabel(getAppointmentDate(upcomingAppointment));
-  const appointmentTime = formatTimeLabel(getAppointmentTime(upcomingAppointment));
   const appointmentDoctor = formatInlineValue(getDoctorName(upcomingAppointment), "No appointment scheduled");
   const appointmentSpecialization = formatInlineValue(getSpecialization(upcomingAppointment), "Waiting for appointment data");
   const appointmentClinic = formatInlineValue(getClinicName(upcomingAppointment), "Clinic details not available");
@@ -181,7 +187,7 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
   };
 
   const handleViewDetails = () => {
-    navigate("/patient/profile");
+    navigate("/patient/medical-history");
   };
 
   const handleReschedule = () => {
@@ -194,18 +200,20 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
 
   const statCards = [
     {
-      label: "Upcoming appointment",
-      value: appointmentDate || "No appointment",
-      note: appointmentTime || appointmentStatus,
+      label: "Upcoming Appointments",
+      value: formatCount(hasAppointment ? 1 : 0),
+      note: hasAppointment ? [appointmentDate, appointmentTime].filter(Boolean).join(" at ") : "No upcoming appointment",
       icon: Clock,
       tone: "teal",
+      route: "/patient/appointments/book",
     },
     {
-      label: "Previous visits",
+      label: "Previous Appointments",
       value: formatCount(previousVisits),
       note: "Completed consultations",
-      icon: FileText,
+      icon: Calendar,
       tone: "blue",
+      route: "/patient/medical-history",
     },
     {
       label: "Prescriptions",
@@ -213,13 +221,23 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
       note: "Available to download",
       icon: Pill,
       tone: "amber",
+      route: "/patient/prescriptions",
     },
     {
-      label: "Bills pending",
+      label: "Medical Records",
+      value: formatCount(medicalRecordCount),
+      note: "Reports and visit history",
+      icon: FileText,
+      tone: "blue",
+      route: "/patient/medical-history",
+    },
+    {
+      label: "Bills Pending",
       value: formatCurrency(pendingBillsAmount),
       note: pendingBillsAmount ? "Payment due" : "No pending balance",
-      icon: DollarSign,
+      icon: IndianRupee,
       tone: "green",
+      route: "/patient/bills",
     },
   ];
 
@@ -227,18 +245,13 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
     <div className="patient-dashboard">
       <div className="pd-header">
         <div className="pd-header-copy">
-          <p className="pd-eyebrow">Patient portal</p>
-          <h1 className="pd-greeting-title">Good day, {selectedPatientName}</h1>
+          <h1 className="pd-greeting-title">Patient Dashboard</h1>
           <p className="pd-greeting-subtitle">Keep track of appointments, care history, prescriptions, and billing in one place.</p>
         </div>
         <div className="pd-header-actions">
           <button type="button" className="pd-header-btn pd-header-btn--primary" onClick={handleBookAppointment}>
             <Calendar size={16} />
-            Book appointment
-          </button>
-          <button type="button" className="pd-header-btn" onClick={handleViewDetails}>
-            <FileText size={16} />
-            View records
+            Book Appointment
           </button>
         </div>
       </div>
@@ -247,14 +260,13 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
-            <button type="button" className={`pd-stat-card pd-stat-card--${card.tone}`} key={card.label}>
+            <button type="button" className={`pd-stat-card pd-stat-card--${card.tone}`} key={card.label} onClick={() => navigate(card.route)}>
               <div className={`pd-stat-icon pd-stat-icon--${card.tone}`}>
                 <Icon size={18} />
               </div>
               <div className="pd-stat-copy">
-                <p className="pd-stat-label">{card.label}</p>
                 <h2 className="pd-stat-value">{card.value}</h2>
-                <span className="pd-stat-description">{card.note}</span>
+                <p className="pd-stat-label">{card.label}</p>
               </div>
             </button>
           );
@@ -265,7 +277,7 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
         <section className="pd-card pd-appointment-panel">
           <div className="pd-section-header">
             <div>
-              <h2>Upcoming appointment</h2>
+              <h2>Upcoming Appointment</h2>
               <p>Next scheduled visit and clinic details.</p>
             </div>
             <span className="pd-status-badge">{appointmentStatus}</span>
@@ -307,7 +319,7 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
               <div className="pd-empty-state">
                 <p>No upcoming appointment is available from the backend yet.</p>
                 <button type="button" className="pd-action-btn pd-action-btn--primary" onClick={handleBookAppointment}>
-                  Book appointment
+                  Book Appointment
                 </button>
               </div>
             )}
@@ -334,7 +346,7 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
             <div>
               <h2>
                 <Bell size={18} />
-                Notifications
+                Notifications:
               </h2>
               <p>Recent updates from the care team and billing desk.</p>
             </div>
@@ -368,85 +380,10 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
             )}
           </div>
 
-          {selectedNotification ? (
-            <div className="pd-selected-notification">
-              <div className="pd-selected-notification-head">
-                <strong>{selectedNotification.title}</strong>
-                <span>{selectedNotification.date}</span>
-              </div>
-              <p>{selectedNotification.message}</p>
-            </div>
-          ) : null}
         </section>
       </div>
 
       <div className="pd-bottom-grid">
-        <section className="pd-card pd-profile-panel">
-          <div className="pd-section-header">
-            <div>
-              <h2>Patient profile</h2>
-              <p>Basic information and contact details pulled from the live patient session.</p>
-            </div>
-          </div>
-
-          <div className="pd-profile-card">
-            <div className="pd-profile-avatar">{getInitials(selectedPatientName)}</div>
-            <div className="pd-profile-copy">
-              <h3>{selectedPatientName}</h3>
-              <p>{selectedPatientEmail}</p>
-              <div className="pd-profile-meta">
-                <span>
-                  <Phone size={14} />
-                  {selectedPatientPhone}
-                </span>
-                <span>
-                  <MapPin size={14} />
-                  {selectedPatientAddress}
-                </span>
-                <span>
-                  <Bell size={14} />
-                  {notificationSummary}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="pd-profile-strip pd-profile-strip--expanded" style={{ marginTop: 16 }}>
-            <div>
-              <span>Age</span>
-              <strong>{selectedPatientAge}</strong>
-            </div>
-            <div>
-              <span>Gender</span>
-              <strong>{selectedPatientGender}</strong>
-            </div>
-            <div>
-              <span>Blood group</span>
-              <strong>{selectedPatientBloodGroup}</strong>
-            </div>
-            <div>
-              <span>Patient ID</span>
-              <strong>{selectedPatientId}</strong>
-            </div>
-            <div>
-              <span>Emergency contact</span>
-              <strong>{selectedEmergencyName}</strong>
-            </div>
-            <div>
-              <span>Emergency phone</span>
-              <strong>{selectedEmergencyPhone}</strong>
-            </div>
-            <div>
-              <span>Last visit</span>
-              <strong>{selectedLastVisit}</strong>
-            </div>
-            <div>
-              <span>Address</span>
-              <strong>{selectedPatientAddress}</strong>
-            </div>
-          </div>
-        </section>
-
         <section className="pd-card pd-actions-panel">
           <div className="pd-section-header">
             <div>
@@ -458,27 +395,19 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
           <div className="pd-action-grid">
             <button type="button" className="pd-action-tile pd-action-tile--primary" onClick={handleBookAppointment}>
               <Calendar size={22} />
-              <span>Book appointment</span>
+              <span>Book Appointment</span>
             </button>
             <button type="button" className="pd-action-tile" onClick={handleViewDetails}>
               <FileText size={22} />
-              <span>View records</span>
+              <span>View Reports</span>
             </button>
             <button type="button" className="pd-action-tile" onClick={() => navigate("/patient/prescriptions")}>
               <Pill size={22} />
-              <span>Prescriptions</span>
+              <span>View Prescriptions</span>
             </button>
             <button type="button" className="pd-action-tile" onClick={() => navigate("/patient/bills")}>
-              <DollarSign size={22} />
+              <IndianRupee size={22} />
               <span>Payments</span>
-            </button>
-            <button type="button" className="pd-action-tile" onClick={() => navigate("/patient/medical-history")}>
-              <MessageSquare size={22} />
-              <span>Medical history</span>
-            </button>
-            <button type="button" className="pd-action-tile" onClick={handleViewAllNotifications}>
-              <Bell size={22} />
-              <span>Notifications</span>
             </button>
           </div>
         </section>

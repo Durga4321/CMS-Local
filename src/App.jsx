@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate, NavLink, useNavigate } from "react-router-dom";
 import AppLayout from "./layout/AppLayout";
@@ -41,19 +41,70 @@ import RevenueReport from "./pages/REPORTS/RevenueReport";
 import DoctorWiseReport from "./pages/REPORTS/DoctorWiseReport";
 import "./pages/SUPERADMIN/SuperAdmin.css";
 import { ToastProvider } from "./components/ToastProvider";
-import { Bell, Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, CreditCard, Download, Edit3, FileText, Heart, Key, Link as LinkIcon, LogOut, Mail, MapPin, Pill, Phone, Search, Stethoscope, Trash2, UserRound, Wallet, X } from "lucide-react";
+import { Bell, Calendar, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Circle, ClipboardList, CreditCard, Download, Edit3, Eye, EyeOff, FileText, Heart, Key, Link as LinkIcon, LogOut, Mail, MapPin, Pill, Phone, Printer, Search, Share2, Stethoscope, Trash2, UserRound, Wallet, X } from "lucide-react";
 import { apiUrl, patientApiUrl, PATIENT_API } from "./config/api";
 import { formatIndianCurrency } from "./utils/format";
+import { validateStrongPassword } from "./utils/validation";
 // ensure app styles include patient styles
 
 const normalizeRole = (role = "") =>
   String(role || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+
+const getNestedValue = (record, path) => {
+  if (record == null) return undefined;
+  const keys = String(path).replace(/\?/g, "").split(".");
+  return keys.reduce((value, key) => (value && typeof value === "object" ? value[key] : undefined), record);
+};
+
+const readFirst = (record, keys) =>
+  keys.reduce((value, key) => value || getNestedValue(record, key), "") || "";
+
+const PATIENT_NOTIFICATION_TYPES = [
+  'Appointment Reminder',
+  'Prescription Ready',
+  'Bill Generated',
+  'Follow-up Reminder',
+];
+
+const PATIENT_PASSWORD_REQUIREMENTS = [
+  { label: "Minimum 8 characters", test: (value) => value.length >= 8 },
+  { label: "At least 1 uppercase letter (A-Z)", test: (value) => /[A-Z]/.test(value) },
+  { label: "At least 1 lowercase letter (a-z)", test: (value) => /[a-z]/.test(value) },
+  { label: "At least 1 number (0-9)", test: (value) => /\d/.test(value) },
+  { label: "At least 1 special character (@, #, $, %, etc.)", test: (value) => /[^A-Za-z0-9]/.test(value) },
+];
 
 const isCurrentUserSuperAdmin = () =>
   normalizeRole(localStorage.getItem("adminRole") || localStorage.getItem("userRole")) === "superadmin";
 
 const SuperAdminRoute = ({ children }) =>
   isCurrentUserSuperAdmin() ? children : <Navigate to="/dashboard" replace />;
+
+const logoutPatient = async (navigate) => {
+  const name = localStorage.getItem("patientName") || localStorage.getItem("patientEmail") || "Patient";
+  const role = localStorage.getItem("patientRole") || "Patient";
+  const ipAddress = localStorage.getItem("loginIpAddress") || "";
+  try {
+    await import("./pages/SUPERADMIN/superAdminApi").then(({ recordAuditLog }) =>
+      recordAuditLog({
+        userName: name,
+        user: name,
+        userEmail: localStorage.getItem("patientEmail") || "",
+        email: localStorage.getItem("patientEmail") || "",
+        action: `${name} logged out`,
+        systemAction: "Logout",
+        role,
+        ipAddress,
+        timestamp: new Date().toISOString(),
+      })
+    );
+  } catch {}
+
+  ["token", "userRole", "patientName", "patientId", "patientToken", "patientRole", "patientEmail"].forEach((key) =>
+    localStorage.removeItem(key)
+  );
+  navigate("/patients/register", { replace: true });
+};
 
 function App() {
   return (
@@ -156,30 +207,8 @@ function PatientShell({ notifications, children, patient }) {
   }, []);
 
   const logout = async () => {
-    const name = localStorage.getItem("patientName") || localStorage.getItem("patientEmail") || "Patient";
-    const role = localStorage.getItem("patientRole") || "Patient";
-    const ipAddress = localStorage.getItem("loginIpAddress") || "";
-    try {
-      await import("./pages/SUPERADMIN/superAdminApi").then(({ recordAuditLog }) =>
-        recordAuditLog({
-          userName: name,
-          user: name,
-          userEmail: localStorage.getItem("patientEmail") || "",
-          email: localStorage.getItem("patientEmail") || "",
-          action: `${name} logged out`,
-          systemAction: "Logout",
-          role,
-          ipAddress,
-          timestamp: new Date().toISOString(),
-        })
-      );
-    } catch {}
-
-    ["token", "userRole", "patientName", "patientId", "patientToken", "patientRole", "patientEmail"].forEach((key) =>
-      localStorage.removeItem(key)
-    );
     setMenuOpen(false);
-    navigate("/patients/register", { replace: true });
+    await logoutPatient(navigate);
   };
 
   const patientTitle = patient?.name || patient?.firstName || patient?.fullName || "Patient";
@@ -240,10 +269,6 @@ function PatientShell({ notifications, children, patient }) {
             <Bell size={16} />
             <span>Notifications</span>
             {unreadCount ? <em>{unreadCount}</em> : null}
-          </NavLink>
-          <NavLink to="/patient/profile" className={({ isActive }) => `pp-nav-item ${isActive ? "active" : ""}`}>
-            <UserRound size={16} />
-            <span>My Profile</span>
           </NavLink>
         </nav>
         <div className="pp-patient-chip">
@@ -309,7 +334,7 @@ function PatientShell({ notifications, children, patient }) {
                     className="pp-account-item"
                     onClick={() => {
                       setMenuOpen(false);
-                      navigate('/patient/profile');
+                      navigate('/patient/change-password');
                     }}
                     role="menuitem"
                   >
@@ -417,7 +442,7 @@ function PatientRoutes() {
         <Route path="appointments" element={<Navigate to="appointments/book" replace />} />
         <Route path="appointments/book" element={<PatientBookingWizardPage visits={visits} />} />
         <Route path="book" element={<Navigate to="appointments/book" replace />} />
-        <Route path="medical-history" element={<PatientMedicalHistoryPage patient={patient} visits={visits} />} />
+        <Route path="medical-history" element={<PatientMedicalHistoryPage patient={patient} visits={visits} prescriptions={prescriptions} />} />
         <Route path="history" element={<Navigate to="medical-history" replace />} />
         <Route path="reports" element={<Navigate to="medical-history" replace />} />
         <Route path="prescriptions" element={<PatientPrescriptionsPage prescriptions={prescriptions} />} />
@@ -425,6 +450,7 @@ function PatientRoutes() {
         <Route path="billing" element={<Navigate to="bills" replace />} />
         <Route path="notifications" element={<PatientNotificationsPage notifications={notifications} />} />
         <Route path="profile" element={<PatientProfilePage patient={patient} visits={visits} prescriptions={prescriptions} bills={bills} notifications={notifications} />} />
+        <Route path="change-password" element={<PatientChangePasswordPage />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>
     </PatientShell>
@@ -436,7 +462,6 @@ function PatientPageShell({ title, subtitle, action, children }) {
     <div className="patient-dashboard">
       <div className="pd-header">
         <div className="pd-header-copy">
-          <p className="pd-eyebrow">Patient portal</p>
           <h1 className="pd-greeting-title">{title}</h1>
           <p className="pd-greeting-subtitle">{subtitle}</p>
         </div>
@@ -1084,7 +1109,7 @@ function PatientBookingWizardPage({ visits = [] }) {
   );
 }
 
-function PatientMedicalHistoryPage({ patient, visits = [] }) {
+function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] }) {
   const [history, setHistory] = useState(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState("");
@@ -1127,15 +1152,38 @@ function PatientMedicalHistoryPage({ patient, visits = [] }) {
       .filter(Boolean);
   };
 
-  const chronicConditions = normalizeList(history?.chronicConditions || history?.chronicDiseases || history?.conditions);
-  const allergies = normalizeList(history?.allergies || history?.allergyList || history?.allergy);
-  const currentMedications = normalizeList(history?.currentMedications || history?.medications || history?.drugs);
+  const chronicConditions = normalizeList(
+    history?.chronicConditions ||
+      history?.chronicDiseases ||
+      history?.medicalConditions ||
+      history?.conditions ||
+      patient?.chronicDiseases ||
+      patient?.medicalConditions
+  );
+  const allergies = normalizeList(history?.allergies || history?.allergyList || history?.allergy || patient?.allergies);
+  const currentMedications = normalizeList(
+    history?.currentMedications || history?.medications || history?.drugs || patient?.currentMedications
+  );
 
   const visitRecords = Array.isArray(history?.visits)
     ? history.visits
     : Array.isArray(history?.appointments)
     ? history.appointments
     : visits;
+
+  const reportRecords = Array.isArray(history?.reports)
+    ? history.reports
+    : Array.isArray(history?.labReports)
+    ? history.labReports
+    : visitRecords
+        .map((visit) => readFirst(visit, ['report', 'reportName', 'reportTitle', 'reportUrl', 'documentUrl']) ? visit : null)
+        .filter(Boolean);
+
+  const prescriptionRecords = Array.isArray(history?.prescriptions) && history.prescriptions.length
+    ? history.prescriptions
+    : Array.isArray(prescriptions)
+    ? prescriptions
+    : [];
 
   const readVisitDate = (visit) =>
     readFirst(visit, ['date', 'visitDate', 'appointmentDate', 'createdAt', 'appointment?.date']) || 'Unknown date';
@@ -1149,58 +1197,72 @@ function PatientMedicalHistoryPage({ patient, visits = [] }) {
   const readVisitSummary = (visit) =>
     readFirst(visit, ['summary', 'reason', 'notes', 'diagnosis']) || '';
 
+  const readReportTitle = (report) =>
+    readFirst(report, ['title', 'reportTitle', 'reportName', 'name', 'testName']) || 'Report';
+
+  const readReportDate = (report) =>
+    readFirst(report, ['date', 'reportDate', 'createdAt', 'appointmentDate']) || 'Unknown date';
+
+  const readReportStatus = (report) =>
+    readFirst(report, ['status', 'resultStatus', 'type', 'category']) || 'Available';
+
+  const readPrescriptionDiagnosis = (prescription) =>
+    readFirst(prescription, ['diagnosis', 'condition', 'summary', 'title']) || 'Diagnosis not recorded';
+
   return (
     <PatientPageShell
-      title="Medical history"
-      subtitle="Your record of visits, conditions, and treatments pulled from the patient API."
+      title="Medical History"
+      subtitle="Previous visits, medical conditions, reports, and prescriptions."
     >
       <div className="mh-grid">
         <div className="mh-card">
-          <h3>Chronic conditions</h3>
+          <h3>Medical Conditions</h3>
           {loadingHistory ? (
             <p>Loading...</p>
-          ) : chronicConditions.length ? (
+          ) : chronicConditions.length || allergies.length || currentMedications.length ? (
             <div className="mh-chip-list">
-              {chronicConditions.map((item, index) => (
+              {[...chronicConditions, ...allergies, ...currentMedications].map((item, index) => (
                 <span key={index} className="mh-chip">
                   {item}
                 </span>
               ))}
             </div>
           ) : (
-            <p>No chronic conditions recorded.</p>
+            <p>No medical conditions recorded.</p>
           )}
         </div>
         <div className="mh-card">
-          <h3>Allergies</h3>
+          <h3>Reports</h3>
           {loadingHistory ? (
             <p>Loading...</p>
-          ) : allergies.length ? (
-            <div className="mh-chip-list">
-              {allergies.map((item, index) => (
-                <span key={index} className="mh-chip">
-                  {item}
-                </span>
+          ) : reportRecords.length ? (
+            <div className="mh-mini-list">
+              {reportRecords.slice(0, 3).map((report, index) => (
+                <div className="mh-mini-item" key={report.id || report.reportId || index}>
+                  <strong>{readReportTitle(report)}</strong>
+                  <span>{readReportDate(report)} - {readReportStatus(report)}</span>
+                </div>
               ))}
             </div>
           ) : (
-            <p>No allergies recorded.</p>
+            <p>No reports recorded.</p>
           )}
         </div>
         <div className="mh-card">
-          <h3>Current medications</h3>
+          <h3>Prescriptions</h3>
           {loadingHistory ? (
             <p>Loading...</p>
-          ) : currentMedications.length ? (
-            <div className="mh-chip-list">
-              {currentMedications.map((item, index) => (
-                <span key={index} className="mh-chip">
-                  {item}
-                </span>
+          ) : prescriptionRecords.length ? (
+            <div className="mh-mini-list">
+              {prescriptionRecords.slice(0, 3).map((prescription, index) => (
+                <div className="mh-mini-item" key={prescription.id || prescription.prescriptionId || index}>
+                  <strong>{readPrescriptionDiagnosis(prescription)}</strong>
+                  <span>{readFirst(prescription, ['date', 'visitDate', 'prescribedOn', 'createdAt']) || 'Unknown date'}</span>
+                </div>
               ))}
             </div>
           ) : (
-            <p>No medications recorded.</p>
+            <p>No prescriptions recorded.</p>
           )}
         </div>
       </div>
@@ -1208,7 +1270,7 @@ function PatientMedicalHistoryPage({ patient, visits = [] }) {
       <div className="mh-panel">
         <div className="mh-panel-header">
           <div>
-            <h2>Previous visits</h2>
+            <h2>Previous Visits</h2>
             <p>Latest consultations and notes from your patient history.</p>
           </div>
         </div>
@@ -1233,7 +1295,7 @@ function PatientMedicalHistoryPage({ patient, visits = [] }) {
           </div>
         ) : (
           <div className="mh-empty">
-            <p>No medical history found.</p>
+            <p>No previous visits found.</p>
           </div>
         )}
       </div>
@@ -1243,6 +1305,9 @@ function PatientMedicalHistoryPage({ patient, visits = [] }) {
 
 function PatientPrescriptionsPage({ prescriptions = [] }) {
   const prescriptionRecords = Array.isArray(prescriptions) ? prescriptions : [];
+  const visiblePrescriptionRecords = prescriptionRecords.length
+    ? prescriptionRecords
+    : [{ id: 'empty-prescription', title: 'Prescription', medicines: [] }];
 
   const formatDate = (record) =>
     readFirst(record, ['visitDate', 'date', 'prescribedOn', 'createdAt', 'appointmentDate']) || 'Unknown date';
@@ -1250,60 +1315,161 @@ function PatientPrescriptionsPage({ prescriptions = [] }) {
   const getTitle = (record) =>
     readFirst(record, ['title', 'summary', 'diagnosis', 'condition', 'description']) || 'Prescription';
 
-  const getDoctor = (record) => {
-    const doctorName = readFirst(record, ['doctorName', 'doctor.name', 'provider.name', 'prescribedBy']);
-    return doctorName ? `Prescribed by ${doctorName}` : 'Doctor unavailable';
-  };
-
-  const getMedicationCount = (record) => {
-    const count =
-      Array.isArray(record.medicines) && record.medicines.length
-        ? record.medicines.length
-        : Array.isArray(record.medicineNames) && record.medicineNames.length
-        ? record.medicineNames.length
-        : record.medicationCount || record.medicineCount || record.medicinesCount || 0;
-    return count ? `${count} medicine${count === 1 ? '' : 's'}` : '';
-  };
-
   const getDownloadUrl = (record) =>
-    readFirst(record, ['documentUrl', 'downloadUrl', 'prescriptionUrl', 'url']) || '';
+    readFirst(record, ['pdfUrl', 'documentUrl', 'downloadUrl', 'prescriptionUrl', 'url']) || '';
 
   const viewPrescription = (url) => {
     if (!url) return;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const normalizeMedicineList = (value) => {
+    if (!value && value !== 0) return [];
+    if (Array.isArray(value)) return value.filter(Boolean);
+    return String(value)
+      .split(/,|;/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  };
+
+  const getDoctorDetails = (record) => {
+    const name = readFirst(record, ['doctorName', 'doctor.name', 'provider.name', 'prescribedBy']) || 'Doctor details unavailable';
+    const specialty = readFirst(record, ['doctorSpecialty', 'doctor.specialty', 'specialty', 'department', 'departmentName']);
+    const phone = readFirst(record, ['doctorPhone', 'doctor.phone', 'doctor.mobile']);
+    return [name, specialty, phone].filter(Boolean).join(' | ');
+  };
+
+  const getDiagnosis = (record) =>
+    readFirst(record, ['diagnosis', 'condition', 'summary', 'title', 'description']) || 'Diagnosis not recorded';
+
+  const getMedicineList = (record) => {
+    const rawMedicines =
+      Array.isArray(record.medicines) && record.medicines.length
+        ? record.medicines
+        : Array.isArray(record.medications) && record.medications.length
+        ? record.medications
+        : Array.isArray(record.medicineList) && record.medicineList.length
+        ? record.medicineList
+        : normalizeMedicineList(record.medicineNames || record.medicines || record.medications || record.medicineList);
+
+    return rawMedicines.map((medicine, index) => {
+      if (medicine && typeof medicine === 'object') {
+        return {
+          name: readFirst(medicine, ['name', 'medicineName', 'drugName', 'title']) || `Medicine ${index + 1}`,
+          dosage: readFirst(medicine, ['dosage', 'dose', 'strength']) || readFirst(record, ['dosage', 'dose']) || 'Dosage not recorded',
+          instructions:
+            readFirst(medicine, ['instructions', 'instruction', 'notes', 'frequency', 'timing']) ||
+            readFirst(record, ['instructions', 'instruction', 'notes']) ||
+            'Instructions not recorded',
+        };
+      }
+
+      return {
+        name: String(medicine || `Medicine ${index + 1}`),
+        dosage: readFirst(record, ['dosage', 'dose']) || 'Dosage not recorded',
+        instructions: readFirst(record, ['instructions', 'instruction', 'notes']) || 'Instructions not recorded',
+      };
+    });
+  };
+
+  const printPrescription = (record) => {
+    const medicines = getMedicineList(record);
+    const printWindow = window.open('', '_blank', 'noopener,noreferrer');
+    if (!printWindow) return;
+    printWindow.document.write(`
+      <html>
+        <head><title>Prescription</title></head>
+        <body style="font-family: Arial, sans-serif; padding: 24px; color: #0f172a;">
+          <h1>Prescription</h1>
+          <p><strong>Date:</strong> ${formatDate(record)}</p>
+          <p><strong>Doctor Details:</strong> ${getDoctorDetails(record)}</p>
+          <p><strong>Diagnosis:</strong> ${getDiagnosis(record)}</p>
+          <h2>Medicine List</h2>
+          <ul>
+            ${medicines.map((medicine) => `<li><strong>${medicine.name}</strong><br/>Dosage: ${medicine.dosage}<br/>Instructions: ${medicine.instructions}</li>`).join('')}
+          </ul>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+
+  const sharePrescription = async (record) => {
+    const url = getDownloadUrl(record);
+    const text = `Prescription - ${getDiagnosis(record)} (${formatDate(record)})`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Prescription', text, url: url || window.location.href });
+      } catch {}
+      return;
+    }
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url || text);
+    }
+  };
+
   return (
     <PatientPageShell
       title="Prescriptions"
-      subtitle="View, download or share your prescriptions."
+      subtitle="Doctor details, diagnosis, medicine list, dosage, and instructions."
     >
       <div className="pd-card">
         <div className="pd-section-header">
           <div>
-            <h2>Prescription records</h2>
+            <h2>Prescription Records</h2>
             <p>Current and historical prescriptions.</p>
           </div>
         </div>
 
-        {prescriptionRecords.length ? (
+        {!prescriptionRecords.length ? (
+          <div className="pd-prescription-empty-note">
+            <p>No prescriptions found. The prescription format is ready below.</p>
+          </div>
+        ) : null}
+
+        {visiblePrescriptionRecords.length ? (
           <div className="pd-prescription-list">
-            {prescriptionRecords.map((prescription, index) => {
+            {visiblePrescriptionRecords.map((prescription, index) => {
               const date = formatDate(prescription);
               const title = getTitle(prescription);
-              const doctor = getDoctor(prescription);
-              const count = getMedicationCount(prescription);
               const downloadUrl = getDownloadUrl(prescription);
+              const doctorDetails = getDoctorDetails(prescription);
+              const diagnosis = getDiagnosis(prescription);
+              const medicines = getMedicineList(prescription);
 
               return (
                 <div className="pd-prescription-card" key={prescription.id || prescription.appointmentId || index}>
                   <div className="pd-prescription-copy">
                     <span className="pd-prescription-date">{date}</span>
-                    <h3>{title}</h3>
-                    <p className="pd-prescription-subtitle">
-                      {doctor}
-                      {count ? ` • ${count}` : ''}
-                    </p>
+                    <h3>{diagnosis || title}</h3>
+                    <div className="pd-prescription-detail-grid">
+                      <div>
+                        <span>Doctor Details</span>
+                        <strong>{doctorDetails}</strong>
+                      </div>
+                      <div>
+                        <span>Diagnosis</span>
+                        <strong>{diagnosis || title}</strong>
+                      </div>
+                    </div>
+                    <div className="pd-medicine-table">
+                      <div className="pd-medicine-table-head">
+                        <span>Medicine List</span>
+                        <span>Dosage</span>
+                        <span>Instructions</span>
+                      </div>
+                      {medicines.length ? medicines.map((medicine, medicineIndex) => (
+                        <div className="pd-medicine-row" key={`${medicine.name}-${medicineIndex}`}>
+                          <strong>{medicine.name}</strong>
+                          <span>{medicine.dosage}</span>
+                          <span>{medicine.instructions}</span>
+                        </div>
+                      )) : (
+                        <div className="pd-medicine-empty">No medicines recorded.</div>
+                      )}
+                    </div>
                   </div>
                   <div className="pd-prescription-actions">
                     <button
@@ -1312,15 +1478,24 @@ function PatientPrescriptionsPage({ prescriptions = [] }) {
                       onClick={() => viewPrescription(downloadUrl)}
                       disabled={!downloadUrl}
                     >
-                      View
+                      <Download size={15} />
+                      Download PDF
                     </button>
                     <button
                       type="button"
                       className="pd-prescription-btn pd-prescription-btn--primary"
-                      onClick={() => viewPrescription(downloadUrl)}
-                      disabled={!downloadUrl}
+                      onClick={() => printPrescription(prescription)}
                     >
-                      Download
+                      <Printer size={15} />
+                      Print
+                    </button>
+                    <button
+                      type="button"
+                      className="pd-prescription-btn pd-prescription-btn--secondary"
+                      onClick={() => sharePrescription(prescription)}
+                    >
+                      <Share2 size={15} />
+                      Share
                     </button>
                   </div>
                 </div>
@@ -1358,20 +1533,19 @@ function PatientBillsPage({ bills = [] }) {
   const paymentMode = (record) =>
     readFirst(record, ['paymentMode', 'paymentType', 'mode', 'method']) || 'Not specified';
 
+  const normalizePaymentMode = (value) => String(value).toLowerCase().replace(/\s+/g, '');
+
+  const displayPaymentMode = (record) => {
+    const mode = paymentMode(record);
+    const normalizedMode = normalizePaymentMode(mode);
+    return normalizedMode === 'online' || normalizedMode === 'netbanking' ? 'Netbanking' : mode;
+  };
+
   const paymentStatus = (record) =>
     String(readFirst(record, ['status', 'paymentStatus', 'billStatus']) || 'Pending').toLowerCase();
 
   const totalAmount = (record) => Number(readFirst(record, ['total', 'amount', 'invoiceAmount', 'grandTotal', 'dueAmount', 'netAmount']) || 0);
-  const paidAmount = (record) => Number(readFirst(record, ['paidAmount', 'paid', 'settledAmount']) || 0);
   const dueAmount = (record) => Number(readFirst(record, ['dueAmount', 'balance', 'outstandingAmount']) || 0);
-
-  const uniquePaymentModes = Array.from(
-    new Set(billRecords.map((bill) => paymentMode(bill)).filter(Boolean))
-  );
-
-  const pendingTotal = billRecords.reduce((sum, bill) => sum + Math.max(dueAmount(bill), 0), 0);
-  const settledTotal = billRecords.reduce((sum, bill) => sum + (paidAmount(bill) || 0), 0);
-  const invoiceCount = billRecords.length;
 
   const getLineItems = (record) => {
     if (Array.isArray(record.lineItems) && record.lineItems.length) return record.lineItems;
@@ -1397,7 +1571,7 @@ function PatientBillsPage({ bills = [] }) {
   };
 
   const payLabel = (record) => {
-    const mode = paymentMode(record);
+    const mode = displayPaymentMode(record);
     return paymentUrl(record) ? `Pay by ${mode}` : 'Payment unavailable';
   };
 
@@ -1406,40 +1580,143 @@ function PatientBillsPage({ bills = [] }) {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const latestBill = billRecords[0] || {};
+  const latestLineItems = getLineItems(latestBill);
+  const latestTotal = totalAmount(latestBill);
+  const latestStatus = paymentStatus(latestBill);
+  const latestPatientName =
+    readFirst(latestBill, ['patientName', 'patient.name', 'name', 'customerName']) || 'Patient';
+  const latestPaymentMode = billRecords.length ? displayPaymentMode(latestBill) : 'UPI';
+  const selectedAppointment = billRecords.length ? invoiceNumber(latestBill) : 'No billable appointments found';
+  const latestBillNumber = invoiceNumber(latestBill);
+  const latestAppointmentNumber =
+    readFirst(latestBill, ['appointmentNumber', 'appointmentNo', 'appointmentId', 'appointment.id']) || '-';
+  const latestConsultationFee = readFirst(latestBill, ['consultationCharges', 'consultationCharge']) || 0;
+  const latestLabCharges = readFirst(latestBill, ['labCharges', 'laboratoryCharges']) || 0;
+  const latestMedicineCharges = readFirst(latestBill, ['medicineCharges', 'medicationCharges']) || 0;
+  const latestGst = readFirst(latestBill, ['gst', 'tax', 'gstAmount', 'taxAmount']) || 0;
+  const paymentOptions = ['UPI', 'Card', 'Netbanking'];
+  const statusOptions = ['Paid', 'Pending', 'Refunded'];
+  const totalBillsAmount = billRecords.reduce((sum, bill) => sum + totalAmount(bill), 0);
+
   return (
     <PatientPageShell
-      title="Bills"
-      subtitle="Track billing, lab charges, medicine fees, invoices and payments."
+      title="Billing"
+      subtitle="Review charges, invoices, and pending payments."
     >
-      <div className="pb-summary-grid">
-        <div className="pb-summary-card">
-          <span className="pb-summary-title">Pending amount</span>
-          <strong>{formatAmount(pendingTotal)}</strong>
-          <p>Needs payment</p>
-        </div>
-        <div className="pb-summary-card">
-          <span className="pb-summary-title">Paid amount</span>
-          <strong>{formatAmount(settledTotal)}</strong>
-          <p>Settled invoices</p>
-        </div>
-        <div className="pb-summary-card">
-          <span className="pb-summary-title">Invoices</span>
-          <strong>{invoiceCount}</strong>
-          <p>Available to view</p>
-        </div>
-        <div className="pb-summary-card">
-          <span className="pb-summary-title">Payment modes</span>
-          <strong>{uniquePaymentModes.length}</strong>
-          <p>{uniquePaymentModes.join(', ') || 'None'}</p>
-        </div>
+      <div className="pb-billing-layout">
+        <section className="pb-generate-card">
+          <div className="pb-billing-header">
+            <div>
+              <h2>Generate Bill</h2>
+              <p>Review patient and charge details before creating the invoice.</p>
+            </div>
+            <span className="pb-billing-icon">
+              <FileText size={30} />
+            </span>
+          </div>
+
+          <div className="pb-patient-preview">
+            <strong>{latestPatientName}</strong>
+            <span>{selectedAppointment}</span>
+          </div>
+
+          <div className="pb-info-section">
+            <h3>Bill Information</h3>
+            <div className="pb-info-grid">
+              <div className="pb-info-item">
+                <span>Bill Number</span>
+                <strong>{latestBillNumber}</strong>
+              </div>
+              <div className="pb-info-item">
+                <span>Appointment Number</span>
+                <strong>{latestAppointmentNumber}</strong>
+              </div>
+              <div className="pb-info-item">
+                <span>Consultation Fee</span>
+                <strong>{formatAmount(latestConsultationFee)}</strong>
+              </div>
+              <div className="pb-info-item">
+                <span>Lab Charges</span>
+                <strong>{formatAmount(latestLabCharges)}</strong>
+              </div>
+              <div className="pb-info-item">
+                <span>Medicine Charges</span>
+                <strong>{formatAmount(latestMedicineCharges)}</strong>
+              </div>
+              <div className="pb-info-item">
+                <span>GST</span>
+                <strong>{formatAmount(latestGst)}</strong>
+              </div>
+              <div className="pb-info-item pb-info-item--total">
+                <span>Total</span>
+                <strong>{formatAmount(latestTotal)}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="pb-info-section">
+            <h3>Payment</h3>
+            <div className="pb-option-row">
+              {paymentOptions.map((option) => (
+                <span className={`pb-option-chip ${normalizePaymentMode(latestPaymentMode) === normalizePaymentMode(option) ? 'is-active' : ''}`} key={option}>
+                  {option}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="pb-info-section">
+            <h3>Status</h3>
+            <div className="pb-option-row">
+              {statusOptions.map((option) => (
+                <span className={`pb-status-option ${latestStatus === option.toLowerCase() ? 'is-active' : ''}`} key={option}>
+                  {option}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="pb-payment-actions">
+            <button type="button" className="pb-action-btn pb-action-btn--primary" onClick={() => payInvoice(paymentUrl(latestBill))} disabled={!paymentUrl(latestBill)}>
+              Pay Now
+            </button>
+            <button type="button" className="pb-action-btn pb-action-btn--ghost" onClick={() => viewInvoice(invoiceUrl(latestBill))} disabled={!invoiceUrl(latestBill)}>
+              Download Invoice
+            </button>
+          </div>
+        </section>
+
+        <aside className="pb-latest-card">
+          <h2>Latest Invoice</h2>
+          <div className="pb-latest-invoice">
+            <div>
+              <strong>{latestPatientName}</strong>
+              <span>Invoice generated</span>
+              <span>Status: {latestStatus === 'paid' ? 'Paid' : 'Pending'}</span>
+            </div>
+            <div className="pb-latest-lines">
+              {(latestLineItems.length ? latestLineItems : [{ label: 'Total', amount: latestTotal }]).map((item, index) => (
+                <div className="pb-latest-line" key={`${item.label}-${index}`}>
+                  <span>{item.label}</span>
+                  <strong>{formatAmount(item.amount)}</strong>
+                </div>
+              ))}
+              <div className="pb-latest-line pb-latest-line--total">
+                <span>Total</span>
+                <strong>{formatAmount(latestTotal)}</strong>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
 
       {billRecords.length ? (
-        <div className="pb-invoice-list">
+        <div className="pb-bills-overview">
+          <div className="pb-invoice-list">
           {billRecords.map((bill, index) => {
             const status = paymentStatus(bill);
             const total = totalAmount(bill);
-            const paid = paidAmount(bill);
             const due = dueAmount(bill);
             const lineItems = getLineItems(bill);
             const invoiceLink = invoiceUrl(bill);
@@ -1456,7 +1733,7 @@ function PatientBillsPage({ bills = [] }) {
                     <span className={`pb-status-badge pb-status-badge--${status === 'paid' ? 'paid' : 'pending'}`}>
                       {status === 'paid' ? 'Paid' : 'Pending'}
                     </span>
-                    <span className="pb-payment-badge">{paymentMode(bill)}</span>
+                    <span className="pb-payment-badge">{displayPaymentMode(bill)}</span>
                   </div>
                 </div>
 
@@ -1500,6 +1777,12 @@ function PatientBillsPage({ bills = [] }) {
               </div>
             );
           })}
+          </div>
+          <aside className="pb-total-card">
+            <span>Total Bill</span>
+            <strong>{formatAmount(totalBillsAmount)}</strong>
+            <p>{billRecords.length} invoice{billRecords.length === 1 ? '' : 's'} included</p>
+          </aside>
         </div>
       ) : (
         <div className="pd-selected-notification">
@@ -1511,29 +1794,117 @@ function PatientBillsPage({ bills = [] }) {
 }
 
 function PatientNotificationsPage({ notifications = [] }) {
+  const notificationTypes = PATIENT_NOTIFICATION_TYPES;
+
+  const defaultNotifications = useMemo(() => notificationTypes.map((type, index) => ({
+    id: `default-${index}`,
+    title: type,
+    message: `${type} notification will be shown here when available.`,
+    date: 'No date',
+    type,
+    read: true,
+    url: '',
+  })), [notificationTypes]);
+
+  const normalizeNotification = useCallback((notification, index) => {
+    const title = readFirst(notification, ['title', 'subject', 'name']) || notificationTypes[index % notificationTypes.length];
+    const message = readFirst(notification, ['message', 'body', 'description', 'content']) || 'Notification details will appear here.';
+    const date = readFirst(notification, ['date', 'createdAt', 'scheduledAt', 'time']) || 'No date';
+    const rawType = readFirst(notification, ['type', 'category', 'notificationType']);
+    const searchable = `${rawType} ${title} ${message}`.toLowerCase();
+    const type =
+      notificationTypes.find((item) => searchable.includes(item.toLowerCase().replace('-', ''))) ||
+      (searchable.includes('appointment') ? 'Appointment Reminder' : '') ||
+      (searchable.includes('prescription') ? 'Prescription Ready' : '') ||
+      (searchable.includes('bill') || searchable.includes('invoice') ? 'Bill Generated' : '') ||
+      (searchable.includes('follow') ? 'Follow-up Reminder' : '') ||
+      notificationTypes[index % notificationTypes.length];
+
+    return {
+      ...notification,
+      id: notification.id || notification.notificationId || `notification-${index}`,
+      title,
+      message,
+      date,
+      type,
+      read: Boolean(notification.read || notification.isRead),
+      url: readFirst(notification, ['url', 'link', 'actionUrl', 'documentUrl']),
+    };
+  }, [notificationTypes]);
+
+  const [notificationRows, setNotificationRows] = useState(() =>
+    (notifications.length ? notifications : defaultNotifications).map(normalizeNotification)
+  );
+  const [selectedNotification, setSelectedNotification] = useState(null);
+
+  useEffect(() => {
+    setNotificationRows((notifications.length ? notifications : defaultNotifications).map(normalizeNotification));
+    setSelectedNotification(null);
+  }, [defaultNotifications, normalizeNotification, notifications]);
+
+  const viewNotification = (notification) => {
+    setSelectedNotification(notification);
+    if (notification.url) {
+      window.open(notification.url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const markNotificationAsRead = (notificationId) => {
+    setNotificationRows((rows) =>
+      rows.map((notification) =>
+        notification.id === notificationId ? { ...notification, read: true } : notification
+      )
+    );
+  };
+
+  const deleteNotification = (notificationId) => {
+    setNotificationRows((rows) => rows.filter((notification) => notification.id !== notificationId));
+    setSelectedNotification((notification) => (notification?.id === notificationId ? null : notification));
+  };
+
   return (
     <PatientPageShell
       title="Notifications"
-      subtitle="Recent updates from the clinic and billing desk."
+      subtitle="Appointment reminders, prescription updates, bills, and follow-up reminders."
     >
       <div className="pd-card">
         <div className="pd-section-header">
           <div>
-            <h2>Recent notifications</h2>
-            <p>Synced from the patient portal API.</p>
+            <h2>Notification Types</h2>
+            <p>Appointment Reminder, Prescription Ready, Bill Generated, and Follow-up Reminder.</p>
           </div>
         </div>
-        {notifications.length ? (
+        <div className="pd-notification-type-row">
+          {notificationTypes.map((type) => (
+            <span className="pd-notification-type-chip" key={type}>{type}</span>
+          ))}
+        </div>
+
+        {notificationRows.length ? (
           <div className="pd-notification-list">
-            {notifications.map((notification, index) => (
-              <div className={`pd-notification-item ${notification.read ? "is-read" : "is-unread"}`} key={notification.id || index}>
+            {notificationRows.map((notification) => (
+              <div className={`pd-notification-item ${notification.read ? "is-read" : "is-unread"}`} key={notification.id}>
                 <span className="pd-notification-dot" />
                 <div className="pd-notification-body">
+                  <em>{notification.type}</em>
                   <strong>{notification.title}</strong>
                   <span>{notification.message}</span>
                   <em>{notification.date}</em>
                 </div>
-                <Bell size={16} className="pd-notification-chevron" />
+                <div className="pd-notification-actions">
+                  <button type="button" onClick={() => viewNotification(notification)}>
+                    <FileText size={14} />
+                    View
+                  </button>
+                  <button type="button" onClick={() => markNotificationAsRead(notification.id)} disabled={notification.read}>
+                    <Check size={14} />
+                    Mark as Read
+                  </button>
+                  <button type="button" className="is-danger" onClick={() => deleteNotification(notification.id)}>
+                    <Trash2 size={14} />
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -1542,8 +1913,204 @@ function PatientNotificationsPage({ notifications = [] }) {
             <p>No notifications available.</p>
           </div>
         )}
+        {selectedNotification ? (
+          <div className="pd-selected-notification">
+            <div className="pd-selected-notification-head">
+              <strong>{selectedNotification.title}</strong>
+              <span>{selectedNotification.type}</span>
+            </div>
+            <p>{selectedNotification.message}</p>
+          </div>
+        ) : null}
       </div>
     </PatientPageShell>
+  );
+}
+
+function PatientAccountLayout({ active = "profile", children }) {
+  const navigate = useNavigate();
+
+  return (
+    <div className="pp-account-page-layout">
+      <aside className="pp-account-card">
+        <button
+          type="button"
+          className={`pp-account-card-action ${active === "profile" ? "is-active" : ""}`}
+          onClick={() => navigate("/patient/profile")}
+        >
+          <UserRound size={22} />
+          My Profile
+        </button>
+        <button
+          type="button"
+          className={`pp-account-card-action ${active === "password" ? "is-active" : ""}`}
+          onClick={() => navigate("/patient/change-password")}
+        >
+          <Key size={22} />
+          Change Password
+        </button>
+        <button
+          type="button"
+          className="pp-account-card-action pp-account-card-action--logout"
+          onClick={() => logoutPatient(navigate)}
+        >
+          <LogOut size={22} />
+          Logout
+        </button>
+      </aside>
+      <section className="pp-account-panel">{children}</section>
+    </div>
+  );
+}
+
+function PatientChangePasswordPage() {
+  const [form, setForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [visiblePasswords, setVisiblePasswords] = useState({
+    currentPassword: false,
+    newPassword: false,
+    confirmPassword: false,
+  });
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const passwordRequirements = useMemo(
+    () =>
+      PATIENT_PASSWORD_REQUIREMENTS.map((requirement) => ({
+        ...requirement,
+        met: requirement.test(form.newPassword),
+      })),
+    [form.newPassword]
+  );
+
+  const updateField = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setMessage("");
+    setMessageType("");
+  };
+
+  const togglePasswordVisibility = (field) => {
+    setVisiblePasswords((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const changePassword = async (event) => {
+    event.preventDefault();
+    setMessage("");
+    setMessageType("");
+
+    if (!form.currentPassword || !form.newPassword || !form.confirmPassword) {
+      setMessage("Please fill all password fields.");
+      setMessageType("error");
+      return;
+    }
+
+    const currentPasswordError = validateStrongPassword(form.currentPassword, "Current Password");
+    if (currentPasswordError) {
+      setMessage(currentPasswordError);
+      setMessageType("error");
+      return;
+    }
+
+    const newPasswordError = validateStrongPassword(form.newPassword, "New Password");
+    if (newPasswordError) {
+      setMessage(newPasswordError);
+      setMessageType("error");
+      return;
+    }
+
+    if (form.currentPassword === form.newPassword) {
+      setMessage("New password must be different from current password.");
+      setMessageType("error");
+      return;
+    }
+
+    if (form.newPassword !== form.confirmPassword) {
+      setMessage("New password and confirm password must match.");
+      setMessageType("error");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const token = localStorage.getItem("patientToken") || localStorage.getItem("token") || "";
+      const response = await fetch(apiUrl("Auth/change-password"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          oldPassword: form.currentPassword,
+          newPassword: form.newPassword,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || `Request failed with status ${response.status}`);
+      setMessage(data.message || "Password changed successfully.");
+      setMessageType("success");
+      setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setVisiblePasswords({ currentPassword: false, newPassword: false, confirmPassword: false });
+    } catch (error) {
+      setMessage(error.message || "Unable to change password right now.");
+      setMessageType("error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const renderPasswordField = (field, label, autoComplete) => (
+    <label className="pp-password-label">
+      <span>{label}</span>
+      <div className="pp-password-field">
+        <input
+          type={visiblePasswords[field] ? "text" : "password"}
+          value={form[field]}
+          minLength={8}
+          required
+          autoComplete={autoComplete}
+          onChange={(event) => updateField(field, event.target.value)}
+        />
+        <button
+          type="button"
+          className="pp-password-toggle"
+          onClick={() => togglePasswordVisibility(field)}
+          aria-label={visiblePasswords[field] ? `Hide ${label}` : `Show ${label}`}
+          title={visiblePasswords[field] ? "Hide password" : "Show password"}
+        >
+          {visiblePasswords[field] ? <Eye size={24} /> : <EyeOff size={24} />}
+        </button>
+      </div>
+    </label>
+  );
+
+  return (
+    <div className="patient-dashboard">
+      <PatientAccountLayout active="password">
+        <form className="pp-password-form" onSubmit={changePassword} noValidate>
+          <h2>Change Password</h2>
+          {renderPasswordField("currentPassword", "Current Password", "current-password")}
+          {renderPasswordField("newPassword", "New Password", "new-password")}
+          <ul className="pp-password-requirements" aria-label="Password requirements">
+            {passwordRequirements.map((requirement) => (
+              <li key={requirement.label} className={requirement.met ? "met" : ""}>
+                {requirement.met ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                {requirement.label}
+              </li>
+            ))}
+          </ul>
+          {renderPasswordField("confirmPassword", "Confirm Password", "new-password")}
+          {message ? <p className={`pp-password-message pp-password-message--${messageType}`}>{message}</p> : null}
+          <button type="submit" className="pp-password-submit" disabled={saving}>
+            {saving ? "Updating..." : "Update Password"}
+          </button>
+        </form>
+      </PatientAccountLayout>
+    </div>
   );
 }
 
@@ -1551,15 +2118,33 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
   const currentPatient = patient || {};
   const profileName = currentPatient.name || currentPatient.firstName || "Patient";
   const profileEmail = currentPatient.email || "Email not available";
-  const profilePhone = currentPatient.phone || "Phone not available";
+  const profilePhone = currentPatient.mobile || currentPatient.phone || currentPatient.phoneNumber || "Mobile not available";
   const profileGender = currentPatient.gender || "Gender not available";
-  const profileAge = currentPatient.age || currentPatient.dob || "Age not available";
+  const profileDob = currentPatient.dob || currentPatient.dateOfBirth || currentPatient.birthDate || "DOB not available";
   const profileBloodGroup = currentPatient.bloodGroup || currentPatient.bloodgroup || "-";
-  const profileId = currentPatient.id || currentPatient.patientCode || "-";
   const profileAddress = currentPatient.address || "Address not available";
-  const profileEmergencyName = currentPatient.emergencyContactName || "-";
-  const profileEmergencyPhone = currentPatient.emergencyContactPhone || "-";
-  const profileLastVisit = visits[0]?.date || currentPatient.lastVisit || "-";
+  const profileEmergencyName = currentPatient.emergencyContactName || currentPatient.emergencyName || currentPatient.emergencyContact?.name || "-";
+  const profileEmergencyRelationship =
+    currentPatient.emergencyContactRelationship ||
+    currentPatient.emergencyRelationship ||
+    currentPatient.emergencyContact?.relationship ||
+    "-";
+  const profileEmergencyPhone =
+    currentPatient.emergencyContactPhone ||
+    currentPatient.emergencyPhone ||
+    currentPatient.emergencyContact?.phone ||
+    "-";
+  const formatMedicalList = (value, fallback = "Not recorded") => {
+    if (Array.isArray(value)) return value.filter(Boolean).join(", ") || fallback;
+    return value || fallback;
+  };
+  const profileAllergies = formatMedicalList(currentPatient.allergies || currentPatient.allergyList || currentPatient.allergy);
+  const profileChronicDiseases = formatMedicalList(
+    currentPatient.chronicDiseases || currentPatient.chronicConditions || currentPatient.medicalConditions
+  );
+  const profileCurrentMedications = formatMedicalList(
+    currentPatient.currentMedications || currentPatient.medications || currentPatient.currentMedication
+  );
   const profileInitials = String(profileName)
     .split(" ")
     .slice(0, 2)
@@ -1568,16 +2153,14 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
     .toUpperCase();
 
   return (
-    <PatientPageShell
-      title="My profile"
-      subtitle="Profile details and summary cards backed by the live patient session."
-    >
-      <div className="pd-bottom-grid">
+    <div className="patient-dashboard">
+      <PatientAccountLayout active="profile">
+        <div className="pd-profile-page-grid">
         <div className="pd-card">
           <div className="pd-section-header">
             <div>
-              <h2>Profile</h2>
-              <p>Identity, contact, and emergency details from the live patient session.</p>
+              <h2>Patient Profile</h2>
+              <p>Personal details and contact information.</p>
             </div>
           </div>
           <div className="pd-profile-card">
@@ -1593,47 +2176,47 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
               </div>
             </div>
           </div>
-          <div className="pd-profile-strip pd-profile-strip--expanded" style={{ marginTop: 16 }}>
-            <div><span>Patient ID</span><strong>{profileId}</strong></div>
-            <div><span>Age / DOB</span><strong>{profileAge}</strong></div>
-            <div><span>Gender</span><strong>{profileGender}</strong></div>
-            <div><span>Blood group</span><strong>{profileBloodGroup}</strong></div>
-            <div><span>Phone</span><strong>{profilePhone}</strong></div>
-            <div><span>Email</span><strong>{profileEmail}</strong></div>
-            <div><span>Emergency contact</span><strong>{profileEmergencyName}</strong></div>
-            <div><span>Emergency phone</span><strong>{profileEmergencyPhone}</strong></div>
-            <div><span>Address</span><strong>{profileAddress}</strong></div>
-            <div><span>Last visit</span><strong>{profileLastVisit}</strong></div>
-          </div>
-        </div>
+          <div className="pd-profile-section-grid">
+            <section className="pd-profile-section">
+              <h3>Personal Details</h3>
+              <div className="pd-profile-strip pd-profile-strip--expanded">
+                <div><span>Name</span><strong>{profileName}</strong></div>
+                <div><span>Gender</span><strong>{profileGender}</strong></div>
+                <div><span>DOB</span><strong>{profileDob}</strong></div>
+                <div><span>Blood Group</span><strong>{profileBloodGroup}</strong></div>
+              </div>
+            </section>
 
-        <div className="pd-card">
-          <div className="pd-section-header">
-            <div>
-              <h2>Summary</h2>
-              <p>Quick counts from the portal backend.</p>
-            </div>
-          </div>
-          <div className="pd-stats-container" style={{ gridTemplateColumns: "1fr" }}>
-            <div className="pd-stat-card">
-              <div className="pd-stat-icon pd-stat-icon--teal"><Calendar size={18} /></div>
-              <div className="pd-stat-copy"><p className="pd-stat-label">Visits</p><h2 className="pd-stat-value">{visits.length}</h2><span className="pd-stat-description">Completed consultations</span></div>
-            </div>
-            <div className="pd-stat-card">
-              <div className="pd-stat-icon pd-stat-icon--amber"><Pill size={18} /></div>
-              <div className="pd-stat-copy"><p className="pd-stat-label">Prescriptions</p><h2 className="pd-stat-value">{prescriptions.length}</h2><span className="pd-stat-description">Ready to review</span></div>
-            </div>
-            <div className="pd-stat-card">
-              <div className="pd-stat-icon pd-stat-icon--green"><Wallet size={18} /></div>
-              <div className="pd-stat-copy"><p className="pd-stat-label">Bills</p><h2 className="pd-stat-value">{bills.length}</h2><span className="pd-stat-description">Billing records</span></div>
-            </div>
-            <div className="pd-stat-card">
-              <div className="pd-stat-icon pd-stat-icon--blue"><Bell size={18} /></div>
-              <div className="pd-stat-copy"><p className="pd-stat-label">Notifications</p><h2 className="pd-stat-value">{notifications.length}</h2><span className="pd-stat-description">Recent updates</span></div>
-            </div>
+            <section className="pd-profile-section">
+              <h3>Contact</h3>
+              <div className="pd-profile-strip pd-profile-strip--expanded">
+                <div><span>Mobile</span><strong>{profilePhone}</strong></div>
+                <div><span>Email</span><strong>{profileEmail}</strong></div>
+                <div><span>Address</span><strong>{profileAddress}</strong></div>
+              </div>
+            </section>
+
+            <section className="pd-profile-section">
+              <h3>Emergency Contact</h3>
+              <div className="pd-profile-strip pd-profile-strip--expanded">
+                <div><span>Name</span><strong>{profileEmergencyName}</strong></div>
+                <div><span>Relationship</span><strong>{profileEmergencyRelationship}</strong></div>
+                <div><span>Phone</span><strong>{profileEmergencyPhone}</strong></div>
+              </div>
+            </section>
+
+            <section className="pd-profile-section">
+              <h3>Medical Information</h3>
+              <div className="pd-profile-strip pd-profile-strip--expanded">
+                <div><span>Allergies</span><strong>{profileAllergies}</strong></div>
+                <div><span>Chronic Diseases</span><strong>{profileChronicDiseases}</strong></div>
+                <div><span>Current Medications</span><strong>{profileCurrentMedications}</strong></div>
+              </div>
+            </section>
           </div>
         </div>
-      </div>
-    </PatientPageShell>
+        </div>
+      </PatientAccountLayout>
+    </div>
   );
 }

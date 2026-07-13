@@ -283,7 +283,9 @@ function PatientRegister() {
         }
 
         setSuccess(true);
-        toast?.success ? toast.success('Registration successful. Please login.') : null;
+        if (toast?.success) {
+          toast.success('Registration successful. Please login.');
+        }
         navigate('/login', { replace: true, state: { message: 'Registration successful. Please login.', email: form.email } });
       } catch (err) {
         const message = err?.message || 'Unable to reach server. Try again later.';
