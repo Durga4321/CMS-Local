@@ -603,9 +603,6 @@ const AdminLogin = () => {
           <p className="auth-register">New to CMS? <Link to="/patients/register" className="create-account-btn" role="button">Create account</Link></p>
         </div>
 
-        <div className="auth-footer">
-          © {new Date().getFullYear()} CMS · Secure Access
-        </div>
       </div>
     </div>
   );

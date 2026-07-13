@@ -47,7 +47,6 @@
 .auth-card h2,
 .auth-card p.subtitle,
 .success-message,
-.auth-footer,
 .auth-actions-row,
 .auth-register-row {
   text-align: center;
@@ -189,7 +188,6 @@ body.auth-page-no-scroll {
 .forgot-password-link {
   display: block;
   text-align: center;
-  margin-top: 0.65rem;
   color: var(--primary);
   text-decoration: none;
   font-size: 0.86rem;
@@ -203,8 +201,12 @@ body.auth-page-no-scroll {
 }
 
 .auth-register-row {
-  margin-top: 0.45rem;
+  margin-top: 0.6rem;
   text-align: center;
+}
+
+.auth-actions-row {
+  margin-top: 1rem;
 }
 
 .auth-register {
@@ -222,14 +224,6 @@ body.auth-page-no-scroll {
 
 .create-account-link:hover {
   text-decoration: underline;
-}
-
-.auth-footer {
-  margin-top: 0.65rem;
-  text-align: center;
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  letter-spacing: 0.02em;
 }
 
 /* Wide card variant for registration pages */

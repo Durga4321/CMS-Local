@@ -225,7 +225,6 @@
   background: #f1f5f9;
   border-radius: 12px;
   color: #0f172a;
-  display: grid;
   place-items: center;
   cursor: pointer;
 }
@@ -242,7 +241,6 @@
   background: rgba(15, 157, 157, 0.12);
   color: #0f9d9d;
   cursor: pointer;
-  display: grid;
   place-items: center;
 }
 
@@ -788,7 +786,7 @@
 .rc-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 30;
+  z-index: 1100;
   background: rgba(7, 17, 32, 0.36);
   display: grid;
   place-items: center;
