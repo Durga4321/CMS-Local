@@ -193,6 +193,10 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
     navigate("/patient/appointments/book");
   };
 
+  const handleViewRecords = () => {
+    navigate("/patient/medical-history");
+  };
+
   const handleViewDetails = () => {
     navigate("/patient/medical-history");
   };
