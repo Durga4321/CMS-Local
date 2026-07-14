@@ -81,6 +81,7 @@ const buildRowsHtml = (rows, columns) =>
 function Reports() {
   const [rows, setRows] = useState([]);
   const [chartData, setChartData] = useState([]);
+  const [backendSummary, setBackendSummary] = useState(null);
   const [activityRows, setActivityRows] = useState([]);
   const [activeTab, setActiveTab] = useState(reportTabs[0]);
   const [startDate, setStartDate] = useState(getDefaultStartDate);
@@ -104,6 +105,7 @@ function Reports() {
         setRows(reports.rows);
         setChartData(reports.chartData);
         setActivityRows(reports.activityRows || []);
+        setBackendSummary(reports.summary || null);
         setError(reports.error);
       } catch (requestError) {
         if (active) setError(requestError.message || "Unable to load reports.");
@@ -138,6 +140,7 @@ function Reports() {
       setRows(reports.rows);
       setChartData(reports.chartData);
       setActivityRows(reports.activityRows || []);
+      setBackendSummary(reports.summary || null);
       setError(reports.error);
     } catch (requestError) {
       setError(requestError.message || "Unable to fetch report data.");
@@ -207,6 +210,16 @@ function Reports() {
   }, [activityRows, search, startDate, endDate]);
 
   const reportSummary = useMemo(() => {
+    // Prefer backend-provided summary counts when available to avoid frontend-derived duplication
+    if (backendSummary) {
+      return {
+        totalRevenue: backendSummary.totalRevenue || filteredRows.reduce((sum, row) => sum + toNumber(row.revenue), 0),
+        userCount: backendSummary.userCount || backendSummary.users || filteredRows.reduce((sum, row) => sum + toNumber(row.users), 0),
+        activeClinics: backendSummary.activeClinics || backendSummary.activeUserCount || filteredRows.filter((row) => row.status === "Active").length,
+        clinicCount: backendSummary.clinicCount || backendSummary.clinics || filteredRows.length,
+      };
+    }
+
     const revenueRows = filteredRows.filter((row) => toNumber(row.revenue) > 0);
     const userRows = revenueRows.length ? revenueRows : filteredRows;
     const totalRevenue = filteredRows.reduce((sum, row) => sum + toNumber(row.revenue), 0);
@@ -219,7 +232,7 @@ function Reports() {
       activeClinics,
       clinicCount: filteredRows.length,
     };
-  }, [filteredRows]);
+  }, [filteredRows, backendSummary]);
 
   const summaryCards = useMemo(
     () => [
@@ -237,7 +250,7 @@ function Reports() {
       },
       {
         label: "Active Clinics",
-        value: `${reportSummary.activeClinics}/${reportSummary.clinicCount}`,
+        value: `${reportSummary.clinicCount}`,
         icon: BarChart3,
         tone: "green",
       },
@@ -502,7 +515,7 @@ function Reports() {
         <div style={{ marginTop: 16 }}>
         <DataTable
           columns={columns}
-          rows={filteredRows}
+          rows={filteredRows.slice(0, 5)}
           loading={loading}
           error={error}
           emptyMessage="No report records found."

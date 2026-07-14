@@ -2784,7 +2784,7 @@ const countDashboardAdmins = async () => {
 };
 
 export const fetchDashboardData = async () => {
-  const [dashboard, summary, reportsSummary, revenueTrend, userActivity, auditLogs, loginHistory] = await Promise.allSettled([
+  const [dashboard, summary, reportsSummary, revenueTrend, userActivity, auditLogs, loginHistory, clinicsResult, usersResult] = await Promise.allSettled([
     superAdminRequestFirst([SUPER_ADMIN_API.dashboard, SUPER_ADMIN_API.dashboardCompat]),
     superAdminRequestFirst([SUPER_ADMIN_API.dashboardSummary, SUPER_ADMIN_API.dashboardSummaryCompat]),
     superAdminRequest(SUPER_ADMIN_API.reportsSummary),
@@ -2792,6 +2792,8 @@ export const fetchDashboardData = async () => {
     superAdminRequest(SUPER_ADMIN_API.reportsUserActivity),
     superAdminRequest(SUPER_ADMIN_API.auditLogs),
     superAdminRequest(SUPER_ADMIN_API.loginHistory),
+    superAdminRequest(SUPER_ADMIN_API.clinics),
+    superAdminRequest(SUPER_ADMIN_API.users),
   ]);
 
   const dashboardData = dashboard.status === "fulfilled" ? asObject(dashboard.value) : {};
@@ -2806,19 +2808,35 @@ export const fetchDashboardData = async () => {
   const loginActivityRows =
     loginHistory.status === "fulfilled" ? asArray(loginHistory.value).map(normalizeLoginLog).map(auditLogToDashboardActivity) : [];
   const localActivityRows = readLocalList(LOCAL_AUDIT_LOGS_KEY).map(normalizeAuditLog).map(auditLogToDashboardActivity);
+  
+  // Get actual counts from fetched data for consistency with lists
+  const clinicRows = clinicsResult.status === "fulfilled" ? asArray(clinicsResult.value) : [];
+  const actualClinicCount = clinicRows.length;
+  
+  const userRows = usersResult.status === "fulfilled" ? asArray(usersResult.value).filter((u) => !u.isDeleted) : [];
+  const actualUserCount = userRows.length;
+  const activeUserCount = userRows.filter((u) => u.active === true || u.isActive === true || u.status === "Active").length;
+  
   const adminCount = await countDashboardAdmins();
+  
   const nextSummary = {
     ...summaryData,
+    totalClinics: actualClinicCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalClinics", "clinics", "clinicCount"]),
+    clinics: actualClinicCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalClinics", "clinics", "clinicCount"]),
+    clinicCount: actualClinicCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalClinics", "clinics", "clinicCount"]),
     totalRevenue: getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalRevenue", "revenue", "revenueSummary"]),
     totalAdmins: adminCount,
     admins: adminCount,
     adminCount,
+    totalUsers: actualUserCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalUsers", "users", "userCount"]),
+    users: actualUserCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalUsers", "users", "userCount"]),
+    userCount: actualUserCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalUsers", "users", "userCount"]),
+    activeUsers: activeUserCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["activeUsers", "activeUserCount"]),
+    activeUserCount: activeUserCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["activeUsers", "activeUserCount"]),
   };
+  
   const dashboardRevenueData = buildMonthlyRevenueRows(asArray(revenueData));
-  const totalUsers = getDashboardMetric(
-    { ...dashboardData, ...nextSummary },
-    ["totalUsers", "users", "userCount"]
-  );
+  const totalUsers = nextSummary.totalUsers;
 
   return {
     dashboard: dashboardData,
@@ -2895,14 +2913,95 @@ export const fetchReports = async () => {
     if (rawClinicId && clinicLookupIds.has(rawClinicId)) return true;
     if (normalizedRowId && clinicLookupIds.has(normalizedRowId)) return true;
     if (rowName && clinicLookupNames.has(rowName)) return true;
-
     return false;
   });
 
+  // If there are clinic records, ensure we do not include any fallback or 'Unassigned Clinic' rows
+  // which may have been generated as fallbacks. Keep only rows that map to a known clinic id/name.
+  const hasClinicList = clinicRows && clinicRows.length > 0;
+  const filteredStrict = hasClinicList
+    ? rowsFiltered.filter((r) => {
+        const name = String(r.name || r.clinicName || r.hospitalName || "").trim().toLowerCase();
+        if (!name) return false;
+        if (name === "unassigned clinic") return false;
+        // ensure the name exists in clinicLookupNames or the id exists in clinicLookupIds
+        const rawClinicId = normalizeLookupKey(getReportClinicId(r.raw || r));
+        const normalizedRowId = normalizeLookupKey(r.id || r.clinicId || r.hospitalId || "");
+        if (rawClinicId && clinicLookupIds.has(rawClinicId)) return true;
+        if (normalizedRowId && clinicLookupIds.has(normalizedRowId)) return true;
+        if (clinicLookupNames.has(name)) return true;
+        return false;
+      })
+    : rowsFiltered;
+
+  // Map to canonical clinic records and dedupe by clinic id so reports show exact clinics
+  const clinicByIdMap = new Map(
+    clinicRows
+      .map((c) => [String(c.id || c.clinicId || c._id || "").trim(), normalizeClinic(c)])
+      .filter(([k]) => k)
+  );
+  const clinicByNameMap = new Map(
+    clinicRows
+      .map((c) => [String(pick(c, ["name", "clinicName", "hospitalName"], "")).trim().toLowerCase(), normalizeClinic(c)])
+      .filter(([k]) => k)
+  );
+
+  const dedupedMap = new Map();
+  filteredStrict.forEach((r) => {
+    const rawClinicId = normalizeLookupKey(getReportClinicId(r.raw || r));
+    const normalizedRowId = normalizeLookupKey(r.id || r.clinicId || r.hospitalId || "");
+    const rowNameKey = String(r.name || r.clinicName || r.hospitalName || "").trim().toLowerCase();
+
+    const matchedById = rawClinicId && clinicByIdMap.get(rawClinicId);
+    const matchedByRowId = normalizedRowId && clinicByIdMap.get(normalizedRowId);
+    const matchedByName = rowNameKey && clinicByNameMap.get(rowNameKey);
+
+    const clinicMatch = matchedById || matchedByRowId || matchedByName || null;
+
+    if (!clinicMatch) return; // skip any remaining non-matching rows
+
+    const key = String(clinicMatch.id || clinicMatch.name).trim();
+    // merge/aggregate if duplicate
+    if (!dedupedMap.has(key)) {
+      const normalized = { ...r, id: clinicMatch.id, name: clinicMatch.name, raw: { ...(r.raw || {}), _matchedClinic: clinicMatch.raw || clinicMatch } };
+      dedupedMap.set(key, normalized);
+    } else {
+      // merge numeric fields conservatively (sum revenue/invoice/users where sensible)
+      const existing = dedupedMap.get(key);
+      existing.revenue = toNumber(existing.revenue) + toNumber(r.revenue);
+      existing.users = Math.max(toNumber(existing.users), toNumber(r.users));
+      existing.invoiceCount = Math.max(toNumber(existing.invoiceCount), toNumber(r.invoiceCount));
+      dedupedMap.set(key, existing);
+    }
+  });
+
+  const finalRows = Array.from(dedupedMap.values());
+
+  // Provide backend-derived summary counts so frontends can rely on authoritative numbers
+  const actualClinicCount = clinicRows.length;
+  const actualUserCount = userRows.filter((u) => !u.isDeleted).length;
+  const activeUserCount = userRows.filter((u) => u.active === true || u.isActive === true || u.status === "Active").length;
+  const adminCount = await countDashboardAdmins();
+
+  const nextSummary = {
+    totalClinics: actualClinicCount,
+    clinics: actualClinicCount,
+    clinicCount: actualClinicCount,
+    totalUsers: actualUserCount,
+    users: actualUserCount,
+    userCount: actualUserCount,
+    activeUsers: activeUserCount,
+    activeUserCount: activeUserCount,
+    totalAdmins: adminCount,
+    admins: adminCount,
+    adminCount,
+  };
+
   return {
-    rows: rowsFiltered,
-    chartData: mergeReportChartData({ revenueRows, activityRows, rowsFiltered }),
+    rows: finalRows,
+    chartData: mergeReportChartData({ revenueRows, activityRows, rows: finalRows }),
     activityRows: activityRows.map(normalizeActivity),
+    summary: nextSummary,
     error:
       summary.status === "rejected" &&
       revenueTrend.status === "rejected" &&
@@ -2919,3 +3018,33 @@ export const fetchReports = async () => {
 
 export const getDashboardMetric = (source, keys, fallback = 0) =>
   toNumber(pick(source, keys, fallback));
+
+// Helper functions for getting actual counts from fetched data
+export const countActualClinics = async () => {
+  try {
+    const clinics = await superAdminRequest(SUPER_ADMIN_API.clinics);
+    return asArray(clinics).length;
+  } catch {
+    return 0;
+  }
+};
+
+export const countActualUsers = async () => {
+  try {
+    const users = await superAdminRequest(SUPER_ADMIN_API.users);
+    const userRows = asArray(users).filter((u) => !u.isDeleted);
+    return userRows.length;
+  } catch {
+    return 0;
+  }
+};
+
+export const countActiveUsers = async () => {
+  try {
+    const users = await superAdminRequest(SUPER_ADMIN_API.users);
+    const userRows = asArray(users).filter((u) => !u.isDeleted && (u.active === true || u.isActive === true || u.status === "Active"));
+    return userRows.length;
+  } catch {
+    return 0;
+  }
+};

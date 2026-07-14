@@ -531,3 +531,51 @@
     overflow-wrap: anywhere;
   }
 }
+
+/* Skeleton loaders */
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e6eef6 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s linear infinite;
+}
+
+.skeleton--text {
+  height: 14px;
+  border-radius: 6px;
+}
+
+.skeleton--value {
+  height: 28px;
+  border-radius: 6px;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Suggestions dropdown */
+.add-patient-suggestions,
+.sa-field-suggestions {
+  margin: 6px 0 0;
+  padding: 6px 0;
+  list-style: none;
+  border: 1px solid #e6eef6;
+  background: #ffffff;
+  border-radius: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.add-patient-suggestions li,
+.sa-field-suggestions li {
+  padding: 8px 12px;
+  cursor: pointer;
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.add-patient-suggestions li:hover,
+.sa-field-suggestions li:hover {
+  background: #f1f5f9;
+}

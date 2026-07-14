@@ -44,6 +44,7 @@ function AddPatientModal({ onClose, onAdd }) {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [areaOptions, setAreaOptions] = useState([]);
+  const [streetOptions, setStreetOptions] = useState([]);
 
   const handleChange = (event) => {
     const { name } = event.target;
@@ -137,6 +138,15 @@ function AddPatientModal({ onClose, onAdd }) {
       .then((location) => {
         if (!active) return;
         setAreaOptions(location.areaOptions);
+        // build street/village suggestions from post offices data
+        const candidates = (location.postOffices || []).map((po) => {
+          if (!po) return "";
+          if (typeof po === "string") return po;
+          return (
+            po.Name || po.name || po.StreetVillage || po.streetVillage || po.Village || po.village || po.PostOfficeName || po.postOfficeName || ""
+          );
+        }).filter(Boolean);
+        setStreetOptions(Array.from(new Set(candidates)).slice(0, 10));
         setForm((previous) => {
           const previousParts = previous.addressParts || emptyAddressParts;
           if (previousParts.pincode !== pincode) return previous;
@@ -167,6 +177,7 @@ function AddPatientModal({ onClose, onAdd }) {
       .catch((lookupError) => {
         if (!active) return;
         setAreaOptions([]);
+        setStreetOptions([]);
         setFieldErrors((previous) => ({
           ...previous,
           "address.pincode": lookupError.message || "Unable to fetch pincode location.",
@@ -257,6 +268,11 @@ function AddPatientModal({ onClose, onAdd }) {
         .map((option) => String(option || "").trim())
     )
   );
+
+  // hide suggestions when pincode/area not present
+  React.useEffect(() => {
+    if (!form.addressParts?.pincode) setStreetOptions([]);
+  }, [form.addressParts?.pincode]);
 
   return (
     <div
@@ -393,7 +409,15 @@ function AddPatientModal({ onClose, onAdd }) {
                     value={form.addressParts?.streetVillage || ""}
                     onChange={(event) => handleAddressChange("streetVillage", event.target.value)}
                     className={fieldErrors["address.streetVillage"] ? "is-invalid" : ""}
+                    autoComplete="off"
                   />
+                  {streetOptions?.length ? (
+                    <ul className="add-patient-suggestions">
+                      {streetOptions.map((opt) => (
+                        <li key={opt} onClick={() => handleAddressChange("streetVillage", opt)}>{opt}</li>
+                      ))}
+                    </ul>
+                  ) : null}
                   {fieldErrors["address.streetVillage"] ? (
                     <span className="add-patient-field-error">{fieldErrors["address.streetVillage"]}</span>
                   ) : null}
