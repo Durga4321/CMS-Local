@@ -243,14 +243,15 @@ function PatientLogin() {
       {/* Centered login card */}
       <div className="login-card-wrapper">
         {/* Logo badge */}
-        <div className="login-logo-badge">
+        {/* <div className="login-logo-badge">
           <Heart size={20} />
         </div>
-        <p className="login-brand-name">CMS Patient Portal</p>
+        <p className="login-brand-name">CMS Patient Portal</p> */}
 
         <div className="patient-login-card">
           <div className="card-header">
             <h2>Patient Login</h2>
+            <br/><br/>
             <p>Enter your patient account details below</p>
           </div>
 

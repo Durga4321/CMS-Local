@@ -299,10 +299,10 @@ function PatientRegister() {
     <div className="patient-register-page">
       <div className="register-card-wrapper">
         {/* Logo */}
-        <div className="register-logo-badge">
+        {/* <div className="register-logo-badge">
           <Heart size={20} />
         </div>
-        <p className="register-brand-name">Patient Registration</p>
+        <p className="register-brand-name">Patient Registration</p> */}
 
         <div className="patient-register-card">
           <div className="card-header">
@@ -319,7 +319,7 @@ function PatientRegister() {
             {/* STEP 1: PERSONAL & CLINIC */}
             {currentStep === 1 && (
               <div className="step-content">
-                <div className="input-group">
+                {/* <div className="input-group">
                   <label htmlFor="reg-clinic">Select Clinic / Hospital</label>
                   <select
                     id="reg-clinic"
@@ -336,7 +336,7 @@ function PatientRegister() {
                     ))}
                   </select>
                   {errors.hospitalId && <span className="error-message">{errors.hospitalId}</span>}
-                </div>
+                </div> */}
 
                 <div className="input-group">
                   <label htmlFor="reg-first">First Name</label>

@@ -237,6 +237,14 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
       tone: "amber",
     },
     {
+      label: "Medical Records",
+      value: formatCount(medicalRecordCount),
+      note: "Visits and prescriptions",
+      icon: FileText,
+      tone: "teal",
+      route: "/patient/medical-history",
+    },
+    {
       label: "Bills Pending",
       value: formatCurrency(pendingBillsAmount),
       note: pendingBillsAmount ? "Payment due" : "No pending balance",

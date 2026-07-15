@@ -622,8 +622,8 @@ function PatientAppointmentsPage({ visits = [], onRefresh }) {
       subtitle="Book, review, and reschedule care visits from your portal."
       action={
         <button type="button" className="pd-header-btn pd-header-btn--primary" onClick={() => navigate("/patient/dashboard")}>
-          <Calendar size={16} />
-          Back to dashboard
+        
+          ← Back to dashboard
         </button>
       }
     >
@@ -1362,9 +1362,10 @@ function PatientBookingWizardPage({ visits = [], onRefresh }) {
             <section className="booking-panel booking-summary-panel">
               <div className="booking-panel-header">
                 <h2>Confirm</h2>
-                <p>Review your branch, department, doctor, and schedule.</p>
+                <p>Review your  branch, department, doctor, and schedule.</p>
               </div>
               <div className="booking-summary">
+                
                 <div className="booking-summary-row">
                   <span>Branch</span>
                   <strong>{selectedBranch?.name || 'Not selected'}</strong>
