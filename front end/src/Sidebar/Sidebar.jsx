@@ -24,6 +24,7 @@ import { getClinicDisplayName } from "../utils/clinicDisplay";
 
 const items = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/branches", label: "Branches", icon: Building2 },
   { to: "/doctors", label: "Doctors", icon: Stethoscope },
   { to: "/receptionists", label: "Receptionists", icon: UserCheck },
   { to: "/patients", label: "Patients", icon: UserRound },

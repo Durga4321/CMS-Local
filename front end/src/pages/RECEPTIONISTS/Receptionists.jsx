@@ -15,6 +15,10 @@ import "./Receptionists.css";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
 import {
+  buildBranchOptions,
+  fetchBranchesForHospital,
+} from "../../utils/branchApi";
+import {
   canUsePermission,
   fetchAndStoreRolePermissions,
 } from "../../utils/authorization";
@@ -29,7 +33,6 @@ import {
   getClinicDisplayName,
   getStoredClinicName,
 } from "../../utils/clinicDisplay";
-import { validateUniqueMobileNumber } from "../../utils/mobileUniqueness";
 const RECEPTIONIST_API = apiUrl("Receptionist");
 
 const getAuthToken = () =>
@@ -60,6 +63,7 @@ const getEmptyForm = () => ({
   name: "",
   email: "",
   phone: "",
+  branchId: "",
 });
 
 const parseReceptionistsResponse = (data) => {
@@ -67,6 +71,23 @@ const parseReceptionistsResponse = (data) => {
   if (Array.isArray(data?.data)) return data.data;
   return [];
 };
+
+const getReceptionistBranchId = (receptionist = {}) =>
+  receptionist.branchId ??
+  receptionist.BranchId ??
+  receptionist.branchID ??
+  receptionist.BranchID ??
+  receptionist.branch?.id ??
+  receptionist.branch?.branchId ??
+  "";
+
+const getReceptionistBranchName = (receptionist = {}, branchNameById = {}) =>
+  receptionist.branchName ??
+  receptionist.BranchName ??
+  receptionist.branch?.name ??
+  receptionist.branch?.branchName ??
+  branchNameById[String(getReceptionistBranchId(receptionist) || "")] ??
+  "";
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -126,6 +147,8 @@ function Receptionists() {
   const [editingReceptionist, setEditingReceptionist] = useState(null);
   const [form, setForm] = useState(getEmptyForm());
   const [fieldErrors, setFieldErrors] = useState({});
+  const [branchOptions, setBranchOptions] = useState([]);
+  const [loadingBranches, setLoadingBranches] = useState(true);
   const [permissionsLoading, setPermissionsLoading] = useState(true);
   const [permissionRecord, setPermissionRecord] = useState(null);
 
@@ -138,6 +161,14 @@ function Receptionists() {
   const permissionDisabledTitle = permissionsLoading
     ? "Loading permissions"
     : "Permission disabled by Super Admin";
+  const branchNameById = useMemo(
+    () =>
+      branchOptions.reduce((lookup, branch) => {
+        lookup[String(branch.id)] = branch.name;
+        return lookup;
+      }, {}),
+    [branchOptions]
+  );
 
   const fetchReceptionists = async () => {
     setLoading(true);
@@ -173,6 +204,42 @@ function Receptionists() {
   useEffect(() => {
     let active = true;
 
+    const loadBranches = async () => {
+      setLoadingBranches(true);
+
+      try {
+        const branches = await fetchBranchesForHospital(hospitalId);
+        if (!active) return;
+
+        const options = buildBranchOptions(branches);
+        const activeOptions = options.filter((branch) => branch.isActive);
+        setBranchOptions(options);
+
+        if (activeOptions.length === 1) {
+          setForm((previous) => ({
+            ...previous,
+            branchId: previous.branchId || activeOptions[0].id,
+          }));
+        }
+      } catch {
+        if (active) {
+          setBranchOptions([]);
+        }
+      } finally {
+        if (active) setLoadingBranches(false);
+      }
+    };
+
+    loadBranches();
+
+    return () => {
+      active = false;
+    };
+  }, [hospitalId]);
+
+  useEffect(() => {
+    let active = true;
+
     const loadPermissions = async () => {
       setPermissionsLoading(true);
       const record = await fetchAndStoreRolePermissions();
@@ -194,11 +261,11 @@ function Receptionists() {
     if (!value) return receptionists;
 
     return receptionists.filter((item) =>
-      [item.name, item.email, item.phone]
+      [item.name, item.email, item.phone, getReceptionistBranchName(item, branchNameById)]
         .filter(Boolean)
         .some((field) => String(field).toLowerCase().includes(value))
     );
-  }, [receptionists, searchText]);
+  }, [branchNameById, receptionists, searchText]);
 
   const openAddModal = () => {
     if (!canCreateReceptionist) {
@@ -207,7 +274,11 @@ function Receptionists() {
     }
 
     setEditingReceptionist(null);
-    setForm(getEmptyForm());
+    const activeOptions = branchOptions.filter((branch) => branch.isActive);
+    setForm({
+      ...getEmptyForm(),
+      branchId: activeOptions.length === 1 ? activeOptions[0].id : "",
+    });
     setFieldErrors({});
     setError("");
     setSuccess("");
@@ -225,6 +296,7 @@ function Receptionists() {
       name: receptionist?.name || "",
       email: receptionist?.email || "",
       phone: receptionist?.phone || "",
+      branchId: String(getReceptionistBranchId(receptionist) || ""),
     });
     setFieldErrors({});
     setError("");
@@ -271,6 +343,9 @@ function Receptionists() {
     nextErrors.name = validateAlpha(form.name, "Name");
     nextErrors.email = validateGmail(form.email);
     nextErrors.phone = validateMobile(form.phone, "Phone");
+    if (!form.branchId) {
+      nextErrors.branchId = "Select a branch.";
+    }
 
     if (!hospitalId) {
       nextErrors.form = "Clinic not found. Please login again.";
@@ -301,7 +376,8 @@ function Receptionists() {
       name: form.name.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
-      hospitalId,
+      hospitalId: Number(hospitalId),
+      branchId: Number(form.branchId) || 0,
     };
 
     try {
@@ -313,25 +389,7 @@ function Receptionists() {
         throw new Error("Create permission is disabled by Super Admin.");
       }
 
-      const duplicateMobileError = await validateUniqueMobileNumber(
-        payload.phone,
-        {
-          current: isEditing
-            ? { id: editingReceptionist.id, source: "Receptionist" }
-            : {},
-          localRecords: receptionists,
-          localSource: "Receptionist",
-        }
-      );
-
-      if (duplicateMobileError) {
-        setFieldErrors((previous) => ({
-          ...previous,
-          phone: duplicateMobileError,
-        }));
-        throw new Error(duplicateMobileError);
-      }
-
+      const token = getAuthToken();
       const response = await fetch(
         isEditing
           ? `${RECEPTIONIST_API}/${editingReceptionist.id}`
@@ -341,6 +399,7 @@ function Receptionists() {
           headers: {
             "Content-Type": "application/json",
             "ngrok-skip-browser-warning": "true",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify(payload),
         }
@@ -708,6 +767,31 @@ function Receptionists() {
                 {fieldErrors.phone ? (
                   <span className="receptionists-field-error">
                     {fieldErrors.phone}
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="receptionists-field">
+                <label htmlFor="receptionist-branch">Branch</label>
+                <select
+                  id="receptionist-branch"
+                  value={form.branchId}
+                  onChange={(event) => updateField("branchId", event.target.value)}
+                  className={fieldErrors.branchId ? "is-invalid" : ""}
+                  disabled={loadingBranches || saving}
+                >
+                  <option value="">
+                    {loadingBranches ? "Loading branches..." : "Select branch"}
+                  </option>
+                  {branchOptions.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors.branchId ? (
+                  <span className="receptionists-field-error">
+                    {fieldErrors.branchId}
                   </span>
                 ) : null}
               </div>

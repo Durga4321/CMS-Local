@@ -221,6 +221,12 @@ import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import {
+  buildBranchOptions,
+  fetchBranchesForHospital,
+  getApiHeaders,
+  getStoredHospitalId,
+} from "../../utils/branchApi";
+import {
   onlyAlpha,
   onlyIndianMobileValue,
   onlyNumberValue,
@@ -230,6 +236,7 @@ import {
   validateMobile,
   validateNumeric,
   validateRequired,
+  validateSelected,
   validateText,
 } from "../../utils/validation";
 import {
@@ -241,9 +248,6 @@ import {
 } from "../../utils/mobileUniqueness";
 const DOCTORS_API_URL =
   apiUrl("Doctor");
-
-const DEFAULT_DOCTOR_IMAGE_URL =
-  "https://posological-bea-subacademically.ngrok-free.dev/images/doctors/c65cac75-3f85-4caa-87db-56cd02670c07.png";
 
 const DOCTOR_SPECIALIZATIONS_API_URL =
   apiUrl("Doctor/specializations");
@@ -362,21 +366,38 @@ const formatFeeValue = (value) => {
   return Number.isNaN(numberValue) ? text : numberValue.toFixed(2);
 };
 
-const appendDoctorFormData = (body, values) => {
-  Object.entries(values).forEach(([key, value]) => {
+const buildDoctorCreateUrl = (values) => {
+  const params = new URLSearchParams();
+  Object.entries({
+    BranchId: values.branchId,
+    Name: values.name,
+    Specialization: values.specialization,
+    Experience: values.experience,
+    Qualification: values.qualification,
+    ConsultationFee: values.consultationFee,
+    AreaofExpertise: values.areaofExpertise,
+    IsActive: values.isActive,
+    PhoneNumber: values.phoneNumber,
+    Email: values.email,
+  }).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== "") {
-      body.append(key, value);
+      params.set(key, String(value));
     }
   });
+
+  const query = params.toString();
+  return query ? `${DOCTORS_API_URL}?${query}` : DOCTORS_API_URL;
 };
 
 function AddDoctor() {
   const navigate = useNavigate();
   const toast = useToast();
+  const hospitalId = getStoredHospitalId();
   const clinicName = getClinicDisplayName({}, "Clinic");
   const imageInputRef = useRef(null);
 
   const [form, setForm] = useState({
+    branchId: "",
     name: "",
     specialization: "",
     areaofExpertise: "",
@@ -399,6 +420,9 @@ function AddDoctor() {
     useState(QUALIFICATION_OPTIONS);
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [optionsWarning, setOptionsWarning] = useState("");
+  const [branchOptions, setBranchOptions] = useState([]);
+  const [loadingBranches, setLoadingBranches] = useState(true);
+  const [branchWarning, setBranchWarning] = useState("");
   const [permissionsLoading, setPermissionsLoading] = useState(true);
   const [permissionRecord, setPermissionRecord] = useState(null);
   const canCreateDoctor = !permissionsLoading && canUsePermission(permissionRecord, "create");
@@ -483,6 +507,43 @@ function AddDoctor() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadBranches = async () => {
+      setLoadingBranches(true);
+      setBranchWarning("");
+
+      try {
+        const branches = await fetchBranchesForHospital(hospitalId);
+        if (!active) return;
+
+        const options = buildBranchOptions(branches).filter((branch) => branch.isActive);
+        setBranchOptions(options);
+
+        if (options.length === 1) {
+          setForm((previous) => ({
+            ...previous,
+            branchId: previous.branchId || options[0].id,
+          }));
+        }
+      } catch {
+        if (active) {
+          setBranchOptions([]);
+          setBranchWarning("Unable to load branches. Create a branch before adding doctors.");
+        }
+      } finally {
+        if (active) setLoadingBranches(false);
+      }
+    };
+
+    loadBranches();
+
+    return () => {
+      active = false;
+    };
+  }, [hospitalId]);
 
   useEffect(() => {
     return () => {
@@ -587,6 +648,7 @@ function AddDoctor() {
 
   const validateForm = (values = form) => {
     const nextErrors = {
+      branchId: validateSelected(values.branchId, "a branch"),
       name: validateAlpha(values.name, "Doctor name"),
       specialization: validateAlpha(values.specialization, "Specialization"),
       areaofExpertise: validateText(values.areaofExpertise, "Area of expertise"),
@@ -652,57 +714,28 @@ function AddDoctor() {
     setSaving(true);
     setError("");
 
-    const body = {
-      name: form.name.trim(),
-      specialization: form.specialization.trim(),
-      experience: String(Number(form.experience) || 0),
-      qualification: form.qualification.trim(),
-      consultationFee: Number(formattedForm.fees) || 0,
-      areaofExpertise: form.areaofExpertise.trim(),
-      email: form.email.trim(),
-      phoneNumber: form.phone.trim(),
-      isActive: form.isActive === "true",
-    };
     const requestPayload = {
-      ...body,
-      Name: body.name,
-      Specialization: body.specialization,
-      Experience: body.experience,
-      Qualification: body.qualification,
-      ConsultationFee: body.consultationFee,
-      AreaofExpertise: body.areaofExpertise,
-      Email: body.email,
-      PhoneNumber: body.phoneNumber,
-      IsActive: String(body.isActive),
-      image: DEFAULT_DOCTOR_IMAGE_URL,
-      imageUrl: DEFAULT_DOCTOR_IMAGE_URL,
-      Image: DEFAULT_DOCTOR_IMAGE_URL,
+      branchId: Number(formattedForm.branchId) || 0,
+      name: formattedForm.name.trim(),
+      specialization: formattedForm.specialization.trim(),
+      experience: String(Number(formattedForm.experience) || 0),
+      qualification: formattedForm.qualification.trim(),
+      consultationFee: Number(formattedForm.fees) || 0,
+      areaofExpertise: formattedForm.areaofExpertise.trim(),
+      email: formattedForm.email.trim(),
+      phoneNumber: formattedForm.phone.trim(),
+      isActive: formattedForm.isActive === "true",
     };
-    const requestOptions = imageFile
-      ? (() => {
-        const formData = new FormData();
-        appendDoctorFormData(formData, requestPayload);
-        formData.append("Image", imageFile);
-        return {
-          method: "POST",
-          headers: {
-            "ngrok-skip-browser-warning": "true",
-          },
-          body: formData,
-        };
-      })()
-      : {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-        body: JSON.stringify(requestPayload),
-      };
+    const formData = new FormData();
+    if (imageFile) {
+      formData.append("Image", imageFile);
+    }
 
     try {
-      const response = await fetch(DOCTORS_API_URL, {
-        ...requestOptions,
+      const response = await fetch(buildDoctorCreateUrl(requestPayload), {
+        method: "POST",
+        headers: getApiHeaders(),
+        body: formData,
       });
 
       if (!response.ok) {
@@ -779,6 +812,29 @@ function AddDoctor() {
           ) : null}
 
           <div className="add-doctor-grid">
+            <div className="add-doctor-input-group add-doctor-input-group-full">
+              <label>Branch</label>
+              <select
+                name="branchId"
+                value={form.branchId}
+                onChange={handleChange}
+                className={fieldErrors.branchId ? "is-invalid" : ""}
+                disabled={loadingBranches || saving}
+                required
+              >
+                <option value="">
+                  {loadingBranches ? "Loading branches..." : "Select branch"}
+                </option>
+                {branchOptions.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
+              </select>
+              {fieldErrors.branchId ? (
+                <span className="add-doctor-field-error">{fieldErrors.branchId}</span>
+              ) : null}
+            </div>
 
             <div className="add-doctor-input-group">
               <label>Name</label>
@@ -951,6 +1007,10 @@ function AddDoctor() {
             <p className="add-doctor-form-note">{optionsWarning}</p>
           ) : null}
 
+          {branchWarning ? (
+            <p className="add-doctor-form-note">{branchWarning}</p>
+          ) : null}
+
           {error ? (
             <p className="add-doctor-form-error">{error}</p>
           ) : null}
@@ -959,7 +1019,7 @@ function AddDoctor() {
             <button
               className="add-doctor-primary"
               type="submit"
-              disabled={saving || !canCreateDoctor}
+              disabled={saving || loadingBranches || !canCreateDoctor}
               title={
                 canCreateDoctor
                   ? "Add doctor"

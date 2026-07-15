@@ -103,6 +103,7 @@ const getActivityCount = (data) => {
 
 const adminSearchItems = [
   { label: "Dashboard", keywords: "home stats overview", path: "/dashboard" },
+  { label: "Branches", keywords: "branch hospital location clinic", path: "/branches" },
   { label: "Doctors", keywords: "doctor physicians schedule register", path: "/doctors" },
   { label: "Receptionists", keywords: "front desk receptionist", path: "/receptionists" },
   { label: "Patients", keywords: "patient records medical", path: "/patients" },

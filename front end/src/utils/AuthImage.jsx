@@ -11,17 +11,7 @@ const getStoredAuthToken = () =>
   localStorage.getItem("receptionistToken") ||
   "";
 
-const isApiImageUrl = (imageUrl) => {
-  if (!imageUrl) return false;
 
-  try {
-    const candidate = new URL(imageUrl, window.location.origin);
-    const assetOrigin = new URL(API_ASSET_BASE_URL, window.location.origin).origin;
-    return candidate.origin === assetOrigin || candidate.origin === window.location.origin;
-  } catch {
-    return false;
-  }
-};
 
 const shouldUseDirectImage = (imageUrl) => {
   if (!imageUrl) return false;
@@ -30,16 +20,7 @@ const shouldUseDirectImage = (imageUrl) => {
   return normalized.startsWith("data:") || normalized.startsWith("blob:");
 };
 
-const isStaticAssetImageUrl = (imageUrl) => {
-  if (!imageUrl) return false;
 
-  try {
-    const candidate = new URL(imageUrl, window.location.origin);
-    return /^\/images\//i.test(candidate.pathname);
-  } catch {
-    return /^\/?images\//i.test(String(imageUrl).trim());
-  }
-};
 
 // =========================================
 // IMAGE URL FIXER
@@ -137,47 +118,44 @@ function AuthImage({
       };
     }
 
-    if (shouldUseDirectImage(imageSrc) || isStaticAssetImageUrl(imageSrc)) {
+    // Blob, data, and localhost URLs: use directly
+    if (shouldUseDirectImage(imageSrc) || imageSrc.includes("localhost")) {
       setResolvedSrc(imageSrc);
       return () => {
         active = false;
       };
     }
 
-    const token = getStoredAuthToken();
+    // All other URLs (API images via ngrok, etc.): fetch with headers
+    const loadImage = async () => {
+      try {
+        const token = getStoredAuthToken();
+        const headers = {
+          "ngrok-skip-browser-warning": "true",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        };
 
-    if (isApiImageUrl(imageSrc) && token) {
-      const loadImage = async () => {
-        try {
-          const response = await fetch(imageSrc, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "ngrok-skip-browser-warning": "true",
-            },
-          });
+        const response = await fetch(imageSrc, { headers });
 
-          if (!response.ok) {
-            throw new Error(`Image request failed with status ${response.status}`);
-          }
-
-          const blob = await response.blob();
-          if (!active) return;
-
-          objectUrl = URL.createObjectURL(blob);
-          setResolvedSrc(objectUrl);
-          return;
-        } catch (error) {
-          if (active) {
-            console.log("Image fetch failed:", imageSrc, error);
-            setResolvedSrc(imageSrc);
-          }
+        if (!response.ok) {
+          throw new Error(`Image request failed with status ${response.status}`);
         }
-      };
 
-      loadImage();
-    } else {
-      setResolvedSrc(imageSrc);
-    }
+        const blob = await response.blob();
+        if (!active) return;
+
+        objectUrl = URL.createObjectURL(blob);
+        setResolvedSrc(objectUrl);
+      } catch (error) {
+        if (active) {
+          console.log("Image fetch failed:", imageSrc, error);
+          // Fallback: try direct src
+          setResolvedSrc(imageSrc);
+        }
+      }
+    };
+
+    loadImage();
 
     return () => {
       active = false;

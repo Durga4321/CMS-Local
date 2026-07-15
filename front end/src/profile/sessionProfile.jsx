@@ -204,6 +204,3 @@ export const getInitials = (value) =>
     .slice(0, 2)
     .toUpperCase() || "U";
 
-
-
-    

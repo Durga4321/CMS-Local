@@ -4,6 +4,12 @@ import { useNavigate } from "react-router-dom";
 import "./DoctorSchedule.css";
 import { apiUrl } from "../../config/api";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
+import {
+  fetchBranchesForHospital,
+  buildBranchOptions,
+  getStoredHospitalId,
+  getAuthToken,
+} from "../../utils/branchApi";
 
 const DOCTORS_API = apiUrl("Doctor");
 const SCHEDULE_API = apiUrl("Schedule");
@@ -249,6 +255,9 @@ function Schedule() {
 
   const [doctors, setDoctors] = useState([]);
   const [doctorId, setDoctorId] = useState("");
+  const [branchOptions, setBranchOptions] = useState([]);
+  const [branchId, setBranchId] = useState("");
+  const [loadingBranches, setLoadingBranches] = useState(true);
   const [days, setDays] = useState(DEFAULT_WORKING_DAYS);
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(defaultEndDate);
@@ -277,6 +286,7 @@ function Schedule() {
   );
 
   useEffect(() => {
+    const hospitalId = getStoredHospitalId();
     Promise.allSettled([
       fetch(DOCTORS_API, {
         headers: { "ngrok-skip-browser-warning": "true" },
@@ -290,7 +300,8 @@ function Schedule() {
         if (!response.ok) throw new Error("Unable to load schedule settings.");
         return response.json();
       }),
-    ]).then(([doctorResult, settingsResult]) => {
+      fetchBranchesForHospital(hospitalId),
+    ]).then(([doctorResult, settingsResult, branchesResult]) => {
       if (doctorResult.status === "fulfilled") {
         const rows = parseListResponse(doctorResult.value)
           .map(normalizeDoctor)
@@ -320,6 +331,13 @@ function Schedule() {
           )
         );
       }
+
+      if (branchesResult.status === "fulfilled") {
+        const options = buildBranchOptions(branchesResult.value);
+        setBranchOptions(options);
+        if (options.length > 0) setBranchId(String(options[0].id));
+      }
+      setLoadingBranches(false);
     });
   }, []);
 
@@ -327,11 +345,17 @@ function Schedule() {
     if (!doctorId || !previewDate) return;
 
     setIsFetchingSlots(true);
+    const token = getAuthToken();
     fetch(
       `${SCHEDULE_API}/day-slots?doctorId=${encodeURIComponent(
         doctorId
       )}&date=${encodeURIComponent(previewDate)}`,
-      { headers: { "ngrok-skip-browser-warning": "true" } }
+      {
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      }
     )
       .then((response) => {
         if (!response.ok) throw new Error("Failed to fetch slots");
@@ -360,9 +384,9 @@ function Schedule() {
   const handleSave = async () => {
     setHasSaveError(true);
 
-    if (!doctorId || !startDate || !endDate || days.length === 0) {
+    if (!doctorId || !branchId || !startDate || !endDate || days.length === 0) {
       setSaveMessage(
-        "Select a doctor, at least one working day, and a date range."
+        "Select a doctor, branch, at least one working day, and a date range."
       );
       return;
     }
@@ -389,6 +413,7 @@ function Schedule() {
     });
 
     const payload = {
+      branchId: Number(branchId),
       doctorId: Number(doctorId),
       days,
       startDate,
@@ -400,12 +425,14 @@ function Schedule() {
       slotDuration: resolvedTimes.slotDuration,
     };
 
+    const token = getAuthToken();
     try {
       const response = await fetch(SCHEDULE_API, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "ngrok-skip-browser-warning": "true",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(payload),
       });
@@ -450,6 +477,24 @@ function Schedule() {
 
       <div className="schedule-container">
         <div className="left">
+          <label htmlFor="schedule-branch">Branch</label>
+          <select
+            id="schedule-branch"
+            value={branchId}
+            onChange={(event) => setBranchId(event.target.value)}
+            disabled={loadingBranches}
+          >
+            {loadingBranches ? <option value="">Loading branches...</option> : null}
+            {!loadingBranches && !branchOptions.length ? (
+              <option value="">No branches found</option>
+            ) : null}
+            {branchOptions.map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branch.name}
+              </option>
+            ))}
+          </select>
+
           <label htmlFor="schedule-doctor">Doctor</label>
           <select
             id="schedule-doctor"

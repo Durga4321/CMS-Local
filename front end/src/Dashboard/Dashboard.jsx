@@ -51,63 +51,10 @@ import { getClinicDisplayName } from "../utils/clinicDisplay";
 /* ================= API ================= */
 
 const API = apiUrl("Dashboard");
-const RECEPTIONIST_API = apiUrl("Receptionist");
 
 const getAdminToken = () =>
   localStorage.getItem("adminToken") ||
   localStorage.getItem("token");
-
-const parseListResponse = (data) => {
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.data)) return data.data;
-  if (Array.isArray(data?.items)) return data.items;
-  if (Array.isArray(data?.records)) return data.records;
-  if (Array.isArray(data?.result)) return data.result;
-  return [];
-};
-
-const decodeJwtPayload = (token) => {
-  try {
-    const payload = token?.split(".")?.[1];
-    if (!payload || typeof atob !== "function") return null;
-
-    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
-    return JSON.parse(atob(normalized + padding));
-  } catch {
-    return null;
-  }
-};
-
-const getDashboardHospitalId = () => {
-  const storedHospitalId = localStorage.getItem("hospitalId");
-  if (storedHospitalId) return String(storedHospitalId);
-
-  const claims = decodeJwtPayload(getAdminToken());
-  return String(claims?.HospitalId || claims?.hospitalId || "");
-};
-
-const getRecordHospitalId = (record = {}) =>
-  String(
-    record.hospitalId ??
-    record.HospitalId ??
-    record.clinicId ??
-    record.ClinicId ??
-    record.hospital?.id ??
-    record.clinic?.id ??
-    ""
-  );
-
-const countClinicReceptionists = (records = [], hospitalId = "") => {
-  const expectedHospitalId = String(hospitalId || "").trim();
-
-  if (!expectedHospitalId) return records.length;
-
-  return records.filter((record) => {
-    const recordHospitalId = getRecordHospitalId(record).trim();
-    return !recordHospitalId || recordHospitalId === expectedHospitalId;
-  }).length;
-};
 
 const formatCurrency = (value) =>
   formatIndianCurrency(value, {
@@ -343,29 +290,6 @@ function Dashboard() {
           console.log("Failed to load clinic details:", e.message || e);
         }
 
-        try {
-          const receptionistResp = await fetch(RECEPTIONIST_API, {
-            headers: {
-              "ngrok-skip-browser-warning": "true",
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-          });
-
-          if (receptionistResp.ok) {
-            const receptionistData = await receptionistResp.json();
-            const receptionistRecords = parseListResponse(receptionistData);
-            merged = {
-              ...merged,
-              totalReceptionists: countClinicReceptionists(
-                receptionistRecords,
-                getDashboardHospitalId()
-              ),
-            };
-          }
-        } catch (e) {
-          console.log("Failed to load receptionist count:", e.message || e);
-        }
-
         setDashboardData(merged);
 
       } catch (error) {
@@ -378,20 +302,15 @@ function Dashboard() {
 
       }
     };
-
   /* ================= LOADING ================= */
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          padding: "30px",
-        }}
-      >
-        Loading dashboard...
-      </div>
-    );
-  }
+  // Helper skeleton component (lightweight) used for placeholders while loading
+  const Skeleton = ({ width = "100%", height = 16, style = {} }) => (
+    <div
+      className="skeleton"
+      style={{ width, height, borderRadius: 6, ...style }}
+    />
+  );
 
   /* ================= CHART DATA ================= */
 
@@ -667,19 +586,22 @@ function Dashboard() {
               <div className="dashboard-clinic-flip-row">
                 <span className="dashboard-clinic-flip-label">Clinic Name</span>
                 <span className="dashboard-clinic-flip-value">{clinicInfo.name || "-"}</span>
+                {loading && <Skeleton width="70%" height={20} style={{float: 'right'}} />}
               </div>
               <div className="dashboard-clinic-flip-row">
                 <span className="dashboard-clinic-flip-label">Contact Number</span>
                 <span className="dashboard-clinic-flip-value">{clinicInfo.contactNumber || "-"}</span>
+                {loading && <Skeleton width="50%" height={18} style={{float: 'right'}} />}
               </div>
               <div className="dashboard-clinic-flip-row">
                 <span className="dashboard-clinic-flip-label">Email</span>
                 <span className="dashboard-clinic-flip-value">{clinicInfo.email || "-"}</span>
+                {loading && <Skeleton width="60%" height={18} style={{float: 'right'}} />}
               </div>
               <div className="dashboard-clinic-flip-row">
                 <span className="dashboard-clinic-flip-label">Status</span>
                 <span className={`dashboard-clinic-flip-status ${clinicInfo.status?.toLowerCase() === "active" ? "active" : "inactive"}`}>
-                  {clinicInfo.status || "-"}
+                  {loading ? <Skeleton width={76} height={18} /> : clinicInfo.status || "-"}
                 </span>
               </div>
               <div className="dashboard-clinic-flip-footer">
@@ -689,7 +611,7 @@ function Dashboard() {
             <div className="dashboard-clinic-flip-back">
               <div className="dashboard-clinic-flip-header">Full Address</div>
               <div className="dashboard-clinic-flip-address">
-                {clinicInfo.address || "-"}
+                {loading ? <Skeleton width="100%" height={18} /> : clinicInfo.address || "-"}
               </div>
               <div className="dashboard-clinic-flip-footer">
                 Tap or press Enter to flip back.
@@ -729,14 +651,14 @@ function Dashboard() {
 
               </div>
 
-              <div className="dashboard-stat-body">
+                <div className="dashboard-stat-body">
 
                 <p className="dashboard-stat-label">
                   {label}
                 </p>
 
                 <h2 className="dashboard-stat-value">
-                  {value}
+                  {loading ? <Skeleton width={80} height={28} /> : value}
                 </h2>
 
               </div>
@@ -777,20 +699,25 @@ function Dashboard() {
 
           <div className="dashboard-chart">
 
-            <ResponsiveContainer
-              width="100%"
-              height={240}
-            >
-
-              <BarChart
-                data={revenueData}
-                margin={{
-                  top: 18,
-                  right: 26,
-                  left: 8,
-                  bottom: 4,
-                }}
+            {loading ? (
+              <div style={{ height: 240 }}>
+                <Skeleton width="100%" height={240} />
+              </div>
+            ) : (
+              <ResponsiveContainer
+                width="100%"
+                height={240}
               >
+
+                <BarChart
+                  data={revenueData}
+                  margin={{
+                    top: 18,
+                    right: 26,
+                    left: 8,
+                    bottom: 4,
+                  }}
+                >
 
                 <CartesianGrid
                   stroke="#e2e8f0"
@@ -856,6 +783,8 @@ function Dashboard() {
 
             </ResponsiveContainer>
 
+          )}
+
           </div>
 
         </div>
@@ -881,42 +810,45 @@ function Dashboard() {
           </div>
 
           <div className="dashboard-status-chart">
+            {loading ? (
+              <Skeleton width="100%" height={180} />
+            ) : (
+              <ResponsiveContainer
+                width="100%"
+                height={180}
+              >
 
-            <ResponsiveContainer
-              width="100%"
-              height={180}
-            >
+                <PieChart>
 
-              <PieChart>
+                  <Pie
+                    data={pieData}
+                    innerRadius={64}
+                    outerRadius={92}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
 
-                <Pie
-                  data={pieData}
-                  innerRadius={64}
-                  outerRadius={92}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
+                    {pieData.map(
+                      (
+                        entry,
+                        index
+                      ) => (
 
-                  {pieData.map(
-                    (
-                      entry,
-                      index
-                    ) => (
+                        <Cell
+                          key={index}
+                          fill={
+                            entry.color
+                          }
+                        />
+                      )
+                    )}
 
-                      <Cell
-                        key={index}
-                        fill={
-                          entry.color
-                        }
-                      />
-                    )
-                  )}
+                  </Pie>
 
-                </Pie>
+                </PieChart>
 
-              </PieChart>
-
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            )}
 
           </div>
 
@@ -1012,21 +944,24 @@ function Dashboard() {
           </div>
 
           <div className="dashboard-chart">
+            {loading ? (
+              <Skeleton width="100%" height={240} />
+            ) : (
 
-            <ResponsiveContainer
-              width="100%"
-              height={240}
-            >
-
-              <BarChart
-                data={growthData}
-                margin={{
-                  top: 18,
-                  right: 28,
-                  left: 0,
-                  bottom: 4,
-                }}
+              <ResponsiveContainer
+                width="100%"
+                height={240}
               >
+
+                <BarChart
+                  data={growthData}
+                  margin={{
+                    top: 18,
+                    right: 28,
+                    left: 0,
+                    bottom: 4,
+                  }}
+                >
 
                 <CartesianGrid
                   stroke="#e2e8f0"
@@ -1104,7 +1039,9 @@ function Dashboard() {
 
               </BarChart>
 
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+
+            )}
 
           </div>
 
@@ -1135,47 +1072,32 @@ function Dashboard() {
 
           <div className="dashboard-activity-list">
 
-            {dashboardData?.recentActivities
-              ?.length > 0 ? (
-
-              dashboardData.recentActivities.map(
-                (
-                  item,
-                  index
-                ) => (
-
-                  <div
-                    className="dashboard-activity-item"
-                    key={index}
-                  >
-
-                    <div className="dashboard-activity-icon">
-
-                      <CalendarCheck size={16} />
-
-                    </div>
-
-                    <div>
-
-                      <p>
-                        {item.title}
-                      </p>
-
-                      <span>
-                        {item.time}
-                      </span>
-
-                    </div>
-
+            {loading ? (
+              Array.from({ length: 4 }).map((_, idx) => (
+                <div className="dashboard-activity-item" key={`s-${idx}`}>
+                  <div className="dashboard-activity-icon">
+                    <Skeleton width={36} height={36} />
                   </div>
-                )
-              )
+                  <div>
+                    <p><Skeleton width="60%" height={14} /></p>
+                    <span><Skeleton width="30%" height={12} /></span>
+                  </div>
+                </div>
+              ))
             ) : (
-
-              <p>
-                No recent activities
-              </p>
-
+              (dashboardData?.recentActivities?.length > 0 ? (
+                dashboardData.recentActivities.map((item, index) => (
+                  <div className="dashboard-activity-item" key={index}>
+                    <div className="dashboard-activity-icon"><CalendarCheck size={16} /></div>
+                    <div>
+                      <p>{item.title}</p>
+                      <span>{item.time}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p>No recent activities</p>
+              ))
             )}
 
           </div>

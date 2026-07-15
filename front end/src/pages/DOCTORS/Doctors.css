@@ -103,7 +103,7 @@
 .doctors-toolbar {
   margin: 14px 0 14px;
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(150px, 0.32fr) minmax(126px, 0.25fr) minmax(140px, 0.25fr);
+  grid-template-columns: minmax(240px, 1fr) minmax(140px, 0.28fr) minmax(150px, 0.32fr) minmax(126px, 0.25fr) minmax(140px, 0.25fr);
   gap: 10px;
   align-items: center;
 }
@@ -875,7 +875,7 @@
 
 .doctor-edit-field-full {
   grid-column: 1 / -1;
-  max-width: 48%;
+  max-width: 100%;
 }
 
 .doctor-edit-error {

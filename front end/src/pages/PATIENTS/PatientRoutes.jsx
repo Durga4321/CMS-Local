@@ -51,12 +51,12 @@ const logoutPatient = async (navigate) => {
         timestamp: new Date().toISOString(),
       })
     );
-  } catch {}
+  } catch { }
 
   ["token", "userRole", "patientName", "patientId", "patientToken", "patientRole", "patientEmail"].forEach((key) =>
     localStorage.removeItem(key)
   );
-  navigate("/patients/register", { replace: true });
+  navigate("/login/patient", { replace: true });
 };
 
 /* ----------------- Patient module (inlined) ----------------- */
@@ -386,7 +386,7 @@ function PatientRoutes() {
   const [notifications, setNotifications] = useState([]);
   const [dashboardData, setDashboardData] = useState(null);
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
     const headers = {
       'Content-Type': 'application/json',
@@ -394,51 +394,51 @@ function PatientRoutes() {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
 
-    const fetchData = async () => {
-      try {
-        const profileUrl = patientApiUrl(PATIENT_API.profile);
-        const profileRes = await fetch(profileUrl, { headers }).catch(() => null);
-        const profileData = profileRes?.ok ? await profileRes.json().catch(() => null) : null;
-        if (profileData) setPatient(profileData);
+    try {
+      const profileUrl = patientApiUrl(PATIENT_API.profile);
+      const profileRes = await fetch(profileUrl, { headers }).catch(() => null);
+      const profileData = profileRes?.ok ? await profileRes.json().catch(() => null) : null;
+      if (profileData) setPatient(profileData);
 
-        const appointmentsUrl = patientApiUrl(PATIENT_API.appointments);
-        const appointmentsRes = await fetch(appointmentsUrl, { headers }).catch(() => null);
-        const appointmentsData = appointmentsRes?.ok ? await appointmentsRes.json().catch(() => []) : [];
-        const appointmentsList = Array.isArray(appointmentsData) ? appointmentsData : (appointmentsData.items || appointmentsData.data || []);
-        setVisits(appointmentsList);
+      const appointmentsUrl = patientApiUrl(PATIENT_API.appointments);
+      const appointmentsRes = await fetch(appointmentsUrl, { headers }).catch(() => null);
+      const appointmentsData = appointmentsRes?.ok ? await appointmentsRes.json().catch(() => []) : [];
+      const appointmentsList = Array.isArray(appointmentsData) ? appointmentsData : (appointmentsData.items || appointmentsData.data || []);
+      setVisits(appointmentsList);
 
-        const prescriptionsUrl = patientApiUrl(PATIENT_API.prescriptions);
-        const prescriptionsRes = await fetch(prescriptionsUrl, { headers }).catch(() => null);
-        if (prescriptionsRes?.ok) {
-          const rxData = await prescriptionsRes.json().catch(() => []);
-          setPrescriptions(Array.isArray(rxData) ? rxData : (rxData.items || rxData.data || []));
-        }
-
-        const billsUrl = patientApiUrl(PATIENT_API.bills);
-        const billsRes = await fetch(billsUrl, { headers }).catch(() => null);
-        if (billsRes?.ok) {
-          const bData = await billsRes.json().catch(() => []);
-          setBills(Array.isArray(bData) ? bData : (bData.items || bData.data || []));
-        }
-
-        const notificationsUrl = patientApiUrl(PATIENT_API.notifications);
-        const notificationsRes = await fetch(notificationsUrl, { headers }).catch(() => null);
-        if (notificationsRes?.ok) {
-          const nData = await notificationsRes.json().catch(() => []);
-          setNotifications(Array.isArray(nData) ? nData : (nData.items || nData.data || []));
-        }
-
-        const dashboardUrl = patientApiUrl(PATIENT_API.dashboard);
-        const dashboardRes = await fetch(dashboardUrl, { headers }).catch(() => null);
-        const dashboardJson = dashboardRes?.ok ? await dashboardRes.json().catch(() => null) : null;
-        if (dashboardJson) setDashboardData(dashboardJson);
-      } catch (err) {
-        // ignore errors
+      const prescriptionsUrl = patientApiUrl(PATIENT_API.prescriptions);
+      const prescriptionsRes = await fetch(prescriptionsUrl, { headers }).catch(() => null);
+      if (prescriptionsRes?.ok) {
+        const rxData = await prescriptionsRes.json().catch(() => []);
+        setPrescriptions(Array.isArray(rxData) ? rxData : (rxData.items || rxData.data || []));
       }
-    };
 
-    fetchData();
+      const billsUrl = patientApiUrl(PATIENT_API.bills);
+      const billsRes = await fetch(billsUrl, { headers }).catch(() => null);
+      if (billsRes?.ok) {
+        const bData = await billsRes.json().catch(() => []);
+        setBills(Array.isArray(bData) ? bData : (bData.items || bData.data || []));
+      }
+
+      const notificationsUrl = patientApiUrl(PATIENT_API.notifications);
+      const notificationsRes = await fetch(notificationsUrl, { headers }).catch(() => null);
+      if (notificationsRes?.ok) {
+        const nData = await notificationsRes.json().catch(() => []);
+        setNotifications(Array.isArray(nData) ? nData : (nData.items || nData.data || []));
+      }
+
+      const dashboardUrl = patientApiUrl(PATIENT_API.dashboard);
+      const dashboardRes = await fetch(dashboardUrl, { headers }).catch(() => null);
+      const dashboardJson = dashboardRes?.ok ? await dashboardRes.json().catch(() => null) : null;
+      if (dashboardJson) setDashboardData(dashboardJson);
+    } catch (err) {
+      // ignore errors
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   return (
     <PatientShell notifications={notifications} patient={patient}>
@@ -456,8 +456,8 @@ function PatientRoutes() {
             />
           }
         />
-        <Route path="appointments" element={<PatientAppointmentsPage visits={visits} />} />
-        <Route path="appointments/book" element={<PatientBookingWizardPage visits={visits} />} />
+        <Route path="appointments" element={<PatientAppointmentsPage visits={visits} onRefresh={fetchData} />} />
+        <Route path="appointments/book" element={<PatientBookingWizardPage visits={visits} onRefresh={fetchData} />} />
         <Route path="book" element={<Navigate to="appointments/book" replace />} />
         <Route path="medical-history" element={<PatientMedicalHistoryPage patient={patient} visits={visits} prescriptions={prescriptions} />} />
         <Route path="history" element={<Navigate to="medical-history" replace />} />
@@ -489,14 +489,132 @@ function PatientPageShell({ title, subtitle, action, children }) {
   );
 }
 
-function PatientAppointmentsPage({ visits = [] }) {
+function PatientAppointmentsPage({ visits = [], onRefresh }) {
   const navigate = useNavigate();
   const rows = visits || [];
   const [selectedAppointment, setSelectedAppointment] = useState(rows[0] || null);
 
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+  const [cancelLoading, setCancelLoading] = useState(false);
+
+  const [rescheduling, setRescheduling] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [rescheduleSlots, setRescheduleSlots] = useState([]);
+  const [rescheduleLoadingSlots, setRescheduleLoadingSlots] = useState(false);
+  const [rescheduleError, setRescheduleError] = useState("");
+  const [rescheduleSaving, setRescheduleSaving] = useState(false);
+
   useEffect(() => {
     setSelectedAppointment(rows[0] || null);
   }, [rows]);
+
+  const getApiHeaders = () => {
+    const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
+    return {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
+  const handleCancel = async () => {
+    setCancelLoading(true);
+    setCancelError("");
+    try {
+      const id = selectedAppointment.appointmentId || selectedAppointment.id;
+      const cancelUrl = patientApiUrl(PATIENT_API.cancelAppointment, { id });
+      const response = await fetch(cancelUrl, {
+        method: "PATCH",
+        headers: getApiHeaders(),
+      });
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unable to cancel appointment.");
+        throw new Error(errorText || "Unable to cancel appointment.");
+      }
+      setCancelling(false);
+      if (onRefresh) await onRefresh();
+    } catch (err) {
+      setCancelError(err.message || "Failed to cancel appointment.");
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchRescheduleSlots = async () => {
+      if (!selectedAppointment || !rescheduleDate) {
+        setRescheduleSlots([]);
+        return;
+      }
+      setRescheduleLoadingSlots(true);
+      setRescheduleError("");
+      try {
+        const doctor = selectedAppointment.doctor || {};
+        const doctorId = selectedAppointment.doctorId || doctor.doctorId || doctor.id || selectedAppointment.userId;
+        if (!doctorId) {
+          throw new Error("Doctor identifier not found on this appointment.");
+        }
+        const slotsUrl = patientApiUrl(PATIENT_API.doctorSlots, { doctorId });
+        const response = await fetch(`${slotsUrl}?date=${encodeURIComponent(rescheduleDate)}`, {
+          headers: getApiHeaders(),
+        });
+        if (!response.ok) {
+          throw new Error("Unable to fetch available time slots.");
+        }
+        const data = await response.json();
+        const slotList = Array.isArray(data) ? data : (data.items || data.data || data.slots || []);
+        setRescheduleSlots(slotList.map((slot) => {
+          if (typeof slot === 'string') return slot;
+          return slot.start || slot.time || '';
+        }).filter(Boolean));
+      } catch (err) {
+        setRescheduleError(err.message || "Failed to load slots.");
+        setRescheduleSlots([]);
+      } finally {
+        setRescheduleLoadingSlots(false);
+      }
+    };
+
+    if (rescheduling) {
+      fetchRescheduleSlots();
+    }
+  }, [rescheduling, rescheduleDate, selectedAppointment]);
+
+  const handleReschedule = async () => {
+    if (!rescheduleDate || !rescheduleTime) {
+      setRescheduleError("Please select date and time.");
+      return;
+    }
+    setRescheduleSaving(true);
+    setRescheduleError("");
+    try {
+      const id = selectedAppointment.appointmentId || selectedAppointment.id;
+      const rescheduleUrl = patientApiUrl(PATIENT_API.rescheduleAppointment, { id });
+      const payload = {
+        date: formatAppointmentDateTime(rescheduleDate),
+        startTime: formatSlotTime(rescheduleTime),
+      };
+      const response = await fetch(rescheduleUrl, {
+        method: "PUT",
+        headers: getApiHeaders(),
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unable to reschedule appointment.");
+        throw new Error(errorText || "Unable to reschedule appointment.");
+      }
+      setRescheduling(false);
+      setRescheduleDate("");
+      setRescheduleTime("");
+      if (onRefresh) await onRefresh();
+    } catch (err) {
+      setRescheduleError(err.message || "Failed to reschedule appointment.");
+    } finally {
+      setRescheduleSaving(false);
+    }
+  };
 
   return (
     <PatientPageShell
@@ -533,7 +651,11 @@ function PatientAppointmentsPage({ visits = [] }) {
                   type="button"
                   className={`pd-notification-item ${isSelected ? "is-active" : ""}`}
                   key={appointmentKey}
-                  onClick={() => setSelectedAppointment(visit)}
+                  onClick={() => {
+                    setSelectedAppointment(visit);
+                    setCancelling(false);
+                    setRescheduling(false);
+                  }}
                 >
                   <span className="pd-notification-dot" />
                   <span className="pd-notification-body">
@@ -569,7 +691,7 @@ function PatientAppointmentsPage({ visits = [] }) {
                 <strong>{getAppointmentDoctor(selectedAppointment)}</strong>
               </div>
               <div>
-                <span>Clinic</span>
+                <span>Branch / Clinic</span>
                 <strong>{getAppointmentClinic(selectedAppointment)}</strong>
               </div>
               <div>
@@ -585,6 +707,123 @@ function PatientAppointmentsPage({ visits = [] }) {
                 <strong>{getAppointmentReason(selectedAppointment)}</strong>
               </div>
             </div>
+
+            {getAppointmentStatus(selectedAppointment) !== "Cancelled" &&
+              getAppointmentStatus(selectedAppointment) !== "Completed" && (
+                <div className="pd-appointment-actions">
+                  <button
+                    type="button"
+                    className="pd-action-btn pd-action-btn--secondary"
+                    onClick={() => {
+                      setRescheduling(true);
+                      setCancelling(false);
+                      setRescheduleError("");
+                      setRescheduleDate("");
+                      setRescheduleTime("");
+                    }}
+                  >
+                    Reschedule
+                  </button>
+                  <button
+                    type="button"
+                    className="pd-action-btn pd-action-btn--danger"
+                    onClick={() => {
+                      setCancelling(true);
+                      setRescheduling(false);
+                      setCancelError("");
+                    }}
+                  >
+                    Cancel Appointment
+                  </button>
+                </div>
+              )}
+
+            {cancelling && (
+              <div className="pd-action-form">
+                <h3>Cancel Appointment</h3>
+                <p>Are you sure you want to cancel appointment {getAppointmentNumber(selectedAppointment)}?</p>
+                {cancelError && <p className="pd-error-text">{cancelError}</p>}
+                <div className="pd-form-actions">
+                  <button
+                    type="button"
+                    className="pd-btn pd-btn--ghost"
+                    onClick={() => setCancelling(false)}
+                    disabled={cancelLoading}
+                  >
+                    No, keep it
+                  </button>
+                  <button
+                    type="button"
+                    className="pd-btn pd-btn--danger"
+                    onClick={handleCancel}
+                    disabled={cancelLoading}
+                  >
+                    {cancelLoading ? "Cancelling..." : "Yes, cancel"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {rescheduling && (
+              <div className="pd-action-form">
+                <h3>Reschedule Appointment</h3>
+                <div className="pd-form-group">
+                  <label htmlFor="reschedule-date">Select new date</label>
+                  <input
+                    id="reschedule-date"
+                    type="date"
+                    min={new Date().toISOString().split("T")[0]}
+                    value={rescheduleDate}
+                    onChange={(e) => {
+                      setRescheduleDate(e.target.value);
+                      setRescheduleTime("");
+                    }}
+                  />
+                </div>
+                {rescheduleDate && (
+                  <div className="pd-form-group">
+                    <label>Available slots</label>
+                    {rescheduleLoadingSlots ? (
+                      <p>Loading slots...</p>
+                    ) : rescheduleSlots.length ? (
+                      <div className="pd-slot-grid">
+                        {rescheduleSlots.map((slot) => (
+                          <button
+                            key={slot}
+                            type="button"
+                            className={`pd-slot-chip ${rescheduleTime === slot ? 'selected' : ''}`}
+                            onClick={() => setRescheduleTime(slot)}
+                          >
+                            {slot}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="pd-error-text">No slots available for this date.</p>
+                    )}
+                  </div>
+                )}
+                {rescheduleError && <p className="pd-error-text">{rescheduleError}</p>}
+                <div className="pd-form-actions">
+                  <button
+                    type="button"
+                    className="pd-btn pd-btn--ghost"
+                    onClick={() => setRescheduling(false)}
+                    disabled={rescheduleSaving}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="pd-btn pd-btn--primary"
+                    onClick={handleReschedule}
+                    disabled={rescheduleSaving || !rescheduleDate || !rescheduleTime}
+                  >
+                    {rescheduleSaving ? "Saving..." : "Confirm Reschedule"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : null}
       </div>
@@ -592,14 +831,14 @@ function PatientAppointmentsPage({ visits = [] }) {
   );
 }
 
-function PatientBookingWizardPage({ visits = [] }) {
+function PatientBookingWizardPage({ visits = [], onRefresh }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [clinics, setClinics] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [slots, setSlots] = useState([]);
-  const [selectedClinic, setSelectedClinic] = useState(null);
+  const [selectedBranch, setSelectedBranch] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [selectedDate, setSelectedDate] = useState("");
@@ -635,82 +874,74 @@ function PatientBookingWizardPage({ visits = [] }) {
   };
 
   useEffect(() => {
-    const fetchBookingData = async () => {
+    const fetchBranches = async () => {
       setLoading(true);
       try {
         const headers = getApiHeaders();
-
-        const clinicsUrl = patientApiUrl(PATIENT_API.clinics);
-        const clinicsRes = await fetch(clinicsUrl, { headers }).catch(() => null);
-        const clinicsData = clinicsRes?.ok ? await clinicsRes.json().catch(() => null) : null;
-        const clinicList = parseApiList(clinicsData);
-
-        const doctorsUrl = patientApiUrl(PATIENT_API.doctors);
-        const doctorsRes = await fetch(doctorsUrl, { headers }).catch(() => null);
-        const doctorsData = doctorsRes?.ok ? await doctorsRes.json().catch(() => null) : null;
-        const doctorList = parseApiList(doctorsData).map((doctor) => normalizeDoctorOption(doctor));
-
-        setClinics(clinicList.map(normalizeClinicOption));
-        setDoctors(doctorList);
-
-        const deptMap = new Map();
-        doctorList.forEach((doctor) => {
-          const deptName = normalizeName(readFirst(doctor, ['departmentName', 'specialty', 'speciality', 'department', 'specialization', 'department.name']));
-          const deptId = readId(doctor, ['departmentId', 'specialtyId', 'department.id']);
-          if (deptName && !deptMap.has(deptId || deptName)) {
-            deptMap.set(deptId || deptName, { id: deptId || deptName, name: deptName });
-          }
-        });
-        setDepartments(Array.from(deptMap.values()));
+        const branchesUrl = patientApiUrl(PATIENT_API.branches);
+        const branchesRes = await fetch(branchesUrl, { headers }).catch(() => null);
+        const branchesData = branchesRes?.ok ? await branchesRes.json().catch(() => null) : null;
+        const branchList = parseApiList(branchesData);
+        setBranches(branchList.map((b) => ({
+          ...b,
+          id: b.branchId || b.id,
+          name: b.branchName || b.name || 'Branch',
+          address: b.address || '',
+          phone: b.phone || '',
+        })));
       } catch (err) {
-        // Silently fail and fall back to visit-derived options
+        // Silently fail
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBookingData();
+    fetchBranches();
   }, []);
 
   useEffect(() => {
     const fetchDepartments = async () => {
-      if (!selectedClinic) {
+      if (!selectedBranch) {
         setDepartments([]);
         return;
       }
 
       const headers = getApiHeaders();
-      const clinicId = selectedClinic.id || selectedClinic.clinicId || selectedClinic.hospitalId;
-      if (!clinicId) {
+      const branchId = selectedBranch.id || selectedBranch.branchId;
+      if (!branchId) {
         setDepartments([]);
         return;
       }
 
       try {
         setDepartments([]);
-        const departmentsUrl = patientApiUrl(PATIENT_API.clinicDepartments, { clinicId });
+        const departmentsUrl = patientApiUrl(PATIENT_API.branchDepartments, { branchId });
         const response = await fetch(departmentsUrl, { headers }).catch(() => null);
         const data = response?.ok ? await response.json().catch(() => null) : null;
         const departmentsList = parseApiList(data);
-        setDepartments(departmentsList.map((department) => normalizeDepartmentOption(department, clinicId)));
+        // API returns array of strings like ["Neurology"]
+        setDepartments(departmentsList.map((dept) => {
+          if (typeof dept === 'string') return { id: dept, name: dept };
+          return normalizeDepartmentOption(dept, branchId);
+        }));
       } catch (err) {
         setDepartments([]);
       }
     };
 
     fetchDepartments();
-  }, [selectedClinic]);
+  }, [selectedBranch]);
 
   useEffect(() => {
     const fetchDoctors = async () => {
-      if (!selectedClinic || !selectedDepartment) {
+      if (!selectedBranch || !selectedDepartment) {
         setDoctors([]);
         return;
       }
 
-      const clinicId = selectedClinic.id || selectedClinic.clinicId || selectedClinic.hospitalId;
+      const branchId = selectedBranch.id || selectedBranch.branchId;
       const departmentName = selectedDepartment.name || selectedDepartment.departmentName || selectedDepartment.id;
-      if (!clinicId || !departmentName) {
+      if (!branchId || !departmentName) {
         setDoctors([]);
         return;
       }
@@ -719,21 +950,30 @@ function PatientBookingWizardPage({ visits = [] }) {
         setDoctors([]);
         const headers = getApiHeaders();
         const params = new URLSearchParams({
-          clinicId: String(clinicId),
+          branchId: String(branchId),
           department: String(departmentName),
         });
         const doctorsUrl = `${patientApiUrl(PATIENT_API.doctors)}?${params.toString()}`;
         const response = await fetch(doctorsUrl, { headers }).catch(() => null);
         const data = response?.ok ? await response.json().catch(() => null) : null;
         const doctorList = parseApiList(data);
-        setDoctors(doctorList.map((doctor) => normalizeDoctorOption(doctor, clinicId, departmentName)));
+        setDoctors(doctorList.map((doctor) => ({
+          ...doctor,
+          id: doctor.doctorId || doctor.id,
+          name: doctor.doctorName || doctor.name || 'Doctor',
+          specialty: doctor.department || departmentName,
+          qualification: doctor.qualification || '',
+          experience: doctor.experience || 0,
+          consultationFee: doctor.consultationFee || 0,
+          availableToday: doctor.availableToday || false,
+        })));
       } catch (err) {
         setDoctors([]);
       }
     };
 
     fetchDoctors();
-  }, [selectedClinic, selectedDepartment]);
+  }, [selectedBranch, selectedDepartment]);
 
   useEffect(() => {
     const fetchSlots = async () => {
@@ -743,7 +983,7 @@ function PatientBookingWizardPage({ visits = [] }) {
       }
 
       const headers = getApiHeaders();
-      const doctorId = selectedDoctor.id || selectedDoctor.doctorId || selectedDoctor.userId;
+      const doctorId = selectedDoctor.id || selectedDoctor.doctorId;
       if (!doctorId) {
         setSlots([]);
         return;
@@ -754,7 +994,16 @@ function PatientBookingWizardPage({ visits = [] }) {
         const response = await fetch(`${slotsUrl}?date=${encodeURIComponent(selectedDate)}`, { headers }).catch(() => null);
         const data = response?.ok ? await response.json().catch(() => null) : null;
         const slotList = parseApiList(data);
-        setSlots(slotList.map((slot) => normalizeSlotOption(slot, doctorId, selectedDate)));
+        // API returns {start, end, status} objects
+        setSlots(slotList.map((slot) => ({
+          ...slot,
+          id: `${doctorId}-${selectedDate}-${slot.start || slot.time}`,
+          doctorId: String(doctorId),
+          date: selectedDate,
+          time: slot.start || slot.time || '',
+          end: slot.end || '',
+          status: slot.status || 'Available',
+        })));
       } catch (err) {
         setSlots([]);
       }
@@ -763,37 +1012,45 @@ function PatientBookingWizardPage({ visits = [] }) {
     fetchSlots();
   }, [selectedDoctor, selectedDate]);
 
-  const clinicOptions = useMemo(() => {
-    if (clinics.length) return clinics.map(normalizeClinicOption);
+  const branchOptions = useMemo(() => {
+    if (branches.length) return branches;
 
     const ids = new Map();
     visits.forEach((visit) => {
-      const id = readId(visit, ['clinicId', 'clinic.id', 'hospitalId', 'clinic.clinicId']);
-      const name = normalizeName(readFirst(visit, ['clinicName', 'clinic.name', 'hospitalName', 'clinic']));
-      const address = readFirst(visit, ['clinicAddress', 'clinic.address', 'hospitalAddress']);
+      const id = readId(visit, ['branchId', 'clinicId', 'clinic.id', 'hospitalId', 'clinic.clinicId']);
+      const name = normalizeName(readFirst(visit, ['branchName', 'clinicName', 'clinic.name', 'hospitalName', 'clinic']));
+      const address = readFirst(visit, ['branchAddress', 'clinicAddress', 'clinic.address', 'hospitalAddress']);
       if (id && name && !ids.has(id)) ids.set(id, { id, name, address });
     });
     return Array.from(ids.values());
-  }, [clinics, visits]);
+  }, [branches, visits]);
 
   const departmentOptions = useMemo(() => {
     if (departments.length) {
-      return departments.map((department) => normalizeDepartmentOption(department, selectedClinic?.id));
+      return departments.map((department) => {
+        if (typeof department === 'string') return { id: department, name: department };
+        return normalizeDepartmentOption(department, selectedBranch?.id);
+      });
     }
 
     const ids = new Map();
     visits.forEach((visit) => {
       const id = readId(visit, ['departmentId', 'department.id', 'specialtyId']);
       const name = normalizeName(readFirst(visit, ['departmentName', 'department.name', 'specialty', 'speciality']));
-      const clinicId = readId(visit, ['clinicId', 'clinic.id', 'hospitalId', 'clinic.clinicId']);
-      if (id && name && !ids.has(id)) ids.set(id, { id, name, clinicId });
+      const branchId = readId(visit, ['branchId', 'clinicId', 'clinic.id', 'hospitalId', 'clinic.clinicId']);
+      if (id && name && !ids.has(id)) ids.set(id, { id, name, branchId });
     });
     return Array.from(ids.values());
-  }, [departments, selectedClinic, visits]);
+  }, [departments, selectedBranch, visits]);
 
   const doctorOptions = useMemo(() => {
     if (doctors.length) {
-      return doctors.map((doctor) => normalizeDoctorOption(doctor, selectedClinic?.id, selectedDepartment?.name));
+      return doctors.map((doctor) => ({
+        ...doctor,
+        id: doctor.doctorId || doctor.id,
+        name: doctor.doctorName || doctor.name || 'Doctor',
+        specialty: doctor.department || selectedDepartment?.name || '',
+      }));
     }
 
     const ids = new Map();
@@ -803,15 +1060,15 @@ function PatientBookingWizardPage({ visits = [] }) {
       const name = normalizeName(readFirst(doctor, ['name', 'doctorName', 'fullName']));
       const specialty = normalizeName(readFirst(doctor, ['specialty', 'speciality', 'departmentName']));
       const departmentId = readId(visit, ['departmentId', 'department.id', 'specialtyId']);
-      const clinicId = readId(visit, ['clinicId', 'clinic.id', 'hospitalId', 'clinic.clinicId']);
-      if (id && name && !ids.has(id)) ids.set(id, { id, name, specialty, departmentId, clinicId });
+      const branchId = readId(visit, ['branchId', 'clinicId', 'clinic.id', 'hospitalId', 'clinic.clinicId']);
+      if (id && name && !ids.has(id)) ids.set(id, { id, name, specialty, departmentId, branchId });
     });
     return Array.from(ids.values());
-  }, [doctors, selectedClinic, selectedDepartment, visits]);
+  }, [doctors, selectedBranch, selectedDepartment, visits]);
 
   const slotOptions = useMemo(() => {
     if (slots.length) {
-      return slots.map((slot) => normalizeSlotOption(slot, selectedDoctor?.id, selectedDate));
+      return slots;
     }
 
     return visits
@@ -819,34 +1076,25 @@ function PatientBookingWizardPage({ visits = [] }) {
         const doctorId = readId(visit, ['doctorId', 'doctor.id', 'doctor.doctorId']);
         const date = readFirst(visit, ['date', 'appointmentDate', 'visitDate']);
         const time = readFirst(visit, ['time', 'slot', 'appointmentTime']);
-        const clinicId = readId(visit, ['clinicId', 'clinic.id', 'hospitalId', 'clinic.clinicId']);
+        const branchId = readId(visit, ['branchId', 'clinicId', 'clinic.id', 'hospitalId', 'clinic.clinicId']);
         const departmentId = readId(visit, ['departmentId', 'department.id', 'specialtyId']);
-        return doctorId && date && time ? { id: `${doctorId}-${date}-${time}`, doctorId, date, time, clinicId, departmentId } : null;
+        return doctorId && date && time ? { id: `${doctorId}-${date}-${time}`, doctorId, date, time, branchId, departmentId } : null;
       })
       .filter(Boolean);
   }, [slots, selectedDoctor, selectedDate, visits]);
 
   const filteredDepartments = useMemo(
     () => {
-      if (!selectedClinic) return departmentOptions;
-      const selectedClinicId = String(selectedClinic.id || selectedClinic.clinicId || selectedClinic.hospitalId || "");
+      if (!selectedBranch) return departmentOptions;
+      const selectedBranchId = String(selectedBranch.id || selectedBranch.branchId || "");
 
       return departmentOptions.filter((department) => {
-        if (department.clinicId && String(department.clinicId) === selectedClinicId) return true;
-        if (
-          Array.isArray(department.clinicIds) &&
-          department.clinicIds.some((clinicId) => String(clinicId) === selectedClinicId)
-        )
-          return true;
-        if (
-          Array.isArray(selectedClinic.departmentIds) &&
-          selectedClinic.departmentIds.some((departmentId) => String(departmentId) === String(department.id))
-        )
-          return true;
-        return !department.clinicId && !department.clinicIds && !selectedClinic.departmentIds;
+        if (department.branchId && String(department.branchId) === selectedBranchId) return true;
+        if (department.clinicId && String(department.clinicId) === selectedBranchId) return true;
+        return true;
       });
     },
-    [departmentOptions, selectedClinic]
+    [departmentOptions, selectedBranch]
   );
 
   const filteredDoctors = useMemo(
@@ -854,7 +1102,7 @@ function PatientBookingWizardPage({ visits = [] }) {
       if (!selectedDepartment) return doctorOptions;
       const selectedDepartmentId = String(selectedDepartment.id || "");
       const selectedDepartmentName = normalizeComparable(selectedDepartment.name || selectedDepartment.departmentName || selectedDepartment.id);
-      const selectedClinicId = String(selectedClinic?.id || selectedClinic?.clinicId || selectedClinic?.hospitalId || "");
+      const selectedBranchId = String(selectedBranch?.id || selectedBranch?.branchId || "");
 
       return doctorOptions.filter((doctor) => {
         const doctorDepartmentName = normalizeComparable(doctor.departmentName || doctor.department || doctor.specialty);
@@ -868,18 +1116,12 @@ function PatientBookingWizardPage({ visits = [] }) {
         )
           return false;
         if (doctorDepartmentName && selectedDepartmentName && doctorDepartmentName !== selectedDepartmentName) return false;
-        if (selectedClinicId && doctor.clinicId && String(doctor.clinicId) !== selectedClinicId) return false;
-        if (
-          selectedClinicId &&
-          Array.isArray(doctor.clinicIds) &&
-          doctor.clinicIds.length > 0 &&
-          !doctor.clinicIds.some((clinicId) => String(clinicId) === selectedClinicId)
-        )
-          return false;
+        if (selectedBranchId && doctor.branchId && String(doctor.branchId) !== selectedBranchId) return false;
+        if (selectedBranchId && doctor.clinicId && String(doctor.clinicId) !== selectedBranchId) return false;
         return true;
       });
     },
-    [doctorOptions, selectedDepartment, selectedClinic]
+    [doctorOptions, selectedDepartment, selectedBranch]
   );
 
   const filteredSlots = useMemo(
@@ -904,15 +1146,15 @@ function PatientBookingWizardPage({ visits = [] }) {
     [filteredSlots, selectedDate]
   );
 
-  const stepItems = ['Clinic', 'Department', 'Doctor', 'Date & time', 'Confirm'];
+  const stepItems = ['Branch', 'Department', 'Doctor', 'Date & time', 'Confirm'];
   const canConfirm =
-    selectedClinic &&
+    selectedBranch &&
     selectedDoctor &&
     selectedDate &&
     selectedTime &&
     reasonForVisit.trim();
   const canContinue =
-    (step === 1 && selectedClinic) ||
+    (step === 1 && selectedBranch) ||
     (step === 2 && selectedDepartment) ||
     (step === 3 && selectedDoctor) ||
     (step === 4 && selectedDate && selectedTime);
@@ -928,10 +1170,10 @@ function PatientBookingWizardPage({ visits = [] }) {
     setBookingState('saving');
     setBookingError('');
     try {
-      const hospitalId = selectedClinic?.hospitalId || selectedClinic?.clinicId || selectedClinic?.id;
-      const doctorId = selectedDoctor?.doctorId || selectedDoctor?.id || selectedDoctor?.userId;
+      const branchId = selectedBranch?.branchId || selectedBranch?.id;
+      const doctorId = selectedDoctor?.doctorId || selectedDoctor?.id;
       const payload = {
-        hospitalId: readNumericId(hospitalId),
+        branchId: readNumericId(branchId),
         doctorId: readNumericId(doctorId),
         date: formatAppointmentDateTime(selectedDate),
         startTime: formatSlotTime(selectedTime),
@@ -950,6 +1192,7 @@ function PatientBookingWizardPage({ visits = [] }) {
       }
       setBookingState('success');
       setStep(5);
+      if (onRefresh) await onRefresh();
     } catch (error) {
       setBookingState('error');
       setBookingError(error.message || 'Could not complete booking.');
@@ -989,30 +1232,30 @@ function PatientBookingWizardPage({ visits = [] }) {
           {step === 1 && (
             <section className="booking-panel">
               <div className="booking-panel-header">
-                <h2>Clinic</h2>
-                <p>Choose the clinic location for your appointment.</p>
+                <h2>Branch</h2>
+                <p>Choose the branch location for your appointment.</p>
               </div>
               <div className="booking-grid">
-                {clinicOptions.length ? (
-                  clinicOptions.map((clinic) => (
+                {branchOptions.length ? (
+                  branchOptions.map((branch) => (
                     <button
-                      key={clinic.id || clinic.name}
+                      key={branch.id || branch.name}
                       type="button"
-                      className={`booking-card ${selectedClinic?.id === clinic.id ? 'selected' : ''}`}
+                      className={`booking-card ${selectedBranch?.id === branch.id ? 'selected' : ''}`}
                       onClick={() => {
-                        setSelectedClinic(clinic);
+                        setSelectedBranch(branch);
                         setSelectedDepartment(null);
                         setSelectedDoctor(null);
                         setSelectedDate('');
                         setSelectedTime('');
                       }}
                     >
-                      <strong>{clinic.name}</strong>
-                      <span>{clinic.address || 'Location details unavailable'}</span>
+                      <strong>{branch.name}</strong>
+                      <span>{branch.address || 'Location details unavailable'}</span>
                     </button>
                   ))
                 ) : (
-                  <p className="booking-empty">No clinics found yet.</p>
+                  <p className="booking-empty">No branches found yet.</p>
                 )}
               </div>
             </section>
@@ -1119,12 +1362,12 @@ function PatientBookingWizardPage({ visits = [] }) {
             <section className="booking-panel booking-summary-panel">
               <div className="booking-panel-header">
                 <h2>Confirm</h2>
-                <p>Review your clinic, department, doctor, and schedule.</p>
+                <p>Review your branch, department, doctor, and schedule.</p>
               </div>
               <div className="booking-summary">
                 <div className="booking-summary-row">
-                  <span>Clinic</span>
-                  <strong>{selectedClinic?.name || 'Not selected'}</strong>
+                  <span>Branch</span>
+                  <strong>{selectedBranch?.name || 'Not selected'}</strong>
                 </div>
                 <div className="booking-summary-row">
                   <span>Department</span>
@@ -1238,11 +1481,11 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
 
   const chronicConditions = normalizeList(
     history?.chronicConditions ||
-      history?.chronicDiseases ||
-      history?.medicalConditions ||
-      history?.conditions ||
-      patient?.chronicDiseases ||
-      patient?.medicalConditions
+    history?.chronicDiseases ||
+    history?.medicalConditions ||
+    history?.conditions ||
+    patient?.chronicDiseases ||
+    patient?.medicalConditions
   );
   const allergies = normalizeList(history?.allergies || history?.allergyList || history?.allergy || patient?.allergies);
   const currentMedications = normalizeList(
@@ -1252,22 +1495,22 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
   const visitRecords = Array.isArray(history?.visits)
     ? history.visits
     : Array.isArray(history?.appointments)
-    ? history.appointments
-    : visits;
+      ? history.appointments
+      : visits;
 
   const reportRecords = Array.isArray(history?.reports)
     ? history.reports
     : Array.isArray(history?.labReports)
-    ? history.labReports
-    : visitRecords
+      ? history.labReports
+      : visitRecords
         .map((visit) => readFirst(visit, ['report', 'reportName', 'reportTitle', 'reportUrl', 'documentUrl']) ? visit : null)
         .filter(Boolean);
 
   const prescriptionRecords = Array.isArray(history?.prescriptions) && history.prescriptions.length
     ? history.prescriptions
     : Array.isArray(prescriptions)
-    ? prescriptions
-    : [];
+      ? prescriptions
+      : [];
 
   const readVisitDate = (visit) =>
     readFirst(visit, ['date', 'visitDate', 'appointmentDate', 'createdAt', 'appointment?.date']) || 'Unknown date';
@@ -1433,10 +1676,10 @@ function PatientPrescriptionsPage({ prescriptions = [] }) {
       Array.isArray(record.medicines) && record.medicines.length
         ? record.medicines
         : Array.isArray(record.medications) && record.medications.length
-        ? record.medications
-        : Array.isArray(record.medicineList) && record.medicineList.length
-        ? record.medicineList
-        : normalizeMedicineList(record.medicineNames || record.medicines || record.medications || record.medicineList);
+          ? record.medications
+          : Array.isArray(record.medicineList) && record.medicineList.length
+            ? record.medicineList
+            : normalizeMedicineList(record.medicineNames || record.medicines || record.medications || record.medicineList);
 
     return rawMedicines.map((medicine, index) => {
       if (medicine && typeof medicine === 'object') {
@@ -1757,69 +2000,69 @@ function PatientBillsPage({ bills = [] }) {
       {billRecords.length ? (
         <div className="pb-bills-overview">
           <div className="pb-invoice-list">
-          {billRecords.map((bill, index) => {
-            const status = paymentStatus(bill);
-            const total = totalAmount(bill);
-            const due = dueAmount(bill);
-            const lineItems = getLineItems(bill);
-            const invoiceLink = invoiceUrl(bill);
+            {billRecords.map((bill, index) => {
+              const status = paymentStatus(bill);
+              const total = totalAmount(bill);
+              const due = dueAmount(bill);
+              const lineItems = getLineItems(bill);
+              const invoiceLink = invoiceUrl(bill);
 
-            return (
-              <div className="pb-invoice-card" key={bill.id || bill.invoiceNumber || index}>
-                <div className="pb-invoice-header">
-                  <div>
-                    <span className="pb-invoice-date">{formatDate(bill)}</span>
-                    <h3>{invoiceNumber(bill)}</h3>
-                    <p className="pb-invoice-subtitle">{doctorLabel(bill)}</p>
-                  </div>
-                  <div className="pb-invoice-status-group">
-                    <span className={`pb-status-badge pb-status-badge--${status === 'paid' ? 'paid' : 'pending'}`}>
-                      {status === 'paid' ? 'Paid' : 'Pending'}
-                    </span>
-                    <span className="pb-payment-badge">{displayPaymentMode(bill)}</span>
-                  </div>
-                </div>
-
-                <div className="pb-charge-grid">
-                  {lineItems.length ? lineItems.map((item, itemIndex) => (
-                    <div className="pb-charge-row" key={`${String(item.label)}-${itemIndex}`}>
-                      <span>{item.label}</span>
-                      <strong>{formatAmount(item.amount)}</strong>
+              return (
+                <div className="pb-invoice-card" key={bill.id || bill.invoiceNumber || index}>
+                  <div className="pb-invoice-header">
+                    <div>
+                      <span className="pb-invoice-date">{formatDate(bill)}</span>
+                      <h3>{invoiceNumber(bill)}</h3>
+                      <p className="pb-invoice-subtitle">{doctorLabel(bill)}</p>
                     </div>
-                  )) : (
-                    <div className="pb-charge-row">
-                      <span>Amount</span>
-                      <strong>{formatAmount(total)}</strong>
+                    <div className="pb-invoice-status-group">
+                      <span className={`pb-status-badge pb-status-badge--${status === 'paid' ? 'paid' : 'pending'}`}>
+                        {status === 'paid' ? 'Paid' : 'Pending'}
+                      </span>
+                      <span className="pb-payment-badge">{displayPaymentMode(bill)}</span>
                     </div>
-                  )}
-                </div>
+                  </div>
 
-                <div className="pb-charge-summary">
-                  <span>Total invoice</span>
-                  <strong>{formatAmount(total)}</strong>
-                </div>
+                  <div className="pb-charge-grid">
+                    {lineItems.length ? lineItems.map((item, itemIndex) => (
+                      <div className="pb-charge-row" key={`${String(item.label)}-${itemIndex}`}>
+                        <span>{item.label}</span>
+                        <strong>{formatAmount(item.amount)}</strong>
+                      </div>
+                    )) : (
+                      <div className="pb-charge-row">
+                        <span>Amount</span>
+                        <strong>{formatAmount(total)}</strong>
+                      </div>
+                    )}
+                  </div>
 
-                <div className="pb-bill-actions">
-                  <button type="button" className="pb-action-btn pb-action-btn--ghost" onClick={() => viewInvoice(invoiceLink)} disabled={!invoiceLink}>
-                    View invoice
-                  </button>
-                  <button type="button" className="pb-action-btn pb-action-btn--primary" onClick={() => viewInvoice(invoiceLink)} disabled={!invoiceLink}>
-                    Download
-                  </button>
-                  {due > 0 ? (
-                    <button
-                      type="button"
-                      className="pb-action-btn pb-action-btn--secondary"
-                      onClick={() => payInvoice(paymentUrl(bill))}
-                      disabled={!paymentUrl(bill)}
-                    >
-                      {payLabel(bill)}
+                  <div className="pb-charge-summary">
+                    <span>Total invoice</span>
+                    <strong>{formatAmount(total)}</strong>
+                  </div>
+
+                  <div className="pb-bill-actions">
+                    <button type="button" className="pb-action-btn pb-action-btn--ghost" onClick={() => viewInvoice(invoiceLink)} disabled={!invoiceLink}>
+                      View invoice
                     </button>
-                  ) : null}
+                    <button type="button" className="pb-action-btn pb-action-btn--primary" onClick={() => viewInvoice(invoiceLink)} disabled={!invoiceLink}>
+                      Download
+                    </button>
+                    {due > 0 ? (
+                      <button
+                        type="button"
+                        className="pb-action-btn pb-action-btn--secondary"
+                        onClick={() => payInvoice(paymentUrl(bill))}
+                        disabled={!paymentUrl(bill)}
+                      >
+                        {payLabel(bill)}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
           </div>
           <aside className="pb-total-card">
             <span>Total Bill</span>
@@ -2199,65 +2442,65 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
     <div className="patient-dashboard">
       <PatientAccountLayout active="profile">
         <div className="pd-profile-page-grid">
-        <div className="pd-card">
-          <div className="pd-section-header">
-            <div>
-              <h2>Patient Profile</h2>
-              <p>Personal details and contact information.</p>
-            </div>
-          </div>
-          <div className="pd-profile-card">
-            <div className="pd-profile-avatar">{profileInitials}</div>
-            <div className="pd-profile-copy">
-              <h3>{profileName}</h3>
-              <p>{profileEmail}</p>
-              <div className="pd-profile-meta">
-                <span><Phone size={14} />{profilePhone}</span>
-                <span><UserRound size={14} />{profileGender}</span>
-                <span><Mail size={14} />{profileEmail}</span>
-                <span><MapPin size={14} />{profileAddress}</span>
+          <div className="pd-card">
+            <div className="pd-section-header">
+              <div>
+                <h2>Patient Profile</h2>
+                <p>Personal details and contact information.</p>
               </div>
             </div>
+            <div className="pd-profile-card">
+              <div className="pd-profile-avatar">{profileInitials}</div>
+              <div className="pd-profile-copy">
+                <h3>{profileName}</h3>
+                <p>{profileEmail}</p>
+                <div className="pd-profile-meta">
+                  <span><Phone size={14} />{profilePhone}</span>
+                  <span><UserRound size={14} />{profileGender}</span>
+                  <span><Mail size={14} />{profileEmail}</span>
+                  <span><MapPin size={14} />{profileAddress}</span>
+                </div>
+              </div>
+            </div>
+            <div className="pd-profile-section-grid">
+              <section className="pd-profile-section">
+                <h3>Personal Details</h3>
+                <div className="pd-profile-strip pd-profile-strip--expanded">
+                  <div><span>Name</span><strong>{profileName}</strong></div>
+                  <div><span>Gender</span><strong>{profileGender}</strong></div>
+                  <div><span>DOB</span><strong>{profileDob}</strong></div>
+                  <div><span>Blood Group</span><strong>{profileBloodGroup}</strong></div>
+                </div>
+              </section>
+
+              <section className="pd-profile-section">
+                <h3>Contact</h3>
+                <div className="pd-profile-strip pd-profile-strip--expanded">
+                  <div><span>Mobile</span><strong>{profilePhone}</strong></div>
+                  <div><span>Email</span><strong>{profileEmail}</strong></div>
+                  <div><span>Address</span><strong>{profileAddress}</strong></div>
+                </div>
+              </section>
+
+              <section className="pd-profile-section">
+                <h3>Emergency Contact</h3>
+                <div className="pd-profile-strip pd-profile-strip--expanded">
+                  <div><span>Name</span><strong>{profileEmergencyName}</strong></div>
+                  <div><span>Relationship</span><strong>{profileEmergencyRelationship}</strong></div>
+                  <div><span>Phone</span><strong>{profileEmergencyPhone}</strong></div>
+                </div>
+              </section>
+
+              <section className="pd-profile-section">
+                <h3>Medical Information</h3>
+                <div className="pd-profile-strip pd-profile-strip--expanded">
+                  <div><span>Allergies</span><strong>{profileAllergies}</strong></div>
+                  <div><span>Chronic Diseases</span><strong>{profileChronicDiseases}</strong></div>
+                  <div><span>Current Medications</span><strong>{profileCurrentMedications}</strong></div>
+                </div>
+              </section>
+            </div>
           </div>
-          <div className="pd-profile-section-grid">
-            <section className="pd-profile-section">
-              <h3>Personal Details</h3>
-              <div className="pd-profile-strip pd-profile-strip--expanded">
-                <div><span>Name</span><strong>{profileName}</strong></div>
-                <div><span>Gender</span><strong>{profileGender}</strong></div>
-                <div><span>DOB</span><strong>{profileDob}</strong></div>
-                <div><span>Blood Group</span><strong>{profileBloodGroup}</strong></div>
-              </div>
-            </section>
-
-            <section className="pd-profile-section">
-              <h3>Contact</h3>
-              <div className="pd-profile-strip pd-profile-strip--expanded">
-                <div><span>Mobile</span><strong>{profilePhone}</strong></div>
-                <div><span>Email</span><strong>{profileEmail}</strong></div>
-                <div><span>Address</span><strong>{profileAddress}</strong></div>
-              </div>
-            </section>
-
-            <section className="pd-profile-section">
-              <h3>Emergency Contact</h3>
-              <div className="pd-profile-strip pd-profile-strip--expanded">
-                <div><span>Name</span><strong>{profileEmergencyName}</strong></div>
-                <div><span>Relationship</span><strong>{profileEmergencyRelationship}</strong></div>
-                <div><span>Phone</span><strong>{profileEmergencyPhone}</strong></div>
-              </div>
-            </section>
-
-            <section className="pd-profile-section">
-              <h3>Medical Information</h3>
-              <div className="pd-profile-strip pd-profile-strip--expanded">
-                <div><span>Allergies</span><strong>{profileAllergies}</strong></div>
-                <div><span>Chronic Diseases</span><strong>{profileChronicDiseases}</strong></div>
-                <div><span>Current Medications</span><strong>{profileCurrentMedications}</strong></div>
-              </div>
-            </section>
-          </div>
-        </div>
         </div>
       </PatientAccountLayout>
     </div>

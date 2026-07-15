@@ -600,7 +600,7 @@ const AdminLogin = () => {
         </div>
 
         <div className="auth-register-row">
-          <p className="auth-register">New to CMS? <Link to="/patients/register" className="create-account-btn" role="button">Create account</Link></p>
+          <p className="auth-register">New patient? <Link to="/register/patient" className="create-account-btn" role="button">Create account</Link></p>
         </div>
 
       </div>

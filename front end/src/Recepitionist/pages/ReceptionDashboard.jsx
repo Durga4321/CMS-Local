@@ -7,54 +7,32 @@ import {
   Clock,
   ClipboardList,
   UserPlus,
-  Users,
 } from "lucide-react";
 import { formatToday, parseList, requestJson } from "../receptionApi";
 
 function ReceptionDashboard() {
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
-  const [stats, setStats] = useState({
-    today: 0,
-    waiting: 0,
-    completed: 0,
-    patients: 0,
-  });
+  const [stats, setStats] = useState({ today: 0, waiting: 0, completed: 0 });
 
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const [dashboardData, appointmentData, patientData] = await Promise.all([
+        const [dashboardData, appointmentData] = await Promise.all([
           requestJson("ReceptionistDashboard"),
           requestJson("Appointment"),
-          requestJson("Patient"),
         ]);
-        const patientList = parseList(patientData);
 
         setStats({
           today: Number(dashboardData?.totalTodayAppointments) || 0,
           waiting: Number(dashboardData?.waitingAppointments) || 0,
           completed: Number(dashboardData?.completedAppointments) || 0,
-          patients:
-            Number(
-              dashboardData?.totalPatients ??
-              dashboardData?.patientCount ??
-              dashboardData?.patientsCount
-            ) || patientList.length,
         });
         setAppointments(parseList(appointmentData));
       } catch (dashboardError) {
-        Promise.allSettled([requestJson("Appointment"), requestJson("Patient")])
-          .then(([appointmentResult, patientResult]) => {
-            const data =
-              appointmentResult.status === "fulfilled"
-                ? appointmentResult.value
-                : [];
+        requestJson("Appointment")
+          .then((data) => {
             const appointmentList = parseList(data);
-            const patientList =
-              patientResult.status === "fulfilled"
-                ? parseList(patientResult.value)
-                : [];
             const todayDate = formatToday();
             const todays = appointmentList.filter((item) =>
               String(item.date || item.appointmentDate || "").startsWith(todayDate)
@@ -69,12 +47,11 @@ function ReceptionDashboard() {
               completed: appointmentList.filter((item) =>
                 ["completed", "consulted"].includes(String(item.status || "").toLowerCase())
               ).length,
-              patients: patientList.length,
             });
             setAppointments(appointmentList);
           })
           .catch(() => {
-            setStats({ today: 0, waiting: 0, completed: 0, patients: 0 });
+            setStats({ today: 0, waiting: 0, completed: 0 });
             setAppointments([]);
           });
       }
@@ -121,14 +98,6 @@ function ReceptionDashboard() {
           <span>Today</span>
           <p>Waiting Patients</p>
           <strong>{stats.waiting}</strong>
-        </article>
-        <article className="rc-stat-card">
-          <div className="rc-stat-icon teal">
-            <Users size={22} />
-          </div>
-          <span>Total</span>
-          <p>Total Patients</p>
-          <strong>{stats.patients}</strong>
         </article>
         <article className="rc-stat-card">
           <div className="rc-stat-icon green">

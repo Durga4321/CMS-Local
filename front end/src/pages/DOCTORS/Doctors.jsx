@@ -5,14 +5,9 @@ import {
   Plus,
   Pencil,
   Trash2,
-  ToggleLeft,
-  ToggleRight,
   Calendar,
   X,
   Camera,
-  Mail,
-  Phone,
-  ArrowUpDown,
   RotateCw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +19,9 @@ import {
   canUsePermission,
   fetchAndStoreRolePermissions,
 } from "../../utils/authorization";
+import {
+  getApiHeaders,
+} from "../../utils/branchApi";
 import { useToast } from "../../components/ToastProvider";
 import {
   onlyAlpha,
@@ -258,13 +256,7 @@ const validateEditForm = (form) => {
   return errors;
 };
 
-const appendDoctorFormData = (body, values) => {
-  Object.entries(values).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      body.append(key, value);
-    }
-  });
-};
+
 
 const buildDoctorUpdateBody = ({
   doctor = {},
@@ -314,7 +306,7 @@ function Doctors() {
   const [specializationFilter, setSpecializationFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [experienceFilter, setExperienceFilter] = useState("");
-  const [sortConfig, setSortConfig] = useState({
+  const [sortConfig] = useState({
     key: "dateAdded",
     direction: "desc",
   });
@@ -337,7 +329,6 @@ function Doctors() {
 
   const [toggleLoadingId, setToggleLoadingId] = useState(null);
   const [deleteLoadingId, setDeleteLoadingId] = useState(null);
-  const clinicName = getClinicDisplayName({}, "Clinic");
   const canCreateDoctor = !permissionsLoading && canUsePermission(permissionRecord, "create");
   const canEditDoctor = !permissionsLoading && canUsePermission(permissionRecord, "edit");
   const canDeleteDoctor = !permissionsLoading && canUsePermission(permissionRecord, "delete");
@@ -563,13 +554,7 @@ function Doctors() {
     [doctors]
   );
 
-  const handleSort = (key) => {
-    setSortConfig((previous) => ({
-      key,
-      direction:
-        previous.key === key && previous.direction === "asc" ? "desc" : "asc",
-    }));
-  };
+
 
   const toggleDoctorCardFlip = (doctorKey) => {
     setFlippedDoctorIds((previous) => ({
@@ -727,44 +712,40 @@ function Doctors() {
       doctor: editingDoctor,
       form: editForm,
     });
-    const requestOptions = editImageFile
-      ? (() => {
-        const body = new FormData();
-        appendDoctorFormData(body, {
-          ...requestBody,
-          Name: requestBody.name,
-          Specialization: requestBody.specialization,
-          Experience: requestBody.experience,
-          Qualification: requestBody.qualification,
-          ConsultationFee: requestBody.consultationFee,
-          AreaofExpertise: requestBody.areaofExpertise,
-          Email: requestBody.email,
-          PhoneNumber: requestBody.phoneNumber,
-          IsActive: String(requestBody.isActive),
-        });
-        body.append("Image", editImageFile);
-        return {
-          method: "PUT",
-          body,
-        };
-      })()
-      : {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      };
+    // Always use multipart/form-data + query params (per PUT /api/Doctor/{id} spec)
+    const params = new URLSearchParams();
+    const paramMap = {
+      BranchId: requestBody.branchId,
+      Name: requestBody.name,
+      Specialization: requestBody.specialization,
+      Experience: requestBody.experience,
+      Qualification: requestBody.qualification,
+      ConsultationFee: requestBody.consultationFee,
+      AreaofExpertise: requestBody.areaofExpertise,
+      IsActive: String(requestBody.isActive),
+      PhoneNumber: requestBody.phoneNumber,
+      Email: requestBody.email,
+    };
+    Object.entries(paramMap).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        params.set(key, String(value));
+      }
+    });
+    const formData = new FormData();
+    if (editImageFile) {
+      formData.append("Image", editImageFile);
+    }
 
     try {
-      const response = await fetch(`${DOCTORS_API_URL}/${editingDoctor.id}`, {
-        ...requestOptions,
+      const url = `${DOCTORS_API_URL}/${editingDoctor.id}?${params.toString()}`;
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: getApiHeaders(),
+        body: formData,
       });
 
       if (!response.ok) {
-        const apiError =
-          await parseEditError(response);
-
+        const apiError = await parseEditError(response);
         setEditFieldErrors(apiError.fieldErrors);
         throw new Error(apiError.message);
       }

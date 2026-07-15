@@ -23,6 +23,7 @@ import ForgotPassword from "./Login/Forgotpassword";
 import VerifyOTP from "./Login/Verifyopt";
 import ResetPassword from "./Login/Resertpassword";
 import Dashboard from "./Dashboard/Dashboard";
+import Branches from "./pages/BRANCHES/Branches";
 import Receptionists from "./pages/RECEPTIONISTS/Receptionists";
 import Doctors from "./pages/DOCTORS/Doctors";
 import AddDoctor from "./pages/DOCTORS/AddDoctor";
@@ -31,6 +32,7 @@ import Patients from "./pages/PATIENTS/Patients";
 import PatientDetails from "./pages/PATIENTS/PatientDetails";
 import PatientDashboard from "./pages/PATIENTS/PatientDashboard";
 import PatientRegister from "./pages/PATIENTS/PatientRegister";
+import PatientLogin from "./pages/PATIENTS/PatientLogin";
 // Optional
 import Appointments from "./pages/APPOINTMENTS/Appointments";
 import NewAppointment from "./pages/APPOINTMENTS/NewAppointment";
@@ -103,7 +105,7 @@ const logoutPatient = async (navigate) => {
   ["token", "userRole", "patientName", "patientId", "patientToken", "patientRole", "patientEmail"].forEach((key) =>
     localStorage.removeItem(key)
   );
-  navigate("/patients/register", { replace: true });
+  navigate("/login/patient", { replace: true });
 };
 
 function App() {
@@ -120,7 +122,14 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/VerifyOTP" element={<VerifyOTP />} />
         <Route path="/ResetPassword" element={<ResetPassword />} />
-        <Route path="/patients/register" element={<PatientRegister />} />
+
+        {/* PATIENT AUTH - Separate Register & Login pages */}
+        <Route path="/register/patient" element={<PatientRegister />} />
+        <Route path="/login/patient" element={<PatientLogin />} />
+        {/* Redirect aliases so old links still work */}
+        <Route path="/patients/register" element={<Navigate to="/register/patient" replace />} />
+        <Route path="/patient/register" element={<Navigate to="/register/patient" replace />} />
+        <Route path="/patient/login" element={<Navigate to="/login/patient" replace />} />
 
         {/* MAIN LAYOUT */}
         <Route element={<AppLayout />}>
@@ -130,6 +139,7 @@ function App() {
           <Route path="profile" element={<UserProfilePage roleType="admin" />} />
 
           {/* MODULES */}
+          <Route path="branches" element={<Branches />} />
           <Route path="doctors" element={<Doctors />} />
           <Route path="doctors/add" element={<AddDoctor />} />
           <Route path="doctors/register" element={<Navigate to="/doctors/add" replace />} />
@@ -161,12 +171,6 @@ function App() {
           <Route path="superadmin/reports" element={<SuperAdminRoute><SuperAdminReports /></SuperAdminRoute>} />
           <Route path="superadmin/audit-logs" element={<SuperAdminRoute><SuperAdminAuditLogs /></SuperAdminRoute>} />
           <Route path="superadmin/notifications" element={<SuperAdminRoute><SuperAdminNotifications /></SuperAdminRoute>} />
-
-
-
-
-
-
 
         </Route>
 

@@ -1,354 +1,304 @@
-.patient-register-header {
-  text-align: center;
-  margin-bottom: 0.75rem;
-}
+/* ─── Patient Register — Simple centered card ─── */
 
-.patient-register-header h2 {
-  margin: 0 0 0.3rem;
-  text-align: center;
-  font-size: 1.8rem;
-  line-height: 1.1;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
 
-.patient-register-header .subtitle {
-  margin: 0;
-  text-align: center;
-  font-size: 0.88rem;
-  line-height: 1.35;
-  color: rgba(15, 23, 42, 0.64);
-}
-
-.register-grid--spaced {
-  margin-top: 0.2rem;
-}
-
-.register-terms {
-  margin-top: 0.55rem;
-  font-size: 0.92rem;
-}
-
-.register-terms label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  font-size: 0.92rem;
-  color: rgba(15, 23, 42, 0.75);
-  cursor: pointer;
-}
-
-.register-terms input {
-  width: auto;
-  min-height: auto;
-  margin: 0;
-}
-
-.register-login-link {
-  margin-top: 0.85rem;
-  text-align: center;
-}
-
-.register-page {
-  min-height: 100vh;
+.patient-register-page {
+  position: relative;
   width: 100vw;
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
   align-items: center;
-  position: relative;
-  isolation: isolate;
-  background: linear-gradient(180deg, rgba(236, 251, 250, 0.95), rgba(255, 255, 255, 0.98));
-  padding: 24px;
-  overflow: hidden;
+  justify-content: center;
+  overflow-y: auto;
+  background: radial-gradient(circle at 30% 70%, #032f30 0%, #020617 60%, #010312 100%);
+  color: #f8fafc;
+  font-family: 'Inter', sans-serif;
   box-sizing: border-box;
+  padding: 40px 20px;
 }
 
-.register-bg {
-  position: fixed;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  transform: scale(1.05);
-  filter: saturate(1.05);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.register-veil {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(-45deg,
-      rgba(15, 23, 42, 0.55),
-      rgba(19, 78, 74, 0.5),
-      rgba(14, 165, 164, 0.45),
-      rgba(34, 211, 238, 0.4));
-  background-size: 400% 400%;
-  animation: gradientBG 18s ease infinite;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.register-card {
+/* ── Centered wrapper ── */
+.register-card-wrapper {
   position: relative;
-  z-index: 2;
-  width: min(1120px, 100%);
-  max-height: calc(100vh - 28px);
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 18px;
-  box-shadow: 0 24px 70px rgba(8, 30, 42, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  padding: 20px 42px 26px;
-  box-sizing: border-box;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: regFadeUp 0.5s ease-out;
 }
 
-@keyframes gradientBG {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
+@keyframes regFadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.register-header h1 {
-  margin: 0;
-  font-size: 24px;
-  letter-spacing: 0;
+/* Logo badge */
+.register-logo-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 24px rgba(20, 184, 166, 0.4);
+  margin-bottom: 8px;
 }
 
-.register-header p {
-  margin: 5px 0 0;
-  color: #426078;
+.register-brand-name {
+  margin: 0 0 18px;
   font-size: 13px;
-  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  text-transform: uppercase;
 }
 
-.register-section {
-  margin-top: 12px;
-}
-
-.register-section h2 {
-  margin: 0 0 8px;
-  font-size: 14px;
-  color: #1d3845;
-}
-
+/* Glass card */
 .patient-register-card {
   width: 100%;
-  max-width: 100%;
-  padding: 0;
-  margin: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.auth-card--wide.patient-register-card {
-  width: min(940px, 100%);
-  max-width: 940px;
-  max-height: calc(100vh - 48px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 2rem 2rem 1.8rem;
-  margin: 0 16px;
-  border-radius: 30px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  box-shadow: 0 34px 70px rgba(15, 23, 42, 0.16);
-}
-
-.auth-container {
-  width: 100vw !important;
-  min-height: 100vh !important;
-  height: 100vh !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  overflow: hidden !important;
-  position: relative;
-}
-
-html.auth-page-no-scroll,
-body.auth-page-no-scroll {
-  overflow: hidden !important;
-  height: 100% !important;
-}
-
-.register-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem 1.25rem;
-}
-
-.register-grid .wide {
-  grid-column: 1 / -1;
-}
-
-.form-group {
-  margin-bottom: 0.8rem;
-}
-
-.form-group label {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 0.35rem;
-  display: block;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  min-height: 44px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 10px 12px;
-  font: 500 0.95rem -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  color: #0f172a;
-  background: #ffffff;
+  max-width: 480px;
+  padding: 32px 30px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.55),
+    0 0 60px rgba(20, 184, 166, 0.05);
   box-sizing: border-box;
-  transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #0f766e;
-  background: #f0fdfa;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+/* ── Header ── */
+.card-header {
+  margin-bottom: 24px;
+  text-align: center;
 }
 
-.form-group input.is-invalid,
-.form-group select.is-invalid,
-.form-group textarea.is-invalid {
-  border-color: #dc2626;
-  background: #fff7f7;
+.card-header h2 {
+  margin: 0 0 4px;
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
 }
 
-.form-group textarea {
-  min-height: 100px;
-  resize: vertical;
-}
-
-.form-group select {
-  appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, #0f172a 50%), linear-gradient(135deg, #0f172a 50%, transparent 50%);
-  background-position: calc(100% - 12px) center, calc(100% - 8px) center;
-  background-size: 6px 6px;
-  background-repeat: no-repeat;
-  padding-right: 30px;
-}
-
-.form-group input::placeholder,
-.form-group textarea::placeholder {
+.card-header p {
+  margin: 0;
+  font-size: 13px;
   color: #94a3b8;
 }
 
-.error-message {
-  display: block;
-  color: #dc2626;
-  font-size: 12px;
-  font-weight: 700;
-  margin-top: 4px;
-}
-
-.register-actions {
-  margin-top: 1rem;
+/* Stepper */
+.stepper-dots {
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding-bottom: 0.5rem;
+  gap: 8px;
+  margin-top: 12px;
 }
 
-.submit-btn--block {
-  display: block;
+.stepper-dot {
+  width: 24px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  transition: all 0.3s ease;
+}
+
+.stepper-dot.active {
+  background: #2dd4bf;
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.5);
+}
+
+/* ── Step animation ── */
+.step-content {
+  animation: fadeInStep 0.35s ease-in-out;
+}
+
+@keyframes fadeInStep {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Form inputs ── */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 16px;
+}
+
+.input-group label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.input-group input,
+.input-group select,
+.input-group textarea {
   width: 100%;
-  max-width: 280px;
-  padding: 12px 24px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 0 16px;
+  font-size: 14px;
+  color: #fff;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.input-group input,
+.input-group select {
+  height: 44px;
+}
+
+.input-group textarea {
+  padding: 10px 16px;
+  resize: none;
+}
+
+.input-group input:focus,
+.input-group select:focus,
+.input-group textarea:focus {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.input-group select option {
+  background: #0f172a;
+  color: #fff;
+}
+
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ── Error / banner ── */
+.error-message {
+  font-size: 12px;
+  color: #f43f5e;
+  font-weight: 600;
+}
+
+.api-error-banner {
+  padding: 11px;
+  margin-bottom: 16px;
+  background: rgba(244, 63, 94, 0.14);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-radius: 8px;
+  color: #fb7185;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* ── Step actions ── */
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  gap: 14px;
+}
+
+.action-btn {
+  height: 44px;
+  padding: 0 22px;
   border-radius: 10px;
   font-size: 14px;
   font-weight: 700;
-  border: none;
-  background: #0f766e;
-  color: #ffffff;
   cursor: pointer;
-  transition: background 0.16s ease, box-shadow 0.16s ease;
-  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
 }
 
-.submit-btn--block:hover {
-  background: #0d5d5b;
-  box-shadow: 0 6px 16px rgba(15, 118, 110, 0.3);
-  transform: translateY(-1px);
+.back-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
 }
 
-.submit-btn--block:active {
-  transform: translateY(0);
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 
-.patient-register-card .register-login-link p {
+.next-btn {
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.2);
+}
+
+.next-btn:hover {
+  box-shadow: 0 6px 20px rgba(20, 184, 166, 0.35);
+  background: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%);
+}
+
+.register-submit-btn {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
+  flex-grow: 1;
+}
+
+.register-submit-btn:hover {
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+  background: linear-gradient(135deg, #34d399 0%, #065f46 100%);
+}
+
+.register-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Footer ── */
+.card-footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 13.5px;
+  color: #94a3b8;
+}
+
+.card-footer p {
   margin: 0;
-  font-size: 0.92rem;
-  color: #64748b;
 }
 
-.patient-register-card .register-login-link a {
-  color: #0f766e;
-  font-weight: 700;
+.login-link {
+  color: #2dd4bf;
   text-decoration: none;
-  transition: color 0.16s ease;
-}
-
-.patient-register-card .register-login-link a:hover {
-  color: #0d5d5b;
-  text-decoration: underline;
-}
-
-.register-success {
-  margin-top: 12px;
-  border-radius: 10px;
-  padding: 12px;
-  font-size: 13px;
   font-weight: 700;
-  color: #15803d;
-  background: #dcfce7;
-  border: 1px solid #86efac;
+  transition: color 0.15s;
 }
 
-.register-field-error {
-  min-height: 12px;
-  color: #b42318;
-  font-size: 10px;
-  font-style: normal;
-  line-height: 1.25;
+.login-link:hover {
+  color: #14b8a6;
 }
 
-@media (max-width: 900px) {
-  .register-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .patient-register-card {
-    max-width: 760px;
-    padding: 1.1rem 1rem;
-  }
-}
-
-@media (max-width: 640px) {
-  .register-grid {
-    grid-template-columns: 1fr;
+/* ── Responsive ── */
+@media (max-width: 540px) {
+  .patient-register-page {
+    padding: 24px 12px;
   }
 
   .patient-register-card {
     max-width: 100%;
-    padding: 1rem 0.9rem;
+    padding: 24px 18px;
+  }
+
+  .input-row {
+    grid-template-columns: 1fr;
+    gap: 0;
   }
 }

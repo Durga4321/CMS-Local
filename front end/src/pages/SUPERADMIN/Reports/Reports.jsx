@@ -7,7 +7,6 @@ import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
 import { fetchReports } from "../superAdminApi";
 import { formatIndianCurrency } from "../../../utils/format";
-import { formatGeneratedDateTime } from "../../../utils/dateFormat";
 
 const downloadFile = (filename, content, type) => {
   const blob = new Blob([content], { type });
@@ -82,6 +81,7 @@ const buildRowsHtml = (rows, columns) =>
 function Reports() {
   const [rows, setRows] = useState([]);
   const [chartData, setChartData] = useState([]);
+  const [backendSummary, setBackendSummary] = useState(null);
   const [activityRows, setActivityRows] = useState([]);
   const [activeTab, setActiveTab] = useState(reportTabs[0]);
   const [startDate, setStartDate] = useState(getDefaultStartDate);
@@ -105,6 +105,7 @@ function Reports() {
         setRows(reports.rows);
         setChartData(reports.chartData);
         setActivityRows(reports.activityRows || []);
+        setBackendSummary(reports.summary || null);
         setError(reports.error);
       } catch (requestError) {
         if (active) setError(requestError.message || "Unable to load reports.");
@@ -139,6 +140,7 @@ function Reports() {
       setRows(reports.rows);
       setChartData(reports.chartData);
       setActivityRows(reports.activityRows || []);
+      setBackendSummary(reports.summary || null);
       setError(reports.error);
     } catch (requestError) {
       setError(requestError.message || "Unable to fetch report data.");
@@ -208,6 +210,16 @@ function Reports() {
   }, [activityRows, search, startDate, endDate]);
 
   const reportSummary = useMemo(() => {
+    // Prefer backend-provided summary counts when available to avoid frontend-derived duplication
+    if (backendSummary) {
+      return {
+        totalRevenue: backendSummary.totalRevenue || filteredRows.reduce((sum, row) => sum + toNumber(row.revenue), 0),
+        userCount: backendSummary.userCount || backendSummary.users || filteredRows.reduce((sum, row) => sum + toNumber(row.users), 0),
+        activeClinics: backendSummary.activeClinics || backendSummary.activeUserCount || filteredRows.filter((row) => row.status === "Active").length,
+        clinicCount: backendSummary.clinicCount || backendSummary.clinics || filteredRows.length,
+      };
+    }
+
     const revenueRows = filteredRows.filter((row) => toNumber(row.revenue) > 0);
     const userRows = revenueRows.length ? revenueRows : filteredRows;
     const totalRevenue = filteredRows.reduce((sum, row) => sum + toNumber(row.revenue), 0);
@@ -220,7 +232,7 @@ function Reports() {
       activeClinics,
       clinicCount: filteredRows.length,
     };
-  }, [filteredRows]);
+  }, [filteredRows, backendSummary]);
 
   const summaryCards = useMemo(
     () => [
@@ -238,7 +250,7 @@ function Reports() {
       },
       {
         label: "Active Clinics",
-        value: `${reportSummary.activeClinics}/${reportSummary.clinicCount}`,
+        value: `${reportSummary.clinicCount}`,
         icon: BarChart3,
         tone: "green",
       },
@@ -285,7 +297,6 @@ function Reports() {
   const hasReportContent = exportRows.length > 0 || chartRows.length > 0;
 
   const exportExcel = () => {
-    const generatedAt = formatGeneratedDateTime();
     const summaryHtml = buildRowsHtml(summaryRows, ["Metric", "Value"]);
     const chartHtml = buildRowsHtml(chartRows, ["Period", "Revenue", "Users"]);
     const detailHtml = buildRowsHtml(exportRows, [
@@ -302,7 +313,7 @@ function Reports() {
         <head><meta charset="utf-8" /></head>
         <body>
           <h2>Super Admin Reports</h2>
-          <p>Generated ${htmlEscape(generatedAt)}</p>
+          <p>Generated ${htmlEscape(new Date().toLocaleString("en-IN"))}</p>
           <h3>Summary Metrics</h3>
           <table border="1"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${summaryHtml}</tbody></table>
           <h3>Usage Analytics</h3>
@@ -319,7 +330,6 @@ function Reports() {
   };
 
   const exportPdf = () => {
-    const generatedAt = formatGeneratedDateTime();
     const summaryHtml = buildRowsHtml(summaryRows, ["Metric", "Value"]);
     const chartHtml = buildRowsHtml(chartRows, ["Period", "Revenue", "Users"]);
     const rowsHtml = buildRowsHtml(exportRows, [
@@ -358,7 +368,7 @@ function Reports() {
         </head>
         <body>
           <h1>Super Admin Reports</h1>
-          <p>Generated ${htmlEscape(generatedAt)}</p>
+          <p>Generated ${new Date().toLocaleString("en-IN")}</p>
           <div class="metrics">
             <div class="metric"><b>${formatIndianCurrency(reportSummary.totalRevenue)}</b><span>Total Revenue</span></div>
             <div class="metric"><b>${reportSummary.userCount.toLocaleString("en-IN")}</b><span>Users</span></div>
@@ -505,7 +515,7 @@ function Reports() {
         <div style={{ marginTop: 16 }}>
         <DataTable
           columns={columns}
-          rows={filteredRows}
+          rows={filteredRows.slice(0, 5)}
           loading={loading}
           error={error}
           emptyMessage="No report records found."

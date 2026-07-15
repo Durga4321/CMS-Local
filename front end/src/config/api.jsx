@@ -1,10 +1,14 @@
 const DEFAULT_API_BASE_URL = "https://posological-bea-subacademically.ngrok-free.dev";
+// Images are served from the localhost backend
+const DEFAULT_API_ASSET_BASE_URL = "https://localhost:7178";
 
 export const API_BASE_URL = (
   process.env.REACT_APP_API_BASE_URL || DEFAULT_API_BASE_URL
 ).replace(/\/+$/, "");
 
-export const API_ASSET_BASE_URL = API_BASE_URL;
+export const API_ASSET_BASE_URL = (
+  process.env.REACT_APP_API_ASSET_BASE_URL || DEFAULT_API_ASSET_BASE_URL
+).replace(/\/+$/, "");
 
 export const apiUrl = (path) => {
   const cleanPath = String(path || "")
@@ -33,6 +37,8 @@ export const PATIENT_API = {
   dashboard: "patient-portal/dashboard",
   profile: "patient-portal/profile",
   clinics: "patient-portal/clinics",
+  branches: "patient-portal/branches",
+  branchDepartments: "patient-portal/branches/{branchId}/departments",
   clinicDepartments: "patient-portal/clinics/{clinicId}/departments",
   doctors: "patient-portal/doctors",
   doctorSlots: "patient-portal/doctors/{doctorId}/slots",

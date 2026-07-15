@@ -1,0 +1,360 @@
+/* ─── Patient Login — Centered card with orbit rings ─── */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+.patient-login-page {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: radial-gradient(circle at 30% 70%, #032f30 0%, #020617 60%, #010312 100%);
+  color: #f8fafc;
+  font-family: 'Inter', sans-serif;
+  box-sizing: border-box;
+}
+
+/* ── Stars ── */
+.stars-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.star {
+  position: absolute;
+  background: #fff;
+  border-radius: 50%;
+  opacity: 0.8;
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.12; transform: scale(0.8); }
+  50%      { opacity: 0.85; transform: scale(1.3); box-shadow: 0 0 6px rgba(255,255,255,0.7); }
+}
+
+/* ══════════════════════════════════════════════
+   ORBIT SYSTEM  –  sits behind the card
+   ══════════════════════════════════════════════ */
+.orbit-system {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* shared ring base */
+.orbit-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(45, 212, 191, 0.14);
+}
+
+/* Inner ring  —  clockwise, 22 s */
+.orbit-ring--inner {
+  width: 420px;
+  height: 420px;
+  animation: spinCW 22s linear infinite;
+}
+
+/* Outer ring  —  counter-clockwise, 30 s */
+.orbit-ring--outer {
+  width: 580px;
+  height: 580px;
+  border-color: rgba(99, 102, 241, 0.12);
+  animation: spinCCW 30s linear infinite;
+}
+
+@keyframes spinCW  { to { transform: rotate(360deg); } }
+@keyframes spinCCW { to { transform: rotate(-360deg); } }
+
+/* slot = invisible arm from ring centre to the edge */
+.orbit-slot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+}
+
+/* position the icon at the ring radius */
+.orbit-slot--inner { --r: 210px; }
+.orbit-slot--outer { --r: 290px; }
+
+.orbit-icon {
+  position: absolute;
+  top: calc(-1 * var(--r));
+  left: -20px;               /* half icon box */
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
+  border: 1.5px solid var(--icon-border, rgba(45, 212, 191, 0.3));
+  color: var(--icon-color, #2dd4bf);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--icon-color, #2dd4bf) 30%, transparent);
+  transition: box-shadow 0.3s;
+}
+
+.orbit-icon--sm {
+  width: 34px;
+  height: 34px;
+  left: -17px;
+  top: calc(-1 * var(--r));
+}
+
+/* counter-rotate so icons stay upright */
+.orbit-icon--counter-cw  { animation: counterCW  22s linear infinite; }
+.orbit-icon--counter-ccw { animation: counterCCW 30s linear infinite; }
+
+@keyframes counterCW  { to { transform: rotate(-360deg); } }
+@keyframes counterCCW { to { transform: rotate(360deg); } }
+
+/* ══════════════════════════════════════════════
+   CENTERED LOGIN CARD
+   ══════════════════════════════════════════════ */
+.login-card-wrapper {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeUp 0.6s ease-out;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* logo badge */
+.login-logo-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 28px rgba(20, 184, 166, 0.45);
+  margin-bottom: 8px;
+}
+
+.login-brand-name {
+  margin: 0 0 20px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+/* glass card */
+.patient-login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 36px 34px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.55),
+    0 0 80px rgba(20, 184, 166, 0.06);
+  box-sizing: border-box;
+}
+
+.card-header {
+  margin-bottom: 26px;
+  text-align: center;
+}
+
+.card-header h2 {
+  margin: 0 0 6px;
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.card-header p {
+  margin: 0;
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+/* ── form inputs ── */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+.input-group label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.input-group input {
+  width: 100%;
+  height: 46px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 0 16px;
+  font-size: 14.5px;
+  color: #fff;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.input-group input:focus {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.input-group input.input-error {
+  border-color: #f43f5e;
+}
+
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle-btn:hover { color: #94a3b8; }
+
+.error-message {
+  font-size: 12px;
+  color: #f43f5e;
+  font-weight: 600;
+}
+
+.login-success-banner {
+  padding: 11px;
+  margin-bottom: 18px;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  color: #34d399;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.api-error-banner {
+  padding: 11px;
+  margin-bottom: 18px;
+  background: rgba(244, 63, 94, 0.14);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-radius: 8px;
+  color: #fb7185;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* submit button */
+.login-btn {
+  width: 100%;
+  height: 48px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+  box-shadow: 0 4px 16px rgba(20, 184, 166, 0.3);
+  margin-top: 6px;
+}
+
+.login-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(20, 184, 166, 0.4);
+  background: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%);
+}
+
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* footer */
+.card-footer {
+  margin-top: 26px;
+  text-align: center;
+  font-size: 13.5px;
+  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card-footer p { margin: 0; }
+
+.register-link,
+.admin-link {
+  color: #2dd4bf;
+  text-decoration: none;
+  font-weight: 700;
+  transition: color 0.15s;
+}
+
+.register-link:hover,
+.admin-link:hover {
+  color: #14b8a6;
+}
+
+.admin-link-p {
+  font-size: 12.5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 14px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .orbit-ring--inner { width: 320px; height: 320px; }
+  .orbit-ring--outer { width: 440px; height: 440px; }
+  .orbit-slot--inner { --r: 160px; }
+  .orbit-slot--outer { --r: 220px; }
+
+  .patient-login-card {
+    max-width: 92vw;
+    padding: 28px 20px;
+  }
+}
