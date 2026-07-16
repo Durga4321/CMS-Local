@@ -42,6 +42,13 @@ const isAdminRoleUser = (user = {}) => {
   return role === "admin";
 };
 
+const FIELD_LABELS = {
+  name: "Name",
+  email: "Email",
+  mobileNumber: "Mobile number",
+  password: "Password",
+};
+
 function Users() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
@@ -169,7 +176,14 @@ function Users() {
 
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
-      setError("Please fix the highlighted fields.");
+      const invalidFields = Object.keys(nextFieldErrors).map(
+        (field) => FIELD_LABELS[field] || field
+      );
+      setError(
+        invalidFields.length === 1
+          ? `Please correct the ${invalidFields[0]} field.`
+          : `Please correct the following fields: ${invalidFields.join(", ")}.`
+      );
       return;
     }
 
@@ -295,12 +309,21 @@ function Users() {
         </span>
       ),
     },
-    { key: "lastActive", label: "Last Active" },
+    {
+      key: "lastActive",
+      label: "Last Active",
+      width: "minmax(168px, 1fr)",
+      cellClassName: "sa-table-cell--nowrap sa-table-cell--last-active",
+      render: (user) => {
+        const lastActive = user.lastActive || "Never Logged In";
+        return <span title={lastActive}>{lastActive}</span>;
+      },
+    },
     {
       key: "actions",
       label: "Actions",
-      width: "minmax(178px, 0.8fr)",
-      cellClassName: "sa-table-cell--nowrap",
+      width: "minmax(176px, 0.9fr)",
+      cellClassName: "sa-table-cell--actions",
       render: (user) => (
         <div className="sa-actions">
           {(() => {
@@ -370,6 +393,7 @@ function Users() {
       />
 
       <DataTable
+        className="sa-table--users"
         columns={columns}
         rows={rows}
         loading={loading}

@@ -152,6 +152,16 @@ function Receptionists() {
   const [permissionsLoading, setPermissionsLoading] = useState(true);
   const [permissionRecord, setPermissionRecord] = useState(null);
 
+  // Keep the page-level success banner in sync with the transient toast.
+  // Without this, a status-change confirmation remains until another action
+  // clears the component state.
+  useEffect(() => {
+    if (!success) return undefined;
+
+    const timeoutId = window.setTimeout(() => setSuccess(""), 3500);
+    return () => window.clearTimeout(timeoutId);
+  }, [success]);
+
   const hospitalId = getHospitalId();
   const clinicDisplayName =
     getStoredClinicName() || getClinicDisplayName({ hospitalId }, "Clinic");
@@ -586,7 +596,19 @@ function Receptionists() {
         </div>
       </div>
 
-      {success ? <div className="receptionists-success">{success}</div> : null}
+      {success ? (
+        <div className="receptionists-success" role="status">
+          <span>{success}</span>
+          <button
+            type="button"
+            className="receptionists-notification-close"
+            aria-label="Dismiss success notification"
+            onClick={() => setSuccess("")}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      ) : null}
       {error ? <div className="receptionists-error">{error}</div> : null}
 
       <div className="receptionists-table">

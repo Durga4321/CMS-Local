@@ -27,6 +27,7 @@ const htmlEscape = (value) =>
 const toNumber = (value) => Number(value || 0);
 const getPerformance = (row) => (row.status === "Active" ? "Healthy" : "Needs Review");
 const reportTabs = ["Reports Dashboard", "Revenue Report", "User Activity"];
+const getAdminDisplayName = (value) => String(value || "").trim() || "Not Assigned";
 
 const toDateInputValue = (date) => date.toISOString().slice(0, 10);
 const getDefaultStartDate = () => {
@@ -156,7 +157,11 @@ function Reports() {
       width: "minmax(60px, 0.4fr)",
       render: (_item, index) => index + 1,
     },
-    { key: "adminName", label: "Admin" },
+    {
+      key: "adminName",
+      label: "Admin",
+      render: (clinic) => getAdminDisplayName(clinic.adminName),
+    },
     { key: "name", label: "Clinic" },
     {
       key: "revenue",
@@ -261,7 +266,7 @@ function Reports() {
   const exportRows = useMemo(
     () =>
       filteredRows.map((row) => ({
-        Admin: row.adminName || "-",
+        Admin: getAdminDisplayName(row.adminName),
         "Admin Email": row.adminEmail || "-",
         Clinic: row.name || "-",
         Revenue: formatIndianCurrency(row.revenue),

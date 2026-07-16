@@ -26,7 +26,6 @@ import {
 } from "../../utils/branchApi";
 import {
   onlyAddressText,
-  onlyAlpha,
   onlyDigits,
   onlyIndianMobileValue,
   validateGmail,
@@ -35,6 +34,12 @@ import {
   validateText,
 } from "../../utils/validation";
 import { getStoredClinicName } from "../../utils/clinicDisplay";
+import {
+  getCitiesForDistrict,
+  getDistrictsForState,
+  INDIA_COUNTRY,
+  INDIAN_STATES,
+} from "../../utils/indianLocations";
 
 const getEmptyForm = (hospitalId = getStoredHospitalId()) => ({
   name: "",
@@ -45,7 +50,7 @@ const getEmptyForm = (hospitalId = getStoredHospitalId()) => ({
   city: "",
   district: "",
   state: "",
-  country: "India",
+  country: INDIA_COUNTRY,
   postalCode: "",
 });
 
@@ -69,7 +74,7 @@ const getBranchForm = (branch, hospitalId) => ({
   city: String(readBranchField(branch, "city", "City") || ""),
   district: String(readBranchField(branch, "district", "District") || ""),
   state: String(readBranchField(branch, "state", "State") || ""),
-  country: String(readBranchField(branch, "country", "Country") || "India"),
+  country: String(readBranchField(branch, "country", "Country") || INDIA_COUNTRY),
   postalCode: String(readBranchField(branch, "postalCode", "PostalCode", "pincode") || ""),
 });
 
@@ -114,6 +119,17 @@ function Branches() {
   const [editingBranch, setEditingBranch] = useState(null);
   const [form, setForm] = useState(getEmptyForm(hospitalId));
   const [fieldErrors, setFieldErrors] = useState({});
+
+  const districts = useMemo(
+    () => getDistrictsForState(form.state),
+    [form.state]
+  );
+
+  // City choices are constrained to the selected state and district.
+  const cities = useMemo(
+    () => getCitiesForDistrict(form.state, form.district),
+    [form.district, form.state]
+  );
 
   const fetchBranches = async () => {
     setLoading(true);
@@ -184,10 +200,6 @@ function Branches() {
   const updateField = (name, value) => {
     let nextValue = value;
 
-    if (["city", "district", "state", "country"].includes(name)) {
-      nextValue = onlyAlpha(value);
-    }
-
     if (name === "phone") {
       nextValue = onlyIndianMobileValue(value);
     }
@@ -200,10 +212,36 @@ function Branches() {
       nextValue = onlyAddressText(value);
     }
 
-    setForm((previous) => ({
-      ...previous,
-      [name]: nextValue,
-    }));
+    setForm((previous) => {
+      if (name === "country") {
+        return {
+          ...previous,
+          country: nextValue,
+          state: "",
+          district: "",
+          city: "",
+        };
+      }
+
+      if (name === "state") {
+        return {
+          ...previous,
+          state: nextValue,
+          district: "",
+          city: "",
+        };
+      }
+
+      if (name === "district") {
+        return {
+          ...previous,
+          district: nextValue,
+          city: "",
+        };
+      }
+
+      return { ...previous, [name]: nextValue };
+    });
 
     setFieldErrors((previous) => ({
       ...previous,
@@ -230,6 +268,22 @@ function Branches() {
 
     if (!nextErrors.postalCode && !/^\d{5,6}$/.test(form.postalCode.trim())) {
       nextErrors.postalCode = "Postal code must be 5 or 6 digits.";
+    }
+
+    if (!nextErrors.country && form.country !== INDIA_COUNTRY) {
+      nextErrors.country = "Country must be India.";
+    }
+
+    if (!nextErrors.state && !INDIAN_STATES.includes(form.state)) {
+      nextErrors.state = "Select a valid state.";
+    }
+
+    if (!nextErrors.district && !getDistrictsForState(form.state).includes(form.district)) {
+      nextErrors.district = "Select a valid district for the selected state.";
+    }
+
+    if (!nextErrors.city && !getCitiesForDistrict(form.state, form.district).includes(form.city)) {
+      nextErrors.city = "Select a valid city for the selected district.";
     }
 
     Object.keys(nextErrors).forEach((key) => {
@@ -566,58 +620,76 @@ function Branches() {
               </div>
 
               <div className="branches-field">
-                <label htmlFor="branch-city">City</label>
-                <input
-                  id="branch-city"
-                  value={form.city}
-                  onChange={(event) => updateField("city", event.target.value)}
-                  className={fieldErrors.city ? "is-invalid" : ""}
+                <label htmlFor="branch-country">Country</label>
+                <select
+                  id="branch-country"
+                  value={form.country}
+                  onChange={(event) => updateField("country", event.target.value)}
+                  className={fieldErrors.country ? "is-invalid" : ""}
                   disabled={saving}
-                />
-                {fieldErrors.city ? (
-                  <span className="branches-field-error">{fieldErrors.city}</span>
-                ) : null}
-              </div>
-
-              <div className="branches-field">
-                <label htmlFor="branch-district">District</label>
-                <input
-                  id="branch-district"
-                  value={form.district}
-                  onChange={(event) => updateField("district", event.target.value)}
-                  className={fieldErrors.district ? "is-invalid" : ""}
-                  disabled={saving}
-                />
-                {fieldErrors.district ? (
-                  <span className="branches-field-error">{fieldErrors.district}</span>
+                >
+                  <option value="">Select country</option>
+                  <option value={INDIA_COUNTRY}>{INDIA_COUNTRY}</option>
+                </select>
+                {fieldErrors.country ? (
+                  <span className="branches-field-error">{fieldErrors.country}</span>
                 ) : null}
               </div>
 
               <div className="branches-field">
                 <label htmlFor="branch-state">State</label>
-                <input
+                <select
                   id="branch-state"
                   value={form.state}
                   onChange={(event) => updateField("state", event.target.value)}
                   className={fieldErrors.state ? "is-invalid" : ""}
-                  disabled={saving}
-                />
+                  disabled={saving || form.country !== INDIA_COUNTRY}
+                >
+                  <option value="">{form.country ? "Select state" : "Select country first"}</option>
+                  {INDIAN_STATES.map((state) => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
                 {fieldErrors.state ? (
                   <span className="branches-field-error">{fieldErrors.state}</span>
                 ) : null}
               </div>
 
               <div className="branches-field">
-                <label htmlFor="branch-country">Country</label>
-                <input
-                  id="branch-country"
-                  value={form.country}
-                  onChange={(event) => updateField("country", event.target.value)}
-                  className={fieldErrors.country ? "is-invalid" : ""}
-                  disabled={saving}
-                />
-                {fieldErrors.country ? (
-                  <span className="branches-field-error">{fieldErrors.country}</span>
+                <label htmlFor="branch-district">District</label>
+                <select
+                  id="branch-district"
+                  value={form.district}
+                  onChange={(event) => updateField("district", event.target.value)}
+                  className={fieldErrors.district ? "is-invalid" : ""}
+                  disabled={saving || !form.state}
+                >
+                  <option value="">{form.state ? "Select district" : "Select state first"}</option>
+                  {districts.map((district) => (
+                    <option key={district} value={district}>{district}</option>
+                  ))}
+                </select>
+                {fieldErrors.district ? (
+                  <span className="branches-field-error">{fieldErrors.district}</span>
+                ) : null}
+              </div>
+
+              <div className="branches-field">
+                <label htmlFor="branch-city">City</label>
+                <select
+                  id="branch-city"
+                  value={form.city}
+                  onChange={(event) => updateField("city", event.target.value)}
+                  className={fieldErrors.city ? "is-invalid" : ""}
+                  disabled={saving || !form.district}
+                >
+                  <option value="">{form.district ? "Select city" : "Select district first"}</option>
+                  {cities.map((city) => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </select>
+                {fieldErrors.city ? (
+                  <span className="branches-field-error">{fieldErrors.city}</span>
                 ) : null}
               </div>
 

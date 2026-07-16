@@ -424,6 +424,33 @@
   padding: 14px 16px;
 }
 
+/* User rows have several fixed-width columns. Keep their grid wide enough so
+   the last-activity label and action buttons remain aligned and readable. */
+.sa-table--users .sa-table-head,
+.sa-table--users .sa-table-row {
+  min-width: 1080px;
+}
+
+.sa-table--users .sa-table-cell--last-active {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sa-table--users .sa-table-cell--last-active > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Clinics has four row actions. Reserve space for all controls and keep a
+   consistent buffer between the final action and the table border. */
+.sa-table--clinics .sa-table-head,
+.sa-table--clinics .sa-table-row {
+  padding-right: 28px;
+}
+
 .sa-table-head {
   border-bottom: 1px solid #dbe3ed;
   color: #111827;
@@ -568,6 +595,11 @@
   gap: 8px;
   flex-wrap: nowrap;
   white-space: nowrap;
+}
+
+.sa-table-cell--actions {
+  padding-right: 8px;
+  box-sizing: border-box;
 }
 
 .sa-icon-btn {
@@ -770,12 +802,16 @@
 
 .sa-tabs {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+  column-gap: 10px;
+  row-gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 14px;
 }
 
 .sa-tab {
+  flex: 0 0 auto;
   height: 38px;
   border: 1px solid #dbe3ed;
   border-radius: 8px;

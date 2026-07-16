@@ -835,3 +835,61 @@ export const INDIAN_STATES = Object.keys(INDIAN_STATE_DISTRICTS);
 
 export const getDistrictsForState = (state) =>
   INDIAN_STATE_DISTRICTS[state] || [];
+
+// District headquarters and commonly used cities. District names are used as a
+// safe fallback when a smaller district does not yet have a separate city list.
+// This keeps every selectable location within the selected state and district.
+export const INDIAN_DISTRICT_CITIES = {
+  "Andhra Pradesh": {
+    Ananthapuramu: ["Anantapur"],
+    Chittoor: ["Chittoor", "Tirupati"],
+    Guntur: ["Guntur"],
+    Kakinada: ["Kakinada"],
+    Krishna: ["Vijayawada"],
+    Nellore: ["Nellore"],
+    Visakhapatnam: ["Visakhapatnam"],
+    Vizianagaram: ["Vizianagaram"],
+  },
+  Assam: { Kamrup: ["Guwahati"], Jorhat: ["Jorhat"], Dibrugarh: ["Dibrugarh"] },
+  Bihar: { Patna: ["Patna"], Gaya: ["Gaya"], Muzaffarpur: ["Muzaffarpur"] },
+  Chandigarh: { Chandigarh: ["Chandigarh"] },
+  Chhattisgarh: { Raipur: ["Raipur"], Bilaspur: ["Bilaspur"], Durg: ["Bhilai", "Durg"] },
+  Delhi: { "New Delhi": ["New Delhi"], "Central Delhi": ["Delhi"] },
+  Goa: { "North Goa": ["Panaji", "Mapusa"], "South Goa": ["Margao", "Vasco da Gama"] },
+  Gujarat: {
+    Ahmedabad: ["Ahmedabad"], Surat: ["Surat"], Vadodara: ["Vadodara"],
+    Rajkot: ["Rajkot"], Gandhinagar: ["Gandhinagar"], Jamnagar: ["Jamnagar"],
+  },
+  Haryana: { Gurugram: ["Gurugram"], Faridabad: ["Faridabad"], Hisar: ["Hisar"], Karnal: ["Karnal"] },
+  "Himachal Pradesh": { Shimla: ["Shimla"], Kangra: ["Dharamshala"], Solan: ["Solan"] },
+  "Jammu and Kashmir": { Jammu: ["Jammu"], Srinagar: ["Srinagar"], Anantnag: ["Anantnag"] },
+  Jharkhand: { Ranchi: ["Ranchi"], Dhanbad: ["Dhanbad"], "East Singhbhum": ["Jamshedpur"] },
+  Karnataka: {
+    "Bengaluru Urban": ["Bengaluru"], Mysuru: ["Mysuru"], Belagavi: ["Belagavi"],
+    Dakshina: ["Mangaluru"], Dharwad: ["Hubballi", "Dharwad"], Kalaburagi: ["Kalaburagi"],
+  },
+  Kerala: { Ernakulam: ["Kochi"], Thiruvananthapuram: ["Thiruvananthapuram"], Kozhikode: ["Kozhikode"], Thrissur: ["Thrissur"] },
+  "Madhya Pradesh": { Bhopal: ["Bhopal"], Indore: ["Indore"], Jabalpur: ["Jabalpur"], Gwalior: ["Gwalior"] },
+  Maharashtra: {
+    "Mumbai City": ["Mumbai"], "Mumbai Suburban": ["Mumbai"], Pune: ["Pune"],
+    Nagpur: ["Nagpur"], Nashik: ["Nashik"], Thane: ["Thane"], Aurangabad: ["Chhatrapati Sambhajinagar"],
+  },
+  Odisha: { Khordha: ["Bhubaneswar"], Cuttack: ["Cuttack"], Sambalpur: ["Sambalpur"], Puri: ["Puri"] },
+  Puducherry: { Puducherry: ["Puducherry"] },
+  Punjab: { Ludhiana: ["Ludhiana"], Amritsar: ["Amritsar"], Jalandhar: ["Jalandhar"], Patiala: ["Patiala"] },
+  Rajasthan: { Jaipur: ["Jaipur"], Jodhpur: ["Jodhpur"], Udaipur: ["Udaipur"], Kota: ["Kota"], Ajmer: ["Ajmer"] },
+  "Tamil Nadu": {
+    Chennai: ["Chennai"], Coimbatore: ["Coimbatore"], Madurai: ["Madurai"], Salem: ["Salem"],
+    Tiruchirappalli: ["Tiruchirappalli"], Tiruppur: ["Tiruppur"], Vellore: ["Vellore"],
+  },
+  Telangana: { Hyderabad: ["Hyderabad"], Warangal: ["Warangal"], Nizamabad: ["Nizamabad"], Karimnagar: ["Karimnagar"] },
+  "Uttar Pradesh": {
+    Lucknow: ["Lucknow"], "Kanpur Nagar": ["Kanpur"], Agra: ["Agra"], Varanasi: ["Varanasi"],
+    Prayagraj: ["Prayagraj"], Meerut: ["Meerut"], Ghaziabad: ["Ghaziabad"],
+  },
+  Uttarakhand: { Dehradun: ["Dehradun"], Haridwar: ["Haridwar"], Nainital: ["Nainital"] },
+  "West Bengal": { Kolkata: ["Kolkata"], Darjeeling: ["Darjeeling", "Siliguri"], Howrah: ["Howrah"], "North 24 Parganas": ["Barasat"] },
+};
+
+export const getCitiesForDistrict = (state, district) =>
+  INDIAN_DISTRICT_CITIES[state]?.[district] || (district ? [district] : []);

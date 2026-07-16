@@ -116,6 +116,29 @@
   background: #ecfdf5;
   border: 1px solid #bbf7d0;
   color: #047857;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.receptionists-notification-close {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: currentColor;
+  cursor: pointer;
+}
+
+.receptionists-notification-close:hover {
+  background: rgb(4 120 87 / 12%);
 }
 
 .receptionists-error {

@@ -7,6 +7,7 @@ function DataTable({
   emptyMessage = "No records found.",
   getRowKey,
   rowIndexOffset = 0,
+  className = "",
 }) {
   const gridTemplateColumns = columns
     .map((column) => column.width || "minmax(0, 1fr)")
@@ -17,7 +18,7 @@ function DataTable({
   }
 
   return (
-    <div className="sa-table">
+    <div className={`sa-table${className ? ` ${className}` : ""}`}>
       <div className="sa-table-head" style={{ gridTemplateColumns }}>
         {columns.map((column) => (
           <span key={column.key}>{column.label}</span>

@@ -101,7 +101,8 @@ function Clinics() {
     {
       key: "actions",
       label: "Actions",
-      width: "minmax(112px, 0.8fr)",
+      width: "minmax(176px, 0.9fr)",
+      cellClassName: "sa-table-cell--actions",
       render: (clinic) => {
         const isActive = String(clinic.status || "").trim().toLowerCase() === "active";
         const disabledTitle = "Clinic inactive — only status toggle is available";
@@ -165,6 +166,7 @@ function Clinics() {
       />
 
       <DataTable
+        className="sa-table--clinics"
         columns={columns}
         rows={rows}
         loading={loading}
