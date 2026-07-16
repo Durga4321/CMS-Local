@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE_URL = "https://posological-bea-subacademically.ngrok-free.dev";
+const DEFAULT_API_BASE_URL = "https://stroller-uplifted-freebee.ngrok-free.dev";
 // Images are served from the localhost backend
 const DEFAULT_API_ASSET_BASE_URL = "https://localhost:7178";
 
