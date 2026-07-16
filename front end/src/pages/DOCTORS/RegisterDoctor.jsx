@@ -5,6 +5,7 @@ import "./RegisterDoctor.css";
 import { apiUrl } from "../../config/api";
 import PasswordField from "../../components/PasswordField";
 import { useToast } from "../../components/ToastProvider";
+import { formatTitleCase } from "../../utils/format";
 import {
   onlyAlpha,
   onlyIndianMobileValue,
@@ -130,7 +131,7 @@ function RegisterDoctor() {
     let nextValue = value;
 
     if (name === "name") {
-      nextValue = onlyAlpha(value);
+      nextValue = formatTitleCase(onlyAlpha(value));
     }
 
     if (name === "mobileNumber") {
@@ -212,7 +213,7 @@ function RegisterDoctor() {
     }
 
     const doctorId = Number(form.doctorId);
-    const name = form.name.trim();
+    const name = formatTitleCase(form.name.trim());
     const mobileNumber = form.mobileNumber.trim();
     const email = form.email.trim();
     const clinicId = hospitalId ? Number(hospitalId) || hospitalId : undefined;

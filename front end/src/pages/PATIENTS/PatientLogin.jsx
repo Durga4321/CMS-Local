@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useToast } from "../../components/ToastProvider";
 import { validateGmail } from "../../utils/validation";
+import { formatTitleCase } from "../../utils/format";
 import {
   Heart, Eye, EyeOff, Stethoscope, Plus, Pill, Activity,
   Building2, Thermometer, Syringe,
@@ -207,8 +208,10 @@ function PatientLogin() {
         return;
       }
 
-      const displayName = authData.name || authData.firstName ||
-        getClaim(claims, "name", "unique_name") || "Patient";
+      const displayName = formatTitleCase(
+        authData.name || authData.firstName ||
+        getClaim(claims, "name", "unique_name") || "Patient"
+      );
       const patientId = authData.patientId ||
         getClaim(claims, "PatientId", "patientId") || "";
 

@@ -212,6 +212,16 @@
   overflow-wrap: anywhere;
 }
 
+.receptionists-cell.receptionists-email {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
 .receptionists-status {
   min-width: 74px;
   height: 28px;

@@ -126,6 +126,39 @@
   font-size: 14px;
 }
 
+.branches-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.branches-field-suggestions {
+  margin: 6px 0 0;
+  padding: 8px 0;
+  border: 1px solid #dbe3ed;
+  border-radius: 8px;
+  background: #ffffff;
+  max-height: 160px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.branches-field-suggestions li {
+  padding: 10px 12px;
+  cursor: pointer;
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.branches-field-suggestions li:hover {
+  background: #f8fafc;
+}
+
+.branches-field textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
 .branches-success,
 .branches-error {
   margin: 0 0 12px;

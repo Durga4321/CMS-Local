@@ -13,6 +13,7 @@ import {
   updateUserStatus,
 } from "../superAdminApi";
 import { useToast } from "../../../components/ToastProvider";
+import { formatTitleCase } from "../../../utils/format";
 import {
   onlyAlpha,
   onlyIndianMobileValue,
@@ -264,7 +265,10 @@ function Admins() {
     const { checked, name, type, value } = event.target;
     let nextValue = value;
 
-    if (["fullName", "role"].includes(name)) {
+    if (name === "fullName") {
+      nextValue = formatTitleCase(onlyAlpha(value));
+    }
+    if (name === "role") {
       nextValue = onlyAlpha(value);
     }
 

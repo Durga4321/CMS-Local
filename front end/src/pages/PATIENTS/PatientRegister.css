@@ -76,6 +76,18 @@
   text-align: center;
 }
 
+.card-header.card-header--with-back {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  text-align: left;
+}
+
+.card-header.card-header--with-back > div {
+  min-width: 0;
+}
+
 .card-header h2 {
   margin: 0 0 4px;
   font-size: 24px;
@@ -231,6 +243,17 @@
 .back-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
+}
+
+.patient-register-back-btn {
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .next-btn {

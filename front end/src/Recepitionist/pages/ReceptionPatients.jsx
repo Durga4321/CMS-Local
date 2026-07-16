@@ -40,6 +40,7 @@ import {
   validateRequired,
   validateSelected,
 } from "../../utils/validation";
+import { formatTitleCase } from "../../utils/format";
 
 const emptyForm = {
   name: "",
@@ -418,7 +419,7 @@ function ReceptionPatients() {
     let nextValue = value;
 
     if (["name", "emergencyContactName"].includes(name)) {
-      nextValue = onlyAlpha(value);
+      nextValue = formatTitleCase(onlyAlpha(value));
     }
 
     if (["phone", "emergencyContactPhone"].includes(name)) {

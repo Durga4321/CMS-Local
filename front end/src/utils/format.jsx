@@ -51,3 +51,11 @@ export const formatTitleCase = (value = "") =>
         )
         .join("")
     );
+
+export const capitalizeFirstLetter = (value = "") =>
+  String(value)
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/^[^\s]/, (char) => char.toUpperCase());
+
+export const formatDisplayText = (value = "") => formatTitleCase(value);

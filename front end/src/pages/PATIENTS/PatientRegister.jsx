@@ -6,6 +6,7 @@ import PasswordField from "../../components/PasswordField";
 import { buildAddress, emptyAddressParts, onlyPincodeValue } from "../../utils/address";
 import { INDIA_COUNTRY } from "../../utils/indianLocations";
 import { fetchPincodeLocation } from "../../utils/pincodeLocation";
+import { formatTitleCase } from "../../utils/format";
 import { Heart, ChevronRight, ChevronLeft, Check } from "lucide-react";
 import "./PatientRegister.css";
 
@@ -120,7 +121,7 @@ function PatientRegister() {
     }
 
     if (name === "firstName" || name === "lastName") {
-      value = value.replace(/[^a-zA-Z\s]/g, "");
+      value = formatTitleCase(value.replace(/[^a-zA-Z\s]/g, ""));
     }
 
     if (name === "streetVillage" || name === "area") {
@@ -240,6 +241,14 @@ function PatientRegister() {
     setCurrentStep((prev) => prev - 1);
   };
 
+  const handleBackNavigation = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate("/login/patient");
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!validateStep(3)) {
@@ -251,8 +260,8 @@ function PatientRegister() {
     setErrors({});
 
     const payload = {
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
+      firstName: formatTitleCase(form.firstName.trim()),
+      lastName: formatTitleCase(form.lastName.trim()),
       gender: form.gender,
       dateOfBirth: form.dob,
       mobileNumber: form.mobile,
@@ -305,14 +314,24 @@ function PatientRegister() {
         <p className="register-brand-name">Patient Registration</p> */}
 
         <div className="patient-register-card">
-          <div className="card-header">
-            <h2>Create Account</h2>
-            <p>Step {currentStep} of 3</p>
-            <div className="stepper-dots">
-              <span className={`stepper-dot ${currentStep >= 1 ? "active" : ""}`} />
-              <span className={`stepper-dot ${currentStep >= 2 ? "active" : ""}`} />
-              <span className={`stepper-dot ${currentStep >= 3 ? "active" : ""}`} />
+          <div className="card-header card-header--with-back">
+            <button
+              type="button"
+              className="action-btn back-btn patient-register-back-btn"
+              onClick={handleBackNavigation}
+              aria-label="Go back"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <div>
+              <h2>Create Account</h2>
+              <p>Step {currentStep} of 3</p>
             </div>
+          </div>
+          <div className="stepper-dots">
+            <span className={`stepper-dot ${currentStep >= 1 ? "active" : ""}`} />
+            <span className={`stepper-dot ${currentStep >= 2 ? "active" : ""}`} />
+            <span className={`stepper-dot ${currentStep >= 3 ? "active" : ""}`} />
           </div>
 
           <form onSubmit={handleSubmit} noValidate>

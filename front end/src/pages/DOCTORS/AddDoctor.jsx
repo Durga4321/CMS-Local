@@ -219,6 +219,7 @@ import { useNavigate } from "react-router-dom";
 import { Camera, X } from "lucide-react";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
+import { formatTitleCase } from "../../utils/format";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import {
   buildBranchOptions,
@@ -577,7 +578,7 @@ function AddDoctor() {
     let { value } = event.target;
 
     if (["name", "specialization"].includes(name)) {
-      value = onlyAlpha(value);
+      value = formatTitleCase(onlyAlpha(value));
     }
 
     if (name === "phone") {

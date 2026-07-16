@@ -25,8 +25,25 @@ const htmlEscape = (value) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 const toNumber = (value) => Number(value || 0);
-const getPerformance = (row) => (row.status === "Active" ? "Healthy" : "Needs Review");
-const reportTabs = ["Reports Dashboard", "Revenue Report", "User Activity"];
+const formatDateTime = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value || "");
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+};
+const getPerformance = (row) => {
+  const users = toNumber(row.users);
+  if (users > 100) return "Excellent";
+  if (users > 50) return "Good";
+  if (users > 20) return "Average";
+  return "Poor";
+};
+const reportTabs = ["Super Admin Reports", "Revenue Report", "User Activity"];
 
 const toDateInputValue = (date) => date.toISOString().slice(0, 10);
 const getDefaultStartDate = () => {
@@ -174,7 +191,7 @@ function Reports() {
     {
       key: "performance",
       label: "Clinic Performance",
-      render: (clinic) => (clinic.status === "Active" ? "Healthy" : "Needs Review"),
+      render: (clinic) => getPerformance(clinic),
     },
   ];
 
@@ -313,7 +330,7 @@ function Reports() {
         <head><meta charset="utf-8" /></head>
         <body>
           <h2>Super Admin Reports</h2>
-          <p>Generated ${htmlEscape(new Date().toLocaleString("en-IN"))}</p>
+          <p>Generated ${htmlEscape(formatDateTime(new Date()))}</p>
           <h3>Summary Metrics</h3>
           <table border="1"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${summaryHtml}</tbody></table>
           <h3>Usage Analytics</h3>
@@ -368,7 +385,7 @@ function Reports() {
         </head>
         <body>
           <h1>Super Admin Reports</h1>
-          <p>Generated ${new Date().toLocaleString("en-IN")}</p>
+          <p>Generated ${formatDateTime(new Date())}</p>
           <div class="metrics">
             <div class="metric"><b>${formatIndianCurrency(reportSummary.totalRevenue)}</b><span>Total Revenue</span></div>
             <div class="metric"><b>${reportSummary.userCount.toLocaleString("en-IN")}</b><span>Users</span></div>
@@ -422,7 +439,7 @@ function Reports() {
   return (
     <>
       <Header
-        title="Reports"
+        title="Super Admin Reports"
         subtitle="Admin-wise clinic revenue, user activity, and performance reports."
         action={
           <>

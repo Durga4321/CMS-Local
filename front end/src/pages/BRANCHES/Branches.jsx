@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Building2,
   CheckCircle,
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import "./Branches.css";
 import { useToast } from "../../components/ToastProvider";
+import { formatTitleCase } from "../../utils/format";
 import {
   BRANCH_API_URL,
   fetchBranchesForHospital,
@@ -25,6 +26,15 @@ import {
   parseErrorMessage,
 } from "../../utils/branchApi";
 import {
+  buildAddress,
+  buildAddressPayload,
+  emptyAddressParts,
+  onlyPincodeValue,
+  parseAddress,
+  validateAddressParts,
+} from "../../utils/address";
+import { fetchPincodeLocation } from "../../utils/pincodeLocation";
+import {
   onlyAddressText,
   onlyAlpha,
   onlyDigits,
@@ -34,6 +44,11 @@ import {
   validateRequired,
   validateText,
 } from "../../utils/validation";
+import {
+  getDistrictsForState,
+  INDIA_COUNTRY,
+  INDIAN_STATES,
+} from "../../utils/indianLocations";
 import { getStoredClinicName } from "../../utils/clinicDisplay";
 
 const getEmptyForm = (hospitalId = getStoredHospitalId()) => ({
@@ -47,6 +62,7 @@ const getEmptyForm = (hospitalId = getStoredHospitalId()) => ({
   state: "",
   country: "India",
   postalCode: "",
+  addressParts: emptyAddressParts,
 });
 
 const readBranchField = (branch, ...keys) => {
@@ -60,31 +76,47 @@ const readBranchField = (branch, ...keys) => {
   return "";
 };
 
-const getBranchForm = (branch, hospitalId) => ({
-  name: String(getBranchName(branch) || ""),
-  hospitalId: String(readBranchField(branch, "hospitalId", "HospitalId") || hospitalId || ""),
-  phone: String(readBranchField(branch, "phone", "Phone") || ""),
-  email: String(readBranchField(branch, "email", "Email") || ""),
-  address: String(readBranchField(branch, "address", "Address") || ""),
-  city: String(readBranchField(branch, "city", "City") || ""),
-  district: String(readBranchField(branch, "district", "District") || ""),
-  state: String(readBranchField(branch, "state", "State") || ""),
-  country: String(readBranchField(branch, "country", "Country") || "India"),
-  postalCode: String(readBranchField(branch, "postalCode", "PostalCode", "pincode") || ""),
-});
+const getBranchForm = (branch, hospitalId) => {
+  const parsedAddress = parseAddress(String(readBranchField(branch, "address", "Address") || ""));
 
-const buildBranchPayload = (form) => ({
-  name: form.name.trim(),
-  hospitalId: Number(form.hospitalId) || 0,
-  phone: form.phone.trim(),
-  email: form.email.trim(),
-  address: form.address.trim(),
-  city: form.city.trim(),
-  district: form.district.trim(),
-  state: form.state.trim(),
-  country: form.country.trim(),
-  postalCode: form.postalCode.trim(),
-});
+  return {
+    name: formatTitleCase(onlyAlpha(String(getBranchName(branch) || ""))),
+    hospitalId: String(readBranchField(branch, "hospitalId", "HospitalId") || hospitalId || ""),
+    phone: String(readBranchField(branch, "phone", "Phone") || ""),
+    email: String(readBranchField(branch, "email", "Email") || ""),
+    address: formatTitleCase(onlyAddressText(String(readBranchField(branch, "address", "Address") || ""))),
+    city: formatTitleCase(onlyAlpha(String(readBranchField(branch, "city", "City") || parsedAddress.city || ""))),
+    district: formatTitleCase(onlyAlpha(String(readBranchField(branch, "district", "District") || ""))),
+    state: formatTitleCase(onlyAlpha(String(readBranchField(branch, "state", "State") || parsedAddress.state || ""))),
+    country: formatTitleCase(onlyAlpha(String(readBranchField(branch, "country", "Country") || parsedAddress.country || "India"))),
+    postalCode: String(readBranchField(branch, "postalCode", "PostalCode", "pincode") || parsedAddress.pincode || ""),
+    addressParts: {
+      ...emptyAddressParts,
+      ...parsedAddress,
+      country: formatTitleCase(onlyAlpha(String(readBranchField(branch, "country", "Country") || parsedAddress.country || "India"))),
+      city: formatTitleCase(onlyAlpha(String(readBranchField(branch, "city", "City") || parsedAddress.city || ""))),
+      state: formatTitleCase(onlyAlpha(String(readBranchField(branch, "state", "State") || parsedAddress.state || ""))),
+    },
+  };
+};
+
+const buildBranchPayload = (form) => {
+  const addressPayload = buildAddressPayload(form.addressParts);
+
+  return {
+    name: formatTitleCase(onlyAlpha(form.name)).trim(),
+    hospitalId: Number(form.hospitalId) || 0,
+    phone: form.phone.trim(),
+    email: form.email.trim(),
+    address: formatTitleCase(onlyAddressText(form.address)).trim(),
+    city: formatTitleCase(onlyAlpha(form.addressParts?.city || form.city)).trim(),
+    district: formatTitleCase(onlyAlpha(form.addressParts?.city || form.district)).trim(),
+    state: formatTitleCase(onlyAlpha(form.addressParts?.state || form.state)).trim(),
+    country: formatTitleCase(onlyAlpha(form.addressParts?.country || form.country)).trim(),
+    postalCode: String(form.addressParts?.pincode || addressPayload.postalCode || "").trim(),
+    ...addressPayload,
+  };
+};
 
 const formatBranchAddress = (branch) =>
   [
@@ -110,10 +142,50 @@ function Branches() {
   const [updatingStatusId, setUpdatingStatusId] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const lastErrorToast = useRef("");
+
+  const showError = (message) => {
+    const nextMessage = String(message || "").trim();
+    if (!nextMessage || lastErrorToast.current === nextMessage) return;
+    lastErrorToast.current = nextMessage;
+    setError(nextMessage);
+    toast.error(nextMessage);
+  };
+
+  const clearMessages = () => {
+    setError("");
+    setSuccess("");
+    lastErrorToast.current = "";
+  };
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState(null);
   const [form, setForm] = useState(getEmptyForm(hospitalId));
   const [fieldErrors, setFieldErrors] = useState({});
+  const [areaOptions, setAreaOptions] = useState([]);
+  const [streetOptions, setStreetOptions] = useState([]);
+
+  const selectedDistricts = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...getDistrictsForState(form.addressParts?.state),
+          form.addressParts?.city,
+        ].filter(Boolean))
+      ),
+    [form.addressParts?.city, form.addressParts?.state]
+  );
+
+  const visibleAreaOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          [form.addressParts?.area, ...areaOptions]
+            .filter(Boolean)
+            .map((area) => String(area).trim())
+        )
+      ),
+    [form.addressParts?.area, areaOptions]
+  );
 
   const fetchBranches = async () => {
     setLoading(true);
@@ -126,8 +198,7 @@ function Branches() {
     } catch (fetchError) {
       const message = fetchError.message || "Unable to load branches.";
       setBranches([]);
-      setError(message);
-      toast.error(message);
+      showError(message);
     } finally {
       setLoading(false);
     }
@@ -136,6 +207,93 @@ function Branches() {
   useEffect(() => {
     fetchBranches();
   }, []);
+
+  useEffect(() => {
+    const addressParts = form.addressParts || emptyAddressParts;
+    const nextAddress = buildAddress(addressParts);
+
+    if (form.address !== nextAddress) {
+      setForm((current) => ({
+        ...current,
+        address: nextAddress,
+      }));
+    }
+  }, [form.addressParts]);
+
+  useEffect(() => {
+    const pincode = form.addressParts?.pincode || "";
+    if (pincode.length !== 6) {
+      setAreaOptions([]);
+      setStreetOptions([]);
+      return undefined;
+    }
+
+    let active = true;
+    fetchPincodeLocation(pincode)
+      .then((location) => {
+        if (!active) return;
+
+        setAreaOptions(location.areaOptions || []);
+        const candidates = (location.postOffices || [])
+          .map((po) => {
+            if (!po) return "";
+            if (typeof po === "string") return po;
+            return (
+              po.Name ||
+              po.name ||
+              po.StreetVillage ||
+              po.streetVillage ||
+              po.Village ||
+              po.village ||
+              po.PostOfficeName ||
+              po.postOfficeName ||
+              ""
+            );
+          })
+          .filter(Boolean);
+
+        setStreetOptions(Array.from(new Set(candidates)).slice(0, 10));
+
+        setForm((current) => {
+          const previousParts = current.addressParts || emptyAddressParts;
+          if (previousParts.pincode !== pincode) return current;
+
+          const addressParts = {
+            ...previousParts,
+            area: previousParts.area || location.area,
+            city: location.city || previousParts.city,
+            state: location.state || previousParts.state,
+            country: location.country || previousParts.country,
+            pincode,
+          };
+
+          return {
+            ...current,
+            addressParts,
+            address: buildAddress(addressParts),
+          };
+        });
+
+        setFieldErrors((current) => ({
+          ...current,
+          "address.pincode": "",
+          "address.area": "",
+          "address.city": "",
+          "address.state": "",
+        }));
+      })
+      .catch((lookupError) => {
+        if (!active) return;
+        setFieldErrors((current) => ({
+          ...current,
+          "address.pincode": lookupError.message || "Unable to resolve pincode.",
+        }));
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [form.addressParts?.pincode]);
 
   const filteredBranches = useMemo(() => {
     const value = searchText.trim().toLowerCase();
@@ -184,8 +342,12 @@ function Branches() {
   const updateField = (name, value) => {
     let nextValue = value;
 
+    if (name === "name") {
+      nextValue = formatTitleCase(onlyAlpha(value));
+    }
+
     if (["city", "district", "state", "country"].includes(name)) {
-      nextValue = onlyAlpha(value);
+      nextValue = formatTitleCase(onlyAlpha(value));
     }
 
     if (name === "phone") {
@@ -193,11 +355,7 @@ function Branches() {
     }
 
     if (name === "postalCode") {
-      nextValue = onlyDigits(value).slice(0, 6);
-    }
-
-    if (name === "address") {
-      nextValue = onlyAddressText(value);
+      nextValue = onlyPincodeValue(value);
     }
 
     setForm((previous) => ({
@@ -210,27 +368,73 @@ function Branches() {
       [name]: "",
       form: "",
     }));
-    setError("");
-    setSuccess("");
+    clearMessages();
+  };
+
+  const handleAddressChange = (name, value) => {
+    let nextValue = value;
+
+    if (name === "pincode") {
+      nextValue = onlyPincodeValue(value);
+    } else if (["city", "state", "country"].includes(name)) {
+      nextValue = onlyAlpha(value).trim();
+    } else {
+      nextValue = onlyAddressText(value).trim();
+    }
+
+    setForm((current) => {
+      const previousParts = current.addressParts || emptyAddressParts;
+      const addressParts = {
+        ...previousParts,
+        [name]: nextValue,
+        country: INDIA_COUNTRY,
+      };
+
+      if (name === "state" && previousParts.state !== nextValue) {
+        addressParts.city = "";
+        addressParts.area = "";
+        addressParts.pincode = "";
+      }
+
+      if (name === "city" && previousParts.city !== nextValue) {
+        addressParts.area = "";
+        addressParts.pincode = "";
+      }
+
+      if (name === "pincode" && previousParts.pincode !== nextValue) {
+        addressParts.area = "";
+      }
+
+      return {
+        ...current,
+        addressParts,
+        address: buildAddress(addressParts),
+      };
+    });
+
+    setFieldErrors((current) => ({
+      ...current,
+      address: "",
+      [`address.${name}`]: "",
+      ...(name === "state" ? { "address.city": "" } : {}),
+      ...(name === "city" ? { "address.pincode": "", "address.area": "" } : {}),
+    }));
+    clearMessages();
   };
 
   const validateForm = () => {
+    const addressParts = form.addressParts || emptyAddressParts;
     const nextErrors = {
       name: validateText(form.name, "Branch name"),
       hospitalId: validateRequired(form.hospitalId, "Hospital"),
       phone: validateMobile(form.phone, "Phone"),
       email: validateGmail(form.email, "Email", { strict: false }),
-      address: validateRequired(form.address, "Address"),
-      city: validateText(form.city, "City"),
-      district: validateText(form.district, "District"),
-      state: validateText(form.state, "State"),
-      country: validateText(form.country, "Country"),
-      postalCode: validateRequired(form.postalCode, "Postal code"),
+      ...Object.fromEntries(
+        Object.entries(validateAddressParts(addressParts, "Address")).map(
+          ([key, value]) => [key === "address" ? "address" : `address.${key}`, value]
+        )
+      ),
     };
-
-    if (!nextErrors.postalCode && !/^\d{5,6}$/.test(form.postalCode.trim())) {
-      nextErrors.postalCode = "Postal code must be 5 or 6 digits.";
-    }
 
     Object.keys(nextErrors).forEach((key) => {
       if (!nextErrors[key]) delete nextErrors[key];
@@ -244,8 +448,7 @@ function Branches() {
     event.preventDefault();
 
     if (!validateForm()) {
-      setError("Please fix the highlighted fields.");
-      toast.error("Please fix the highlighted fields.");
+      showError("Please fix the highlighted fields.");
       return;
     }
 
@@ -285,8 +488,7 @@ function Branches() {
       closeModal({ force: true });
     } catch (submitError) {
       const message = submitError.message || "Unable to save branch.";
-      setError(message);
-      toast.error(message);
+      showError(message);
     } finally {
       setSaving(false);
     }
@@ -329,8 +531,7 @@ function Branches() {
       toast.success(message);
     } catch (statusError) {
       const message = statusError.message || "Unable to update branch status.";
-      setError(message);
-      toast.error(message);
+      showError(message);
     } finally {
       setUpdatingStatusId(null);
     }
@@ -552,88 +753,122 @@ function Branches() {
               </div>
 
               <div className="branches-field branches-field-full">
-                <label htmlFor="branch-address">Address</label>
-                <input
-                  id="branch-address"
-                  value={form.address}
-                  onChange={(event) => updateField("address", event.target.value)}
-                  className={fieldErrors.address ? "is-invalid" : ""}
-                  disabled={saving}
-                />
+                <label>Address</label>
+                <div className="branches-form-grid">
+                  <div className="branches-field">
+                    <label>Pincode</label>
+                    <input
+                      id="branch-postal"
+                      value={form.addressParts?.pincode || ""}
+                      onChange={(event) => handleAddressChange("pincode", event.target.value)}
+                      className={fieldErrors["address.pincode"] ? "is-invalid" : ""}
+                      disabled={saving}
+                      inputMode="numeric"
+                      maxLength={6}
+                    />
+                    {fieldErrors["address.pincode"] ? (
+                      <span className="branches-field-error">{fieldErrors["address.pincode"]}</span>
+                    ) : null}
+                  </div>
+
+                  <div className="branches-field">
+                    <label>Street/Village Name</label>
+                    <input
+                      value={form.addressParts?.streetVillage || ""}
+                      onChange={(event) => handleAddressChange("streetVillage", event.target.value)}
+                      className={fieldErrors["address.streetVillage"] ? "is-invalid" : ""}
+                      disabled={saving}
+                      autoComplete="off"
+                    />
+                    {streetOptions?.length ? (
+                      <ul className="branches-field-suggestions">
+                        {streetOptions.map((opt) => (
+                          <li key={opt} onClick={() => handleAddressChange("streetVillage", opt)}>
+                            {opt}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {fieldErrors["address.streetVillage"] ? (
+                      <span className="branches-field-error">{fieldErrors["address.streetVillage"]}</span>
+                    ) : null}
+                  </div>
+
+                  <div className="branches-field">
+                    <label>Area</label>
+                    <select
+                      value={form.addressParts?.area || ""}
+                      onChange={(event) => handleAddressChange("area", event.target.value)}
+                      className={fieldErrors["address.area"] ? "is-invalid" : ""}
+                      disabled={saving || !visibleAreaOptions.length}
+                    >
+                      <option value="">Select Area</option>
+                      {visibleAreaOptions.map((area) => (
+                        <option key={area} value={area}>
+                          {area}
+                        </option>
+                      ))}
+                    </select>
+                    {fieldErrors["address.area"] ? (
+                      <span className="branches-field-error">{fieldErrors["address.area"]}</span>
+                    ) : null}
+                  </div>
+
+                  <div className="branches-field">
+                    <label>City/District</label>
+                    <select
+                      value={form.addressParts?.city || ""}
+                      onChange={(event) => handleAddressChange("city", event.target.value)}
+                      className={fieldErrors["address.city"] ? "is-invalid" : ""}
+                      disabled={saving || !form.addressParts?.state}
+                    >
+                      <option value="">Select City/District</option>
+                      {selectedDistricts.map((district) => (
+                        <option key={district} value={district}>
+                          {district}
+                        </option>
+                      ))}
+                    </select>
+                    {fieldErrors["address.city"] ? (
+                      <span className="branches-field-error">{fieldErrors["address.city"]}</span>
+                    ) : null}
+                  </div>
+
+                  <div className="branches-field">
+                    <label>State</label>
+                    <select
+                      value={form.addressParts?.state || ""}
+                      onChange={(event) => handleAddressChange("state", event.target.value)}
+                      className={fieldErrors["address.state"] ? "is-invalid" : ""}
+                      disabled={saving}
+                    >
+                      <option value="">Select State</option>
+                      {INDIAN_STATES.map((state) => (
+                        <option key={state} value={state}>
+                          {state}
+                        </option>
+                      ))}
+                    </select>
+                    {fieldErrors["address.state"] ? (
+                      <span className="branches-field-error">{fieldErrors["address.state"]}</span>
+                    ) : null}
+                  </div>
+
+                  <div className="branches-field">
+                    <label>Country</label>
+                    <input value={INDIA_COUNTRY} disabled readOnly />
+                    {fieldErrors["address.country"] ? (
+                      <span className="branches-field-error">{fieldErrors["address.country"]}</span>
+                    ) : null}
+                  </div>
+
+                  <div className="branches-field branches-field-full">
+                    <label>Final Address</label>
+                    <textarea value={buildAddress(form.addressParts)} readOnly />
+                  </div>
+                </div>
                 {fieldErrors.address ? (
                   <span className="branches-field-error">{fieldErrors.address}</span>
-                ) : null}
-              </div>
-
-              <div className="branches-field">
-                <label htmlFor="branch-city">City</label>
-                <input
-                  id="branch-city"
-                  value={form.city}
-                  onChange={(event) => updateField("city", event.target.value)}
-                  className={fieldErrors.city ? "is-invalid" : ""}
-                  disabled={saving}
-                />
-                {fieldErrors.city ? (
-                  <span className="branches-field-error">{fieldErrors.city}</span>
-                ) : null}
-              </div>
-
-              <div className="branches-field">
-                <label htmlFor="branch-district">District</label>
-                <input
-                  id="branch-district"
-                  value={form.district}
-                  onChange={(event) => updateField("district", event.target.value)}
-                  className={fieldErrors.district ? "is-invalid" : ""}
-                  disabled={saving}
-                />
-                {fieldErrors.district ? (
-                  <span className="branches-field-error">{fieldErrors.district}</span>
-                ) : null}
-              </div>
-
-              <div className="branches-field">
-                <label htmlFor="branch-state">State</label>
-                <input
-                  id="branch-state"
-                  value={form.state}
-                  onChange={(event) => updateField("state", event.target.value)}
-                  className={fieldErrors.state ? "is-invalid" : ""}
-                  disabled={saving}
-                />
-                {fieldErrors.state ? (
-                  <span className="branches-field-error">{fieldErrors.state}</span>
-                ) : null}
-              </div>
-
-              <div className="branches-field">
-                <label htmlFor="branch-country">Country</label>
-                <input
-                  id="branch-country"
-                  value={form.country}
-                  onChange={(event) => updateField("country", event.target.value)}
-                  className={fieldErrors.country ? "is-invalid" : ""}
-                  disabled={saving}
-                />
-                {fieldErrors.country ? (
-                  <span className="branches-field-error">{fieldErrors.country}</span>
-                ) : null}
-              </div>
-
-              <div className="branches-field">
-                <label htmlFor="branch-postal">Postal Code</label>
-                <input
-                  id="branch-postal"
-                  value={form.postalCode}
-                  onChange={(event) => updateField("postalCode", event.target.value)}
-                  className={fieldErrors.postalCode ? "is-invalid" : ""}
-                  disabled={saving}
-                  inputMode="numeric"
-                  maxLength={6}
-                />
-                {fieldErrors.postalCode ? (
-                  <span className="branches-field-error">{fieldErrors.postalCode}</span>
                 ) : null}
               </div>
 

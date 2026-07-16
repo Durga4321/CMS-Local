@@ -159,6 +159,18 @@ const asArray = (value) => {
     if (Array.isArray(value[key])) return value[key];
   }
 
+  const queue = [value];
+  while (queue.length) {
+    const current = queue.shift();
+    for (const key of Object.keys(current)) {
+      const item = current[key];
+      if (Array.isArray(item)) return item;
+      if (item && typeof item === "object") {
+        queue.push(item);
+      }
+    }
+  }
+
   return [];
 };
 

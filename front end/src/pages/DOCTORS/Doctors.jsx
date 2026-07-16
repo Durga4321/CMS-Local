@@ -36,7 +36,7 @@ import {
   validateText,
 } from "../../utils/validation";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
-import { formatIndianCurrency } from "../../utils/format";
+import { formatIndianCurrency, formatTitleCase } from "../../utils/format";
 
 const DOCTORS_API_URL =
   apiUrl("Doctor");
@@ -80,7 +80,17 @@ const parseDoctorsResponse = (data) => {
 
 const getDoctorIsActive = (doctor) => {
   if (typeof doctor?.isActive === "boolean") return doctor.isActive;
-  return String(doctor?.status || "").toLowerCase() === "active";
+  if (typeof doctor?.IsActive === "boolean") return doctor.IsActive;
+  if (typeof doctor?.isActive === "string") {
+    return !["false", "inactive", "0"].includes(doctor.isActive.trim().toLowerCase());
+  }
+  if (typeof doctor?.IsActive === "string") {
+    return !["false", "inactive", "0"].includes(doctor.IsActive.trim().toLowerCase());
+  }
+
+  const status = String(doctor?.status || "").trim().toLowerCase();
+  if (!status) return true;
+  return !["inactive", "disabled", "false", "0"].includes(status);
 };
 
 const cleanFormValue = (value) => {
@@ -617,7 +627,7 @@ function Doctors() {
     let nextValue = value;
 
     if (["name", "specialization"].includes(name)) {
-      nextValue = onlyAlpha(value);
+      nextValue = formatTitleCase(onlyAlpha(value));
     }
 
     if (name === "phone") {
@@ -777,9 +787,7 @@ function Doctors() {
     try {
       const response = await fetch(`${DOCTORS_API_URL}/${doctor.id}/toggle-status`, {
         method: "PATCH",
-        headers: {
-          "ngrok-skip-browser-warning": "true",
-        },
+        headers: getApiHeaders(),
       });
 
       if (!response.ok) {
@@ -792,10 +800,11 @@ function Doctors() {
 
       setDoctors((previousDoctors) =>
         previousDoctors.map((item) =>
-          item.id === doctor.id
+          String(item.id) === String(doctor.id)
             ? {
               ...item,
               isActive: nextIsActive,
+              IsActive: nextIsActive,
               status: nextIsActive ? "Active" : "Inactive",
             }
             : item

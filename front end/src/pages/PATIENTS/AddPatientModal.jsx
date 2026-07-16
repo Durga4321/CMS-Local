@@ -16,6 +16,7 @@ import {
   INDIA_COUNTRY,
   INDIAN_STATES,
 } from "../../utils/indianLocations";
+import { formatTitleCase } from "../../utils/format";
 import {
   onlyAlpha,
   onlyAddressText,
@@ -51,7 +52,7 @@ function AddPatientModal({ onClose, onAdd }) {
     let { value } = event.target;
 
     if (["name", "emergencyContactName"].includes(name)) {
-      value = onlyAlpha(value);
+      value = formatTitleCase(onlyAlpha(value));
     }
 
     if (["phone", "emergencyContactPhone"].includes(name)) {

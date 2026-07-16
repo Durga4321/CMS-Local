@@ -8,6 +8,7 @@ import {
 import PatientDashboard from "./PatientDashboard";
 import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
 import { validateStrongPassword } from "../../utils/validation";
+import { formatTitleCase } from "../../utils/format";
 
 const getNestedValue = (record, path) => {
   if (record == null) return undefined;
@@ -228,14 +229,17 @@ function PatientShell({ notifications, children, patient }) {
     await logoutPatient(navigate);
   };
 
-  const patientTitle = patient?.name || patient?.firstName || patient?.fullName || "Patient";
-  const patientSubtitle =
+  const patientTitle = formatTitleCase(
+    patient?.name || patient?.firstName || patient?.fullName || "Patient"
+  );
+  const patientSubtitle = formatTitleCase(
     patient?.clinicName ||
     patient?.hospitalName ||
     patient?.clinic?.name ||
     patient?.organization ||
     patient?.role ||
-    "Patient";
+    "Patient"
+  );
 
   const initials = (() => {
     const name = patientTitle;
@@ -324,13 +328,13 @@ function PatientShell({ notifications, children, patient }) {
                 aria-expanded={menuOpen}
               >
                 <span className="pp-avatar">{initials}</span>
-                <span className="pp-account-name">{patient?.firstName || patient?.name || ''}</span>
+                <span className="pp-account-name">{formatTitleCase(patient?.firstName || patient?.name || '')}</span>
                 <ChevronDown size={15} />
               </button>
               {menuOpen ? (
                 <div className="pp-account-dropdown" role="menu">
                   <div className="pp-account-summary">
-                    <strong>{patient?.name || patient?.firstName || ''}</strong>
+                    <strong>{formatTitleCase(patient?.name || patient?.firstName || '')}</strong>
                     <span>{patient?.email || ''}</span>
                     <span className="pp-account-badge">Patient</span>
                   </div>
