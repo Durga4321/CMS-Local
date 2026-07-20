@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Trash2 } from "lucide-react";
+import { markNotificationRead } from "../../pages/SUPERADMIN/superAdminApi";
 
-function NotificationPanel({ items = [], onDelete = () => {} }) {
+function NotificationPanel({ items = [], onDelete = () => {}, onRead = () => {} }) {
   const [activeNotification, setActiveNotification] = useState(null);
 
   if (!items.length) {
@@ -39,7 +40,13 @@ function NotificationPanel({ items = [], onDelete = () => {} }) {
             <button
               className="sa-notification-item-btn"
               type="button"
-              onClick={() => setActiveNotification(item)}
+              onClick={async () => {
+                setActiveNotification(item);
+                try {
+                  if (item.id) await markNotificationRead(item.id);
+                } catch {}
+                onRead(item);
+              }}
             >
               <div>
                 <b>{item.title}</b>

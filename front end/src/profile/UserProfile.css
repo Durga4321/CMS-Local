@@ -3,19 +3,19 @@
 }
 
 .user-profile-chip {
-  min-width: 210px;
-  max-width: 280px;
-  height: 46px;
-  border: 2px solid #b8f3f4;
-  border-radius: 18px;
-  background: #fff;
+  width: 92px;
+  height: 50px;
+  border: 3px solid #93c5fd;
+  border-radius: 999px;
+  background: #dbeafe;
   color: #082033;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 4px 12px 4px 6px;
+  justify-content: center;
+  gap: 6px;
+  padding: 3px 9px 3px 5px;
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(15, 157, 157, 0.08);
+  box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.24);
   font-family: inherit;
 }
 
@@ -23,25 +23,51 @@
   transform: rotate(180deg);
 }
 
-.user-profile-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: #bbf4f1;
+.user-profile-avatar-shell {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
-  color: #07354d;
+  flex: 0 0 38px;
+}
+
+.user-profile-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #5b8df7, #2f5fdf);
+  border: 3px solid rgba(255, 255, 255, 0.72);
+  display: grid;
+  place-items: center;
+  color: #ffffff;
   font-weight: 800;
-  font-size: 14px;
-  flex: 0 0 auto;
+  font-size: 13px;
+  box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.28);
+  box-sizing: border-box;
+}
+
+.user-profile-online-dot {
+  position: absolute;
+  right: 0;
+  bottom: 1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  background: #18c77a;
 }
 
 .user-profile-copy {
-  min-width: 0;
-  display: grid;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
   text-align: left;
-  gap: 1px;
-  flex: 1;
 }
 
 .user-profile-copy strong {
@@ -63,8 +89,9 @@
 }
 
 .user-profile-chevron {
-  color: #718199;
+  color: #0f2f4f;
   transition: transform 0.16s ease;
+  flex: 0 0 auto;
 }
 
 .user-profile-dropdown {
@@ -388,13 +415,9 @@
 
 @media (max-width: 900px) {
   .user-profile-chip {
-    min-width: 76px;
-    height: 46px;
-    padding: 4px;
-  }
-
-  .user-profile-copy {
-    display: none;
+    width: 84px;
+    height: 48px;
+    padding-right: 8px;
   }
 
   .profile-layout,

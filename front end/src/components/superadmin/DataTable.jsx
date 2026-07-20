@@ -9,8 +9,11 @@ function DataTable({
   rowIndexOffset = 0,
   className = "",
 }) {
+  const normalizeColumnWidth = (width = "minmax(96px, max-content)") =>
+    String(width).replace(/,\s*[\d.]+fr\)/g, ", max-content)");
+
   const gridTemplateColumns = columns
-    .map((column) => column.width || "minmax(0, 1fr)")
+    .map((column) => normalizeColumnWidth(column.width))
     .join(" ");
 
   if (error) {

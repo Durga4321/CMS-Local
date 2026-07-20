@@ -7,11 +7,7 @@ export const ADDRESS_TEXT_PATTERN = /^[A-Za-z0-9\s.,/#-]+$/;
 
 const REPEATED_LETTER_PATTERN = /([A-Za-z])\1{3,}/;
 const LONG_CONSONANT_RUN_PATTERN = /[bcdfghjklmnpqrstvwxyz]{5,}/i;
-const AWKWARD_EMAIL_LOCAL_PATTERN =
-  /(?:[bcdfghjklmnpqrstvwxyz]{4,}|[aeiou]{3,}|[bcdfghjklmnpqrstvwxyz]{3}$)/i;
 const VOWEL_PATTERN = /[aeiou]/i;
-const EMAIL_WORD_PATTERN =
-  /(admin|care|clinic|contact|doctor|health|hospital|info|medical|office|patient|reception|support|user)/i;
 
 export const onlyDigits = (value) => String(value ?? "").replace(/\D/g, "");
 
@@ -27,7 +23,7 @@ export const onlyAddressText = (value) =>
   String(value ?? "").replace(/[^A-Za-z0-9\s.,/#-]/g, "");
 
 export const onlyClinicName = (value) =>
-  String(value ?? "").replace(/[^A-Za-z0-9\s.,'&()\-]/g, "");
+  String(value ?? "").replace(/[^A-Za-z0-9\s.,'&()-]/g, "");
 
 export const onlyNumberValue = (value) =>
   String(value ?? "").replace(/[^\d.]/g, "").replace(/(\..*)\./g, "$1");
@@ -102,7 +98,7 @@ export const validateClinicName = (value, label) => {
   const required = validateRequired(value, label);
   if (required) return required;
   const text = String(value).trim();
-  if (!/^[A-Za-z0-9\s.,'&()\-]+$/.test(text)) {
+  if (!/^[A-Za-z0-9\s.,'&()-]+$/.test(text)) {
     return `${label} must be valid text, not random characters.`;
   }
 

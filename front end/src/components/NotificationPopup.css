@@ -3,21 +3,23 @@
 }
 
 .notification-trigger {
-  border: 0;
-  background: transparent;
+  border: 1px solid #e5edf7;
+  background: #f8fafc;
   cursor: pointer;
   color: #0f172a;
-  width: 34px;
-  height: 34px;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
   position: relative;
+  border-radius: 50%;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.07);
 }
 
 .notification-badge {
   position: absolute;
-  top: -6px;
-  right: -6px;
+  top: 2px;
+  right: 0;
   min-width: 18px;
   height: 18px;
   padding: 0 5px;

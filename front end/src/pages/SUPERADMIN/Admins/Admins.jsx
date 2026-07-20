@@ -47,6 +47,12 @@ const getAdminClinicId = (admin, clinics = []) =>
 const getAdminClinicName = (admin, clinics = []) =>
   admin?.assignedClinic ||
   clinics.find((clinic) => String(clinic.id) === String(getAdminClinicId(admin, clinics)))?.name ||
+  admin?.raw?.clinicName ||
+  admin?.raw?.ClinicName ||
+  admin?.raw?.hospitalName ||
+  admin?.raw?.HospitalName ||
+  admin?.raw?.assignedClinic ||
+  admin?.raw?.AssignedClinic ||
   "";
 
 const getAdminKey = (admin = {}) =>
@@ -68,8 +74,8 @@ const updateCurrentAdminClinicSession = (admin, clinicId, clinicName) => {
 };
 
 const isAdminType = (value = "") => {
-  const role = String(value).trim().toLowerCase();
-  return role === "admin" || role === "clinic admin";
+  const role = String(value).trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+  return role === "admin" || role === "clinicadmin" || role === "superadmin";
 };
 
 const getUserAdminRole = (user = {}) =>
@@ -109,19 +115,6 @@ const mergeAdmins = (adminRows = [], userRows = []) => {
 
   return Array.from(rows.values());
 };
-
-const isAdminClinicPresent = (admin = {}, clinics = []) => {
-  if (!Array.isArray(clinics) || clinics.length === 0) return true;
-  const clinicId = String(getAdminClinicId(admin, clinics) || "").trim();
-  const clinicName = String(getAdminClinicName(admin, clinics) || "").trim().toLowerCase();
-
-  return clinics.some((c) => {
-    const idMatch = String(c.id || "") === clinicId;
-    const nameMatch = String(c.name || "").trim().toLowerCase() === clinicName && clinicName;
-    return idMatch || nameMatch;
-  });
-};
-
 
 function Admins() {
   const toast = useToast();
@@ -386,7 +379,6 @@ function Admins() {
       phone:
         admin.phone || admin.mobileNumber || admin.raw?.phone || admin.raw?.mobileNumber || "",
     }))
-    .filter((admin) => isAdminClinicPresent(admin, clinics))
     .filter((admin) => {
       const matchesSearch = [admin.name, admin.email, admin.assignedClinic, admin.phone]
         .some((value) => String(value).toLowerCase().includes(query));

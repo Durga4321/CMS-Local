@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route, Navigate, NavLink, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./layout/AppLayout";
 import DoctorApp from "./doctors/DoctorApp";
 import ReceptionistApp from "./Recepitionist/ReceptionistApp";
@@ -37,76 +37,23 @@ import PatientLogin from "./pages/PATIENTS/PatientLogin";
 import Appointments from "./pages/APPOINTMENTS/Appointments";
 import NewAppointment from "./pages/APPOINTMENTS/NewAppointment";
 import Doctorschedulepage from "./pages/Schedule/docschedule";
+import AdminRolesPermissions from "./pages/RolesPermissions/RolesPermissions";
 import Reports from "./pages/REPORTS/Reports";
 import DailyReport from "./pages/REPORTS/DailyReport";
 import RevenueReport from "./pages/REPORTS/RevenueReport";
 import DoctorWiseReport from "./pages/REPORTS/DoctorWiseReport";
 import "./pages/SUPERADMIN/SuperAdmin.css";
 import { ToastProvider } from "./components/ToastProvider";
-import { Bell, Calendar, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Circle, ClipboardList, CreditCard, Download, Edit3, Eye, EyeOff, FileText, Heart, Key, Link as LinkIcon, LogOut, Mail, MapPin, Pill, Phone, Printer, Search, Share2, Stethoscope, Trash2, UserRound, Wallet, X } from "lucide-react";
-import { apiUrl, patientApiUrl, PATIENT_API } from "./config/api";
-import { formatIndianCurrency } from "./utils/format";
-import { validateStrongPassword } from "./utils/validation";
 // ensure app styles include patient styles
 
 const normalizeRole = (role = "") =>
   String(role || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
-
-const getNestedValue = (record, path) => {
-  if (record == null) return undefined;
-  const keys = String(path).replace(/\?/g, "").split(".");
-  return keys.reduce((value, key) => (value && typeof value === "object" ? value[key] : undefined), record);
-};
-
-const readFirst = (record, keys) =>
-  keys.reduce((value, key) => value || getNestedValue(record, key), "") || "";
-
-const PATIENT_NOTIFICATION_TYPES = [
-  'Appointment Reminder',
-  'Prescription Ready',
-  'Bill Generated',
-  'Follow-up Reminder',
-];
-
-const PATIENT_PASSWORD_REQUIREMENTS = [
-  { label: "Minimum 8 characters", test: (value) => value.length >= 8 },
-  { label: "At least 1 uppercase letter (A-Z)", test: (value) => /[A-Z]/.test(value) },
-  { label: "At least 1 lowercase letter (a-z)", test: (value) => /[a-z]/.test(value) },
-  { label: "At least 1 number (0-9)", test: (value) => /\d/.test(value) },
-  { label: "At least 1 special character (@, #, $, %, etc.)", test: (value) => /[^A-Za-z0-9]/.test(value) },
-];
 
 const isCurrentUserSuperAdmin = () =>
   normalizeRole(localStorage.getItem("adminRole") || localStorage.getItem("userRole")) === "superadmin";
 
 const SuperAdminRoute = ({ children }) =>
   isCurrentUserSuperAdmin() ? children : <Navigate to="/dashboard" replace />;
-
-const logoutPatient = async (navigate) => {
-  const name = localStorage.getItem("patientName") || localStorage.getItem("patientEmail") || "Patient";
-  const role = localStorage.getItem("patientRole") || "Patient";
-  const ipAddress = localStorage.getItem("loginIpAddress") || "";
-  try {
-    await import("./pages/SUPERADMIN/superAdminApi").then(({ recordAuditLog }) =>
-      recordAuditLog({
-        userName: name,
-        user: name,
-        userEmail: localStorage.getItem("patientEmail") || "",
-        email: localStorage.getItem("patientEmail") || "",
-        action: `${name} logged out`,
-        systemAction: "Logout",
-        role,
-        ipAddress,
-        timestamp: new Date().toISOString(),
-      })
-    );
-  } catch {}
-
-  ["token", "userRole", "patientName", "patientId", "patientToken", "patientRole", "patientEmail"].forEach((key) =>
-    localStorage.removeItem(key)
-  );
-  navigate("/login/patient", { replace: true });
-};
 
 function App() {
   return (
@@ -153,6 +100,7 @@ function App() {
 
           <Route path="appointments" element={<Appointments />} />
           <Route path="appointments/new" element={<NewAppointment />} />
+          <Route path="roles" element={<AdminRolesPermissions />} />
 
           <Route path="reports" element={<Reports />} />
           <Route path="reports/daily" element={<DailyReport />} />

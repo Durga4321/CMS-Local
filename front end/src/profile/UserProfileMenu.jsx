@@ -35,8 +35,12 @@ function UserProfileMenu({ roleType = "admin" }) {
         className={`user-profile-chip${open ? " open" : ""}`}
         type="button"
         onClick={() => setOpen((value) => !value)}
+        title={`${profile.name} ${profile.email}`.trim()}
       >
-        <span className="user-profile-avatar">{getInitials(profile.name || profile.email)}</span>
+        <span className="user-profile-avatar-shell">
+          <span className="user-profile-avatar">{getInitials(profile.name || profile.email)}</span>
+          <span className="user-profile-online-dot" />
+        </span>
         <span className="user-profile-copy">
           <strong>{profile.name}</strong>
           <em>{profile.email}</em>

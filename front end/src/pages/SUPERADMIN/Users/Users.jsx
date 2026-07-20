@@ -7,7 +7,6 @@ import {
   deleteUser,
   fetchUser,
   fetchUsers,
-  fetchClinics,
   saveUser,
   updateUserStatus,
 } from "../superAdminApi";
@@ -53,7 +52,6 @@ function Users() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
   const [users, setUsers] = useState([]);
-  const [clinics, setClinics] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingUserId, setEditingUserId] = useState("");
@@ -78,18 +76,6 @@ function Users() {
 
   useEffect(() => {
     loadUsers();
-  }, []);
-
-  useEffect(() => {
-    const loadClinics = async () => {
-      try {
-        setClinics(await fetchClinics());
-      } catch {
-        setClinics([]);
-      }
-    };
-
-    loadClinics();
   }, []);
 
   const openUserDetails = async (user) => {

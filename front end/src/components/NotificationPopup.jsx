@@ -167,7 +167,7 @@ function NotificationPopup({ isSuperAdmin = false }) {
     } finally {
       setLoading(false);
     }
-  }, [role]);
+  }, [isSuperAdmin, role]);
 
   useEffect(() => {
     loadNotifications();
