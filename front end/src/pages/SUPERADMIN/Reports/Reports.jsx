@@ -171,23 +171,26 @@ function Reports() {
     {
       key: "serial",
       label: "S.No.",
-      width: "minmax(60px, 0.4fr)",
+      width: "minmax(52px, 0.25fr)",
       render: (_item, index) => index + 1,
     },
     {
       key: "adminName",
       label: "Admin",
+      width: "minmax(120px, 0.8fr)",
       render: (clinic) => getAdminDisplayName(clinic.adminName),
     },
-    { key: "name", label: "Clinic" },
+    { key: "name", label: "Clinic", width: "minmax(130px, 0.85fr)" },
     {
       key: "revenue",
       label: "Total Revenue",
+      width: "minmax(120px, 0.7fr)",
       render: (clinic) => formatIndianCurrency(clinic.revenue),
     },
     {
       key: "users",
       label: "Users",
+      width: "minmax(80px, 0.45fr)",
       render: (clinic) =>
         clinic.users !== undefined && clinic.users !== null && clinic.users !== ""
           ? Number(clinic.users).toLocaleString("en-IN")
@@ -196,6 +199,7 @@ function Reports() {
     {
       key: "performance",
       label: "Clinic Performance",
+      width: "minmax(140px, 0.8fr)",
       render: (clinic) => getPerformance(clinic),
     },
   ];

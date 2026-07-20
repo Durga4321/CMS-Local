@@ -82,20 +82,25 @@ function AuditLogs() {
     {
       key: "serial",
       label: "S.No.",
-      width: "minmax(60px, 0.4fr)",
+      width: "minmax(52px, 0.25fr)",
       render: (_log, index) => index + 1,
     },
     {
       key: "userName",
       label: "User",
-      width: "minmax(170px, 1.25fr)",
+      width: "minmax(120px, 0.7fr)",
       render: (row) => row.userName || row.user || row.action || "-",
     },
     {
       key: "email",
       label: "Email Address",
-      width: "minmax(190px, 1.2fr)",
-      render: (row) => row.email || row.userEmail || "-",
+      width: "minmax(260px, 1.1fr)",
+      cellClassName: "sa-table-cell--nowrap",
+      render: (row) => (
+        <span title={row.email || row.userEmail || ""} className="sa-table-text-overflow">
+          {row.email || row.userEmail || "-"}
+        </span>
+      ),
     },
     { key: "action", label: "Action", width: "minmax(180px, 1.2fr)" },
     { key: "systemAction", label: "System Action", width: "minmax(120px, 0.75fr)" },

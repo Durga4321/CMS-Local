@@ -307,15 +307,15 @@ function RolesPermissions() {
     {
       key: "serial",
       label: "S.No.",
-      width: "minmax(60px, 0.4fr)",
+      width: "minmax(52px, 0.25fr)",
       render: (_role, index) => index + 1,
     },
-    { key: "name", label: "Role" },
-    { key: "module", label: "Module" },
+    { key: "name", label: "Role", width: "minmax(110px, 0.65fr)" },
+    { key: "module", label: "Module", width: "minmax(120px, 0.7fr)" },
     {
       key: "users",
       label: "Assigned Users",
-      width: "minmax(140px, 1fr)",
+      width: "minmax(145px, 0.85fr)",
       cellClassName: "sa-table-cell--wrap",
       render: (role) => {
         const adminNames = getRoleAdminNames(role);
@@ -340,7 +340,7 @@ function RolesPermissions() {
     {
       key: "permissions",
       label: "Permissions",
-      width: "minmax(220px, 1.3fr)",
+      width: "minmax(190px, 1fr)",
       render: (role) => {
         const perms = Array.isArray(role.permissions) && role.permissions.length > 0
           ? role.permissions.join(", ")
@@ -351,7 +351,7 @@ function RolesPermissions() {
     {
       key: "actions",
       label: "Actions",
-      width: "minmax(112px, 0.7fr)",
+      width: "minmax(92px, 0.45fr)",
       render: (role) => {
         const canUseRemoteActions = role.canPersistPermissions !== false && role.id;
         const isSystemRole = isDefaultRole(role);
