@@ -305,3 +305,68 @@
   font-size: 15px;
   background: #fff;
 }
+
+@media (max-width: 768px) {
+  .da-page {
+    padding: 0;
+    gap: 16px;
+  }
+
+  .da-alert {
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .da-alert button {
+    flex: 0 0 auto;
+  }
+
+  .da-header-card {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px;
+  }
+
+  .da-header-actions {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .da-filter-group,
+  .da-filter-select,
+  .da-refresh-btn {
+    width: 100%;
+  }
+
+  .da-refresh-btn {
+    justify-content: center;
+  }
+
+  .da-thead,
+  .da-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) max-content;
+    min-width: 0;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  .da-thead > span:first-child,
+  .da-thead > span:nth-child(3),
+  .da-thead > span:nth-child(5),
+  .da-thead > span:nth-child(7),
+  .da-row > span:first-child,
+  .da-row > span:nth-child(3),
+  .da-row > span:nth-child(5) {
+    display: none;
+  }
+
+  .da-actions {
+    grid-column: 1 / -1;
+  }
+
+  .da-empty-row {
+    padding: 32px 16px;
+  }
+}

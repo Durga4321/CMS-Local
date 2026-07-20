@@ -4,7 +4,7 @@ import NotificationPopup from "../components/NotificationPopup";
 import UserProfileMenu from "../profile/UserProfileMenu";
 import "./DoctorTopbar.css";
 
-function DoctorTopbar({ title, onMenuToggle }) {
+function DoctorTopbar({ title, sidebarOpen, onMenuToggle }) {
   return (
     <header className="dr-topbar">
       <div className="dr-topbar-left">
@@ -13,6 +13,8 @@ function DoctorTopbar({ title, onMenuToggle }) {
           type="button"
           onClick={onMenuToggle}
           title="Toggle menu"
+          aria-label="Toggle navigation menu"
+          aria-expanded={sidebarOpen}
         >
           <Menu size={20} />
         </button>

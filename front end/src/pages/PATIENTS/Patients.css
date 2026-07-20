@@ -239,4 +239,33 @@
   .patients-title {
     font-size: 24px;
   }
+
+  .patients-table-scroll {
+    overflow-x: hidden;
+  }
+
+  .patients-thead,
+  .patients-row {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    min-width: 0;
+    column-gap: 12px;
+    padding: 14px 20px;
+  }
+
+  /* Keep the two most useful columns aligned on phones. */
+  .patients-thead span:first-child,
+  .patients-thead span:nth-child(n + 4),
+  .patients-row > span:first-child,
+  .patients-row > span:nth-child(n + 4) {
+    display: none;
+  }
+
+  .patients-row .patients-view-btn {
+    grid-column: 1 / -1;
+    margin-top: -4px;
+  }
+
+  .patients-table-scroll .patients-empty {
+    min-width: 0;
+  }
 }

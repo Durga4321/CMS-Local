@@ -13,7 +13,9 @@ const PAGE_TITLES = {
 
 function DoctorLayout() {
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(
+    () => typeof window === "undefined" || window.innerWidth > 768
+  );
   const token =
     localStorage.getItem("token") ||
     localStorage.getItem("doctorToken") ||
@@ -37,10 +39,18 @@ function DoctorLayout() {
 
   return (
     <div className={`dr-layout${sidebarOpen ? "" : " dr-layout--collapsed"}`}>
+      <button
+        type="button"
+        className="dr-sidebar-overlay"
+        aria-label="Close navigation menu"
+        tabIndex={sidebarOpen ? 0 : -1}
+        onClick={() => setSidebarOpen(false)}
+      />
       <DoctorSidebar />
       <div className="dr-layout-body">
         <DoctorTopbar
           title={title}
+          sidebarOpen={sidebarOpen}
           onMenuToggle={() => setSidebarOpen((p) => !p)}
         />
         <main className="dr-layout-content">
