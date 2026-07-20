@@ -456,13 +456,23 @@ function Admins() {
     {
       key: "serial",
       label: "S.No.",
-      width: "minmax(60px, 0.4fr)",
+      width: "minmax(52px, 0.25fr)",
       render: (_admin, index) => index + 1,
     },
-    { key: "name", label: "Name" },
-    { key: "email", label: "Email", width: "minmax(220px, 1.5fr)", cellClassName: "sa-table-cell--wrap" },
-            { key: "assignedClinic", label: "Assigned Clinic" },
-            { key: "phone", label: "Mobile Number", render: (admin) => (admin.phone || admin.raw?.phone || admin.raw?.mobileNumber || "-") },
+    { key: "name", label: "Name", width: "minmax(120px, 0.75fr)" },
+    {
+      key: "email",
+      label: "Email",
+      width: "minmax(220px, 1fr)",
+      cellClassName: "sa-table-cell--nowrap",
+      render: (admin) => (
+        <span title={admin.email || ""} className="sa-table-text-overflow">
+          {admin.email || "-"}
+        </span>
+      ),
+    },
+            { key: "assignedClinic", label: "Assigned Clinic", width: "minmax(140px, 0.85fr)" },
+            { key: "phone", label: "Mobile Number", width: "minmax(118px, 0.65fr)", render: (admin) => (admin.phone || admin.raw?.phone || admin.raw?.mobileNumber || "-") },
             {
               key: "status",
               label: "Status",
@@ -476,7 +486,7 @@ function Admins() {
     {
       key: "actions",
       label: "Actions",
-      width: "minmax(155px, 1fr)",
+      width: "minmax(152px, 0.7fr)",
       render: (admin) => {
         const isActive = String(admin.status || "").trim().toLowerCase() === "active";
         const disabledTitle = "Record inactive — only status toggle is available";

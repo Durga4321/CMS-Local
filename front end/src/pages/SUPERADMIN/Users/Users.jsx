@@ -266,18 +266,19 @@ function Users() {
     {
       key: "serial",
       label: "S.No.",
-      width: "minmax(60px, 0.4fr)",
+      width: "minmax(52px, 0.25fr)",
       render: (_user, index) => index + 1,
     },
     {
       key: "name",
       label: "Name",
+      width: "minmax(120px, 0.8fr)",
       render: (user) => formatTitleCase(user.name) || "-",
     },
     {
       key: "email",
       label: "Email",
-      width: "minmax(170px, 1.2fr)",
+      width: "minmax(220px, 1fr)",
       cellClassName: "sa-table-cell--nowrap",
       render: (user) => (
         <span title={user.email || ""} className="sa-table-text-overflow">
@@ -285,7 +286,7 @@ function Users() {
         </span>
       ),
     },
-    { key: "clinic", label: "Clinic" },
+    { key: "clinic", label: "Clinic", width: "minmax(130px, 0.8fr)" },
     { key: "role", label: "Role", width: "minmax(90px, 0.6fr)" },
     {
       key: "status",
@@ -300,6 +301,7 @@ function Users() {
     {
       key: "lastActive",
       label: "Last Active",
+      width: "minmax(135px, 0.8fr)",
       cellClassName: "sa-table-cell--nowrap",
       render: (user) => {
         const lastActive = user.lastActive || user.lastSeen || user.lastActiveAt || user.updatedAt || user.createdAt || "-";
@@ -313,7 +315,7 @@ function Users() {
     {
       key: "actions",
       label: "Actions",
-      width: "minmax(178px, 0.8fr)",
+      width: "minmax(162px, 0.7fr)",
       cellClassName: "sa-table-cell--nowrap",
       render: (user) => (
         <div className="sa-actions">

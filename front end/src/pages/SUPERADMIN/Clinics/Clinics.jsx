@@ -81,13 +81,23 @@ function Clinics() {
     {
       key: "serial",
       label: "S.No.",
-      width: "minmax(60px, 0.4fr)",
+      width: "minmax(52px, 0.25fr)",
       render: (_clinic, index) => index + 1,
     },
-    { key: "name", label: "Clinic Name", width: "minmax(140px, 1fr)" },
-    { key: "address", label: "Address", width: "minmax(160px, 1.1fr)" },
-    { key: "contactNumber", label: "Contact Number", width: "minmax(130px, 0.9fr)" },
-    { key: "email", label: "Email", width: "minmax(160px, 1fr)" },
+    { key: "name", label: "Clinic Name", width: "minmax(135px, 0.85fr)" },
+    { key: "address", label: "Address", width: "minmax(170px, 1fr)" },
+    { key: "contactNumber", label: "Contact Number", width: "minmax(126px, 0.65fr)" },
+    {
+      key: "email",
+      label: "Email",
+      width: "minmax(210px, 1fr)",
+      cellClassName: "sa-table-cell--nowrap",
+      render: (clinic) => (
+        <span title={clinic.email || ""} className="sa-table-text-overflow">
+          {clinic.email || "-"}
+        </span>
+      ),
+    },
     {
       key: "status",
       label: "Status",
@@ -101,7 +111,7 @@ function Clinics() {
     {
       key: "actions",
       label: "Actions",
-      width: "minmax(112px, 0.8fr)",
+      width: "minmax(152px, 0.7fr)",
       render: (clinic) => {
         const isActive = String(clinic.status || "").trim().toLowerCase() === "active";
         const disabledTitle = "Clinic inactive — only status toggle is available";

@@ -55,29 +55,54 @@ const addDays = (date, numberOfDays) => {
 };
 
 const normalizeTime = (value, fallback) => {
-  const match = String(value || "").match(/^(\d{1,2}):(\d{2})/);
+  const timeValue = String(value || "").trim();
+  const match = timeValue.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
   if (!match) return fallback;
 
-  const hours = Number(match[1]);
+  let hours = Number(match[1]);
   const minutes = Number(match[2]);
-  if (hours > 23 || minutes > 59) return fallback;
+  const meridiem = match[3]?.toUpperCase();
+
+  if (meridiem) {
+    if (hours < 1 || hours > 12 || minutes > 59) return fallback;
+    if (meridiem === "AM") hours = hours === 12 ? 0 : hours;
+    if (meridiem === "PM") hours = hours === 12 ? 12 : hours + 12;
+  } else if (hours > 23 || minutes > 59) {
+    return fallback;
+  }
 
   return `${padNumber(hours)}:${padNumber(minutes)}`;
 };
 
 const timeToMinutes = (value) => {
-  const [hours, minutes] = String(value || "")
+  const normalizedTime = normalizeTime(value, "");
+  const [hours, minutes] = String(normalizedTime || "")
     .split(":")
     .map(Number);
   return Number.isFinite(hours) && Number.isFinite(minutes)
     ? hours * 60 + minutes
-    : 0;
+    : null;
 };
 
 const minutesToTime = (value) =>
   `${padNumber(Math.floor(value / 60))}:${padNumber(value % 60)}`;
 
-const formatTimeForApi = (value) => `${normalizeTime(value, "00:00")}:00`;
+const formatTime12Hour = (value, fallback = "12:00 AM") => {
+  const normalizedTime = normalizeTime(value, "");
+  if (!normalizedTime) return fallback;
+
+  const [hours, minutes] = normalizedTime.split(":").map(Number);
+  const meridiem = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 || 12;
+  return `${padNumber(displayHours)}:${padNumber(minutes)} ${meridiem}`;
+};
+
+const formatTimeForApi = (value) => formatTime12Hour(value);
+
+const formatSlotTime = (value) => formatTime12Hour(value, "");
+
+const formatScheduleTimeInput = (value, fallback) =>
+  formatTime12Hour(value, fallback);
 
 const isTodayDate = (value) => value === toDateInputValue(new Date());
 
@@ -85,6 +110,8 @@ const isCompletedSlot = (slotEnd, date) => {
   if (!isTodayDate(date)) return false;
 
   const endMinutes = timeToMinutes(slotEnd);
+  if (endMinutes === null) return false;
+
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   return endMinutes <= nowMinutes;
@@ -262,13 +289,13 @@ function Schedule() {
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(defaultEndDate);
   const [workStart, setWorkStart] = useState(
-    DEFAULT_SCHEDULE_SETTINGS.clinicOpen
+    formatTime12Hour(DEFAULT_SCHEDULE_SETTINGS.clinicOpen)
   );
   const [workEnd, setWorkEnd] = useState(
-    DEFAULT_SCHEDULE_SETTINGS.clinicClose
+    formatTime12Hour(DEFAULT_SCHEDULE_SETTINGS.clinicClose)
   );
-  const [breakStart, setBreakStart] = useState("13:00");
-  const [breakEnd, setBreakEnd] = useState("14:00");
+  const [breakStart, setBreakStart] = useState(formatTime12Hour("13:00"));
+  const [breakEnd, setBreakEnd] = useState(formatTime12Hour("14:00"));
   const [slotDuration, setSlotDuration] = useState(
     String(DEFAULT_SCHEDULE_SETTINGS.slotDuration)
   );
@@ -314,15 +341,15 @@ function Schedule() {
         const settings =
           settingsResult.value?.data || settingsResult.value || {};
         setWorkStart(
-          normalizeTime(
+          formatTime12Hour(
             settings.clinicOpen,
-            DEFAULT_SCHEDULE_SETTINGS.clinicOpen
+            formatTime12Hour(DEFAULT_SCHEDULE_SETTINGS.clinicOpen)
           )
         );
         setWorkEnd(
-          normalizeTime(
+          formatTime12Hour(
             settings.clinicClose,
-            DEFAULT_SCHEDULE_SETTINGS.clinicClose
+            formatTime12Hour(DEFAULT_SCHEDULE_SETTINGS.clinicClose)
           )
         );
         setSlotDuration(
@@ -557,12 +584,18 @@ function Schedule() {
               <label htmlFor="schedule-work-start">Start Time</label>
               <input
                 id="schedule-work-start"
-                type="time"
+                type="text"
+                placeholder="09:00 AM"
                 value={workStart}
                 onChange={(event) => {
                   setWorkStart(event.target.value);
                   setSaveMessage("");
                 }}
+                onBlur={(event) =>
+                  setWorkStart(
+                    formatScheduleTimeInput(event.target.value, formatTime12Hour(DEFAULT_SCHEDULE_SETTINGS.clinicOpen))
+                  )
+                }
               />
             </div>
 
@@ -570,12 +603,18 @@ function Schedule() {
               <label htmlFor="schedule-work-end">End Time</label>
               <input
                 id="schedule-work-end"
-                type="time"
+                type="text"
+                placeholder="06:00 PM"
                 value={workEnd}
                 onChange={(event) => {
                   setWorkEnd(event.target.value);
                   setSaveMessage("");
                 }}
+                onBlur={(event) =>
+                  setWorkEnd(
+                    formatScheduleTimeInput(event.target.value, formatTime12Hour(DEFAULT_SCHEDULE_SETTINGS.clinicClose))
+                  )
+                }
               />
             </div>
 
@@ -583,12 +622,16 @@ function Schedule() {
               <label htmlFor="schedule-break-start">Break Start</label>
               <input
                 id="schedule-break-start"
-                type="time"
+                type="text"
+                placeholder="01:00 PM"
                 value={breakStart}
                 onChange={(event) => {
                   setBreakStart(event.target.value);
                   setSaveMessage("");
                 }}
+                onBlur={(event) =>
+                  setBreakStart(formatScheduleTimeInput(event.target.value, "01:00 PM"))
+                }
               />
             </div>
 
@@ -596,12 +639,16 @@ function Schedule() {
               <label htmlFor="schedule-break-end">Break End</label>
               <input
                 id="schedule-break-end"
-                type="time"
+                type="text"
+                placeholder="02:00 PM"
                 value={breakEnd}
                 onChange={(event) => {
                   setBreakEnd(event.target.value);
                   setSaveMessage("");
                 }}
+                onBlur={(event) =>
+                  setBreakEnd(formatScheduleTimeInput(event.target.value, "02:00 PM"))
+                }
               />
             </div>
 
@@ -673,13 +720,8 @@ function Schedule() {
               <p className="slots-msg">Loading slots...</p>
             ) : previewSlots.length > 0 ? (
               previewSlots.map((slot, index) => {
-                const slotStart = String(
-                  slot.start || slot.startTime || ""
-                ).slice(0, 5);
-                const slotEnd = String(slot.end || slot.endTime || "").slice(
-                  0,
-                  5
-                );
+                const slotStart = formatSlotTime(slot.start || slot.startTime || "");
+                const slotEnd = formatSlotTime(slot.end || slot.endTime || "");
                 const isBooked = isBookedSlot(slot);
                 const isCompleted = !isBooked && (isTimeOutSlot(slot) || isCompletedSlot(slotEnd, previewDate));
                 const statusClass = isBooked
