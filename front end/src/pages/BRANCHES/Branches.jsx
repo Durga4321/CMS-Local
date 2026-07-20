@@ -45,7 +45,6 @@ import {
   validateText,
 } from "../../utils/validation";
 import {
-  getCitiesForDistrict,
   getDistrictsForState,
   INDIA_COUNTRY,
   INDIAN_STATES,
@@ -163,7 +162,6 @@ function Branches() {
   const [form, setForm] = useState(getEmptyForm(hospitalId));
   const [fieldErrors, setFieldErrors] = useState({});
   const [areaOptions, setAreaOptions] = useState([]);
-  const [streetOptions, setStreetOptions] = useState([]);
 
   const selectedDistricts = useMemo(
     () =>
@@ -186,17 +184,6 @@ function Branches() {
         )
       ),
     [form.addressParts?.area, areaOptions]
-  );
-
-  const districts = useMemo(
-    () => getDistrictsForState(form.state),
-    [form.state]
-  );
-
-  // City choices are constrained to the selected state and district.
-  const cities = useMemo(
-    () => getCitiesForDistrict(form.state, form.district),
-    [form.district, form.state]
   );
 
   const fetchBranches = async () => {
@@ -236,7 +223,6 @@ function Branches() {
     const pincode = form.addressParts?.pincode || "";
     if (pincode.length !== 6) {
       setAreaOptions([]);
-      setStreetOptions([]);
       return undefined;
     }
 
@@ -246,26 +232,6 @@ function Branches() {
         if (!active) return;
 
         setAreaOptions(location.areaOptions || []);
-        const candidates = (location.postOffices || [])
-          .map((po) => {
-            if (!po) return "";
-            if (typeof po === "string") return po;
-            return (
-              po.Name ||
-              po.name ||
-              po.StreetVillage ||
-              po.streetVillage ||
-              po.Village ||
-              po.village ||
-              po.PostOfficeName ||
-              po.postOfficeName ||
-              ""
-            );
-          })
-          .filter(Boolean);
-
-        setStreetOptions(Array.from(new Set(candidates)).slice(0, 10));
-
         setForm((current) => {
           const previousParts = current.addressParts || emptyAddressParts;
           if (previousParts.pincode !== pincode) return current;
@@ -473,26 +439,6 @@ function Branches() {
         )
       ),
     };
-
-    if (!nextErrors.postalCode && !/^\d{5,6}$/.test(form.postalCode.trim())) {
-      nextErrors.postalCode = "Postal code must be 5 or 6 digits.";
-    }
-
-    if (!nextErrors.country && form.country !== INDIA_COUNTRY) {
-      nextErrors.country = "Country must be India.";
-    }
-
-    if (!nextErrors.state && !INDIAN_STATES.includes(form.state)) {
-      nextErrors.state = "Select a valid state.";
-    }
-
-    if (!nextErrors.district && !getDistrictsForState(form.state).includes(form.district)) {
-      nextErrors.district = "Select a valid district for the selected state.";
-    }
-
-    if (!nextErrors.city && !getCitiesForDistrict(form.state, form.district).includes(form.city)) {
-      nextErrors.city = "Select a valid city for the selected district.";
-    }
 
     Object.keys(nextErrors).forEach((key) => {
       if (!nextErrors[key]) delete nextErrors[key];
@@ -838,15 +784,6 @@ function Branches() {
                       disabled={saving}
                       autoComplete="off"
                     />
-                    {streetOptions?.length ? (
-                      <ul className="branches-field-suggestions">
-                        {streetOptions.map((opt) => (
-                          <li key={opt} onClick={() => handleAddressChange("streetVillage", opt)}>
-                            {opt}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
                     {fieldErrors["address.streetVillage"] ? (
                       <span className="branches-field-error">{fieldErrors["address.streetVillage"]}</span>
                     ) : null}

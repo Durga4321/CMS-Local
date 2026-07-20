@@ -268,18 +268,25 @@ function Notifications() {
         {!loading && error && !showForm ? <div className="sa-state sa-state--error">{error}</div> : null}
         {!loading && !error ? (
           <NotificationPanel
-            items={notifications}
-            onDelete={async (item) => {
-              try {
-                if (item.id) await deleteNotification(item.id);
-              } catch (err) {
-                // still hide the notification for this user if remote delete fails
+              items={notifications}
+              onDelete={async (item) => {
+                try {
+                  if (item.id) await deleteNotification(item.id);
+                } catch (err) {
+                  // still hide the notification for this user if remote delete fails
+                  saveDeletedNotificationKey(item);
+                }
                 saveDeletedNotificationKey(item);
-              }
-              saveDeletedNotificationKey(item);
-              setNotifications((current) => current.filter((n) => getNotificationKey(n) !== getNotificationKey(item)));
-            }}
-          />
+                setNotifications((current) => current.filter((n) => getNotificationKey(n) !== getNotificationKey(item)));
+              }}
+              onRead={(item) => {
+                setNotifications((current) =>
+                  current.map((n) =>
+                    getNotificationKey(n) === getNotificationKey(item) ? { ...n, status: "Read" } : n
+                  )
+                );
+              }}
+            />
         ) : null}
       </div>
     </>

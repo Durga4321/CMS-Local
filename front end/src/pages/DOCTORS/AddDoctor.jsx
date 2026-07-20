@@ -236,7 +236,6 @@ import {
   validateImageFile,
   validateMobile,
   validateNumeric,
-  validateRequired,
   validateSelected,
   validateText,
 } from "../../utils/validation";
@@ -367,29 +366,6 @@ const formatFeeValue = (value) => {
   return Number.isNaN(numberValue) ? text : numberValue.toFixed(2);
 };
 
-const buildDoctorCreateUrl = (values) => {
-  const params = new URLSearchParams();
-  Object.entries({
-    BranchId: values.branchId,
-    Name: values.name,
-    Specialization: values.specialization,
-    Experience: values.experience,
-    Qualification: values.qualification,
-    ConsultationFee: values.consultationFee,
-    AreaofExpertise: values.areaofExpertise,
-    IsActive: values.isActive,
-    PhoneNumber: values.phoneNumber,
-    Email: values.email,
-  }).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      params.set(key, String(value));
-    }
-  });
-
-  const query = params.toString();
-  return query ? `${DOCTORS_API_URL}?${query}` : DOCTORS_API_URL;
-};
-
 function AddDoctor() {
   const navigate = useNavigate();
   const toast = useToast();
@@ -411,7 +387,6 @@ function AddDoctor() {
   });
 
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -597,7 +572,6 @@ function AddDoctor() {
       [name]: value,
     }));
     setFieldErrors((previous) => ({ ...previous, [name]: "" }));
-    setError("");
   };
 
   const handleFeeBlur = () => {
@@ -614,7 +588,6 @@ function AddDoctor() {
     const imageError = validateImageFile(nextFile, "Profile image");
     if (imageError) {
       setFieldErrors((previous) => ({ ...previous, image: imageError }));
-      setError("");
       toast.error(imageError);
       return;
     }
@@ -694,7 +667,6 @@ function AddDoctor() {
       const message = permissionsLoading
         ? "Loading permissions. Please try again."
         : "Create permission is disabled by Super Admin.";
-      setError(message);
       toast.error(message);
       return;
     }
@@ -712,13 +684,11 @@ function AddDoctor() {
         ...previous,
         phone: duplicateMobileMessage,
       }));
-      setError(duplicateMobileMessage);
       toast.error(duplicateMobileMessage);
       return;
     }
 
     setSaving(true);
-    setError("");
 
     const requestPayload = {
       branchId: Number(formattedForm.branchId) || 0,
@@ -765,7 +735,6 @@ if (imageFile) {
       navigate("/doctors");
     } catch (submitError) {
       const message = submitError.message || "Unable to add doctor right now.";
-      setError(message);
       toast.error(message);
     } finally {
       setSaving(false);

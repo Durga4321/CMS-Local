@@ -22,17 +22,10 @@ import {
 import {
   Stethoscope,
   Users,
-  Calendar,
-  IndianRupee,
   CalendarCheck,
   DollarSign,
   UserPlus,
   UserRoundCheck,
-  Building2,
-  Phone,
-  Mail,
-  MapPin,
-  ShieldCheck,
 } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";

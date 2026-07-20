@@ -5,7 +5,7 @@ import { validateGmail } from "../../utils/validation";
 import { formatTitleCase } from "../../utils/format";
 import {
   Heart, Eye, EyeOff, Stethoscope, Plus, Pill, Activity,
-  Building2, Thermometer, Syringe,
+  Building2, Thermometer,
 } from "lucide-react";
 import { apiUrl } from "../../config/api";
 import "./PatientLogin.css";

@@ -1,4 +1,5 @@
 import React, {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -14,7 +15,6 @@ import {
 
 import AppointmentModal from "./AppointmentModal";
 import { apiUrl } from "../../config/api";
-import { normalizeString } from "../SUPERADMIN/superAdminApi";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 
 // ================= API =================
@@ -192,7 +192,7 @@ function Appointments() {
   // ================= FETCH =================
 
   const fetchAppointments =
-    async () => {
+    useCallback(async () => {
 
       try {
 
@@ -218,11 +218,6 @@ function Appointments() {
 
         const data =
           await response.json();
-
-        console.log(
-          "APPOINTMENTS:",
-          data
-        );
 
         setAppointments(
           parseAppointments(data).filter((appt) => {
@@ -254,13 +249,11 @@ function Appointments() {
 
         setLoading(false);
       }
-    };
+    }, [clinics]);
 
   // ================= LOAD =================
 
   useEffect(() => {
-    fetchAppointments();
-    // load clinics for filtering
     (async () => {
       try {
         const resp = await fetch(apiUrl("Clinics"), { headers: { "ngrok-skip-browser-warning": "true" } });
@@ -272,6 +265,10 @@ function Appointments() {
       } catch {}
     })();
   }, []);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
 
   // ================= DOCTOR OPTIONS =================
 

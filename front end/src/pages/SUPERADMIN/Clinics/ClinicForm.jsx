@@ -93,7 +93,6 @@ function ClinicForm({ mode }) {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [areaOptions, setAreaOptions] = useState([]);
-  const [streetOptions, setStreetOptions] = useState([]);
   const selectedDistricts = Array.from(
     new Set([
       ...getDistrictsForState(form.addressParts?.state),
@@ -107,10 +106,6 @@ function ClinicForm({ mode }) {
         .map((area) => String(area).trim())
     )
   );
-
-  React.useEffect(() => {
-    if (!form.addressParts?.pincode) setStreetOptions([]);
-  }, [form.addressParts?.pincode]);
 
   useEffect(() => {
     const addressParts = form.addressParts || emptyAddressParts;
@@ -250,14 +245,6 @@ function ClinicForm({ mode }) {
       .then((location) => {
         if (!active) return;
         setAreaOptions(location.areaOptions);
-        const candidates = (location.postOffices || []).map((po) => {
-          if (!po) return "";
-          if (typeof po === "string") return po;
-          return (
-            po.Name || po.name || po.StreetVillage || po.streetVillage || po.Village || po.village || po.PostOfficeName || po.postOfficeName || ""
-          );
-        }).filter(Boolean);
-        setStreetOptions(Array.from(new Set(candidates)).slice(0, 10));
         setForm((current) => {
           const previousParts = current.addressParts || emptyAddressParts;
           if (previousParts.pincode !== pincode) return current;
@@ -288,7 +275,6 @@ function ClinicForm({ mode }) {
       .catch((lookupError) => {
         if (!active) return;
         setAreaOptions([]);
-        setStreetOptions([]);
         setFieldErrors((current) => ({
           ...current,
           "address.pincode": lookupError.message || "Unable to fetch pincode location.",
@@ -468,13 +454,6 @@ function ClinicForm({ mode }) {
                   required
                   autoComplete="off"
                 />
-                {streetOptions?.length ? (
-                  <ul className="sa-field-suggestions">
-                    {streetOptions.map((opt) => (
-                      <li key={opt} onClick={() => handleAddressChange("streetVillage", opt)}>{opt}</li>
-                    ))}
-                  </ul>
-                ) : null}
                 {fieldErrors["address.streetVillage"] ? (
                   <span className="sa-field-error">{fieldErrors["address.streetVillage"]}</span>
                 ) : null}

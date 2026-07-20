@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
@@ -7,7 +7,7 @@ import { buildAddress, emptyAddressParts, onlyPincodeValue } from "../../utils/a
 import { INDIA_COUNTRY } from "../../utils/indianLocations";
 import { fetchPincodeLocation } from "../../utils/pincodeLocation";
 import { formatTitleCase } from "../../utils/format";
-import { Heart, ChevronRight, ChevronLeft, Check } from "lucide-react";
+import { ChevronRight, ChevronLeft, Check } from "lucide-react";
 import "./PatientRegister.css";
 
 const REGISTER_API = apiUrl("patient-portal/register");
@@ -17,8 +17,6 @@ function PatientRegister() {
   const toast = useToast();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [clinics, setClinics] = useState([]);
-  const [loadingClinics, setLoadingClinics] = useState(true);
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -36,6 +34,8 @@ function PatientRegister() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [areaOptions, setAreaOptions] = useState([]);
+  const [clinics, setClinics] = useState([]);
+  const [loadingClinics, setLoadingClinics] = useState(true);
 
   const visibleAreaOptions = Array.from(
     [form.addressParts?.area, ...areaOptions].filter(Boolean)
@@ -43,7 +43,9 @@ function PatientRegister() {
 
   // Fetch clinics on mount
   useEffect(() => {
+    let mounted = true;
     const loadClinics = async () => {
+      setLoadingClinics(true);
       try {
         const response = await fetch(apiUrl("clinics"), {
           headers: { "ngrok-skip-browser-warning": "true" },
@@ -51,18 +53,25 @@ function PatientRegister() {
         if (response.ok) {
           const data = await response.json();
           const list = Array.isArray(data) ? data : (data.items || data.data || []);
-          setClinics(list);
+          if (!mounted) return;
+          setClinics(list || []);
           if (list.length > 0) {
             setForm((current) => ({ ...current, hospitalId: String(list[0].id || list[0].hospitalId || "") }));
           }
+        } else {
+          if (mounted) setClinics([]);
         }
       } catch (err) {
         console.error("Failed to load clinics", err);
+        if (mounted) setClinics([]);
       } finally {
-        setLoadingClinics(false);
+        if (mounted) setLoadingClinics(false);
       }
     };
     loadClinics();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Fetch location from pincode

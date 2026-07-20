@@ -12,6 +12,10 @@ import {
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { parseList, requestJson } from "../receptionApi";
+import {
+  canUseStaffRolePermission,
+  getStaffPermissionDisabledTitle,
+} from "../../utils/staffRolePermissions";
 
 const emptyForm = {
   id: "",
@@ -57,6 +61,12 @@ function ReceptionMedicalHistory() {
   const [documentFile, setDocumentFile] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const canCreateHistory = canUseStaffRolePermission("Receptionist", "Create");
+  const canEditHistory = canUseStaffRolePermission("Receptionist", "Edit");
+  const canDeleteHistory = canUseStaffRolePermission("Receptionist", "Delete");
+  const createDisabledTitle = getStaffPermissionDisabledTitle("Receptionist", "Create");
+  const editDisabledTitle = getStaffPermissionDisabledTitle("Receptionist", "Edit");
+  const deleteDisabledTitle = getStaffPermissionDisabledTitle("Receptionist", "Delete");
 
   const patientsById = useMemo(
     () => new Map(patients.map((patient) => [String(patient.id), patient])),
@@ -137,6 +147,10 @@ function ReceptionMedicalHistory() {
   }, [fetchAppointments, fetchHistories, fetchPatients]);
 
   const openAdd = () => {
+    if (!canCreateHistory) {
+      setMessage("Create permission is disabled by Admin.");
+      return;
+    }
     setForm({
       ...emptyForm,
       patientId: requestedPatientId,
@@ -161,6 +175,10 @@ function ReceptionMedicalHistory() {
   }, [modal, patients, requestedPatientId]);
 
   const openEdit = (record) => {
+    if (!canEditHistory) {
+      setMessage("Edit permission is disabled by Admin.");
+      return;
+    }
     setForm({
       id: getHistoryId(record),
       patientId: getPatientId(record),
@@ -211,6 +229,15 @@ function ReceptionMedicalHistory() {
 
   const saveHistory = async (event) => {
     event.preventDefault();
+    if (modal === "edit" && !canEditHistory) {
+      setMessage("Edit permission is disabled by Admin.");
+      return;
+    }
+    if (modal !== "edit" && !canCreateHistory) {
+      setMessage("Create permission is disabled by Admin.");
+      return;
+    }
+
     const patientId = Number(form.patientId);
 
     if (!patientId) {
@@ -243,6 +270,11 @@ function ReceptionMedicalHistory() {
   };
 
   const deleteHistory = async (record) => {
+    if (!canDeleteHistory) {
+      setMessage("Delete permission is disabled by Admin.");
+      return;
+    }
+
     const historyId = getHistoryId(record) || getPatientId(record);
     if (!historyId) {
       setMessage("Patient ID is missing.");
@@ -270,7 +302,12 @@ function ReceptionMedicalHistory() {
           </p>
         </div>
         <div className="rc-head-actions">
-          <button className="rc-btn primary" onClick={openAdd}>
+          <button
+            className="rc-btn primary"
+            onClick={openAdd}
+            disabled={!canCreateHistory}
+            title={canCreateHistory ? "Add history" : createDisabledTitle}
+          >
             <FilePlus2 size={16} /> Add History
           </button>
           <button
@@ -330,6 +367,8 @@ function ReceptionMedicalHistory() {
                   <button
                     aria-label="Edit medical history"
                     onClick={() => openEdit(record)}
+                    disabled={!canEditHistory}
+                    title={canEditHistory ? "Edit medical history" : editDisabledTitle}
                   >
                     <Pencil size={15} />
                   </button>
@@ -340,7 +379,12 @@ function ReceptionMedicalHistory() {
                   >
                     <CalendarPlus size={15} /> Book Appointment
                   </button>
-                  <button className="danger" onClick={() => deleteHistory(record)}>
+                  <button
+                    className="danger"
+                    onClick={() => deleteHistory(record)}
+                    disabled={!canDeleteHistory}
+                    title={canDeleteHistory ? "Delete medical history" : deleteDisabledTitle}
+                  >
                     <Trash2 size={15} /> Delete
                   </button>
                 </span>
@@ -445,7 +489,16 @@ function ReceptionMedicalHistory() {
                 Close
               </button>
               {modal !== "view" ? (
-                <button type="submit" className="rc-btn primary">
+                <button
+                  type="submit"
+                  className="rc-btn primary"
+                  disabled={modal === "edit" ? !canEditHistory : !canCreateHistory}
+                  title={
+                    modal === "edit"
+                      ? canEditHistory ? "Save history" : editDisabledTitle
+                      : canCreateHistory ? "Save history" : createDisabledTitle
+                  }
+                >
                   {documentFile ? <Upload size={16} /> : <HeartPulse size={16} />} Save
                 </button>
               ) : null}

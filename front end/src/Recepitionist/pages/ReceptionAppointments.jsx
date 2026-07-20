@@ -17,6 +17,19 @@ const getMinutesFromTime = (value) => {
   return Number(match[1]) * 60 + Number(match[2]);
 };
 
+const formatTo12Hour = (time) => {
+  if (!time) return "";
+  const text = String(time || "").trim();
+  if (/\b(am|pm)\b/i.test(text)) return text;
+  const match = text.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return text;
+  let hours = Number(match[1]);
+  const minutes = match[2];
+  const meridiem = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  return `${String(hours).padStart(2, "0")}:${minutes} ${meridiem}`;
+};
+
 const isToday = (date) => {
   const today = new Date();
   const [year, month, day] = String(date || "").split("-").map(Number);
@@ -252,10 +265,10 @@ function ReceptionAppointments() {
       setForm((prev) => ({
         ...prev,
         patientId: nextPatients.some(
-          (patient) => String(patient.id) === requestedPatientId
+          (patient) => String(getPatientId(patient)) === requestedPatientId
         )
           ? requestedPatientId
-          : prev.patientId || String(nextPatients[0]?.id || ""),
+          : prev.patientId || String(getPatientId(nextPatients[0]) || ""),
         doctorId: nextDoctors.some(
           (doctor) => String(getDoctorId(doctor)) === String(prev.doctorId)
         )
@@ -269,14 +282,21 @@ function ReceptionAppointments() {
     refresh();
   }, [refresh]);
 
+  const getPatientId = (patient = {}) =>
+    patient.id ?? patient.patientId ?? patient.PatientId ?? patient.PID ?? "";
+
   const getPatientName = (patient = {}) =>
     String(patient.name || patient.fullName || patient.patientName || "").trim();
 
   const selectedPatient = useMemo(
     () =>
-      patients.find((patient) => String(patient.id) === String(form.patientId)),
+      patients.find(
+        (patient) => String(getPatientId(patient)) === String(form.patientId)
+      ),
     [patients, form.patientId]
   );
+
+  const patientCount = patients.length;
 
   const matchingPatients = useMemo(() => {
     const search = patientSearch.trim().toLowerCase();
@@ -285,7 +305,7 @@ function ReceptionAppointments() {
     return patients
       .filter((patient) => {
         const name = getPatientName(patient).toLowerCase();
-        const id = String(patient.id || "").toLowerCase();
+        const id = String(getPatientId(patient) || "").toLowerCase();
         return name.includes(search) || id.includes(search);
       })
       .slice(0, 8);
@@ -301,6 +321,8 @@ function ReceptionAppointments() {
     if (Array.isArray(data)) return data;
     if (Array.isArray(data?.slots)) return data.slots;
     if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data?.items)) return data.items;
+    if (Array.isArray(data?.result)) return data.result;
     return [];
   };
 
@@ -309,6 +331,10 @@ function ReceptionAppointments() {
     if (typeof slot === "string") return slot;
     if (slot.start && slot.end)
       return `${String(slot.start).slice(0, 5)} - ${String(slot.end).slice(0, 5)}`;
+    if (slot.startTime && slot.endTime)
+      return `${String(slot.startTime).slice(0, 5)} - ${String(slot.endTime).slice(0, 5)}`;
+    if (slot.start_time && slot.end_time)
+      return `${String(slot.start_time).slice(0, 5)} - ${String(slot.end_time).slice(0, 5)}`;
     if (slot.slot) return String(slot.slot);
     return String(slot);
   };
@@ -382,6 +408,8 @@ function ReceptionAppointments() {
     }
 
     const selectedSlotStart = getSlotStart(selectedSlot);
+    const selectedDoctor = doctors.find((d) => String(getDoctorId(d)) === String(form.doctorId));
+    const hospitalIdForAppointment = Number(getRecordHospitalId(selectedDoctor)) || Number(receptionistHospitalId) || 0;
     const vitals = {
       bloodPressure: appendUnit(form.bloodPressure, vitalFieldByName.bloodPressure.unit),
       sugarLevel: appendUnit(form.sugarLevel, vitalFieldByName.sugarLevel.unit),
@@ -392,11 +420,12 @@ function ReceptionAppointments() {
     };
     const body = {
       doctorId: Number(form.doctorId),
+      hospitalId: hospitalIdForAppointment,
       patientId: Number(form.patientId),
       date: form.date,
       appointmentDate: form.date,
       slot: selectedSlot,
-      startTime: selectedSlotStart ? `${selectedSlotStart}:00` : "",
+      startTime: selectedSlotStart ? formatTo12Hour(selectedSlotStart) : "",
       time: selectedSlot,
       status: "Scheduled",
       chiefComplaints: form.chiefComplaints.trim(),
@@ -416,12 +445,14 @@ function ReceptionAppointments() {
     };
 
     try {
+      console.debug("Booking payload", { selectedDoctor, hospitalIdForAppointment, body });
       await requestJson("Appointment", { method: "POST", body: JSON.stringify(body) });
       setMessage("Appointment booked successfully.");
       toast.success("Appointment booked successfully");
       setSelectedSlot("");
       refresh();
     } catch (error) {
+      console.error("Booking failed", { error, selectedDoctor, hospitalIdForAppointment, body });
       const text = error.message || "Unable to book appointment.";
       setMessage(text);
       toast.error(text);
@@ -450,7 +481,7 @@ function ReceptionAppointments() {
   };
 
   const selectPatient = (patient) => {
-    setField("patientId", String(patient.id));
+    setField("patientId", String(getPatientId(patient)));
     setPatientSearch(getPatientName(patient));
     setIsPatientMenuOpen(false);
   };
@@ -459,10 +490,15 @@ function ReceptionAppointments() {
     setPatientSearch(value);
     setIsPatientMenuOpen(true);
 
-    const exactMatch = patients.find(
-      (patient) => getPatientName(patient).toLowerCase() === value.trim().toLowerCase()
-    );
-    setField("patientId", exactMatch ? String(exactMatch.id) : "");
+    const exactMatch = patients.find((patient) => {
+      const nameMatches =
+        getPatientName(patient).toLowerCase() === value.trim().toLowerCase();
+      const idMatches =
+        String(getPatientId(patient)).toLowerCase() === value.trim().toLowerCase();
+      return nameMatches || idMatches;
+    });
+
+    setField("patientId", exactMatch ? String(getPatientId(exactMatch)) : "");
   };
 
   return (
@@ -471,6 +507,7 @@ function ReceptionAppointments() {
         <div>
           <h2>Appointment Booking</h2>
           <p>Select patient, doctor, date, lock a slot, and confirm booking.</p>
+          <p>{patientCount} registered patient{patientCount === 1 ? "" : "s"} available for booking.</p>
         </div>
         <div className="rc-head-actions">
           <button className="rc-btn" onClick={() => navigate("/reception/dashboard")}>
@@ -497,6 +534,7 @@ function ReceptionAppointments() {
                 autoComplete="off"
                 aria-label="Search patient by name"
                 aria-autocomplete="list"
+                // eslint-disable-next-line jsx-a11y/role-supports-aria-props
                 aria-expanded={isPatientMenuOpen}
               />
               {isPatientMenuOpen ? (
@@ -504,15 +542,15 @@ function ReceptionAppointments() {
                   {matchingPatients.length > 0 ? (
                     matchingPatients.map((patient) => (
                       <button
-                        key={patient.id}
+                        key={getPatientId(patient)}
                         type="button"
                         role="option"
-                        aria-selected={String(patient.id) === String(form.patientId)}
+                        aria-selected={String(getPatientId(patient)) === String(form.patientId)}
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => selectPatient(patient)}
                       >
                         <strong>{getPatientName(patient) || "Unnamed patient"}</strong>
-                        <span>Patient ID: {patient.id}</span>
+                        <span>Patient ID: {getPatientId(patient)}</span>
                       </button>
                     ))
                   ) : (
