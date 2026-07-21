@@ -7,15 +7,51 @@ import { getReceptionistProfile } from "../receptionSession";
 import { validateText } from "../../utils/validation";
 import { formatIndianCurrency } from "../../utils/format";
 
-const getSlotStart = (slot) => String(slot || "").split(" - ")[0].trim();
+const parseSlotLabel = (slot) => {
+  if (!slot) return "";
+  if (typeof slot === "string") return slot;
+  if (typeof slot === "object") {
+    if (slot.slotLabel) return String(slot.slotLabel);
+    if (slot.timeSlot) return String(slot.timeSlot);
+    if (slot.slotTime) return String(slot.slotTime);
+    if (slot.time && typeof slot.time === "string") return String(slot.time);
+    if (slot.start && slot.end)
+      return `${String(slot.start).slice(0, 5)} - ${String(slot.end).slice(0, 5)}`;
+    if (slot.startTime && slot.endTime)
+      return `${String(slot.startTime).slice(0, 5)} - ${String(slot.endTime).slice(0, 5)}`;
+    if (slot.start_time && slot.end_time)
+      return `${String(slot.start_time).slice(0, 5)} - ${String(slot.end_time).slice(0, 5)}`;
+    if (slot.slot) return String(slot.slot);
+    if (slot.label) return String(slot.label);
+  }
+  return String(slot);
+};
 
-const getSlotEnd = (slot) => String(slot || "").split(" - ")[1]?.trim() || "";
+const getSlotStart = (slot) => String(parseSlotLabel(slot) || "").split(" - ")[0].trim();
+
+const getSlotEnd = (slot) => String(parseSlotLabel(slot) || "").split(" - ")[1]?.trim() || "";
+
+const parseSlotStart = (slot) => getSlotStart(slot);
 
 const getMinutesFromTime = (value) => {
-  const match = String(value || "").match(/^(\d{1,2}):(\d{2})/);
+  const text = String(value || "").trim();
+  const match = text.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/i);
   if (!match) return null;
 
-  return Number(match[1]) * 60 + Number(match[2]);
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const meridiem = match[3]?.toUpperCase();
+
+  if (meridiem === "PM" && hours < 12) {
+    hours += 12;
+  }
+  if (meridiem === "AM" && hours === 12) {
+    hours = 0;
+  }
+
+  return Number.isFinite(hours) && Number.isFinite(minutes)
+    ? hours * 60 + minutes
+    : null;
 };
 
 const formatTo12Hour = (time) => {
@@ -45,20 +81,24 @@ const isToday = (date) => {
 const isCompletedSlot = (slotLabel, date) => {
   if (!isToday(date)) return false;
 
-  const slotEndMinutes = getMinutesFromTime(getSlotEnd(slotLabel));
-  if (slotEndMinutes === null) return false;
+  const slotStart = getSlotStart(slotLabel);
+  const slotEnd = getSlotEnd(slotLabel);
+  const startMinutes = getMinutesFromTime(slotStart);
+  let endMinutes = getMinutesFromTime(slotEnd);
+
+  if (endMinutes === null) return false;
+  if (startMinutes !== null && endMinutes <= startMinutes) {
+    endMinutes += 12 * 60;
+  }
 
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  return slotEndMinutes <= nowMinutes;
+  return endMinutes <= nowMinutes;
 };
 
 const getSlotStatus = (slot) => String(slot?.status || "").trim().toLowerCase();
 
-const isTimeOutSlot = (slot) => {
-  const status = getSlotStatus(slot);
-  return status === "time out" || status === "timeout" || status === "completed";
-};
+const isTimeOutSlot = () => false;
 
 const isBookedSlot = (slot) => {
   const status = getSlotStatus(slot);
@@ -359,26 +399,33 @@ function ReceptionAppointments() {
   const parseSlotLabel = (slot) => {
     if (!slot) return "";
     if (typeof slot === "string") return slot;
-    if (slot.start && slot.end)
-      return `${String(slot.start).slice(0, 5)} - ${String(slot.end).slice(0, 5)}`;
-    if (slot.startTime && slot.endTime)
-      return `${String(slot.startTime).slice(0, 5)} - ${String(slot.endTime).slice(0, 5)}`;
-    if (slot.start_time && slot.end_time)
-      return `${String(slot.start_time).slice(0, 5)} - ${String(slot.end_time).slice(0, 5)}`;
-    if (slot.slot) return String(slot.slot);
-    return String(slot);
+    if (typeof slot === "object") {
+      if (slot.slotLabel) return String(slot.slotLabel).trim();
+      if (slot.timeSlot) return String(slot.timeSlot).trim();
+      if (slot.slotTime) return String(slot.slotTime).trim();
+      if (slot.label) return String(slot.label).trim();
+      if (slot.time && typeof slot.time === "string") return String(slot.time).trim();
+      if (slot.start && slot.end)
+        return `${String(slot.start).trim()} - ${String(slot.end).trim()}`;
+      if (slot.startTime && slot.endTime)
+        return `${String(slot.startTime).trim()} - ${String(slot.endTime).trim()}`;
+      if (slot.start_time && slot.end_time)
+        return `${String(slot.start_time).trim()} - ${String(slot.end_time).trim()}`;
+      if (slot.slot) return String(slot.slot).trim();
+    }
+    return String(slot).trim();
   };
 
   const bookedSlots = useMemo(() => {
     return new Set(
       appointments
-        .filter((item) => String(item.date || item.appointmentDate || "").startsWith(form.date))
-      .filter(
+        .filter((item) => String(item.date || item.appointmentDate || item.scheduledDate || "").startsWith(form.date))
+        .filter(
           (item) =>
             String(item.doctorId || item.DoctorId || item.doctor?.doctorId || item.doctor?.id || "") ===
             String(form.doctorId)
         )
-        .map((item) => getSlotStart(item.slot || item.startTime || item.time || ""))
+        .map((item) => parseSlotStart(item.slot || item.startTime || item.time || item.appointmentTime || item.slotTime || ""))
         .filter(Boolean)
     );
   }, [appointments, form.date, form.doctorId]);
@@ -386,9 +433,9 @@ function ReceptionAppointments() {
   const visibleSlots = useMemo(() => {
     return availableSlots.filter((slot) => {
       const label = parseSlotLabel(slot);
-      return !(isTimeOutSlot(slot) || isCompletedSlot(label, form.date));
+      return Boolean(label);
     });
-  }, [availableSlots, form.date]);
+  }, [availableSlots]);
 
   useEffect(() => {
     if (!form.doctorId || !form.date) {
@@ -696,24 +743,30 @@ function ReceptionAppointments() {
             ) : visibleSlots.length > 0 ? (
               visibleSlots.map((slot) => {
                 const label = parseSlotLabel(slot);
-                const slotStart = getSlotStart(label);
+                const slotStart = parseSlotStart(label);
                 const isBooked = Boolean(isBookedSlot(slot) || bookedSlots.has(slotStart));
-                const isSelected = selectedSlot && getSlotStart(selectedSlot) === slotStart;
+                const isSelected = selectedSlot && parseSlotStart(selectedSlot) === slotStart;
+                const isCompleted = !isBooked && isTimeOutSlot(slot, form.date);
+                const statusLabel = isBooked ? "BOOKED" : isCompleted ? "TIME OUT" : "AVAILABLE";
+                const buttonClass = [
+                  isSelected ? "selected" : "",
+                  isBooked ? "booked" : isCompleted ? "completed" : "available",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+
                 return (
                   <button
                     type="button"
-                    key={label}
-                    disabled={isBooked}
-                    className={[
-                      isSelected ? "selected" : "",
-                      isBooked ? "booked" : "",
-                    ].filter(Boolean).join(" ")}
+                    key={`${label}-${slotStart}`}
+                    disabled={isBooked || isCompleted}
+                    className={buttonClass}
                     onClick={() => {
                       setSelectedSlot(label);
                       setPaymentStep(false);
                     }}
                   >
-                    {label} - {isBooked ? "BOOKED" : "AVAILABLE"}
+                    {label} - {statusLabel}
                   </button>
                 );
               })

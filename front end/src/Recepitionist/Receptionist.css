@@ -1283,21 +1283,28 @@
 
 .rc-slots button {
   height: 36px;
-  border: 1px solid #cce4d7;
+  border: 1px solid #c4edd2;
   border-radius: 8px;
-  background: #e7f6ef;
-  color: #00a263;
+  background: #e6f8ee;
+  color: #107a3a;
   font-weight: 700;
   cursor: pointer;
 }
 
-.rc-slots button.selected {
-  outline: 2px solid #0f9d9d;
+.rc-slots button.available {
+  background: #e6f8ee;
+  border-color: #c4edd2;
+  color: #107a3a;
 }
 
 .rc-slots button.booked {
-  background: #f1f4f7;
-  color: #687589;
+  background: #ffe5e7;
+  border-color: #f3b8bf;
+  color: #b61a22;
+}
+
+.rc-slots button:disabled {
+  opacity: 1;
 }
 
 .rc-slots button.completed {

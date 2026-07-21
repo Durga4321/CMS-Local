@@ -44,6 +44,7 @@ import { getClinicDisplayName } from "../utils/clinicDisplay";
 /* ================= API ================= */
 
 const API = apiUrl("Dashboard");
+const RECEPTIONIST_API = apiUrl("Receptionist");
 
 const getAdminToken = () =>
   localStorage.getItem("adminToken") ||
@@ -256,8 +257,8 @@ function Dashboard() {
           data
         );
 
-        // Merge optional clinic details from the separate endpoint
         let merged = { ...data };
+
         try {
           const clinicResp = await fetch(`${API}/ClincData`, {
             headers: {
@@ -268,7 +269,6 @@ function Dashboard() {
 
           if (clinicResp.ok) {
             const clinicData = await clinicResp.json();
-            // attach under `clinic` and also copy top-level clinicName/contact if present
             merged = {
               ...merged,
               clinic: {
@@ -279,8 +279,47 @@ function Dashboard() {
             };
           }
         } catch (e) {
-          // ignore clinic fetch errors; dashboard still shows whatever it has
           console.log("Failed to load clinic details:", e.message || e);
+        }
+
+        const receptionistCount =
+          getDashboardMetricValue(
+            [
+              "totalReceptionists",
+              "receptionistCount",
+              "receptionists",
+              "receptionistTotal",
+              "receptionist_count",
+            ],
+            null
+          );
+
+        if (
+          receptionistCount === null ||
+          receptionistCount === 0
+        ) {
+          try {
+            const receptionistResp = await fetch(RECEPTIONIST_API, {
+              headers: {
+                "ngrok-skip-browser-warning": "true",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+            });
+
+            if (receptionistResp.ok) {
+              const receptionistData = await receptionistResp.json();
+              const receptionists =
+                Array.isArray(receptionistData)
+                  ? receptionistData
+                  : receptionistData?.data || receptionistData?.rows || [];
+              merged = {
+                ...merged,
+                receptionistCount: receptionists.length,
+              };
+            }
+          } catch (e) {
+            console.log("Failed to load receptionist count:", e.message || e);
+          }
         }
 
         setDashboardData(merged);
@@ -441,6 +480,15 @@ function Dashboard() {
       ),
   };
 
+  const getDashboardMetricValue = (keys = [], fallback = 0) => {
+    const value = pickValue(dashboardData, keys, fallback);
+    if (Array.isArray(value)) {
+      return value.length;
+    }
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+
   const summaryCards = [
     {
       label:
@@ -489,8 +537,17 @@ function Dashboard() {
         "Total Receptionists",
       value:
         formatNumber(
-          dashboardData?.totalReceptionists ??
-          dashboardData?.receptionistCount
+          getDashboardMetricValue(
+            [
+              "totalReceptionists",
+              "receptionistCount",
+              "receptionists",
+              "receptionistTotal",
+              "receptionist_count",
+              "receptionistCount",
+            ],
+            0
+          )
         ),
       icon:
         Users,
