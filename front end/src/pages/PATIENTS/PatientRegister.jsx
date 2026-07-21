@@ -35,6 +35,73 @@ function PatientRegister() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [areaOptions, setAreaOptions] = useState([]);
   const [clinics, setClinics] = useState([]);
+
+  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const DOB_REGEX = /^(\d{2})\/(\d{2})\/(\d{2,4})$/;
+
+  const validateDobValue = (value) => {
+    if (!value?.trim()) return "Date of birth is required.";
+
+    const input = String(value).trim();
+    let date = null;
+
+    if (DOB_REGEX.test(input)) {
+      const [, day, month, yearPart] = input.match(DOB_REGEX);
+      const year = yearPart.length === 2 ? `20${yearPart}` : yearPart;
+      date = new Date(`${year}-${month}-${day}T00:00:00`);
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+      date = new Date(`${input}T00:00:00`);
+    } else {
+      return "Use DD/MM/YYYY or browser date picker.";
+    }
+
+    if (!date || Number.isNaN(date.getTime())) return "Enter a valid date of birth.";
+
+    const parsedYear = date.getFullYear();
+    const parsedMonth = String(date.getMonth() + 1).padStart(2, "0");
+    const parsedDay = String(date.getDate()).padStart(2, "0");
+
+    if (DOB_REGEX.test(input)) {
+      const [, day, month, yearPart] = input.match(DOB_REGEX);
+      const year = yearPart.length === 2 ? `20${yearPart}` : yearPart;
+      if (parsedDay !== day || parsedMonth !== month || String(parsedYear) !== year) {
+        return "Enter a valid date of birth.";
+      }
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (date > today) return "Date of birth cannot be in the future.";
+
+    return "";
+  };
+
+  const normalizeDobInput = (value) => {
+    const input = String(value || "").trim();
+    if (DOB_REGEX.test(input)) {
+      const [, day, month, yearPart] = input.match(DOB_REGEX);
+      const year = yearPart.length === 2 ? `20${yearPart}` : yearPart;
+      return `${year}-${month}-${day}`;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+      return input;
+    }
+    return input;
+  };
+
+  const getDobPayloadValue = (value) => {
+    const input = String(value || "").trim();
+    if (DOB_REGEX.test(input)) {
+      const [, day, month, yearPart] = input.match(DOB_REGEX);
+      const year = yearPart.length === 2 ? `20${yearPart}` : yearPart;
+      return `${year}-${month}-${day}`;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+      return input;
+    }
+    return value;
+  };
+
   const [loadingClinics, setLoadingClinics] = useState(true);
 
   const visibleAreaOptions = Array.from(
@@ -129,6 +196,10 @@ function PatientRegister() {
       value = value.replace(/\D/g, "").slice(0, 10);
     }
 
+    if (name === "dob") {
+      value = normalizeDobInput(value);
+    }
+
     if (name === "firstName" || name === "lastName") {
       value = formatTitleCase(value.replace(/[^a-zA-Z\s]/g, ""));
     }
@@ -153,6 +224,24 @@ function PatientRegister() {
       const next = { ...current };
       delete next[name];
       delete next.api;
+
+      if (name === "email" && value.trim()) {
+        if (!EMAIL_PATTERN.test(value.trim())) {
+          next.email = "Enter a valid email address.";
+        }
+      }
+
+      if (name === "dob") {
+        const dobError = validateDobValue(value);
+        if (dobError) {
+          next.dob = dobError;
+        }
+      }
+
+      if (name === "mobile" && value && !/^\d{10}$/.test(value)) {
+        next.mobile = "Enter a valid 10 digit mobile number.";
+      }
+
       return next;
     });
   };
@@ -193,7 +282,8 @@ function PatientRegister() {
       if (!form.firstName.trim()) nextErrors.firstName = "First name is required.";
       if (!form.lastName.trim()) nextErrors.lastName = "Last name is required.";
       if (!form.gender) nextErrors.gender = "Please select gender.";
-      if (!form.dob) nextErrors.dob = "Date of birth is required.";
+      const dobError = validateDobValue(form.dob);
+      if (dobError) nextErrors.dob = dobError;
 
       if (form.firstName && !/^[a-zA-Z\s]+$/.test(form.firstName)) {
         nextErrors.firstName = "Only alphabets are allowed.";
@@ -217,7 +307,7 @@ function PatientRegister() {
       if (form.addressParts?.pincode && !/^\d{6}$/.test(form.addressParts.pincode)) {
         nextErrors.pincode = "Pincode must be exactly 6 digits.";
       }
-      if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      if (form.email && !EMAIL_PATTERN.test(form.email.trim())) {
         nextErrors.email = "Enter a valid email address.";
       }
     }
@@ -272,7 +362,7 @@ function PatientRegister() {
       firstName: formatTitleCase(form.firstName.trim()),
       lastName: formatTitleCase(form.lastName.trim()),
       gender: form.gender,
-      dateOfBirth: form.dob,
+      dateOfBirth: getDobPayloadValue(form.dob),
       mobileNumber: form.mobile,
       email: form.email.trim(),
       address: form.address.trim(),
@@ -410,6 +500,7 @@ function PatientRegister() {
                       name="dob"
                       value={form.dob}
                       onChange={handleChange}
+                      placeholder="DD/MM/YYYY"
                     />
                     {errors.dob && <span className="error-message">{errors.dob}</span>}
                   </div>

@@ -751,7 +751,7 @@
 
 .pp-account-card-action {
   width: 100%;
-  min-height: 48px;
+  min-height: 42px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -770,26 +770,41 @@
 }
 
 .pp-account-card-action svg {
+  width: 30px;
+  height: 30px;
   flex: 0 0 auto;
-}
-
-.pp-account-card-action:hover,
-.pp-account-card-action.is-active {
-  background: #e7f8f8;
-  color: #009ca1;
+  border: 1px solid #cdeef0;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: #f1feff;
+  color: #07354d;
 }
 
 .pp-account-card-action--logout {
-  margin-top: 0;
-  color: #c72520;
-}
+  min-height: 40px;
+  padding: 0 12px;
+    margin-top: 0;
+    color: #c72520;
+  }
 
-.pp-account-card-action--logout:hover {
-  background: #fff1f1;
-  color: #c82020;
-}
+  .pp-account-card-action--logout svg {
+    width: 28px;
+    height: 28px;
+    border-color: #ffd6d6;
+    background: #fff2f2;
+    color: #e0342f;
+  }
 
-.pp-account-panel {
+  .pp-account-card-action:hover,
+  .pp-account-card-action.is-active {
+    background: #e7f8f8;
+    color: #009ca1;
+  }
+
+  .pp-account-card-action--logout:hover {
+    background: #fff1f1;
+    color: #c82020;
   min-width: 0;
 }
 
@@ -1243,6 +1258,37 @@
   color: #0f172a;
   font-size: 16px;
   line-height: 1.2;
+}
+
+.pb-bill-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.pb-bill-detail {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.pb-bill-detail span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+.pb-bill-detail strong {
+  display: block;
+  color: #0f172a;
+  font-size: 16px;
+  line-height: 1.35;
 }
 
 .pb-info-grid {
@@ -1759,7 +1805,7 @@
 
 .pp-account-item {
   width: 100%;
-  min-height: 58px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1769,22 +1815,33 @@
   border-radius: 12px;
   color: #082033;
   font: inherit;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
-.pp-account-item svg {
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
-  padding: 10px;
-  box-sizing: border-box;
+.pp-account-menu-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
   border: 1px solid #cdeef0;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #f1feff;
   color: #07354d;
+}
+
+.pp-account-menu-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pp-account-menu-icon.danger {
+  border-color: #ffd6d6;
+  background: #fff2f2;
+  color: #e0342f;
 }
 
 .pp-account-item:hover {

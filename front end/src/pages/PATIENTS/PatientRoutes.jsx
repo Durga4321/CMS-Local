@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Navigate, NavLink, Route, Routes, useNavigate } from "react-router-dom";
 import {
   Bell, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, ClipboardList,
-  CreditCard, Download, Eye, EyeOff, FileText, Heart, Key, LogOut, Mail, MapPin, Pill,
+  CreditCard, Download, Eye, EyeOff, FileText, Heart, KeyRound, LogOut, Mail, MapPin, Pill,
   Menu, Phone, Search, Share2, Trash2, UserRound, X,
 } from "lucide-react";
 import PatientDashboard from "./PatientDashboard";
@@ -415,7 +415,9 @@ function PatientShell({ notifications, children, patient }) {
                     }}
                     role="menuitem"
                   >
-                    <UserRound size={16} />
+                    <span className="pp-account-menu-icon">
+                      <UserRound size={20} />
+                    </span>
                     My Profile
                   </button>
                   <button
@@ -427,7 +429,9 @@ function PatientShell({ notifications, children, patient }) {
                     }}
                     role="menuitem"
                   >
-                    <Key size={16} />
+                    <span className="pp-account-menu-icon">
+                      <KeyRound size={20} />
+                    </span>
                     Change Password
                   </button>
                   <button
@@ -436,7 +440,9 @@ function PatientShell({ notifications, children, patient }) {
                     onClick={logout}
                     role="menuitem"
                   >
-                    <LogOut size={16} />
+                    <span className="pp-account-menu-icon danger">
+                      <LogOut size={20} />
+                    </span>
                     Logout
                   </button>
                 </div>
@@ -693,10 +699,14 @@ function PatientAppointmentsPage({ visits = [], onRefresh }) {
       title="Appointments"
       subtitle="Book, review, and reschedule care visits from your portal."
       action={
-        <button type="button" className="pd-header-btn pd-header-btn--primary" onClick={() => navigate("/patient/dashboard")}>
-        
-          ← Back to dashboard
-        </button>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button type="button" className="pd-header-btn pd-header-btn--primary" onClick={() => navigate("/patient/dashboard")}>
+            ← Back to dashboard
+          </button>
+          <button type="button" className="pd-header-btn" onClick={() => navigate("/patient/appointments/book")}>
+            Book appointment
+          </button>
+        </div>
       }
     >
       <div className="pd-card">
@@ -705,9 +715,7 @@ function PatientAppointmentsPage({ visits = [], onRefresh }) {
             <h2>Appointment history</h2>
             <p>Linked to the patient portal backend data.</p>
           </div>
-          <button type="button" className="pd-link-button" onClick={() => navigate("/patient/appointments/book")}>
-            Book appointment
-          </button>
+          {/* Book button moved to header actions */}
         </div>
 
         {rows.length ? (
@@ -2073,6 +2081,8 @@ function PatientPrescriptionsPage({ prescriptions = [] }) {
 
 function PatientBillsPage({ bills = [] }) {
   const billRecords = Array.isArray(bills) ? bills : [];
+  const [downloadStatus, setDownloadStatus] = useState("");
+  const [downloadError, setDownloadError] = useState("");
   const formatAmount = (value) =>
     new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(value || 0));
 
@@ -2081,6 +2091,40 @@ function PatientBillsPage({ bills = [] }) {
 
   const invoiceNumber = (record) =>
     readFirst(record, ['invoiceNumber', 'billNumber', 'referenceNumber', 'id']) || 'Invoice';
+
+  const getPatientName = (record) => {
+    const rawName = readFirst(record, [
+      'patientName',
+      'patient.name',
+      'patient.fullName',
+      'patient.firstName',
+      'patient.lastName',
+      'patientName',
+      'customerName',
+      'name',
+    ]);
+    if (typeof rawName === 'string' && rawName.trim()) return rawName.trim();
+    if (typeof rawName === 'object' && rawName !== null) {
+      return (
+        readFirst(rawName, ['fullName', 'name', 'firstName', 'lastName']) || ''
+      ).trim();
+    }
+    return invoiceNumber(record);
+  };
+
+  const getAppointmentNumber = (record) =>
+    readFirst(record, ['appointmentNumber', 'appointmentNo', 'appointmentId', 'appointment.id', 'appointment_id']) || '-';
+
+  const getConsultationFee = (record) =>
+    Number(
+      readFirst(record, [
+        'consultationCharges',
+        'consultationCharge',
+        'consultationFee',
+        'consultationAmount',
+        'consultation',
+      ]) || 0
+    );
 
   const doctorLabel = (record) => {
     const doctorName = readFirst(record, ['doctorName', 'doctor.name', 'provider.name', 'physician']);
@@ -2119,14 +2163,237 @@ function PatientBillsPage({ bills = [] }) {
     ].filter((item) => item.amount != null && item.amount !== '');
   };
 
-  const invoiceUrl = (record) =>
-    readFirst(record, ['invoiceUrl', 'downloadUrl', 'documentUrl', 'pdfUrl']) || '';
-
   const paymentUrl = (record) =>
     readFirst(record, ['paymentUrl', 'payUrl', 'checkoutUrl', 'paymentLink', 'paymentGatewayUrl']) || '';
 
-  const viewInvoice = (url) => {
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  const getApiHeaders = () => {
+    const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
+    return {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
+  const resolveInvoiceUrl = (value) => {
+    if (!value && value !== 0) return '';
+    if (typeof value === 'string') {
+      return value.trim();
+    }
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const result = resolveInvoiceUrl(item);
+        if (result) return result;
+      }
+      return '';
+    }
+    if (typeof value === 'object') {
+      const url = readFirst(value, [
+        'invoiceUrl',
+        'downloadUrl',
+        'documentUrl',
+        'pdfUrl',
+        'fileUrl',
+        'url',
+        'link',
+        'path',
+        'invoice.fileUrl',
+        'invoice.downloadUrl',
+        'invoice.documentUrl',
+        'invoice.pdfUrl',
+        'document.fileUrl',
+        'document.downloadUrl',
+        'document.pdfUrl',
+        'file.url',
+        'invoice.link',
+        'document.link',
+      ]);
+      if (url) return resolveInvoiceUrl(url);
+
+      return (
+        resolveInvoiceUrl(value.invoice) ||
+        resolveInvoiceUrl(value.document) ||
+        resolveInvoiceUrl(value.file) ||
+        resolveInvoiceUrl(value.pdf) ||
+        resolveInvoiceUrl(value.download)
+      );
+    }
+    return '';
+  };
+
+  const invoiceUrl = (record) => resolveInvoiceUrl(record) || '';
+
+  const getInvoiceId = (record) =>
+    readFirst(record, ['invoiceId', 'billId', 'id', '_id', 'referenceId']);
+
+  const getBillDetailUrl = (billId) =>
+    patientApiUrl(`patient-portal/bills/${encodeURIComponent(billId)}`);
+
+  const getInvoiceSourceUrl = async (record) => {
+    const directUrl = invoiceUrl(record);
+    if (directUrl) return directUrl;
+
+    const invoiceId = getInvoiceId(record);
+    if (!invoiceId) return '';
+
+    const billDetailUrl = getBillDetailUrl(invoiceId);
+    const response = await fetch(billDetailUrl, { headers: getApiHeaders() }).catch(() => null);
+    if (!response?.ok) return '';
+
+    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+    if (contentType.includes('pdf') || contentType.includes('octet-stream') || contentType.includes('binary')) {
+      return billDetailUrl;
+    }
+
+    const data = await response.json().catch(() => null);
+    if (!data) return '';
+
+    return resolveInvoiceUrl(data) || resolveInvoiceUrl(data.invoice) || resolveInvoiceUrl(data.document) || '';
+  };
+
+  const getPrintableInvoiceHtml = (record) => {
+    const invoiceNumberValue = invoiceNumber(record);
+    const patientName = readFirst(record, ['patientName', 'patient.name', 'name', 'customerName']) || 'Patient';
+    const doctorName = readFirst(record, ['doctorName', 'doctor.name', 'provider.name', 'physician']) || 'Doctor';
+    const appointmentNumber = readFirst(record, ['appointmentNumber', 'appointmentNo', 'appointmentId', 'appointment.id']) || '-';
+    const billDate = formatDate(record);
+    const total = formatAmount(totalAmount(record));
+    const due = formatAmount(dueAmount(record));
+    const paymentModeValue = displayPaymentMode(record);
+    const statusValue = paymentStatus(record) === 'paid' ? 'Paid' : 'Pending';
+    const lineItems = getLineItems(record);
+
+    const lineRows = lineItems.length
+      ? lineItems.map((item) => `
+          <tr>
+            <td>${item.label}</td>
+            <td style="text-align:right;">${formatAmount(item.amount)}</td>
+          </tr>
+        `).join('')
+      : `
+          <tr>
+            <td>Description</td>
+            <td style="text-align:right;">${total}</td>
+          </tr>
+        `;
+
+    return `<!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Invoice ${invoiceNumberValue}</title>
+          <style>
+            body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f5f7fb; color: #0f172a; }
+            .invoice { max-width: 780px; margin: 0 auto; padding: 32px; background: #ffffff; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
+            .header h1 { margin: 0; font-size: 24px; }
+            .meta { text-align: right; }
+            .meta span { display: block; margin-bottom: 4px; color: #475569; font-size: 13px; }
+            .section { margin-bottom: 24px; }
+            .section h2 { margin: 0 0 12px; font-size: 14px; color: #0f172a; letter-spacing: .8px; text-transform: uppercase; }
+            .info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+            .info-card { padding: 14px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; }
+            .info-card strong { display: block; font-size: 15px; margin-top: 6px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+            th, td { padding: 14px 12px; border-bottom: 1px solid #e2e8f0; }
+            th { text-align: left; background: #111827; color: white; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+            td:last-child { text-align: right; }
+            .summary { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 18px; background: #111827; color: #ffffff; border-radius: 12px; }
+            .summary div { font-size: 16px; }
+            .footer { margin-top: 32px; font-size: 12px; color: #475569; }
+            @media print {
+              body { background: #ffffff; }
+              .invoice { box-shadow: none; margin: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="invoice">
+            <div class="header">
+              <div>
+                <h1>Invoice</h1>
+                <p style="margin:4px 0 0;color:#475569;">${invoiceNumberValue}</p>
+              </div>
+              <div class="meta">
+                <span>Date: ${billDate}</span>
+                <span>Status: ${statusValue}</span>
+                <span>Payment: ${paymentModeValue}</span>
+              </div>
+            </div>
+            <div class="info-grid">
+              <div class="info-card">
+                <strong>Patient</strong>
+                <span>${patientName}</span>
+                <span>Appointment: ${appointmentNumber}</span>
+              </div>
+              <div class="info-card">
+                <strong>Doctor</strong>
+                <span>${doctorName}</span>
+              </div>
+            </div>
+            <div class="section">
+              <h2>Line Items</h2>
+              <table>
+                <thead>
+                  <tr><th>Description</th><th>Amount</th></tr>
+                </thead>
+                <tbody>${lineRows}</tbody>
+              </table>
+            </div>
+            <div class="summary">
+              <div>Total Amount</div>
+              <div>${total}</div>
+            </div>
+            <div class="footer">
+              <p>Thank you for choosing our clinic. Please retain this invoice for your records.</p>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>`;
+  };
+
+  const downloadInvoice = async (record, directUrl = '', filename = '') => {
+    const url = directUrl || (await getInvoiceSourceUrl(record));
+    if (!url) {
+      setDownloadStatus('Invoice is being prepared for PDF download.');
+      setDownloadError('');
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        setDownloadStatus('');
+        setDownloadError('Please allow popups to download the invoice PDF.');
+        return;
+      }
+      printWindow.document.write(getPrintableInvoiceHtml(record));
+      printWindow.document.close();
+      return;
+    }
+
+    setDownloadStatus('');
+    setDownloadError('');
+
+    try {
+      const response = await fetch(url, { headers: getApiHeaders() });
+      if (!response.ok) throw new Error('Unable to download invoice.');
+      const blob = await response.blob();
+      const downloadName = filename || url.split('/').pop().split('?')[0] || 'invoice.pdf';
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = downloadName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+      setDownloadStatus('Invoice downloaded successfully.');
+    } catch (error) {
+      setDownloadError('Unable to download invoice. Please try again.');
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const payLabel = (record) => {
@@ -2143,17 +2410,25 @@ function PatientBillsPage({ bills = [] }) {
   const latestLineItems = getLineItems(latestBill);
   const latestTotal = totalAmount(latestBill);
   const latestStatus = paymentStatus(latestBill);
-  const latestPatientName =
-    readFirst(latestBill, ['patientName', 'patient.name', 'name', 'customerName']) || 'Patient';
+  const latestPatientName = getPatientName(latestBill) || 'Patient';
   const latestPaymentMode = billRecords.length ? displayPaymentMode(latestBill) : 'UPI';
-  const selectedAppointment = billRecords.length ? invoiceNumber(latestBill) : 'No billable appointments found';
+  const selectedAppointment = billRecords.length ? getAppointmentNumber(latestBill) : 'No billable appointments found';
   const latestBillNumber = invoiceNumber(latestBill);
-  const latestAppointmentNumber =
-    readFirst(latestBill, ['appointmentNumber', 'appointmentNo', 'appointmentId', 'appointment.id']) || '-';
-  const latestConsultationFee = readFirst(latestBill, ['consultationCharges', 'consultationCharge']) || 0;
+  const latestAppointmentNumber = getAppointmentNumber(latestBill);
+  const latestConsultationFee = getConsultationFee(latestBill);
   const latestLabCharges = readFirst(latestBill, ['labCharges', 'laboratoryCharges']) || 0;
   const latestMedicineCharges = readFirst(latestBill, ['medicineCharges', 'medicationCharges']) || 0;
   const latestGst = readFirst(latestBill, ['gst', 'tax', 'gstAmount', 'taxAmount']) || 0;
+  const latestOtherCharges = Number(
+    readFirst(latestBill, ['otherCharges', 'miscCharges', 'serviceCharges', 'additionalCharges']) || 0
+  );
+  const latestSummaryLineItems = [
+    { label: 'Consultation Fee', amount: latestConsultationFee },
+    { label: 'Lab Charges', amount: latestLabCharges },
+    { label: 'Medicine Charges', amount: latestMedicineCharges },
+    { label: 'GST / Tax', amount: latestGst },
+    { label: 'Other Charges', amount: latestOtherCharges },
+  ].filter((item) => item.amount != null && Number(item.amount) !== 0);
   const paymentOptions = ['UPI', 'Card', 'Netbanking'];
   const statusOptions = ['Paid', 'Pending', 'Refunded'];
   const totalBillsAmount = billRecords.reduce((sum, bill) => sum + totalAmount(bill), 0);
@@ -2167,82 +2442,67 @@ function PatientBillsPage({ bills = [] }) {
         <section className="pb-generate-card">
           <div className="pb-billing-header">
             <div>
-              <h2>Generate Bill</h2>
-              <p>Review patient and charge details before creating the invoice.</p>
+              <h2>Hospital Bill Summary</h2>
+              <p>All charges and invoice details are shown in a single summary.</p>
             </div>
             <span className="pb-billing-icon">
               <FileText size={30} />
             </span>
           </div>
 
-          <div className="pb-patient-preview">
-            <strong>{latestPatientName}</strong>
-            <span>{selectedAppointment}</span>
+          <div className="pb-bill-details-grid">
+            <div className="pb-bill-detail">
+              <span>Patient</span>
+              <strong>{latestPatientName || 'N/A'}</strong>
+            </div>
+            <div className="pb-bill-detail">
+              <span>Bill Number</span>
+              <strong>{latestBillNumber || 'N/A'}</strong>
+            </div>
+            <div className="pb-bill-detail">
+              <span>Appointment Number</span>
+              <strong>{selectedAppointment || 'N/A'}</strong>
+            </div>
+            <div className="pb-bill-detail">
+              <span>Status</span>
+              <strong>{latestStatus === 'paid' ? 'Paid' : 'Pending'}</strong>
+            </div>
           </div>
 
-          <div className="pb-info-section">
-            <h3>Bill Information</h3>
-            <div className="pb-info-grid">
-              <div className="pb-info-item">
-                <span>Bill Number</span>
-                <strong>{latestBillNumber}</strong>
+          <div className="pb-charge-grid">
+            {latestSummaryLineItems.length ? latestSummaryLineItems.map((item) => (
+              <div className="pb-charge-row" key={item.label}>
+                <span>{item.label}</span>
+                <strong>{formatAmount(item.amount)}</strong>
               </div>
-              <div className="pb-info-item">
-                <span>Appointment Number</span>
-                <strong>{latestAppointmentNumber}</strong>
-              </div>
-              <div className="pb-info-item">
-                <span>Consultation Fee</span>
-                <strong>{formatAmount(latestConsultationFee)}</strong>
-              </div>
-              <div className="pb-info-item">
-                <span>Lab Charges</span>
-                <strong>{formatAmount(latestLabCharges)}</strong>
-              </div>
-              <div className="pb-info-item">
-                <span>Medicine Charges</span>
-                <strong>{formatAmount(latestMedicineCharges)}</strong>
-              </div>
-              <div className="pb-info-item">
-                <span>GST</span>
-                <strong>{formatAmount(latestGst)}</strong>
-              </div>
-              <div className="pb-info-item pb-info-item--total">
-                <span>Total</span>
+            )) : (
+              <div className="pb-charge-row">
+                <span>Total invoice</span>
                 <strong>{formatAmount(latestTotal)}</strong>
               </div>
-            </div>
+            )}
           </div>
 
-          <div className="pb-info-section">
-            <h3>Payment</h3>
-            <div className="pb-option-row">
-              {paymentOptions.map((option) => (
-                <span className={`pb-option-chip ${normalizePaymentMode(latestPaymentMode) === normalizePaymentMode(option) ? 'is-active' : ''}`} key={option}>
-                  {option}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="pb-info-section">
-            <h3>Status</h3>
-            <div className="pb-option-row">
-              {statusOptions.map((option) => (
-                <span className={`pb-status-option ${latestStatus === option.toLowerCase() ? 'is-active' : ''}`} key={option}>
-                  {option}
-                </span>
-              ))}
-            </div>
+          <div className="pb-charge-summary">
+            <span>Total invoice</span>
+            <strong>{formatAmount(latestTotal)}</strong>
           </div>
 
           <div className="pb-payment-actions">
-            <button type="button" className="pb-action-btn pb-action-btn--primary" onClick={() => payInvoice(paymentUrl(latestBill))} disabled={!paymentUrl(latestBill)}>
-              Pay Now
-            </button>
-            <button type="button" className="pb-action-btn pb-action-btn--ghost" onClick={() => viewInvoice(invoiceUrl(latestBill))} disabled={!invoiceUrl(latestBill)}>
+            <button
+              type="button"
+              className="pb-action-btn pb-action-btn--primary"
+              onClick={() => downloadInvoice(latestBill, '', `${invoiceNumber(latestBill)}.pdf`)}
+              disabled={!invoiceUrl(latestBill) && !getInvoiceId(latestBill)}
+            >
               Download Invoice
             </button>
+            {downloadStatus ? (
+              <div className="pb-download-message pb-download-message--success">{downloadStatus}</div>
+            ) : null}
+            {downloadError ? (
+              <div className="pb-download-message pb-download-message--error">{downloadError}</div>
+            ) : null}
           </div>
         </section>
 
@@ -2292,7 +2552,6 @@ function PatientBillsPage({ bills = [] }) {
                       <span className={`pb-status-badge pb-status-badge--${status === 'paid' ? 'paid' : 'pending'}`}>
                         {status === 'paid' ? 'Paid' : 'Pending'}
                       </span>
-                      <span className="pb-payment-badge">{displayPaymentMode(bill)}</span>
                     </div>
                   </div>
 
@@ -2316,22 +2575,14 @@ function PatientBillsPage({ bills = [] }) {
                   </div>
 
                   <div className="pb-bill-actions">
-                    <button type="button" className="pb-action-btn pb-action-btn--ghost" onClick={() => viewInvoice(invoiceLink)} disabled={!invoiceLink}>
-                      View invoice
+                    <button
+                      type="button"
+                      className="pb-action-btn pb-action-btn--primary"
+                      onClick={() => downloadInvoice(bill, invoiceLink, `${invoiceNumber(bill)}.pdf`)}
+                      disabled={!invoiceLink && !getInvoiceId(bill)}
+                    >
+                      Download Invoice
                     </button>
-                    <button type="button" className="pb-action-btn pb-action-btn--primary" onClick={() => viewInvoice(invoiceLink)} disabled={!invoiceLink}>
-                      Download
-                    </button>
-                    {due > 0 ? (
-                      <button
-                        type="button"
-                        className="pb-action-btn pb-action-btn--secondary"
-                        onClick={() => payInvoice(paymentUrl(bill))}
-                        disabled={!paymentUrl(bill)}
-                      >
-                        {payLabel(bill)}
-                      </button>
-                    ) : null}
                   </div>
                 </div>
               );
@@ -2505,7 +2756,7 @@ function PatientAccountLayout({ active = "profile", children }) {
           className={`pp-account-card-action ${active === "password" ? "is-active" : ""}`}
           onClick={() => navigate("/patient/change-password")}
         >
-          <Key size={22} />
+          <KeyRound size={22} />
           Change Password
         </button>
         <button

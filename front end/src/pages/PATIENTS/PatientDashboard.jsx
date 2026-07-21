@@ -141,6 +141,18 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
         return isPending ? total + toAmount(bill?.amount ?? bill?.balance ?? bill?.total ?? bill?.dueAmount) : total;
       }, 0)
     : 0;
+  const hasBills = Array.isArray(bills) && bills.length > 0;
+  const hasPendingBills = Array.isArray(bills)
+    ? bills.some((bill) => {
+        const status = getBillStatus(bill);
+        return !status || status.includes("pending") || status.includes("unpaid") || status.includes("due");
+      })
+    : false;
+  const pendingStatusNote = hasBills
+    ? hasPendingBills
+      ? "Payment due"
+      : "Billing completed"
+    : "No bills yet";
   const selectedPatientId = formatInlineValue(dashboardPatient.patientCode || dashboardPatient.id, "-");
   const selectedPatientPhone = formatInlineValue(dashboardPatient.phone, "Phone not available");
   const selectedPatientBloodGroup = formatInlineValue(dashboardPatient.bloodGroup || dashboardPatient.bloodgroup, "-");
@@ -247,7 +259,7 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
     {
       label: "Bills Pending",
       value: formatCurrency(pendingBillsAmount),
-      note: pendingBillsAmount ? "Payment due" : "No pending balance",
+      note: pendingStatusNote,
       icon: IndianRupee,
       tone: "green",
       route: "/patient/bills",
