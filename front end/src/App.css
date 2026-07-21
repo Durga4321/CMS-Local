@@ -1654,70 +1654,90 @@
 }
 
 .pp-account-toggle {
-  min-width: 210px;
-  max-width: 280px;
-  min-height: 46px;
+  width: 92px;
+  min-width: 92px;
+  max-width: 92px;
+  min-height: 50px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 4px 12px 4px 6px;
-  border: 2px solid #b8f3f4;
-  border-radius: 18px;
-  background: #ffffff;
+  justify-content: center;
+  gap: 6px;
+  padding: 3px 9px 3px 5px;
+  border: 3px solid #93c5fd;
+  border-radius: 999px;
+  background: #dbeafe;
   color: #082033;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(15, 157, 157, 0.08);
+  box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.24);
 }
 
 .pp-account-toggle .pp-avatar {
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
-  border-radius: 14px;
-  background: #dff3f3;
+  position: relative;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border: 3px solid rgba(255, 255, 255, 0.72);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #5b8df7, #2f5fdf);
+  color: #ffffff;
+  box-sizing: border-box;
+  box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.28);
+}
+
+.pp-account-toggle .pp-avatar::after {
+  content: "";
+  position: absolute;
+  right: -3px;
+  bottom: -2px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #18c77a;
 }
 
 .pp-account-name {
-  max-width: 140px;
+  position: absolute;
+  width: 1px;
+  height: 1px;
   overflow: hidden;
-  text-overflow: ellipsis;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
   white-space: nowrap;
-  font-size: 13px;
-  font-weight: 700;
 }
 
 .pp-account-dropdown {
   position: absolute;
   right: 0;
-  top: calc(100% + 10px);
-  width: 270px;
+  top: calc(100% + 14px);
+  width: 360px;
   max-width: calc(100vw - 32px);
-  padding: 14px 10px 10px;
+  padding: 16px 14px 14px;
   border: 1px solid #e1e8f2;
-  border-radius: 16px;
+  border-radius: 20px;
   background: #ffffff;
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.14);
   z-index: 2000;
 }
 
 .pp-account-summary {
-  padding: 0 10px 12px;
-  margin-bottom: 10px;
+  padding: 0 10px 14px;
+  margin-bottom: 12px;
   border-bottom: 1px solid #e4eaf2;
 }
 
 .pp-account-summary strong {
   display: block;
   color: #082033;
-  font-size: 14px;
-  margin-bottom: 6px;
+  font-size: 18px;
+  margin-bottom: 7px;
 }
 
 .pp-account-summary span {
   display: block;
   color: #687895;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   overflow-wrap: anywhere;
 }
@@ -1728,41 +1748,41 @@
   align-items: center;
   justify-content: center;
   margin-top: 8px;
-  padding: 4px 9px;
+  padding: 5px 11px;
   border: 1px solid #bbf7d0;
   border-radius: 999px;
   background: #f0fdf4;
   color: #15803d;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
 }
 
 .pp-account-item {
   width: 100%;
-  min-height: 46px;
+  min-height: 58px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   border: 0;
   background: #ffffff;
   padding: 8px 10px;
   border-radius: 12px;
   color: #082033;
   font: inherit;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 800;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .pp-account-item svg {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  padding: 8px;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  padding: 10px;
   box-sizing: border-box;
   border: 1px solid #cdeef0;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #f1feff;
   color: #07354d;
 }
@@ -1967,6 +1987,47 @@
   color: #0f172a;
 }
 
+.booking-payment-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.45fr);
+  gap: 14px;
+  align-items: end;
+  padding: 18px;
+  border: 1px solid #dbe3ed;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.booking-payment-panel strong {
+  display: block;
+  color: #0f172a;
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.booking-payment-panel span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.booking-payment-panel label {
+  display: grid;
+  gap: 8px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.booking-payment-panel select {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #dbe3ed;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 0 12px;
+}
+
 .booking-error {
   color: #b91c1c;
   margin: 0;
@@ -2154,27 +2215,52 @@
   }
 
   .pp-account-toggle {
-    min-width: 0;
-    width: 154px;
-    min-height: 44px;
-    gap: 8px;
-    padding: 3px 9px 3px 4px;
-    border-radius: 16px;
+    width: 84px;
+    min-width: 84px;
+    max-width: 84px;
+    min-height: 48px;
+    gap: 6px;
+    padding: 3px 8px 3px 5px;
+    border-radius: 999px;
   }
 
   .pp-account-toggle .pp-avatar {
-    width: 36px;
-    height: 36px;
-    flex-basis: 36px;
-    border-radius: 12px;
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    border-radius: 50%;
   }
 
   .pp-account-name {
-    max-width: 82px;
-    font-size: 12px;
+    width: 1px;
+    max-width: 1px;
   }
 
   .pp-account-dropdown {
     width: min(100%, 320px);
+  }
+
+  .pp-account-summary strong {
+    font-size: 16px;
+  }
+
+  .pp-account-summary span {
+    font-size: 12px;
+  }
+
+  .pp-account-item {
+    min-height: 48px;
+    font-size: 14px;
+  }
+
+  .pp-account-item svg {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    padding: 8px;
+  }
+
+  .booking-payment-panel {
+    grid-template-columns: 1fr;
   }
 }

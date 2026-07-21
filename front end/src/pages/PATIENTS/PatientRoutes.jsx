@@ -8,7 +8,7 @@ import {
 import PatientDashboard from "./PatientDashboard";
 import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
 import { validateStrongPassword } from "../../utils/validation";
-import { formatTitleCase } from "../../utils/format";
+import { formatIndianCurrency, formatTitleCase } from "../../utils/format";
 
 const getNestedValue = (record, path) => {
   if (record == null) return undefined;
@@ -111,6 +111,11 @@ const formatAppointmentDateTime = (value) => {
 const readNumericId = (value) => {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : value;
+};
+
+const getResponseId = (record, keys) => {
+  if (!record || typeof record !== "object") return "";
+  return readFirst(record, keys) || readFirst(record.data || {}, keys) || "";
 };
 
 const formatPatientDate = (value) => {
@@ -913,6 +918,8 @@ function PatientBookingWizardPage({ visits = [], onRefresh }) {
   const [reasonForVisit, setReasonForVisit] = useState("");
   const [bookingState, setBookingState] = useState("idle");
   const [bookingError, setBookingError] = useState("");
+  const [paymentMode, setPaymentMode] = useState("UPI");
+  const [paymentDetails, setPaymentDetails] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const parseApiList = (data) => {
@@ -1233,12 +1240,21 @@ function PatientBookingWizardPage({ visits = [], onRefresh }) {
 
   const handleBackStep = () => setStep((current) => Math.max(1, current - 1));
 
+  const consultationFee = Number(
+    selectedDoctor?.consultationFee ??
+      selectedDoctor?.ConsultationFee ??
+      selectedDoctor?.fees ??
+      selectedDoctor?.fee ??
+      0
+  ) || 0;
+
   const handleConfirmBooking = async () => {
-    setBookingState('saving');
+    setBookingState('payment');
     setBookingError('');
     try {
       const branchId = selectedBranch?.branchId || selectedBranch?.id;
       const doctorId = selectedDoctor?.doctorId || selectedDoctor?.id;
+      const patientId = localStorage.getItem("patientId") || "";
       const payload = {
         branchId: readNumericId(branchId),
         doctorId: readNumericId(doctorId),
@@ -1257,6 +1273,59 @@ function PatientBookingWizardPage({ visits = [], onRefresh }) {
         const errorText = await response.text().catch(() => 'Unable to book appointment.');
         throw new Error(errorText || 'Unable to book appointment.');
       }
+      const appointmentData = await response.json().catch(() => ({}));
+      const appointmentId =
+        getResponseId(appointmentData, ["appointmentId", "AppointmentId", "id", "Id"]) ||
+        getResponseId(appointmentData?.appointment, ["appointmentId", "AppointmentId", "id", "Id"]);
+      if (!appointmentId) {
+        throw new Error("Appointment created, but appointment ID was not returned for payment.");
+      }
+
+      const paymentPayload = {
+        appointmentId: readNumericId(appointmentId),
+        patientId: readNumericId(patientId),
+        doctorId: readNumericId(doctorId),
+        branchId: readNumericId(branchId),
+        date: formatAppointmentDateTime(selectedDate),
+        startTime: formatSlotTime(selectedTime),
+        amount: consultationFee,
+        paymentMode,
+      };
+      const paymentResponse = await fetch(apiUrl("payment/create"), {
+        method: "POST",
+        headers,
+        body: JSON.stringify(paymentPayload),
+      });
+      const paymentData = await paymentResponse.json().catch(() => ({}));
+      if (!paymentResponse.ok) {
+        throw new Error(paymentData.message || paymentData.title || "Unable to create consultation payment.");
+      }
+
+      const paymentId = getResponseId(paymentData, ["paymentId", "PaymentId", "id", "Id"]);
+      const transactionId =
+        getResponseId(paymentData, ["transactionId", "TransactionId"]) ||
+        `PAT-${Date.now()}`;
+
+      const successResponse = await fetch(apiUrl("payment/success"), {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          paymentId: readNumericId(paymentId),
+          transactionId,
+        }),
+      });
+      const successData = await successResponse.json().catch(() => ({}));
+      if (!successResponse.ok) {
+        throw new Error(successData.message || successData.title || "Payment could not be confirmed.");
+      }
+
+      setPaymentDetails({
+        appointmentId,
+        paymentId,
+        transactionId,
+        amount: consultationFee,
+        paymentMode,
+      });
       setBookingState('success');
       setStep(5);
       if (onRefresh) await onRefresh();
@@ -1453,6 +1522,10 @@ function PatientBookingWizardPage({ visits = [], onRefresh }) {
                   <span>Time</span>
                   <strong>{selectedTime || 'Not selected'}</strong>
                 </div>
+                <div className="booking-summary-row">
+                  <span>Consultation Fee</span>
+                  <strong>{formatIndianCurrency(consultationFee)}</strong>
+                </div>
               </div>
               <div className="booking-field-group">
                 <label htmlFor="reason-for-visit">Reason for visit</label>
@@ -1464,8 +1537,28 @@ function PatientBookingWizardPage({ visits = [], onRefresh }) {
                   placeholder="Fever, follow-up consultation, knee pain..."
                 />
               </div>
+              <div className="booking-payment-panel">
+                <div>
+                  <strong>Payment</strong>
+                  <span>Pay only the doctor consultation fee to confirm this appointment.</span>
+                </div>
+                <label>
+                  <span>Payment Mode</span>
+                  <select value={paymentMode} onChange={(event) => setPaymentMode(event.target.value)}>
+                    <option value="UPI">UPI</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Card">Card</option>
+                    <option value="Insurance">Insurance</option>
+                  </select>
+                </label>
+              </div>
               {bookingError ? <p className="booking-error">{bookingError}</p> : null}
-              {bookingState === 'success' && <p className="booking-success">Your appointment request has been sent successfully.</p>}
+              {bookingState === 'success' && (
+                <p className="booking-success">
+                  Payment completed. Appointment confirmed
+                  {paymentDetails?.transactionId ? ` - ${paymentDetails.transactionId}` : ""}.
+                </p>
+              )}
             </section>
           )}
         </div>
@@ -1488,9 +1581,9 @@ function PatientBookingWizardPage({ visits = [], onRefresh }) {
               type="button"
               className="booking-button booking-button--primary"
               onClick={handleConfirmBooking}
-              disabled={bookingState === 'saving' || !canConfirm}
+              disabled={bookingState === 'payment' || !canConfirm}
             >
-              {bookingState === 'saving' ? 'Booking...' : 'Confirm appointment'}
+              {bookingState === 'payment' ? 'Processing payment...' : 'Pay Now'}
             </button>
           )}
           {step > 1 ? (

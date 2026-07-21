@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, CreditCard } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "../../components/ToastProvider";
 import { formatToday, parseList, requestJson } from "../receptionApi";
 import { getReceptionistProfile } from "../receptionSession";
 import { validateText } from "../../utils/validation";
+import { formatIndianCurrency } from "../../utils/format";
 
 const getSlotStart = (slot) => String(slot || "").split(" - ")[0].trim();
 
@@ -74,7 +75,26 @@ const getRecordHospitalId = (record = {}) =>
   "";
 
 const getDoctorId = (doctor = {}) =>
-  doctor.id ?? doctor.doctorId ?? doctor.DoctorId ?? "";
+  doctor.doctorId ?? doctor.DoctorId ?? doctor.id ?? doctor.Id ?? "";
+
+const getDoctorBranchId = (doctor = {}) =>
+  doctor.branchId ??
+  doctor.BranchId ??
+  doctor.branch?.id ??
+  doctor.Branch?.Id ??
+  getRecordHospitalId(doctor) ??
+  "";
+
+const getDoctorFee = (doctor = {}) =>
+  Number(
+    doctor.consultationFee ??
+      doctor.ConsultationFee ??
+      doctor.fees ??
+      doctor.Fees ??
+      doctor.fee ??
+      doctor.Fee ??
+      0
+  ) || 0;
 
 const isActiveDoctor = (doctor = {}) => {
   if (typeof doctor.isActive === "boolean") return doctor.isActive;
@@ -211,6 +231,9 @@ function ReceptionAppointments() {
   const [selectedSlot, setSelectedSlot] = useState("");
   const [message, setMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [paymentStep, setPaymentStep] = useState(false);
+  const [paymentMode, setPaymentMode] = useState("UPI");
+  const [bookingLoading, setBookingLoading] = useState(false);
   const [form, setForm] = useState({
     patientId: "",
     doctorId: "",
@@ -296,6 +319,13 @@ function ReceptionAppointments() {
     [patients, form.patientId]
   );
 
+  const selectedDoctor = useMemo(
+    () => doctors.find((d) => String(getDoctorId(d)) === String(form.doctorId)),
+    [doctors, form.doctorId]
+  );
+
+  const consultationFee = getDoctorFee(selectedDoctor);
+
   const patientCount = patients.length;
 
   const matchingPatients = useMemo(() => {
@@ -343,8 +373,10 @@ function ReceptionAppointments() {
     return new Set(
       appointments
         .filter((item) => String(item.date || item.appointmentDate || "").startsWith(form.date))
-        .filter(
-          (item) => String(item.doctorId || item.doctor?.id || "") === String(form.doctorId)
+      .filter(
+          (item) =>
+            String(item.doctorId || item.DoctorId || item.doctor?.doctorId || item.doctor?.id || "") ===
+            String(form.doctorId)
         )
         .map((item) => getSlotStart(item.slot || item.startTime || item.time || ""))
         .filter(Boolean)
@@ -378,12 +410,11 @@ function ReceptionAppointments() {
       .finally(() => setSlotLoading(false));
   }, [form.doctorId, form.date]);
 
-  const submit = async (event) => {
-    event.preventDefault();
+  const validateBookingForm = () => {
     if (!form.patientId || !form.doctorId || !selectedSlot) {
       setMessage("Please select patient, doctor, date, and time slot.");
       toast.error("Please select patient, doctor, date, and time slot.");
-      return;
+      return false;
     }
 
     const nextFieldErrors = VITAL_FIELDS.reduce((errors, field) => {
@@ -404,12 +435,28 @@ function ReceptionAppointments() {
       setFieldErrors(nextFieldErrors);
       setMessage("Please fix the highlighted fields.");
       toast.error("Please fix the highlighted fields.");
-      return;
+      return false;
     }
 
+    setFieldErrors({});
+    return true;
+  };
+
+  const openPaymentStep = (event) => {
+    event.preventDefault();
+    if (!validateBookingForm()) return;
+
+    setPaymentStep(true);
+    setMessage("");
+  };
+
+  const submit = async () => {
+    if (!validateBookingForm()) return;
+
     const selectedSlotStart = getSlotStart(selectedSlot);
-    const selectedDoctor = doctors.find((d) => String(getDoctorId(d)) === String(form.doctorId));
-    const hospitalIdForAppointment = Number(getRecordHospitalId(selectedDoctor)) || Number(receptionistHospitalId) || 0;
+    const branchIdForAppointment =
+      Number(getDoctorBranchId(selectedDoctor)) || Number(receptionistHospitalId) || 0;
+    const transactionId = `CONS-${Date.now()}`;
     const vitals = {
       bloodPressure: appendUnit(form.bloodPressure, vitalFieldByName.bloodPressure.unit),
       sugarLevel: appendUnit(form.sugarLevel, vitalFieldByName.sugarLevel.unit),
@@ -419,14 +466,15 @@ function ReceptionAppointments() {
       respiratoryRate: appendUnit(form.respiratoryRate, vitalFieldByName.respiratoryRate.unit),
     };
     const body = {
+      branchId: branchIdForAppointment,
       doctorId: Number(form.doctorId),
-      hospitalId: hospitalIdForAppointment,
       patientId: Number(form.patientId),
-      date: form.date,
-      appointmentDate: form.date,
-      slot: selectedSlot,
+      date: new Date(`${form.date}T00:00:00`).toISOString(),
       startTime: selectedSlotStart ? formatTo12Hour(selectedSlotStart) : "",
-      time: selectedSlot,
+      paymentMode,
+      transactionId,
+      paidAmount: consultationFee,
+      paymentStatus: "Paid",
       status: "Scheduled",
       chiefComplaints: form.chiefComplaints.trim(),
       bloodPressure: vitals.bloodPressure,
@@ -445,17 +493,21 @@ function ReceptionAppointments() {
     };
 
     try {
-      console.debug("Booking payload", { selectedDoctor, hospitalIdForAppointment, body });
+      setBookingLoading(true);
+      console.debug("Booking payload", { selectedDoctor, branchIdForAppointment, body });
       await requestJson("Appointment", { method: "POST", body: JSON.stringify(body) });
-      setMessage("Appointment booked successfully.");
-      toast.success("Appointment booked successfully");
+      setMessage("Payment received. Appointment booked successfully.");
+      toast.success("Payment received. Appointment booked successfully");
       setSelectedSlot("");
+      setPaymentStep(false);
       refresh();
     } catch (error) {
-      console.error("Booking failed", { error, selectedDoctor, hospitalIdForAppointment, body });
+      console.error("Booking failed", { error, selectedDoctor, branchIdForAppointment, body });
       const text = error.message || "Unable to book appointment.";
       setMessage(text);
       toast.error(text);
+    } finally {
+      setBookingLoading(false);
     }
   };
 
@@ -466,6 +518,9 @@ function ReceptionAppointments() {
       : value;
 
     setForm((prev) => ({ ...prev, [name]: nextValue }));
+    if (["patientId", "doctorId", "date"].includes(name)) {
+      setPaymentStep(false);
+    }
 
     if (vitalField) {
       setFieldErrors((prev) => ({
@@ -518,7 +573,7 @@ function ReceptionAppointments() {
 
       {message ? <div className="rc-alert">{message}</div> : null}
 
-      <form className="rc-card rc-booking-form" onSubmit={submit} noValidate>
+      <form className="rc-card rc-booking-form" onSubmit={openPaymentStep} noValidate>
         <div className="rc-booking-fields">
           <h3>Book Appointment</h3>
           <label>
@@ -532,13 +587,18 @@ function ReceptionAppointments() {
                 onBlur={() => setTimeout(() => setIsPatientMenuOpen(false), 150)}
                 placeholder="Type to search patient name"
                 autoComplete="off"
+                role="combobox"
                 aria-label="Search patient by name"
                 aria-autocomplete="list"
-                // eslint-disable-next-line jsx-a11y/role-supports-aria-props
+                aria-controls="reception-patient-options"
                 aria-expanded={isPatientMenuOpen}
               />
               {isPatientMenuOpen ? (
-                <div className="rc-patient-autocomplete-menu" role="listbox">
+                <div
+                  id="reception-patient-options"
+                  className="rc-patient-autocomplete-menu"
+                  role="listbox"
+                >
                   {matchingPatients.length > 0 ? (
                     matchingPatients.map((patient) => (
                       <button
@@ -648,7 +708,10 @@ function ReceptionAppointments() {
                       isSelected ? "selected" : "",
                       isBooked ? "booked" : "",
                     ].filter(Boolean).join(" ")}
-                    onClick={() => setSelectedSlot(label)}
+                    onClick={() => {
+                      setSelectedSlot(label);
+                      setPaymentStep(false);
+                    }}
                   >
                     {label} - {isBooked ? "BOOKED" : "AVAILABLE"}
                   </button>
@@ -661,6 +724,38 @@ function ReceptionAppointments() {
           <button type="submit" className="rc-confirm">
             <CheckCircle size={16} /> Confirm Booking
           </button>
+          {paymentStep ? (
+            <div className="rc-consult-payment">
+              <div className="rc-consult-payment-head">
+                <CreditCard size={18} />
+                <div>
+                  <strong>Consultation Payment</strong>
+                  <span>{selectedDoctor?.name || "Doctor"} fee only</span>
+                </div>
+              </div>
+              <div className="rc-payment-row">
+                <span>Consultation Fee</span>
+                <strong>{formatIndianCurrency(consultationFee)}</strong>
+              </div>
+              <label>
+                <span>Payment Mode</span>
+                <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)}>
+                  <option value="UPI">UPI</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Card">Card</option>
+                  <option value="Insurance">Insurance</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                className="rc-confirm"
+                onClick={submit}
+                disabled={bookingLoading}
+              >
+                <CreditCard size={16} /> {bookingLoading ? "Processing..." : "Pay Now"}
+              </button>
+            </div>
+          ) : null}
         </div>
       </form>
     </section>

@@ -1307,6 +1307,69 @@
   cursor: not-allowed;
 }
 
+.rc-consult-payment {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #cfe2e7;
+  border-radius: 10px;
+  background: #fff;
+  padding: 12px;
+}
+
+.rc-consult-payment-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rc-consult-payment-head svg {
+  width: 34px;
+  height: 34px;
+  padding: 8px;
+  border-radius: 9px;
+  color: #0f9d9d;
+  background: #e8f6f4;
+  flex: 0 0 auto;
+}
+
+.rc-consult-payment-head strong {
+  display: block;
+  color: #071120;
+  font-size: 14px;
+}
+
+.rc-consult-payment-head span {
+  display: block;
+  margin-top: 2px;
+  color: #40516a;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rc-payment-row {
+  min-height: 42px;
+  border: 1px solid #d9e1ec;
+  border-radius: 8px;
+  background: #f8fbff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+}
+
+.rc-payment-row span {
+  color: #40516a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rc-payment-row strong {
+  color: #071120;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
 .rc-patient-summary,
 .rc-total,
 .rc-invoice-box {
