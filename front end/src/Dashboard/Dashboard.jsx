@@ -2,6 +2,7 @@
 import React, {
   useEffect,
   useState,
+  useCallback,
 } from "react";
 
 import "./Dashboard.css";
@@ -162,14 +163,6 @@ function Dashboard() {
     navigate("/doctors/add");
   };
 
-  /* ================= LOAD DASHBOARD ================= */
-
-  useEffect(() => {
-
-    fetchDashboard();
-
-  }, []);
-
   useEffect(() => {
     let active = true;
 
@@ -222,7 +215,16 @@ function Dashboard() {
     location.hash,
   ]);
 
-  const fetchDashboard =
+  const getDashboardMetricValue = (keys = [], fallback = 0) => {
+    const value = pickValue(dashboardData, keys, fallback);
+    if (Array.isArray(value)) {
+      return value.length;
+    }
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+
+  const fetchDashboard = useCallback(
     async () => {
 
       try {
@@ -329,11 +331,10 @@ function Dashboard() {
         console.log(error);
 
       } finally {
-
         setLoading(false);
-
       }
-    };
+    }, []
+  );
   /* ================= LOADING ================= */
 
   // Helper skeleton component (lightweight) used for placeholders while loading
@@ -478,15 +479,6 @@ function Dashboard() {
           "-"
         )
       ),
-  };
-
-  const getDashboardMetricValue = (keys = [], fallback = 0) => {
-    const value = pickValue(dashboardData, keys, fallback);
-    if (Array.isArray(value)) {
-      return value.length;
-    }
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : fallback;
   };
 
   const summaryCards = [

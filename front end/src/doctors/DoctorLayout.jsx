@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import DoctorSidebar from "./DoctorSidebar";
 import DoctorTopbar from "./DoctorTopbar";
+import { loadStaffRolePermissions } from "../utils/staffRolePermissions";
 import "./DoctorLayout.css";
 
 const PAGE_TITLES = {
@@ -16,6 +17,7 @@ function DoctorLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(
     () => typeof window === "undefined" || window.innerWidth > 768
   );
+  const [doctorSearch, setDoctorSearch] = useState("");
   const token =
     localStorage.getItem("token") ||
     localStorage.getItem("doctorToken") ||
@@ -28,6 +30,10 @@ function DoctorLayout() {
   const isDoctor =
     String(role).toLowerCase() === "doctor" ||
     Boolean(localStorage.getItem("doctorToken"));
+
+  useEffect(() => {
+    loadStaffRolePermissions().catch(() => {});
+  }, []);
 
   if (!token) return <Navigate to="/login" replace />;
   if (!isDoctor) return <Navigate to="/dashboard" replace />;
@@ -48,13 +54,15 @@ function DoctorLayout() {
       />
       <DoctorSidebar />
       <div className="dr-layout-body">
-        <DoctorTopbar
-          title={title}
-          sidebarOpen={sidebarOpen}
-          onMenuToggle={() => setSidebarOpen((p) => !p)}
-        />
-        <main className="dr-layout-content">
-          <Outlet />
+            <DoctorTopbar
+              title={title}
+              sidebarOpen={sidebarOpen}
+              onMenuToggle={() => setSidebarOpen((p) => !p)}
+              search={doctorSearch}
+              onSearch={setDoctorSearch}
+            />
+            <main className="dr-layout-content">
+              <Outlet context={{ doctorSearch, setDoctorSearch }} />
         </main>
       </div>
     </div>

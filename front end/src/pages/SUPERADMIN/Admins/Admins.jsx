@@ -131,6 +131,8 @@ function Admins() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const ADMIN_SECRETS_KEY = "admin_secrets";
 
@@ -386,6 +388,17 @@ function Admins() {
       return matchesSearch && matchesStatus;
     });
   }, [admins, clinics, search, status]);
+
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, status, rows.length]);
+
+  const pagedRows = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return rows.slice(start, start + pageSize);
+  }, [rows, currentPage]);
 
   const handleDelete = async (admin) => {
     const confirmed = window.confirm(`Delete ${admin.name || "this admin"}?`);
@@ -673,11 +686,33 @@ function Admins() {
 
       <DataTable
         columns={columns}
-        rows={rows}
+        rows={pagedRows}
         loading={loading}
         error={!showForm ? error : ""}
+        rowIndexOffset={(currentPage - 1) * pageSize}
         emptyMessage="No admins match your filters."
       />
+
+      <div className="sa-table-footer">
+        <div className="sa-table-summary">
+          Showing {pagedRows.length} of {rows.length} admins
+        </div>
+        <div className="sa-pagination">
+          <button type="button" className="sa-btn" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
+            First
+          </button>
+          <button type="button" className="sa-btn" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1}>
+            Prev
+          </button>
+          <span className="sa-pagination-label">Page {currentPage} of {pageCount}</span>
+          <button type="button" className="sa-btn" onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))} disabled={currentPage === pageCount}>
+            Next
+          </button>
+          <button type="button" className="sa-btn" onClick={() => setCurrentPage(pageCount)} disabled={currentPage === pageCount}>
+            Last
+          </button>
+        </div>
+      </div>
     </>
   );
 }

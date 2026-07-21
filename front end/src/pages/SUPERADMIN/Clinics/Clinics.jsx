@@ -15,6 +15,8 @@ function Clinics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingClinicId, setUpdatingClinicId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const loadClinics = async () => {
     setLoading(true);
@@ -76,6 +78,17 @@ function Clinics() {
       return matchesSearch && matchesStatus;
     });
   }, [clinics, search, status]);
+
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, status, rows.length]);
+
+  const pagedRows = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return rows.slice(start, start + pageSize);
+  }, [rows, currentPage]);
 
   const columns = [
     {
@@ -180,11 +193,33 @@ function Clinics() {
       <DataTable
         className="sa-table--clinics"
         columns={columns}
-        rows={rows}
+        rows={pagedRows}
         loading={loading}
         error={error}
+        rowIndexOffset={(currentPage - 1) * pageSize}
         emptyMessage="No clinics match your filters."
       />
+
+      <div className="sa-table-footer">
+        <div className="sa-table-summary">
+          Showing {pagedRows.length} of {rows.length} clinics
+        </div>
+        <div className="sa-pagination">
+          <button type="button" className="sa-btn" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
+            First
+          </button>
+          <button type="button" className="sa-btn" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1}>
+            Prev
+          </button>
+          <span className="sa-pagination-label">Page {currentPage} of {pageCount}</span>
+          <button type="button" className="sa-btn" onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))} disabled={currentPage === pageCount}>
+            Next
+          </button>
+          <button type="button" className="sa-btn" onClick={() => setCurrentPage(pageCount)} disabled={currentPage === pageCount}>
+            Last
+          </button>
+        </div>
+      </div>
 
       {selectedClinic ? (
         <div className="sa-form-card" style={{ marginTop: 16 }}>

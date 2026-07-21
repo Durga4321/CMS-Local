@@ -60,6 +60,8 @@ function Users() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const loadUsers = async () => {
     setLoading(true);
@@ -202,6 +204,17 @@ function Users() {
       return matchesSearch && matchesStatus;
     });
   }, [search, status, users]);
+
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, status, rows.length]);
+
+  const pagedRows = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return rows.slice(start, start + pageSize);
+  }, [rows, currentPage]);
 
   const toggleStatus = async (user) => {
     if (!isAdminRoleUser(user)) {
@@ -388,11 +401,33 @@ function Users() {
       <DataTable
         className="sa-table--users"
         columns={columns}
-        rows={rows}
+        rows={pagedRows}
         loading={loading}
         error={!showForm ? error : ""}
+        rowIndexOffset={(currentPage - 1) * pageSize}
         emptyMessage="No users match your filters."
       />
+
+      <div className="sa-table-footer">
+        <div className="sa-table-summary">
+          Showing {pagedRows.length} of {rows.length} users
+        </div>
+        <div className="sa-pagination">
+          <button type="button" className="sa-btn" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
+            First
+          </button>
+          <button type="button" className="sa-btn" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1}>
+            Prev
+          </button>
+          <span className="sa-pagination-label">Page {currentPage} of {pageCount}</span>
+          <button type="button" className="sa-btn" onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))} disabled={currentPage === pageCount}>
+            Next
+          </button>
+          <button type="button" className="sa-btn" onClick={() => setCurrentPage(pageCount)} disabled={currentPage === pageCount}>
+            Last
+          </button>
+        </div>
+      </div>
 
       {showForm ? (
         <div className="sa-modal-backdrop" role="presentation" onMouseDown={closeForm}>

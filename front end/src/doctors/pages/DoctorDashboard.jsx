@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import {
   Calendar,
   CheckCircle,
@@ -131,13 +131,27 @@ const buildDoctorDashboard = (data, appointments, doctor) => {
 const formatTime = (value) => {
   if (!value) return "-";
 
-  const [hourValue, minuteValue = "00"] = String(value).split(":");
+  const raw = String(value).trim();
+
+  // Detect if the input already contains an AM/PM suffix and strip it
+  const ampmMatch = raw.match(/\b(am|pm)\b$/i);
+  let suffix = "";
+  let timePart = raw;
+
+  if (ampmMatch) {
+    suffix = ampmMatch[1].toUpperCase();
+    timePart = raw.replace(/\b(am|pm)\b$/i, "").trim();
+  }
+
+  const [hourValue, minuteValueRaw = "00"] = String(timePart).split(":");
   const hour = Number(hourValue);
 
-  if (Number.isNaN(hour)) return value;
+  if (Number.isNaN(hour)) return raw;
 
-  const suffix = hour >= 12 ? "PM" : "AM";
+  if (!suffix) suffix = hour >= 12 ? "PM" : "AM";
+
   const displayHour = hour % 12 || 12;
+  const minuteValue = String(minuteValueRaw).replace(/[^0-9]/g, "");
 
   return `${String(displayHour).padStart(2, "0")}:${minuteValue.padStart(2, "0")} ${suffix}`;
 };
@@ -160,7 +174,11 @@ function DoctorDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
+  // Support shared search state from layout via Outlet context (fallback to local state)
+  const outlet = useOutletContext?.() || {};
+  const [localSearch, setLocalSearch] = useState("");
+  const search = outlet.doctorSearch !== undefined ? outlet.doctorSearch : localSearch;
+  const setSearch = outlet.setDoctorSearch !== undefined ? outlet.setDoctorSearch : setLocalSearch;
   const [notes, setNotes] = useState(null);
   const [notesLoading, setNotesLoading] = useState(false);
   const [patientOverview, setPatientOverview] = useState(null);

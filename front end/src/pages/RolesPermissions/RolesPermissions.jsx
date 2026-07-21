@@ -3,6 +3,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import Header from "../../components/superadmin/Header";
 import DataTable from "../../components/superadmin/DataTable";
 import PermissionMatrix from "../../components/superadmin/PermissionMatrix";
+import { fetchRoles, saveRole, updateRolePermissions, deleteRole } from "../SUPERADMIN/superAdminApi";
 import { apiUrl } from "../../config/api";
 import { onlyAlpha, validateAlpha } from "../../utils/validation";
 
@@ -112,31 +113,47 @@ function AdminRolesPermissions() {
     writeList(STORAGE_KEY, nextRoles);
   };
 
+  const safePersistRoles = (nextRoles) => {
+    setRoles(nextRoles);
+    writeList(STORAGE_KEY, nextRoles);
+  };
+
   useEffect(() => {
-    persistRoles(mergeRoles(readList(STORAGE_KEY)));
+    const loadInitialData = async () => {
+      try {
+        const remoteRoles = await fetchRoles();
+        const merged = mergeRoles([...remoteRoles, ...readList(STORAGE_KEY)]);
+        setRoles(merged);
+        writeList(STORAGE_KEY, merged);
+      } catch {
+        persistRoles(mergeRoles(readList(STORAGE_KEY)));
+      }
 
-    let active = true;
-    Promise.allSettled([
-      fetch(apiUrl("Doctor"), { headers: { "ngrok-skip-browser-warning": "true" } })
-        .then((response) => (response.ok ? response.json() : [])),
-      fetch(apiUrl("Receptionist"), { headers: { "ngrok-skip-browser-warning": "true" } })
-        .then((response) => (response.ok ? response.json() : [])),
-    ]).then(([doctorResult, receptionistResult]) => {
-      if (!active) return;
+      let active = true;
+      Promise.allSettled([
+        fetch(apiUrl("Doctor"), { headers: { "ngrok-skip-browser-warning": "true" } })
+          .then((response) => (response.ok ? response.json() : [])),
+        fetch(apiUrl("Receptionist"), { headers: { "ngrok-skip-browser-warning": "true" } })
+          .then((response) => (response.ok ? response.json() : [])),
+      ]).then(([doctorResult, receptionistResult]) => {
+        if (!active) return;
 
-      const doctors = doctorResult.status === "fulfilled"
-        ? parseApiList(doctorResult.value).map((item) => normalizeStaff(item, "Doctor"))
-        : [];
-      const receptionists = receptionistResult.status === "fulfilled"
-        ? parseApiList(receptionistResult.value).map((item) => normalizeStaff(item, "Receptionist"))
-        : [];
+        const doctors = doctorResult.status === "fulfilled"
+          ? parseApiList(doctorResult.value).map((item) => normalizeStaff(item, "Doctor"))
+          : [];
+        const receptionists = receptionistResult.status === "fulfilled"
+          ? parseApiList(receptionistResult.value).map((item) => normalizeStaff(item, "Receptionist"))
+          : [];
 
-      setStaff([...doctors, ...receptionists].filter((item) => item.id && item.name));
-    });
+        setStaff([...doctors, ...receptionists].filter((item) => item.id && item.name));
+      });
 
-    return () => {
-      active = false;
+      return () => {
+        active = false;
+      };
     };
+
+    loadInitialData();
   }, []);
 
   const getAssignedStaff = (role) => {
@@ -188,7 +205,7 @@ function AdminRolesPermissions() {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const roleName = form.roleName || form.name;
@@ -200,35 +217,59 @@ function AdminRolesPermissions() {
     }
 
     setSaving(true);
-    const id = editingRoleId || normalizeRoleKey(roleName) || `role-${Date.now()}`;
     const nextRole = {
       ...form,
-      id,
       name: roleName,
       roleName,
       permissions: withViewPermission(form.permissions),
     };
-    const nextRoles = roles.some((role) => String(getRoleKey(role)) === String(id))
-      ? roles.map((role) => (String(getRoleKey(role)) === String(id) ? { ...role, ...nextRole } : role))
-      : [...roles, nextRole];
 
-    persistRoles(mergeRoles(nextRoles));
-    setSaving(false);
-    closeForm();
+    try {
+      const savedRole = await saveRole(nextRole, editingRoleId || undefined);
+      const nextRoles = roles.some((role) => String(getRoleKey(role)) === String(getRoleKey(savedRole)))
+        ? roles.map((role) => (String(getRoleKey(role)) === String(getRoleKey(savedRole)) ? { ...role, ...savedRole } : role))
+        : [...roles, savedRole];
+
+      persistRoles(mergeRoles(nextRoles));
+      closeForm();
+    } catch (saveError) {
+      const id = editingRoleId || normalizeRoleKey(roleName) || `role-${Date.now()}`;
+      const fallbackRole = {
+        ...nextRole,
+        id,
+      };
+      const nextRoles = roles.some((role) => String(getRoleKey(role)) === String(id))
+        ? roles.map((role) => (String(getRoleKey(role)) === String(id) ? { ...role, ...fallbackRole } : role))
+        : [...roles, fallbackRole];
+
+      persistRoles(mergeRoles(nextRoles));
+      setError("Unable to save to backend. Changes are stored locally only.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (role) => {
+  const handleDelete = async (role) => {
     if (role.system) {
       setError(`Cannot delete system role: ${role.name}`);
       return;
     }
 
     if (!window.confirm(`Delete ${role.name || "this role"}?`)) return;
-    persistRoles(mergeRoles(roles.filter((item) => getRoleKey(item) !== getRoleKey(role))));
+    const nextRoles = mergeRoles(roles.filter((item) => getRoleKey(item) !== getRoleKey(role)));
+    persistRoles(nextRoles);
     if (editingRoleId === getRoleKey(role)) closeForm();
+
+    if (role.id) {
+      try {
+        await deleteRole(role.id);
+      } catch (deleteError) {
+        setError("Unable to delete from backend. The local role has been removed.");
+      }
+    }
   };
 
-  const handleMatrixPermissionToggle = (role, permission) => {
+  const handleMatrixPermissionToggle = async (role, permission) => {
     if (permission === "View") return;
 
     const roleKey = getRoleKey(role);
@@ -237,11 +278,21 @@ function AdminRolesPermissions() {
       ? currentPermissions.filter((item) => item !== permission)
       : withViewPermission([...currentPermissions, permission]);
 
-    persistRoles(
-      roles.map((item) =>
-        getRoleKey(item) === roleKey ? { ...item, permissions } : item
-      )
+    const nextRoles = roles.map((item) =>
+      getRoleKey(item) === roleKey ? { ...item, permissions } : item
     );
+    persistRoles(nextRoles);
+
+    if (role.id) {
+      try {
+        await updateRolePermissions(role.id, {
+          ...role,
+          permissions,
+        });
+      } catch (updateError) {
+        setError("Unable to update permissions on backend. Changes are stored locally.");
+      }
+    }
   };
 
   const columns = [

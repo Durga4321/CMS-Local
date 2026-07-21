@@ -1,10 +1,24 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Menu, Search } from "lucide-react";
 import NotificationPopup from "../components/NotificationPopup";
 import UserProfileMenu from "../profile/UserProfileMenu";
 import "./DoctorTopbar.css";
 
-function DoctorTopbar({ title, sidebarOpen, onMenuToggle }) {
+function DoctorTopbar({ title, sidebarOpen, onMenuToggle, search = "", onSearch = () => {} }) {
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   return (
     <header className="dr-topbar">
       <div className="dr-topbar-left">
@@ -24,9 +38,12 @@ function DoctorTopbar({ title, sidebarOpen, onMenuToggle }) {
       <div className="dr-topbar-search">
         <Search size={15} className="dr-search-icon" />
         <input
+          ref={inputRef}
           className="dr-search-input"
           placeholder="Search patient by name, ID or phone..."
-          readOnly
+          aria-label="Search patients"
+          value={search}
+          onChange={(e) => onSearch(e.target.value)}
         />
         <kbd className="dr-search-kbd">Ctrl + K</kbd>
       </div>

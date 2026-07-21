@@ -7,6 +7,7 @@ import { recordAuditLog } from '../pages/SUPERADMIN/superAdminApi';
 import { useToast } from '../components/ToastProvider';
 import { validateGmail } from '../utils/validation';
 import { fetchAndStoreRolePermissions } from '../utils/authorization';
+import { loadStaffRolePermissions } from '../utils/staffRolePermissions';
 const EyeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
@@ -466,6 +467,9 @@ const AdminLogin = () => {
         localStorage.setItem('doctorEmail', loginEmail);
         localStorage.setItem('doctorName', displayName);
         localStorage.setItem('doctorId', String(authData.doctorId || getClaim(claims, 'DoctorId') || ''));
+        try {
+          await loadStaffRolePermissions();
+        } catch {}
         toast.success('Login successful');
         navigate('/doctor/dashboard', { replace: true });
         return;
@@ -476,6 +480,9 @@ const AdminLogin = () => {
         localStorage.setItem('receptionistRole', role);
         localStorage.setItem('receptionistEmail', loginEmail);
         localStorage.setItem('receptionistName', displayName);
+        try {
+          await loadStaffRolePermissions();
+        } catch {}
         toast.success('Login successful');
         navigate('/reception/dashboard', { replace: true });
         return;

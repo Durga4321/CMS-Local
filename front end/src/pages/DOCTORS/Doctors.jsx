@@ -327,7 +327,6 @@ function Doctors() {
   const [permissionsLoading, setPermissionsLoading] = useState(true);
   const [permissionRecord, setPermissionRecord] = useState(null);
 
-
   const [editingDoctor, setEditingDoctor] = useState(null);
   const [editForm, setEditForm] = useState(getInitialEditForm());
   const [editImageFile, setEditImageFile] = useState(null);
@@ -556,6 +555,8 @@ function Doctors() {
     experienceFilter,
     sortConfig,
   ]);
+
+  const visibleDoctors = filteredDoctors;
 
   const specializationOptions = useMemo(
     () =>
@@ -974,7 +975,7 @@ function Doctors() {
       ) : null}
 
       <div className="doctors-card-grid">
-        {filteredDoctors.map((doc) => {
+        {visibleDoctors.map((doc) => {
           const initials =
             (doc.name || "D")
               .split(" ")

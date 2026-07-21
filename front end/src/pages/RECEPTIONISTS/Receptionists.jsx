@@ -152,6 +152,8 @@ function Receptionists() {
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [permissionsLoading, setPermissionsLoading] = useState(true);
   const [permissionRecord, setPermissionRecord] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 8;
 
   // Keep the page-level success banner in sync with the transient toast.
   // Without this, a status-change confirmation remains until another action
@@ -180,6 +182,28 @@ function Receptionists() {
       }, {}),
     [branchOptions]
   );
+
+  const filteredReceptionists = useMemo(() => {
+    const value = searchText.trim().toLowerCase();
+    if (!value) return receptionists;
+
+    return receptionists.filter((item) =>
+      [item.name, item.email, item.phone, getReceptionistBranchName(item, branchNameById)]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(value))
+    );
+  }, [branchNameById, receptionists, searchText]);
+
+  const pageCount = Math.max(1, Math.ceil(filteredReceptionists.length / pageSize));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchText, filteredReceptionists.length]);
+
+  const visibleReceptionists = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredReceptionists.slice(start, start + pageSize);
+  }, [filteredReceptionists, currentPage]);
 
   const fetchReceptionists = async () => {
     setLoading(true);
@@ -267,29 +291,9 @@ function Receptionists() {
     };
   }, []);
 
-  const filteredReceptionists = useMemo(() => {
-    const value = searchText.trim().toLowerCase();
-    if (!value) return receptionists;
-
-    return receptionists.filter((item) =>
-      [item.name, item.email, item.phone, getReceptionistBranchName(item, branchNameById)]
-        .filter(Boolean)
-        .some((field) => String(field).toLowerCase().includes(value))
-    );
-  }, [branchNameById, receptionists, searchText]);
-
   const openAddModal = () => {
-    if (!canCreateReceptionist) {
-      toast.error("Create permission is disabled by Super Admin.");
-      return;
-    }
-
     setEditingReceptionist(null);
-    const activeOptions = branchOptions.filter((branch) => branch.isActive);
-    setForm({
-      ...getEmptyForm(),
-      branchId: activeOptions.length === 1 ? activeOptions[0].id : "",
-    });
+    setForm(getEmptyForm());
     setFieldErrors({});
     setError("");
     setSuccess("");
@@ -297,17 +301,12 @@ function Receptionists() {
   };
 
   const openEditModal = (receptionist) => {
-    if (!canEditReceptionist) {
-      toast.error("Edit permission is disabled by Super Admin.");
-      return;
-    }
-
     setEditingReceptionist(receptionist);
     setForm({
-      name: receptionist?.name || "",
-      email: receptionist?.email || "",
-      phone: receptionist?.phone || "",
-      branchId: String(getReceptionistBranchId(receptionist) || ""),
+      name: receptionist.name || "",
+      email: receptionist.email || "",
+      phone: receptionist.phone || "",
+      branchId: getReceptionistBranchId(receptionist) || "",
     });
     setFieldErrors({});
     setError("");
@@ -627,7 +626,7 @@ function Receptionists() {
           <div className="receptionists-empty">No receptionists found.</div>
         ) : null}
 
-        {filteredReceptionists.map((receptionist, index) => {
+        {visibleReceptionists.map((receptionist, index) => {
           const initials =
             (receptionist.name || "R")
               .split(" ")
@@ -644,7 +643,7 @@ function Receptionists() {
 
           return (
             <div className="receptionists-row" key={receptionist.id}>
-              <span>{index + 1}</span>
+              <span>{(currentPage - 1) * pageSize + index + 1}</span>
               <div className="receptionists-name-cell">
                 <div className="receptionists-avatar">{initials}</div>
                 <div>
@@ -706,6 +705,26 @@ function Receptionists() {
           );
         })}
       </div>
+
+      {filteredReceptionists.length ? (
+        <div className="rc-pagination">
+          <button type="button" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
+            First
+          </button>
+          <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1}>
+            Prev
+          </button>
+          <span>
+            Page {currentPage} of {pageCount}
+          </span>
+          <button type="button" onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))} disabled={currentPage === pageCount}>
+            Next
+          </button>
+          <button type="button" onClick={() => setCurrentPage(pageCount)} disabled={currentPage === pageCount}>
+            Last
+          </button>
+        </div>
+      ) : null}
 
       {modalOpen ? (
         <div className="receptionists-modal-overlay" onClick={closeModal}>

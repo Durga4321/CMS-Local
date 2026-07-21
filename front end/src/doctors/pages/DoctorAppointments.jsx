@@ -25,11 +25,25 @@ const getStatusClass = (status) =>
 
 const formatTime = (value) => {
   if (!value) return "-";
-  const [hourValue, minuteValue = "00"] = String(value).split(":");
+
+  const raw = String(value).trim();
+  const ampmMatch = raw.match(/\b(am|pm)\b$/i);
+  let suffix = "";
+  let timePart = raw;
+
+  if (ampmMatch) {
+    suffix = ampmMatch[1].toUpperCase();
+    timePart = raw.replace(/\b(am|pm)\b$/i, "").trim();
+  }
+
+  const [hourValue, minuteValueRaw = "00"] = String(timePart).split(":");
   const hour = Number(hourValue);
-  if (Number.isNaN(hour)) return value;
-  const suffix = hour >= 12 ? "PM" : "AM";
+  if (Number.isNaN(hour)) return raw;
+
+  if (!suffix) suffix = hour >= 12 ? "PM" : "AM";
   const displayHour = hour % 12 || 12;
+  const minuteValue = String(minuteValueRaw).replace(/[^0-9]/g, "");
+
   return `${String(displayHour).padStart(2, "0")}:${minuteValue.padStart(2, "0")} ${suffix}`;
 };
 
