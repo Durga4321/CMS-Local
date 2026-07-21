@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Banknote, CreditCard, Download, FileText, ReceiptText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { parseList, requestJson } from "../receptionApi";
@@ -70,7 +70,9 @@ const getAppointmentId = (appointment) =>
     appointment?.appointmentId,
     appointment?.AppointmentId,
     appointment?.id,
-    appointment?.Id
+    appointment?.Id,
+    appointment?.appointment?.id,
+    appointment?.appointment?.appointmentId
   ) || "";
 
 const getAppointmentStatus = (appointment = {}) =>
@@ -83,6 +85,8 @@ const getAppointmentStatus = (appointment = {}) =>
     appointment.BillingStatus ??
     appointment.paymentStatus ??
     appointment.PaymentStatus ??
+    appointment.state ??
+    appointment.State ??
     ""
   )
     .trim()
@@ -90,7 +94,7 @@ const getAppointmentStatus = (appointment = {}) =>
 
 const isBillableAppointment = (appointment = {}) => {
   const status = getAppointmentStatus(appointment);
-  return !["cancelled", "canceled", "billed", "paid"].includes(status);
+  return !["cancelled", "canceled", "billed"].includes(status);
 };
 
 const getAppointmentPatientName = (appointment = {}) =>
@@ -121,6 +125,34 @@ const getAppointmentDoctorName = (appointment = {}) =>
     appointment.Doctor?.FullName
   ) || "-";
 
+const getAppointmentClinicId = (appointment = {}) =>
+  firstValue(
+    appointment.clinicId,
+    appointment.ClinicId,
+    appointment.hospitalId,
+    appointment.HospitalId,
+    appointment.assignedClinicId,
+    appointment.AssignedClinicId,
+    appointment.hospital?.id,
+    appointment.clinic?.id,
+    appointment.assignedClinic?.id
+  ) || "";
+
+const getAppointmentClinicName = (appointment = {}) =>
+  firstValue(
+    appointment.clinicName,
+    appointment.ClinicName,
+    appointment.hospitalName,
+    appointment.HospitalName,
+    appointment.clinic,
+    appointment.Clinic,
+    appointment.assignedClinic,
+    appointment.AssignedClinic,
+    appointment.hospital?.name,
+    appointment.clinic?.name,
+    appointment.assignedClinic?.name
+  ) || "";
+
 const getAppointmentTime = (appointment = {}) =>
   firstValue(
     appointment.time,
@@ -146,9 +178,12 @@ const getAppointmentConsultationCharge = (appointment = {}) =>
 const fetchBillingAppointments = async () => {
   const billingAppointments = await requestJson("Billing/appointments").catch(() => null);
   const billingList = parseList(billingAppointments);
-  if (billingList.length > 0) return billingList;
+  if (billingList.length > 0) {
+    return { appointments: billingList, source: "billing" };
+  }
 
-  return parseList(await requestJson("Appointment"));
+  const appointmentList = parseList(await requestJson("Appointment"));
+  return { appointments: appointmentList, source: "appointment" };
 };
 
 const getInvoiceAmounts = ({ invoice, form, selectedAppointment, total }) => ({
@@ -191,6 +226,8 @@ function ReceptionBilling() {
   const amountFormatTimers = useRef({});
   const messageTimer = useRef(null);
   const [appointments, setAppointments] = useState([]);
+  const [billingSource, setBillingSource] = useState("billing");
+  const [appointmentDetails, setAppointmentDetails] = useState(null);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
@@ -204,35 +241,73 @@ function ReceptionBilling() {
   });
 
   useEffect(() => {
-    Promise.all([fetchBillingAppointments(), requestJson("Billing")])
-      .then((data) => {
-        const [appointmentsData, invoicesData] = data;
-        const all = parseList(appointmentsData).filter(isBillableAppointment);
-        // Restrict billing appointments to receptionist's clinic
-        const allowedClinicId = String(clinicId || "").trim();
-        const allowedClinicName = String(clinicName || "").trim().toLowerCase();
+    const loadBillingData = async () => {
+      try {
+        const [appointmentsResult, invoicesResult] = await Promise.allSettled([
+          fetchBillingAppointments(),
+          requestJson("Billing"),
+        ]);
+
+        const appointmentsResultData =
+          appointmentsResult.status === "fulfilled" ? appointmentsResult.value : { appointments: [], source: "billing" };
+        const invoicesData =
+          invoicesResult.status === "fulfilled" ? invoicesResult.value : [];
+
+        const all = parseList(appointmentsResultData.appointments).filter(isBillableAppointment);
         const list = all.filter((appt) => {
-          const apptClinicId = String(appt.clinicId || appt.hospitalId || appt.hospital || "").trim();
-          const apptClinicName = String(appt.clinicName || appt.hospitalName || appt.clinic || "").trim().toLowerCase();
-          if (allowedClinicId && (apptClinicId === allowedClinicId)) return true;
-          if (allowedClinicName && (apptClinicName === allowedClinicName)) return true;
-          // if receptionist clinic not set, allow appointment
+          if (appointmentsResultData.source === "billing") return true;
+
+          const allowedClinicId = String(clinicId || "").trim();
+          const allowedClinicName = String(clinicName || "").trim().toLowerCase();
+          const apptClinicId = String(getAppointmentClinicId(appt)).trim();
+          const apptClinicName = String(getAppointmentClinicName(appt)).trim().toLowerCase();
+          if (allowedClinicId && apptClinicId === allowedClinicId) return true;
+          if (allowedClinicName && apptClinicName === allowedClinicName) return true;
           if (!allowedClinicId && !allowedClinicName) return true;
           return false;
         });
+
+        if (invoicesResult.status !== "fulfilled") {
+          console.warn("Unable to load invoices:", invoicesResult.reason);
+        }
+
+        setBillingSource(appointmentsResultData.source);
         setAppointments(list);
         setForm((prev) => ({
           ...prev,
           appointmentId: String(getAppointmentId(list[0]) || ""),
         }));
         setInvoice(getLatestInvoice(invoicesData));
-      })
-      .catch((error) => {
+      } catch (error) {
         setMessage(error.message);
         setMessageType("error");
         toast.error(error.message || "Unable to load billing details.");
-      });
-  }, [toast]);
+      }
+    };
+
+    loadBillingData();
+  }, [toast, clinicId, clinicName]);
+
+  const fetchAppointmentDetails = useCallback(
+    async (appointmentId) => {
+      if (!appointmentId) {
+        setAppointmentDetails(null);
+        return;
+      }
+
+      try {
+        const details = await requestJson(`Billing/appointment/${appointmentId}`);
+        setAppointmentDetails(details);
+      } catch {
+        setAppointmentDetails(null);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    fetchAppointmentDetails(form.appointmentId);
+  }, [form.appointmentId, fetchAppointmentDetails]);
 
   useEffect(() => {
     const timers = amountFormatTimers.current;
@@ -274,7 +349,8 @@ function ReceptionBilling() {
     );
   }, [appointments, form.appointmentId]);
 
-  const consultationCharge = Number(getAppointmentConsultationCharge(selectedAppointment));
+  const activeAppointment = appointmentDetails || selectedAppointment;
+  const consultationCharge = Number(getAppointmentConsultationCharge(activeAppointment));
   const medicineCharges = Number(form.medicineCharges || 0);
   const labCharges = Number(form.labCharges || 0);
   const total =

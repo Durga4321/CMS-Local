@@ -6,7 +6,11 @@ export const receptionApiUrl = (path) => apiUrl(path);
 export const parseList = (data) => {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.data?.appointments)) return data.data.appointments;
   if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.result)) return data.result;
+  if (Array.isArray(data?.result?.appointments)) return data.result.appointments;
+  if (Array.isArray(data?.appointments)) return data.appointments;
   return [];
 };
 
