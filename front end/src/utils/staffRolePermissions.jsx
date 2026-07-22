@@ -27,7 +27,30 @@ const getRoleBoolean = (role = {}, key) =>
   role[key] === true || role[key.charAt(0).toUpperCase() + key.slice(1)] === true;
 
 const withViewPermission = (permissions = []) =>
-  Array.from(new Set(["view", ...((Array.isArray(permissions) ? permissions : []).map((permission) => String(permission || "").trim().toLowerCase()))]));
+  Array.from(
+    new Set([
+      "view",
+      ...((Array.isArray(permissions) ? permissions : []).map((permission) =>
+        String(permission || "").trim().toLowerCase()
+      )),
+    ])
+  );
+
+const mergeStoredWithRemoteRoles = (remoteRoles = []) => {
+  const storedRoles = readRoles();
+  const rows = new Map();
+
+  [...remoteRoles, ...storedRoles].forEach((role) => {
+    const roleKey = normalize(role.roleName || role.name || role.id);
+    if (!roleKey || roleKey === "admin") return;
+    rows.set(roleKey, {
+      roleName: role.roleName || role.name || role.id || "",
+      permissions: withViewPermission(getRolePermissions(role)),
+    });
+  });
+
+  return Array.from(rows.values());
+};
 
 const getRolePermissions = (role = {}) => {
   const rawPermissions = role.permissions || role.permissionNames || role.claims || [];
@@ -60,22 +83,6 @@ const getRolePermissions = (role = {}) => {
         .filter(Boolean)
     )
   );
-};
-
-const mergeStoredWithRemoteRoles = (remoteRoles = []) => {
-  const storedRoles = readRoles();
-  const rows = new Map();
-
-  [...remoteRoles, ...storedRoles].forEach((role) => {
-    const roleKey = normalize(role.roleName || role.name || role.id);
-    if (!roleKey) return;
-    rows.set(roleKey, {
-      roleName: role.roleName || role.name || role.id || "",
-      permissions: withViewPermission(getRolePermissions(role)),
-    });
-  });
-
-  return Array.from(rows.values());
 };
 
 export const getStaffRolePermissionRecord = (roleName = "") => {

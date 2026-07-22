@@ -109,7 +109,6 @@ const adminSearchItems = [
   { label: "Patients", keywords: "patient records medical", path: "/patients" },
   { label: "Appointments", keywords: "booking appointment token", path: "/appointments" },
   { label: "Schedule Settings", keywords: "doctor schedule slots timing", path: "/DoctorSchedule/schedule" },
-  { label: "Roles & Permissions", keywords: "roles permissions doctor receptionist access", path: "/roles" },
   { label: "Reports", keywords: "analysis revenue export", path: "/reports" },
 ];
 

@@ -83,18 +83,23 @@ const withViewPermission = (permissions = []) =>
 
 const getRoleKey = (role = {}) => role.id || role.key || role.roleName || role.name;
 
-const mergeRoles = (storedRoles = []) => {
+const mergeRoles = (remoteRoles = [], storedRoles = []) => {
   const rows = new Map(defaultRoles.map((role) => [normalizeRoleKey(role.name), role]));
 
-  storedRoles.forEach((role) => {
-    const key = normalizeRoleKey(role.roleName || role.name);
-    if (!key) return;
-    rows.set(key, {
-      ...rows.get(key),
-      ...role,
-      permissions: withViewPermission(role.permissions),
+  const applyRoles = (roles = []) => {
+    roles.forEach((role) => {
+      const key = normalizeRoleKey(role.roleName || role.name);
+      if (!key || key === "admin") return;
+      rows.set(key, {
+        ...rows.get(key),
+        ...role,
+        permissions: withViewPermission(role.permissions),
+      });
     });
-  });
+  };
+
+  applyRoles(remoteRoles);
+  applyRoles(storedRoles);
 
   return Array.from(rows.values());
 };
@@ -122,11 +127,11 @@ function AdminRolesPermissions() {
     const loadInitialData = async () => {
       try {
         const remoteRoles = await fetchRoles();
-        const merged = mergeRoles([...remoteRoles, ...readList(STORAGE_KEY)]);
+        const merged = mergeRoles(remoteRoles, readList(STORAGE_KEY));
         setRoles(merged);
         writeList(STORAGE_KEY, merged);
       } catch {
-        persistRoles(mergeRoles(readList(STORAGE_KEY)));
+        persistRoles(mergeRoles([], readList(STORAGE_KEY)));
       }
 
       let active = true;

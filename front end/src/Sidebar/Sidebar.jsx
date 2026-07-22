@@ -30,7 +30,6 @@ const items = [
   { to: "/patients", label: "Patients", icon: UserRound },
   { to: "/appointments", label: "Appointments", icon: CalendarDays },
   { to: "/DoctorSchedule/schedule", label: "Schedule Settings", icon: Settings2 },
-  { to: "/roles", label: "Roles & Permissions", icon: ShieldCheck },
   { to: "/reports", label: "Reports", icon: FileBarChart2 },
 ];
 

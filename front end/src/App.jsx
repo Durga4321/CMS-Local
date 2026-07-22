@@ -37,7 +37,6 @@ import PatientLogin from "./pages/PATIENTS/PatientLogin";
 import Appointments from "./pages/APPOINTMENTS/Appointments";
 import NewAppointment from "./pages/APPOINTMENTS/NewAppointment";
 import Doctorschedulepage from "./pages/Schedule/docschedule";
-import AdminRolesPermissions from "./pages/RolesPermissions/RolesPermissions";
 import Reports from "./pages/REPORTS/Reports";
 import DailyReport from "./pages/REPORTS/DailyReport";
 import RevenueReport from "./pages/REPORTS/RevenueReport";
@@ -100,7 +99,6 @@ function App() {
 
           <Route path="appointments" element={<Appointments />} />
           <Route path="appointments/new" element={<NewAppointment />} />
-          <Route path="roles" element={<AdminRolesPermissions />} />
 
           <Route path="reports" element={<Reports />} />
           <Route path="reports/daily" element={<DailyReport />} />
