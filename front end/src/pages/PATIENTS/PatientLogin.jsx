@@ -248,12 +248,11 @@ function PatientLogin() {
       <div className="auth-veil" aria-hidden="true" />
 
       <div className="auth-card">
-        <div className="auth-logo" aria-hidden="true">
+        {/* <div className="auth-logo" aria-hidden="true">
           <Heart size={20} />
-        </div>
+        </div> */}
 
-        <h2>CMS Login</h2>
-        <p className="subtitle">Welcome back to the Clinic Management System</p>
+        <h2>Patient Login</h2>
         {successMessage ? <p className="success-message">{successMessage}</p> : null}
 
         <form className="auth-form" onSubmit={handleLogin} noValidate>
@@ -314,8 +313,10 @@ function PatientLogin() {
           <Link to="/forgot-password" className="forgot-password-link">Forgot Password?</Link>
         </div>
 
-        <div className="auth-register-row">
-          <p className="auth-register">New patient? <Link to="/register/patient" className="create-account-btn">Create account</Link></p>
+        <div className="auth-register-row" style={{ marginTop: '0.6rem' }}>
+          <p className="auth-register">
+            Staff user? <Link to="/login" className="create-account-btn" role="button">Staff Login</Link>
+          </p>
         </div>
       </div>
     </div>

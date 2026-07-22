@@ -132,9 +132,9 @@ body.auth-page-no-scroll {
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-lg);
-  padding: 1.3rem 1.5rem 1.1rem;
+  padding: 1.7rem 1.6rem 1.3rem;
   width: 100%;
-  max-width: 360px;
+  max-width: 420px;
   box-shadow: var(--shadow-card),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
   animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1);
@@ -240,7 +240,7 @@ body.auth-page-no-scroll {
   display: grid;
   /* Two-column layout on desktop to match reference */
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.25rem 1.6rem;
+  gap: 1rem;
   width: 100%;
 }
 
@@ -281,9 +281,55 @@ body.auth-page-no-scroll {
   border-radius: 12px;
 }
 
-/* Tighter form-group spacing on wide card */
+.auth-card--wide .form-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.auth-card--wide .form-actions-row .back-button {
+  flex: 0 0 140px;
+  min-width: 120px;
+  padding: 0.95rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(14, 165, 164, 0.25);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.auth-card--wide .form-actions-row .back-button:hover {
+  background: rgba(14, 165, 164, 0.08);
+}
+
+.auth-card--wide .form-actions-row .submit-btn--block {
+  flex: 1;
+}
+
+/* Normalized form-group spacing on wide card */
 .auth-card--wide .form-group {
-  margin-bottom: 0.6rem;
+  /* remove per-group bottom margin so container gap controls spacing uniformly */
+  margin-bottom: 0;
+}
+
+/* Ensure each registration step container applies the same field spacing internally */
+.auth-card--wide .auth-form > div {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Ensure grid rows and form container use same vertical gap */
+.auth-card--wide .auth-form {
+  gap: 1rem;
+}
+
+.register-grid > .form-group {
+  margin-bottom: 0;
 }
 
 /* Ensure subtitle aligns nicely on wide card */
@@ -308,6 +354,35 @@ body.auth-page-no-scroll {
 
 .create-account-btn:hover {
   transform: translateY(-2px);
+}
+
+.auth-card--wide .auth-form {
+  gap: 1rem;
+}
+
+.auth-card--wide .auth-register-row {
+  margin-top: 0.9rem;
+  text-align: center;
+}
+
+.auth-card--wide .auth-form .submit-btn,
+.auth-card--wide .submit-btn {
+  width: 100%;
+}
+
+.auth-register-row,
+.auth-actions-row {
+  margin-top: 0.75rem;
+}
+
+.auth-register-row p,
+.auth-actions-row p {
+  margin: 0;
+}
+
+.auth-card--wide .create-account-link {
+  font-weight: 700;
+  color: var(--primary);
 }
 
 @media (max-width: 480px) {

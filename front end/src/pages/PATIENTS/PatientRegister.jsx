@@ -7,7 +7,8 @@ import { buildAddress, emptyAddressParts, onlyPincodeValue } from "../../utils/a
 import { INDIA_COUNTRY } from "../../utils/indianLocations";
 import { fetchPincodeLocation } from "../../utils/pincodeLocation";
 import { formatTitleCase } from "../../utils/format";
-import { ChevronRight, ChevronLeft, Check } from "lucide-react";
+import { validateStrongPassword, validateEmail, validateName, validateText } from "../../utils/validation";
+import { ChevronRight, ChevronLeft, Check, Heart } from "lucide-react";
 import clinicBg from '../../assests/clinic-bg.jpg';
 import "../../Login/styles/Auth.css";
 
@@ -37,7 +38,6 @@ function PatientRegister() {
   const [areaOptions, setAreaOptions] = useState([]);
   const [clinics, setClinics] = useState([]);
 
-  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const DOB_REGEX = /^(\d{2})\/(\d{2})\/(\d{2,4})$/;
 
   const validateDobValue = (value) => {
@@ -226,16 +226,18 @@ function PatientRegister() {
       delete next[name];
       delete next.api;
 
-      if (name === "email" && value.trim()) {
-        if (!EMAIL_PATTERN.test(value.trim())) {
-          next.email = "Enter a valid email address.";
+      if (name === "email") {
+        const emailError = validateEmail(value.trim(), "Email");
+        if (emailError) {
+          next.email = emailError;
         }
       }
 
-      if (name === "dob") {
-        const dobError = validateDobValue(value);
-        if (dobError) {
-          next.dob = dobError;
+      if (name === "firstName" || name === "lastName") {
+        const fieldLabel = name === "firstName" ? "First name" : "Last name";
+        const nameError = validateName(value, fieldLabel);
+        if (nameError) {
+          next[name] = nameError;
         }
       }
 
@@ -243,8 +245,38 @@ function PatientRegister() {
         next.mobile = "Enter a valid 10 digit mobile number.";
       }
 
+      if (name === "streetVillage" && value.trim()) {
+        const streetError = validateText(value, "Street/Village");
+        if (streetError) {
+          next.streetVillage = streetError;
+        }
+      }
+
+      if (name === "address" && value.trim()) {
+        const addressError = validateText(value, "Full address");
+        if (addressError) {
+          next.address = addressError;
+        }
+      }
+
       return next;
     });
+  };
+
+  const handleBlur = (event) => {
+    const { name, value } = event.target;
+    if (name === "email") {
+      const emailError = validateEmail(value, "Email");
+      setErrors((current) => {
+        const next = { ...current };
+        if (emailError) {
+          next.email = emailError;
+        } else {
+          delete next.email;
+        }
+        return next;
+      });
+    }
   };
 
   const handlePincodeChange = (value) => {
@@ -280,18 +312,13 @@ function PatientRegister() {
 
     if (step === 1) {
       if (!form.hospitalId) nextErrors.hospitalId = "Please select a clinic.";
-      if (!form.firstName.trim()) nextErrors.firstName = "First name is required.";
-      if (!form.lastName.trim()) nextErrors.lastName = "Last name is required.";
+      const firstNameError = validateName(form.firstName, "First name");
+      if (firstNameError) nextErrors.firstName = firstNameError;
+      const lastNameError = validateName(form.lastName, "Last name");
+      if (lastNameError) nextErrors.lastName = lastNameError;
       if (!form.gender) nextErrors.gender = "Please select gender.";
       const dobError = validateDobValue(form.dob);
       if (dobError) nextErrors.dob = dobError;
-
-      if (form.firstName && !/^[a-zA-Z\s]+$/.test(form.firstName)) {
-        nextErrors.firstName = "Only alphabets are allowed.";
-      }
-      if (form.lastName && !/^[a-zA-Z\s]+$/.test(form.lastName)) {
-        nextErrors.lastName = "Only alphabets are allowed.";
-      }
     }
 
     if (step === 2) {
@@ -308,19 +335,27 @@ function PatientRegister() {
       if (form.addressParts?.pincode && !/^\d{6}$/.test(form.addressParts.pincode)) {
         nextErrors.pincode = "Pincode must be exactly 6 digits.";
       }
-      if (form.email && !EMAIL_PATTERN.test(form.email.trim())) {
-        nextErrors.email = "Enter a valid email address.";
+      if (form.email) {
+        const emailError = validateEmail(form.email.trim(), "Email");
+        if (emailError) nextErrors.email = emailError;
+      }
+      if (form.addressParts?.streetVillage?.trim()) {
+        const streetError = validateText(form.addressParts.streetVillage, "Street/Village");
+        if (streetError) nextErrors.streetVillage = streetError;
+      }
+      if (form.address.trim()) {
+        const addressError = validateText(form.address, "Full address");
+        if (addressError) nextErrors.address = addressError;
       }
     }
 
     if (step === 3) {
-      if (!form.password) nextErrors.password = "Password is required.";
-      if (!form.confirmPassword) nextErrors.confirmPassword = "Confirm password is required.";
+      const passwordError = validateStrongPassword(form.password, "Password");
+      if (passwordError) nextErrors.password = passwordError;
 
-      if (form.password && form.password.length < 6) {
-        nextErrors.password = "Password must be at least 6 characters.";
-      }
-      if (form.password && form.confirmPassword && form.password !== form.confirmPassword) {
+      if (!form.confirmPassword) {
+        nextErrors.confirmPassword = "Confirm password is required.";
+      } else if (form.password && form.confirmPassword && form.password !== form.confirmPassword) {
         nextErrors.confirmPassword = "Passwords do not match.";
       }
     }
@@ -414,11 +449,11 @@ function PatientRegister() {
       <div className="auth-veil" aria-hidden="true" />
 
       <div className={`auth-card auth-card--wide`}>
-        <div className="auth-logo" aria-hidden="true">
+        {/* <div className="auth-logo" aria-hidden="true">
           <Heart size={20} />
-        </div>
+        </div> */}
 
-        <h2>Create Account</h2>
+        <h2>Register Here</h2>
         <p className="subtitle">Step {currentStep} of 3</p>
 
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
@@ -426,7 +461,7 @@ function PatientRegister() {
           {currentStep === 1 && (
             <div>
               <div className="form-group">
-                <label htmlFor="reg-clinic">Select Clinic / Hospital</label>
+                <label htmlFor="reg-clinic">Select Clinic/Hospital</label>
                 <select id="reg-clinic" name="hospitalId" value={form.hospitalId} onChange={handleChange} disabled={loadingClinics}>
                   {loadingClinics ? <option value="">Loading clinics...</option> : null}
                   {clinics.map((clinic) => (
@@ -464,8 +499,8 @@ function PatientRegister() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
-                <button type="button" className="submit-btn" onClick={handleNext}>Next Step</button>
+              <div className="form-actions-row form-actions-row--end">
+                <button type="button" className="submit-btn submit-btn--block" onClick={handleNext}>Next Step</button>
               </div>
             </div>
           )}
@@ -488,7 +523,7 @@ function PatientRegister() {
 
               <div className="form-group">
                 <label htmlFor="reg-email">Email Address</label>
-                <input id="reg-email" type="email" name="email" value={form.email} onChange={handleChange} placeholder="john.doe@gmail.com" />
+                <input id="reg-email" type="email" name="email" value={form.email} onChange={handleChange} onBlur={handleBlur} placeholder="john.doe@gmail.com" />
                 {errors.email && <span className="error-message">{errors.email}</span>}
               </div>
 
@@ -514,9 +549,9 @@ function PatientRegister() {
                 {errors.address && <span className="error-message">{errors.address}</span>}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 8 }}>
-                <button type="button" className="password-toggle" onClick={handleBack} disabled={isSubmitting}>Back</button>
-                <button type="button" className="submit-btn" onClick={handleNext}>Next Step</button>
+              <div className="form-actions-row">
+                <button type="button" className="back-button" onClick={handleBack} disabled={isSubmitting}>Back</button>
+                <button type="button" className="submit-btn submit-btn--block" onClick={handleNext}>Next Step</button>
               </div>
             </div>
           )}
@@ -538,16 +573,16 @@ function PatientRegister() {
 
               {errors.api && <div className="api-error-banner">{errors.api}</div>}
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 8 }}>
-                <button type="button" className="password-toggle" onClick={handleBack} disabled={isSubmitting}>Back</button>
-                <button type="submit" className="submit-btn" disabled={isSubmitting}>{isSubmitting ? 'Creating...' : 'Complete Registration'}</button>
+              <div className="form-actions-row">
+                <button type="button" className="back-button" onClick={handleBack} disabled={isSubmitting}>Back</button>
+                <button type="submit" className="submit-btn submit-btn--block" disabled={isSubmitting}>{isSubmitting ? 'Creating...' : 'Complete Registration'}</button>
               </div>
             </div>
           )}
         </form>
 
-        <div className="auth-register-row" style={{ marginTop: 12 }}>
-          <p className="auth-register">Already have account? <Link to="/login/patient" className="create-account-btn">Login here</Link></p>
+        <div className="auth-register-row">
+          <p className="auth-register">Already have account? <Link to="/login/patient" className="create-account-link">Login here</Link></p>
         </div>
       </div>
     </div>
