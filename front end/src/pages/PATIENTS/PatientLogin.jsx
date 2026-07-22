@@ -8,7 +8,8 @@ import {
   Building2, Thermometer,
 } from "lucide-react";
 import { apiUrl } from "../../config/api";
-import "./PatientLogin.css";
+import clinicBg from '../../assests/clinic-bg.jpg';
+import "../../Login/styles/Auth.css";
 
 const LOGIN_API = apiUrl("Auth/login");
 
@@ -136,6 +137,7 @@ function PatientLogin() {
   const [email,            setEmail]            = useState("");
   const [password,         setPassword]         = useState("");
   const [passwordVisible,  setPasswordVisible]  = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [errors,           setErrors]           = useState({});
   const [isLoading,        setIsLoading]        = useState(false);
   const [successMessage,   setSuccessMessage]   = useState("");
@@ -237,90 +239,84 @@ function PatientLogin() {
   };
 
   return (
-    <div className="patient-login-page">
-      <StarsBackground />
+    <div className="auth-container">
+      <div
+        className="auth-bg"
+        style={{ backgroundImage: `url(${clinicBg})` }}
+        aria-hidden="true"
+      />
+      <div className="auth-veil" aria-hidden="true" />
 
-      {/* Hospital orbit rings */}
-      <MedicalOrbits />
-
-      {/* Centered login card */}
-      <div className="login-card-wrapper">
-        {/* Logo badge */}
-        {/* <div className="login-logo-badge">
+      <div className="auth-card">
+        {/* <div className="auth-logo" aria-hidden="true">
           <Heart size={20} />
-        </div>
-        <p className="login-brand-name">CMS Patient Portal</p> */}
+        </div> */}
 
-        <div className="patient-login-card">
-          <div className="card-header">
-            <h2>Patient Login</h2>
-            <br/><br/>
-            <p>Enter your patient account details below</p>
+        <h2>Patient Login</h2>
+        {successMessage ? <p className="success-message">{successMessage}</p> : null}
+
+        <form className="auth-form" onSubmit={handleLogin} noValidate>
+          <div className="form-group">
+            <label htmlFor="login-email">Email Address</label>
+            <input
+              id="login-email"
+              type="email"
+              placeholder="patient@gmail.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={errors.email ? 'input-error' : ''}
+              disabled={isLoading}
+              autoComplete="email"
+              autoFocus
+            />
+            {errors.email && <span className="error-message">{errors.email}</span>}
           </div>
 
-          {successMessage && (
-            <div className="login-success-banner">{successMessage}</div>
-          )}
-
-          <form onSubmit={handleLogin} noValidate>
-            <div className="input-group">
-              <label htmlFor="login-email">Email Address</label>
+          <div className="form-group">
+            <label htmlFor="login-password">Password</label>
+            <div className="password-wrapper">
               <input
-                id="login-email"
-                type="email"
-                placeholder="patient@gmail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={errors.email ? "input-error" : ""}
+                id="login-password"
+                type={passwordVisible ? 'text' : 'password'}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={errors.password ? 'input-error' : ''}
                 disabled={isLoading}
+                autoComplete="current-password"
               />
-              {errors.email && <span className="error-message">{errors.email}</span>}
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setPasswordVisible((prev) => !prev)}
+                aria-label={passwordVisible ? 'Hide password' : 'Show password'}
+              >
+                {passwordVisible ? <Eye /> : <EyeOff />}
+              </button>
             </div>
-
-            <div className="input-group">
-              <label htmlFor="login-password">Password</label>
-              <div className="password-input-wrapper">
-                <input
-                  id="login-password"
-                  type={passwordVisible ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={errors.password ? "input-error" : ""}
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setPasswordVisible(!passwordVisible)}
-                  className="password-toggle-btn"
-                >
-                  {passwordVisible ? <Eye size={18} /> : <EyeOff size={18} />}
-                </button>
-              </div>
-              {errors.password && <span className="error-message">{errors.password}</span>}
-            </div>
-
-            {errors.api && <div className="api-error-banner">{errors.api}</div>}
-
-            <button type="submit" className="login-btn" disabled={isLoading}>
-              {isLoading ? "Signing in…" : "Login"}
-            </button>
-          </form>
-
-          <div className="card-footer">
-            <p>
-              New patient?{" "}
-              <Link to="/register/patient" className="register-link">
-                Register here
-              </Link>
-            </p>
-            <p className="admin-link-p">
-              Are you a staff member?{" "}
-              <Link to="/login" className="admin-link">
-                Staff Login
-              </Link>
-            </p>
+            {errors.password && <span className="error-message">{errors.password}</span>}
           </div>
+
+          <label className="remember-me-row">
+            <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+            <span>Remember Me</span>
+          </label>
+
+          {errors.api ? <span className="error-message">{errors.api}</span> : null}
+
+          <button type="submit" className="submit-btn" disabled={isLoading}>
+            {isLoading ? 'Signing in…' : 'Login'}
+          </button>
+        </form>
+
+        <div className="auth-actions-row">
+          <Link to="/forgot-password" className="forgot-password-link">Forgot Password?</Link>
+        </div>
+
+        <div className="auth-register-row" style={{ marginTop: '0.6rem' }}>
+          <p className="auth-register">
+            Staff user? <Link to="/login" className="create-account-btn" role="button">Staff Login</Link>
+          </p>
         </div>
       </div>
     </div>

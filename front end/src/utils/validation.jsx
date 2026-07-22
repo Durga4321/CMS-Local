@@ -9,6 +9,25 @@ const REPEATED_LETTER_PATTERN = /([A-Za-z])\1{3,}/;
 const LONG_CONSONANT_RUN_PATTERN = /[bcdfghjklmnpqrstvwxyz]{5,}/i;
 const VOWEL_PATTERN = /[aeiou]/i;
 
+const hasRepeatedSubstringPattern = (text) => {
+  const normalized = String(text || "").toLowerCase().replace(/[^a-z]/g, "");
+  if (normalized.length < 6) return false;
+
+  const checkSegment = (length, threshold) => {
+    const counts = new Map();
+    for (let i = 0; i + length <= normalized.length; i += 1) {
+      const segment = normalized.slice(i, i + length);
+      const nextCount = (counts.get(segment) || 0) + 1;
+      counts.set(segment, nextCount);
+      if (nextCount >= threshold) return true;
+    }
+    return false;
+  };
+
+  // Reject unusual repeated patterns like multiple occurrences of the same 2-letter or 3-letter sequence.
+  return checkSegment(2, 3) || checkSegment(3, 2);
+};
+
 export const onlyDigits = (value) => String(value ?? "").replace(/\D/g, "");
 
 export const onlyIndianMobileValue = (value) => {
@@ -94,6 +113,55 @@ export const validateAlpha = (value, label) => {
     : `${label} must be valid text, not random characters.`;
 };
 
+export const validateName = (value, label) => {
+  const required = validateRequired(value, label);
+  if (required) return required;
+
+  const raw = String(value);
+  const trimmed = raw.trim();
+  const normalized = trimmed.replace(/\s+/g, " ");
+
+  if (/[0-9]/.test(raw)) {
+    return `${label} should not contain numbers.`;
+  }
+
+
+  if (/[^A-Za-z\s.'-]/.test(raw)) {
+    return `${label} should contain only letters, spaces, apostrophes, or hyphens.`;
+  }
+
+  if (/\s{2,}/.test(raw)) {
+    return `${label} should not contain consecutive spaces.`;
+  }
+
+  if (/^[^A-Za-z]/.test(trimmed) || /[^A-Za-z]$/.test(trimmed)) {
+    return `${label} must start and end with a letter.`;
+  }
+
+  if (/[.'\-]{2,}/.test(normalized)) {
+    return `${label} should not contain repeated punctuation.`;
+  }
+
+  if (!/^[A-Za-z](?:[A-Za-z'\- ]*[A-Za-z])?$/.test(normalized)) {
+    return `${label} must be a valid name.`;
+  }
+
+  const lettersOnly = normalized.replace(/[^A-Za-z]/g, "");
+  if (lettersOnly.length < 2) {
+    return `${label} must be valid text, not random characters.`;
+  }
+  if (REPEATED_LETTER_PATTERN.test(lettersOnly)) {
+    return `${label} must be valid text, not random characters.`;
+  }
+  if (hasRepeatedSubstringPattern(lettersOnly)) {
+    return `${label} must be valid text, not random characters.`;
+  }
+  if (LONG_CONSONANT_RUN_PATTERN.test(lettersOnly)) {
+    return `${label} must be valid text, not random characters.`;
+  }
+  return "";
+};
+
 export const validateClinicName = (value, label) => {
   const required = validateRequired(value, label);
   if (required) return required;
@@ -141,6 +209,15 @@ export const validateEmailCom = (value, label = "Email") => {
   if (required) return required;
   const text = String(value || "").trim();
   if (!EMAIL_COM_PATTERN.test(text)) return `Please enter a valid email address.`;
+  return "";
+};
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const validateEmail = (value, label = "Email") => {
+  const required = validateRequired(value, label);
+  if (required) return required;
+  const email = String(value || "").trim();
+  if (!EMAIL_PATTERN.test(email)) return `${label} must be a valid email address.`;
   return "";
 };
 

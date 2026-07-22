@@ -7,8 +7,10 @@ import { buildAddress, emptyAddressParts, onlyPincodeValue } from "../../utils/a
 import { INDIA_COUNTRY } from "../../utils/indianLocations";
 import { fetchPincodeLocation } from "../../utils/pincodeLocation";
 import { formatTitleCase } from "../../utils/format";
-import { ChevronRight, ChevronLeft, Check } from "lucide-react";
-import "./PatientRegister.css";
+import { validateStrongPassword, validateEmail, validateName, validateText } from "../../utils/validation";
+import { ChevronRight, ChevronLeft, Check, Heart } from "lucide-react";
+import clinicBg from '../../assests/clinic-bg.jpg';
+import "../../Login/styles/Auth.css";
 
 const REGISTER_API = apiUrl("patient-portal/register");
 
@@ -36,7 +38,6 @@ function PatientRegister() {
   const [areaOptions, setAreaOptions] = useState([]);
   const [clinics, setClinics] = useState([]);
 
-  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const DOB_REGEX = /^(\d{2})\/(\d{2})\/(\d{2,4})$/;
 
   const validateDobValue = (value) => {
@@ -225,16 +226,18 @@ function PatientRegister() {
       delete next[name];
       delete next.api;
 
-      if (name === "email" && value.trim()) {
-        if (!EMAIL_PATTERN.test(value.trim())) {
-          next.email = "Enter a valid email address.";
+      if (name === "email") {
+        const emailError = validateEmail(value.trim(), "Email");
+        if (emailError) {
+          next.email = emailError;
         }
       }
 
-      if (name === "dob") {
-        const dobError = validateDobValue(value);
-        if (dobError) {
-          next.dob = dobError;
+      if (name === "firstName" || name === "lastName") {
+        const fieldLabel = name === "firstName" ? "First name" : "Last name";
+        const nameError = validateName(value, fieldLabel);
+        if (nameError) {
+          next[name] = nameError;
         }
       }
 
@@ -242,8 +245,38 @@ function PatientRegister() {
         next.mobile = "Enter a valid 10 digit mobile number.";
       }
 
+      if (name === "streetVillage" && value.trim()) {
+        const streetError = validateText(value, "Street/Village");
+        if (streetError) {
+          next.streetVillage = streetError;
+        }
+      }
+
+      if (name === "address" && value.trim()) {
+        const addressError = validateText(value, "Full address");
+        if (addressError) {
+          next.address = addressError;
+        }
+      }
+
       return next;
     });
+  };
+
+  const handleBlur = (event) => {
+    const { name, value } = event.target;
+    if (name === "email") {
+      const emailError = validateEmail(value, "Email");
+      setErrors((current) => {
+        const next = { ...current };
+        if (emailError) {
+          next.email = emailError;
+        } else {
+          delete next.email;
+        }
+        return next;
+      });
+    }
   };
 
   const handlePincodeChange = (value) => {
@@ -279,18 +312,13 @@ function PatientRegister() {
 
     if (step === 1) {
       if (!form.hospitalId) nextErrors.hospitalId = "Please select a clinic.";
-      if (!form.firstName.trim()) nextErrors.firstName = "First name is required.";
-      if (!form.lastName.trim()) nextErrors.lastName = "Last name is required.";
+      const firstNameError = validateName(form.firstName, "First name");
+      if (firstNameError) nextErrors.firstName = firstNameError;
+      const lastNameError = validateName(form.lastName, "Last name");
+      if (lastNameError) nextErrors.lastName = lastNameError;
       if (!form.gender) nextErrors.gender = "Please select gender.";
       const dobError = validateDobValue(form.dob);
       if (dobError) nextErrors.dob = dobError;
-
-      if (form.firstName && !/^[a-zA-Z\s]+$/.test(form.firstName)) {
-        nextErrors.firstName = "Only alphabets are allowed.";
-      }
-      if (form.lastName && !/^[a-zA-Z\s]+$/.test(form.lastName)) {
-        nextErrors.lastName = "Only alphabets are allowed.";
-      }
     }
 
     if (step === 2) {
@@ -307,19 +335,27 @@ function PatientRegister() {
       if (form.addressParts?.pincode && !/^\d{6}$/.test(form.addressParts.pincode)) {
         nextErrors.pincode = "Pincode must be exactly 6 digits.";
       }
-      if (form.email && !EMAIL_PATTERN.test(form.email.trim())) {
-        nextErrors.email = "Enter a valid email address.";
+      if (form.email) {
+        const emailError = validateEmail(form.email.trim(), "Email");
+        if (emailError) nextErrors.email = emailError;
+      }
+      if (form.addressParts?.streetVillage?.trim()) {
+        const streetError = validateText(form.addressParts.streetVillage, "Street/Village");
+        if (streetError) nextErrors.streetVillage = streetError;
+      }
+      if (form.address.trim()) {
+        const addressError = validateText(form.address, "Full address");
+        if (addressError) nextErrors.address = addressError;
       }
     }
 
     if (step === 3) {
-      if (!form.password) nextErrors.password = "Password is required.";
-      if (!form.confirmPassword) nextErrors.confirmPassword = "Confirm password is required.";
+      const passwordError = validateStrongPassword(form.password, "Password");
+      if (passwordError) nextErrors.password = passwordError;
 
-      if (form.password && form.password.length < 6) {
-        nextErrors.password = "Password must be at least 6 characters.";
-      }
-      if (form.password && form.confirmPassword && form.password !== form.confirmPassword) {
+      if (!form.confirmPassword) {
+        nextErrors.confirmPassword = "Confirm password is required.";
+      } else if (form.password && form.confirmPassword && form.password !== form.confirmPassword) {
         nextErrors.confirmPassword = "Passwords do not match.";
       }
     }
@@ -404,278 +440,149 @@ function PatientRegister() {
   };
 
   return (
-    <div className="patient-register-page">
-      <div className="register-card-wrapper">
-        {/* Logo */}
-        {/* <div className="register-logo-badge">
+    <div className="auth-container">
+      <div
+        className="auth-bg"
+        style={{ backgroundImage: `url(${clinicBg})` }}
+        aria-hidden="true"
+      />
+      <div className="auth-veil" aria-hidden="true" />
+
+      <div className={`auth-card auth-card--wide`}>
+        {/* <div className="auth-logo" aria-hidden="true">
           <Heart size={20} />
-        </div>
-        <p className="register-brand-name">Patient Registration</p> */}
+        </div> */}
 
-        <div className="patient-register-card">
-          <div className="card-header card-header--with-back">
-            <button
-              type="button"
-              className="action-btn back-btn patient-register-back-btn"
-              onClick={handleBackNavigation}
-              aria-label="Go back"
-            >
-              <ChevronLeft size={18} />
-            </button>
+        <h2>Register Here</h2>
+        <p className="subtitle">Step {currentStep} of 3</p>
+
+        <form className="auth-form" onSubmit={handleSubmit} noValidate>
+          {/* STEP 1 */}
+          {currentStep === 1 && (
             <div>
-              <h2>Create Account</h2>
-              <p>Step {currentStep} of 3</p>
-            </div>
-          </div>
-          <div className="stepper-dots">
-            <span className={`stepper-dot ${currentStep >= 1 ? "active" : ""}`} />
-            <span className={`stepper-dot ${currentStep >= 2 ? "active" : ""}`} />
-            <span className={`stepper-dot ${currentStep >= 3 ? "active" : ""}`} />
-          </div>
+              <div className="form-group">
+                <label htmlFor="reg-clinic">Select Clinic/Hospital</label>
+                <select id="reg-clinic" name="hospitalId" value={form.hospitalId} onChange={handleChange} disabled={loadingClinics}>
+                  {loadingClinics ? <option value="">Loading clinics...</option> : null}
+                  {clinics.map((clinic) => (
+                    <option key={clinic.id || clinic.hospitalId} value={clinic.id || clinic.hospitalId}>{clinic.name || clinic.clinicName || 'Clinic'}</option>
+                  ))}
+                </select>
+                {errors.hospitalId && <span className="error-message">{errors.hospitalId}</span>}
+              </div>
 
-          <form onSubmit={handleSubmit} noValidate>
-            {/* STEP 1: PERSONAL & CLINIC */}
-            {currentStep === 1 && (
-              <div className="step-content">
-                <div className="input-group">
-                  <label htmlFor="reg-clinic">Select Clinic / Hospital</label>
-                  <select
-                    id="reg-clinic"
-                    name="hospitalId"
-                    value={form.hospitalId}
-                    onChange={handleChange}
-                    disabled={loadingClinics}
-                  >
-                    {loadingClinics ? <option value="">Loading clinics...</option> : null}
-                    {clinics.map((clinic) => (
-                      <option key={clinic.id || clinic.hospitalId} value={clinic.id || clinic.hospitalId}>
-                        {clinic.name || clinic.clinicName || "Clinic"}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.hospitalId && <span className="error-message">{errors.hospitalId}</span>}
-                </div>
-
-                <div className="input-group">
+              <div className="register-grid">
+                <div className="form-group">
                   <label htmlFor="reg-first">First Name</label>
-                  <input
-                    id="reg-first"
-                    name="firstName"
-                    value={form.firstName}
-                    onChange={handleChange}
-                    placeholder="John"
-                  />
+                  <input id="reg-first" name="firstName" value={form.firstName} onChange={handleChange} placeholder="John" />
                   {errors.firstName && <span className="error-message">{errors.firstName}</span>}
                 </div>
-
-                <div className="input-group">
+                <div className="form-group">
                   <label htmlFor="reg-last">Last Name</label>
-                  <input
-                    id="reg-last"
-                    name="lastName"
-                    value={form.lastName}
-                    onChange={handleChange}
-                    placeholder="Doe"
-                  />
+                  <input id="reg-last" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Doe" />
                   {errors.lastName && <span className="error-message">{errors.lastName}</span>}
                 </div>
-
-                <div className="input-row">
-                  <div className="input-group">
-                    <label htmlFor="reg-gender">Gender</label>
-                    <select id="reg-gender" name="gender" value={form.gender} onChange={handleChange}>
-                      <option value="">Gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                    {errors.gender && <span className="error-message">{errors.gender}</span>}
-                  </div>
-
-                  <div className="input-group">
-                    <label htmlFor="reg-dob">DOB</label>
-                    <input
-                      id="reg-dob"
-                      type="date"
-                      name="dob"
-                      value={form.dob}
-                      onChange={handleChange}
-                      placeholder="DD/MM/YYYY"
-                    />
-                    {errors.dob && <span className="error-message">{errors.dob}</span>}
-                  </div>
+                <div className="form-group">
+                  <label htmlFor="reg-gender">Gender</label>
+                  <select id="reg-gender" name="gender" value={form.gender} onChange={handleChange}>
+                    <option value="">Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  {errors.gender && <span className="error-message">{errors.gender}</span>}
                 </div>
-
-                <div className="step-actions">
-                  <div />
-                  <button type="button" className="action-btn next-btn" onClick={handleNext}>
-                    Next Step <ChevronRight size={16} />
-                  </button>
+                <div className="form-group">
+                  <label htmlFor="reg-dob">DOB</label>
+                  <input id="reg-dob" type="date" name="dob" value={form.dob} onChange={handleChange} placeholder="DD/MM/YYYY" />
+                  {errors.dob && <span className="error-message">{errors.dob}</span>}
                 </div>
               </div>
-            )}
 
-            {/* STEP 2: CONTACT */}
-            {currentStep === 2 && (
-              <div className="step-content">
-                <div className="input-row">
-                  <div className="input-group">
-                    <label htmlFor="reg-mobile">Mobile</label>
-                    <input
-                      id="reg-mobile"
-                      name="mobile"
-                      value={form.mobile}
-                      onChange={handleChange}
-                      placeholder="9876543210"
-                      maxLength={10}
-                    />
-                    {errors.mobile && <span className="error-message">{errors.mobile}</span>}
-                  </div>
+              <div className="form-actions-row form-actions-row--end">
+                <button type="button" className="submit-btn submit-btn--block" onClick={handleNext}>Next Step</button>
+              </div>
+            </div>
+          )}
 
-                  <div className="input-group">
-                    <label htmlFor="reg-pincode">Pincode</label>
-                    <input
-                      id="reg-pincode"
-                      name="pincode"
-                      value={form.addressParts.pincode}
-                      onChange={(e) => handlePincodeChange(e.target.value)}
-                      placeholder="50123"
-                      maxLength={6}
-                    />
-                    {errors.pincode && <span className="error-message">{errors.pincode}</span>}
-                  </div>
+          {/* STEP 2 */}
+          {currentStep === 2 && (
+            <div>
+              <div className="register-grid">
+                <div className="form-group">
+                  <label htmlFor="reg-mobile">Mobile</label>
+                  <input id="reg-mobile" name="mobile" value={form.mobile} onChange={handleChange} placeholder="9876543210" maxLength={10} />
+                  {errors.mobile && <span className="error-message">{errors.mobile}</span>}
                 </div>
-
-                <div className="input-group">
-                  <label htmlFor="reg-email">Email Address</label>
-                  <input
-                    id="reg-email"
-                    type="email"
-                    name="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    placeholder="john.doe@gmail.com"
-                  />
-                  {errors.email && <span className="error-message">{errors.email}</span>}
-                </div>
-
-                <div className="input-row">
-                  <div className="input-group">
-                    <label htmlFor="reg-street">Street / Village</label>
-                    <input
-                      id="reg-street"
-                      name="streetVillage"
-                      value={form.addressParts.streetVillage}
-                      onChange={handleChange}
-                      placeholder="Street name"
-                    />
-                    {errors.streetVillage && <span className="error-message">{errors.streetVillage}</span>}
-                  </div>
-
-                  <div className="input-group">
-                    <label htmlFor="reg-area">Area</label>
-                    <select
-                      id="reg-area"
-                      name="area"
-                      value={form.addressParts.area}
-                      onChange={handleChange}
-                      disabled={!visibleAreaOptions.length}
-                    >
-                      <option value="">Select Area</option>
-                      {visibleAreaOptions.map((option, idx) => (
-                        <option key={idx} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.area && <span className="error-message">{errors.area}</span>}
-                  </div>
-                </div>
-
-                <div className="input-group">
-                  <label htmlFor="reg-address">Full Address</label>
-                  <textarea
-                    id="reg-address"
-                    name="address"
-                    value={form.address}
-                    onChange={handleChange}
-                    placeholder="Building, street details"
-                    rows={2}
-                  />
-                  {errors.address && <span className="error-message">{errors.address}</span>}
-                </div>
-
-                <div className="step-actions">
-                  <button type="button" className="action-btn back-btn" onClick={handleBack}>
-                    <ChevronLeft size={16} /> Back
-                  </button>
-                  <button type="button" className="action-btn next-btn" onClick={handleNext}>
-                    Next Step <ChevronRight size={16} />
-                  </button>
+                <div className="form-group">
+                  <label htmlFor="reg-pincode">Pincode</label>
+                  <input id="reg-pincode" name="pincode" value={form.addressParts.pincode} onChange={(e) => handlePincodeChange(e.target.value)} placeholder="50123" maxLength={6} />
+                  {errors.pincode && <span className="error-message">{errors.pincode}</span>}
                 </div>
               </div>
-            )}
 
-            {/* STEP 3: PASSWORD */}
-            {currentStep === 3 && (
-              <div className="step-content">
-                <div className="input-group">
-                  <label htmlFor="reg-pass">Password</label>
-                  <PasswordField
-                    id="reg-pass"
-                    name="password"
-                    value={form.password}
-                    onChange={handleChange}
-                    placeholder="Enter strong password"
-                  />
-                  {errors.password && <span className="error-message">{errors.password}</span>}
+              <div className="form-group">
+                <label htmlFor="reg-email">Email Address</label>
+                <input id="reg-email" type="email" name="email" value={form.email} onChange={handleChange} onBlur={handleBlur} placeholder="john.doe@gmail.com" />
+                {errors.email && <span className="error-message">{errors.email}</span>}
+              </div>
+
+              <div className="register-grid">
+                <div className="form-group">
+                  <label htmlFor="reg-street">Street / Village</label>
+                  <input id="reg-street" name="streetVillage" value={form.addressParts.streetVillage} onChange={handleChange} placeholder="Street name" />
+                  {errors.streetVillage && <span className="error-message">{errors.streetVillage}</span>}
                 </div>
-
-                <div className="input-group">
-                  <label htmlFor="reg-confirm">Confirm Password</label>
-                  <PasswordField
-                    id="reg-confirm"
-                    name="confirmPassword"
-                    value={form.confirmPassword}
-                    onChange={handleChange}
-                    placeholder="Re-enter password"
-                  />
-                  {errors.confirmPassword && (
-                    <span className="error-message">{errors.confirmPassword}</span>
-                  )}
-                </div>
-
-                {errors.api && <div className="api-error-banner">{errors.api}</div>}
-
-                <div className="step-actions">
-                  <button
-                    type="button"
-                    className="action-btn back-btn"
-                    onClick={handleBack}
-                    disabled={isSubmitting}
-                  >
-                    <ChevronLeft size={16} /> Back
-                  </button>
-                  <button
-                    type="submit"
-                    className="action-btn submit-btn register-submit-btn"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Creating..." : "Complete Registration"} <Check size={16} />
-                  </button>
+                <div className="form-group">
+                  <label htmlFor="reg-area">Area</label>
+                  <select id="reg-area" name="area" value={form.addressParts.area} onChange={handleChange} disabled={!visibleAreaOptions.length}>
+                    <option value="">Select Area</option>
+                    {visibleAreaOptions.map((option, idx) => <option key={idx} value={option}>{option}</option>)}
+                  </select>
+                  {errors.area && <span className="error-message">{errors.area}</span>}
                 </div>
               </div>
-            )}
-          </form>
 
-          <div className="card-footer">
-            <p>
-              Already have account?{" "}
-              <Link to="/login/patient" className="login-link">
-                Login here
-              </Link>
-            </p>
-          </div>
+              <div className="form-group">
+                <label htmlFor="reg-address">Full Address</label>
+                <textarea id="reg-address" name="address" value={form.address} onChange={handleChange} placeholder="Building, street details" rows={2} />
+                {errors.address && <span className="error-message">{errors.address}</span>}
+              </div>
+
+              <div className="form-actions-row">
+                <button type="button" className="back-button" onClick={handleBack} disabled={isSubmitting}>Back</button>
+                <button type="button" className="submit-btn submit-btn--block" onClick={handleNext}>Next Step</button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3 */}
+          {currentStep === 3 && (
+            <div>
+              <div className="form-group">
+                <label htmlFor="reg-pass">Password</label>
+                <PasswordField id="reg-pass" name="password" value={form.password} onChange={handleChange} placeholder="Enter strong password" />
+                {errors.password && <span className="error-message">{errors.password}</span>}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="reg-confirm">Confirm Password</label>
+                <PasswordField id="reg-confirm" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="Re-enter password" />
+                {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
+              </div>
+
+              {errors.api && <div className="api-error-banner">{errors.api}</div>}
+
+              <div className="form-actions-row">
+                <button type="button" className="back-button" onClick={handleBack} disabled={isSubmitting}>Back</button>
+                <button type="submit" className="submit-btn submit-btn--block" disabled={isSubmitting}>{isSubmitting ? 'Creating...' : 'Complete Registration'}</button>
+              </div>
+            </div>
+          )}
+        </form>
+
+        <div className="auth-register-row">
+          <p className="auth-register">Already have account? <Link to="/login/patient" className="create-account-link">Login here</Link></p>
         </div>
       </div>
     </div>
