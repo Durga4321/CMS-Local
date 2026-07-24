@@ -3,7 +3,11 @@ import { ArrowLeft, Banknote, CreditCard, Download, FileText, ReceiptText } from
 import { useNavigate } from "react-router-dom";
 import { parseList, requestJson } from "../receptionApi";
 import { getReceptionistProfile } from "../receptionSession";
-import { getReceptionistScope, scopeReceptionistRecords } from "../receptionScope";
+import {
+  belongsToReceptionistScope,
+  getReceptionistScope,
+  scopeReceptionistRecords,
+} from "../receptionScope";
 import { useToast } from "../../components/ToastProvider";
 import {
   onlyNumberValue,
@@ -32,6 +36,7 @@ const formatAmountInput = (value, { emptyValue = "0.00" } = {}) => {
 };
 
 const formatCurrency = (value) => formatIndianCurrency(value);
+const LAST_INVOICE_STORAGE_KEY = "receptionLatestInvoice";
 
 const AMOUNT_KEYS = {
   consultation: [
@@ -291,6 +296,11 @@ const getAppointmentStatus = (appointment = {}) =>
     appointment.BillingStatus ??
     appointment.paymentStatus ??
     appointment.PaymentStatus ??
+    appointment.appointment?.status ??
+    appointment.appointment?.Status ??
+    appointment.appointment?.appointmentStatus ??
+    appointment.Appointment?.Status ??
+    appointment.Appointment?.AppointmentStatus ??
     appointment.state ??
     appointment.State ??
     ""
@@ -300,7 +310,11 @@ const getAppointmentStatus = (appointment = {}) =>
 
 const isBillableAppointment = (appointment = {}) => {
   const status = getAppointmentStatus(appointment);
-  return ["completed", "consulted", "complete"].includes(status);
+  return (
+    ["completed", "consulted", "complete"].includes(status) ||
+    status.includes("completed") ||
+    status.includes("consulted")
+  );
 };
 
 const getAppointmentPatientName = (appointment = {}) =>
@@ -317,8 +331,18 @@ const getAppointmentPatientId = (appointment = {}) =>
   firstValue(
     appointment.patientId,
     appointment.PatientId,
+    appointment.pid,
+    appointment.PID,
+    appointment.patientCode,
+    appointment.PatientCode,
     appointment.patient?.id,
-    appointment.Patient?.Id
+    appointment.Patient?.Id,
+    appointment.patient?.patientId,
+    appointment.Patient?.PatientId,
+    appointment.patient?.pid,
+    appointment.Patient?.PID,
+    appointment.patient?.patientCode,
+    appointment.Patient?.PatientCode
   ) || "-";
 
 const getAppointmentDoctorName = (appointment = {}) =>
@@ -354,14 +378,84 @@ const getAppointmentConsultationCharge = (appointment = {}) =>
   ) || 0;
 
 const fetchBillingAppointments = async () => {
-  const billingAppointments = await requestJson("Billing/appointments").catch(() => null);
-  const billingList = parseList(billingAppointments);
-  if (billingList.length > 0) {
-    return { appointments: billingList, source: "billing" };
+  const [appointments, billingAppointments] = await Promise.all([
+    requestJson("Appointment").catch(() => null),
+    requestJson("Billing/appointments").catch(() => null),
+  ]);
+  const byAppointmentId = new Map();
+
+  [...parseList(billingAppointments), ...parseList(appointments)].forEach((appointment) => {
+    const key = String(getAppointmentId(appointment) || JSON.stringify(appointment));
+    const existing = byAppointmentId.get(key);
+    byAppointmentId.set(key, existing ? { ...existing, ...appointment } : appointment);
+  });
+
+  return Array.from(byAppointmentId.values());
+};
+
+const getPatientId = (patient = {}) =>
+  firstValue(
+    patient.id,
+    patient.Id,
+    patient.patientId,
+    patient.PatientId,
+    patient.pid,
+    patient.PID,
+    patient.patientCode,
+    patient.PatientCode
+  ) || "";
+
+const attachPatientToAppointment = (appointment = {}, patientsById = new Map()) => {
+  const patient =
+    patientsById.get(String(getAppointmentPatientId(appointment))) ||
+    patientsById.get(String(appointment.patientCode || appointment.PatientCode || "")) ||
+    appointment.patient ||
+    appointment.Patient ||
+    null;
+
+  if (!patient) return appointment;
+
+  return {
+    ...appointment,
+    patient,
+    Patient: appointment.Patient || patient,
+    patientName: getAppointmentPatientName(appointment) !== "-"
+      ? getAppointmentPatientName(appointment)
+      : firstValue(patient.name, patient.Name, patient.fullName, patient.FullName),
+    patientId: firstValue(appointment.patientId, appointment.PatientId, getPatientId(patient)),
+    branchId: firstValue(appointment.branchId, appointment.BranchId, patient.branchId, patient.BranchId),
+    branchName: firstValue(
+      appointment.branchName,
+      appointment.BranchName,
+      appointment.branch,
+      appointment.Branch,
+      patient.branchName,
+      patient.BranchName,
+      patient.branch,
+      patient.Branch
+    ),
+    hospitalId: firstValue(
+      appointment.hospitalId,
+      appointment.HospitalId,
+      appointment.clinicId,
+      appointment.ClinicId,
+      patient.hospitalId,
+      patient.HospitalId,
+      patient.clinicId,
+      patient.ClinicId
+    ),
+  };
+};
+
+const appointmentBelongsToBillingScope = (appointment, scope) => {
+  if (belongsToReceptionistScope(appointment, scope)) return true;
+
+  const patient = appointment?.patient || appointment?.Patient;
+  if (patient && belongsToReceptionistScope(patient, scope)) {
+    return true;
   }
 
-  const appointmentList = parseList(await requestJson("Appointment"));
-  return { appointments: appointmentList, source: "appointment" };
+  return false;
 };
 
 const getInvoiceAmounts = ({ invoice, form, selectedAppointment, total }) => {
@@ -390,7 +484,7 @@ const getInvoiceAmounts = ({ invoice, form, selectedAppointment, total }) => {
     consultation,
     medicine,
     lab,
-    total: invoiceTotal || consultation + medicine + lab,
+    total: consultation + medicine + lab,
   };
 };
 
@@ -402,6 +496,25 @@ const getLatestInvoice = (data) => {
     if (bDate !== aDate) return bDate - aDate;
     return Number(b?.id || 0) - Number(a?.id || 0);
   })[0] || null;
+};
+
+const readStoredLatestInvoice = () => {
+  try {
+    const invoice = JSON.parse(localStorage.getItem(LAST_INVOICE_STORAGE_KEY) || "null");
+    return invoice && typeof invoice === "object" ? invoice : null;
+  } catch {
+    return null;
+  }
+};
+
+const storeLatestInvoice = (invoice) => {
+  if (!invoice || typeof invoice !== "object") return;
+
+  try {
+    localStorage.setItem(LAST_INVOICE_STORAGE_KEY, JSON.stringify(invoice));
+  } catch {
+    // Ignore storage quota/privacy failures; backend invoice remains the source of truth.
+  }
 };
 
 const fetchInvoiceDetails = async (invoice) => {
@@ -471,23 +584,52 @@ function ReceptionBilling() {
           fetchBillingAppointments(),
           requestJson("Billing"),
         ]);
+        const patientsData = await requestJson("Patient").catch(() => []);
 
         const appointmentsResultData =
-          appointmentsResult.status === "fulfilled" ? appointmentsResult.value : { appointments: [], source: "billing" };
+          appointmentsResult.status === "fulfilled" ? appointmentsResult.value : [];
         const invoicesData =
           invoicesResult.status === "fulfilled" ? invoicesResult.value : [];
+        const scopedPatients = scopeReceptionistRecords(parseList(patientsData), receptionistScope);
+        const patientsById = new Map();
 
-        const list = scopeReceptionistRecords(
-          parseList(appointmentsResultData.appointments).filter(isBillableAppointment),
-          receptionistScope
+        scopedPatients.forEach((patient) => {
+          const id = getPatientId(patient);
+          if (id) patientsById.set(String(id), patient);
+          if (patient.patientCode || patient.PatientCode) {
+            patientsById.set(String(patient.patientCode || patient.PatientCode), patient);
+          }
+          if (patient.pid || patient.PID) {
+            patientsById.set(String(patient.pid || patient.PID), patient);
+          }
+        });
+
+        const completedAppointments = parseList(appointmentsResultData)
+          .map((appointment) => attachPatientToAppointment(appointment, patientsById))
+          .filter(isBillableAppointment);
+        const strictList = completedAppointments.filter((appointment) =>
+          appointmentBelongsToBillingScope(appointment, receptionistScope)
         );
-        const scopedInvoices = scopeReceptionistRecords(parseList(invoicesData), receptionistScope);
+        const list = strictList.length
+          ? strictList
+          : scopeReceptionistRecords(completedAppointments, receptionistScope, {
+              allowMissingBranch: true,
+            });
+        const invoiceList = parseList(invoicesData);
+        const scopedInvoices = scopeReceptionistRecords(invoiceList, receptionistScope);
+        const fallbackScopedInvoices = scopeReceptionistRecords(invoiceList, receptionistScope, {
+          allowMissingClinic: true,
+          allowMissingBranch: true,
+        });
 
         if (invoicesResult.status !== "fulfilled") {
           console.warn("Unable to load invoices:", invoicesResult.reason);
         }
 
-        const latestInvoice = getLatestInvoice(scopedInvoices);
+        const latestInvoice =
+          getLatestInvoice(scopedInvoices) ||
+          getLatestInvoice(fallbackScopedInvoices) ||
+          readStoredLatestInvoice();
         const latestInvoiceDetails = latestInvoice
           ? await fetchInvoiceDetails(latestInvoice)
           : null;
@@ -506,6 +648,20 @@ function ReceptionBilling() {
     };
 
     loadBillingData();
+
+    const handleRefresh = () => {
+      if (document.visibilityState === "visible") {
+        loadBillingData();
+      }
+    };
+
+    window.addEventListener("focus", loadBillingData);
+    document.addEventListener("visibilitychange", handleRefresh);
+
+    return () => {
+      window.removeEventListener("focus", loadBillingData);
+      document.removeEventListener("visibilitychange", handleRefresh);
+    };
   }, [toast, receptionistScope]);
 
   const fetchAppointmentDetails = useCallback(
@@ -573,10 +729,8 @@ function ReceptionBilling() {
   const consultationCharge = Number(getAppointmentConsultationCharge(activeAppointment));
   const medicineCharges = Number(form.medicineCharges || 0);
   const labCharges = Number(form.labCharges || 0);
-  const total =
-    consultationCharge +
-    medicineCharges +
-    labCharges;
+  const payableTotal = medicineCharges + labCharges;
+  const total = consultationCharge + payableTotal;
 
   const validateForm = () => {
     const nextErrors = {
@@ -642,8 +796,14 @@ function ReceptionBilling() {
 
     const body = {
       appointmentId: Number(form.appointmentId),
+      consultationCharge,
       medicineCharge: Number(form.medicineCharges || 0),
       labCharge: Number(form.labCharges || 0),
+      totalAmount: total,
+      grandTotal: total,
+      payableAmount: payableTotal,
+      paymentAmount: payableTotal,
+      paidAmount: payableTotal,
       paymentMode: String(form.paymentMode || ""),
       PaymentMode: String(form.paymentMode || ""),
     };
@@ -662,6 +822,10 @@ function ReceptionBilling() {
         medicineCharge: Number(form.medicineCharges || 0),
         labCharge: Number(form.labCharges || 0),
         totalAmount: total,
+        grandTotal: total,
+        payableAmount: payableTotal,
+        paymentAmount: payableTotal,
+        paidAmount: payableTotal,
         patientName:
           invoiceData?.patientName ||
           getAppointmentPatientName(selectedAppointment),
@@ -670,6 +834,7 @@ function ReceptionBilling() {
           getAppointmentDoctorName(selectedAppointment),
       };
       setInvoice(nextInvoice);
+      storeLatestInvoice(nextInvoice);
       setShowInvoiceActions(false);
       const text = invoiceData?.message || "Bill generated successfully";
       showMessage(text, "success", { autoHide: true });
@@ -1022,12 +1187,23 @@ function ReceptionBilling() {
     setShowInvoiceActions(false);
   };
 
+  const invoiceAppointment = useMemo(() => {
+    if (!invoice) return null;
+
+    return appointments.find(
+      (item) => String(getAppointmentId(item)) === String(invoice.appointmentId || invoice.AppointmentId)
+    );
+  }, [appointments, invoice]);
   const invoiceAmounts = getInvoiceAmounts({
     invoice,
-    form,
-    selectedAppointment,
-    total,
+    form: {},
+    selectedAppointment: invoice ? invoiceAppointment : null,
+    total: 0,
   });
+  const latestInvoicePatientName =
+    invoice?.patientName ||
+    invoice?.PatientName ||
+    getAppointmentPatientName(invoiceAppointment);
 
   return (
     <section className="rc-page">
@@ -1164,7 +1340,7 @@ function ReceptionBilling() {
         <div className="rc-invoice-box">
           <div>
             <strong>
-              {invoice?.patientName || getAppointmentPatientName(selectedAppointment)}
+              {invoice ? latestInvoicePatientName : "-"}
             </strong>
             <span>{invoice ? "Invoice generated" : "No invoice generated yet"}</span>
             {invoice ? (

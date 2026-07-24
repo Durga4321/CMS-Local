@@ -16,6 +16,7 @@ import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { useToast } from "../../components/ToastProvider";
 import { validateDate, validateRequired } from "../../utils/validation";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
+import { mergeStoredAppointmentVitals } from "../../utils/appointmentVitals";
 
 const STEPS = [
   "Waiting",
@@ -72,6 +73,18 @@ const INSTRUCTION_OPTIONS = [
   "Continue current diet and medication plan.",
 ];
 
+const splitDiagnosisTests = (value) =>
+  String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const joinDiagnosisTests = (items = []) =>
+  items
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .join(", ");
+
 const createMedicine = () => ({
   id: Date.now() + Math.random(),
   medicineName: "",
@@ -92,6 +105,17 @@ const toDateInput = (value) => {
   return date.toISOString().slice(0, 10);
 };
 
+const pickVital = (item = {}, fallback = {}, key) =>
+  item[key] ||
+  item.vitals?.[key] ||
+  item.Vitals?.[key] ||
+  item.appointment?.[key] ||
+  item.Appointment?.[key] ||
+  fallback[key] ||
+  fallback.vitals?.[key] ||
+  fallback.Vitals?.[key] ||
+  "";
+
 const normalizeAppointment = (item, fallback = {}) => {
   if (!item) return null;
 
@@ -99,6 +123,8 @@ const normalizeAppointment = (item, fallback = {}) => {
     ...item,
     appointmentId: item.appointmentId || item.id || fallback.appointmentId,
     patientId: item.patientId || fallback.patientId,
+    doctorId: item.doctorId || item.DoctorId || item.doctor?.id || item.Doctor?.Id || fallback.doctorId,
+    tokenNumber: item.tokenNumber || item.TokenNumber || item.token || fallback.tokenNumber,
     patientName:
       item.patientName ||
       item.name ||
@@ -118,6 +144,12 @@ const normalizeAppointment = (item, fallback = {}) => {
       item.doctorSpecialization ||
       fallback.doctorSpecialization ||
       "",
+    bloodPressure: pickVital(item, fallback, "bloodPressure"),
+    sugarLevel: pickVital(item, fallback, "sugarLevel"),
+    temperature: pickVital(item, fallback, "temperature"),
+    weight: pickVital(item, fallback, "weight"),
+    pulseRate: pickVital(item, fallback, "pulseRate"),
+    respiratoryRate: pickVital(item, fallback, "respiratoryRate"),
   };
 };
 
@@ -343,9 +375,29 @@ function Prescription() {
           throw new Error("No appointment found for prescription.");
         }
 
-        const normalizedAppointment = normalizeAppointment(selectedAppointment, {
+        let normalizedAppointment = normalizeAppointment(selectedAppointment, {
           patientId: routeState.patientId || routeAppointment?.patientId,
         });
+
+        try {
+          const detailResponse = await fetch(
+            `${APPOINTMENTS_API}/${normalizedAppointment.appointmentId}`,
+            { headers }
+          );
+          if (detailResponse.ok) {
+            normalizedAppointment = normalizeAppointment(
+              {
+                ...normalizedAppointment,
+                ...(await detailResponse.json()),
+              },
+              normalizedAppointment
+            );
+          }
+        } catch {
+          // The list payload is enough when the detail endpoint is unavailable.
+        }
+
+        normalizedAppointment = mergeStoredAppointmentVitals(normalizedAppointment);
 
         let savedConsultation = routeState.consultation || null;
         const consultationResponse = await fetch(
@@ -420,6 +472,20 @@ function Prescription() {
     loadPrescription();
   }, [routeState]);
 
+  useEffect(() => {
+    const refreshStoredVitals = () => {
+      setAppointment((prev) => (prev ? mergeStoredAppointmentVitals(prev) : prev));
+    };
+
+    window.addEventListener("focus", refreshStoredVitals);
+    window.addEventListener("storage", refreshStoredVitals);
+
+    return () => {
+      window.removeEventListener("focus", refreshStoredVitals);
+      window.removeEventListener("storage", refreshStoredVitals);
+    };
+  }, []);
+
   const hospitalName = getClinicDisplayName({}, "Clinic Name");
   const doctorName = localStorage.getItem("doctorName") || appointment?.doctorName || "Doctor";
   const chiefComplaint =
@@ -490,9 +556,13 @@ function Prescription() {
     diagnosisOptions.forEach((option) => {
       if (option) options.add(option);
     });
-    if (diagnosis) options.add(diagnosis);
+    splitDiagnosisTests(diagnosis).forEach((option) => options.add(option));
     return Array.from(options).sort((a, b) => a.localeCompare(b));
   }, [diagnosis, diagnosisOptions]);
+  const selectedDiagnosisTests = useMemo(
+    () => splitDiagnosisTests(diagnosis),
+    [diagnosis]
+  );
 
   const updateMedicine = (id, field, value) =>
     setMedicines((prev) =>
@@ -914,20 +984,36 @@ function Prescription() {
             <label className="rx-label">Diagnosis Tests *</label>
             <select
               className="rx-input"
-              value={diagnosis}
+              value=""
               onChange={(event) => {
-                setDiagnosis(event.target.value);
+                const selected = event.target.value;
+                if (!selected) return;
+                setDiagnosis(
+                  joinDiagnosisTests([
+                    ...selectedDiagnosisTests.filter(
+                      (item) => item.toLowerCase() !== selected.toLowerCase()
+                    ),
+                    selected,
+                  ])
+                );
                 setFieldErrors((prev) => ({ ...prev, diagnosis: "" }));
                 setError("");
               }}
             >
-              <option value="">Select diagnosis test</option>
+              <option value="">
+                {selectedDiagnosisTests.length ? "Add another diagnosis test" : "Select diagnosis test"}
+              </option>
               {diagnosisSelectOptions.map((item) => (
                 <option value={item} key={item}>
                   {item}
                 </option>
               ))}
             </select>
+            <small className="rx-field-hint">
+              {selectedDiagnosisTests.length
+                ? selectedDiagnosisTests.join(", ")
+                : "Select one or more diagnosis tests"}
+            </small>
             {fieldErrors.diagnosis ? (
               <small className="rx-field-error">{fieldErrors.diagnosis}</small>
             ) : null}

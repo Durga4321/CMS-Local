@@ -192,6 +192,12 @@
   border-color: #2563eb;
 }
 
+.rx-field-hint {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
 .rx-textarea {
   width: 100%;
   border: 1px solid #e2e8f0;
