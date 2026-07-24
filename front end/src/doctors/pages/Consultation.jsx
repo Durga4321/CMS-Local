@@ -13,6 +13,7 @@ import {
   mergeDiagnosisOption,
 } from "../utils/diagnosisOptions";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
+import { mergeStoredAppointmentVitals } from "../../utils/appointmentVitals";
 
 const STEPS = [
   "Waiting",
@@ -44,7 +45,15 @@ const getInitials = (name) =>
 const getDisplayDate = (value) => formatDateMMDDYYYY(value, emptyValue);
 
 const pickVital = (item = {}, fallback = {}, key) =>
-  item[key] || item.vitals?.[key] || fallback[key] || fallback.vitals?.[key] || "";
+  item[key] ||
+  item.vitals?.[key] ||
+  item.Vitals?.[key] ||
+  item.appointment?.[key] ||
+  item.Appointment?.[key] ||
+  fallback[key] ||
+  fallback.vitals?.[key] ||
+  fallback.Vitals?.[key] ||
+  "";
 
 const normalizeAppointment = (item, fallback = {}) => {
   if (!item) return null;
@@ -53,6 +62,8 @@ const normalizeAppointment = (item, fallback = {}) => {
     ...item,
     appointmentId: item.appointmentId || item.id || fallback.appointmentId,
     patientId: item.patientId || fallback.patientId,
+    doctorId: item.doctorId || item.DoctorId || item.doctor?.id || item.Doctor?.Id || fallback.doctorId,
+    tokenNumber: item.tokenNumber || item.TokenNumber || item.token || fallback.tokenNumber,
     patientName: item.patientName || fallback.patientName || emptyValue,
     patientCode: item.patientCode || fallback.patientCode || emptyValue,
     age: item.age ?? fallback.age ?? emptyValue,
@@ -281,10 +292,29 @@ function Consultation() {
         const selectedAppointment = normalizeAppointment(selected, {
           patientId: routeState.patientId || routeAppointment?.patientId,
         });
+        let detailedAppointment = selectedAppointment;
+
+        try {
+          const detailResponse = await fetch(
+            `${APPOINTMENTS_API}/${selectedAppointment.appointmentId}`,
+            { headers }
+          );
+          if (detailResponse.ok) {
+            detailedAppointment = normalizeAppointment(
+              {
+                ...selectedAppointment,
+                ...(await detailResponse.json()),
+              },
+              selectedAppointment
+            );
+          }
+        } catch {
+          // The list payload is enough when the detail endpoint is unavailable.
+        }
 
         let savedConsultation = null;
         const consultationResponse = await fetch(
-          `${CONSULTATION_API}/appointment/${selectedAppointment.appointmentId}`,
+          `${CONSULTATION_API}/appointment/${detailedAppointment.appointmentId}`,
           {
             headers,
           }
@@ -294,10 +324,10 @@ function Consultation() {
           savedConsultation = await consultationResponse.json();
         }
 
-        const hydratedAppointment = {
-          ...selectedAppointment,
-          patientId: selectedAppointment.patientId || savedConsultation?.patientId,
-        };
+        const hydratedAppointment = mergeStoredAppointmentVitals({
+          ...detailedAppointment,
+          patientId: detailedAppointment.patientId || savedConsultation?.patientId,
+        });
 
         let patientOverview = null;
         if (hydratedAppointment.patientId) {
@@ -341,6 +371,33 @@ function Consultation() {
 
     loadConsultation();
   }, [routeState]);
+
+  useEffect(() => {
+    const refreshStoredVitals = () => {
+      setAppointment((prev) => (prev ? mergeStoredAppointmentVitals(prev) : prev));
+      setForm((prev) => {
+        if (!appointment) return prev;
+        const hydrated = mergeStoredAppointmentVitals(appointment);
+        return {
+          ...prev,
+          bp: hydrated.bloodPressure || prev.bp,
+          sugar: hydrated.sugarLevel || prev.sugar,
+          temp: hydrated.temperature || prev.temp,
+          weight: hydrated.weight || prev.weight,
+          pulse: hydrated.pulseRate || prev.pulse,
+          resp: hydrated.respiratoryRate || prev.resp,
+        };
+      });
+    };
+
+    window.addEventListener("focus", refreshStoredVitals);
+    window.addEventListener("storage", refreshStoredVitals);
+
+    return () => {
+      window.removeEventListener("focus", refreshStoredVitals);
+      window.removeEventListener("storage", refreshStoredVitals);
+    };
+  }, [appointment]);
 
   const patient = useMemo(() => {
     if (!appointment) return null;

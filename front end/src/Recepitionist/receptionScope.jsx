@@ -4,6 +4,7 @@ const firstValue = (...values) =>
   values.find((value) => value !== undefined && value !== null && String(value).trim() !== "");
 
 const normalizeId = (value) => String(value ?? "").trim();
+const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
 
 export const getRecordClinicId = (record = {}) =>
   normalizeId(
@@ -55,11 +56,35 @@ export const getRecordBranchId = (record = {}) =>
     )
   );
 
+export const getRecordBranchName = (record = {}) =>
+  normalizeText(
+    firstValue(
+      record.branchName,
+      record.BranchName,
+      record.branch,
+      record.Branch,
+      record.patient?.branchName,
+      record.patient?.BranchName,
+      record.Patient?.BranchName,
+      record.appointment?.branchName,
+      record.appointment?.BranchName,
+      record.Appointment?.BranchName,
+      record.doctor?.branchName,
+      record.doctor?.BranchName,
+      record.Doctor?.BranchName,
+      record.branch?.name,
+      record.branch?.branchName,
+      record.Branch?.Name,
+      record.Branch?.BranchName
+    )
+  );
+
 export const getReceptionistScope = () => {
   const profile = getReceptionistProfile();
   return {
     clinicId: normalizeId(profile.hospitalId),
     branchId: normalizeId(profile.branchId),
+    branchName: normalizeText(profile.branchName),
   };
 };
 
@@ -70,11 +95,18 @@ export const belongsToReceptionistScope = (
 ) => {
   const clinicId = normalizeId(scope.clinicId);
   const branchId = normalizeId(scope.branchId);
+  const branchName = normalizeText(scope.branchName);
   const recordClinicId = getRecordClinicId(record);
   const recordBranchId = getRecordBranchId(record);
+  const recordBranchName = getRecordBranchName(record);
 
   if (clinicId && recordClinicId !== clinicId && !(allowMissingClinic && !recordClinicId)) return false;
-  if (branchId && recordBranchId !== branchId && !(allowMissingBranch && !recordBranchId)) return false;
+  if (
+    branchId &&
+    recordBranchId !== branchId &&
+    !(branchName && recordBranchName === branchName) &&
+    !(allowMissingBranch && !recordBranchId && !recordBranchName)
+  ) return false;
 
   return true;
 };

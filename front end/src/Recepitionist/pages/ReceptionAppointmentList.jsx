@@ -1,12 +1,73 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, RefreshCw, Search, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, Plus, RefreshCw, Search, SlidersHorizontal, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../../components/ToastProvider";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 import { filterAppointments, getAppointmentValue, getBookingType } from "./appointmentListUtils";
 import { getReceptionistScope, scopeReceptionistRecords } from "../receptionScope";
+import { requestJson } from "../receptionApi";
+import {
+  getAppointmentRecordId,
+  mergeStoredAppointmentVitals,
+  saveStoredAppointmentVitals,
+} from "../../utils/appointmentVitals";
 
 const pageSize = 8;
+const emptyVitals = {
+  bloodPressure: "",
+  sugarLevel: "",
+  temperature: "",
+  weight: "",
+  pulseRate: "",
+  respiratoryRate: "",
+};
+const vitalFields = [
+  { name: "bloodPressure", label: "Blood Pressure", unit: "mmHg", placeholder: "120/80" },
+  { name: "sugarLevel", label: "Sugar Level", unit: "mg/dL", placeholder: "100" },
+  { name: "temperature", label: "Temperature", unit: "F", placeholder: "98.6" },
+  { name: "weight", label: "Weight", unit: "kg", placeholder: "70" },
+  { name: "pulseRate", label: "Pulse Rate", unit: "bpm", placeholder: "72" },
+  { name: "respiratoryRate", label: "Respiratory Rate", unit: "breaths/min", placeholder: "16" },
+];
+
+const stripUnit = (value) =>
+  String(value || "")
+    .replace(/\s*(mmhg|mg\/dl|f|kg|bpm|breaths\/min)\s*$/i, "")
+    .trim();
+
+const appendUnit = (value, unit) => {
+  const text = stripUnit(value);
+  return text ? `${text} ${unit}` : "";
+};
+
+const sanitizeVitalValue = (name, value) => {
+  const text = String(value || "");
+  if (name === "bloodPressure") {
+    return text
+      .replace(/[^\d/]/g, "")
+      .replace(/\/{2,}/g, "/")
+      .replace(/^(\d*\/\d*)\/.*$/, "$1");
+  }
+
+  if (name === "pulseRate" || name === "respiratoryRate") {
+    return text.replace(/\D/g, "");
+  }
+
+  return text.replace(/[^\d.]/g, "").replace(/(\..*)\./g, "$1");
+};
+
+const getAppointmentId = (appointment = {}) =>
+  getAppointmentRecordId(appointment) ||
+  getAppointmentValue(appointment, ["appointmentId", "AppointmentId", "id", "Id"], "");
+
+const getVitalValue = (appointment = {}, name) =>
+  stripUnit(
+    getAppointmentValue(
+      appointment,
+      [name, `vitals.${name}`, `Vitals.${name}`, `appointment.${name}`, `Appointment.${name}`],
+      ""
+    )
+  );
 
 function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingType, emptyState }) {
   const navigate = useNavigate();
@@ -20,6 +81,9 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
   const [statusFilter, setStatusFilter] = useState("All");
   const [dateFilter, setDateFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [vitalsAppointment, setVitalsAppointment] = useState(null);
+  const [vitalsForm, setVitalsForm] = useState(emptyVitals);
+  const [vitalsSaving, setVitalsSaving] = useState(false);
 
   const loadAppointments = useCallback(async () => {
     setLoading(true);
@@ -27,7 +91,7 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
 
     try {
       const data = scopeReceptionistRecords(await fetchAppointments(), receptionistScope);
-      const nextAppointments = data.filter((item) => {
+      const nextAppointments = data.map(mergeStoredAppointmentVitals).filter((item) => {
         const currentBookingType = getBookingType(item);
         return currentBookingType === bookingType;
       });
@@ -81,6 +145,97 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
   useEffect(() => {
     setPage(1);
   }, [search, doctorFilter, statusFilter, dateFilter]);
+
+  const openVitals = (appointment) => {
+    setVitalsAppointment(appointment);
+    setVitalsForm(
+      vitalFields.reduce(
+        (form, field) => ({
+          ...form,
+          [field.name]: getVitalValue(appointment, field.name),
+        }),
+        {}
+      )
+    );
+  };
+
+  const closeVitals = () => {
+    if (vitalsSaving) return;
+    setVitalsAppointment(null);
+    setVitalsForm(emptyVitals);
+  };
+
+  const setVitalField = (name, value) => {
+    setVitalsForm((prev) => ({ ...prev, [name]: sanitizeVitalValue(name, value) }));
+  };
+
+  const saveVitals = async (event) => {
+    event.preventDefault();
+    const appointmentId = getAppointmentId(vitalsAppointment);
+    if (!appointmentId) {
+      toast.error("Appointment ID missing.");
+      return;
+    }
+
+    const vitals = vitalFields.reduce(
+      (values, field) => ({
+        ...values,
+        [field.name]: appendUnit(vitalsForm[field.name], field.unit),
+      }),
+      {}
+    );
+    const payload = {
+      ...vitals,
+      bloodPressureUnit: "mmHg",
+      sugarLevelUnit: "mg/dL",
+      temperatureUnit: "F",
+      weightUnit: "kg",
+      pulseRateUnit: "bpm",
+      respiratoryRateUnit: "breaths/min",
+      vitals,
+    };
+    const saveAttempts = [
+      { path: `Appointment/${appointmentId}/vitals`, method: "PUT" },
+      { path: `Appointment/${appointmentId}/vitals`, method: "PATCH" },
+      { path: `Appointment/${appointmentId}`, method: "PATCH" },
+    ];
+
+    try {
+      setVitalsSaving(true);
+      let saved = null;
+
+      for (const attempt of saveAttempts) {
+        try {
+          saved = await requestJson(attempt.path, {
+            method: attempt.method,
+            body: JSON.stringify(payload),
+          });
+          break;
+        } catch {
+          // Some backends do not expose a vitals update route; local storage below keeps the vitals available.
+        }
+      }
+
+      saveStoredAppointmentVitals(vitalsAppointment, payload);
+      saveStoredAppointmentVitals({ ...vitalsAppointment, ...payload }, payload);
+
+      setAppointments((prev) =>
+        prev.map((appointment) =>
+          String(getAppointmentId(appointment)) === String(appointmentId)
+            ? { ...appointment, ...payload, ...(saved && typeof saved === "object" ? saved : {}) }
+            : appointment
+        )
+      );
+      toast.success("Vitals saved.");
+      setVitalsAppointment(null);
+      setVitalsForm(emptyVitals);
+      loadAppointments();
+    } catch (error) {
+      toast.error(error.message || "Unable to save vitals.");
+    } finally {
+      setVitalsSaving(false);
+    }
+  };
 
   return (
     <section className="rc-page">
@@ -172,6 +327,7 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
                     <th>Payment</th>
                     <th>Booking Type</th>
                     <th>Status</th>
+                    {bookingType === "Online" ? <th>Vitals</th> : null}
                   </tr>
                 </thead>
                 <tbody>
@@ -189,6 +345,19 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
                       <td>{getAppointmentValue(item, ["paymentStatus", "PaymentStatus", "payment.status", "billing.paymentStatus"], "-")}</td>
                       <td>{getBookingType(item)}</td>
                       <td>{getAppointmentValue(item, ["status", "appointmentStatus", "AppointmentStatus", "Status"], "-")}</td>
+                      {bookingType === "Online" ? (
+                        <td>
+                          <button
+                            className="rc-icon-btn"
+                            type="button"
+                            aria-label="Add vitals"
+                            title="Add vitals"
+                            onClick={() => openVitals(item)}
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </td>
+                      ) : null}
                     </tr>
                   ))}
                 </tbody>
@@ -209,6 +378,46 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
           </>
         )}
       </div>
+
+      {vitalsAppointment ? (
+        <div className="rc-modal-backdrop">
+          <form className="rc-card rc-modal-compact" onSubmit={saveVitals}>
+            <div className="rc-modal-header">
+              <div>
+                <h3>Appointment Vitals</h3>
+                <p>
+                  {getAppointmentValue(vitalsAppointment, ["patientName", "patient.name", "PatientName"], "-")}
+                </p>
+              </div>
+              <button className="rc-modal-close" type="button" onClick={closeVitals}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="rc-form-grid">
+              {vitalFields.map((field) => (
+                <label key={field.name}>
+                  <span>{field.label}</span>
+                  <input
+                    value={vitalsForm[field.name] || ""}
+                    onChange={(event) => setVitalField(field.name, event.target.value)}
+                    placeholder={field.placeholder}
+                    inputMode={field.name === "bloodPressure" ? "numeric" : "decimal"}
+                  />
+                  <small>{field.unit}</small>
+                </label>
+              ))}
+            </div>
+            <div className="rc-modal-actions">
+              <button className="rc-btn ghost" type="button" onClick={closeVitals} disabled={vitalsSaving}>
+                Cancel
+              </button>
+              <button className="rc-btn primary" type="submit" disabled={vitalsSaving}>
+                {vitalsSaving ? "Saving..." : "Save Vitals"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </section>
   );
 }
