@@ -242,6 +242,10 @@ import {
 import {
   validateUniqueMobileNumber,
 } from "../../utils/mobileUniqueness";
+import {
+  SPECIALIZATION_OPTIONS,
+  getExpertiseOptionsForSpecialization,
+} from "./doctorExpertiseOptions";
 const DOCTORS_API_URL =
   apiUrl("Doctor");
 
@@ -250,38 +254,6 @@ const DOCTOR_SPECIALIZATIONS_API_URL =
 
 const DOCTOR_QUALIFICATIONS_API_URL =
   apiUrl("Doctor/qualifications");
-
-const SPECIALIZATION_OPTIONS = [
-  "Cardiology",
-  "Cardiothoracic and Cardiovascular Surgery",
-  "Dermatology",
-  "Dental and Maxillofacial Surgery",
-  "ENT",
-  "Endocrinology",
-  "General Medicine",
-  "General Surgery",
-  "Gynecology",
-  "Internal Medicine",
-  "Medical Gastroenterology",
-  "Nephrology",
-  "Neurology",
-  "Neurosurgery",
-  "Obstetrics and Gynaecology",
-  "Ophthalmology",
-  "Orthopedics",
-  "Paediatric Cardiology",
-  "Pediatrics",
-  "Plastic and Cosmetic Surgery",
-  "Pulmonology",
-  "Psychiatry",
-  "Psychiatric Counselling",
-  "Radiology",
-  "Rheumatology",
-  "Surgical Gastroenterology - Laparoscopic and MIS",
-  "Urology",
-  "Vascular and Endovascular Surgery",
-  "Other",
-];
 
 const QUALIFICATION_OPTIONS = [
   { value: "MBBS", label: "Bachelor of Medicine and Bachelor of Surgery (MBBS)" },
@@ -470,6 +442,11 @@ function AddDoctor() {
     [form.name]
   );
 
+  const expertiseOptions = useMemo(
+    () => getExpertiseOptionsForSpecialization(form.specialization),
+    [form.specialization]
+  );
+
   useEffect(() => {
     let active = true;
 
@@ -588,7 +565,7 @@ function AddDoctor() {
     const { name } = event.target;
     let { value } = event.target;
 
-    if (["name", "specialization", "areaofExpertise"].includes(name)) {
+    if (name === "name") {
       value = formatTitleCase(onlyAlpha(value));
     }
 
@@ -615,10 +592,21 @@ function AddDoctor() {
       }
     }
 
-    setForm((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
+    setForm((previous) => {
+      const nextForm = {
+        ...previous,
+        [name]: value,
+      };
+
+      if (name === "specialization") {
+        const nextExpertiseOptions = getExpertiseOptionsForSpecialization(value);
+        nextForm.areaofExpertise = nextExpertiseOptions.includes(previous.areaofExpertise)
+          ? previous.areaofExpertise
+          : "";
+      }
+
+      return nextForm;
+    });
     setFieldErrors((previous) => ({ ...previous, [name]: "" }));
   };
 
@@ -746,11 +734,11 @@ function AddDoctor() {
     const requestPayload = {
       branchId: Number(formattedForm.branchId) || 0,
       name: formatTitleCase(formattedForm.name).trim(),
-      specialization: formatTitleCase(formattedForm.specialization).trim(),
+      specialization: formattedForm.specialization.trim(),
       experience: String(Number(formattedForm.experience) || 0),
       qualification: formattedForm.qualification.trim(),
       consultationFee: Number(formattedForm.fees) || 0,
-      areaofExpertise: formatTitleCase(formattedForm.areaofExpertise).trim(),
+      areaofExpertise: formattedForm.areaofExpertise.trim(),
       email: formattedForm.email.trim(),
       phoneNumber: formattedForm.phone.trim(),
       isActive: formattedForm.isActive === "true",
@@ -895,22 +883,23 @@ if (imageFile) {
 
             <div className="add-doctor-input-group">
               <label>Specialization</label>
-              <input
+              <select
                 name="specialization"
-                list="doctor-specialization-options"
                 value={form.specialization}
                 onChange={handleChange}
                 className={fieldErrors.specialization ? "is-invalid" : ""}
-                placeholder={loadingOptions ? "Loading specializations..." : "Type or select specialization"}
                 required
-              />
-              <datalist id="doctor-specialization-options">
+                disabled={loadingOptions && !specializationOptions.length}
+              >
+                <option value="">
+                  {loadingOptions ? "Loading specializations..." : "Select specialization"}
+                </option>
                 {specializationOptions.map((specialization) => (
                   <option key={specialization} value={specialization}>
                     {specialization}
                   </option>
                 ))}
-              </datalist>
+              </select>
               {fieldErrors.specialization ? (
                 <span className="add-doctor-field-error">
                   {fieldErrors.specialization}
@@ -940,13 +929,25 @@ if (imageFile) {
 
             <div className="add-doctor-input-group">
               <label>Area of Expertise</label>
-              <input
+              <select
                 name="areaofExpertise"
                 value={form.areaofExpertise}
                 onChange={handleChange}
                 className={fieldErrors.areaofExpertise ? "is-invalid" : ""}
+                disabled={!expertiseOptions.length}
                 required
-              />
+              >
+                <option value="">
+                  {form.specialization
+                    ? "Select area of expertise"
+                    : "Select specialization first"}
+                </option>
+                {expertiseOptions.map((expertise) => (
+                  <option key={expertise} value={expertise}>
+                    {expertise}
+                  </option>
+                ))}
+              </select>
               {fieldErrors.areaofExpertise ? (
                 <span className="add-doctor-field-error">
                   {fieldErrors.areaofExpertise}

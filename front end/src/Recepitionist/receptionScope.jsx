@@ -121,6 +121,11 @@ export const scopeReceptionistRecords = (
 export const withReceptionistScopePayload = (payload = {}, scope = getReceptionistScope()) => ({
   ...payload,
   hospitalId: Number(scope.clinicId) || payload.hospitalId || 0,
+  HospitalId: Number(scope.clinicId) || payload.HospitalId || payload.hospitalId || 0,
   clinicId: Number(scope.clinicId) || payload.clinicId || 0,
+  ClinicId: Number(scope.clinicId) || payload.ClinicId || payload.clinicId || 0,
   branchId: Number(scope.branchId) || payload.branchId || 0,
+  BranchId: Number(scope.branchId) || payload.BranchId || payload.branchId || 0,
+  branchName: scope.branchName || payload.branchName || "",
+  BranchName: scope.branchName || payload.BranchName || payload.branchName || "",
 });

@@ -8,6 +8,7 @@ import { INDIA_COUNTRY } from "../../utils/indianLocations";
 import { fetchPincodeLocation } from "../../utils/pincodeLocation";
 import { formatTitleCase } from "../../utils/format";
 import { validateStrongPassword, validateEmail, validateName, validateText } from "../../utils/validation";
+import { validateUniqueMobileNumber } from "../../utils/mobileUniqueness";
 import { ChevronRight, ChevronLeft, Check, Heart } from "lucide-react";
 import clinicBg from '../../assests/clinic-bg.jpg';
 import "../../Login/styles/Auth.css";
@@ -408,6 +409,17 @@ function PatientRegister() {
     };
 
     try {
+      const duplicateMobileMessage = await validateUniqueMobileNumber(payload.mobileNumber, {
+        localSource: "Patient",
+      });
+      if (duplicateMobileMessage) {
+        setErrors({ mobile: duplicateMobileMessage });
+        toast.error(duplicateMobileMessage);
+        setIsSubmitting(false);
+        setCurrentStep(2);
+        return;
+      }
+
       const response = await fetch(REGISTER_API, {
         method: "POST",
         headers: {

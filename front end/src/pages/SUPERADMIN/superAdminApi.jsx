@@ -255,7 +255,7 @@ const normalizeUtcDateValue = (value) => {
   if (!value || typeof value !== "string") return value;
 
   const text = value.trim();
-  const isIsoDateTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(text);
+  const isIsoDateTime = /^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}/.test(text);
   const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(text);
 
   return isIsoDateTime && !hasTimezone ? `${text}Z` : text;
@@ -570,7 +570,7 @@ const formatLastActive = (user = {}) => {
     ""
   );
 
-  return formatDateTime(activityValue) || "Never Logged In";
+  return formatAuditDateTime(activityValue) || "Never Logged In";
 };
 
 const readJson = async (response) => {
@@ -2631,7 +2631,7 @@ export const fetchUsers = async () => {
   return users.map((user) => {
     const lastLoginRaw = findMostRecentLogin(user, loginLogs);
     return lastLoginRaw
-      ? { ...user, lastActive: formatDateTime(lastLoginRaw) }
+      ? { ...user, lastActive: formatAuditDateTime(lastLoginRaw) }
       : user;
   });
 };

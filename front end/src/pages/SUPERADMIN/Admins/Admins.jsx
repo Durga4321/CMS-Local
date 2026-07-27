@@ -21,6 +21,7 @@ import {
   validateGmail,
   validateMobile,
 } from "../../../utils/validation";
+import { validateUniqueMobileNumber } from "../../../utils/mobileUniqueness";
 
 const emptyAdmin = {
   fullName: "",
@@ -322,6 +323,18 @@ function Admins() {
       const adminName = form.fullName.trim();
       const adminEmail = form.email.trim();
       const adminPhone = form.phone.trim();
+      const duplicateMobileMessage = await validateUniqueMobileNumber(adminPhone, {
+        current: editingAdminId ? { id: editingAdminId, source: "admins" } : {},
+        localRecords: admins,
+        localSource: "admins",
+      });
+      if (duplicateMobileMessage) {
+        setFieldErrors((current) => ({ ...current, phone: duplicateMobileMessage }));
+        setError(duplicateMobileMessage);
+        toast.error(duplicateMobileMessage);
+        setSaving(false);
+        return;
+      }
       const clinicName = selectedClinic?.name || "";
       await saveAdmin({
         name: adminName,

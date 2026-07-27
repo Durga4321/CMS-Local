@@ -13,6 +13,9 @@ import { useNavigate } from "react-router-dom";
 import { parseList, requestJson } from "../receptionApi";
 import {
   getReceptionistScope,
+  getRecordBranchId,
+  getRecordBranchName,
+  getRecordClinicId,
   scopeReceptionistRecords,
   withReceptionistScopePayload,
 } from "../receptionScope";
@@ -46,6 +49,7 @@ import {
   validateSelected,
 } from "../../utils/validation";
 import { formatTitleCase } from "../../utils/format";
+import { validateUniqueMobileNumber } from "../../utils/mobileUniqueness";
 
 const emptyForm = {
   name: "",
@@ -73,11 +77,119 @@ const getAppointmentPatientId = (appointment = {}) =>
   firstText(
     appointment.patientId,
     appointment.PatientId,
+    appointment.pid,
+    appointment.PID,
     appointment.patient?.id,
-    appointment.Patient?.Id
+    appointment.patient?.patientId,
+    appointment.patient?.PatientId,
+    appointment.Patient?.Id,
+    appointment.Patient?.PatientId
+  );
+
+const getAppointmentPatientPhone = (appointment = {}) =>
+  normalizePhone(
+    firstText(
+      appointment.phone,
+      appointment.Phone,
+      appointment.phoneNumber,
+      appointment.PhoneNumber,
+      appointment.mobileNumber,
+      appointment.MobileNumber,
+      appointment.patientPhone,
+      appointment.PatientPhone,
+      appointment.patient?.phone,
+      appointment.patient?.Phone,
+      appointment.patient?.phoneNumber,
+      appointment.patient?.PhoneNumber,
+      appointment.Patient?.phone,
+      appointment.Patient?.Phone,
+      appointment.Patient?.phoneNumber,
+      appointment.Patient?.PhoneNumber
+    )
   );
 
 const normalizePhone = (value) => String(value ?? "").replace(/\D/g, "");
+const OFFLINE_PATIENT_SCOPE_KEY = "reception_offline_patient_scope_v2";
+
+const readOfflinePatientScope = () => {
+  try {
+    const data = JSON.parse(localStorage.getItem(OFFLINE_PATIENT_SCOPE_KEY) || "{}");
+    return data && typeof data === "object" ? data : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeOfflinePatientScope = (scopeData) => {
+  localStorage.setItem(OFFLINE_PATIENT_SCOPE_KEY, JSON.stringify(scopeData));
+};
+
+const getOfflinePatientScopeKeys = (patient = {}) => {
+  const id = getPatientId(patient);
+  const phone = normalizePhone(patient.phone || patient.Phone);
+  return [
+    id ? `id:${id}` : "",
+    phone ? `phone:${phone}` : "",
+  ].filter(Boolean);
+};
+
+const rememberOfflinePatientScope = (patient = {}, scope = {}) => {
+  const keys = getOfflinePatientScopeKeys(patient);
+  if (!keys.length) return;
+
+  const scopeData = readOfflinePatientScope();
+  const scopedValue = {
+    clinicId: String(scope.clinicId || ""),
+    branchId: String(scope.branchId || ""),
+    branchName: String(scope.branchName || ""),
+  };
+
+  keys.forEach((key) => {
+    scopeData[key] = scopedValue;
+  });
+  writeOfflinePatientScope(scopeData);
+};
+
+const hasRememberedOfflinePatientScope = (patient = {}, scope = {}) => {
+  const scopeData = readOfflinePatientScope();
+  const clinicId = String(scope.clinicId || "");
+  const branchId = String(scope.branchId || "");
+  const branchName = String(scope.branchName || "");
+
+  return getOfflinePatientScopeKeys(patient).some((key) => {
+    const saved = scopeData[key];
+    if (!saved) return false;
+
+    const savedClinicId = String(saved.clinicId || "");
+    const savedBranchId = String(saved.branchId || "");
+    const savedBranchName = String(saved.branchName || "");
+
+    return (
+      (!clinicId || savedClinicId === clinicId) &&
+      (!branchId || savedBranchId === branchId || (branchName && savedBranchName === branchName))
+    );
+  });
+};
+
+const patientBelongsToReceptionistPatientList = (
+  patient = {},
+  branchPatientIds = new Set(),
+  branchPatientPhones = new Set(),
+  scope = {}
+) => {
+  if (branchPatientIds.has(getPatientId(patient))) return true;
+  if (branchPatientPhones.has(normalizePhone(patient.phone || patient.Phone))) return true;
+
+  const clinicId = getRecordClinicId(patient);
+  const branchId = getRecordBranchId(patient);
+  const branchName = getRecordBranchName(patient);
+
+  if (clinicId || branchId || branchName) {
+    return scopeReceptionistRecords([patient], scope).length > 0;
+  }
+
+  return hasRememberedOfflinePatientScope(patient, scope);
+};
 
 const getPatientAddressParts = (patient = {}) => {
   const parsedAddress = parseAddress(firstText(patient.address, patient.Address));
@@ -157,18 +269,6 @@ const patientFieldLabels = {
   dateOfBirth: "Date Of Birth",
   emergencyContactName: "Emergency Contact Name",
   emergencyContactPhone: "Emergency Contact Number",
-};
-
-const validatePatientName = (value) => {
-  const alphaError = validateAlpha(value, "Name");
-  if (alphaError) return alphaError;
-
-  const nameParts = String(value || "")
-    .trim()
-    .split(/\s+/)
-    .filter((part) => part.replace(/\./g, "").length >= 2);
-
-  return nameParts.length >= 2 ? "" : "Name must include first and last name.";
 };
 
 const getPatientDateOfBirth = (patient = {}) => {
@@ -264,19 +364,35 @@ function ReceptionPatients() {
     Promise.all([
       requestJson("Patient"),
       requestJson("Appointment").catch(() => []),
+      requestJson("Appointment/offline").catch(() => []),
+      requestJson("Appointment/online").catch(() => []),
     ])
-      .then(([data, appointmentData]) => {
+      .then(([data, appointmentData, offlineAppointmentData, onlineAppointmentData]) => {
+        const branchAppointments = [
+          ...parseList(appointmentData),
+          ...parseList(offlineAppointmentData),
+          ...parseList(onlineAppointmentData),
+        ];
         const branchPatientIds = new Set(
-          scopeReceptionistRecords(parseList(appointmentData), receptionistScope)
+          scopeReceptionistRecords(branchAppointments, receptionistScope)
             .map(getAppointmentPatientId)
+            .filter(Boolean)
+        );
+        const branchPatientPhones = new Set(
+          scopeReceptionistRecords(branchAppointments, receptionistScope)
+            .map(getAppointmentPatientPhone)
             .filter(Boolean)
         );
         setPatients(
           parseList(data)
             .filter((patient) => !isDeletedPatient(patient))
             .filter((patient) =>
-              branchPatientIds.has(getPatientId(patient)) ||
-              scopeReceptionistRecords([patient], receptionistScope).length > 0
+              patientBelongsToReceptionistPatientList(
+                patient,
+                branchPatientIds,
+                branchPatientPhones,
+                receptionistScope
+              )
             )
         );
         setMessage("");
@@ -478,7 +594,7 @@ function ReceptionPatients() {
 
   const validateForm = () => {
     const nextErrors = {
-      name: validatePatientName(form.name),
+      name: validateAlpha(form.name, "Name"),
       email: validateGmail(form.email),
       phone: validateMobile(form.phone, "Phone"),
       age: validateNumeric(form.age, "Age", { integer: true, max: 100 }),
@@ -572,6 +688,18 @@ function ReceptionPatients() {
       return;
     }
 
+    const duplicateMobileMessage = await validateUniqueMobileNumber(form.phone, {
+      current: modal === "edit" && form.id ? { id: form.id, source: "Patient" } : {},
+      localRecords: patients,
+      localSource: "Patient",
+    });
+    if (duplicateMobileMessage) {
+      setFieldErrors((prev) => ({ ...prev, phone: duplicateMobileMessage }));
+      setMessage(duplicateMobileMessage);
+      toast.error(duplicateMobileMessage);
+      return;
+    }
+
     const duplicateEmergencyContact = findPatientUsingPhone(
       form.emergencyContactPhone,
       form.id
@@ -593,12 +721,14 @@ function ReceptionPatients() {
 
     try {
       if (modal === "edit" && form.id) {
-        await requestJson(`Patient/${form.id}`, {
+        const result = await requestJson(`Patient/${form.id}`, {
           method: "PUT",
           body: JSON.stringify(body),
         });
+        rememberOfflinePatientScope({ ...form, ...body, ...(result || {}) }, receptionistScope);
       } else {
-        await requestJson("Patient", { method: "POST", body: JSON.stringify(body) });
+        const result = await requestJson("Patient", { method: "POST", body: JSON.stringify(body) });
+        rememberOfflinePatientScope({ ...form, ...body, ...(result || {}) }, receptionistScope);
       }
       setModal(null);
       await fetchPatients();

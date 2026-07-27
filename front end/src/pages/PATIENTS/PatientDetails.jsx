@@ -119,10 +119,24 @@ const normalizeHistory = (data) => {
       visit.id,
     date:
       visit.date ||
+      visit.Date ||
+      visit.appointmentDate ||
+      visit.AppointmentDate ||
+      visit.scheduledDate ||
+      visit.ScheduledDate ||
+      visit.slotDate ||
+      visit.SlotDate ||
       visit.lastVisit ||
       emptyValue,
     time:
       visit.time ||
+      visit.Time ||
+      visit.startTime ||
+      visit.StartTime ||
+      visit.slotTime ||
+      visit.SlotTime ||
+      visit.timeSlot ||
+      visit.TimeSlot ||
       emptyValue,
     status:
       visit.status ||
@@ -254,10 +268,25 @@ const getDisplayDate = (value) => {
   )
     return emptyValue;
 
-  if (!String(value).includes("T"))
-    return value;
+  const raw = String(value).trim();
+  const isoDateTimeMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (isoDateTimeMatch) {
+    const [, year, month, day, hour, minute, second = "00"] = isoDateTimeMatch;
+    if (hour === "00" && minute === "00" && second === "00")
+      return `${year}-${month}-${day}`;
 
-  return String(value).split("T")[0];
+    const hasTimezone = /(?:z|[+-]\d{2}:?\d{2})$/i.test(raw);
+    const date = new Date(hasTimezone ? raw : `${raw}Z`);
+    if (!Number.isNaN(date.getTime())) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+  }
+
+  const isoDateMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoDateMatch)
+    return `${isoDateMatch[1]}-${isoDateMatch[2]}-${isoDateMatch[3]}`;
+
+  return raw;
 };
 
 function PatientDetails() {

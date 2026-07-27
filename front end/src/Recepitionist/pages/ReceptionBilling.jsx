@@ -286,27 +286,29 @@ const getAppointmentId = (appointment) =>
     appointment?.appointment?.appointmentId
   ) || "";
 
-const getAppointmentStatus = (appointment = {}) =>
-  String(
-    appointment.status ??
-    appointment.Status ??
-    appointment.appointmentStatus ??
-    appointment.AppointmentStatus ??
-    appointment.billingStatus ??
-    appointment.BillingStatus ??
-    appointment.paymentStatus ??
-    appointment.PaymentStatus ??
-    appointment.appointment?.status ??
-    appointment.appointment?.Status ??
-    appointment.appointment?.appointmentStatus ??
-    appointment.Appointment?.Status ??
-    appointment.Appointment?.AppointmentStatus ??
-    appointment.state ??
-    appointment.State ??
+const getAppointmentStatus = (appointment = {}) => {
+  const source = appointment || {};
+  return String(
+    source.status ??
+    source.Status ??
+    source.appointmentStatus ??
+    source.AppointmentStatus ??
+    source.billingStatus ??
+    source.BillingStatus ??
+    source.paymentStatus ??
+    source.PaymentStatus ??
+    source.appointment?.status ??
+    source.appointment?.Status ??
+    source.appointment?.appointmentStatus ??
+    source.Appointment?.Status ??
+    source.Appointment?.AppointmentStatus ??
+    source.state ??
+    source.State ??
     ""
   )
     .trim()
     .toLowerCase();
+};
 
 const isBillableAppointment = (appointment = {}) => {
   const status = getAppointmentStatus(appointment);
@@ -317,65 +319,85 @@ const isBillableAppointment = (appointment = {}) => {
   );
 };
 
-const getAppointmentPatientName = (appointment = {}) =>
-  firstValue(
-    appointment.patientName,
-    appointment.PatientName,
-    appointment.patient?.name,
-    appointment.Patient?.Name,
-    appointment.patient?.fullName,
-    appointment.Patient?.FullName
-  ) || "-";
+const getAppointmentPatientName = (appointment = {}) => {
+  const source = appointment || {};
+  return (
+    firstValue(
+      source.patientName,
+      source.PatientName,
+      source.patient?.name,
+      source.Patient?.Name,
+      source.patient?.fullName,
+      source.Patient?.FullName
+    ) || "-"
+  );
+};
 
-const getAppointmentPatientId = (appointment = {}) =>
-  firstValue(
-    appointment.patientId,
-    appointment.PatientId,
-    appointment.pid,
-    appointment.PID,
-    appointment.patientCode,
-    appointment.PatientCode,
-    appointment.patient?.id,
-    appointment.Patient?.Id,
-    appointment.patient?.patientId,
-    appointment.Patient?.PatientId,
-    appointment.patient?.pid,
-    appointment.Patient?.PID,
-    appointment.patient?.patientCode,
-    appointment.Patient?.PatientCode
-  ) || "-";
+const getAppointmentPatientId = (appointment = {}) => {
+  const source = appointment || {};
+  return (
+    firstValue(
+      source.patientId,
+      source.PatientId,
+      source.pid,
+      source.PID,
+      source.patientCode,
+      source.PatientCode,
+      source.patient?.id,
+      source.Patient?.Id,
+      source.patient?.patientId,
+      source.Patient?.PatientId,
+      source.patient?.pid,
+      source.Patient?.PID,
+      source.patient?.patientCode,
+      source.Patient?.PatientCode
+    ) || "-"
+  );
+};
 
-const getAppointmentDoctorName = (appointment = {}) =>
-  firstValue(
-    appointment.doctorName,
-    appointment.DoctorName,
-    appointment.doctor?.name,
-    appointment.Doctor?.Name,
-    appointment.doctor?.fullName,
-    appointment.Doctor?.FullName
-  ) || "-";
+const getAppointmentDoctorName = (appointment = {}) => {
+  const source = appointment || {};
+  return (
+    firstValue(
+      source.doctorName,
+      source.DoctorName,
+      source.doctor?.name,
+      source.Doctor?.Name,
+      source.doctor?.fullName,
+      source.Doctor?.FullName
+    ) || "-"
+  );
+};
 
-const getAppointmentTime = (appointment = {}) =>
-  firstValue(
-    appointment.time,
-    appointment.Time,
-    appointment.slot,
-    appointment.Slot,
-    appointment.startTime,
-    appointment.StartTime
-  ) || "-";
+const getAppointmentTime = (appointment = {}) => {
+  const source = appointment || {};
+  return (
+    firstValue(
+      source.time,
+      source.Time,
+      source.slot,
+      source.Slot,
+      source.startTime,
+      source.StartTime
+    ) || "-"
+  );
+};
 
-const getAppointmentConsultationCharge = (appointment = {}) =>
-  firstValue(
-    appointment.consultationCharge,
-    appointment.ConsultationCharge,
-    appointment.consultationCharges,
-    appointment.ConsultationCharges,
-    appointment.doctor?.consultationCharge,
-    appointment.Doctor?.ConsultationCharge,
-    appointment.doctor?.fee,
-    appointment.Doctor?.Fee
-  ) || 0;
+const getAppointmentConsultationCharge = (appointment = {}) => {
+  const source = appointment || {};
+  return (
+    firstValue(
+      source.consultationCharge,
+      source.ConsultationCharge,
+      source.consultationCharges,
+      source.ConsultationCharges,
+      source.doctor?.consultationCharge,
+      source.Doctor?.ConsultationCharge,
+      source.doctor?.fee,
+      source.Doctor?.Fee
+    ) || 0
+  );
+};
 
 const fetchBillingAppointments = async () => {
   const [appointments, billingAppointments] = await Promise.all([
@@ -393,17 +415,21 @@ const fetchBillingAppointments = async () => {
   return Array.from(byAppointmentId.values());
 };
 
-const getPatientId = (patient = {}) =>
-  firstValue(
-    patient.id,
-    patient.Id,
-    patient.patientId,
-    patient.PatientId,
-    patient.pid,
-    patient.PID,
-    patient.patientCode,
-    patient.PatientCode
-  ) || "";
+const getPatientId = (patient = {}) => {
+  const source = patient || {};
+  return (
+    firstValue(
+      source.id,
+      source.Id,
+      source.patientId,
+      source.PatientId,
+      source.pid,
+      source.PID,
+      source.patientCode,
+      source.PatientCode
+    ) || ""
+  );
+};
 
 const attachPatientToAppointment = (appointment = {}, patientsById = new Map()) => {
   const patient =

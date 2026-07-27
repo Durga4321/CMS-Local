@@ -62,7 +62,13 @@ export const requestJson = async (path, options = {}) => {
   return data;
 };
 
-export const formatToday = () => new Date().toISOString().slice(0, 10);
+export const formatToday = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 export const getOnlineAppointments = async () =>
   parseList(await requestJson("Appointment/online"));

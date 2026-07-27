@@ -4,7 +4,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "../../components/ToastProvider";
 import { formatToday, parseList, requestJson } from "../receptionApi";
 import { getReceptionistProfile } from "../receptionSession";
-import { scopeReceptionistRecords } from "../receptionScope";
+import {
+  getRecordBranchId,
+  getRecordBranchName,
+  getRecordClinicId,
+  scopeReceptionistRecords,
+} from "../receptionScope";
 import { validateText } from "../../utils/validation";
 import { formatIndianCurrency } from "../../utils/format";
 
@@ -31,8 +36,6 @@ const parseSlotLabel = (slot) => {
 const getSlotStart = (slot) => String(parseSlotLabel(slot) || "").split(" - ")[0].trim();
 
 const getSlotEnd = (slot) => String(parseSlotLabel(slot) || "").split(" - ")[1]?.trim() || "";
-
-const parseSlotStart = (slot) => getSlotStart(slot);
 
 const getMinutesFromTime = (value) => {
   const text = String(value || "").trim();
@@ -66,6 +69,48 @@ const formatTo12Hour = (time) => {
   const meridiem = hours >= 12 ? "PM" : "AM";
   hours = hours % 12 || 12;
   return `${String(hours).padStart(2, "0")}:${minutes} ${meridiem}`;
+};
+
+const normalizeAppointmentDate = (value) => {
+  const text = String(value || "").trim();
+  if (!text) return "";
+
+  const isoMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const isoDateTimeMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (isoDateTimeMatch) {
+    const [, year, month, day, hour, minute, second = "00"] = isoDateTimeMatch;
+    if (hour === "00" && minute === "00" && second === "00") return `${year}-${month}-${day}`;
+
+    const hasTimezone = /(?:z|[+-]\d{2}:?\d{2})$/i.test(text);
+    const date = new Date(hasTimezone ? text : `${text}Z`);
+    if (!Number.isNaN(date.getTime())) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+  }
+
+  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+
+  const dmyMatch = text.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+  if (dmyMatch) {
+    return `${dmyMatch[3]}-${dmyMatch[2].padStart(2, "0")}-${dmyMatch[1].padStart(2, "0")}`;
+  }
+
+  return text;
+};
+
+const normalizeSlotStart = (value) => {
+  const text = String(value || "").trim();
+  const start = text.split(" - ")[0].trim();
+  const match = start.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?/i);
+  if (!match) return start.toLowerCase();
+
+  let hours = Number(match[1]);
+  const minutes = match[2];
+  const meridiem = match[3]?.toUpperCase();
+  if (meridiem === "PM" && hours < 12) hours += 12;
+  if (meridiem === "AM" && hours === 12) hours = 0;
+
+  return `${String(hours).padStart(2, "0")}:${minutes}`;
 };
 
 const isToday = (date) => {
@@ -119,7 +164,102 @@ const getDoctorId = (doctor = {}) =>
   doctor.doctorId ?? doctor.DoctorId ?? doctor.id ?? doctor.Id ?? "";
 
 const getAppointmentPatientId = (appointment = {}) =>
-  appointment.patientId ?? appointment.PatientId ?? appointment.patient?.id ?? appointment.Patient?.Id ?? "";
+  appointment.patientId ??
+  appointment.PatientId ??
+  appointment.pid ??
+  appointment.PID ??
+  appointment.patient?.id ??
+  appointment.patient?.patientId ??
+  appointment.patient?.PatientId ??
+  appointment.Patient?.Id ??
+  appointment.Patient?.PatientId ??
+  "";
+
+const normalizePhone = (value) => String(value ?? "").replace(/\D/g, "");
+
+const getAppointmentPatientPhone = (appointment = {}) =>
+  normalizePhone(
+    appointment.phone ??
+      appointment.Phone ??
+      appointment.phoneNumber ??
+      appointment.PhoneNumber ??
+      appointment.mobileNumber ??
+      appointment.MobileNumber ??
+      appointment.patientPhone ??
+      appointment.PatientPhone ??
+      appointment.patient?.phone ??
+      appointment.patient?.Phone ??
+      appointment.patient?.phoneNumber ??
+      appointment.patient?.PhoneNumber ??
+      appointment.Patient?.phone ??
+      appointment.Patient?.Phone ??
+      appointment.Patient?.phoneNumber ??
+      appointment.Patient?.PhoneNumber ??
+      ""
+  );
+
+const getPatientRecordId = (patient = {}) =>
+  patient.id ?? patient.patientId ?? patient.PatientId ?? patient.PID ?? "";
+
+const getPatientPhone = (patient = {}) => normalizePhone(patient.phone ?? patient.Phone ?? "");
+
+const OFFLINE_PATIENT_SCOPE_KEY = "reception_offline_patient_scope_v2";
+
+const readOfflinePatientScope = () => {
+  try {
+    const data = JSON.parse(localStorage.getItem(OFFLINE_PATIENT_SCOPE_KEY) || "{}");
+    return data && typeof data === "object" ? data : {};
+  } catch {
+    return {};
+  }
+};
+
+const getOfflinePatientScopeKeys = (patient = {}) => {
+  const id = String(getPatientRecordId(patient) || "").trim();
+  const phone = getPatientPhone(patient);
+  return [id ? `id:${id}` : "", phone ? `phone:${phone}` : ""].filter(Boolean);
+};
+
+const hasRememberedOfflinePatientScope = (patient = {}, scope = {}) => {
+  const scopeData = readOfflinePatientScope();
+  const clinicId = String(scope.clinicId || "");
+  const branchId = String(scope.branchId || "");
+  const branchName = String(scope.branchName || "");
+
+  return getOfflinePatientScopeKeys(patient).some((key) => {
+    const saved = scopeData[key];
+    if (!saved) return false;
+
+    const savedClinicId = String(saved.clinicId || "");
+    const savedBranchId = String(saved.branchId || "");
+    const savedBranchName = String(saved.branchName || "");
+
+    return (
+      (!clinicId || savedClinicId === clinicId) &&
+      (!branchId || savedBranchId === branchId || (branchName && savedBranchName === branchName))
+    );
+  });
+};
+
+const patientBelongsToBookingBranch = (
+  patient = {},
+  branchPatientIds = new Set(),
+  branchPatientPhones = new Set(),
+  scope = {}
+) => {
+  if (branchPatientIds.has(String(getPatientRecordId(patient) || "").trim())) return true;
+  if (branchPatientPhones.has(getPatientPhone(patient))) return true;
+
+  const clinicId = getRecordClinicId(patient);
+  const branchId = getRecordBranchId(patient);
+  const branchName = getRecordBranchName(patient);
+
+  if (clinicId || branchId || branchName) {
+    return scopeReceptionistRecords([patient], scope).length > 0;
+  }
+
+  return hasRememberedOfflinePatientScope(patient, scope);
+};
 
 const getDoctorBranchId = (doctor = {}) =>
   doctor.branchId ??
@@ -262,12 +402,16 @@ function ReceptionAppointments() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const toast = useToast();
+  const receptionistProfile = getReceptionistProfile();
   const requestedPatientId = String(searchParams.get("patientId") || "").trim();
   const receptionistHospitalId = String(
-    getReceptionistProfile().hospitalId || ""
+    receptionistProfile.hospitalId || ""
   ).trim();
   const receptionistBranchId = String(
-    getReceptionistProfile().branchId || ""
+    receptionistProfile.branchId || ""
+  ).trim();
+  const receptionistBranchName = String(
+    receptionistProfile.branchName || receptionistProfile.branch || ""
   ).trim();
   const [patients, setPatients] = useState([]);
   const [patientSearch, setPatientSearch] = useState("");
@@ -332,22 +476,34 @@ function ReceptionAppointments() {
       requestJson("Patient").catch(() => []),
       doctorRequest,
       requestJson("Appointment").catch(() => []),
-    ]).then(([patientData, doctorResult, appointmentData]) => {
+      requestJson("Appointment/offline").catch(() => []),
+      requestJson("Appointment/online").catch(() => []),
+    ]).then(([patientData, doctorResult, appointmentData, offlineAppointmentData, onlineAppointmentData]) => {
       const scope = {
         clinicId: receptionistHospitalId,
         branchId: receptionistBranchId,
+        branchName: receptionistBranchName,
       };
-      const scopedAppointments = scopeReceptionistRecords(parseList(appointmentData), scope);
+      const appointmentRecords = [
+        ...parseList(appointmentData),
+        ...parseList(offlineAppointmentData),
+        ...parseList(onlineAppointmentData),
+      ];
+      const scopedAppointments = scopeReceptionistRecords(appointmentRecords, scope);
       const branchPatientIds = new Set(
         scopedAppointments
           .map(getAppointmentPatientId)
           .map((id) => String(id || "").trim())
           .filter(Boolean)
       );
-      const nextPatients = parseList(patientData).filter((patient) => {
-        const patientId = String(patient.id ?? patient.patientId ?? patient.PatientId ?? "").trim();
-        return branchPatientIds.has(patientId) || scopeReceptionistRecords([patient], scope).length > 0;
-      });
+      const branchPatientPhones = new Set(
+        scopedAppointments
+          .map(getAppointmentPatientPhone)
+          .filter(Boolean)
+      );
+      const nextPatients = parseList(patientData).filter((patient) =>
+        patientBelongsToBookingBranch(patient, branchPatientIds, branchPatientPhones, scope)
+      );
       const activeDoctors = parseList(doctorResult.data).filter(isActiveDoctor);
       const branchDoctors =
         receptionistBranchId && doctorResult.source !== "branch"
@@ -387,7 +543,11 @@ function ReceptionAppointments() {
           (patient) => String(getPatientId(patient)) === requestedPatientId
         )
           ? requestedPatientId
-          : prev.patientId || String(getPatientId(nextPatients[0]) || ""),
+          : nextPatients.some(
+              (patient) => String(getPatientId(patient)) === String(prev.patientId)
+            )
+            ? prev.patientId
+            : "",
         doctorId: nextDoctors.some(
           (doctor) => String(getDoctorId(doctor)) === String(prev.doctorId)
         )
@@ -395,7 +555,7 @@ function ReceptionAppointments() {
           : String(getDoctorId(nextDoctors[0]) || ""),
       }));
     });
-  }, [receptionistBranchId, receptionistHospitalId, requestedPatientId]);
+  }, [receptionistBranchId, receptionistBranchName, receptionistHospitalId, requestedPatientId]);
 
   useEffect(() => {
     refresh();
@@ -406,14 +566,6 @@ function ReceptionAppointments() {
 
   const getPatientName = (patient = {}) =>
     String(patient.name || patient.fullName || patient.patientName || "").trim();
-
-  const selectedPatient = useMemo(
-    () =>
-      patients.find(
-        (patient) => String(getPatientId(patient)) === String(form.patientId)
-      ),
-    [patients, form.patientId]
-  );
 
   const selectedDoctor = useMemo(
     () => doctors.find((d) => String(getDoctorId(d)) === String(form.doctorId)),
@@ -436,12 +588,6 @@ function ReceptionAppointments() {
       })
       .slice(0, 8);
   }, [patientSearch, patients]);
-
-  useEffect(() => {
-    if (selectedPatient) {
-      setPatientSearch(getPatientName(selectedPatient));
-    }
-  }, [selectedPatient]);
 
   const parseSlots = (data) => {
     if (Array.isArray(data)) return data;
@@ -475,13 +621,43 @@ function ReceptionAppointments() {
   const bookedSlots = useMemo(() => {
     return new Set(
       appointments
-        .filter((item) => String(item.date || item.appointmentDate || item.scheduledDate || "").startsWith(form.date))
+        .filter((item) =>
+          normalizeAppointmentDate(
+            item.date ||
+              item.Date ||
+              item.appointmentDate ||
+              item.AppointmentDate ||
+              item.scheduledDate ||
+              item.ScheduledDate ||
+              item.slotDate ||
+              item.SlotDate ||
+              item.bookingDate ||
+              item.BookingDate ||
+              ""
+          ) === form.date
+        )
         .filter(
           (item) =>
             String(item.doctorId || item.DoctorId || item.doctor?.doctorId || item.doctor?.id || "") ===
             String(form.doctorId)
         )
-        .map((item) => parseSlotStart(item.slot || item.startTime || item.time || item.appointmentTime || item.slotTime || ""))
+        .map((item) =>
+          normalizeSlotStart(
+            item.slot ||
+              item.Slot ||
+              item.startTime ||
+              item.StartTime ||
+              item.time ||
+              item.Time ||
+              item.appointmentTime ||
+              item.AppointmentTime ||
+              item.slotTime ||
+              item.SlotTime ||
+              item.timeSlot ||
+              item.TimeSlot ||
+              ""
+          )
+        )
         .filter(Boolean)
     );
   }, [appointments, form.date, form.doctorId]);
@@ -574,7 +750,9 @@ function ReceptionAppointments() {
       branchId: branchIdForAppointment,
       doctorId: Number(form.doctorId),
       patientId: Number(form.patientId),
-      date: new Date(`${form.date}T00:00:00`).toISOString(),
+      date: form.date,
+      appointmentDate: form.date,
+      slotDate: form.date,
       startTime: selectedSlotStart ? formatTo12Hour(selectedSlotStart) : "",
       paymentMode,
       transactionId,
@@ -642,7 +820,7 @@ function ReceptionAppointments() {
 
   const selectPatient = (patient) => {
     setField("patientId", String(getPatientId(patient)));
-    setPatientSearch(getPatientName(patient));
+    setPatientSearch("");
     setIsPatientMenuOpen(false);
   };
 
@@ -659,6 +837,11 @@ function ReceptionAppointments() {
     });
 
     setField("patientId", exactMatch ? String(getPatientId(exactMatch)) : "");
+  };
+
+  const openPatientMenu = () => {
+    setPatientSearch("");
+    setIsPatientMenuOpen(true);
   };
 
   return (
@@ -688,9 +871,9 @@ function ReceptionAppointments() {
                 type="text"
                 value={patientSearch}
                 onChange={(e) => handlePatientSearch(e.target.value)}
-                onFocus={() => setIsPatientMenuOpen(true)}
+                onFocus={openPatientMenu}
                 onBlur={() => setTimeout(() => setIsPatientMenuOpen(false), 150)}
-                placeholder="Type to search patient name"
+                placeholder="Select Patient"
                 autoComplete="off"
                 role="combobox"
                 aria-label="Search patient by name"
@@ -801,9 +984,9 @@ function ReceptionAppointments() {
             ) : visibleSlots.length > 0 ? (
               visibleSlots.map((slot) => {
                 const label = parseSlotLabel(slot);
-                const slotStart = parseSlotStart(label);
+                const slotStart = normalizeSlotStart(label);
                 const isBooked = Boolean(isBookedSlot(slot) || bookedSlots.has(slotStart));
-                const isSelected = selectedSlot && parseSlotStart(selectedSlot) === slotStart;
+                const isSelected = selectedSlot && normalizeSlotStart(selectedSlot) === slotStart;
                 const isCompleted = !isBooked && isTimeOutSlot(slot, form.date);
                 const statusLabel = isBooked ? "BOOKED" : isCompleted ? "TIME OUT" : "AVAILABLE";
                 const buttonClass = [

@@ -41,6 +41,7 @@ const UNIQUE_PHONE_SOURCES = [
   { source: "Receptionist", path: "Receptionist" },
   { source: "Patient", path: "Patient" },
   { source: "Clinics", path: "Clinics" },
+  { source: "Branch", path: "Branch" },
   { source: "admins", path: "admins" },
   { source: "users", path: "users" },
 ];
@@ -51,6 +52,7 @@ const parseListResponse = (data) => {
   if (Array.isArray(data?.items)) return data.items;
   if (Array.isArray(data?.records)) return data.records;
   if (Array.isArray(data?.result)) return data.result;
+  if (Array.isArray(data?.branches)) return data.branches;
   return [];
 };
 
@@ -82,9 +84,15 @@ const hasDuplicateInRecords = (records = [], phone, source, current = {}) =>
   );
 
 const fetchSourceRecords = async ({ path }) => {
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("adminToken") ||
+    localStorage.getItem("superAdminToken") ||
+    localStorage.getItem("patientToken");
   const response = await fetch(apiUrl(path), {
     headers: {
       "ngrok-skip-browser-warning": "true",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
 

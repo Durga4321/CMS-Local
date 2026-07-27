@@ -28,6 +28,7 @@ import {
   validateNumeric,
   validateSelected,
 } from "../../utils/validation";
+import { validateUniqueMobileNumber } from "../../utils/mobileUniqueness";
 
 function AddPatientModal({ onClose, onAdd }) {
   const toast = useToast();
@@ -221,7 +222,7 @@ function AddPatientModal({ onClose, onAdd }) {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!validateForm()) {
@@ -231,6 +232,16 @@ function AddPatientModal({ onClose, onAdd }) {
     }
 
     setError("");
+    const duplicateMobileMessage = await validateUniqueMobileNumber(form.phone, {
+      localSource: "Patient",
+    });
+    if (duplicateMobileMessage) {
+      setFieldErrors((previous) => ({ ...previous, phone: duplicateMobileMessage }));
+      setError(duplicateMobileMessage);
+      toast.error(duplicateMobileMessage);
+      return;
+    }
+
     onAdd({
       ...form,
       name: form.name.trim(),
