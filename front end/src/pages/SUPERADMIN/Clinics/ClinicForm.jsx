@@ -30,6 +30,7 @@ import {
   validateMobile,
   validateSelected,
 } from "../../../utils/validation";
+import { validateUniqueMobileNumber } from "../../../utils/mobileUniqueness";
 
 const emptyClinic = {
   name: "",
@@ -317,6 +318,18 @@ function ClinicForm({ mode }) {
     }
 
     const trimmedContact = form.contactNumber.trim();
+    const duplicateMobileMessage = await validateUniqueMobileNumber(trimmedContact, {
+      current: mode === "edit" ? { id, source: "Clinics" } : {},
+      localRecords: clinics,
+      localSource: "Clinics",
+    });
+    if (duplicateMobileMessage) {
+      setFieldErrors((current) => ({ ...current, contactNumber: duplicateMobileMessage }));
+      setError(duplicateMobileMessage);
+      toast.error(duplicateMobileMessage);
+      return;
+    }
+
     const duplicateClinic = clinics.find((existingClinic) => {
       const existingContact = String(
         existingClinic.contactNumber ||

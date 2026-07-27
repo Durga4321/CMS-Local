@@ -33,8 +33,13 @@ import {
   validateSelected,
   validateText,
 } from "../../utils/validation";
+import { validateUniqueMobileNumber } from "../../utils/mobileUniqueness";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { formatIndianCurrency, formatTitleCase } from "../../utils/format";
+import {
+  SPECIALIZATION_OPTIONS,
+  getExpertiseOptionsForSpecialization,
+} from "./doctorExpertiseOptions";
 
 const DOCTORS_API_URL =
   apiUrl("Doctor");
@@ -104,11 +109,15 @@ const cleanDisplayText = (value) => {
 const getImageUrl = (entity = {}) => {
   const candidates = [
     entity?.imageUrl,
+    entity?.ImageUrl,
     entity?.image,
     entity?.Image,
     entity?.profileImage,
+    entity?.ProfileImage,
     entity?.profileImageUrl,
+    entity?.ProfileImageUrl,
     entity?.imagePath,
+    entity?.ImagePath,
   ];
 
   for (const candidate of candidates) {
@@ -261,7 +270,7 @@ const getValidationMessages = (data) => {
 const validateEditForm = (form) => {
   const errors = getEmptyEditErrors();
   errors.name = validateAlpha(form.name, "Name");
-  errors.specialization = validateAlpha(form.specialization, "Specialization");
+  errors.specialization = validateText(form.specialization, "Specialization");
   errors.areaofExpertise = validateText(form.areaofExpertise, "Area of expertise");
   errors.experience = validateNumeric(form.experience, "Experience", {
     integer: true,
@@ -361,6 +370,11 @@ function Doctors() {
         return lookup;
       }, {}),
     [branchOptions]
+  );
+
+  const editExpertiseOptions = useMemo(
+    () => getExpertiseOptionsForSpecialization(editForm.specialization),
+    [editForm.specialization]
   );
 
   const openAddDoctor = () => {
@@ -735,7 +749,7 @@ function Doctors() {
     const { name, value } = event.target;
     let nextValue = value;
 
-    if (["name", "specialization"].includes(name)) {
+    if (name === "name") {
       nextValue = formatTitleCase(onlyAlpha(value));
     }
 
@@ -750,10 +764,21 @@ function Doctors() {
       }
     }
 
-    setEditForm((previous) => ({
-      ...previous,
-      [name]: name === "isActive" ? value === "true" : nextValue,
-    }));
+    setEditForm((previous) => {
+      const nextForm = {
+        ...previous,
+        [name]: name === "isActive" ? value === "true" : nextValue,
+      };
+
+      if (name === "specialization") {
+        const nextExpertiseOptions = getExpertiseOptionsForSpecialization(value);
+        nextForm.areaofExpertise = nextExpertiseOptions.includes(previous.areaofExpertise)
+          ? previous.areaofExpertise
+          : "";
+      }
+
+      return nextForm;
+    });
 
     setEditFieldErrors((previous) => ({
       ...previous,
@@ -844,6 +869,19 @@ function Doctors() {
       doctor: editingDoctor,
       form: editForm,
     });
+    const duplicateMobileMessage = await validateUniqueMobileNumber(requestBody.phoneNumber, {
+      current: { id: editingDoctor.id, source: "Doctor" },
+      localRecords: doctors,
+      localSource: "Doctor",
+    });
+    if (duplicateMobileMessage) {
+      setEditFieldErrors((current) => ({ ...current, phone: duplicateMobileMessage }));
+      setEditError(duplicateMobileMessage);
+      toast.error(duplicateMobileMessage);
+      setSavingEdit(false);
+      return;
+    }
+
     // Always use multipart/form-data + query params (per PUT /api/Doctor/{id} spec)
     const params = new URLSearchParams();
     const paramMap = {
@@ -1342,14 +1380,27 @@ function Doctors() {
 
                 <div className="doctor-edit-field">
                   <label htmlFor="edit-specialization">Specialization</label>
-                  <input
+                  <select
                     id="edit-specialization"
                     name="specialization"
                     value={editForm.specialization}
                     onChange={handleEditFieldChange}
                     className={editFieldErrors.specialization ? "is-invalid" : ""}
                     aria-invalid={Boolean(editFieldErrors.specialization)}
-                  />
+                  >
+                    <option value="">Select specialization</option>
+                    {editForm.specialization &&
+                    !SPECIALIZATION_OPTIONS.includes(editForm.specialization) ? (
+                      <option value={editForm.specialization}>
+                        {editForm.specialization}
+                      </option>
+                    ) : null}
+                    {SPECIALIZATION_OPTIONS.map((specialization) => (
+                      <option key={specialization} value={specialization}>
+                        {specialization}
+                      </option>
+                    ))}
+                  </select>
                   {editFieldErrors.specialization ? (
                     <span className="doctor-edit-field-error">
                       {editFieldErrors.specialization}
@@ -1359,14 +1410,32 @@ function Doctors() {
 
                 <div className="doctor-edit-field">
                   <label htmlFor="edit-areaofExpertise">Area of Expertise</label>
-                  <input
+                  <select
                     id="edit-areaofExpertise"
                     name="areaofExpertise"
                     value={editForm.areaofExpertise}
                     onChange={handleEditFieldChange}
                     className={editFieldErrors.areaofExpertise ? "is-invalid" : ""}
                     aria-invalid={Boolean(editFieldErrors.areaofExpertise)}
-                  />
+                    disabled={!editExpertiseOptions.length}
+                  >
+                    <option value="">
+                      {editForm.specialization
+                        ? "Select area of expertise"
+                        : "Select specialization first"}
+                    </option>
+                    {editForm.areaofExpertise &&
+                    !editExpertiseOptions.includes(editForm.areaofExpertise) ? (
+                      <option value={editForm.areaofExpertise}>
+                        {editForm.areaofExpertise}
+                      </option>
+                    ) : null}
+                    {editExpertiseOptions.map((expertise) => (
+                      <option key={expertise} value={expertise}>
+                        {expertise}
+                      </option>
+                    ))}
+                  </select>
                   {editFieldErrors.areaofExpertise ? (
                     <span className="doctor-edit-field-error">
                       {editFieldErrors.areaofExpertise}

@@ -45,6 +45,7 @@ import {
   validateRequired,
   validateText,
 } from "../../utils/validation";
+import { validateUniqueMobileNumber } from "../../utils/mobileUniqueness";
 import {
   getDistrictsForState,
   INDIA_COUNTRY,
@@ -466,6 +467,18 @@ function Branches() {
     const isEditing = Boolean(branchId);
 
     try {
+      const duplicateMobileMessage = await validateUniqueMobileNumber(form.phone, {
+        current: isEditing ? { id: branchId, source: "Branch" } : {},
+        localRecords: branches,
+        localSource: "Branch",
+      });
+      if (duplicateMobileMessage) {
+        setFieldErrors((current) => ({ ...current, phone: duplicateMobileMessage }));
+        showError(duplicateMobileMessage);
+        setSaving(false);
+        return;
+      }
+
       const response = await fetch(
         isEditing ? `${BRANCH_API_URL}/${branchId}` : BRANCH_API_URL,
         {

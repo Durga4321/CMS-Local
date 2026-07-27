@@ -16,6 +16,7 @@ import {
   validateStrongPassword,
 } from "../../utils/validation";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
+import { validateUniqueMobileNumber } from "../../utils/mobileUniqueness";
 
 const DOCTORS_API = apiUrl("Doctor");
 const REGISTER_DOCTOR_API = apiUrl("Auth/register-doctor");
@@ -252,6 +253,19 @@ function RegisterDoctor() {
     };
 
     try {
+      const duplicateMobileMessage = await validateUniqueMobileNumber(mobileNumber, {
+        current: { id: doctorId, source: "Doctor" },
+        localRecords: doctors,
+        localSource: "Doctor",
+      });
+      if (duplicateMobileMessage) {
+        setFieldErrors((previous) => ({ ...previous, mobileNumber: duplicateMobileMessage }));
+        setError(duplicateMobileMessage);
+        toast.error(duplicateMobileMessage);
+        setSaving(false);
+        return;
+      }
+
       const headers = {
         "Content-Type": "application/json",
         "ngrok-skip-browser-warning": "true",

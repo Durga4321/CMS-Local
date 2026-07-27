@@ -33,6 +33,7 @@ import {
   getClinicDisplayName,
   getStoredClinicName,
 } from "../../utils/clinicDisplay";
+import { validateUniqueMobileNumber } from "../../utils/mobileUniqueness";
 const RECEPTIONIST_API = apiUrl("Receptionist");
 const REQUEST_TIMEOUT_MS = 3500;
 
@@ -538,6 +539,18 @@ function Receptionists() {
 
     try {
       const isEditing = Boolean(editingReceptionist?.id);
+      const duplicateMobileMessage = await validateUniqueMobileNumber(payload.phone, {
+        current: isEditing ? { id: editingReceptionist.id, source: "Receptionist" } : {},
+        localRecords: receptionists,
+        localSource: "Receptionist",
+      });
+      if (duplicateMobileMessage) {
+        setFieldErrors((previous) => ({ ...previous, phone: duplicateMobileMessage }));
+        setError(duplicateMobileMessage);
+        toast.error(duplicateMobileMessage);
+        setSaving(false);
+        return;
+      }
       const token = getAuthToken();
       const data = await submitReceptionistRequest({
         url: isEditing
