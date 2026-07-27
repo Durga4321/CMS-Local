@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./PatientDashboard.css";
 import {
   Bell,
@@ -28,7 +28,101 @@ const toAmount = (value) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const getNestedValue = (record, path) => {
+  if (record == null) return undefined;
+  const keys = Array.isArray(path) ? path : String(path).replace(/\?/g, "").split(".");
+  return keys.reduce((value, key) => (value && typeof value === "object" ? value[key] : undefined), record);
+};
+
+const readFirst = (record, keys) =>
+  keys.reduce((value, key) => value || getNestedValue(record, key), "") || "";
+
 const getBillStatus = (bill) => String(bill?.status || bill?.paymentStatus || bill?.state || "").toLowerCase();
+
+const getBillAppointmentKey = (bill) =>
+  firstValue(
+    readFirst(bill, [
+      'appointmentNumber', 'appointmentNo', 'appointmentId', 'appointment.id', 'appointment_id',
+      'appointment.appointmentNumber', 'appointment.appointmentNo', 'appointment.appointmentId',
+      'invoice.appointmentId', 'invoice.appointment.id', 'invoice.appointment.appointmentNumber',
+      'bill.appointmentId', 'bill.appointment.id', 'bill.appointment.appointmentNumber',
+    ]),
+    ''
+  );
+
+const getBillDateValue = (bill) => {
+  const date = new Date(
+    firstValue(
+      readFirst(bill, ['invoiceDate', 'billDate', 'date', 'createdAt', 'updatedAt']),
+      ''
+    )
+  );
+  return Number.isFinite(date.getTime()) ? date.getTime() : 0;
+};
+
+const selectBestBillRecord = (existing, incoming) => {
+  if (!existing) return incoming;
+  const existingDate = getBillDateValue(existing);
+  const incomingDate = getBillDateValue(incoming);
+  if (incomingDate > existingDate) return incoming;
+  if (incomingDate < existingDate) return existing;
+
+  const existingStatus = getBillStatus(existing);
+  const incomingStatus = getBillStatus(incoming);
+  if (incomingStatus === 'paid' && existingStatus !== 'paid') return incoming;
+  if (existingStatus === 'paid' && incomingStatus !== 'paid') return existing;
+
+  return incoming;
+};
+
+const dedupeBillsByAppointment = (bills = []) => {
+  const grouped = new Map();
+  Array.isArray(bills) && bills.forEach((bill) => {
+    const key = getBillAppointmentKey(bill) || String(firstValue(bill?.invoiceNumber, bill?.billNumber, bill?.referenceNumber, bill?.id, '')).trim();
+    const current = grouped.get(key);
+    grouped.set(key, selectBestBillRecord(current, bill));
+  });
+  return Array.from(grouped.values());
+};
+
+const getBillTotalAmount = (bill) => {
+  const amount = firstValue(
+    bill?.amount,
+    bill?.total,
+    bill?.invoiceAmount,
+    bill?.grandTotal,
+    bill?.paymentAmount,
+    bill?.paidAmount,
+    bill?.dueAmount,
+    bill?.balance,
+    bill?.outstandingAmount
+  );
+  return toAmount(amount);
+};
+
+const getBillDueAmount = (bill) => {
+  const amount = firstValue(
+    bill?.dueAmount,
+    bill?.balance,
+    bill?.outstandingAmount,
+    bill?.remainingAmount,
+    bill?.amount,
+    bill?.total
+  );
+  return toAmount(amount);
+};
+
+const getBillPaidAmount = (bill) => {
+  const amount = firstValue(
+    bill?.paidAmount,
+    bill?.paymentAmount,
+    bill?.amount,
+    bill?.total,
+    bill?.invoiceAmount,
+    bill?.grandTotal
+  );
+  return toAmount(amount);
+};
 
 const firstValue = (...values) => values.find((value) => value !== undefined && value !== null && String(value).trim() !== "");
 
@@ -130,20 +224,88 @@ const getSortedUpcomingAppointment = (items = []) => {
 function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY_ARRAY, bills = EMPTY_ARRAY }) {
   const navigate = useNavigate();
   const dashboardPatient = patient || {};
+  const uniqueBills = useMemo(() => {
+    const seen = new Set();
+    return (Array.isArray(bills) ? bills : []).filter((bill) => {
+      const billId = String(
+        firstValue(
+          bill?.invoiceId,
+          bill?.billId,
+          bill?.id,
+          bill?.referenceId,
+          bill?.invoice?.id,
+          bill?.bill?.id,
+          bill?.invoice?.referenceId,
+          bill?.bill?.referenceId
+        ) || ""
+      ).trim();
+      const billNumber = String(
+        firstValue(
+          bill?.invoiceNumber,
+          bill?.billNumber,
+          bill?.referenceNumber,
+          bill?.invoice?.invoiceNumber,
+          bill?.invoice?.billNumber,
+          bill?.bill?.invoiceNumber,
+          bill?.bill?.billNumber,
+          bill?.bill?.referenceNumber
+        ) || ""
+      ).trim();
+      const appointmentId = String(
+        firstValue(
+          bill?.appointmentId,
+          bill?.appointment?.id,
+          bill?.appointment_id,
+          bill?.invoice?.appointmentId,
+          bill?.invoice?.appointment?.id,
+          bill?.bill?.appointmentId,
+          bill?.bill?.appointment?.id,
+          bill?.appointmentNumber,
+          bill?.appointmentNo,
+          bill?.appointment?.number
+        ) || ""
+      ).trim();
+      const patientId = String(
+        firstValue(
+          bill?.patientId,
+          bill?.patient?.id,
+          bill?.invoice?.patientId,
+          bill?.invoice?.patient?.id,
+          bill?.bill?.patientId,
+          bill?.bill?.patient?.id,
+          bill?.patientCode,
+          bill?.patient?.code
+        ) || ""
+      ).trim();
+      const key = [billId, billNumber, appointmentId, patientId]
+        .filter(Boolean)
+        .join("|");
+      if (!key) return true;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [bills]);
   const upcomingAppointment = getSortedUpcomingAppointment(visits);
   const previousVisits = Array.isArray(visits) ? visits.length : 0;
   const prescriptionCount = Array.isArray(prescriptions) ? prescriptions.length : 0;
   const medicalRecordCount = previousVisits + prescriptionCount;
-  const pendingBillsAmount = Array.isArray(bills)
-    ? bills.reduce((total, bill) => {
+  const pendingBillsAmount = Array.isArray(uniqueBills)
+    ? uniqueBills.reduce((total, bill) => {
         const status = getBillStatus(bill);
         const isPending = !status || status.includes("pending") || status.includes("unpaid") || status.includes("due");
-        return isPending ? total + toAmount(bill?.amount ?? bill?.balance ?? bill?.total ?? bill?.dueAmount) : total;
+        return isPending ? total + getBillDueAmount(bill) : total;
       }, 0)
     : 0;
-  const hasBills = Array.isArray(bills) && bills.length > 0;
-  const hasPendingBills = Array.isArray(bills)
-    ? bills.some((bill) => {
+  const totalPaidAmount = Array.isArray(uniqueBills)
+    ? uniqueBills.reduce((total, bill) => {
+        const status = getBillStatus(bill);
+        return status === "paid" ? total + getBillPaidAmount(bill) : total;
+      }, 0)
+    : 0;
+  const hasBills = Array.isArray(uniqueBills) && uniqueBills.length > 0;
+  const hasPendingBills = Array.isArray(uniqueBills)
+    ? uniqueBills.some((bill) => {
         const status = getBillStatus(bill);
         return !status || status.includes("pending") || status.includes("unpaid") || status.includes("due");
       })
@@ -151,8 +313,14 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
   const pendingStatusNote = hasBills
     ? hasPendingBills
       ? "Payment due"
-      : "Billing completed"
+      : "Paid"
     : "No bills yet";
+  const billCardLabel = hasBills
+    ? hasPendingBills
+      ? "Bills Pending"
+      : "Bills Paid"
+    : "Billing";
+  const billCardValue = hasPendingBills ? pendingBillsAmount : totalPaidAmount;
   const selectedPatientId = formatInlineValue(dashboardPatient.patientCode || dashboardPatient.id, "-");
   const selectedPatientPhone = formatInlineValue(dashboardPatient.phone, "Phone not available");
   const selectedPatientBloodGroup = formatInlineValue(dashboardPatient.bloodGroup || dashboardPatient.bloodgroup, "-");
@@ -257,8 +425,8 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
       route: "/patient/medical-history",
     },
     {
-      label: "Bills Pending",
-      value: formatCurrency(pendingBillsAmount),
+      label: billCardLabel,
+      value: formatCurrency(billCardValue),
       note: pendingStatusNote,
       icon: IndianRupee,
       tone: "green",

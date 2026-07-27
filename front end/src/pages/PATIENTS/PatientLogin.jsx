@@ -247,7 +247,7 @@ function PatientLogin() {
       />
       <div className="auth-veil" aria-hidden="true" />
 
-      <div className="auth-card">
+      <div className="auth-card auth-card--login-compact">
         {/* <div className="auth-logo" aria-hidden="true">
           <Heart size={20} />
         </div> */}

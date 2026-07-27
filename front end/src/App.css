@@ -654,7 +654,7 @@
 .pd-medicine-table-head,
 .pd-medicine-row {
   display: grid;
-  grid-template-columns: minmax(140px, 1fr) minmax(120px, 0.8fr) minmax(180px, 1.2fr);
+  grid-template-columns: minmax(140px, 1fr) minmax(120px, 0.8fr) minmax(80px, 0.5fr) minmax(100px, 0.6fr) minmax(100px, 0.6fr) minmax(160px, 1fr);
   gap: 12px;
   padding: 12px 14px;
 }
@@ -1476,6 +1476,38 @@
 .pb-invoice-list {
   display: grid;
   gap: 20px;
+}
+
+.pb-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #e6eef6;
+  background: #ffffff;
+}
+
+.pb-recent-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+.pb-recent-table thead th {
+  text-align: left;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: #475569;
+  border-bottom: 1px solid #eef6fb;
+}
+
+.pb-recent-table tbody td {
+  padding: 12px 18px;
+  border-bottom: 1px solid #f1f7fb;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.pb-recent-table tbody tr:hover td {
+  background: #fbfefd;
 }
 
 .pb-bills-overview {

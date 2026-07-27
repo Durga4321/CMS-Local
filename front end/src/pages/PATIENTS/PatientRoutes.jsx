@@ -68,6 +68,80 @@ const readId = (record, keys) => {
   return value === undefined || value === null ? undefined : String(value);
 };
 
+const getBillRecordKey = (bill) => {
+  if (!bill || typeof bill !== "object") return "";
+  const billId = readFirst(bill, [
+    'invoiceId', 'billId', 'id', '_id', 'referenceId',
+    'invoice.id', 'invoice._id', 'invoice.referenceId',
+    'bill.id', 'bill._id', 'bill.referenceId',
+  ]);
+  const billNumber = readFirst(bill, [
+    'invoiceNumber', 'billNumber', 'referenceNumber', 'number',
+    'invoice.invoiceNumber', 'invoice.billNumber', 'invoice.referenceNumber',
+    'bill.invoiceNumber', 'bill.billNumber', 'bill.referenceNumber',
+  ]);
+  const appointmentId = readFirst(bill, [
+    'appointmentId', 'appointment.id', 'appointment_id',
+    'appointmentNumber', 'appointmentNo', 'appointment.number',
+    'invoice.appointmentId', 'invoice.appointment.id',
+    'bill.appointmentId', 'bill.appointment.id',
+  ]);
+  const patientId = readFirst(bill, [
+    'patientId', 'patient.id', 'invoice.patientId', 'invoice.patient.id',
+    'patientCode', 'patient.code', 'patient.patientCode',
+  ]);
+  const parts = [billId, billNumber, appointmentId, patientId]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  if (parts.length) return parts.join("|");
+  const stableKeys = Object.keys(bill).sort();
+  return JSON.stringify(stableKeys.reduce((acc, key) => {
+    acc[key] = bill[key];
+    return acc;
+  }, {}));
+};
+
+const getBillAppointmentKey = (bill) =>
+  readFirst(bill, [
+    'appointmentNumber', 'appointmentNo', 'appointmentId', 'appointment.id', 'appointment_id',
+    'appointment.appointmentNumber', 'appointment.appointmentNo', 'appointment.appointmentId',
+    'invoice.appointmentId', 'invoice.appointment.id', 'invoice.appointment.appointmentNumber',
+    'bill.appointmentId', 'bill.appointment.id', 'bill.appointment.appointmentNumber',
+  ]) || '';
+
+const getBillDateValue = (bill) => {
+  const date = new Date(
+    readFirst(bill, ['invoiceDate', 'billDate', 'date', 'createdAt', 'updatedAt']) || ''
+  );
+  return Number.isFinite(date.getTime()) ? date.getTime() : 0;
+};
+
+const selectBestBillRecord = (existing, incoming) => {
+  if (!existing) return incoming;
+  const existingDate = getBillDateValue(existing);
+  const incomingDate = getBillDateValue(incoming);
+  if (incomingDate > existingDate) return incoming;
+  if (incomingDate < existingDate) return existing;
+
+  const existingStatus = String(readFirst(existing, ['status', 'paymentStatus', 'billStatus', 'state']) || '').toLowerCase();
+  const incomingStatus = String(readFirst(incoming, ['status', 'paymentStatus', 'billStatus', 'state']) || '').toLowerCase();
+  if (incomingStatus === 'paid' && existingStatus !== 'paid') return incoming;
+  if (existingStatus === 'paid' && incomingStatus !== 'paid') return existing;
+
+  return incoming;
+};
+
+const dedupeBillsByAppointment = (bills = []) => {
+  const grouped = new Map();
+  Array.isArray(bills) && bills.forEach((bill) => {
+    const key = getBillAppointmentKey(bill) || getBillRecordKey(bill);
+    const current = grouped.get(key);
+    grouped.set(key, selectBestBillRecord(current, bill));
+  });
+  return Array.from(grouped.values());
+};
+
 const normalizeName = (value) => {
   if (!value && value !== 0) return "";
   if (typeof value === "string") return value.trim();
@@ -495,7 +569,8 @@ function PatientRoutes() {
       const billsRes = await fetch(billsUrl, { headers }).catch(() => null);
       if (billsRes?.ok) {
         const bData = await billsRes.json().catch(() => []);
-        setBills(Array.isArray(bData) ? bData : (bData.items || bData.data || []));
+        const rawBills = Array.isArray(bData) ? bData : (bData.items || bData.data || []);
+        setBills(dedupeBillsByAppointment(rawBills));
       }
 
       const notificationsUrl = patientApiUrl(PATIENT_API.notifications);
@@ -1920,66 +1995,466 @@ function PatientPrescriptionsPage({ prescriptions = [] }) {
   }, [prescriptionRecords]);
 
   const formatDate = (record) =>
-    formatPatientDate(readFirst(record, ['visitDate', 'date', 'prescribedOn', 'createdAt', 'appointmentDate', 'followUpDate'])) || 'Unknown date';
+    formatPatientDate(
+      readFirst(record, [
+        'visitDate',
+        'prescriptionDate',
+        'date',
+        'prescribedOn',
+        'createdAt',
+        'appointmentDate',
+        'followUpDate',
+        'visitOn',
+      ])
+    ) || 'Unknown date';
 
   const getTitle = (record) =>
-    readFirst(record, ['title', 'summary', 'diagnosis', 'condition', 'description']) || 'Prescription';
+    readFirst(record, ['title', 'summary', 'diagnosis', 'condition', 'description', 'problem', 'chiefComplaint']) ||
+    'Prescription';
 
-  const getDownloadUrl = (record) =>
-    readFirst(record, ['pdfUrl', 'documentUrl', 'downloadUrl', 'prescriptionUrl', 'url']) || '';
+  const normalizePrescriptionUrl = (value) => {
+    if (!value && value !== 0) return '';
+    const rawUrl = String(value).trim();
+    if (!rawUrl) return '';
+    if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
+    if (/^\/?api\//i.test(rawUrl)) return apiUrl(rawUrl.replace(/^\/?api\/?/i, ''));
+    if (/^\//.test(rawUrl)) return `${window.location.origin}${rawUrl}`;
+    if (/\.pdf(\?|$)/i.test(rawUrl) || /\/[^\s]+\.[a-z0-9]{2,5}(\?|$)/i.test(rawUrl)) {
+      return `${window.location.origin}/${rawUrl.replace(/^\/?/, '')}`;
+    }
+    return '';
+  };
+
+  const resolvePrescriptionUrl = (value, seen = new Set()) => {
+    if (value == null) return '';
+    if (typeof value === 'string') return normalizePrescriptionUrl(value);
+    if (typeof value !== 'object') return '';
+    if (seen.has(value)) return '';
+    seen.add(value);
+
+    const direct = readFirst(value, [
+      'prescriptionUrl',
+      'pdfUrl',
+      'documentUrl',
+      'downloadUrl',
+      'fileUrl',
+      'url',
+      'link',
+      'path',
+    ]);
+    if (direct) {
+      const normalized = normalizePrescriptionUrl(direct);
+      if (normalized) return normalized;
+    }
+
+    const nestedPaths = [
+      'prescription',
+      'document',
+      'file',
+      'pdf',
+      'download',
+      'attachment',
+      'attachments',
+    ];
+
+    for (const path of nestedPaths) {
+      const nestedValue = getNestedValue(value, path);
+      const result = resolvePrescriptionUrl(nestedValue, seen);
+      if (result) return result;
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const result = resolvePrescriptionUrl(item, seen);
+        if (result) return result;
+      }
+    }
+
+    for (const key of Object.keys(value)) {
+      const result = resolvePrescriptionUrl(value[key], seen);
+      if (result) return result;
+    }
+
+    return '';
+  };
+
+  const getDownloadUrl = (record) => resolvePrescriptionUrl(record) || '';
+
+  const getApiHeaders = () => {
+    const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
+    return {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
+  const getFileNameFromUrl = (url) => {
+    if (!url) return 'prescription.pdf';
+    const fileName = url.split('/').pop().split('?')[0];
+    return fileName || 'prescription.pdf';
+  };
+
+  const escapeHtml = (unsafe) => {
+    if (unsafe == null) return '';
+    return String(unsafe)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
+  const formatShareText = (prescription) => {
+    const lines = [];
+    lines.push(`Prescription`);
+    const doctor = readFirst(prescription, ['doctorName', 'doctor.name', 'prescribedBy']);
+    if (doctor) lines.push(`Doctor: ${doctor}`);
+    const diag = readFirst(prescription, ['diagnosis', 'condition', 'title']);
+    if (diag) lines.push(`Diagnosis: ${diag}`);
+    const meds = getMedicineList(prescription);
+    if (meds && meds.length) {
+      lines.push('Medicines:');
+      meds.forEach((m) => lines.push(`- ${m.name} | ${m.dosage} | ${m.instructions}`));
+    }
+    return lines.join('\n');
+  };
+
+  const downloadPrescription = async (url, prescription = null) => {
+    // Primary: download existing URL
+    if (url) {
+      try {
+        const response = await fetch(url, { headers: getApiHeaders(), mode: 'cors' });
+        if (!response.ok) throw new Error('Unable to download prescription.');
+        const blob = await response.blob();
+        const filename = getFileNameFromUrl(url);
+        const objectUrl = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = objectUrl;
+        anchor.download = filename;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(objectUrl);
+        return;
+      } catch (error) {
+        // fallback to opening in new tab
+        try { window.open(url, '_blank', 'noopener,noreferrer'); return; } catch (e) {}
+      }
+    }
+
+    // Fallback: generate printable HTML and open print dialog so user can save as PDF
+    if (prescription) {
+      try {
+        const html = `
+          <html>
+            <head>
+              <title>Prescription</title>
+              <style>body{font-family: Arial, sans-serif; padding:20px;}</style>
+            </head>
+            <body>
+              <h2>Prescription</h2>
+              <p><strong>Diagnosis:</strong> ${escapeHtml(readFirst(prescription, ['diagnosis', 'condition', 'title']) || '')}</p>
+              <p><strong>Doctor:</strong> ${escapeHtml(readFirst(prescription, ['doctorName','doctor.name','prescribedBy']) || '')}</p>
+              <h3>Medicines</h3>
+              <ul>
+                ${getMedicineList(prescription)
+                  .map(m => `<li><strong>${escapeHtml(m.name)}</strong> - ${escapeHtml(m.dosage)} - ${escapeHtml(m.instructions)}</li>`)
+                  .join('')}
+              </ul>
+            </body>
+          </html>`;
+
+        const win = window.open('', '_blank');
+        if (!win) return;
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+        // Ask user to print/save as PDF
+        win.focus();
+        setTimeout(() => { try { win.print(); } catch (e) {} }, 500);
+        return;
+      } catch (e) {
+        // ignore and fall through
+      }
+    }
+  };
+
+  const sharePrescription = async (url, title = 'Prescription', prescription = null) => {
+    if (!url && !prescription) return;
+    try {
+      const response = await fetch(url, { headers: getApiHeaders(), mode: 'cors' });
+      if (response.ok) {
+        const blob = await response.blob();
+        const filename = getFileNameFromUrl(url);
+        const file = new File([blob], filename, { type: blob.type || 'application/pdf' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ title, files: [file], text: title });
+          return;
+        }
+      }
+    } catch (err) {
+      // if fetch/share fails, fallback to URL share
+    }
+
+    if (navigator.share) {
+      try {
+        if (url) {
+          await navigator.share({ title, url });
+          return;
+        }
+        // share textual prescription if no URL
+        if (prescription) {
+          await navigator.share({ title, text: formatShareText(prescription) });
+          return;
+        }
+        return;
+      } catch (err) {
+        // ignore
+      }
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        if (url) {
+          await navigator.clipboard.writeText(url);
+          window.alert('Prescription link copied to clipboard.');
+          return;
+        }
+        if (prescription) {
+          await navigator.clipboard.writeText(formatShareText(prescription));
+          window.alert('Prescription text copied to clipboard.');
+          return;
+        }
+      } catch (err) {
+        // fallback below
+      }
+    }
+
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   const viewPrescription = (url) => {
     if (!url) return;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const normalizeMedicineList = (value) => {
+  const splitMedicineEntries = (value) => {
     if (!value && value !== 0) return [];
     if (Array.isArray(value)) return value.filter(Boolean);
-    return String(value)
-      .split(/,|;/)
+    if (typeof value === 'object') {
+      if (Array.isArray(value.medicines)) return value.medicines.filter(Boolean);
+      if (Array.isArray(value.medications)) return value.medications.filter(Boolean);
+      if (Array.isArray(value.items)) return value.items.filter(Boolean);
+      if (Array.isArray(value.drugs)) return value.drugs.filter(Boolean);
+      if (typeof value.text === 'string') return splitMedicineEntries(value.text);
+      return [];
+    }
+
+    const text = String(value).trim();
+    if (!text) return [];
+
+    const entries = text.split(/\n|\r|;|\|/).map((item) => item.trim()).filter(Boolean);
+    if (entries.length > 1) return entries;
+
+    return [text];
+  };
+
+  const normalizePrescriptionNote = (note, medicineName = '') => {
+    const value = String(note || '').trim();
+    if (!value) return '';
+
+    const normalized = value.replace(/\s+/g, ' ').trim();
+    const lower = normalized.toLowerCase();
+    if (/\b(after\s+food|before\s+food|with\s+water|at\s+bedtime|morning\s+only|evening\s+only|night\s+only|after\s+meals|before\s+meals|complete\s+full\s+course|continue\s+full\s+course|take\s+as\s+directed|as\s+directed|continue\s+medication)\b/i.test(lower)) {
+      return '';
+    }
+
+    const nameLower = String(medicineName || '').trim().toLowerCase();
+    if (nameLower && (lower === nameLower || lower === `${nameLower} ${nameLower}`)) {
+      return '';
+    }
+
+    return normalized;
+  };
+
+  const extractMedicineFieldsFromString = (text) => {
+    const source = String(text || '').trim();
+    if (!source) return null;
+
+    const quantityMatch = source.match(/\b\d+\s*(?:tabs?|tablets?|capsules?|caps|ml|mg|g|pills?|strip|pack|dose(?:s)?|qty|x)\b/i);
+    const frequencyMatch = source.match(/\b(?:\d[- ]\d[- ]\d(?:[- ]\d)?|every\s+\d+\s*(?:hours?|hrs?)|once\s+daily|twice\s+daily|thrice\s+daily|od|bd|tds|hs|morning|evening|night|bedtime|after\s+food|before\s+food)\b/i);
+    const durationMatch = source.match(/\b(?:\d+\s*(?:days?|weeks?|months?)|course(?:\s+days)?|treatment\s+duration|course\s+of\s+\d+)\b/i);
+    const dosageMatch = source.match(/\b\d+(?:\.\d+)?\s*(?:mg|g|ml|mcg|units?|tablet|tab|capsule|cap|sachet|dose)\b/i);
+
+    const quantity = quantityMatch ? quantityMatch[0] : '';
+    const frequency = frequencyMatch ? frequencyMatch[0] : '';
+    const duration = durationMatch ? durationMatch[0] : '';
+    const dosage = dosageMatch ? dosageMatch[0] : '';
+
+    let name = source;
+    [quantity, frequency, duration, dosage].forEach((token) => {
+      if (token) name = name.replace(token, '');
+    });
+    name = name.replace(/[:,;\-\|]+/g, ' ').replace(/\b(after|before|with|and|for|daily|once|twice|thrice|take|tab|tablet|capsule|cap|dose)\b/gi, ' ').replace(/\s+/g, ' ').trim();
+    if (!name) {
+      name = source;
+    }
+
+    const rawNotes = source
+      .split(/[,;\n\r]+/)
       .map((item) => item.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .filter((item) => {
+        const lower = item.toLowerCase();
+        return ![quantity, frequency, duration, dosage].some((token) => token && lower.includes(token.toLowerCase()));
+      })
+      .filter((item) => {
+        const lower = item.toLowerCase();
+        return !/\b(after\s+food|before\s+food|with\s+water|at\s+bedtime|morning\s+only|evening\s+only|night\s+only|after\s+meals|before\s+meals)\b/i.test(lower);
+      });
+
+    const notes = rawNotes.length > 1 ? rawNotes.slice(1).join(', ') : rawNotes.slice(0, 1).join(', ');
+
+    return {
+      name,
+      dosage,
+      quantity,
+      frequency,
+      duration,
+      notes,
+      instructions: notes || '',
+    };
+  };
+
+  const normalizeMedicineList = (value) => {
+    const entries = splitMedicineEntries(value);
+    return entries.map((item) => item && typeof item === 'string' ? item.trim() : item).filter(Boolean);
+  };
+
+  const parseMedicineEntry = (medicine, index, record) => {
+    if (typeof medicine === 'string') {
+      const parsed = extractMedicineFieldsFromString(medicine);
+      const displayName = parsed?.name || String(medicine);
+      return {
+        ...parsed,
+        name: displayName,
+        notes: normalizePrescriptionNote(parsed?.notes, displayName),
+      };
+    }
+
+    if (medicine && typeof medicine === 'object') {
+      const primaryName =
+        readFirst(medicine, ['name', 'medicineName', 'drugName', 'title', 'itemName', 'label']) ||
+        readFirst(medicine, ['medicine', 'medication']) ||
+        '';
+      const parsedFromName = extractMedicineFieldsFromString(primaryName);
+      const displayName = primaryName || parsedFromName?.name || `Medicine ${index + 1}`;
+      const rawNotes =
+        readFirst(medicine, ['notes', 'note', 'remark', 'remarks', 'comments', 'instructionNotes', 'specialInstructions', 'additionalNotes', 'advice', 'adviceNotes']) ||
+        parsedFromName?.notes ||
+        '';
+      const notes = normalizePrescriptionNote(rawNotes, displayName);
+      const rawInstructions =
+        readFirst(medicine, ['instructions', 'instruction', 'notes', 'frequency', 'timing', 'duration']) ||
+        parsedFromName?.instructions ||
+        readFirst(record, ['instructions', 'instruction', 'notes']) ||
+        '';
+
+      return {
+        ...parsedFromName,
+        ...medicine,
+        name: displayName,
+        dosage:
+          readFirst(medicine, ['dosage', 'dose', 'strength', 'quantity', 'qty']) ||
+          parsedFromName?.dosage ||
+          readFirst(record, ['dosage', 'dose']) ||
+          'Dosage not recorded',
+        quantity:
+          readFirst(medicine, ['quantity', 'qty', 'count', 'pack', 'units', 'quantityValue', 'pillCount', 'pill_count', 'doseCount', 'doseQty']) ||
+          parsedFromName?.quantity ||
+          '',
+        frequency:
+          readFirst(medicine, ['frequency', 'freq', 'timing', 'when', 'doseFrequency', 'frequencyText', 'timings', 'howOften', 'doseTiming', 'schedule']) ||
+          parsedFromName?.frequency ||
+          '',
+        duration:
+          readFirst(medicine, ['duration', 'days', 'course', 'period', 'durationDays', 'courseDays', 'treatmentDuration', 'courseDuration']) ||
+          parsedFromName?.duration ||
+          '',
+        notes,
+        instructions: normalizePrescriptionNote(rawInstructions, displayName) || rawInstructions,
+      };
+    }
+
+    return {
+      name: String(medicine || `Medicine ${index + 1}`),
+      dosage: readFirst(record, ['dosage', 'dose']) || 'Dosage not recorded',
+      instructions: readFirst(record, ['instructions', 'instruction', 'notes']) || 'Instructions not recorded',
+    };
   };
 
   const getDoctorDetails = (record) => {
-    const name = readFirst(record, ['doctorName', 'doctor.name', 'provider.name', 'prescribedBy']) || 'Doctor details unavailable';
+    const name =
+      readFirst(record, [
+        'doctorName',
+        'doctor.name',
+        'provider.name',
+        'practitionerName',
+        'prescribedBy',
+        'provider.displayName',
+      ]) || 'Doctor details unavailable';
     const specialty = readFirst(record, ['doctorSpecialty', 'doctor.specialty', 'specialty', 'department', 'departmentName']);
-    const phone = readFirst(record, ['doctorPhone', 'doctor.phone', 'doctor.mobile']);
+    const phone = readFirst(record, ['doctorPhone', 'doctor.phone', 'doctor.mobile', 'contact', 'contactNumber']);
     return [name, specialty, phone].filter(Boolean).join(' | ');
   };
 
   const getDiagnosis = (record) =>
-    readFirst(record, ['diagnosis', 'condition', 'summary', 'title', 'description']) || 'Diagnosis not recorded';
+    readFirst(record, ['diagnosis', 'condition', 'summary', 'title', 'description', 'provisionalDiagnosis', 'dx']) ||
+    'Diagnosis not recorded';
 
   const getMedicineList = (record) => {
     const rawMedicines =
       Array.isArray(record.medicines) && record.medicines.length
         ? record.medicines
         : Array.isArray(record.medications) && record.medications.length
-          ? record.medications
-          : Array.isArray(record.medicineList) && record.medicineList.length
-            ? record.medicineList
-            : normalizeMedicineList(record.medicineNames || record.medicines || record.medications || record.medicineList);
+        ? record.medications
+        : Array.isArray(record.medicineList) && record.medicineList.length
+        ? record.medicineList
+        : Array.isArray(record.prescribedMedicines) && record.prescribedMedicines.length
+        ? record.prescribedMedicines
+        : normalizeMedicineList(record.medicineNames || record.medicines || record.medications || record.medicineList || record.prescribedMedicines || record.items || record.drugs);
 
-    return rawMedicines.map((medicine, index) => {
-      if (medicine && typeof medicine === 'object') {
-        return {
-          name: readFirst(medicine, ['name', 'medicineName', 'drugName', 'title']) || `Medicine ${index + 1}`,
-          dosage: readFirst(medicine, ['dosage', 'dose', 'strength']) || readFirst(record, ['dosage', 'dose']) || 'Dosage not recorded',
-          instructions:
-            readFirst(medicine, ['instructions', 'instruction', 'notes', 'frequency', 'timing']) ||
-            readFirst(record, ['instructions', 'instruction', 'notes']) ||
-            'Instructions not recorded',
-        };
-      }
-
-      return {
-        name: String(medicine || `Medicine ${index + 1}`),
-        dosage: readFirst(record, ['dosage', 'dose']) || 'Dosage not recorded',
-        instructions: readFirst(record, ['instructions', 'instruction', 'notes']) || 'Instructions not recorded',
-      };
-    });
+    return rawMedicines.map((medicine, index) => parseMedicineEntry(medicine, index, record));
+  };
+  // extend medicine objects with quantity, frequency, duration, notes when available
+  const enrichMedicine = (medicine = {}) => {
+    const rawFreq = readFirst(medicine, ['frequency', 'freq', 'timing', 'when', 'doseFrequency', 'frequencyText', 'timings', 'howOften', 'doseTiming', 'schedule']);
+    const frequency = Array.isArray(rawFreq) ? rawFreq.join('-') : rawFreq || '';
+    const rawDuration = readFirst(medicine, ['duration', 'days', 'course', 'period', 'durationDays', 'courseDays', 'treatmentDuration', 'courseDuration']);
+    const duration = rawDuration || '';
+    const qty =
+      readFirst(medicine, ['quantity', 'qty', 'count', 'pack', 'units', 'quantityValue', 'pillCount', 'pill_count', 'doseCount', 'doseQty']) ||
+      (medicine.dosage && /\d+/.test(String(medicine.dosage)) ? String((String(medicine.dosage).match(/\d+/) || [''])[0]) : '');
+    return {
+      ...medicine,
+      quantity: qty,
+      frequency,
+      duration,
+      notes:
+        readFirst(medicine, [
+          'notes',
+          'note',
+          'remark',
+          'remarks',
+          'comments',
+          'instructionNotes',
+          'specialInstructions',
+          'additionalNotes',
+          'advice',
+          'adviceNotes',
+        ]) || medicine.instructions || '',
+    };
   };
 
 
@@ -1997,6 +2472,8 @@ function PatientPrescriptionsPage({ prescriptions = [] }) {
           </div>
         </div>
 
+        {/* debug panel removed */}
+
         {!prescriptionRecords.length ? (
           <div className="pd-prescription-empty-note">
             <p>No prescriptions found. The prescription format is ready below.</p>
@@ -2012,6 +2489,7 @@ function PatientPrescriptionsPage({ prescriptions = [] }) {
               const diagnosis = getDiagnosis(prescription);
               const medicines = getMedicineList(prescription);
               const downloadUrl = getDownloadUrl(prescription);
+              // runtime debug removed
 
               return (
                 <div className="pd-prescription-card" key={prescription.prescriptionId || prescription.id || prescription.appointmentId || index}>
@@ -2030,17 +2508,26 @@ function PatientPrescriptionsPage({ prescriptions = [] }) {
                     </div>
                     <div className="pd-medicine-table">
                       <div className="pd-medicine-table-head">
-                        <span>Medicine List</span>
+                        <span>Medicine</span>
                         <span>Dosage</span>
-                        <span>Instructions</span>
+                        <span>Quantity</span>
+                        <span>Frequency</span>
+                        <span>Duration</span>
+                        <span>Notes</span>
                       </div>
-                      {medicines.length ? medicines.map((medicine, medicineIndex) => (
-                        <div className="pd-medicine-row" key={`${medicine.name}-${medicineIndex}`}>
-                          <strong>{medicine.name}</strong>
-                          <span>{medicine.dosage}</span>
-                          <span>{medicine.instructions}</span>
-                        </div>
-                      )) : (
+                      {medicines.length ? medicines.map((rawMed, medicineIndex) => {
+                        const medicine = enrichMedicine(rawMed);
+                        return (
+                          <div className="pd-medicine-row" key={`${medicine.name}-${medicineIndex}`}>
+                            <strong>{medicine.name}</strong>
+                            <span>{medicine.dosage}</span>
+                            <span>{medicine.quantity || '-'}</span>
+                            <span>{medicine.frequency || '-'}</span>
+                            <span>{medicine.duration || '-'}</span>
+                            <span>{medicine.notes || '-'}</span>
+                          </div>
+                        );
+                      }) : (
                         <div className="pd-medicine-empty">No medicines recorded.</div>
                       )}
                     </div>
@@ -2049,8 +2536,8 @@ function PatientPrescriptionsPage({ prescriptions = [] }) {
                     <button
                       type="button"
                       className="pd-prescription-btn pd-prescription-btn--ghost"
-                      onClick={() => viewPrescription(downloadUrl)}
-                      disabled={!downloadUrl}
+                      onClick={() => downloadPrescription(downloadUrl, prescription)}
+                      disabled={!(downloadUrl || prescription)}
                     >
                       <Download size={15} />
                       Download PDF
@@ -2058,8 +2545,8 @@ function PatientPrescriptionsPage({ prescriptions = [] }) {
                     <button
                       type="button"
                       className="pd-prescription-btn pd-prescription-btn--primary"
-                      onClick={() => viewPrescription(downloadUrl)}
-                      disabled={!downloadUrl}
+                      onClick={() => sharePrescription(downloadUrl, title, prescription)}
+                      disabled={!(downloadUrl || prescription)}
                     >
                       <Share2 size={15} />
                       Share
@@ -2080,7 +2567,7 @@ function PatientPrescriptionsPage({ prescriptions = [] }) {
 }
 
 function PatientBillsPage({ bills = [] }) {
-  const billRecords = Array.isArray(bills) ? bills : [];
+  const billRecords = useMemo(() => dedupeBillsByAppointment(bills), [bills]);
   const [downloadStatus, setDownloadStatus] = useState("");
   const [downloadError, setDownloadError] = useState("");
   const formatAmount = (value) =>
@@ -2432,12 +2919,38 @@ function PatientBillsPage({ bills = [] }) {
   const paymentOptions = ['UPI', 'Card', 'Netbanking'];
   const statusOptions = ['Paid', 'Pending', 'Refunded'];
   const totalBillsAmount = billRecords.reduce((sum, bill) => sum + totalAmount(bill), 0);
+  const totalDueAmount = billRecords.reduce((sum, bill) => sum + (dueAmount(bill) || 0), 0);
+  const totalPaidAmount = billRecords.reduce((sum, bill) => sum + ((paymentStatus(bill) === 'paid') ? totalAmount(bill) : 0), 0);
 
   return (
     <PatientPageShell
       title="Billing"
       subtitle="Review charges, invoices, and pending payments."
     >
+      {/* Billing summary cards */}
+      <div className="pb-summary-grid">
+        <div className="pb-summary-card">
+          <span className="pb-summary-title">Patient</span>
+          <strong>{latestPatientName || 'N/A'}</strong>
+          <p>Active patient on file</p>
+        </div>
+        <div className="pb-summary-card">
+          <span className="pb-summary-title">Latest Bill</span>
+          <strong>{latestBillNumber || 'N/A'}</strong>
+          <p>Appointment: {latestAppointmentNumber || 'N/A'}</p>
+        </div>
+        <div className="pb-summary-card">
+          <span className="pb-summary-title">Billing Status</span>
+          <strong>{latestStatus === 'paid' ? 'Paid' : 'Pending'}</strong>
+          <p>{billRecords.length} invoice{billRecords.length === 1 ? '' : 's'}</p>
+        </div>
+        <div className="pb-summary-card pb-info-item--total">
+          <span className="pb-summary-title">Total Outstanding</span>
+          <strong>{formatAmount(totalDueAmount)}</strong>
+          <p>Due amount across all invoices</p>
+        </div>
+      </div>
+
       <div className="pb-billing-layout">
         <section className="pb-generate-card">
           <div className="pb-billing-header">
@@ -2469,22 +2982,8 @@ function PatientBillsPage({ bills = [] }) {
             </div>
           </div>
 
-          <div className="pb-charge-grid">
-            {latestSummaryLineItems.length ? latestSummaryLineItems.map((item) => (
-              <div className="pb-charge-row" key={item.label}>
-                <span>{item.label}</span>
-                <strong>{formatAmount(item.amount)}</strong>
-              </div>
-            )) : (
-              <div className="pb-charge-row">
-                <span>Total invoice</span>
-                <strong>{formatAmount(latestTotal)}</strong>
-              </div>
-            )}
-          </div>
-
           <div className="pb-charge-summary">
-            <span>Total invoice</span>
+            <span>Latest Invoice Total</span>
             <strong>{formatAmount(latestTotal)}</strong>
           </div>
 
@@ -2533,65 +3032,69 @@ function PatientBillsPage({ bills = [] }) {
       {billRecords.length ? (
         <div className="pb-bills-overview">
           <div className="pb-invoice-list">
-            {billRecords.map((bill, index) => {
-              const status = paymentStatus(bill);
-              const total = totalAmount(bill);
-              const due = dueAmount(bill);
-              const lineItems = getLineItems(bill);
-              const invoiceLink = invoiceUrl(bill);
-
-              return (
-                <div className="pb-invoice-card" key={bill.id || bill.invoiceNumber || index}>
-                  <div className="pb-invoice-header">
-                    <div>
-                      <span className="pb-invoice-date">{formatDate(bill)}</span>
-                      <h3>{invoiceNumber(bill)}</h3>
-                      <p className="pb-invoice-subtitle">{doctorLabel(bill)}</p>
-                    </div>
-                    <div className="pb-invoice-status-group">
-                      <span className={`pb-status-badge pb-status-badge--${status === 'paid' ? 'paid' : 'pending'}`}>
-                        {status === 'paid' ? 'Paid' : 'Pending'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pb-charge-grid">
-                    {lineItems.length ? lineItems.map((item, itemIndex) => (
-                      <div className="pb-charge-row" key={`${String(item.label)}-${itemIndex}`}>
-                        <span>{item.label}</span>
-                        <strong>{formatAmount(item.amount)}</strong>
-                      </div>
-                    )) : (
-                      <div className="pb-charge-row">
-                        <span>Amount</span>
-                        <strong>{formatAmount(total)}</strong>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="pb-charge-summary">
-                    <span>Total invoice</span>
-                    <strong>{formatAmount(total)}</strong>
-                  </div>
-
-                  <div className="pb-bill-actions">
-                    <button
-                      type="button"
-                      className="pb-action-btn pb-action-btn--primary"
-                      onClick={() => downloadInvoice(bill, invoiceLink, `${invoiceNumber(bill)}.pdf`)}
-                      disabled={!invoiceLink && !getInvoiceId(bill)}
-                    >
-                      Download Invoice
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            <h3>Recent Bills</h3>
+            <div className="pb-table-wrap">
+              <table className="pb-recent-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Invoice #</th>
+                    <th>Doctor / Clinic</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {billRecords.map((bill, index) => {
+                    const status = paymentStatus(bill);
+                    const total = totalAmount(bill);
+                    const invoiceLink = invoiceUrl(bill);
+                    return (
+                      <tr key={bill.id || bill.invoiceNumber || index}>
+                        <td>{formatDate(bill)}</td>
+                        <td>{invoiceNumber(bill)}</td>
+                        <td>{doctorLabel(bill)}</td>
+                        <td>{formatAmount(total)}</td>
+                        <td><span className={`pb-status-badge pb-status-badge--${status === 'paid' ? 'paid' : 'pending'}`}>{status === 'paid' ? 'Paid' : 'Pending'}</span></td>
+                        <td>
+                          <button
+                            type="button"
+                            className="pb-action-btn pb-action-btn--ghost"
+                            onClick={() => downloadInvoice(bill, invoiceLink, `${invoiceNumber(bill)}.pdf`)}
+                            disabled={!invoiceLink && !getInvoiceId(bill)}
+                          >
+                            Download
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
+
           <aside className="pb-total-card">
-            <span>Total Bill</span>
+            <span>Payment Summary</span>
             <strong>{formatAmount(totalBillsAmount)}</strong>
             <p>{billRecords.length} invoice{billRecords.length === 1 ? '' : 's'} included</p>
+            <div style={{ marginTop: 12 }}>
+              <div className="pb-info-item">
+                <span>Paid</span>
+                <strong>{formatAmount(totalPaidAmount)}</strong>
+              </div>
+              <div style={{ height: 8 }} />
+              <div className="pb-info-item">
+                <span>Outstanding</span>
+                <strong>{formatAmount(totalDueAmount)}</strong>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 18 }}>
+              <h4 style={{ margin: 0, fontSize: 14 }}>Need Help?</h4>
+              <p style={{ margin: '6px 0 0', color: '#475569', fontSize: 13 }}>Contact billing support at <a href="mailto:billing@hospital.example">billing@hospital.example</a> or call +91-99999-99999</p>
+            </div>
           </aside>
         </div>
       ) : (
