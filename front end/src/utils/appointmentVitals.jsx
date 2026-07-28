@@ -1,4 +1,31 @@
+import { apiUrl } from "../config/api";
+
 const STORAGE_KEY = "cmsAppointmentVitals";
+
+export const fetchAppointmentVitals = async (appointmentId, headers = {}) => {
+  const id = String(appointmentId || "").trim();
+  if (!id) return null;
+
+  try {
+    const response = await fetch(
+      apiUrl(`Appointment/${encodeURIComponent(id)}/vitals`),
+      {
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+          ...headers,
+        },
+      }
+    );
+
+    if (!response.ok) return null;
+    const data = await response.json().catch(() => null);
+    return data && typeof data === "object" ? data : null;
+  } catch {
+    return null;
+  }
+};
+
+export const fetchConsultationVitals = fetchAppointmentVitals;
 
 export const getAppointmentRecordId = (appointment = {}) =>
   String(

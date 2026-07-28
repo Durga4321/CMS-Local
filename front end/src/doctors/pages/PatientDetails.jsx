@@ -12,6 +12,7 @@ import {
   isAssignedToLoggedInDoctor,
 } from "../utils/doctorSession";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
+import { fetchConsultationVitals } from "../../utils/appointmentVitals";
 
 const OVERVIEW_API = apiUrl("Overview/patient");
 const APPOINTMENTS_API = apiUrl("Appointment");
@@ -453,28 +454,35 @@ function PatientDetails() {
           overviewVisits,
           routeVisit ? [routeVisit] : []
         );
+        const scopedVisitsWithVitals = await Promise.all(
+          scopedVisits.map(async (visit) => {
+            if (!visit.appointmentId) return visit;
+            const vitals = await fetchConsultationVitals(visit.appointmentId, headers);
+            return vitals ? normalizeVisit({ ...visit, ...vitals }) : visit;
+          })
+        );
 
         const prescriptionsFromAppointments =
-          await fetchPrescriptionsForVisits(scopedVisits, headers);
+          await fetchPrescriptionsForVisits(scopedVisitsWithVitals, headers);
         const documentsFromAppointments = await fetchDocumentsForVisits(
-          scopedVisits,
+          scopedVisitsWithVitals,
           headers
         );
         const fallbackPrescriptions = getPrescriptionsForVisits(
           overviewPatient.pastPrescriptions,
-          scopedVisits
+          scopedVisitsWithVitals
         );
         const scopedPrescriptions = prescriptionsFromAppointments.length
           ? prescriptionsFromAppointments
           : fallbackPrescriptions;
-        const oldestVisit = getOldestVisit(scopedVisits);
+        const oldestVisit = getOldestVisit(scopedVisitsWithVitals);
 
         setPatient({
           ...overviewPatient,
-          previousVisits: scopedVisits,
+          previousVisits: scopedVisitsWithVitals,
           pastPrescriptions: scopedPrescriptions,
           overallAppointments: totalPatientAppointments,
-          assignedAppointments: scopedVisits.length,
+          assignedAppointments: scopedVisitsWithVitals.length,
           lastVisit: oldestVisit
             ? formatDate(oldestVisit.date)
             : emptyValue,
