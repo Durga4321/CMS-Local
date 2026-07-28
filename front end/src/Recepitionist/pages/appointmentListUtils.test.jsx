@@ -1,4 +1,4 @@
-import { filterAppointments, getBookingType } from "./appointmentListUtils";
+import { applyTimeOrderedTokens, filterAppointments, getBookingType } from "./appointmentListUtils";
 
 describe("appointment list utilities", () => {
   it("returns the correct booking type from common payload shapes", () => {
@@ -38,5 +38,19 @@ describe("appointment list utilities", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe(1);
+  });
+
+  it("assigns display tokens by appointment time across online and offline bookings", () => {
+    const appointments = applyTimeOrderedTokens([
+      { id: 1, bookingType: "Online", date: "2026-07-28", startTime: "09:15 AM" },
+      { id: 2, bookingType: "Offline", date: "2026-07-28", startTime: "09:00 AM" },
+      { id: 3, bookingType: "Online", date: "2026-07-28", startTime: "06:00 PM" },
+      { id: 4, bookingType: "Offline", date: "2026-07-29", startTime: "09:00 AM" },
+    ]);
+
+    expect(appointments.find((item) => item.id === 2).displayTokenNumber).toBe("TKN001");
+    expect(appointments.find((item) => item.id === 1).displayTokenNumber).toBe("TKN002");
+    expect(appointments.find((item) => item.id === 3).displayTokenNumber).toBe("TKN003");
+    expect(appointments.find((item) => item.id === 4).displayTokenNumber).toBe("TKN001");
   });
 });

@@ -118,21 +118,45 @@
 }
 
 /* ── Back to Dashboard button ── */
+.comp-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
 .comp-btn {
   margin-top: 8px;
-  background: #2563eb;
-  color: #ffffff;
   border: none;
   border-radius: 10px;
-  padding: 13px 36px;
+  padding: 13px 22px;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.comp-btn:hover {
+.comp-btn--primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.comp-btn--ghost {
+  background: #eef6ff;
+  color: #174b83;
+}
+
+.comp-btn--primary:hover {
   background: #1d4ed8;
+}
+
+.comp-btn--ghost:hover {
+  background: #dbeafe;
 }
 
 .comp-btn:active {

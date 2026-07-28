@@ -27,6 +27,7 @@ const items = [
       { to: "/reception/appointments/offline", label: "Offline Bookings", icon: ListChecks },
     ],
   },
+  { to: "/reception/consultant-room", label: "Consultant Room", icon: ClipboardList },
   { to: "/reception/billing", label: "Billing", icon: ClipboardList },
 ];
 

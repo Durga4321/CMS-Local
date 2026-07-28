@@ -40,6 +40,7 @@ import { getClinicDisplayName } from "../utils/clinicDisplay";
 /* ================= API ================= */
 
 const API = apiUrl("Dashboard");
+const APPOINTMENT_API = apiUrl("Appointment");
 const RECEPTIONIST_API = apiUrl("Receptionist");
 const REQUEST_TIMEOUT_MS = 3500;
 
@@ -100,6 +101,65 @@ const pickValue = (record = {}, keys = [], fallback = "") => {
   }
 
   return fallback;
+};
+
+const parseList = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.result)) return data.result;
+  if (Array.isArray(data?.appointments)) return data.appointments;
+  return [];
+};
+
+const formatToday = () => {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+};
+
+const getAppointmentDateValue = (appointment = {}) =>
+  pickValue(
+    appointment,
+    [
+      "date",
+      "Date",
+      "appointmentDate",
+      "AppointmentDate",
+      "scheduledDate",
+      "ScheduledDate",
+      "slotDate",
+      "SlotDate",
+      "bookingDate",
+      "BookingDate",
+    ],
+    ""
+  );
+
+const getLocalDateKey = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  const isoDateTimeMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (isoDateTimeMatch) {
+    const [, year, month, day, hour, minute, second = "00"] = isoDateTimeMatch;
+    if (hour === "00" && minute === "00" && second === "00") return `${year}-${month}-${day}`;
+
+    const hasTimezone = /(?:z|[+-]\d{2}:?\d{2})$/i.test(raw);
+    const date = new Date(hasTimezone ? raw : `${raw}Z`);
+    if (!Number.isNaN(date.getTime())) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+  }
+
+  const isoDateMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoDateMatch) return `${isoDateMatch[1]}-${isoDateMatch[2]}-${isoDateMatch[3]}`;
+
+  return raw;
+};
+
+const countTodayAppointments = (data) => {
+  const todayKey = formatToday();
+  return parseList(data).filter((appointment) => getLocalDateKey(getAppointmentDateValue(appointment)) === todayKey).length;
 };
 
 const getClinicStatusText = (clinic = {}, dashboardData = {}) => {
@@ -236,10 +296,11 @@ function Dashboard() {
 
         Promise.allSettled([
           fetchWithTimeout(`${API}/ClincData`, { headers }, 2500),
+          fetchWithTimeout(APPOINTMENT_API, { headers }, 2500),
           receptionistCount === null || receptionistCount === 0
             ? fetchWithTimeout(RECEPTIONIST_API, { headers }, 2500)
             : Promise.resolve(null),
-        ]).then(async ([clinicResult, receptionistResult]) => {
+        ]).then(async ([clinicResult, appointmentResult, receptionistResult]) => {
           let nextMerged = { ...data };
 
         if (clinicResult.status === "fulfilled" && clinicResult.value?.ok) {
@@ -251,6 +312,14 @@ function Dashboard() {
               ...clinicData,
             },
             clinicName: nextMerged.clinicName || clinicData?.clinicName || nextMerged.clinic?.clinicName,
+          };
+        }
+
+        if (appointmentResult.status === "fulfilled" && appointmentResult.value?.ok) {
+          const appointmentData = await appointmentResult.value.json().catch(() => []);
+          nextMerged = {
+            ...nextMerged,
+            todayAppointments: countTodayAppointments(appointmentData),
           };
         }
 

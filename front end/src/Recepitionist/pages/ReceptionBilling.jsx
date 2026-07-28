@@ -1311,7 +1311,6 @@ function ReceptionBilling() {
             <option value="UPI">UPI</option>
             <option value="Cash">Cash</option>
             <option value="Card">Card</option>
-            <option value="Insurance">Insurance</option>
           </select>
           {fieldErrors.paymentMode ? <small className="rc-field-error">{fieldErrors.paymentMode}</small> : null}
         </label>

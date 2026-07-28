@@ -1,13 +1,22 @@
 import React from "react";
 import ReceptionAppointmentList from "./ReceptionAppointmentList";
-import { getOfflineAppointments } from "../receptionApi";
+import { getOfflineAppointments, getOnlineAppointments } from "../receptionApi";
+
+const getAllAppointments = async () => {
+  const [onlineAppointments, offlineAppointments] = await Promise.all([
+    getOnlineAppointments(),
+    getOfflineAppointments(),
+  ]);
+
+  return [...onlineAppointments, ...offlineAppointments];
+};
 
 function ReceptionOfflineBookings() {
   return (
     <ReceptionAppointmentList
       title="Offline Bookings"
       subtitle="Appointments created manually by the receptionist."
-      fetchAppointments={getOfflineAppointments}
+      fetchAppointments={getAllAppointments}
       bookingType="Offline"
       emptyState="No offline bookings found for the current filters."
     />
