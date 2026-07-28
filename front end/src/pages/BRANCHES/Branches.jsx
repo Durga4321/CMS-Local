@@ -38,7 +38,6 @@ import { fetchPincodeLocation } from "../../utils/pincodeLocation";
 import {
   onlyAddressText,
   onlyAlpha,
-  onlyDigits,
   onlyIndianMobileValue,
   validateGmail,
   validateMobile,
@@ -630,9 +629,7 @@ function Branches() {
 
       <div className="branches-clinic-band">
         <Building2 size={17} />
-        <span>Hospital ID</span>
-        <b>{hospitalId || "-"}</b>
-        <span>Clinic</span>
+        <span>Clinic Name</span>
         <b>{clinicName}</b>
       </div>
 
@@ -774,15 +771,15 @@ function Branches() {
               </div>
 
               <div className="branches-field">
-                <label htmlFor="branch-hospital">Hospital ID</label>
+                <label htmlFor="branch-clinic">Clinic Name</label>
                 <input
-                  id="branch-hospital"
-                  value={form.hospitalId}
-                  onChange={(event) => updateField("hospitalId", onlyDigits(event.target.value))}
+                  id="branch-clinic"
+                  value={clinicName}
                   className={fieldErrors.hospitalId ? "is-invalid" : ""}
                   disabled={saving}
-                  inputMode="numeric"
+                  readOnly
                 />
+                <input type="hidden" value={form.hospitalId} readOnly />
                 {fieldErrors.hospitalId ? (
                   <span className="branches-field-error">{fieldErrors.hospitalId}</span>
                 ) : null}

@@ -433,15 +433,7 @@ const AdminLogin = () => {
         authData.assignedBranch ||
         getClaim(claims, 'BranchName', 'branchName', 'Branch', 'branch', 'AssignedBranch', 'assignedBranch') ||
         '';
-      let loginIp = await getLoginIp(authData, claims);
-      if (!loginIp) {
-        try {
-          // Fallback to a public IP provider if backend didn't supply an IP
-          loginIp = await fetchPublicIp();
-        } catch {
-          loginIp = '';
-        }
-      }
+      const loginIp = await getLoginIp(authData, claims);
 
       clearStoredSession();
       localStorage.setItem('token', token);
@@ -467,7 +459,7 @@ const AdminLogin = () => {
         localStorage.removeItem('rememberedEmail');
         localStorage.setItem('rememberMe', 'false');
       }
-      await recordAuditLog({
+      const auditPayload = {
         userName: displayName,
         user: displayName,
         userEmail: loginEmail,
@@ -478,7 +470,17 @@ const AdminLogin = () => {
         role,
         ipAddress: loginIp,
         timestamp: new Date().toISOString(),
-      });
+      };
+      window.setTimeout(() => {
+        recordAuditLog(auditPayload).catch(() => {});
+        if (!loginIp) {
+          fetchPublicIp()
+            .then((ipAddress) => {
+              if (ipAddress) localStorage.setItem('loginIpAddress', ipAddress);
+            })
+            .catch(() => {});
+        }
+      }, 0);
 
       if (normalizedRole === 'superadmin') {
         localStorage.setItem('adminToken', token);

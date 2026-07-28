@@ -245,6 +245,7 @@ import {
 import {
   SPECIALIZATION_OPTIONS,
   getExpertiseOptionsForSpecialization,
+  getSpecializationDisplayName,
 } from "./doctorExpertiseOptions";
 const DOCTORS_API_URL =
   apiUrl("Doctor");
@@ -352,6 +353,11 @@ const formatFeeValue = (value) => {
   const numberValue = Number(text);
   return Number.isNaN(numberValue) ? text : numberValue.toFixed(2);
 };
+
+const isApprovedSpecializationOption = (value) =>
+  SPECIALIZATION_OPTIONS.some(
+    (option) => option.toLowerCase() === String(value || "").trim().toLowerCase()
+  );
 
 const formatValidationMessage = (message) =>
   String(message || "")
@@ -479,7 +485,10 @@ function AddDoctor() {
 
           if (options.length) {
             setSpecializationOptions(
-              uniqueByValue([...SPECIALIZATION_OPTIONS, ...options])
+              uniqueByValue([
+                ...SPECIALIZATION_OPTIONS,
+                ...options.filter(isApprovedSpecializationOption),
+              ])
             );
           }
         } else {
@@ -896,7 +905,7 @@ if (imageFile) {
                 </option>
                 {specializationOptions.map((specialization) => (
                   <option key={specialization} value={specialization}>
-                    {specialization}
+                    {getSpecializationDisplayName(specialization)}
                   </option>
                 ))}
               </select>

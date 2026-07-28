@@ -10,6 +10,7 @@ import {
   getStoredHospitalId,
   getAuthToken,
 } from "../../utils/branchApi";
+import { getSpecializationDisplayName } from "./doctorExpertiseOptions";
 
 const DOCTORS_API = apiUrl("Doctor");
 const SCHEDULE_API = apiUrl("Schedule");
@@ -218,7 +219,48 @@ const normalizeDoctor = (doctor = {}) => ({
     doctor.Specialization ||
     doctor.doctorSpecialization ||
     "",
+  branchId:
+    doctor.branchId ??
+    doctor.BranchId ??
+    doctor.branchID ??
+    doctor.clinicBranchId ??
+    "",
 });
+
+const fetchDoctorsForBranch = async (branchId, token) => {
+  const headers = {
+    "ngrok-skip-browser-warning": "true",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  try {
+    const response = await fetch(
+      apiUrl(`Doctor/branch/${encodeURIComponent(branchId)}`),
+      { headers }
+    );
+
+    if (response.ok) {
+      return parseListResponse(await response.json().catch(() => []));
+    }
+  } catch {
+    // Fall back to all doctors if the branch endpoint is unavailable.
+  }
+
+  const response = await fetch(DOCTORS_API, { headers });
+  if (!response.ok) throw new Error("Unable to load doctors.");
+
+  const selectedBranchId = String(branchId);
+  return parseListResponse(await response.json().catch(() => [])).filter(
+    (doctor) =>
+      String(
+        doctor.branchId ??
+          doctor.BranchId ??
+          doctor.branchID ??
+          doctor.clinicBranchId ??
+          ""
+      ) === selectedBranchId
+  );
+};
 
 const getApiErrorMessage = async (response, fallback) => {
   try {
@@ -285,6 +327,7 @@ function Schedule() {
   const [branchOptions, setBranchOptions] = useState([]);
   const [branchId, setBranchId] = useState("");
   const [loadingBranches, setLoadingBranches] = useState(true);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [days, setDays] = useState(DEFAULT_WORKING_DAYS);
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(defaultEndDate);
@@ -315,12 +358,6 @@ function Schedule() {
   useEffect(() => {
     const hospitalId = getStoredHospitalId();
     Promise.allSettled([
-      fetch(DOCTORS_API, {
-        headers: { "ngrok-skip-browser-warning": "true" },
-      }).then(async (response) => {
-        if (!response.ok) throw new Error("Unable to load doctors.");
-        return response.json();
-      }),
       fetch(SCHEDULE_SETTINGS_API, {
         headers: { "ngrok-skip-browser-warning": "true" },
       }).then(async (response) => {
@@ -328,15 +365,7 @@ function Schedule() {
         return response.json();
       }),
       fetchBranchesForHospital(hospitalId),
-    ]).then(([doctorResult, settingsResult, branchesResult]) => {
-      if (doctorResult.status === "fulfilled") {
-        const rows = parseListResponse(doctorResult.value)
-          .map(normalizeDoctor)
-          .filter((doctor) => doctor.id !== "");
-        setDoctors(rows);
-        if (rows.length > 0) setDoctorId(String(rows[0].id));
-      }
-
+    ]).then(([settingsResult, branchesResult]) => {
       if (settingsResult.status === "fulfilled") {
         const settings =
           settingsResult.value?.data || settingsResult.value || {};
@@ -369,7 +398,50 @@ function Schedule() {
   }, []);
 
   useEffect(() => {
-    if (!doctorId || !previewDate) return;
+    let isActive = true;
+
+    setDoctorId("");
+    setDoctors([]);
+    setPreviewSlots([]);
+    setSaveMessage("");
+
+    if (!branchId) {
+      setLoadingDoctors(false);
+      return () => {
+        isActive = false;
+      };
+    }
+
+    setLoadingDoctors(true);
+    fetchDoctorsForBranch(branchId, getAuthToken())
+      .then((rows) => {
+        if (!isActive) return;
+
+        const branchDoctors = rows
+          .map(normalizeDoctor)
+          .filter((doctor) => doctor.id !== "");
+        setDoctors(branchDoctors);
+        setDoctorId(branchDoctors.length ? String(branchDoctors[0].id) : "");
+      })
+      .catch(() => {
+        if (!isActive) return;
+        setDoctors([]);
+        setDoctorId("");
+      })
+      .finally(() => {
+        if (isActive) setLoadingDoctors(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [branchId]);
+
+  useEffect(() => {
+    if (!branchId || !doctorId || !previewDate) {
+      setPreviewSlots([]);
+      return;
+    }
 
     setIsFetchingSlots(true);
     const token = getAuthToken();
@@ -391,7 +463,7 @@ function Schedule() {
       .then((data) => setPreviewSlots(parseListResponse(data)))
       .catch(() => setPreviewSlots([]))
       .finally(() => setIsFetchingSlots(false));
-  }, [doctorId, previewDate, slotRefreshKey]);
+  }, [branchId, doctorId, previewDate, slotRefreshKey]);
 
   const toggleDay = (fullDay) => {
     setSaveMessage("");
@@ -527,12 +599,19 @@ function Schedule() {
             id="schedule-doctor"
             value={doctorId}
             onChange={(event) => setDoctorId(event.target.value)}
+            disabled={!branchId || loadingDoctors}
           >
-            {!doctors.length ? <option value="">No doctors found</option> : null}
+            {!branchId ? <option value="">Select branch first</option> : null}
+            {branchId && loadingDoctors ? (
+              <option value="">Loading doctors...</option>
+            ) : null}
+            {branchId && !loadingDoctors && !doctors.length ? (
+              <option value="">No doctors found for this branch</option>
+            ) : null}
             {doctors.map((doctor) => (
               <option key={doctor.id} value={doctor.id}>
                 Dr. {doctor.name || doctor.id}
-                {doctor.specialization ? ` - ${doctor.specialization}` : ""}
+                {doctor.specialization ? ` - ${getSpecializationDisplayName(doctor.specialization)}` : ""}
               </option>
             ))}
           </select>
@@ -674,7 +753,7 @@ function Schedule() {
             type="button"
             className="save"
             onClick={handleSave}
-            disabled={isSaving || !doctorId}
+            disabled={isSaving || loadingDoctors || !branchId || !doctorId}
           >
             {isSaving
               ? "Saving..."
@@ -718,6 +797,12 @@ function Schedule() {
           <div className="slots">
             {isFetchingSlots ? (
               <p className="slots-msg">Loading slots...</p>
+            ) : loadingDoctors ? (
+              <p className="slots-msg">Loading doctors for this branch...</p>
+            ) : !branchId ? (
+              <p className="slots-msg">Select a branch to view slots.</p>
+            ) : !doctorId ? (
+              <p className="slots-msg">Select a doctor to view slots.</p>
             ) : previewSlots.length > 0 ? (
               previewSlots.map((slot, index) => {
                 const slotStart = formatSlotTime(slot.start || slot.startTime || "");

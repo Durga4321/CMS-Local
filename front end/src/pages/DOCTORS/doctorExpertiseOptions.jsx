@@ -1,11 +1,4 @@
 export const SPECIALIZATION_EXPERTISE_MAP = {
-  "Anaesthesiology, Pain & Palliative Care": [
-    "General Anaesthesia",
-    "Regional Anaesthesia",
-    "Pain Management",
-    "ICU Support",
-    "Palliative Care",
-  ],
   Cardiology: [
     "Heart Diseases",
     "Coronary Artery Disease",
@@ -15,45 +8,22 @@ export const SPECIALIZATION_EXPERTISE_MAP = {
     "Preventive Cardiology",
     "Cardiac Rehabilitation",
   ],
-  "Cardiothoracic & Vascular Surgery": [
-    "Bypass Surgery",
-    "Heart Valve Surgery",
-    "Aortic Surgery",
-    "Lung Surgery",
-    "Thoracic Surgery",
-    "Vascular Reconstruction",
-  ],
-  "Critical Care Medicine": [
-    "ICU Management",
-    "Ventilator Care",
-    "Sepsis Management",
-    "Trauma Care",
-    "Organ Failure Management",
-  ],
-  "Dental Surgery": [
+  Dentist: [
     "Tooth Extraction",
     "Root Canal Treatment",
     "Dental Implants",
     "Cosmetic Dentistry",
     "Gum Disease Treatment",
   ],
-  "Dermatology & Venereology": [
+  Dermatology: [
     "Skin Diseases",
     "Hair Disorders",
     "Nail Disorders",
     "Acne Treatment",
     "Psoriasis",
     "Eczema",
-    "Sexually Transmitted Diseases",
   ],
-  "Emergency Medicine": [
-    "Trauma Care",
-    "Poisoning",
-    "Cardiac Emergencies",
-    "Stroke Management",
-    "Emergency Procedures",
-  ],
-  "ENT (Otorhinolaryngology)": [
+  ENT: [
     "Ear Disorders",
     "Hearing Loss",
     "Sinus Diseases",
@@ -61,21 +31,7 @@ export const SPECIALIZATION_EXPERTISE_MAP = {
     "Throat Disorders",
     "Voice Disorders",
   ],
-  "Foetal Medicine": [
-    "Prenatal Diagnosis",
-    "Fetal Ultrasound",
-    "High-Risk Pregnancy Assessment",
-    "Genetic Screening",
-  ],
-  "Gastrointestinal Surgery": [
-    "Gallbladder Surgery",
-    "Hernia Repair",
-    "Colon Surgery",
-    "Liver Surgery",
-    "Pancreatic Surgery",
-    "Laparoscopic Surgery",
-  ],
-  "General Medicine": [
+  "General Specialist": [
     "Diabetes",
     "Hypertension",
     "Fever Management",
@@ -83,14 +39,7 @@ export const SPECIALIZATION_EXPERTISE_MAP = {
     "Lifestyle Disorders",
     "Preventive Health",
   ],
-  "General & Laparoscopic Surgery": [
-    "Hernia Repair",
-    "Appendix Surgery",
-    "Gallbladder Surgery",
-    "Breast Surgery",
-    "Minimally Invasive Surgery",
-  ],
-  "Gynaecology & Obstetrics": [
+  Gynecology: [
     "Pregnancy Care",
     "High-Risk Pregnancy",
     "Infertility",
@@ -98,27 +47,7 @@ export const SPECIALIZATION_EXPERTISE_MAP = {
     "PCOS",
     "Gynecological Surgery",
   ],
-  "Infectious Diseases": [
-    "Viral Infections",
-    "Bacterial Infections",
-    "Tropical Diseases",
-    "HIV Care",
-    "COVID-19 Management",
-  ],
-  "Interventional Radiology": [
-    "Image-Guided Procedures",
-    "Angioplasty",
-    "Embolization",
-    "Biopsy",
-    "Drainage Procedures",
-  ],
-  "Male Infertility & Andrology": [
-    "Male Infertility",
-    "Erectile Dysfunction",
-    "Hormonal Disorders",
-    "Male Reproductive Health",
-  ],
-  "Medical Gastroenterology": [
+  Gastroenterology: [
     "Liver Diseases",
     "Pancreatic Disorders",
     "Acid Reflux",
@@ -126,20 +55,7 @@ export const SPECIALIZATION_EXPERTISE_MAP = {
     "Endoscopy",
     "ERCP",
   ],
-  "Medical Oncology": [
-    "Chemotherapy",
-    "Targeted Therapy",
-    "Immunotherapy",
-    "Cancer Diagnosis",
-    "Cancer Follow-up",
-  ],
-  Neonatology: [
-    "Premature Babies",
-    "NICU Care",
-    "Neonatal Infections",
-    "Neonatal Intensive Care",
-  ],
-  "Nephrology & Dialysis": [
+  Nephrology: [
     "Kidney Diseases",
     "Dialysis",
     "Hypertension",
@@ -154,14 +70,7 @@ export const SPECIALIZATION_EXPERTISE_MAP = {
     "Neuromuscular Disorders",
     "Multiple Sclerosis",
   ],
-  Neurosurgery: [
-    "Brain Tumors",
-    "Spine Surgery",
-    "Brain Trauma",
-    "Stroke Surgery",
-    "Skull Base Surgery",
-  ],
-  "Orthopaedic Surgery & Joint Replacements": [
+  Orthopedics: [
     "Joint Replacement",
     "Sports Injuries",
     "Fractures",
@@ -175,34 +84,12 @@ export const SPECIALIZATION_EXPERTISE_MAP = {
     "Corneal Diseases",
     "Vision Correction",
   ],
-  "Oro Maxillofacial Surgery": [
-    "Jaw Surgery",
-    "Facial Trauma",
-    "Oral Tumors",
-    "Facial Reconstruction",
-  ],
-  "Organ Transplantation": [
-    "Kidney Transplant",
-    "Liver Transplant",
-    "Transplant Evaluation",
-    "Post-Transplant Care",
-  ],
-  Paediatrics: [
+  Pediatrics: [
     "Child Health",
     "Vaccination",
     "Growth Disorders",
     "Childhood Infections",
     "Nutrition",
-  ],
-  "Paediatric Cardiology": [
-    "Congenital Heart Disease",
-    "Pediatric Heart Failure",
-    "Pediatric Arrhythmias",
-  ],
-  "Paediatric Nephrology": [
-    "Pediatric Kidney Diseases",
-    "Childhood Hypertension",
-    "Congenital Kidney Disorders",
   ],
   Physiotherapy: [
     "Rehabilitation",
@@ -211,12 +98,6 @@ export const SPECIALIZATION_EXPERTISE_MAP = {
     "Orthopedic Rehabilitation",
     "Pain Relief",
   ],
-  "Plastic & Reconstructive Surgery": [
-    "Cosmetic Surgery",
-    "Burn Reconstruction",
-    "Trauma Reconstruction",
-    "Hand Surgery",
-  ],
   Psychiatry: [
     "Depression",
     "Anxiety Disorders",
@@ -224,7 +105,7 @@ export const SPECIALIZATION_EXPERTISE_MAP = {
     "Schizophrenia",
     "Addiction Medicine",
   ],
-  "Respiratory Medicine / Pulmonology": [
+  Pulmonology: [
     "Asthma",
     "COPD",
     "Lung Infections",
@@ -232,32 +113,12 @@ export const SPECIALIZATION_EXPERTISE_MAP = {
     "Bronchoscopy",
     "Interstitial Lung Disease",
   ],
-  "Surgical Oncology": [
-    "Cancer Surgery",
-    "Tumor Removal",
-    "Breast Surgery",
-    "GI Cancer Surgery",
-    "Head & Neck Cancer Surgery",
-  ],
   Urology: [
     "Kidney Stones",
     "Prostate Disorders",
     "Urinary Infections",
     "Bladder Disorders",
     "Urologic Surgery",
-  ],
-  "Vascular Surgery": [
-    "Varicose Veins",
-    "Peripheral Artery Disease",
-    "Aneurysms",
-    "Vascular Access Surgery",
-  ],
-  Rheumatology: [
-    "Rheumatoid Arthritis",
-    "Lupus",
-    "Osteoarthritis",
-    "Gout",
-    "Autoimmune Disorders",
   ],
   Radiology: [
     "MRI Reporting",
@@ -267,17 +128,29 @@ export const SPECIALIZATION_EXPERTISE_MAP = {
     "X-Ray Interpretation",
     "Interventional Imaging",
   ],
-  Endocrinology: [
-    "Diabetes",
-    "Thyroid Disorders",
-    "Hormonal Disorders",
-    "Obesity",
-    "Osteoporosis",
-    "Adrenal Disorders",
-  ],
 };
 
 export const SPECIALIZATION_OPTIONS = Object.keys(SPECIALIZATION_EXPERTISE_MAP);
+
+const SPECIALIZATION_DISPLAY_NAMES = {
+  "Cardiothoracic & Vascular Surgery": "Heart And Vascular Specialist",
+  "Dental Surgery": "Dentist",
+  "Dermatology & Venereology": "Dermatology",
+  "ENT (Otorhinolaryngology)": "ENT",
+  "Gastrointestinal Surgery": "Gastroenterologist",
+  "Medical Gastroenterology": "Gastroenterology",
+  "General & Laparoscopic Surgery": "General Specialist",
+  "Gynaecology & Obstetrics": "Gynecology",
+  "Nephrology & Dialysis": "Nephrology",
+  Neurosurgery: "Neurologist",
+  "Orthopaedic Surgery & Joint Replacements": "Orthopaedist",
+  Paediatrics: "Pediatrics",
+  "Oro Maxillofacial Surgery": "Dental And Face Specialist",
+  "Plastic & Reconstructive Surgery": "Plastic Specialist",
+  "Respiratory Medicine / Pulmonology": "Pulmonology",
+  "Surgical Oncology": "Cancer Specialist",
+  "Vascular Surgery": "Vascular Specialist",
+};
 
 const normalizeKey = (value) =>
   String(value || "")
@@ -290,17 +163,20 @@ const normalizeKey = (value) =>
 
 const SPECIALIZATION_ALIASES = {
   "cardiothoracic and cardiovascular surgery": "Cardiothoracic & Vascular Surgery",
-  dermatology: "Dermatology & Venereology",
-  "dental and maxillofacial surgery": "Dental Surgery",
-  ent: "ENT (Otorhinolaryngology)",
-  gynecology: "Gynaecology & Obstetrics",
-  "obstetrics and gynaecology": "Gynaecology & Obstetrics",
-  pediatrics: "Paediatrics",
-  orthopedics: "Orthopaedic Surgery & Joint Replacements",
+  "dental surgery": "Dentist",
+  "dental and maxillofacial surgery": "Dentist",
+  "dermatology and venereology": "Dermatology",
+  "ent otorhinolaryngology": "ENT",
+  "general medicine": "General Specialist",
+  "gynaecology and obstetrics": "Gynecology",
+  "obstetrics and gynaecology": "Gynecology",
+  paediatrics: "Pediatrics",
+  "orthopaedic surgery and joint replacements": "Orthopedics",
   "plastic and cosmetic surgery": "Plastic & Reconstructive Surgery",
-  pulmonology: "Respiratory Medicine / Pulmonology",
-  "general surgery": "General & Laparoscopic Surgery",
-  "surgical gastroenterology laparoscopic and mis": "Gastrointestinal Surgery",
+  "respiratory medicine pulmonology": "Pulmonology",
+  "medical gastroenterology": "Gastroenterology",
+  "gastrointestinal surgery": "Gastroenterology",
+  "surgical gastroenterology laparoscopic and mis": "Gastroenterology",
   "vascular and endovascular surgery": "Vascular Surgery",
 };
 
@@ -313,6 +189,11 @@ export const getCanonicalSpecialization = (specialization) => {
   );
 
   return exact || SPECIALIZATION_ALIASES[normalized] || "";
+};
+
+export const getSpecializationDisplayName = (specialization) => {
+  const canonical = getCanonicalSpecialization(specialization) || String(specialization || "").trim();
+  return SPECIALIZATION_DISPLAY_NAMES[canonical] || canonical;
 };
 
 export const getExpertiseOptionsForSpecialization = (specialization) => {

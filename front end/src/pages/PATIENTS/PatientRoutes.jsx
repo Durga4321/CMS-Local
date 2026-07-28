@@ -42,26 +42,28 @@ const logoutPatient = async (navigate) => {
   const name = localStorage.getItem("patientName") || localStorage.getItem("patientEmail") || "Patient";
   const role = localStorage.getItem("patientRole") || "Patient";
   const ipAddress = localStorage.getItem("loginIpAddress") || "";
-  try {
-    await import("../SUPERADMIN/superAdminApi").then(({ recordAuditLog }) =>
+  const email = localStorage.getItem("patientEmail") || "";
+
+  ["token", "userRole", "patientName", "patientId", "patientToken", "patientRole", "patientEmail"].forEach((key) =>
+    localStorage.removeItem(key)
+  );
+  navigate("/login/patient", { replace: true });
+
+  window.setTimeout(() => {
+    import("../SUPERADMIN/superAdminApi").then(({ recordAuditLog }) =>
       recordAuditLog({
         userName: name,
         user: name,
-        userEmail: localStorage.getItem("patientEmail") || "",
-        email: localStorage.getItem("patientEmail") || "",
+        userEmail: email,
+        email,
         action: `${name} logged out`,
         systemAction: "Logout",
         role,
         ipAddress,
         timestamp: new Date().toISOString(),
       })
-    );
-  } catch { }
-
-  ["token", "userRole", "patientName", "patientId", "patientToken", "patientRole", "patientEmail"].forEach((key) =>
-    localStorage.removeItem(key)
-  );
-  navigate("/login/patient", { replace: true });
+    ).catch(() => {});
+  }, 0);
 };
 
 /* ----------------- Patient module (inlined) ----------------- */
@@ -551,41 +553,45 @@ function PatientRoutes() {
     };
 
     try {
-      const profileUrl = patientApiUrl(PATIENT_API.profile);
-      const profileRes = await fetch(profileUrl, { headers }).catch(() => null);
+      const [
+        profileRes,
+        appointmentsRes,
+        prescriptionsRes,
+        billsRes,
+        notificationsRes,
+        dashboardRes,
+      ] = await Promise.all([
+        fetch(patientApiUrl(PATIENT_API.profile), { headers }).catch(() => null),
+        fetch(patientApiUrl(PATIENT_API.appointments), { headers }).catch(() => null),
+        fetch(patientApiUrl(PATIENT_API.prescriptions), { headers }).catch(() => null),
+        fetch(patientApiUrl(PATIENT_API.bills), { headers }).catch(() => null),
+        fetch(patientApiUrl(PATIENT_API.notifications), { headers }).catch(() => null),
+        fetch(patientApiUrl(PATIENT_API.dashboard), { headers }).catch(() => null),
+      ]);
+
       const profileData = profileRes?.ok ? await profileRes.json().catch(() => null) : null;
       if (profileData) setPatient(profileData);
 
-      const appointmentsUrl = patientApiUrl(PATIENT_API.appointments);
-      const appointmentsRes = await fetch(appointmentsUrl, { headers }).catch(() => null);
       const appointmentsData = appointmentsRes?.ok ? await appointmentsRes.json().catch(() => []) : [];
       const appointmentsList = Array.isArray(appointmentsData) ? appointmentsData : (appointmentsData.items || appointmentsData.data || []);
       setVisits(appointmentsList);
 
-      const prescriptionsUrl = patientApiUrl(PATIENT_API.prescriptions);
-      const prescriptionsRes = await fetch(prescriptionsUrl, { headers }).catch(() => null);
       if (prescriptionsRes?.ok) {
         const rxData = await prescriptionsRes.json().catch(() => []);
         setPrescriptions(Array.isArray(rxData) ? rxData : (rxData.items || rxData.data || []));
       }
 
-      const billsUrl = patientApiUrl(PATIENT_API.bills);
-      const billsRes = await fetch(billsUrl, { headers }).catch(() => null);
       if (billsRes?.ok) {
         const bData = await billsRes.json().catch(() => []);
         const rawBills = Array.isArray(bData) ? bData : (bData.items || bData.data || []);
         setBills(dedupeBillsByAppointment(rawBills));
       }
 
-      const notificationsUrl = patientApiUrl(PATIENT_API.notifications);
-      const notificationsRes = await fetch(notificationsUrl, { headers }).catch(() => null);
       if (notificationsRes?.ok) {
         const nData = await notificationsRes.json().catch(() => []);
         setNotifications(Array.isArray(nData) ? nData : (nData.items || nData.data || []));
       }
 
-      const dashboardUrl = patientApiUrl(PATIENT_API.dashboard);
-      const dashboardRes = await fetch(dashboardUrl, { headers }).catch(() => null);
       const dashboardJson = dashboardRes?.ok ? await dashboardRes.json().catch(() => null) : null;
       if (dashboardJson) setDashboardData(dashboardJson);
     } catch (err) {
