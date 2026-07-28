@@ -9,6 +9,10 @@ import PatientDashboard from "./PatientDashboard";
 import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
 import { validateStrongPassword } from "../../utils/validation";
 import { formatIndianCurrency, formatTitleCase } from "../../utils/format";
+import {
+  DUPLICATE_APPOINTMENT_MESSAGE,
+  hasDuplicateAppointmentForPatientDoctorDate,
+} from "../../utils/appointmentDuplicateValidation";
 
 const getNestedValue = (record, path) => {
   if (record == null) return undefined;
@@ -610,7 +614,7 @@ function PatientRoutes() {
           }
         />
         <Route path="appointments" element={<PatientAppointmentsPage visits={visits} onRefresh={fetchData} />} />
-        <Route path="appointments/book" element={<PatientBookingWizardPage visits={visits} onRefresh={fetchData} />} />
+        <Route path="appointments/book" element={<PatientBookingWizardPage patient={patient} visits={visits} onRefresh={fetchData} />} />
         <Route path="book" element={<Navigate to="appointments/book" replace />} />
         <Route path="medical-history" element={<PatientMedicalHistoryPage patient={patient} visits={visits} prescriptions={prescriptions} />} />
         <Route path="history" element={<Navigate to="medical-history" replace />} />
@@ -986,7 +990,7 @@ function PatientAppointmentsPage({ visits = [], onRefresh }) {
   );
 }
 
-function PatientBookingWizardPage({ visits = [], onRefresh }) {
+function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [branches, setBranches] = useState([]);
@@ -1338,14 +1342,51 @@ function PatientBookingWizardPage({ visits = [], onRefresh }) {
       const branchId = selectedBranch?.branchId || selectedBranch?.id;
       const doctorId = selectedDoctor?.doctorId || selectedDoctor?.id;
       const patientId = localStorage.getItem("patientId") || "";
+      const patientName =
+        readFirst(patient || {}, ["name", "patientName", "fullName", "displayName"]) ||
+        localStorage.getItem("patientName") ||
+        "";
+      const patientPhone = readFirst(patient || {}, [
+        "phone",
+        "Phone",
+        "phoneNumber",
+        "PhoneNumber",
+        "mobile",
+        "Mobile",
+        "mobileNumber",
+        "MobileNumber",
+      ]);
+      const duplicateAppointments = [...visits];
+      const headers = getApiHeaders();
+      const allAppointmentsResponse = await fetch(apiUrl("Appointment"), { headers }).catch(() => null);
+      if (allAppointmentsResponse?.ok) {
+        const allAppointmentsData = await allAppointmentsResponse.json().catch(() => []);
+        duplicateAppointments.push(...parseApiList(allAppointmentsData));
+      }
+
+      if (
+        hasDuplicateAppointmentForPatientDoctorDate(duplicateAppointments, {
+          patientId,
+          patientName,
+          phone: patientPhone,
+          doctorId,
+          doctorName: selectedDoctor?.doctorName || selectedDoctor?.name,
+          date: selectedDate,
+        })
+      ) {
+        throw new Error(DUPLICATE_APPOINTMENT_MESSAGE);
+      }
+
       const payload = {
         branchId: readNumericId(branchId),
         doctorId: readNumericId(doctorId),
         date: formatAppointmentDateTime(selectedDate),
         startTime: formatSlotTime(selectedTime),
         reasonForVisit: reasonForVisit.trim(),
+        patientName,
+        phone: patientPhone,
+        patientPhone,
       };
-      const headers = getApiHeaders();
       const appointmentUrl = patientApiUrl(PATIENT_API.appointments);
       const response = await fetch(appointmentUrl, {
         method: 'POST',
@@ -1631,7 +1672,6 @@ function PatientBookingWizardPage({ visits = [], onRefresh }) {
                     <option value="UPI">UPI</option>
                     <option value="Cash">Cash</option>
                     <option value="Card">Card</option>
-                    <option value="Insurance">Insurance</option>
                   </select>
                 </label>
               </div>

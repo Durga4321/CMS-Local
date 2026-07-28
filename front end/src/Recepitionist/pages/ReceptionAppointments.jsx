@@ -12,6 +12,10 @@ import {
 } from "../receptionScope";
 import { validateText } from "../../utils/validation";
 import { formatIndianCurrency } from "../../utils/format";
+import {
+  DUPLICATE_APPOINTMENT_MESSAGE,
+  hasDuplicateAppointmentForPatientDoctorDate,
+} from "../../utils/appointmentDuplicateValidation";
 
 const parseSlotLabel = (slot) => {
   if (!slot) return "";
@@ -162,6 +166,9 @@ const getRecordHospitalId = (record = {}) =>
 
 const getDoctorId = (doctor = {}) =>
   doctor.doctorId ?? doctor.DoctorId ?? doctor.id ?? doctor.Id ?? "";
+
+const getDoctorName = (doctor = {}) =>
+  String(doctor.doctorName || doctor.DoctorName || doctor.name || doctor.Name || "").trim();
 
 const getAppointmentPatientId = (appointment = {}) =>
   appointment.patientId ??
@@ -572,6 +579,11 @@ function ReceptionAppointments() {
     [doctors, form.doctorId]
   );
 
+  const selectedPatient = useMemo(
+    () => patients.find((patient) => String(getPatientId(patient)) === String(form.patientId)),
+    [patients, form.patientId]
+  );
+
   const consultationFee = getDoctorFee(selectedDoctor);
 
   const patientCount = patients.length;
@@ -696,6 +708,21 @@ function ReceptionAppointments() {
       return false;
     }
 
+    if (
+      hasDuplicateAppointmentForPatientDoctorDate(appointments, {
+        patientId: form.patientId,
+        patientName: getPatientName(selectedPatient),
+        phone: getPatientPhone(selectedPatient),
+        doctorId: form.doctorId,
+        doctorName: getDoctorName(selectedDoctor),
+        date: form.date,
+      })
+    ) {
+      setMessage(DUPLICATE_APPOINTMENT_MESSAGE);
+      toast.error(DUPLICATE_APPOINTMENT_MESSAGE);
+      return false;
+    }
+
     const nextFieldErrors = VITAL_FIELDS.reduce((errors, field) => {
       const error = validateVitalValue(form[field.name], field);
       if (error) errors[field.name] = error;
@@ -750,6 +777,10 @@ function ReceptionAppointments() {
       branchId: branchIdForAppointment,
       doctorId: Number(form.doctorId),
       patientId: Number(form.patientId),
+      patientName: getPatientName(selectedPatient),
+      phone: getPatientPhone(selectedPatient),
+      patientPhone: getPatientPhone(selectedPatient),
+      doctorName: getDoctorName(selectedDoctor),
       date: form.date,
       appointmentDate: form.date,
       slotDate: form.date,
@@ -976,7 +1007,7 @@ function ReceptionAppointments() {
         <div className="rc-slot-panel">
           <div className="rc-slot-head">
             <strong>Time Slots</strong>
-            <span>Available&nbsp;&nbsp; Booked</span>
+            <span>Available&nbsp;&nbsp; Selected&nbsp;&nbsp; Booked</span>
           </div>
           <div className="rc-slots">
             {slotLoading ? (
@@ -988,10 +1019,16 @@ function ReceptionAppointments() {
                 const isBooked = Boolean(isBookedSlot(slot) || bookedSlots.has(slotStart));
                 const isSelected = selectedSlot && normalizeSlotStart(selectedSlot) === slotStart;
                 const isCompleted = !isBooked && isTimeOutSlot(slot, form.date);
-                const statusLabel = isBooked ? "BOOKED" : isCompleted ? "TIME OUT" : "AVAILABLE";
+                const statusLabel = isBooked
+                  ? "BOOKED"
+                  : isSelected
+                    ? "SELECTED"
+                    : isCompleted
+                      ? "TIME OUT"
+                      : "AVAILABLE";
                 const buttonClass = [
-                  isSelected ? "selected" : "",
                   isBooked ? "booked" : isCompleted ? "completed" : "available",
+                  isSelected && !isBooked && !isCompleted ? "selected" : "",
                 ]
                   .filter(Boolean)
                   .join(" ");
@@ -1002,6 +1039,7 @@ function ReceptionAppointments() {
                     key={`${label}-${slotStart}`}
                     disabled={isBooked || isCompleted}
                     className={buttonClass}
+                    aria-pressed={Boolean(isSelected)}
                     onClick={() => {
                       setSelectedSlot(label);
                       setPaymentStep(false);
@@ -1037,7 +1075,6 @@ function ReceptionAppointments() {
                   <option value="UPI">UPI</option>
                   <option value="Cash">Cash</option>
                   <option value="Card">Card</option>
-                  <option value="Insurance">Insurance</option>
                 </select>
               </label>
               <button

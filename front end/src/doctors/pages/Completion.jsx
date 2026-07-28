@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CheckCircle, Check } from "lucide-react";
+import { CheckCircle, Check, ClipboardList, LayoutDashboard } from "lucide-react";
 import "./Completion.css";
 
 /* ── Completion checklist items ── */
@@ -32,14 +32,6 @@ function Completion() {
     location.state?.appointmentStatus ||
     "Completed";
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      navigate("/doctor/dashboard", { replace: true });
-    }, 2500);
-
-    return () => window.clearTimeout(timer);
-  }, [navigate]);
-
   return (
     <div className="comp-page">
       <div className="comp-card">
@@ -70,6 +62,25 @@ function Completion() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="comp-actions">
+          <button
+            className="comp-btn comp-btn--primary"
+            type="button"
+            onClick={() => navigate("/doctor/appointments", { replace: true })}
+          >
+            <ClipboardList size={18} />
+            Appointments
+          </button>
+          <button
+            className="comp-btn comp-btn--ghost"
+            type="button"
+            onClick={() => navigate("/doctor/dashboard", { replace: true })}
+          >
+            <LayoutDashboard size={18} />
+            Dashboard
+          </button>
         </div>
 
       </div>

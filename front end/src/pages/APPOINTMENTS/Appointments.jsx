@@ -30,10 +30,24 @@ const getDateKey = (value) => {
   if (!value)
     return "";
 
-  return String(value).split("T")[0];
+  const raw = String(value).trim();
+  const isoDateTimeMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (isoDateTimeMatch) {
+    const [, year, month, day, hour, minute, second = "00"] = isoDateTimeMatch;
+    if (hour === "00" && minute === "00" && second === "00")
+      return `${year}-${month}-${day}`;
+
+    const hasTimezone = /(?:z|[+-]\d{2}:?\d{2})$/i.test(raw);
+    const date = new Date(hasTimezone ? raw : `${raw}Z`);
+    if (!Number.isNaN(date.getTime())) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+  }
+
+  return raw.split("T")[0];
 };
 
-const formatDate = (value) => formatDateMMDDYYYY(getDateKey(value), emptyValue);
+const formatDate = (value) => formatDateMMDDYYYY(value, emptyValue);
 
 const formatTime = (value) => {
   if (!value) return emptyValue;
@@ -84,7 +98,13 @@ const normalizeAppointment = (item) => {
 
   const date =
     item.date ||
+    item.Date ||
     item.appointmentDate ||
+    item.AppointmentDate ||
+    item.scheduledDate ||
+    item.ScheduledDate ||
+    item.slotDate ||
+    item.SlotDate ||
     "";
 
   const appointmentId =
@@ -98,7 +118,16 @@ const normalizeAppointment = (item) => {
     date,
     dateKey: getDateKey(date),
     displayDate: formatDate(date),
-    displayTime: formatTime(item.time),
+    displayTime: formatTime(
+      item.time ||
+      item.Time ||
+      item.startTime ||
+      item.StartTime ||
+      item.slotTime ||
+      item.SlotTime ||
+      item.timeSlot ||
+      item.TimeSlot
+    ),
     tokenNumber:
       item.tokenNumber ||
       item.token ||

@@ -1313,10 +1313,26 @@
   color: #107a3a;
 }
 
+.rc-slots button.selected,
+.rc-slots button.available.selected,
+.rc-slots button[aria-pressed="true"] {
+  background: #dbeafe;
+  border-color: #2563eb;
+  color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
 .rc-slots button.booked {
   background: #ffe5e7;
   border-color: #f3b8bf;
   color: #b61a22;
+}
+
+.rc-slots button.booked.selected {
+  background: #ffe5e7;
+  border-color: #f3b8bf;
+  color: #b61a22;
+  box-shadow: none;
 }
 
 .rc-slots button:disabled {

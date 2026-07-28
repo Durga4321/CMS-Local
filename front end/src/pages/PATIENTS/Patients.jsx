@@ -13,11 +13,19 @@ import {
 
 import { useNavigate } from "react-router-dom";
 import { apiUrl } from "../../config/api";
+import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 
 // ================= API =================
 
 const PATIENT_API_URL =
   apiUrl("Patient");
+
+const formatPatientLastVisit = (value) => {
+  if (!value || value === "0001-01-01T00:00:00")
+    return "-";
+
+  return formatDateMMDDYYYY(value, "-");
+};
 
 // ================= RESPONSE =================
 
@@ -313,15 +321,7 @@ function Patients() {
 
                 <span>
 
-                  {patient.lastVisit &&
-                    patient.lastVisit !==
-                    "0001-01-01T00:00:00"
-
-                    ? patient.lastVisit.split(
-                      "T"
-                    )[0]
-
-                    : "-"}
+                  {formatPatientLastVisit(patient.lastVisit)}
 
                 </span>
 

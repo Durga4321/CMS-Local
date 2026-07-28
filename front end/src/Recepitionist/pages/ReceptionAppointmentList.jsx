@@ -3,7 +3,7 @@ import { ArrowLeft, Plus, RefreshCw, Search, SlidersHorizontal, X } from "lucide
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../../components/ToastProvider";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
-import { filterAppointments, getAppointmentValue, getBookingType } from "./appointmentListUtils";
+import { applyTimeOrderedTokens, filterAppointments, getAppointmentValue, getBookingType } from "./appointmentListUtils";
 import { getReceptionistScope, scopeReceptionistRecords } from "../receptionScope";
 import { requestJson } from "../receptionApi";
 import {
@@ -91,7 +91,7 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
 
     try {
       const data = scopeReceptionistRecords(await fetchAppointments(), receptionistScope);
-      const nextAppointments = data.map(mergeStoredAppointmentVitals).filter((item) => {
+      const nextAppointments = applyTimeOrderedTokens(data.map(mergeStoredAppointmentVitals)).filter((item) => {
         const currentBookingType = getBookingType(item);
         return currentBookingType === bookingType;
       });
@@ -115,6 +115,14 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
       doctor: doctorFilter === "All" ? "" : doctorFilter,
       status: statusFilter === "All" ? "" : statusFilter,
       date: dateFilter,
+    }).sort((left, right) => {
+      const dateCompare = String(left.orderedTokenSortDate || "").localeCompare(String(right.orderedTokenSortDate || ""));
+      if (dateCompare) return dateCompare;
+
+      const timeCompare = (left.orderedTokenSortTime || 0) - (right.orderedTokenSortTime || 0);
+      if (timeCompare) return timeCompare;
+
+      return (left.orderedTokenSequence || 0) - (right.orderedTokenSequence || 0);
     });
   }, [appointments, doctorFilter, dateFilter, search, statusFilter]);
 
@@ -333,7 +341,7 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
                 <tbody>
                   {visibleAppointments.map((item, index) => (
                     <tr key={`${item.id || item.appointmentId || index}`}>
-                      <td>{getAppointmentValue(item, ["tokenNumber", "token", "TokenNumber", "tokenNo", "token_number"], "-")}</td>
+                      <td>{getAppointmentValue(item, ["displayTokenNumber", "orderedTokenNumber", "tokenNumber", "token", "TokenNumber", "tokenNo", "token_number"], "-")}</td>
                       <td>{getAppointmentValue(item, ["patientCode", "patient.code", "patient.patientCode", "PatientCode"], "-")}</td>
                       <td>{getAppointmentValue(item, ["patientName", "patient.name", "patient.fullName", "PatientName"], "-")}</td>
                       <td>{getAppointmentValue(item, ["doctorName", "doctor.name", "doctor.fullName", "DoctorName"], "-")}</td>

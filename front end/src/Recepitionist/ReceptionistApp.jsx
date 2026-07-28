@@ -9,6 +9,7 @@ import ReceptionMedicalHistory from "./pages/ReceptionMedicalHistory";
 import ReceptionOnlineBookings from "./pages/ReceptionOnlineBookings";
 import ReceptionOfflineBookings from "./pages/ReceptionOfflineBookings";
 import UserProfilePage from "../profile/UserProfilePage";
+import ConsultantRoomDisplay from "../components/ConsultantRoomDisplay";
 
 function ReceptionistApp() {
   return (
@@ -21,6 +22,7 @@ function ReceptionistApp() {
         <Route path="appointments" element={<ReceptionAppointments />} />
         <Route path="appointments/online" element={<ReceptionOnlineBookings />} />
         <Route path="appointments/offline" element={<ReceptionOfflineBookings />} />
+        <Route path="consultant-room" element={<ConsultantRoomDisplay audience="reception" />} />
         <Route path="billing" element={<ReceptionBilling />} />
         <Route path="profile" element={<UserProfilePage roleType="receptionist" />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
