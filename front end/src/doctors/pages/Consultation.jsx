@@ -13,7 +13,7 @@ import {
   mergeDiagnosisOption,
 } from "../utils/diagnosisOptions";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
-import { mergeStoredAppointmentVitals } from "../../utils/appointmentVitals";
+import { fetchConsultationVitals, mergeStoredAppointmentVitals } from "../../utils/appointmentVitals";
 
 const STEPS = [
   "Waiting",
@@ -324,8 +324,10 @@ function Consultation() {
           savedConsultation = await consultationResponse.json();
         }
 
+        const backendVitals = await fetchConsultationVitals(detailedAppointment.appointmentId, headers);
         const hydratedAppointment = mergeStoredAppointmentVitals({
           ...detailedAppointment,
+          ...(backendVitals || {}),
           patientId: detailedAppointment.patientId || savedConsultation?.patientId,
         });
 

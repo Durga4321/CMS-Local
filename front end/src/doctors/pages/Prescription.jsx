@@ -16,7 +16,7 @@ import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { useToast } from "../../components/ToastProvider";
 import { validateDate, validateRequired } from "../../utils/validation";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
-import { mergeStoredAppointmentVitals } from "../../utils/appointmentVitals";
+import { fetchConsultationVitals, mergeStoredAppointmentVitals } from "../../utils/appointmentVitals";
 
 const STEPS = [
   "Waiting",
@@ -397,7 +397,11 @@ function Prescription() {
           // The list payload is enough when the detail endpoint is unavailable.
         }
 
-        normalizedAppointment = mergeStoredAppointmentVitals(normalizedAppointment);
+        const backendVitals = await fetchConsultationVitals(normalizedAppointment.appointmentId, headers);
+        normalizedAppointment = mergeStoredAppointmentVitals({
+          ...normalizedAppointment,
+          ...(backendVitals || {}),
+        });
 
         let savedConsultation = routeState.consultation || null;
         const consultationResponse = await fetch(

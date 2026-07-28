@@ -203,9 +203,7 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
       vitals,
     };
     const saveAttempts = [
-      { path: `Appointment/${appointmentId}/vitals`, method: "PUT" },
-      { path: `Appointment/${appointmentId}/vitals`, method: "PATCH" },
-      { path: `Appointment/${appointmentId}`, method: "PATCH" },
+      { path: `Appointment/online/${appointmentId}/vitals`, method: "PUT" },
     ];
 
     try {
