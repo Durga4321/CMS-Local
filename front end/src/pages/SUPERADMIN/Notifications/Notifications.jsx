@@ -33,6 +33,7 @@ const getCurrentUserKey = () =>
     .replace(/[^a-z0-9]+/g, "_") || "current_user";
 
 const getDeletedStorageKey = () => `deleted_notifications_${getCurrentUserKey()}`;
+const getReadStorageKey = () => `read_notifications_${getCurrentUserKey()}`;
 
 const getNotificationKey = (notification = {}) =>
   String(
@@ -65,6 +66,22 @@ const emptyNotification = {
   title: "",
   targetUsers: "Active Admins",
   message: "",
+};
+
+const readNotificationKeys = () => {
+  try {
+    const value = JSON.parse(localStorage.getItem(getReadStorageKey()) || "[]");
+    return Array.isArray(value) ? value : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveReadNotificationKey = (notification = {}) => {
+  const key = getNotificationKey(notification);
+  const keys = new Set(readNotificationKeys());
+  keys.add(key);
+  localStorage.setItem(getReadStorageKey(), JSON.stringify(Array.from(keys)));
 };
 
 function Notifications() {
@@ -127,8 +144,15 @@ function Notifications() {
       const filtered = items.filter(
         (it) => !isDeletedNotification(it) && isVisibleNotification(it) && (isSuper || matchesTargetUsers(it, role))
       );
+      const readKeys = new Set(readNotificationKeys());
 
-      setNotifications(filtered);
+      setNotifications(
+        filtered.map((item) =>
+          readKeys.has(getNotificationKey(item)) && String(item.status || "").toLowerCase() !== "read"
+            ? { ...item, targetUsers: "Active Admins", status: "Read" }
+            : { ...item, targetUsers: "Active Admins" }
+        )
+      );
     } catch (requestError) {
       setError(requestError.message || "Unable to load notifications.");
     } finally {
@@ -152,6 +176,22 @@ function Notifications() {
     };
 
     loadTargetOptions();
+  }, []);
+
+  useEffect(() => {
+    const handleNotificationRead = (event) => {
+      const readKey = event.detail?.key;
+      if (!readKey) return;
+
+      setNotifications((current) =>
+        current.map((item) =>
+          getNotificationKey(item) === readKey ? { ...item, status: "Read" } : item
+        )
+      );
+    };
+
+    window.addEventListener("cms:notification-read", handleNotificationRead);
+    return () => window.removeEventListener("cms:notification-read", handleNotificationRead);
   }, []);
 
   const handleChange = (event) => {
@@ -282,6 +322,7 @@ function Notifications() {
                 setNotifications((current) => current.filter((n) => getNotificationKey(n) !== getNotificationKey(item)));
               }}
               onRead={(item) => {
+                saveReadNotificationKey(item);
                 setNotifications((current) =>
                   current.map((n) =>
                     getNotificationKey(n) === getNotificationKey(item) ? { ...n, status: "Read" } : n

@@ -13,8 +13,7 @@ const LogoIcon = () => (
   </svg>
 );
 
-const FORGOT_PASSWORD_API =
-  apiUrl('Auth/forgot-password');
+const FORGOT_PASSWORD_API = apiUrl('Auth/forgot-password');
 
 const ForgotPassword = () => {
   const toast = useToast();
@@ -98,7 +97,7 @@ const ForgotPassword = () => {
             <input
               id="email"
               type="email"
-              placeholder="admin@gmail.com"
+              placeholder="Enter your registered email address"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -111,7 +110,7 @@ const ForgotPassword = () => {
           </div>
 
           <button type="submit" className="submit-btn" disabled={isLoading}>
-            {isLoading ? 'Sending OTP...' : 'Next'}
+            {isLoading ? 'Sending OTP...' : 'Next ->'}
           </button>
         </form>
 
@@ -120,7 +119,7 @@ const ForgotPassword = () => {
         </Link>
 
         <div className="auth-footer">
-          © {new Date().getFullYear()} CMS · Secure Admin Access
+          © {new Date().getFullYear()} CMS • Secure Admin Access
         </div>
       </div>
     </div>

@@ -169,7 +169,7 @@ const VerifyOTP = () => {
           </div>
 
           <button type="submit" className="submit-btn" disabled={isLoading}>
-            {isLoading ? 'Verifying...' : 'Verify OTP'}
+            {isLoading ? 'Verifying...' : 'Verify OTP ->'}
           </button>
         </form>
 
@@ -178,7 +178,7 @@ const VerifyOTP = () => {
         </Link>
 
         <div className="auth-footer">
-          © {new Date().getFullYear()} CMS · Secure Admin Access
+          © {new Date().getFullYear()} CMS • Secure Admin Access
         </div>
       </div>
     </div>

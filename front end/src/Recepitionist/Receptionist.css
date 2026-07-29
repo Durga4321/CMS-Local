@@ -42,6 +42,66 @@
   box-shadow: 0 6px 14px rgba(15, 157, 157, 0.2);
 }
 
+.rc-clinic-logo {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 1px solid #e4ecf7;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  color: #10b981;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.07);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.rc-clinic-logo svg {
+  stroke-width: 2.3;
+}
+
+.rc-clinic-logo small {
+  max-width: 36px;
+  color: #1d65c1;
+  font-size: 6px;
+  font-weight: 900;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rc-clinic-logo--emerald {
+  color: #10b981;
+}
+
+.rc-clinic-logo--dental {
+  color: #1d7ff2;
+  border-color: #dbeafe;
+}
+
+.rc-clinic-logo--dental small {
+  display: none;
+}
+
+.rc-clinic-logo--green {
+  color: #16a34a;
+}
+
+.rc-clinic-logo--sky {
+  color: #0ea5e9;
+}
+
+.rc-clinic-logo--amber {
+  color: #f59e0b;
+}
+
+.rc-clinic-tooth-svg {
+  color: #1d7ff2;
+}
+
 .rc-brand strong,
 .rc-profile strong {
   display: block;
@@ -109,10 +169,62 @@
   font-weight: 600;
 }
 
+.rc-nav-link svg,
+.rc-nav-group-title svg {
+  flex: 0 0 auto;
+  transition: color 0.15s ease, stroke-width 0.15s ease;
+}
+
+.rc-nav > .rc-nav-link:nth-child(6n + 1) svg,
+.rc-nav-group:nth-child(6n + 1) .rc-nav-group-title svg {
+  color: #0ea5e9;
+}
+
+.rc-nav > .rc-nav-link:nth-child(6n + 2) svg,
+.rc-nav-group:nth-child(6n + 2) .rc-nav-group-title svg {
+  color: #0f9d9d;
+}
+
+.rc-nav > .rc-nav-link:nth-child(6n + 3) svg,
+.rc-nav-group:nth-child(6n + 3) .rc-nav-group-title svg {
+  color: #7c3aed;
+}
+
+.rc-nav > .rc-nav-link:nth-child(6n + 4) svg,
+.rc-nav-group:nth-child(6n + 4) .rc-nav-group-title svg {
+  color: #f59e0b;
+}
+
+.rc-nav > .rc-nav-link:nth-child(6n + 5) svg,
+.rc-nav-group:nth-child(6n + 5) .rc-nav-group-title svg {
+  color: #16a34a;
+}
+
+.rc-nav > .rc-nav-link:nth-child(6n + 6) svg,
+.rc-nav-group:nth-child(6n + 6) .rc-nav-group-title svg {
+  color: #db2777;
+}
+
+.rc-nav-child:nth-child(3n + 1) svg {
+  color: #2563eb;
+}
+
+.rc-nav-child:nth-child(3n + 2) svg {
+  color: #8b5cf6;
+}
+
+.rc-nav-child:nth-child(3n + 3) svg {
+  color: #f59e0b;
+}
+
 .rc-nav-link.active {
   color: #0f9d9d;
   background: #dff3f3;
   box-shadow: none;
+}
+
+.rc-nav-link.active svg {
+  stroke-width: 2.6;
 }
 
 .rc-nav-group {

@@ -482,6 +482,7 @@ function PatientShell({ notifications, children, patient }) {
               {menuOpen ? (
                 <div className="pp-account-dropdown" role="menu">
                   <div className="pp-account-summary">
+                    <span className="pp-account-summary-avatar">{initials}</span>
                     <strong>{formatTitleCase(patient?.name || patient?.firstName || '')}</strong>
                     <span>{patient?.email || ''}</span>
                     <span className="pp-account-badge">Patient</span>
@@ -498,7 +499,11 @@ function PatientShell({ notifications, children, patient }) {
                     <span className="pp-account-menu-icon">
                       <UserRound size={20} />
                     </span>
-                    My Profile
+                    <span className="pp-account-menu-copy">
+                      <b>My Profile</b>
+                      <small>View and edit your profile</small>
+                    </span>
+                    <ChevronRight size={17} className="pp-account-menu-arrow" />
                   </button>
                   <button
                     type="button"
@@ -512,7 +517,11 @@ function PatientShell({ notifications, children, patient }) {
                     <span className="pp-account-menu-icon">
                       <KeyRound size={20} />
                     </span>
-                    Change Password
+                    <span className="pp-account-menu-copy">
+                      <b>Change Password</b>
+                      <small>Update your password</small>
+                    </span>
+                    <ChevronRight size={17} className="pp-account-menu-arrow" />
                   </button>
                   <button
                     type="button"
@@ -523,7 +532,10 @@ function PatientShell({ notifications, children, patient }) {
                     <span className="pp-account-menu-icon danger">
                       <LogOut size={20} />
                     </span>
-                    Logout
+                    <span className="pp-account-menu-copy">
+                      <b>Logout</b>
+                      <small>Sign out from your account</small>
+                    </span>
                   </button>
                 </div>
               ) : null}

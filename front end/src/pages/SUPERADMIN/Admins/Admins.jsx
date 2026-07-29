@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Eye, Pencil, Plus, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
+import { Cross, Eye, Leaf, Pencil, Phone, Plus, Sun, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
@@ -115,6 +115,32 @@ const mergeAdmins = (adminRows = [], userRows = []) => {
     });
 
   return Array.from(rows.values());
+};
+
+const getInitials = (value = "") => {
+  const parts = String(value || "Admin").trim().split(/\s+/).filter(Boolean);
+  return (parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : parts[0]?.slice(0, 2) || "A").toUpperCase();
+};
+
+const ToothLogo = () => (
+  <svg className="sa-clinic-tooth-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M7.45 3.8c1.2-.52 2.35-.28 3.18.17.86.47 1.88.47 2.74 0 .83-.45 1.98-.69 3.18-.17 2.2.95 3.13 3.25 2.43 5.87l-1.56 5.84c-.45 1.69-1.28 4.72-3.03 4.72-1.24 0-1.31-1.49-1.68-3.08-.18-.78-.43-1.37-.71-1.37s-.53.59-.71 1.37c-.37 1.59-.44 3.08-1.68 3.08-1.75 0-2.58-3.03-3.03-4.72L5.02 9.67C4.32 7.05 5.25 4.75 7.45 3.8Z"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const getClinicLogo = (clinicName = "") => {
+  const name = String(clinicName).toLowerCase();
+  if (name.includes("dental")) return { type: "tooth", tone: "dental" };
+  if (name.includes("pragathi")) return { type: "icon", icon: Leaf, tone: "green" };
+  if (name.includes("sai ram")) return { type: "icon", icon: Sun, tone: "sky" };
+  if (name.includes("primo") || name.includes("pirnav")) return { type: "icon", icon: Sun, tone: "amber" };
+  return { type: "icon", icon: Cross, tone: "emerald" };
 };
 
 function Admins() {
@@ -474,14 +500,26 @@ function Admins() {
     {
       key: "serial",
       label: "S.No.",
-      width: "minmax(52px, 0.25fr)",
+      width: "44px",
       render: (_admin, index) => index + 1,
     },
-    { key: "name", label: "Name", width: "minmax(120px, 0.75fr)" },
+    {
+      key: "name",
+      label: "Name",
+      width: "minmax(170px, 0.95fr)",
+      render: (admin) => (
+        <span className="sa-admin-name-cell">
+          <span className={`sa-admin-avatar sa-admin-avatar--${getInitials(admin.name || admin.email).charCodeAt(0) % 4}`}>
+            {getInitials(admin.name || admin.email)}
+          </span>
+          <b>{admin.name || "-"}</b>
+        </span>
+      ),
+    },
     {
       key: "email",
       label: "Email",
-      width: "minmax(220px, 1fr)",
+      width: "minmax(210px, 1fr)",
       cellClassName: "sa-table-cell--nowrap",
       render: (admin) => (
         <span title={admin.email || ""} className="sa-table-text-overflow">
@@ -489,12 +527,38 @@ function Admins() {
         </span>
       ),
     },
-            { key: "assignedClinic", label: "Assigned Clinic", width: "minmax(140px, 0.85fr)" },
-            { key: "phone", label: "Mobile Number", width: "minmax(118px, 0.65fr)", render: (admin) => (admin.phone || admin.raw?.phone || admin.raw?.mobileNumber || "-") },
+            {
+              key: "assignedClinic",
+              label: "Assigned Clinic",
+              width: "minmax(160px, 0.8fr)",
+              render: (admin) => {
+                const logo = getClinicLogo(admin.assignedClinic);
+                const LogoIcon = logo.icon;
+                return (
+                  <span className="sa-admin-clinic-cell">
+                    <span className={`sa-admin-clinic-logo sa-admin-clinic-logo--${logo.tone}`}>
+                      {logo.type === "tooth" ? <ToothLogo /> : <LogoIcon size={15} />}
+                    </span>
+                    <span>{admin.assignedClinic || "-"}</span>
+                  </span>
+                );
+              },
+            },
+            {
+              key: "phone",
+              label: "Mobile Number",
+              width: "minmax(126px, 0.6fr)",
+              render: (admin) => (
+                <span className="sa-admin-icon-text sa-admin-icon-text--phone">
+                  <Phone size={15} />
+                  <span>{admin.phone || admin.raw?.phone || admin.raw?.mobileNumber || "-"}</span>
+                </span>
+              ),
+            },
             {
               key: "status",
               label: "Status",
-              width: "minmax(90px, 0.6fr)",
+              width: "100px",
               render: (admin) => (
                 <span className={`sa-badge ${admin.status === "Active" ? "is-active" : "is-danger"}`}>
                   {admin.status}
@@ -504,27 +568,27 @@ function Admins() {
     {
       key: "actions",
       label: "Actions",
-      width: "minmax(152px, 0.7fr)",
+      width: "152px",
       render: (admin) => {
         const isActive = String(admin.status || "").trim().toLowerCase() === "active";
         const disabledTitle = "Record inactive — only status toggle is available";
 
         return (
           <div className="sa-actions">
-            <button className="sa-icon-btn" onClick={() => setSelectedAdmin(admin)} disabled={!isActive} title={isActive ? "View admin" : disabledTitle}>
+            <button className="sa-icon-btn sa-icon-btn--view" onClick={() => setSelectedAdmin(admin)} disabled={!isActive} title={isActive ? "View admin" : disabledTitle}>
               <Eye size={15} />
             </button>
-            <button className="sa-icon-btn" onClick={() => openEditForm(admin)} disabled={!isActive} title={isActive ? "Edit admin" : disabledTitle}>
+            <button className="sa-icon-btn sa-icon-btn--edit" onClick={() => openEditForm(admin)} disabled={!isActive} title={isActive ? "Edit admin" : disabledTitle}>
               <Pencil size={15} />
             </button>
             <button
-              className="sa-icon-btn"
+              className="sa-icon-btn sa-icon-btn--status"
               onClick={() => toggleAdminStatus(admin)}
               title={admin.status === "Active" ? "Deactivate admin" : "Activate admin"}
             >
               {admin.status === "Active" ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
             </button>
-            <button className="sa-icon-btn" onClick={() => handleDelete(admin)} disabled={!isActive} title={isActive ? "Delete admin" : disabledTitle}>
+            <button className="sa-icon-btn sa-icon-btn--delete" onClick={() => handleDelete(admin)} disabled={!isActive} title={isActive ? "Delete admin" : disabledTitle}>
               <Trash2 size={15} />
             </button>
           </div>
@@ -698,12 +762,14 @@ function Admins() {
       ) : null}
 
       <DataTable
+        className="sa-table--admins"
         columns={columns}
         rows={pagedRows}
         loading={loading}
         error={!showForm ? error : ""}
         rowIndexOffset={(currentPage - 1) * pageSize}
         emptyMessage="No admins match your filters."
+        preserveColumnFractions
       />
 
       <div className="sa-table-footer">

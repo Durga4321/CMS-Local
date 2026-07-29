@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, Pencil, Plus, ShieldCheck, Trash2, UsersRound, X } from "lucide-react";
 import {
   deleteRole,
   fetchAdmins,
@@ -27,7 +27,7 @@ const isAdminControlRole = (role = {}) => {
 const emptyForm = {
   id: "",
   roleName: "Admin",
-  module: "Admin Management",
+  module: "All Modules",
   users: "0",
   status: "Active",
   permissions: ["View"],
@@ -173,6 +173,9 @@ function RolesPermissions() {
     return admins.filter((admin) => normalizeKey(admin.role || "Admin") === roleKey);
   };
 
+  const displayAdmins = (role) => getAssignedAdmins(role).slice(0, 4);
+  const hiddenAdminCount = (role) => Math.max(0, getAssignedAdmins(role).length - 4);
+
   const matrixRole = activeRoles[0] || {
     roleName: "Admin",
     module: "General",
@@ -288,10 +291,10 @@ function RolesPermissions() {
         </form>
       ) : null}
 
-      <div className="sa-table">
+      <div className="sa-table sa-table--roles">
         <div
           className="sa-table-head"
-          style={{ gridTemplateColumns: "70px minmax(140px,.7fr) minmax(150px,.8fr) minmax(190px,1fr) minmax(220px,1fr) 120px" }}
+          style={{ gridTemplateColumns: "44px minmax(130px,.7fr) minmax(120px,.65fr) minmax(170px,.9fr) minmax(230px,1fr) 88px" }}
         >
           <span>S.No.</span>
           <span>Role</span>
@@ -310,29 +313,50 @@ function RolesPermissions() {
           <div
             className="sa-table-row"
             key={role.key || role.id || `${role.roleName}-${index}`}
-            style={{ gridTemplateColumns: "70px minmax(140px,.7fr) minmax(150px,.8fr) minmax(190px,1fr) minmax(220px,1fr) 120px" }}
+            style={{ gridTemplateColumns: "44px minmax(130px,.7fr) minmax(120px,.65fr) minmax(170px,.9fr) minmax(230px,1fr) 88px" }}
           >
             <span className="sa-table-cell">{index + 1}</span>
             <span className="sa-table-cell">
-              <b>{role.roleName || role.name || "-"}</b>
-            </span>
-            <span className="sa-table-cell">
-              {role.module || "-"}
-            </span>
-            <span className="sa-table-cell">
-              <span className="sa-role-admin-list">
-                <b>{getAssignedAdmins(role).length} admins</b>
-                <span className="sa-role-admin-names">
-                  {getAssignedAdmins(role).map((admin) => (
-                    <span className="sa-role-admin-name" key={admin.id || admin.email || admin.name}>
-                      {admin.name || admin.email}
-                    </span>
-                  ))}
+              <span className="sa-role-main">
+                <span className="sa-role-logo">
+                  <ShieldCheck size={24} />
+                </span>
+                <span>
+                  <b>{role.roleName || role.name || "Admin"}</b>
+                  <em>System Role</em>
                 </span>
               </span>
             </span>
             <span className="sa-table-cell">
-              {normalizePermissionList(role.permissions || []).join(", ")}
+              <span className="sa-role-module">
+                <b>{role.module || "All Modules"}</b>
+                <span>Full Access</span>
+              </span>
+            </span>
+            <span className="sa-table-cell">
+              <span className="sa-role-admin-list">
+                <b><UsersRound size={15} /> {getAssignedAdmins(role).length} admins</b>
+                <span className="sa-role-admin-names">
+                  {displayAdmins(role).map((admin) => (
+                    <span className="sa-role-admin-name" key={admin.id || admin.email || admin.name}>
+                      {admin.name || admin.email}
+                    </span>
+                  ))}
+                  {hiddenAdminCount(role) ? (
+                    <span className="sa-role-admin-name sa-role-admin-more">+{hiddenAdminCount(role)} more</span>
+                  ) : null}
+                </span>
+              </span>
+            </span>
+            <span className="sa-table-cell">
+              <span className="sa-role-permissions">
+                {normalizePermissionList(role.permissions || []).map((permission) => (
+                  <span key={permission}>
+                    <Check size={11} />
+                    {permission}
+                  </span>
+                ))}
+              </span>
             </span>
             <span className="sa-actions">
               <button className="sa-icon-btn" type="button" onClick={() => openEdit(role)} title="Edit role">

@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { BarChart3, Download, IndianRupee, Search } from "lucide-react";
+import { Building2, Download, Eye, IndianRupee, Search, TrendingUp } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
-import Charts from "../../../components/superadmin/Charts";
-import DashboardCards from "../../../components/superadmin/DashboardCards";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
 import { fetchReports } from "../superAdminApi";
@@ -39,6 +37,7 @@ const formatDateTime = (value) => {
 };
 const getPerformance = (row) => (row.status === "Active" ? "Active" : "Inactive");
 const reportTabs = ["Revenue Report"];
+const chartPalette = ["#0f9f8f", "#2563eb", "#8b5cf6", "#f59e0b", "#94a3b8"];
 
 const toDateInputValue = (date) => date.toISOString().slice(0, 10);
 const getDefaultStartDate = () => {
@@ -89,6 +88,17 @@ const buildRowsHtml = (rows, columns) =>
     `
     )
     .join("");
+
+const getInitials = (value = "") => {
+  const parts = String(value || "NA").trim().split(/\s+/).filter(Boolean);
+  return (parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : parts[0]?.slice(0, 2) || "NA").toUpperCase();
+};
+
+const getPerformanceScore = (row, maxRevenue = 1) => {
+  if (row.performanceScore != null) return Math.round(toNumber(row.performanceScore));
+  const score = Math.round((toNumber(row.revenue) / Math.max(maxRevenue, 1)) * 100);
+  return Math.min(100, Math.max(row.status === "Active" ? 45 : 0, score));
+};
 
 function Reports() {
   const [rows, setRows] = useState([]);
@@ -162,27 +172,55 @@ function Reports() {
     {
       key: "serial",
       label: "S.No.",
-      width: "minmax(52px, 0.25fr)",
+      width: "46px",
       render: (_item, index) => index + 1,
     },
     {
       key: "adminName",
       label: "Admin",
-      width: "minmax(120px, 0.8fr)",
-      render: (clinic) => getAdminDisplayName(clinic.adminName),
+      width: "minmax(180px, 1fr)",
+      render: (clinic) => {
+        const adminName = getAdminDisplayName(clinic.adminName);
+        return (
+          <span className="sa-report-admin">
+            <span>{getInitials(adminName)}</span>
+            <b>{adminName}</b>
+          </span>
+        );
+      },
     },
-    { key: "name", label: "Clinic", width: "minmax(130px, 0.85fr)" },
+    { key: "name", label: "Clinic", width: "minmax(170px, 1fr)" },
     {
       key: "revenue",
       label: "Total Revenue",
-      width: "minmax(120px, 0.7fr)",
+      width: "minmax(140px, 0.8fr)",
       render: (clinic) => formatIndianCurrency(clinic.revenue),
     },
     {
       key: "performance",
       label: "Clinic Performance",
-      width: "minmax(140px, 0.8fr)",
-      render: (clinic) => getPerformance(clinic),
+      width: "minmax(190px, 1fr)",
+      render: (clinic) => {
+        const maxRevenue = Math.max(...rows.map((row) => toNumber(row.revenue)), 1);
+        const score = getPerformanceScore(clinic, maxRevenue);
+        return (
+          <span className="sa-report-performance">
+            <i><b style={{ width: `${score}%` }} /></i>
+            <strong>{score}%</strong>
+          </span>
+        );
+      },
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      width: "76px",
+      cellClassName: "sa-table-cell--actions",
+      render: (clinic) => (
+        <button className="sa-icon-btn sa-icon-btn--view" type="button" title={`View ${clinic.name || "clinic"}`}>
+          <Eye size={14} />
+        </button>
+      ),
     },
   ];
 
@@ -230,22 +268,76 @@ function Reports() {
     };
   }, [filteredRows, backendSummary]);
 
-  const summaryCards = useMemo(
+  const maxChartRevenue = useMemo(
+    () => Math.max(...filteredChartData.map((point) => toNumber(point.revenue)), 1),
+    [filteredChartData]
+  );
+
+  const maxClinicRevenue = useMemo(
+    () => Math.max(...filteredRows.map((row) => toNumber(row.revenue)), 1),
+    [filteredRows]
+  );
+
+  const avgClinicPerformance = useMemo(() => {
+    if (!filteredRows.length) return 0;
+    const total = filteredRows.reduce((sum, row) => sum + getPerformanceScore(row, maxClinicRevenue), 0);
+    return Math.round(total / filteredRows.length);
+  }, [filteredRows, maxClinicRevenue]);
+
+  const clinicBreakdown = useMemo(() => {
+    const sorted = [...filteredRows].sort((left, right) => toNumber(right.revenue) - toNumber(left.revenue));
+    const topRows = sorted.slice(0, 4);
+    const otherRevenue = sorted.slice(4).reduce((sum, row) => sum + toNumber(row.revenue), 0);
+    const rowsForChart = otherRevenue > 0
+      ? [...topRows, { name: "Others", revenue: otherRevenue }]
+      : topRows;
+    const total = Math.max(rowsForChart.reduce((sum, row) => sum + toNumber(row.revenue), 0), 1);
+
+    return rowsForChart.map((row, index) => ({
+      name: row.name || "Clinic",
+      revenue: toNumber(row.revenue),
+      color: chartPalette[index % chartPalette.length],
+      percent: Math.round((toNumber(row.revenue) / total) * 1000) / 10,
+    }));
+  }, [filteredRows]);
+
+  const donutGradient = useMemo(() => {
+    if (!clinicBreakdown.length) return "#e2e8f0 0 100%";
+    let current = 0;
+    return clinicBreakdown
+      .map((item) => {
+        const start = current;
+        current += item.percent;
+        return `${item.color} ${start}% ${current}%`;
+      })
+      .join(", ");
+  }, [clinicBreakdown]);
+
+  const reportCards = useMemo(
     () => [
       {
         label: "Total Revenue",
         value: formatIndianCurrency(reportSummary.totalRevenue),
+        helper: "Across all clinics",
         icon: IndianRupee,
-        tone: "teal",
+        tone: "mint",
       },
       {
-        label: "Clinic Count",
+        label: "Avg. Clinic Performance",
+        value: `${avgClinicPerformance}%`,
+        helper: "Performance Score",
+        icon: TrendingUp,
+        tone: "violet",
+      },
+      {
+        label: "Total Clinics",
         value: `${reportSummary.clinicCount}`,
-        icon: BarChart3,
-        tone: "green",
+        helper: "Active clinics",
+        icon: Building2,
+        tone: "amber",
       },
     ],
-    [reportSummary]
+    [avgClinicPerformance, reportSummary]
   );
 
   const exportRows = useMemo(
@@ -394,7 +486,7 @@ function Reports() {
         onFilterChange={setStatus}
       />
 
-      <div className="sa-panel" style={{ marginBottom: 16 }}>
+      <div className="sa-report-shell">
         <div className="sa-tabs">
           {reportTabs.map((tab) => (
             <button
@@ -407,7 +499,7 @@ function Reports() {
             </button>
           ))}
         </div>
-        <div className="sa-form-grid" style={{ marginTop: 14 }}>
+        <div className="sa-report-filters">
           <div className="sa-form-field">
             <label>Start Date</label>
             <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
@@ -416,37 +508,88 @@ function Reports() {
             <label>End Date</label>
             <input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
           </div>
-        </div>
-        <div className="sa-page-actions" style={{ marginTop: 14 }}>
           <button className="sa-btn sa-btn-primary" type="button" onClick={handleFetchData} disabled={loading}>
             <Search size={16} />
-            {loading ? "Fetching..." : "Fetch Data"}
+            {loading ? "Fetching..." : "Fetch Report"}
           </button>
         </div>
       </div>
 
-      <div className="sa-panel">
-        <h3>{activeTab}</h3>
-        <p>Date-filtered clinic revenue chart and table.</p>
-        {loading ? <div className="sa-state">Loading reports...</div> : null}
-        {!loading && error ? <div className="sa-state sa-state--error">{error}</div> : null}
-        {!loading && !error ? (
-          <>
-            <DashboardCards cards={summaryCards} />
-            <Charts data={filteredChartData} type="bar" dataKey="revenue" />
-          </>
-        ) : null}
-      </div>
+      {loading ? <div className="sa-state">Loading reports...</div> : null}
+      {!loading && error ? <div className="sa-state sa-state--error">{error}</div> : null}
+      {!loading && !error ? (
+        <>
+          <div className="sa-report-card-grid">
+            {reportCards.map(({ label, value, helper, icon: Icon, tone }) => (
+              <div className="sa-report-metric" key={label}>
+                <span className={`sa-report-metric-icon sa-report-metric-icon--${tone}`}>
+                  <Icon size={20} />
+                </span>
+                <div>
+                  <p>{label}</p>
+                  <h2>{value}</h2>
+                  <small>{helper}</small>
+                </div>
+              </div>
+            ))}
+          </div>
 
-      <div style={{ marginTop: 16 }}>
-        <DataTable
-          columns={columns}
-          rows={filteredRows.slice(0, 5)}
-          loading={loading}
-          error={error}
-          emptyMessage="No clinic report records found."
-        />
-      </div>
+          <div className="sa-report-chart-grid">
+            <section className="sa-report-panel">
+              <h3>Revenue Overview</h3>
+              <div className="sa-report-bars">
+                {filteredChartData.length ? filteredChartData.map((point) => {
+                  const height = Math.max(10, Math.round((toNumber(point.revenue) / maxChartRevenue) * 100));
+                  return (
+                    <div className="sa-report-bar-item" key={point.name}>
+                      <span style={{ height: `${height}%` }} title={`${point.name}: ${formatIndianCurrency(point.revenue)}`} />
+                      <small>{point.name}</small>
+                    </div>
+                  );
+                }) : <div className="sa-empty">No revenue data found.</div>}
+              </div>
+              <div className="sa-report-legend">
+                <i />
+                Revenue
+              </div>
+            </section>
+
+            <section className="sa-report-panel">
+              <h3>Revenue by Clinic</h3>
+              <div className="sa-report-donut-wrap">
+                <div className="sa-report-donut" style={{ background: `conic-gradient(${donutGradient})` }}>
+                  <span />
+                </div>
+                <div className="sa-report-donut-list">
+                  {clinicBreakdown.map((item) => (
+                    <div key={item.name}>
+                      <span><i style={{ background: item.color }} />{item.name}</span>
+                      <b>{formatIndianCurrency(item.revenue)} ({item.percent}%)</b>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div className="sa-report-table-wrap">
+            <DataTable
+              className="sa-table--report"
+              columns={columns}
+              rows={filteredRows.slice(0, 10)}
+              loading={false}
+              error=""
+              preserveColumnFractions
+              emptyMessage="No clinic report records found."
+            />
+            <div className="sa-table-footer">
+              <div className="sa-table-summary">
+                Showing {Math.min(filteredRows.length, 10)} of {filteredRows.length} records
+              </div>
+            </div>
+          </div>
+        </>
+      ) : null}
     </>
   );
 }

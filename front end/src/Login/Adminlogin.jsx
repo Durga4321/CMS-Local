@@ -487,7 +487,7 @@ const AdminLogin = () => {
         localStorage.setItem('adminRole', 'superadmin');
         localStorage.setItem('adminEmail', loginEmail);
         localStorage.setItem('adminName', displayName);
-        toast.success('Login successful');
+        toast.success({ title: 'Login successful', description: 'Welcome back, Super Admin!' });
         navigate('/superadmin/dashboard', { replace: true });
         return;
       }
@@ -498,7 +498,7 @@ const AdminLogin = () => {
         localStorage.setItem('doctorEmail', loginEmail);
         localStorage.setItem('doctorName', displayName);
         localStorage.setItem('doctorId', String(authData.doctorId || getClaim(claims, 'DoctorId') || ''));
-        toast.success('Login successful');
+        toast.success({ title: 'Login successful', description: 'Welcome back, Doctor!' });
         navigate('/doctor/dashboard', { replace: true });
         return;
       }
@@ -508,7 +508,7 @@ const AdminLogin = () => {
         localStorage.setItem('receptionistRole', role);
         localStorage.setItem('receptionistEmail', loginEmail);
         localStorage.setItem('receptionistName', displayName);
-        toast.success('Login successful');
+        toast.success({ title: 'Login successful', description: 'Welcome back, Receptionist!' });
         navigate('/reception/dashboard', { replace: true });
         return;
       }
@@ -519,7 +519,7 @@ const AdminLogin = () => {
         localStorage.setItem('patientEmail', loginEmail);
         localStorage.setItem('patientName', displayName);
         localStorage.setItem('patientId', String(authData.patientId || getClaim(claims, 'PatientId') || ''));
-        toast.success('Login successful');
+        toast.success({ title: 'Login successful', description: 'Welcome back, Patient!' });
         navigate('/patient/dashboard', { replace: true });
         return;
       }
@@ -528,7 +528,7 @@ const AdminLogin = () => {
       localStorage.setItem('adminRole', role);
       localStorage.setItem('adminEmail', loginEmail);
       localStorage.setItem('adminName', displayName);
-      toast.success('Login successful');
+      toast.success({ title: 'Login successful', description: 'Welcome back!' });
       navigate('/dashboard', { replace: true });
     } catch {
       setErrors({
@@ -608,28 +608,35 @@ const AdminLogin = () => {
 
           {errors.api ? <span className="error-message">{errors.api}</span> : null}
 
-              <label className="remember-me-row">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-            />
-            <span>Remember Me</span>
-          </label>
+          <div className="auth-inline-actions">
+            <label className="remember-me-row">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <span>Remember Me</span>
+            </label>
+            <Link to="/forgot-password" className="forgot-password-link">
+              Forgot Password?
+            </Link>
+          </div>
 
           <button type="submit" className="submit-btn" disabled={isLoading}>
-            {isLoading ? 'Logging in...' : 'Login'}
+            {isLoading ? 'Logging in...' : 'Login ->'}
           </button>
         </form>
 
-        <div className="auth-actions-row">
-          <Link to="/forgot-password" className="forgot-password-link">
-            Forgot Password?
-          </Link>
+        <div className="auth-register-row">
+          <p className="auth-register">New patient?</p>
+          <Link to="/register/patient" className="create-account-btn create-account-btn--outline" role="button">Create Account</Link>
         </div>
 
-        <div className="auth-register-row">
-          <p className="auth-register">New patient? <Link to="/register/patient" className="create-account-btn" role="button">Create account</Link></p>
+        <div className="auth-footer auth-footer--split">
+          <span>Your data is secure with us</span>
+          <Link to="/forgot-password">Terms & Conditions</Link>
+          <Link to="/forgot-password">Privacy Policy</Link>
+          <span>Version 1.0.0</span>
         </div>
 
       </div>

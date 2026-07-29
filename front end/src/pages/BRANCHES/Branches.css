@@ -86,6 +86,65 @@
   color: #0f766e;
 }
 
+.branches-clinic-logo {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border: 1px solid #e4ecf7;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.branches-clinic-logo svg {
+  stroke-width: 2.3;
+}
+
+.branches-clinic-logo small {
+  max-width: 31px;
+  color: #1d65c1;
+  font-size: 5.5px;
+  font-weight: 900;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.branches-clinic-logo--emerald {
+  color: #10b981;
+}
+
+.branches-clinic-logo--dental {
+  color: #1d7ff2;
+  border-color: #dbeafe;
+}
+
+.branches-clinic-logo--dental small {
+  display: none;
+}
+
+.branches-clinic-logo--green {
+  color: #16a34a;
+}
+
+.branches-clinic-logo--sky {
+  color: #0ea5e9;
+}
+
+.branches-clinic-logo--amber {
+  color: #f59e0b;
+}
+
+.branches-clinic-tooth-svg {
+  color: #1d7ff2;
+}
+
 .branches-clinic-band span {
   color: #64748b;
   font-size: 12px;

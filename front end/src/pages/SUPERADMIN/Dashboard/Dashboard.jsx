@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Activity, Building2, IndianRupee, ShieldCheck, UserCheck, Users } from "lucide-react";
+import { Activity, Building2, IndianRupee, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../../components/superadmin/Header";
 import DashboardCards from "../../../components/superadmin/DashboardCards";
@@ -73,24 +73,10 @@ function Dashboard() {
         onClick: () => navigate("/superadmin/admins"),
       },
       {
-        label: "Total Users",
-        value: getDashboardMetric(metrics, ["totalUsers", "users", "userCount"]),
-        icon: Users,
-        tone: "amber",
-        onClick: () => navigate("/superadmin/users"),
-      },
-      {
-        label: "Active Users",
-        value: getDashboardMetric(metrics, ["activeUsers", "activeUserCount"]),
-        icon: UserCheck,
-        tone: "green",
-        onClick: () => navigate("/superadmin/users"),
-      },
-      {
         label: "Revenue Summary",
         value: formatCurrency(getDashboardMetric(metrics, ["totalRevenue", "revenue", "revenueSummary"])),
         icon: IndianRupee,
-        tone: "teal",
+        tone: "amber",
         onClick: () => navigate("/superadmin/reports"),
       },
     ];
@@ -104,7 +90,7 @@ function Dashboard() {
     <>
       <Header
         title="Super Admin Dashboard"
-        subtitle="Platform-wide clinics, users, revenue, and operational activity."
+        subtitle="Platform-wide clinics, revenue, and operational activity."
       />
 
       {error ? <div className="sa-state sa-state--error">{error}</div> : null}
@@ -114,8 +100,8 @@ function Dashboard() {
       <div className="sa-grid">
         <div className="sa-panel">
           <h3>Charts & Statistics</h3>
-          <p>Revenue and user growth across all clinics.</p>
-          <Charts data={revenueData} dataKey="revenue" secondaryKey="users" />
+          <p>Revenue growth across all clinics.</p>
+          <Charts data={revenueData} dataKey="revenue" />
         </div>
 
         <div className="sa-panel">

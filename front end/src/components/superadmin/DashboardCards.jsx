@@ -10,7 +10,7 @@ function DashboardCards({ cards = [] }) {
       {cards.map(({ label, value, icon: Icon, tone, onClick }) => (
         <button
           type="button"
-          className="sa-stat-card"
+          className={`sa-stat-card sa-stat-card--${tone || "teal"}`}
           key={label}
           onClick={onClick}
           disabled={!onClick}

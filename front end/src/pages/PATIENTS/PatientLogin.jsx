@@ -248,11 +248,12 @@ function PatientLogin() {
       <div className="auth-veil" aria-hidden="true" />
 
       <div className="auth-card auth-card--login-compact">
-        {/* <div className="auth-logo" aria-hidden="true">
+        <div className="auth-logo" aria-hidden="true">
           <Heart size={20} />
-        </div> */}
+        </div>
 
         <h2>Patient Login</h2>
+        <p className="subtitle">Welcome back! Please login to your account.</p>
         {successMessage ? <p className="success-message">{successMessage}</p> : null}
 
         <form className="auth-form" onSubmit={handleLogin} noValidate>
@@ -297,26 +298,31 @@ function PatientLogin() {
             {errors.password && <span className="error-message">{errors.password}</span>}
           </div>
 
-          <label className="remember-me-row">
-            <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
-            <span>Remember Me</span>
-          </label>
+          <div className="auth-inline-actions">
+            <label className="remember-me-row">
+              <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+              <span>Remember Me</span>
+            </label>
+            <Link to="/forgot-password" className="forgot-password-link">Forgot Password?</Link>
+          </div>
 
           {errors.api ? <span className="error-message">{errors.api}</span> : null}
 
           <button type="submit" className="submit-btn" disabled={isLoading}>
-            {isLoading ? 'Signing in…' : 'Login'}
+            {isLoading ? 'Signing in...' : 'Login'}
           </button>
         </form>
 
-        <div className="auth-actions-row">
-          <Link to="/forgot-password" className="forgot-password-link">Forgot Password?</Link>
-        </div>
-
         <div className="auth-register-row" style={{ marginTop: '0.6rem' }}>
           <p className="auth-register">
-            Staff user? <Link to="/login" className="create-account-btn" role="button">Staff Login</Link>
+            Staff user?
           </p>
+          <Link to="/login" className="create-account-btn create-account-btn--outline" role="button">Staff Login</Link>
+        </div>
+
+        <div className="auth-footer auth-footer--split">
+          <span>Your data is secure with us</span>
+          <Link to="/forgot-password">Need help? Contact Support</Link>
         </div>
       </div>
     </div>
