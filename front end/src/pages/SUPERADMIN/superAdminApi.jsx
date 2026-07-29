@@ -786,14 +786,14 @@ export const normalizeLoginLog = (log = {}, index = 0) => {
 };
 
 const normalizeNotificationTarget = (target = "") => {
-  const value = String(target || "All Active Users").trim();
+  const value = String(target || "Active Admins").trim();
   const normalized = value.toLowerCase();
 
   if (normalized.includes("admin")) return "Active Admins";
   if (normalized.includes("active user") || normalized === "active users" || normalized.includes("user"))
-    return "All Active Users";
+    return "Active Admins";
 
-  return "All Active Users";
+  return "Active Admins";
 };
 
 const getNotificationTarget = (notification = {}) => {
@@ -818,7 +818,7 @@ const getNotificationTarget = (notification = {}) => {
     return "Active Admins";
   }
 
-  return normalizeNotificationTarget(targetValues[0] || "All Active Users");
+  return normalizeNotificationTarget(targetValues[0] || "Active Admins");
 };
 
 export const normalizeNotification = (notification = {}) => ({
@@ -831,14 +831,14 @@ export const normalizeNotification = (notification = {}) => ({
 });
 
 const getNotificationAudienceCode = (target = "") =>
-  normalizeNotificationTarget(target) === "Active Admins" ? "admins" : "all";
+  normalizeNotificationTarget(target) === "Active Admins" ? "admins" : "admins";
 
 const buildNotificationPayload = (notification = {}) => {
   const targetUsers = normalizeNotificationTarget(
     pick(
       notification,
       ["targetUsers", "audience", "target", "recipient", "targetAudience", "userType", "role"],
-      "All Active Users"
+      "Active Admins"
     )
   );
   const audienceCode = getNotificationAudienceCode(targetUsers);
@@ -1976,50 +1976,15 @@ export const fetchNotifications = async () => {
 };
 
 export const fetchNotificationTargetOptions = async () => {
-  const [adminsResult, usersResult, doctorsResult, receptionistsResult] = await Promise.allSettled([
-    superAdminRequest(SUPER_ADMIN_API.admins),
-    superAdminRequest(SUPER_ADMIN_API.users),
-    superAdminRequest("Doctor"),
-    superAdminRequest("Receptionist"),
-  ]);
+  const [adminsResult] = await Promise.allSettled([superAdminRequest(SUPER_ADMIN_API.admins)]);
   const adminRows =
     adminsResult.status === "fulfilled" ? asArray(adminsResult.value).filter(isActiveRecord) : [];
-  const userRows =
-    usersResult.status === "fulfilled" ? asArray(usersResult.value).filter(isActiveRecord) : [];
-  const doctorRows =
-    doctorsResult.status === "fulfilled" ? asArray(doctorsResult.value).filter(isActiveRecord) : [];
-  const receptionistRows =
-    receptionistsResult.status === "fulfilled" ? asArray(receptionistsResult.value).filter(isActiveRecord) : [];
-
-  // Build a deduplicated set of active user identities (prefer email, fallback to id)
-  const normalizeIdentity = (row = {}) => {
-    const email = pick(row, ["email", "emailAddress", "adminEmail", "AdminEmail", "doctorEmail", "receptionistEmail"], "") || "";
-    const id = pick(row, ["id", "userId", "adminId", "doctorId", "receptionistId", "_id"], "") || "";
-    const key = (String(email || id) || "").toLowerCase().trim();
-    return key;
-  };
-
-  const unique = new Set();
-  adminRows.forEach((r) => unique.add(normalizeIdentity(r)));
-  userRows.forEach((r) => unique.add(normalizeIdentity(r)));
-  doctorRows.forEach((r) => unique.add(normalizeIdentity(r)));
-  receptionistRows.forEach((r) => unique.add(normalizeIdentity(r)));
 
   const counts = {
     admins: adminRows.length,
-    users: userRows.length,
-    doctors: doctorRows.length,
-    receptionists: receptionistRows.length,
   };
 
-  const allActiveUsersCount = Array.from(unique).filter(Boolean).length;
-
   const options = [
-    {
-      value: "All Active Users",
-      label: "All Active Users",
-      count: allActiveUsersCount,
-    },
     { value: "Active Admins", label: "Active Admins", count: counts.admins },
   ];
 

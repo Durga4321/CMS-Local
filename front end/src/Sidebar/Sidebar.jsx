@@ -30,6 +30,8 @@ const items = [
   { to: "/patients", label: "Patients", icon: UserRound },
   { to: "/appointments", label: "Appointments", icon: CalendarDays },
   { to: "/DoctorSchedule/schedule", label: "Schedule Settings", icon: Settings2 },
+  { to: "/roles", label: "Roles & Permissions", icon: ShieldCheck },
+  { to: "/users", label: "User Management", icon: Users },
   { to: "/reports", label: "Reports", icon: FileBarChart2 },
 ];
 
@@ -47,7 +49,6 @@ const superAdminItems = [
   { to: "/superadmin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/superadmin/clinics", label: "Clinics", icon: Building2 },
   { to: "/superadmin/admins", label: "Admins", icon: UserCog },
-  { to: "/superadmin/users", label: "Users", icon: Users },
   { to: "/superadmin/roles", label: "Roles & Permissions", icon: ShieldCheck },
   { to: "/superadmin/settings", label: "Settings", icon: Settings2 },
   { to: "/superadmin/reports", label: "Reports", icon: FileBarChart2 },

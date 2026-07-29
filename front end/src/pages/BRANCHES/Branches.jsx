@@ -17,6 +17,7 @@ import { useToast } from "../../components/ToastProvider";
 import { formatTitleCase } from "../../utils/format";
 import {
   BRANCH_API_URL,
+  clearBranchCache,
   fetchBranchesForHospital,
   getApiHeaders,
   getBranchId,
@@ -502,6 +503,7 @@ function Branches() {
         (isEditing ? "Branch updated successfully" : "Branch created successfully");
       setSuccess(message);
       toast.success(message);
+      clearBranchCache(hospitalId);
       await fetchBranches();
       closeModal({ force: true });
     } catch (submitError) {
@@ -531,6 +533,7 @@ function Branches() {
         throw new Error(await parseErrorMessage(response, "Unable to update branch status."));
       }
 
+      clearBranchCache(hospitalId);
       setBranches((previous) =>
         previous.map((item) =>
           String(getBranchId(item)) === String(branchId)
@@ -578,6 +581,7 @@ function Branches() {
         throw new Error(await parseErrorMessage(response, "Unable to delete branch."));
       }
 
+      clearBranchCache(hospitalId);
       setBranches((previous) =>
         previous.filter((item) => String(getBranchId(item)) !== String(branchId))
       );

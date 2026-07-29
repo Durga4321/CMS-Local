@@ -8,6 +8,7 @@ import Prescription from "./pages/Prescription";
 import DoctorAppointments from "./pages/DoctorAppointments";
 import Completion from "./pages/Completion";
 import UserProfilePage from "../profile/UserProfilePage";
+import DoctorSchedule from "../pages/DOCTORS/DoctorSchedule";
 
 function DoctorApp() {
   return (
@@ -22,6 +23,7 @@ function DoctorApp() {
         <Route path="consultation" element={<Consultation />} />
         <Route path="prescription" element={<Prescription />} />
         <Route path="appointments" element={<DoctorAppointments />} />
+        <Route path="schedule" element={<DoctorSchedule selfMode />} />
         <Route path="completion" element={<Completion />} />
         <Route path="profile" element={<UserProfilePage roleType="doctor" />} />
 
