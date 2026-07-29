@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { BarChart3, Download, IndianRupee, Search, Users } from "lucide-react";
+import { BarChart3, Download, IndianRupee, Search } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import Charts from "../../../components/superadmin/Charts";
 import DashboardCards from "../../../components/superadmin/DashboardCards";
@@ -37,14 +37,8 @@ const formatDateTime = (value) => {
   const seconds = String(date.getSeconds()).padStart(2, "0");
   return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
 };
-const getPerformance = (row) => {
-  const users = toNumber(row.users);
-  if (users > 100) return "Excellent";
-  if (users > 50) return "Good";
-  if (users > 20) return "Average";
-  return "Poor";
-};
-const reportTabs = ["Super Admin Reports", "Revenue Report", "User Activity"];
+const getPerformance = (row) => (row.status === "Active" ? "Active" : "Inactive");
+const reportTabs = ["Revenue Report"];
 
 const toDateInputValue = (date) => date.toISOString().slice(0, 10);
 const getDefaultStartDate = () => {
@@ -100,7 +94,6 @@ function Reports() {
   const [rows, setRows] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [backendSummary, setBackendSummary] = useState(null);
-  const [activityRows, setActivityRows] = useState([]);
   const [activeTab, setActiveTab] = useState(reportTabs[0]);
   const [startDate, setStartDate] = useState(getDefaultStartDate);
   const [endDate, setEndDate] = useState(getDefaultEndDate);
@@ -122,7 +115,6 @@ function Reports() {
 
         setRows(reports.rows);
         setChartData(reports.chartData);
-        setActivityRows(reports.activityRows || []);
         setBackendSummary(reports.summary || null);
         setError(reports.error);
       } catch (requestError) {
@@ -157,7 +149,6 @@ function Reports() {
       const reports = await fetchReports();
       setRows(reports.rows);
       setChartData(reports.chartData);
-      setActivityRows(reports.activityRows || []);
       setBackendSummary(reports.summary || null);
       setError(reports.error);
     } catch (requestError) {
@@ -188,15 +179,6 @@ function Reports() {
       render: (clinic) => formatIndianCurrency(clinic.revenue),
     },
     {
-      key: "users",
-      label: "Users",
-      width: "minmax(80px, 0.45fr)",
-      render: (clinic) =>
-        clinic.users !== undefined && clinic.users !== null && clinic.users !== ""
-          ? Number(clinic.users).toLocaleString("en-IN")
-          : "-",
-    },
-    {
       key: "performance",
       label: "Clinic Performance",
       width: "minmax(140px, 0.8fr)",
@@ -213,7 +195,7 @@ function Reports() {
     const query = search.trim().toLowerCase();
 
     return rows.filter((row) => {
-      const matchesSearch = [row.adminName, row.adminEmail, row.name, row.revenue, row.users, row.status]
+      const matchesSearch = [row.adminName, row.adminEmail, row.name, row.revenue, row.status]
         .some((value) => String(value).toLowerCase().includes(query));
       const matchesStatus = status === "All" || row.status === status;
       return matchesSearch && matchesStatus && isInsideDateRange(row, startDate, endDate);
@@ -225,36 +207,24 @@ function Reports() {
     [chartData, startDate, endDate]
   );
 
-  const filteredActivityRows = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    return activityRows.filter((row) => {
-      const matchesSearch = [row.title, row.detail, row.time]
-        .some((value) => String(value).toLowerCase().includes(query));
-      return matchesSearch && isInsideDateRange(row, startDate, endDate);
-    });
-  }, [activityRows, search, startDate, endDate]);
-
   const reportSummary = useMemo(() => {
-    // Prefer backend-provided summary counts when available to avoid frontend-derived duplication
+    const clinicCount = backendSummary?.clinicCount || backendSummary?.clinics || filteredRows.length;
+    const activeClinicRows = filteredRows.filter((row) => row.status === "Active").length;
+    const activeClinics = Math.min(activeClinicRows, clinicCount);
+
+    // Prefer backend-provided revenue only; clinic counts are derived from filtered clinic rows.
     if (backendSummary) {
       return {
         totalRevenue: backendSummary.totalRevenue || filteredRows.reduce((sum, row) => sum + toNumber(row.revenue), 0),
-        userCount: backendSummary.userCount || backendSummary.users || filteredRows.reduce((sum, row) => sum + toNumber(row.users), 0),
-        activeClinics: backendSummary.activeClinics || backendSummary.activeUserCount || filteredRows.filter((row) => row.status === "Active").length,
-        clinicCount: backendSummary.clinicCount || backendSummary.clinics || filteredRows.length,
+        activeClinics,
+        clinicCount,
       };
     }
 
-    const revenueRows = filteredRows.filter((row) => toNumber(row.revenue) > 0);
-    const userRows = revenueRows.length ? revenueRows : filteredRows;
     const totalRevenue = filteredRows.reduce((sum, row) => sum + toNumber(row.revenue), 0);
-    const userCount = userRows.reduce((sum, row) => sum + toNumber(row.users), 0);
-    const activeClinics = filteredRows.filter((row) => row.status === "Active").length;
 
     return {
       totalRevenue,
-      userCount,
       activeClinics,
       clinicCount: filteredRows.length,
     };
@@ -269,13 +239,7 @@ function Reports() {
         tone: "teal",
       },
       {
-        label: "Users",
-        value: reportSummary.userCount.toLocaleString("en-IN"),
-        icon: Users,
-        tone: "amber",
-      },
-      {
-        label: "Active Clinics",
+        label: "Clinic Count",
         value: `${reportSummary.clinicCount}`,
         icon: BarChart3,
         tone: "green",
@@ -291,7 +255,6 @@ function Reports() {
         "Admin Email": row.adminEmail || "-",
         Clinic: row.name || "-",
         Revenue: formatIndianCurrency(row.revenue),
-        Users: row.users || 0,
         Status: row.status || "-",
         Performance: getPerformance(row),
       })),
@@ -303,7 +266,6 @@ function Reports() {
       filteredChartData.map((point) => ({
         Period: point.name || "-",
         Revenue: formatIndianCurrency(point.revenue),
-        Users: point.users || 0,
       })),
     [filteredChartData]
   );
@@ -311,8 +273,7 @@ function Reports() {
   const summaryRows = useMemo(
     () => [
       { Metric: "Total Revenue", Value: formatIndianCurrency(reportSummary.totalRevenue) },
-      { Metric: "Users", Value: reportSummary.userCount.toLocaleString("en-IN") },
-      { Metric: "Active Clinics", Value: `${reportSummary.activeClinics}/${reportSummary.clinicCount}` },
+      { Metric: "Clinic Count", Value: reportSummary.clinicCount.toLocaleString("en-IN") },
       { Metric: "Date Range", Value: `${startDate || "All"} to ${endDate || "All"}` },
       { Metric: "Filter", Value: status },
       { Metric: "Search", Value: search.trim() || "All records" },
@@ -322,58 +283,23 @@ function Reports() {
 
   const hasReportContent = exportRows.length > 0 || chartRows.length > 0;
 
-  const exportExcel = () => {
+  const buildClinicReportHtml = () => {
     const summaryHtml = buildRowsHtml(summaryRows, ["Metric", "Value"]);
-    const chartHtml = buildRowsHtml(chartRows, ["Period", "Revenue", "Users"]);
-    const detailHtml = buildRowsHtml(exportRows, [
-      "Admin",
-      "Admin Email",
-      "Clinic",
-      "Revenue",
-      "Users",
-      "Status",
-      "Performance",
-    ]);
-    const workbook = `
-      <html>
-        <head><meta charset="utf-8" /></head>
-        <body>
-          <h2>Super Admin Reports</h2>
-          <p>Generated ${htmlEscape(formatDateTime(new Date()))}</p>
-          <h3>Summary Metrics</h3>
-          <table border="1"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${summaryHtml}</tbody></table>
-          <h3>Usage Analytics</h3>
-          <table border="1"><thead><tr><th>Period</th><th>Revenue</th><th>Users</th></tr></thead><tbody>${chartHtml || '<tr><td colspan="3">No chart data found.</td></tr>'}</tbody></table>
-          <h3>Filtered Report Data</h3>
-          <table border="1">
-            <thead><tr><th>Admin</th><th>Admin Email</th><th>Clinic</th><th>Revenue</th><th>Users</th><th>Status</th><th>Performance</th></tr></thead>
-            <tbody>${detailHtml || '<tr><td colspan="7">No report records found.</td></tr>'}</tbody>
-          </table>
-        </body>
-      </html>
-    `;
-    downloadFile("superadmin-reports.xls", workbook, "application/vnd.ms-excel;charset=utf-8");
-  };
-
-  const exportPdf = () => {
-    const summaryHtml = buildRowsHtml(summaryRows, ["Metric", "Value"]);
-    const chartHtml = buildRowsHtml(chartRows, ["Period", "Revenue", "Users"]);
+    const chartHtml = buildRowsHtml(chartRows, ["Period", "Revenue"]);
     const rowsHtml = buildRowsHtml(exportRows, [
       "Admin",
       "Admin Email",
       "Clinic",
       "Revenue",
-      "Users",
       "Status",
       "Performance",
     ]);
-    const printWindow = window.open("", "_blank", "width=900,height=700");
-    if (!printWindow) return;
 
-    printWindow.document.write(`
+    return `
       <html>
         <head>
-          <title>Super Admin Reports</title>
+          <meta charset="utf-8" />
+          <title>Clinic Reports</title>
           <style>
             body { font-family: Arial, sans-serif; padding: 24px; color: #0f172a; }
             h1 { margin: 0 0 6px; font-size: 22px; }
@@ -382,7 +308,7 @@ function Reports() {
             table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
             th, td { border: 1px solid #dbe3ed; padding: 10px; text-align: left; font-size: 12px; }
             th { background: #f1f5f9; }
-            .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+            .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 18px 0; }
             .metric { border: 1px solid #dbe3ed; padding: 12px; border-radius: 8px; }
             .metric b { display: block; font-size: 16px; }
             .metric span { color: #475569; font-size: 11px; }
@@ -393,19 +319,15 @@ function Reports() {
           </style>
         </head>
         <body>
-          <h1>Super Admin Reports</h1>
-          <p>Generated ${formatDateTime(new Date())}</p>
+          <h1>Clinic Reports</h1>
+          <p>Generated ${htmlEscape(formatDateTime(new Date()))}</p>
           <div class="metrics">
             <div class="metric"><b>${formatIndianCurrency(reportSummary.totalRevenue)}</b><span>Total Revenue</span></div>
-            <div class="metric"><b>${reportSummary.userCount.toLocaleString("en-IN")}</b><span>Users</span></div>
-            <div class="metric"><b>${reportSummary.activeClinics}/${reportSummary.clinicCount}</b><span>Active Clinics</span></div>
+            <div class="metric"><b>${reportSummary.clinicCount.toLocaleString("en-IN")}</b><span>Clinic Count</span></div>
           </div>
-          <h2>Summary Metrics</h2>
-          <table>
-            <thead><tr><th>Metric</th><th>Value</th></tr></thead>
-            <tbody>${summaryHtml}</tbody>
-          </table>
-          <h2>Usage Analytics</h2>
+          <h3>Summary Metrics</h3>
+          <table border="1"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${summaryHtml}</tbody></table>
+          <h3>Revenue Analytics</h3>
           <div class="bars">
             ${
               chartRows
@@ -418,28 +340,27 @@ function Reports() {
                 .join("") || "<p>No chart data found.</p>"
             }
           </div>
-          <table>
-            <thead><tr><th>Period</th><th>Revenue</th><th>Users</th></tr></thead>
-            <tbody>${chartHtml || '<tr><td colspan="3">No chart data found.</td></tr>'}</tbody>
-          </table>
-          <h2>Filtered Report Data</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Admin</th>
-                <th>Email</th>
-                <th>Clinic</th>
-                <th>Revenue</th>
-                <th>Users</th>
-                <th>Status</th>
-                <th>Performance</th>
-              </tr>
-            </thead>
-            <tbody>${rowsHtml || '<tr><td colspan="7">No report records found.</td></tr>'}</tbody>
+          <table border="1"><thead><tr><th>Period</th><th>Revenue</th></tr></thead><tbody>${chartHtml || '<tr><td colspan="2">No chart data found.</td></tr>'}</tbody></table>
+          <h3>Clinic Data</h3>
+          <table border="1">
+            <thead><tr><th>Admin</th><th>Admin Email</th><th>Clinic</th><th>Revenue</th><th>Status</th><th>Performance</th></tr></thead>
+            <tbody>${rowsHtml || '<tr><td colspan="6">No clinic records found.</td></tr>'}</tbody>
           </table>
         </body>
       </html>
-    `);
+    `;
+  };
+
+  const exportExcel = () => {
+    const workbook = buildClinicReportHtml();
+    downloadFile("superadmin-reports.xls", workbook, "application/vnd.ms-excel;charset=utf-8");
+  };
+
+  const exportPdf = () => {
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+    if (!printWindow) return;
+
+    printWindow.document.write(buildClinicReportHtml());
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
@@ -448,8 +369,8 @@ function Reports() {
   return (
     <>
       <Header
-        title="Super Admin Reports"
-        subtitle="Admin-wise clinic revenue, user activity, and performance reports."
+        title="Clinic Reports"
+        subtitle="Clinic revenue, count, and performance reports."
         action={
           <>
             <button className="sa-btn" onClick={exportPdf} disabled={!filteredRows.length}>
@@ -467,7 +388,7 @@ function Reports() {
       <SearchFilter
         value={search}
         onChange={setSearch}
-        placeholder="Search reports by admin, clinic, revenue, users, or status..."
+        placeholder="Search reports by admin, clinic, revenue, or status..."
         filters={statusFilters}
         selectedFilter={status}
         onFilterChange={setStatus}
@@ -506,48 +427,26 @@ function Reports() {
 
       <div className="sa-panel">
         <h3>{activeTab}</h3>
-        <p>
-          {activeTab === "Revenue Report"
-            ? "Date-filtered revenue chart and table."
-            : activeTab === "User Activity"
-              ? "Recent platform user and admin activity."
-              : "Platform revenue, users, and active clinic summary."}
-        </p>
+        <p>Date-filtered clinic revenue chart and table.</p>
         {loading ? <div className="sa-state">Loading reports...</div> : null}
         {!loading && error ? <div className="sa-state sa-state--error">{error}</div> : null}
         {!loading && !error ? (
           <>
             <DashboardCards cards={summaryCards} />
-            {activeTab !== "User Activity" ? (
-              <Charts data={filteredChartData} type="bar" dataKey="revenue" />
-            ) : (
-              <div className="sa-activity-list">
-                {filteredActivityRows.length ? filteredActivityRows.map((activity) => (
-                  <div className="sa-activity-item" key={activity.id}>
-                    <div>
-                      <b>{activity.title}</b>
-                      <p>{activity.detail}</p>
-                    </div>
-                    <span>{activity.time}</span>
-                  </div>
-                )) : <div className="sa-state">No user activity found for this date range.</div>}
-              </div>
-            )}
+            <Charts data={filteredChartData} type="bar" dataKey="revenue" />
           </>
         ) : null}
       </div>
 
-      {activeTab !== "User Activity" ? (
-        <div style={{ marginTop: 16 }}>
+      <div style={{ marginTop: 16 }}>
         <DataTable
           columns={columns}
           rows={filteredRows.slice(0, 5)}
           loading={loading}
           error={error}
-          emptyMessage="No report records found."
+          emptyMessage="No clinic report records found."
         />
-        </div>
-      ) : null}
+      </div>
     </>
   );
 }

@@ -11,6 +11,7 @@ import {
   mergeStoredAppointmentVitals,
   saveStoredAppointmentVitals,
 } from "../../utils/appointmentVitals";
+import { getSpecializationDisplayName } from "../../pages/DOCTORS/doctorExpertiseOptions";
 
 const pageSize = 8;
 const emptyVitals = {
@@ -343,7 +344,7 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
                       <td>{getAppointmentValue(item, ["patientCode", "patient.code", "patient.patientCode", "PatientCode"], "-")}</td>
                       <td>{getAppointmentValue(item, ["patientName", "patient.name", "patient.fullName", "PatientName"], "-")}</td>
                       <td>{getAppointmentValue(item, ["doctorName", "doctor.name", "doctor.fullName", "DoctorName"], "-")}</td>
-                      <td>{getAppointmentValue(item, ["doctorSpecialization", "doctor.specialization", "doctorSpeciality", "DoctorSpecialization", "specialization"], "-")}</td>
+                      <td>{getSpecializationDisplayName(getAppointmentValue(item, ["doctorSpecialization", "doctor.specialization", "doctorSpeciality", "DoctorSpecialization", "specialization"], "")) || "-"}</td>
                       <td>{formatDateMMDDYYYY(getAppointmentValue(item, ["date", "appointmentDate", "AppointmentDate", "scheduledDate", "slotDate", "SlotDate", "bookingDate", "BookingDate"], ""))}</td>
                       <td>{getAppointmentValue(item, ["time", "slot", "Slot", "startTime", "StartTime", "slotTime", "SlotTime", "timeSlot", "TimeSlot", "appointmentTime", "AppointmentTime"], "-")}</td>
                       <td>{getAppointmentValue(item, ["chiefComplaint", "chiefComplaints", "ChiefComplaint", "complaint", "reason"], "-")}</td>

@@ -677,3 +677,157 @@ body.auth-page-no-scroll {
     padding: 1.15rem 1rem 1rem;
   }
 }
+
+/* Keep patient auth screens aligned with the CMS Login card. */
+.auth-card--login-compact,
+.auth-card--compact-register {
+  width: 100%;
+  max-width: 420px;
+  min-height: 520px;
+  padding: 2.4rem 2rem;
+  border-radius: var(--radius-lg);
+  margin: 0 auto;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-card), inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+  box-sizing: border-box;
+}
+
+.auth-card--compact-register {
+  justify-content: center;
+}
+
+.auth-card--login-compact h2,
+.auth-card--compact-register h2 {
+  font-size: 1.38rem;
+  margin: 0 0 0.25rem;
+}
+
+.auth-card--login-compact p.subtitle,
+.auth-card--compact-register p.subtitle {
+  margin: 0 0 0.95rem;
+  font-size: 0.8rem;
+}
+
+.auth-card--login-compact .auth-form,
+.auth-card--compact-register .auth-form {
+  gap: 1.1rem;
+}
+
+.auth-card--login-compact .form-group,
+.auth-card--compact-register .form-group {
+  margin-bottom: 0;
+}
+
+.auth-card--login-compact .form-group label,
+.auth-card--compact-register .form-group label {
+  margin-bottom: 0;
+  font-size: 0.78rem;
+}
+
+.auth-card--login-compact .form-group input,
+.auth-card--login-compact .form-group select,
+.auth-card--login-compact .form-group textarea,
+.auth-card--compact-register .form-group input,
+.auth-card--compact-register .form-group select,
+.auth-card--compact-register .form-group textarea {
+  min-height: 2.75rem;
+  height: 2.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+}
+
+.auth-card--compact-register .form-group textarea {
+  height: auto;
+  min-height: calc(2.75rem + 1.5rem);
+}
+
+.auth-card--compact-register .register-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.auth-card--compact-register input[type="date"] {
+  height: 2.75rem;
+  padding: 0.75rem 2.4rem 0.75rem 0.9rem;
+  font-size: 0.9rem;
+}
+
+.auth-card--login-compact .password-wrapper input {
+  height: 2.75rem;
+}
+
+.auth-card--login-compact .submit-btn,
+.auth-card--login-compact .submit-btn--block,
+.auth-card--compact-register .submit-btn,
+.auth-card--compact-register .submit-btn--block {
+  width: 100%;
+  min-height: 3.1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+}
+
+.form-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.form-actions-row .back-button {
+  flex: 0 0 120px;
+  min-height: 3.1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1.5px solid rgba(14, 165, 164, 0.32);
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--primary);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 24px -14px rgba(14, 165, 164, 0.5);
+  transition: transform 0.2s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.form-actions-row .back-button:hover {
+  transform: translateY(-2px);
+  background: rgba(14, 165, 164, 0.1);
+  box-shadow: 0 14px 28px -16px rgba(14, 165, 164, 0.6);
+}
+
+.form-actions-row .back-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.form-actions-row .submit-btn--block {
+  flex: 1;
+}
+
+@media (max-width: 540px) {
+  .auth-card--login-compact,
+  .auth-card--compact-register {
+    max-width: 100%;
+    min-height: auto;
+    padding: 1.75rem 1.4rem;
+  }
+
+  .auth-card--compact-register .register-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions-row {
+    flex-direction: column;
+  }
+
+  .form-actions-row .back-button,
+  .form-actions-row .submit-btn--block {
+    flex: none;
+    width: 100%;
+  }
+}

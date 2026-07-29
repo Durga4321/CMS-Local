@@ -46,51 +46,20 @@ export const logoutAndClearSessions = async (roleType = "admin") => {
       localStorage.getItem("patientEmail") ||
       "User"
   ).trim();
-  let ipAddress = String(localStorage.getItem("loginIpAddress") || "").trim();
-
-  if (!ipAddress) {
-    // Try public IP providers as a fallback when no IP is stored
-    const fetchPublicIp = async () => {
-      const providers = [
-        { url: 'https://api.ipify.org?format=json', read: (d) => String(d?.ip || '') },
-        { url: 'https://api64.ipify.org?format=json', read: (d) => String(d?.ip || '') },
-        { url: 'https://ipapi.co/json/', read: (d) => String(d?.ip || '') },
-        { url: 'https://api.my-ip.io/v2/ip.json', read: (d) => String(d?.ip || '') },
-      ];
-
-      for (const p of providers) {
-        try {
-          const res = await fetch(p.url);
-          if (!res.ok) continue;
-          const data = await res.json().catch(() => ({}));
-          const ip = String(p.read(data) || '').trim();
-          if (ip) return ip;
-        } catch {
-          /* try next */
-        }
-      }
-
-      return '';
-    };
-
-    try {
-      ipAddress = await fetchPublicIp();
-      if (ipAddress) localStorage.setItem('loginIpAddress', ipAddress);
-    } catch {}
-  }
-
-  try {
-    await recordAuditLog({
+  const ipAddress = String(localStorage.getItem("loginIpAddress") || "").trim();
+  const payload = {
       userName: name,
       action: `${name} logged out`,
       systemAction: "Logout",
       role: role || roleType,
       ipAddress,
       timestamp: new Date().toISOString(),
-    });
-  } catch {}
+  };
 
   clearAllSessions();
+  window.setTimeout(() => {
+    recordAuditLog(payload).catch(() => {});
+  }, 0);
 };
 
 const decodeJwtPayload = (token) => {

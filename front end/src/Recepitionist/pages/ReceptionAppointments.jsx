@@ -16,6 +16,7 @@ import {
   DUPLICATE_APPOINTMENT_MESSAGE,
   hasDuplicateAppointmentForPatientDoctorDate,
 } from "../../utils/appointmentDuplicateValidation";
+import { getSpecializationDisplayName } from "../../pages/DOCTORS/doctorExpertiseOptions";
 
 const parseSlotLabel = (slot) => {
   if (!slot) return "";
@@ -950,7 +951,7 @@ function ReceptionAppointments() {
               {doctors.map((d) => (
                 <option key={getDoctorId(d)} value={getDoctorId(d)}>
                   {d.name}
-                  {d.specialization ? ` - ${d.specialization}` : ""}
+                    {d.specialization ? ` - ${getSpecializationDisplayName(d.specialization)}` : ""}
                 </option>
               ))}
             </select>

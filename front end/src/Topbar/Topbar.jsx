@@ -109,6 +109,7 @@ const adminSearchItems = [
   { label: "Patients", keywords: "patient records medical", path: "/patients" },
   { label: "Appointments", keywords: "booking appointment token", path: "/appointments" },
   { label: "Schedule Settings", keywords: "doctor schedule slots timing", path: "/DoctorSchedule/schedule" },
+  { label: "User Management", keywords: "users logins online branch browser device", path: "/users" },
   { label: "Reports", keywords: "analysis revenue export", path: "/reports" },
 ];
 
@@ -116,7 +117,6 @@ const superAdminSearchItems = [
   { label: "Super Admin Dashboard", keywords: "overview stats analytics", path: "/superadmin/dashboard" },
   { label: "Clinics", keywords: "clinic hospital branch", path: "/superadmin/clinics" },
   { label: "Admins", keywords: "clinic admins management", path: "/superadmin/admins" },
-  { label: "Users", keywords: "users accounts active", path: "/superadmin/users" },
   { label: "Settings", keywords: "configuration email sms payment", path: "/superadmin/settings" },
   { label: "Reports", keywords: "analysis revenue export pdf csv", path: "/superadmin/reports" },
   { label: "Audit Logs", keywords: "login audit history activity", path: "/superadmin/audit-logs" },

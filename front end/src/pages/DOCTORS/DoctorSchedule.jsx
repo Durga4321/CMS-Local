@@ -10,6 +10,8 @@ import {
   getStoredHospitalId,
   getAuthToken,
 } from "../../utils/branchApi";
+import { getSpecializationDisplayName } from "./doctorExpertiseOptions";
+import { getLoggedInDoctor, normalizeDoctorName } from "../../doctors/utils/doctorSession";
 
 const DOCTORS_API = apiUrl("Doctor");
 const SCHEDULE_API = apiUrl("Schedule");
@@ -218,7 +220,55 @@ const normalizeDoctor = (doctor = {}) => ({
     doctor.Specialization ||
     doctor.doctorSpecialization ||
     "",
+  branchId:
+    doctor.branchId ??
+    doctor.BranchId ??
+    doctor.branchID ??
+    doctor.clinicBranchId ??
+    "",
+  branchName:
+    doctor.branchName ||
+    doctor.BranchName ||
+    doctor.branch?.name ||
+    doctor.branch?.branchName ||
+    "",
+  raw: doctor,
 });
+
+const fetchDoctorsForBranch = async (branchId, token) => {
+  const headers = {
+    "ngrok-skip-browser-warning": "true",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  try {
+    const response = await fetch(
+      apiUrl(`Doctor/branch/${encodeURIComponent(branchId)}`),
+      { headers }
+    );
+
+    if (response.ok) {
+      return parseListResponse(await response.json().catch(() => []));
+    }
+  } catch {
+    // Fall back to all doctors if the branch endpoint is unavailable.
+  }
+
+  const response = await fetch(DOCTORS_API, { headers });
+  if (!response.ok) throw new Error("Unable to load doctors.");
+
+  const selectedBranchId = String(branchId);
+  return parseListResponse(await response.json().catch(() => [])).filter(
+    (doctor) =>
+      String(
+        doctor.branchId ??
+          doctor.BranchId ??
+          doctor.branchID ??
+          doctor.clinicBranchId ??
+          ""
+      ) === selectedBranchId
+  );
+};
 
 const getApiErrorMessage = async (response, fallback) => {
   try {
@@ -239,6 +289,107 @@ const getApiErrorMessage = async (response, fallback) => {
   } catch {
     return fallback;
   }
+};
+
+const shouldTryNextScheduleSave = (message) => {
+  const text = String(message || "").toLowerCase();
+  return (
+    !text ||
+    text.includes("unable to create") ||
+    text.includes("already") ||
+    text.includes("exist") ||
+    text.includes("duplicate") ||
+    text.includes("conflict") ||
+    text.includes("not found") ||
+    text.includes("not allowed") ||
+    text.includes("method")
+  );
+};
+
+const saveSchedulePayload = async (payload, token, { replaceExisting = false } = {}) => {
+  const headers = {
+    "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  const bodyPayload = {
+    ...payload,
+    BranchId: payload.branchId,
+    DoctorId: payload.doctorId,
+    Days: payload.days,
+    StartDate: payload.startDate,
+    EndDate: payload.endDate,
+    WorkStart: payload.workStart,
+    WorkEnd: payload.workEnd,
+    BreakStart: payload.breakStart,
+    BreakEnd: payload.breakEnd,
+    SlotDuration: payload.slotDuration,
+    dates: payload.dates,
+    Dates: payload.dates,
+    scheduledDates: payload.dates,
+    ScheduledDates: payload.dates,
+    updateExisting: true,
+    UpdateExisting: true,
+    replaceExisting,
+    ReplaceExisting: replaceExisting,
+    overwrite: replaceExisting,
+    Overwrite: replaceExisting,
+  };
+  const body = JSON.stringify(bodyPayload);
+  const query = new URLSearchParams({
+    doctorId: String(payload.doctorId),
+    branchId: String(payload.branchId),
+    startDate: payload.startDate,
+    endDate: payload.endDate,
+    date: payload.startDate,
+    overwrite: "true",
+  }).toString();
+  const attempts = [
+    { url: SCHEDULE_API, method: replaceExisting ? "PUT" : "POST" },
+    { url: SCHEDULE_API, method: replaceExisting ? "POST" : "PUT" },
+    { url: `${SCHEDULE_API}?${query}`, method: replaceExisting ? "PUT" : "POST" },
+    { url: `${SCHEDULE_API}/${encodeURIComponent(payload.doctorId)}`, method: "PUT" },
+    { url: `${SCHEDULE_API}/${encodeURIComponent(payload.doctorId)}?${query}`, method: "PUT" },
+    { url: `${SCHEDULE_API}/doctor/${encodeURIComponent(payload.doctorId)}`, method: "PUT" },
+    { url: `${SCHEDULE_API}/doctor/${encodeURIComponent(payload.doctorId)}?${query}`, method: "PUT" },
+    { url: `${SCHEDULE_API}/update`, method: "POST" },
+    { url: `${SCHEDULE_API}/replace`, method: "POST" },
+    { url: `${SCHEDULE_API}/regenerate`, method: "POST" },
+  ];
+  let lastError = "";
+  let firstSpecificError = "";
+
+  for (const attempt of attempts) {
+    const response = await fetch(attempt.url, {
+      method: attempt.method,
+      headers,
+      body,
+    });
+
+    if (response.ok) {
+      return response.json().catch(() => ({}));
+    }
+
+    lastError = await getApiErrorMessage(
+      response,
+      replaceExisting
+        ? "Unable to update the schedule."
+        : "Unable to create the schedule."
+    );
+    if (
+      lastError &&
+      !firstSpecificError &&
+      !lastError.toLowerCase().startsWith("unable to ")
+    ) {
+      firstSpecificError = lastError;
+    }
+
+    if (!shouldTryNextScheduleSave(lastError)) {
+      throw new Error(lastError);
+    }
+  }
+
+  throw new Error(firstSpecificError || lastError || "Unable to save the schedule.");
 };
 
 const buildScheduledDates = (startDate, endDate, workingDays) => {
@@ -272,8 +423,69 @@ const buildScheduledDates = (startDate, endDate, workingDays) => {
   return dates;
 };
 
-function Schedule() {
+const fetchAllDoctors = async (token) => {
+  const response = await fetch(DOCTORS_API, {
+    headers: {
+      "ngrok-skip-browser-warning": "true",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (!response.ok) throw new Error("Unable to load doctors.");
+  return parseListResponse(await response.json().catch(() => []));
+};
+
+const findLoggedInDoctorRecord = (doctors, sessionDoctor) => {
+  const sessionDoctorId = String(sessionDoctor?.id || "").trim();
+  const sessionDoctorName = normalizeDoctorName(sessionDoctor?.name);
+
+  return doctors.map(normalizeDoctor).find((doctor) => {
+    if (sessionDoctorId && String(doctor.id) === sessionDoctorId) return true;
+    return sessionDoctorName && normalizeDoctorName(doctor.name) === sessionDoctorName;
+  });
+};
+
+const getStoredDoctorBranchName = () =>
+  String(
+    localStorage.getItem("branchName") ||
+      localStorage.getItem("BranchName") ||
+      localStorage.getItem("doctorBranchName") ||
+      localStorage.getItem("DoctorBranchName") ||
+      ""
+  ).trim();
+
+const getStoredDoctorBranchId = () =>
+  String(
+    localStorage.getItem("branchId") ||
+      localStorage.getItem("BranchId") ||
+      localStorage.getItem("doctorBranchId") ||
+      localStorage.getItem("DoctorBranchId") ||
+      ""
+  ).trim();
+
+const resolveSelfDoctorBranch = (doctor = {}, branchOptions = []) => {
+  const storedBranchId = getStoredDoctorBranchId();
+  const storedBranchName = getStoredDoctorBranchName();
+  const branchId = String(doctor.branchId || storedBranchId || "").trim();
+  const branchName = String(doctor.branchName || storedBranchName || "").trim();
+
+  const matchedBranch =
+    branchOptions.find((branch) => String(branch.id) === branchId) ||
+    branchOptions.find(
+      (branch) =>
+        branchName &&
+        String(branch.name || "").trim().toLowerCase() === branchName.toLowerCase()
+    ) ||
+    (branchOptions.length === 1 ? branchOptions[0] : null);
+
+  return {
+    id: String(branchId || matchedBranch?.id || "").trim(),
+    name: String(branchName || matchedBranch?.name || "").trim(),
+  };
+};
+
+function Schedule({ selfMode = false } = {}) {
   const navigate = useNavigate();
+  const sessionDoctor = useMemo(() => getLoggedInDoctor(), []);
   const today = useMemo(() => toDateInputValue(new Date()), []);
   const defaultEndDate = useMemo(
     () => toDateInputValue(addDays(new Date(), 30)),
@@ -285,6 +497,7 @@ function Schedule() {
   const [branchOptions, setBranchOptions] = useState([]);
   const [branchId, setBranchId] = useState("");
   const [loadingBranches, setLoadingBranches] = useState(true);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [days, setDays] = useState(DEFAULT_WORKING_DAYS);
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(defaultEndDate);
@@ -306,6 +519,7 @@ function Schedule() {
   const [previewSlots, setPreviewSlots] = useState([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
   const [slotRefreshKey, setSlotRefreshKey] = useState(0);
+  const [selfDoctor, setSelfDoctor] = useState(null);
 
   const scheduledDates = useMemo(
     () => buildScheduledDates(startDate, endDate, days),
@@ -315,12 +529,6 @@ function Schedule() {
   useEffect(() => {
     const hospitalId = getStoredHospitalId();
     Promise.allSettled([
-      fetch(DOCTORS_API, {
-        headers: { "ngrok-skip-browser-warning": "true" },
-      }).then(async (response) => {
-        if (!response.ok) throw new Error("Unable to load doctors.");
-        return response.json();
-      }),
       fetch(SCHEDULE_SETTINGS_API, {
         headers: { "ngrok-skip-browser-warning": "true" },
       }).then(async (response) => {
@@ -328,15 +536,8 @@ function Schedule() {
         return response.json();
       }),
       fetchBranchesForHospital(hospitalId),
-    ]).then(([doctorResult, settingsResult, branchesResult]) => {
-      if (doctorResult.status === "fulfilled") {
-        const rows = parseListResponse(doctorResult.value)
-          .map(normalizeDoctor)
-          .filter((doctor) => doctor.id !== "");
-        setDoctors(rows);
-        if (rows.length > 0) setDoctorId(String(rows[0].id));
-      }
-
+      selfMode ? fetchAllDoctors(getAuthToken()) : Promise.resolve([]),
+    ]).then(([settingsResult, branchesResult, doctorsResult]) => {
       if (settingsResult.status === "fulfilled") {
         const settings =
           settingsResult.value?.data || settingsResult.value || {};
@@ -359,17 +560,98 @@ function Schedule() {
         );
       }
 
+      const nextBranchOptions =
+        branchesResult.status === "fulfilled"
+          ? buildBranchOptions(branchesResult.value)
+          : [];
+
       if (branchesResult.status === "fulfilled") {
-        const options = buildBranchOptions(branchesResult.value);
+        const options = nextBranchOptions;
         setBranchOptions(options);
-        if (options.length > 0) setBranchId(String(options[0].id));
+        if (!selfMode && options.length > 0) setBranchId(String(options[0].id));
+      }
+
+      if (selfMode) {
+        const doctor =
+          doctorsResult?.status === "fulfilled"
+            ? findLoggedInDoctorRecord(doctorsResult.value, sessionDoctor)
+            : null;
+        const fallbackDoctor = {
+          id: sessionDoctor.id,
+          name: sessionDoctor.name,
+          branchId: getStoredDoctorBranchId(),
+          branchName: getStoredDoctorBranchName(),
+        };
+        const baseDoctor = doctor || fallbackDoctor;
+        const resolvedBranch = resolveSelfDoctorBranch(baseDoctor, nextBranchOptions);
+        const resolvedDoctor = {
+          ...baseDoctor,
+          branchId: resolvedBranch.id,
+          branchName: resolvedBranch.name,
+        };
+        setSelfDoctor(resolvedDoctor);
+        setDoctors(resolvedDoctor.id ? [resolvedDoctor] : []);
+        setDoctorId(String(resolvedDoctor.id || ""));
+        setBranchId(String(resolvedDoctor.branchId || ""));
       }
       setLoadingBranches(false);
     });
-  }, []);
+  }, [selfMode, sessionDoctor]);
 
   useEffect(() => {
-    if (!doctorId || !previewDate) return;
+    let isActive = true;
+
+    if (!selfMode) {
+      setDoctorId("");
+      setDoctors([]);
+    }
+    setPreviewSlots([]);
+    setSaveMessage("");
+
+    if (selfMode) {
+      setLoadingDoctors(false);
+      return () => {
+        isActive = false;
+      };
+    }
+
+    if (!branchId) {
+      setLoadingDoctors(false);
+      return () => {
+        isActive = false;
+      };
+    }
+
+    setLoadingDoctors(true);
+    fetchDoctorsForBranch(branchId, getAuthToken())
+      .then((rows) => {
+        if (!isActive) return;
+
+        const branchDoctors = rows
+          .map(normalizeDoctor)
+          .filter((doctor) => doctor.id !== "");
+        setDoctors(branchDoctors);
+        setDoctorId(branchDoctors.length ? String(branchDoctors[0].id) : "");
+      })
+      .catch(() => {
+        if (!isActive) return;
+        setDoctors([]);
+        setDoctorId("");
+      })
+      .finally(() => {
+        if (isActive) setLoadingDoctors(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [branchId, selfMode]);
+
+  useEffect(() => {
+    if (!branchId || !doctorId || !previewDate) {
+      setPreviewSlots([]);
+      return;
+    }
 
     setIsFetchingSlots(true);
     const token = getAuthToken();
@@ -391,7 +673,7 @@ function Schedule() {
       .then((data) => setPreviewSlots(parseListResponse(data)))
       .catch(() => setPreviewSlots([]))
       .finally(() => setIsFetchingSlots(false));
-  }, [doctorId, previewDate, slotRefreshKey]);
+  }, [branchId, doctorId, previewDate, slotRefreshKey]);
 
   const toggleDay = (fullDay) => {
     setSaveMessage("");
@@ -404,6 +686,7 @@ function Schedule() {
 
   const handleStartDateChange = (value) => {
     setStartDate(value);
+    setPreviewDate(value);
     setSaveMessage("");
     if (!endDate || value > endDate) setEndDate(value);
   };
@@ -450,35 +733,22 @@ function Schedule() {
       breakStart: formatTimeForApi(resolvedTimes.breakStart),
       breakEnd: formatTimeForApi(resolvedTimes.breakEnd),
       slotDuration: resolvedTimes.slotDuration,
+      dates: scheduledDates.map((date) => date.value),
     };
 
     const token = getAuthToken();
     try {
-      const response = await fetch(SCHEDULE_API, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
+      const data = await saveSchedulePayload(payload, token, {
+        replaceExisting: previewSlots.length > 0,
       });
-
-      if (!response.ok) {
-        throw new Error(
-          await getApiErrorMessage(response, "Unable to create the schedule.")
-        );
-      }
-
-      const data = await response.json().catch(() => ({}));
       setHasSaveError(false);
       setSaveMessage(
         data?.message ||
-          `Schedule created for ${scheduledDates.length} working days.`
+          `Schedule saved for ${scheduledDates.length} working days.`
       );
       setPreviewDate(scheduledDates[0].value);
       setSlotRefreshKey((value) => value + 1);
-      navigate("/doctors", { replace: true });
+      navigate(selfMode ? "/doctor/schedule" : "/doctors", { replace: true });
     } catch (error) {
       setHasSaveError(true);
       setSaveMessage(error.message || "Unable to create the schedule.");
@@ -499,43 +769,69 @@ function Schedule() {
 
   return (
     <div className="schedule-page">
-      <h2>Doctor Schedule</h2>
-      <p>Create availability from working days and a date range</p>
+      <h2>{selfMode ? "My Schedule" : "Doctor Schedule"}</h2>
+      <p>{selfMode ? "Update your availability from working days and timings" : "Create availability from working days and a date range"}</p>
 
       <div className="schedule-container">
         <div className="left">
-          <label htmlFor="schedule-branch">Branch</label>
-          <select
-            id="schedule-branch"
-            value={branchId}
-            onChange={(event) => setBranchId(event.target.value)}
-            disabled={loadingBranches}
-          >
-            {loadingBranches ? <option value="">Loading branches...</option> : null}
-            {!loadingBranches && !branchOptions.length ? (
-              <option value="">No branches found</option>
-            ) : null}
-            {branchOptions.map((branch) => (
-              <option key={branch.id} value={branch.id}>
-                {branch.name}
-              </option>
-            ))}
-          </select>
+          {selfMode ? (
+            <>
+              <label>Branch</label>
+              <div className="schedule-static-field">
+                {selfDoctor?.branchName ||
+                  branchOptions.find((branch) => String(branch.id) === String(branchId))?.name ||
+                  "Assigned branch"}
+              </div>
 
-          <label htmlFor="schedule-doctor">Doctor</label>
-          <select
-            id="schedule-doctor"
-            value={doctorId}
-            onChange={(event) => setDoctorId(event.target.value)}
-          >
-            {!doctors.length ? <option value="">No doctors found</option> : null}
-            {doctors.map((doctor) => (
-              <option key={doctor.id} value={doctor.id}>
-                Dr. {doctor.name || doctor.id}
-                {doctor.specialization ? ` - ${doctor.specialization}` : ""}
-              </option>
-            ))}
-          </select>
+              <label>Doctor</label>
+              <div className="schedule-static-field">
+                Dr. {selfDoctor?.name || sessionDoctor.name || "Doctor"}
+                {selfDoctor?.specialization ? ` - ${getSpecializationDisplayName(selfDoctor.specialization)}` : ""}
+              </div>
+            </>
+          ) : (
+            <>
+              <label htmlFor="schedule-branch">Branch</label>
+              <select
+                id="schedule-branch"
+                value={branchId}
+                onChange={(event) => setBranchId(event.target.value)}
+                disabled={loadingBranches}
+              >
+                {loadingBranches ? <option value="">Loading branches...</option> : null}
+                {!loadingBranches && !branchOptions.length ? (
+                  <option value="">No branches found</option>
+                ) : null}
+                {branchOptions.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
+              </select>
+
+              <label htmlFor="schedule-doctor">Doctor</label>
+              <select
+                id="schedule-doctor"
+                value={doctorId}
+                onChange={(event) => setDoctorId(event.target.value)}
+                disabled={!branchId || loadingDoctors}
+              >
+                {!branchId ? <option value="">Select branch first</option> : null}
+                {branchId && loadingDoctors ? (
+                  <option value="">Loading doctors...</option>
+                ) : null}
+                {branchId && !loadingDoctors && !doctors.length ? (
+                  <option value="">No doctors found for this branch</option>
+                ) : null}
+                {doctors.map((doctor) => (
+                  <option key={doctor.id} value={doctor.id}>
+                    Dr. {doctor.name || doctor.id}
+                    {doctor.specialization ? ` - ${getSpecializationDisplayName(doctor.specialization)}` : ""}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
 
           <h4>Working Days</h4>
           <div className="days" aria-label="Working days">
@@ -674,7 +970,7 @@ function Schedule() {
             type="button"
             className="save"
             onClick={handleSave}
-            disabled={isSaving || !doctorId}
+            disabled={isSaving || loadingDoctors || !branchId || !doctorId}
           >
             {isSaving
               ? "Saving..."
@@ -718,6 +1014,12 @@ function Schedule() {
           <div className="slots">
             {isFetchingSlots ? (
               <p className="slots-msg">Loading slots...</p>
+            ) : loadingDoctors ? (
+              <p className="slots-msg">Loading doctors for this branch...</p>
+            ) : !branchId ? (
+              <p className="slots-msg">Select a branch to view slots.</p>
+            ) : !doctorId ? (
+              <p className="slots-msg">Select a doctor to view slots.</p>
             ) : previewSlots.length > 0 ? (
               previewSlots.map((slot, index) => {
                 const slotStart = formatSlotTime(slot.start || slot.startTime || "");

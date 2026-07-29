@@ -6,6 +6,15 @@ const REQUEST_TIMEOUT_MS = 3500;
 const branchCache = new Map();
 const branchRequests = new Map();
 
+export const clearBranchCache = (hospitalId) => {
+  if (hospitalId === undefined || hospitalId === null || hospitalId === "") {
+    branchCache.clear();
+    return;
+  }
+
+  branchCache.delete(String(hospitalId).trim() || "__all__");
+};
+
 export const getAuthToken = () =>
   localStorage.getItem("adminToken") ||
   localStorage.getItem("token") ||

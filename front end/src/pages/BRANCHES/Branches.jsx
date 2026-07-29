@@ -17,6 +17,7 @@ import { useToast } from "../../components/ToastProvider";
 import { formatTitleCase } from "../../utils/format";
 import {
   BRANCH_API_URL,
+  clearBranchCache,
   fetchBranchesForHospital,
   getApiHeaders,
   getBranchId,
@@ -38,7 +39,6 @@ import { fetchPincodeLocation } from "../../utils/pincodeLocation";
 import {
   onlyAddressText,
   onlyAlpha,
-  onlyDigits,
   onlyIndianMobileValue,
   validateGmail,
   validateMobile,
@@ -503,6 +503,7 @@ function Branches() {
         (isEditing ? "Branch updated successfully" : "Branch created successfully");
       setSuccess(message);
       toast.success(message);
+      clearBranchCache(hospitalId);
       await fetchBranches();
       closeModal({ force: true });
     } catch (submitError) {
@@ -532,6 +533,7 @@ function Branches() {
         throw new Error(await parseErrorMessage(response, "Unable to update branch status."));
       }
 
+      clearBranchCache(hospitalId);
       setBranches((previous) =>
         previous.map((item) =>
           String(getBranchId(item)) === String(branchId)
@@ -579,6 +581,7 @@ function Branches() {
         throw new Error(await parseErrorMessage(response, "Unable to delete branch."));
       }
 
+      clearBranchCache(hospitalId);
       setBranches((previous) =>
         previous.filter((item) => String(getBranchId(item)) !== String(branchId))
       );
@@ -630,9 +633,7 @@ function Branches() {
 
       <div className="branches-clinic-band">
         <Building2 size={17} />
-        <span>Hospital ID</span>
-        <b>{hospitalId || "-"}</b>
-        <span>Clinic</span>
+        <span>Clinic Name</span>
         <b>{clinicName}</b>
       </div>
 
@@ -774,15 +775,15 @@ function Branches() {
               </div>
 
               <div className="branches-field">
-                <label htmlFor="branch-hospital">Hospital ID</label>
+                <label htmlFor="branch-clinic">Clinic Name</label>
                 <input
-                  id="branch-hospital"
-                  value={form.hospitalId}
-                  onChange={(event) => updateField("hospitalId", onlyDigits(event.target.value))}
+                  id="branch-clinic"
+                  value={clinicName}
                   className={fieldErrors.hospitalId ? "is-invalid" : ""}
                   disabled={saving}
-                  inputMode="numeric"
+                  readOnly
                 />
+                <input type="hidden" value={form.hospitalId} readOnly />
                 {fieldErrors.hospitalId ? (
                   <span className="branches-field-error">{fieldErrors.hospitalId}</span>
                 ) : null}

@@ -39,6 +39,7 @@ import { formatIndianCurrency, formatTitleCase } from "../../utils/format";
 import {
   SPECIALIZATION_OPTIONS,
   getExpertiseOptionsForSpecialization,
+  getSpecializationDisplayName,
 } from "./doctorExpertiseOptions";
 
 const DOCTORS_API_URL =
@@ -685,7 +686,19 @@ function Doctors() {
 
   const specializationOptions = useMemo(
     () =>
-      [...new Set(doctors.map((doctor) => doctor.specialization).filter(Boolean))]
+      [
+        ...new Set(
+          doctors
+            .map((doctor) => doctor.specialization)
+            .filter((specialization) =>
+              SPECIALIZATION_OPTIONS.some(
+                (option) =>
+                  option.toLowerCase() ===
+                  String(specialization || "").trim().toLowerCase()
+              )
+            )
+        ),
+      ]
         .sort((a, b) => String(a).localeCompare(String(b))),
     [doctors]
   );
@@ -1068,7 +1081,7 @@ function Doctors() {
           <option value="">All Specializations</option>
           {specializationOptions.map((specialization) => (
             <option key={specialization} value={specialization}>
-              {specialization}
+              {getSpecializationDisplayName(specialization)}
             </option>
           ))}
         </select>
@@ -1174,7 +1187,7 @@ function Doctors() {
 
                   <div className="doctor-card-identity">
                     <h3>{doc.name || "-"}</h3>
-                    <p>{doc.specialization || "-"}</p>
+                    <p>{getSpecializationDisplayName(doc.specialization) || "-"}</p>
                   </div>
 
                   <div className="doctor-card-details">
@@ -1188,7 +1201,7 @@ function Doctors() {
                     </div>
                     <div>
                       <span>Specialization</span>
-                      <b>{doc.specialization || "-"}</b>
+                      <b>{getSpecializationDisplayName(doc.specialization) || "-"}</b>
                     </div>
                     <div>
                       <span>Area of Expertise</span>
@@ -1392,12 +1405,12 @@ function Doctors() {
                     {editForm.specialization &&
                     !SPECIALIZATION_OPTIONS.includes(editForm.specialization) ? (
                       <option value={editForm.specialization}>
-                        {editForm.specialization}
+                        {getSpecializationDisplayName(editForm.specialization)}
                       </option>
                     ) : null}
                     {SPECIALIZATION_OPTIONS.map((specialization) => (
                       <option key={specialization} value={specialization}>
-                        {specialization}
+                        {getSpecializationDisplayName(specialization)}
                       </option>
                     ))}
                   </select>

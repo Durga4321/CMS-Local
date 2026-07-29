@@ -27,6 +27,19 @@
   box-sizing: border-box;
 }
 
+.schedule-static-field {
+  width: 100%;
+  padding: 11px 12px;
+  margin-top: 6px;
+  margin-bottom: 12px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  box-sizing: border-box;
+  background: #f8fafc;
+  color: #111827;
+  font-weight: 700;
+}
+
 .days {
   display: flex;
   gap: 8px;

@@ -11,7 +11,6 @@ import {
 import { validateSelected, validateText } from "../../../utils/validation";
 
 const defaultTargetOptions = [
-  { value: "All Active Users", label: "All Active Users" },
   { value: "Active Admins", label: "Active Admins" },
 ];
 
@@ -64,7 +63,7 @@ const isDeletedNotification = (notification = {}) => {
 
 const emptyNotification = {
   title: "",
-  targetUsers: "All Active Users",
+  targetUsers: "Active Admins",
   message: "",
 };
 
@@ -97,13 +96,13 @@ function Notifications() {
       const normalizeRole = (role = "") => String(role).trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
 
       const matchesTargetUsers = (notification = {}, role = "") => {
-        const target = String(notification.targetUsers || "all active users").trim().toLowerCase();
+        const target = String(notification.targetUsers || "active admins").trim().toLowerCase();
         const r = normalizeRole(role);
 
         if (!target) return true;
 
         if (target.includes("all active user") || target === "active users") {
-          return ["admin", "clinicadmin", "doctor", "receptionist", "user", "patient"].includes(r);
+          return ["admin", "clinicadmin"].includes(r);
         }
 
         if (target.includes("admin")) return ["admin", "clinicadmin"].includes(r);
@@ -143,7 +142,10 @@ function Notifications() {
     const loadTargetOptions = async () => {
       try {
         const options = await fetchNotificationTargetOptions();
-        setTargetOptions(options.length ? options : defaultTargetOptions);
+        const adminOptions = options.filter((option) =>
+          String(option.value || option.label || "").toLowerCase().includes("admin")
+        );
+        setTargetOptions(adminOptions.length ? adminOptions : defaultTargetOptions);
       } catch {
         setTargetOptions(defaultTargetOptions);
       }
@@ -181,7 +183,7 @@ function Notifications() {
     setError("");
 
     try {
-      await createNotification({ ...form, status: "Sent" });
+      await createNotification({ ...form, targetUsers: "Active Admins", status: "Sent" });
       setForm(emptyNotification);
       setFieldErrors({});
       setShowForm(false);

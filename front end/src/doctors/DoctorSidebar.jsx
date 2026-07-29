@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Stethoscope,
   ClipboardList,
+  CalendarClock,
 } from "lucide-react";
 import "./DoctorSidebar.css";
 import { getRoleProfile } from "../profile/sessionProfile";
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
   { label: "Consultation", icon: Stethoscope,     path: "/doctor/consultation" },
   { label: "Prescription", icon: ClipboardList,   path: "/doctor/prescription" },
   { label: "Appointments", icon: ClipboardList,   path: "/doctor/appointments" },
+  { label: "My Schedule",  icon: CalendarClock,   path: "/doctor/schedule" },
 ];
 
 const getInitials = (name) =>

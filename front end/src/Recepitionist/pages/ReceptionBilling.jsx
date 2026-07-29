@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Banknote, CreditCard, Download, FileText, ReceiptText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { parseList, requestJson } from "../receptionApi";
@@ -383,22 +383,6 @@ const getAppointmentTime = (appointment = {}) => {
   );
 };
 
-const getAppointmentConsultationCharge = (appointment = {}) => {
-  const source = appointment || {};
-  return (
-    firstValue(
-      source.consultationCharge,
-      source.ConsultationCharge,
-      source.consultationCharges,
-      source.ConsultationCharges,
-      source.doctor?.consultationCharge,
-      source.Doctor?.ConsultationCharge,
-      source.doctor?.fee,
-      source.Doctor?.Fee
-    ) || 0
-  );
-};
-
 const fetchBillingAppointments = async () => {
   const [appointments, billingAppointments] = await Promise.all([
     requestJson("Appointment").catch(() => null),
@@ -485,11 +469,6 @@ const appointmentBelongsToBillingScope = (appointment, scope) => {
 };
 
 const getInvoiceAmounts = ({ invoice, form, selectedAppointment, total }) => {
-  const consultation = readAmount(
-    invoice,
-    AMOUNT_KEYS.consultation,
-    readAmount(selectedAppointment, AMOUNT_KEYS.consultation, 0)
-  );
   let medicine =
     readAmount(invoice, AMOUNT_KEYS.medicine, 0) ||
     readItemizedAmount(invoice, ["medicine", "medication", "pharmacy", "drug"]) ||
@@ -498,7 +477,7 @@ const getInvoiceAmounts = ({ invoice, form, selectedAppointment, total }) => {
     readAmount(invoice, AMOUNT_KEYS.lab, 0) ||
     readItemizedAmount(invoice, ["lab", "laboratory", "test", "diagnostic"]) ||
     Number(form.labCharges || 0);
-  const lineTotal = consultation + medicine + lab;
+  const lineTotal = medicine + lab;
   const invoiceTotal = readAmount(invoice, AMOUNT_KEYS.total, total);
   const unitemizedBalance = invoiceTotal - lineTotal;
 
@@ -507,10 +486,9 @@ const getInvoiceAmounts = ({ invoice, form, selectedAppointment, total }) => {
   }
 
   return {
-    consultation,
     medicine,
     lab,
-    total: consultation + medicine + lab,
+    total: medicine + lab,
   };
 };
 
@@ -590,7 +568,6 @@ function ReceptionBilling() {
   const amountFormatTimers = useRef({});
   const messageTimer = useRef(null);
   const [appointments, setAppointments] = useState([]);
-  const [appointmentDetails, setAppointmentDetails] = useState(null);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
@@ -690,27 +667,6 @@ function ReceptionBilling() {
     };
   }, [toast, receptionistScope]);
 
-  const fetchAppointmentDetails = useCallback(
-    async (appointmentId) => {
-      if (!appointmentId) {
-        setAppointmentDetails(null);
-        return;
-      }
-
-      try {
-        const details = await requestJson(`Billing/appointment/${appointmentId}`);
-        setAppointmentDetails(details);
-      } catch {
-        setAppointmentDetails(null);
-      }
-    },
-    []
-  );
-
-  useEffect(() => {
-    fetchAppointmentDetails(form.appointmentId);
-  }, [form.appointmentId, fetchAppointmentDetails]);
-
   useEffect(() => {
     const timers = amountFormatTimers.current;
 
@@ -751,12 +707,9 @@ function ReceptionBilling() {
     );
   }, [appointments, form.appointmentId]);
 
-  const activeAppointment = appointmentDetails || selectedAppointment;
-  const consultationCharge = Number(getAppointmentConsultationCharge(activeAppointment));
   const medicineCharges = Number(form.medicineCharges || 0);
   const labCharges = Number(form.labCharges || 0);
-  const payableTotal = medicineCharges + labCharges;
-  const total = consultationCharge + payableTotal;
+  const total = medicineCharges + labCharges;
 
   const validateForm = () => {
     const nextErrors = {
@@ -822,14 +775,14 @@ function ReceptionBilling() {
 
     const body = {
       appointmentId: Number(form.appointmentId),
-      consultationCharge,
+      consultationCharge: 0,
       medicineCharge: Number(form.medicineCharges || 0),
       labCharge: Number(form.labCharges || 0),
       totalAmount: total,
       grandTotal: total,
-      payableAmount: payableTotal,
-      paymentAmount: payableTotal,
-      paidAmount: payableTotal,
+      payableAmount: total,
+      paymentAmount: total,
+      paidAmount: total,
       paymentMode: String(form.paymentMode || ""),
       PaymentMode: String(form.paymentMode || ""),
     };
@@ -844,14 +797,14 @@ function ReceptionBilling() {
       const nextInvoice = {
         ...(invoiceData || {}),
         ...body,
-        consultationCharge,
+        consultationCharge: 0,
         medicineCharge: Number(form.medicineCharges || 0),
         labCharge: Number(form.labCharges || 0),
         totalAmount: total,
         grandTotal: total,
-        payableAmount: payableTotal,
-        paymentAmount: payableTotal,
-        paidAmount: payableTotal,
+        payableAmount: total,
+        paymentAmount: total,
+        paidAmount: total,
         patientName:
           invoiceData?.patientName ||
           getAppointmentPatientName(selectedAppointment),
@@ -1182,7 +1135,6 @@ function ReceptionBilling() {
                 <tr><th>Description</th><th>Amount</th></tr>
               </thead>
               <tbody>
-                <tr><td>Consultation Charge</td><td>${escapeHtml(formatCurrency(invoiceAmounts.consultation))}</td></tr>
                 <tr><td>Medicine Charges</td><td>${escapeHtml(formatCurrency(invoiceAmounts.medicine))}</td></tr>
                 <tr><td>Lab Charges</td><td>${escapeHtml(formatCurrency(invoiceAmounts.lab))}</td></tr>
               </tbody>
@@ -1315,16 +1267,6 @@ function ReceptionBilling() {
           {fieldErrors.paymentMode ? <small className="rc-field-error">{fieldErrors.paymentMode}</small> : null}
         </label>
         <label>
-          <span>Consultation Charge</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={formatAmountInput(consultationCharge)}
-            readOnly
-            className="rc-amount-input"
-          />
-        </label>
-        <label>
           <span>Medicine Charges</span>
           <input
             type="text"
@@ -1393,10 +1335,6 @@ function ReceptionBilling() {
               ) : null}
             </div>
             <div className="rc-invoice-lines">
-              <p>
-                <span>Consultation</span>
-                <b>{formatCurrency(invoiceAmounts.consultation)}</b>
-              </p>
               <p>
                 <span>Medicine</span>
                 <b>{formatCurrency(invoiceAmounts.medicine)}</b>
