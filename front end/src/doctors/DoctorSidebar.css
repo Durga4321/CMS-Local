@@ -46,6 +46,63 @@
   flex-shrink: 0;
 }
 
+.dr-clinic-logo {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  flex-direction: column;
+  gap: 1px;
+  border: 1px solid #e4ecf7;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  color: #10b981;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.07);
+}
+
+.dr-clinic-logo svg {
+  stroke-width: 2.3;
+}
+
+.dr-clinic-logo small {
+  max-width: 36px;
+  color: #1d65c1;
+  font-size: 6px;
+  font-weight: 900;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dr-clinic-logo--emerald {
+  color: #10b981;
+}
+
+.dr-clinic-logo--dental {
+  color: #1d7ff2;
+  border-color: #dbeafe;
+}
+
+.dr-clinic-logo--dental small {
+  display: none;
+}
+
+.dr-clinic-logo--green {
+  color: #16a34a;
+}
+
+.dr-clinic-logo--sky {
+  color: #0ea5e9;
+}
+
+.dr-clinic-logo--amber {
+  color: #f59e0b;
+}
+
+.dr-clinic-tooth-svg {
+  color: #1d7ff2;
+}
+
 .dr-brand-name {
   margin: 0;
   font-size: 14px;
@@ -98,6 +155,31 @@
   white-space: nowrap;
 }
 
+.dr-nav-link svg {
+  flex: 0 0 auto;
+  transition: color 0.15s ease, stroke-width 0.15s ease;
+}
+
+.dr-nav-link:nth-child(5n + 1) svg {
+  color: #0ea5e9;
+}
+
+.dr-nav-link:nth-child(5n + 2) svg {
+  color: #0f9d9d;
+}
+
+.dr-nav-link:nth-child(5n + 3) svg {
+  color: #7c3aed;
+}
+
+.dr-nav-link:nth-child(5n + 4) svg {
+  color: #f59e0b;
+}
+
+.dr-nav-link:nth-child(5n + 5) svg {
+  color: #16a34a;
+}
+
 .dr-nav-link:hover {
   background: #eef6f6;
   color: #0f9d9d;
@@ -107,6 +189,10 @@
   background: #dff3f3;
   color: #0f9d9d;
   font-weight: 700;
+}
+
+.dr-nav-link.active svg {
+  stroke-width: 2.6;
 }
 
 /* ────────────────────────

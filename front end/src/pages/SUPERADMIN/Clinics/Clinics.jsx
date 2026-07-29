@@ -1,10 +1,40 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Eye, Pencil, Plus, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Camera, Cross, Eye, Leaf, MapPin, Pencil, Phone, Plus, Sun, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
 import { deleteClinic, fetchClinics, updateClinicStatus } from "../superAdminApi";
+
+const ToothLogo = () => (
+  <svg className="sa-clinic-tooth-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M7.45 3.8c1.2-.52 2.35-.28 3.18.17.86.47 1.88.47 2.74 0 .83-.45 1.98-.69 3.18-.17 2.2.95 3.13 3.25 2.43 5.87l-1.56 5.84c-.45 1.69-1.28 4.72-3.03 4.72-1.24 0-1.31-1.49-1.68-3.08-.18-.78-.43-1.37-.71-1.37s-.53.59-.71 1.37c-.37 1.59-.44 3.08-1.68 3.08-1.75 0-2.58-3.03-3.03-4.72L5.02 9.67C4.32 7.05 5.25 4.75 7.45 3.8Z"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const getClinicLogo = (clinicName = "") => {
+  const name = String(clinicName).toLowerCase();
+  if (name.includes("dental")) return { type: "tooth", text: "", tone: "dental" };
+  if (name.includes("primo")) return { type: "icon", icon: Sun, text: "PRIMO", tone: "amber" };
+  if (name.includes("pirnav")) return { type: "icon", icon: Sun, text: "PIRNAV", tone: "amber" };
+  if (name.includes("pragathi")) return { type: "icon", icon: Leaf, text: "PRAGATHI", tone: "green" };
+  if (name.includes("sai ram")) return { type: "icon", icon: Sun, text: "SAI RAM", tone: "sky" };
+  if (name.includes("vims")) return { type: "icon", icon: Cross, text: "VIMS", tone: "emerald" };
+  const fallbackText = String(clinicName || "CLINIC")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+  return { type: "icon", icon: Cross, text: fallbackText || "CL", tone: "emerald" };
+};
 
 function Clinics() {
   const navigate = useNavigate();
@@ -94,16 +124,53 @@ function Clinics() {
     {
       key: "serial",
       label: "S.No.",
-      width: "minmax(52px, 0.25fr)",
+      width: "38px",
       render: (_clinic, index) => index + 1,
     },
-    { key: "name", label: "Clinic Name", width: "minmax(135px, 0.85fr)" },
-    { key: "address", label: "Address", width: "minmax(170px, 1fr)" },
-    { key: "contactNumber", label: "Contact Number", width: "minmax(126px, 0.65fr)" },
+    {
+      key: "name",
+      label: "Clinic Name",
+      width: "minmax(180px, 1fr)",
+      render: (clinic) => {
+        const logo = getClinicLogo(clinic.name);
+        const LogoIcon = logo.icon;
+        return (
+          <div className="sa-clinic-name-cell">
+            <span className={`sa-clinic-logo sa-clinic-logo--${logo.tone}`}>
+              {logo.type === "tooth" ? <ToothLogo /> : <LogoIcon size={16} />}
+              <small>{logo.text}</small>
+            </span>
+            <b>{clinic.name || "-"}</b>
+          </div>
+        );
+      },
+    },
+    {
+      key: "address",
+      label: "Address",
+      width: "minmax(250px, 1.35fr)",
+      render: (clinic) => (
+        <span className="sa-clinic-icon-text">
+          <MapPin size={13} />
+          <span>{clinic.address || "-"}</span>
+        </span>
+      ),
+    },
+    {
+      key: "contactNumber",
+      label: "Contact Number",
+      width: "minmax(126px, 0.7fr)",
+      render: (clinic) => (
+        <span className="sa-clinic-icon-text sa-clinic-icon-text--phone">
+          <Phone size={13} />
+          <span>{clinic.contactNumber || "-"}</span>
+        </span>
+      ),
+    },
     {
       key: "email",
       label: "Email",
-      width: "minmax(210px, 1fr)",
+      width: "minmax(180px, 0.95fr)",
       cellClassName: "sa-table-cell--nowrap",
       render: (clinic) => (
         <span title={clinic.email || ""} className="sa-table-text-overflow">
@@ -114,9 +181,10 @@ function Clinics() {
     {
       key: "status",
       label: "Status",
-      width: "minmax(90px, 0.6fr)",
+      width: "86px",
       render: (clinic) => (
-        <span className={`sa-badge ${clinic.status === "Active" ? "is-active" : "is-danger"}`}>
+        <span className={`sa-badge sa-clinic-status ${clinic.status === "Active" ? "is-active" : "is-danger"}`}>
+          <i />
           {clinic.status}
         </span>
       ),
@@ -124,32 +192,30 @@ function Clinics() {
     {
       key: "actions",
       label: "Actions",
-      // Four 32px controls plus their gaps need dedicated room so the final
-      // button never crowds the table edge.
-      width: "minmax(200px, 0.9fr)",
+      width: "118px",
       cellClassName: "sa-table-cell--actions",
       render: (clinic) => {
         const isActive = String(clinic.status || "").trim().toLowerCase() === "active";
-        const disabledTitle = "Clinic inactive — only status toggle is available";
+        const disabledTitle = "Clinic inactive - only status toggle is available";
 
         return (
           <div className="sa-actions">
-            <button className="sa-icon-btn" onClick={() => setSelectedClinic(clinic)} disabled={!isActive} title={isActive ? "View clinic" : disabledTitle}>
-              <Eye size={15} />
+            <button className="sa-icon-btn sa-icon-btn--view" onClick={() => setSelectedClinic(clinic)} disabled={!isActive} title={isActive ? "View clinic" : disabledTitle}>
+              <Eye size={13} />
             </button>
-            <button className="sa-icon-btn" onClick={() => navigate(`/superadmin/clinics/edit/${clinic.id}`)} disabled={!isActive} title={isActive ? "Edit clinic" : disabledTitle}>
-              <Pencil size={15} />
+            <button className="sa-icon-btn sa-icon-btn--edit" onClick={() => navigate(`/superadmin/clinics/edit/${clinic.id}`)} disabled={!isActive} title={isActive ? "Edit clinic" : disabledTitle}>
+              <Pencil size={13} />
             </button>
             <button
-              className="sa-icon-btn"
+              className="sa-icon-btn sa-icon-btn--status"
               onClick={() => toggleClinicStatus(clinic)}
               disabled={updatingClinicId === clinic.id}
               title={clinic.status === "Active" ? "Deactivate clinic" : "Activate clinic"}
             >
-              {clinic.status === "Active" ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
+              <Camera size={13} />
             </button>
-            <button className="sa-icon-btn" onClick={() => handleDelete(clinic)} disabled={!isActive} title={isActive ? "Delete clinic" : disabledTitle}>
-              <Trash2 size={15} />
+            <button className="sa-icon-btn sa-icon-btn--delete" onClick={() => handleDelete(clinic)} disabled={!isActive} title={isActive ? "Delete clinic" : disabledTitle}>
+              <Trash2 size={13} />
             </button>
           </div>
         );
@@ -197,6 +263,7 @@ function Clinics() {
         loading={loading}
         error={error}
         rowIndexOffset={(currentPage - 1) * pageSize}
+        preserveColumnFractions
         emptyMessage="No clinics match your filters."
       />
 

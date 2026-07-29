@@ -11,6 +11,7 @@ export const SUPER_ADMIN_API = {
   notificationSend: "notifications/send",
   auditLogs: "AuditLogs",
   loginHistory: "AuditLogs/login-history",
+  auditLogsBranchWise: "AuditLogs/dashboard/branch-wise",
   dashboardSummary: "SuperAdmin/summary",
   dashboardSummaryCompat: "dashboard/summary",
   revenueOverview: "dashboard/revenue-overview",
@@ -738,7 +739,10 @@ export const normalizeAuditLog = (log = {}) => {
   const normalizedEmail = email || (/@/.test(userName) ? userName : "");
   const action = pick(log, ["action", "systemAction", "activity", "message", "description"]);
   const systemAction = pick(log, ["systemAction", "module", "moduleName", "category"], "Audit");
+  const actionText = String(action || systemAction || "").toLowerCase();
+  const isLogoutActivity = actionText.includes("logout") || actionText.includes("logged out") || actionText.includes("signed out");
   const isLoginActivity =
+    isLogoutActivity ||
     toBoolean(pick(log, ["isLoginActivity"], false)) ||
     String(systemAction).toLowerCase().includes("login") ||
     String(action).toLowerCase() === "login" ||
@@ -750,15 +754,20 @@ export const normalizeAuditLog = (log = {}) => {
     user: userName,
     userEmail: normalizedEmail,
     email: normalizedEmail,
-    action,
-    systemAction: isLoginActivity ? "Login" : systemAction,
+    action: isLogoutActivity ? "Logout" : isLoginActivity ? "Login" : action,
+    systemAction: isLogoutActivity ? "Logout" : isLoginActivity ? "Login" : systemAction,
     isLoginActivity,
+    isLogoutActivity,
     timestampRaw: pick(log, ["timestamp", "createdAt", "date"]),
     timestamp: formatAuditDateTime(pick(log, ["timestamp", "createdAt", "date"])),
     sortTime: getAuditTimestamp(pick(log, ["timestamp", "createdAt", "date"])),
     module: pick(log, ["module", "moduleName", "category", "systemAction"], "Audit"),
     ipAddress: pick(log, AUDIT_IP_KEYS, ""),
     role: getAuditRole(log),
+    clinicId: pick(log, ["clinicId", "ClinicId", "hospitalId", "HospitalId", "assignedClinicId", "AssignedClinicId"], ""),
+    clinicName: pick(log, ["clinicName", "ClinicName", "hospitalName", "HospitalName", "assignedClinic", "AssignedClinic", "clinic"], ""),
+    branchId: pick(log, ["branchId", "BranchId", "branchID", "BranchID"], ""),
+    branchName: pick(log, ["branchName", "BranchName", "branch", "Branch"], ""),
   };
 };
 
@@ -766,6 +775,18 @@ export const normalizeLoginLog = (log = {}, index = 0) => {
   const email = getAuditEmail(log);
   const userName = getAuditUserName(log);
   const normalizedEmail = email || (/@/.test(userName) ? userName : "");
+  const rawAction = pick(log, ["action", "systemAction", "activity", "message", "description"], "Logged in");
+  const rawActionText = String(rawAction).toLowerCase();
+  const hasLogoutTime = Boolean(pick(log, ["logoutTime", "loggedOutAt", "logoutAt", "signedOutAt"], ""));
+  const isOnline = toBoolean(pick(log, ["isOnline"], true));
+  const isLogoutActivity =
+    rawActionText.includes("logout") ||
+    rawActionText.includes("logged out") ||
+    rawActionText.includes("signed out") ||
+    (hasLogoutTime && isOnline === false);
+  const timestampValue = isLogoutActivity
+    ? pick(log, ["logoutTime", "loggedOutAt", "logoutAt", "signedOutAt", "timestamp", "createdAt", "date", "time"])
+    : pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"]);
 
   return {
     id: pick(log, ["id", "logId", "_id"], `login-${index}`),
@@ -773,15 +794,20 @@ export const normalizeLoginLog = (log = {}, index = 0) => {
     user: userName,
     userEmail: normalizedEmail,
     email: normalizedEmail,
-    action: pick(log, ["action", "systemAction", "activity", "message", "description"], "Logged in"),
-    systemAction: "Login",
+    action: isLogoutActivity ? "Logout" : "Login",
+    systemAction: isLogoutActivity ? "Logout" : "Login",
     isLoginActivity: true,
-    timestampRaw: pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"]),
-    timestamp: formatAuditDateTime(pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"])),
-    sortTime: getAuditTimestamp(pick(log, ["timestamp", "createdAt", "date", "loginTime", "time"])),
-    module: "Login",
+    isLogoutActivity,
+    timestampRaw: timestampValue,
+    timestamp: formatAuditDateTime(timestampValue),
+    sortTime: getAuditTimestamp(timestampValue),
+    module: isLogoutActivity ? "Logout" : "Login",
     ipAddress: pick(log, AUDIT_IP_KEYS, ""),
     role: getAuditRole(log),
+    clinicId: pick(log, ["clinicId", "ClinicId", "hospitalId", "HospitalId", "assignedClinicId", "AssignedClinicId"], ""),
+    clinicName: pick(log, ["clinicName", "ClinicName", "hospitalName", "HospitalName", "assignedClinic", "AssignedClinic", "clinic"], ""),
+    branchId: pick(log, ["branchId", "BranchId", "branchID", "BranchID"], ""),
+    branchName: pick(log, ["branchName", "BranchName", "branch", "Branch"], ""),
   };
 };
 
@@ -2381,9 +2407,15 @@ const isLoginAuditLog = (log = {}) => {
   const systemAction = String(log.systemAction || log.module || "").trim().toLowerCase();
   return (
     log.isLoginActivity ||
+    log.isLogoutActivity ||
     systemAction.includes("login") ||
+    systemAction.includes("logout") ||
     action === "login" ||
-    action.includes("logged in")
+    action === "logout" ||
+    action.includes("logged in") ||
+    action.includes("logged out") ||
+    action.includes("signed in") ||
+    action.includes("signed out")
   );
 };
 
@@ -2433,10 +2465,11 @@ const uniqueAuditLogs = (logs = []) => {
   });
 };
 
-export const fetchAuditLogs = async () => {
+export const fetchAuditLogs = async (filters = {}) => {
+  const query = buildAuditLogQuery(filters);
   const [auditResult, loginResult, usersResult, adminsResult, doctorsResult, receptionistsResult] = await Promise.allSettled([
-    superAdminRequest(SUPER_ADMIN_API.auditLogs),
-    superAdminRequest(SUPER_ADMIN_API.loginHistory),
+    superAdminRequest(`${SUPER_ADMIN_API.auditLogs}${query}`),
+    superAdminRequest(`${SUPER_ADMIN_API.loginHistory}${query}`),
     superAdminRequest(SUPER_ADMIN_API.users),
     superAdminRequest(SUPER_ADMIN_API.admins),
     superAdminRequest("Doctor"),
@@ -2479,9 +2512,11 @@ export const fetchAuditLogs = async () => {
   return sortAuditLogs(logs);
 };
 
-export const fetchLoginHistory = async () => {
-  const [loginResult, usersResult, adminsResult, doctorsResult, receptionistsResult] = await Promise.allSettled([
-    superAdminRequest(SUPER_ADMIN_API.loginHistory),
+export const fetchLoginHistory = async (filters = {}) => {
+  const query = buildAuditLogQuery(filters);
+  const [loginResult, auditResult, usersResult, adminsResult, doctorsResult, receptionistsResult] = await Promise.allSettled([
+    superAdminRequest(`${SUPER_ADMIN_API.loginHistory}${query}`),
+    superAdminRequest(`${SUPER_ADMIN_API.auditLogs}${query}`),
     superAdminRequest(SUPER_ADMIN_API.users),
     superAdminRequest(SUPER_ADMIN_API.admins),
     superAdminRequest("Doctor"),
@@ -2492,7 +2527,13 @@ export const fetchLoginHistory = async () => {
     throw loginResult.reason;
   }
 
-  const loginLogs = uniqueAuditLogs(asArray(loginResult.value).map(normalizeLoginLog));
+  const loginLogs = uniqueAuditLogs([
+    ...asArray(loginResult.value).map(normalizeLoginLog),
+    ...(auditResult.status === "fulfilled"
+      ? asArray(auditResult.value).map(normalizeAuditLog).filter(isLoginAuditLog)
+      : []),
+    ...readLocalList(LOCAL_AUDIT_LOGS_KEY).map(normalizeAuditLog).filter(isLoginAuditLog),
+  ]);
   const { roleLookup, emailLookup } = buildAuditLookups({
     users: usersResult.status === "fulfilled" ? asArray(usersResult.value) : [],
     admins: adminsResult.status === "fulfilled" ? asArray(adminsResult.value) : [],
@@ -2599,6 +2640,34 @@ export const fetchUsers = async () => {
       ? { ...user, lastActive: formatAuditDateTime(lastLoginRaw) }
       : user;
   });
+};
+
+const buildAuditLogQuery = (filters = {}) => {
+  const params = new URLSearchParams();
+  const entries = {
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+    clinicId: filters.clinicId,
+    hospitalId: filters.clinicId,
+    clinicName: filters.clinicName,
+    hospitalName: filters.clinicName,
+    branchId: filters.branchId,
+    branchName: filters.branchName,
+  };
+
+  Object.entries(entries).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim()) {
+      params.set(key, value);
+    }
+  });
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+};
+
+export const fetchAuditBranchWiseDashboard = async (filters = {}) => {
+  const query = buildAuditLogQuery(filters);
+  return superAdminRequest(`${SUPER_ADMIN_API.auditLogsBranchWise}${query}`);
 };
 
 export const fetchUser = async (id) =>

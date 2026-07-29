@@ -67,6 +67,11 @@ const saveReadNotificationKey = (notification) => {
   const keys = new Set(readNotificationKeys());
   keys.add(key);
   localStorage.setItem(getReadStorageKey(), JSON.stringify(Array.from(keys)));
+  window.dispatchEvent(
+    new CustomEvent("cms:notification-read", {
+      detail: { key, notification: { ...notification, status: "Read" } },
+    })
+  );
 };
 
 const saveDeletedNotificationKey = (notification) => {
@@ -89,6 +94,11 @@ const isReadNotification = (notification = {}) =>
 
 const getStatusLabel = (notification = {}) =>
   isReadNotification(notification) ? "Read" : "Unread";
+
+const getAudienceLabel = (notification = {}) => {
+  const target = String(notification.targetUsers || "").toLowerCase();
+  return target.includes("admin") || target.includes("user") ? "Active Admins" : "Active Admins";
+};
 
 const isVisibleNotification = (notification = {}) =>
   isSentNotification(notification) || isReadNotification(notification);
@@ -280,6 +290,7 @@ function NotificationPopup({ isSuperAdmin = false }) {
                     <div>
                       <b>{item.title}</b>
                       <p>{item.message}</p>
+                      <small>{getAudienceLabel(item)}</small>
                     </div>
                     <span
                       className={`notification-status ${

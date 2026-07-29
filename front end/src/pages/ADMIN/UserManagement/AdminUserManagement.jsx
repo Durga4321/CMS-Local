@@ -1,5 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw, Search } from "lucide-react";
+import {
+  Cross,
+  Leaf,
+  RefreshCw,
+  Search,
+  Stethoscope,
+  Sun,
+  UserRound,
+  UsersRound,
+} from "lucide-react";
 import { apiUrl } from "../../../config/api";
 import {
   buildBranchOptions,
@@ -50,6 +59,18 @@ const formatDateTime = (value) => {
   });
 };
 
+const formatLastActive = (value) => {
+  if (!value) return "Never";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 const getDisplayStatus = (user = {}) => {
   const status = String(user.status || "").trim();
   if (status) {
@@ -59,6 +80,49 @@ const getDisplayStatus = (user = {}) => {
     return status;
   }
   return user.isOnline ? "Active" : "Inactive";
+};
+
+const getInitials = (value = "") =>
+  String(value || "U")
+    .replace(/^Dr\.\s*/i, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "U";
+
+const ClinicToothLogo = () => (
+  <svg className="admin-users-clinic-tooth-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M7.45 3.8c1.2-.52 2.35-.28 3.18.17.86.47 1.88.47 2.74 0 .83-.45 1.98-.69 3.18-.17 2.2.95 3.13 3.25 2.43 5.87l-1.56 5.84c-.45 1.69-1.28 4.72-3.03 4.72-1.24 0-1.31-1.49-1.68-3.08-.18-.78-.43-1.37-.71-1.37s-.53.59-.71 1.37c-.37 1.59-.44 3.08-1.68 3.08-1.75 0-2.58-3.03-3.03-4.72L5.02 9.67C4.32 7.05 5.25 4.75 7.45 3.8Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const getClinicLogo = (clinicName = "") => {
+  const name = String(clinicName).toLowerCase();
+  if (name.includes("dental")) return { type: "tooth", text: "", tone: "dental" };
+  if (name.includes("pragathi")) return { type: "icon", icon: Leaf, text: "PRAGATHI", tone: "green" };
+  if (name.includes("sai ram")) return { type: "icon", icon: Sun, text: "SAI RAM", tone: "sky" };
+  if (name.includes("primo")) return { type: "icon", icon: Sun, text: "PRIMO", tone: "amber" };
+  if (name.includes("pirnav")) return { type: "icon", icon: Sun, text: "PIRNAV", tone: "amber" };
+  if (name.includes("nri")) return { type: "icon", icon: Cross, text: "NC", tone: "emerald" };
+  if (name.includes("vims")) return { type: "icon", icon: Cross, text: "VIMS", tone: "emerald" };
+  const fallbackText = String(clinicName || "CLINIC")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+  return { type: "icon", icon: Cross, text: fallbackText || "CL", tone: "emerald" };
+};
+
+const getRoleMeta = (role = "") => {
+  const normalized = String(role || "").toLowerCase();
+  if (normalized.includes("reception")) return { label: "Receptionist", icon: UsersRound, tone: "receptionist" };
+  if (normalized.includes("patient")) return { label: "Patient", icon: UserRound, tone: "patient" };
+  if (normalized.includes("doctor")) return { label: "Doctor", icon: Stethoscope, tone: "doctor" };
+  return { label: role || "User", icon: UserRound, tone: "default" };
 };
 
 const normalizeUserLogin = (record = {}, index = 0) => {
@@ -400,24 +464,51 @@ function AdminUserManagement() {
         {loading ? <div className="admin-users-state">Loading user management data...</div> : null}
         {!loading && !filteredUsers.length ? <div className="admin-users-state">No names found.</div> : null}
 
-        {filteredUsers.map((user, index) => (
-          <div className="admin-users-row" key={`${user.id}-${index}`}>
-            <span>{index + 1}</span>
-            <span>{user.name || "-"}</span>
-            <span className="admin-users-email" title={user.email || "-"}>
-              {user.email || "-"}
-            </span>
-            <span>{user.clinicName || "-"}</span>
-            <span>{user.branchName || "-"}</span>
-            <span>{user.role || "-"}</span>
-            <span>
-              <span className={`admin-users-status ${getDisplayStatus(user).toLowerCase() === "active" ? "is-online" : "is-offline"}`}>
-                {getDisplayStatus(user)}
+        {filteredUsers.map((user, index) => {
+          const avatarTone = index % 4;
+          const clinicLogo = getClinicLogo(user.clinicName);
+          const ClinicLogoIcon = clinicLogo.icon;
+          const roleMeta = getRoleMeta(user.role);
+          const RoleIcon = roleMeta.icon;
+          const lastActive = formatLastActive(user.lastActive || user.loginTime);
+
+          return (
+            <div className="admin-users-row" key={`${user.id}-${index}`}>
+              <span>{index + 1}</span>
+              <span className="admin-users-name-cell">
+                <span className={`admin-users-avatar admin-users-avatar--${avatarTone}`}>
+                  {getInitials(user.name || user.email)}
+                </span>
+                <b>{user.name || "-"}</b>
               </span>
-            </span>
-            <span>{formatDateTime(user.lastActive || user.loginTime) === "-" ? "Never Logged In" : formatDateTime(user.lastActive || user.loginTime)}</span>
-          </div>
-        ))}
+              <span className="admin-users-email" title={user.email || "-"}>
+                {user.email || "-"}
+              </span>
+              <span className="admin-users-clinic-cell">
+                <span className={`admin-users-clinic-logo admin-users-clinic-logo--${clinicLogo.tone}`}>
+                  {clinicLogo.type === "tooth" ? <ClinicToothLogo /> : <ClinicLogoIcon size={17} />}
+                  {clinicLogo.text ? <small>{clinicLogo.text}</small> : null}
+                </span>
+                <b>{user.clinicName || "-"}</b>
+              </span>
+              <span>{user.branchName || "-"}</span>
+              <span>
+                <span className={`admin-users-role admin-users-role--${roleMeta.tone}`}>
+                  <RoleIcon size={15} />
+                  {roleMeta.label}
+                </span>
+              </span>
+              <span>
+                <span className={`admin-users-status ${getDisplayStatus(user).toLowerCase() === "active" ? "is-online" : "is-offline"}`}>
+                  {getDisplayStatus(user)}
+                </span>
+              </span>
+              <span className="admin-users-last-active" title={formatDateTime(user.lastActive || user.loginTime)}>
+                {lastActive}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
     </div>

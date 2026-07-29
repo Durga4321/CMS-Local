@@ -24,7 +24,7 @@ import {
   Stethoscope,
   Users,
   CalendarCheck,
-  DollarSign,
+  IndianRupee,
   UserPlus,
   UserRoundCheck,
 } from "lucide-react";
@@ -520,7 +520,7 @@ function Dashboard() {
           totalRevenue
         ),
       icon:
-        DollarSign,
+        IndianRupee,
       color:
         "purple",
       route:

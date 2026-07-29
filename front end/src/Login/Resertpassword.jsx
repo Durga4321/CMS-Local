@@ -240,7 +240,7 @@ const ResetPassword = () => {
           {errors.api ? <span className="error-message">{errors.api}</span> : null}
 
           <button type="submit" className="submit-btn" disabled={isLoading}>
-            {isLoading ? 'Resetting...' : 'Reset Password'}
+            {isLoading ? 'Resetting...' : 'Reset Password ->'}
           </button>
         </form>
 
@@ -249,7 +249,7 @@ const ResetPassword = () => {
         </Link>
 
         <div className="auth-footer">
-          © {new Date().getFullYear()} CMS · Secure Admin Access
+          © {new Date().getFullYear()} CMS • Secure Admin Access
         </div>
       </div>
     </div>

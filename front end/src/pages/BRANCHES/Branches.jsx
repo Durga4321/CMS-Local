@@ -2,11 +2,14 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Building2,
   CheckCircle,
+  Cross,
+  Leaf,
   MapPin,
   Pencil,
   Plus,
   RefreshCw,
   Search,
+  Sun,
   ToggleLeft,
   ToggleRight,
   Trash2,
@@ -78,6 +81,39 @@ const readBranchField = (branch, ...keys) => {
   return "";
 };
 
+const BranchToothLogo = () => (
+  <svg className="branches-clinic-tooth-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M7.45 3.8c1.2-.52 2.35-.28 3.18.17.86.47 1.88.47 2.74 0 .83-.45 1.98-.69 3.18-.17 2.2.95 3.13 3.25 2.43 5.87l-1.56 5.84c-.45 1.69-1.28 4.72-3.03 4.72-1.24 0-1.31-1.49-1.68-3.08-.18-.78-.43-1.37-.71-1.37s-.53.59-.71 1.37c-.37 1.59-.44 3.08-1.68 3.08-1.75 0-2.58-3.03-3.03-4.72L5.02 9.67C4.32 7.05 5.25 4.75 7.45 3.8Z"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const getClinicLogo = (clinicName = "") => {
+  const name = String(clinicName).toLowerCase();
+  if (name.includes("dental")) return { type: "tooth", text: "", tone: "dental" };
+  if (name.includes("pragathi")) return { type: "icon", icon: Leaf, text: "PRAGATHI", tone: "green" };
+  if (name.includes("sai ram")) return { type: "icon", icon: Sun, text: "SAI RAM", tone: "sky" };
+  if (name.includes("primo")) return { type: "icon", icon: Sun, text: "PRIMO", tone: "amber" };
+  if (name.includes("pirnav")) return { type: "icon", icon: Sun, text: "PIRNAV", tone: "amber" };
+  if (name.includes("nri")) return { type: "icon", icon: Cross, text: "NC", tone: "emerald" };
+  if (name.includes("vims")) return { type: "icon", icon: Cross, text: "VIMS", tone: "emerald" };
+
+  const fallbackText = String(clinicName || "CLINIC")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+
+  return { type: "icon", icon: Cross, text: fallbackText || "CL", tone: "emerald" };
+};
+
 const getBranchForm = (branch, hospitalId) => {
   const parsedAddress = parseAddress(String(readBranchField(branch, "address", "Address") || ""));
 
@@ -136,6 +172,8 @@ function Branches() {
   const toast = useToast();
   const hospitalId = getStoredHospitalId();
   const clinicName = getStoredClinicName() || localStorage.getItem("hospitalName") || "Clinic";
+  const clinicLogo = getClinicLogo(clinicName);
+  const ClinicLogoIcon = clinicLogo.icon;
 
   const [branches, setBranches] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -632,7 +670,10 @@ function Branches() {
       </div>
 
       <div className="branches-clinic-band">
-        <Building2 size={17} />
+        <span className={`branches-clinic-logo branches-clinic-logo--${clinicLogo.tone}`}>
+          {clinicLogo.type === "tooth" ? <BranchToothLogo /> : <ClinicLogoIcon size={21} />}
+          {clinicLogo.text ? <small>{clinicLogo.text}</small> : null}
+        </span>
         <span>Clinic Name</span>
         <b>{clinicName}</b>
       </div>
