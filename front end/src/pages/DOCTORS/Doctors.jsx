@@ -1192,10 +1192,6 @@ function Doctors() {
 
                   <div className="doctor-card-details">
                     <div>
-                      <span>Name</span>
-                      <b>{doc.name || "-"}</b>
-                    </div>
-                    <div>
                       <span>Branch</span>
                       <b>{getDoctorBranchName(doc, branchNameById) || "-"}</b>
                     </div>

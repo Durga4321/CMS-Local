@@ -10,6 +10,7 @@ import {
 import {
   DEFAULT_DIAGNOSIS_OPTIONS,
   fetchDiagnosisOptions,
+  filterDiagnosisOptionsBySpecialization,
   mergeDiagnosisOption,
 } from "../utils/diagnosisOptions";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
@@ -27,12 +28,6 @@ const MEDICAL_HISTORY_API = apiUrl("MedicalHistory");
 const CONSULTATION_API = apiUrl("Consultation");
 
 const emptyValue = "-";
-const CLINICAL_NOTE_SECTIONS = [
-  { key: "noteSubjective", label: "Subjective" },
-  { key: "noteAssessment", label: "Assessment" },
-  { key: "notePlan", label: "Plan" },
-];
-
 const getInitials = (name) =>
   String(name || "P")
     .split(" ")
@@ -63,6 +58,16 @@ const normalizeAppointment = (item, fallback = {}) => {
     appointmentId: item.appointmentId || item.id || fallback.appointmentId,
     patientId: item.patientId || fallback.patientId,
     doctorId: item.doctorId || item.DoctorId || item.doctor?.id || item.Doctor?.Id || fallback.doctorId,
+    doctorSpecialization:
+      item.doctorSpecialization ||
+      item.DoctorSpecialization ||
+      item.specialization ||
+      item.Specialization ||
+      item.doctor?.specialization ||
+      item.Doctor?.Specialization ||
+      fallback.doctorSpecialization ||
+      fallback.specialization ||
+      "",
     tokenNumber: item.tokenNumber || item.TokenNumber || item.token || fallback.tokenNumber,
     patientName: item.patientName || fallback.patientName || emptyValue,
     patientCode: item.patientCode || fallback.patientCode || emptyValue,
@@ -144,47 +149,11 @@ const getFallbackAppointment = (appointments) =>
     )
   ) || appointments[0];
 
-const getClinicalSection = (text, heading, nextHeading) => {
-  const source = String(text || "");
-  const nextPattern = nextHeading ? `\\n\\s*${nextHeading}\\s*\\n` : "$";
-  const pattern = new RegExp(`${heading}\\s*\\n[-\\s]*\\n?([\\s\\S]*?)(?=${nextPattern})`, "i");
-  return (source.match(pattern)?.[1] || "").trim();
-};
-
-const parseClinicalNotes = (text) => {
-  const source = String(text || "").trim();
-  if (!source) {
-    return {
-      noteSubjective: "",
-      noteAssessment: "",
-      notePlan: "",
-    };
-  }
-
-  const noteSubjective = getClinicalSection(source, "Subjective", "Assessment");
-  const noteAssessment = getClinicalSection(source, "Assessment", "Plan");
-  const notePlan = getClinicalSection(source, "Plan");
-
-  if (noteSubjective || noteAssessment || notePlan) {
-    return { noteSubjective, noteAssessment, notePlan };
-  }
-
-  return {
-    noteSubjective: source,
-    noteAssessment: "",
-    notePlan: "",
-  };
-};
-
-const buildClinicalNotes = ({ noteSubjective, noteAssessment, notePlan }) =>
-  `Subjective\n${String(noteSubjective || "").trim()}\n\nAssessment\n${String(
-    noteAssessment || ""
-  ).trim()}\n\nPlan\n${String(notePlan || "").trim()}`.trim();
-
 function Consultation() {
   const navigate = useNavigate();
   const location = useLocation();
   const routeState = React.useMemo(() => location.state || {}, [location.state]);
+  const sessionDoctor = useMemo(() => getLoggedInDoctor(), []);
 
   const [step, setStep] = useState(1);
   const [appointment, setAppointment] = useState(null);
@@ -194,7 +163,6 @@ function Consultation() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [diagnosisOptions, setDiagnosisOptions] = useState([]);
-  const [lastEdited, setLastEdited] = useState("");
   const [form, setForm] = useState({
     complaintsChoice: "",
     diagnosis: "",
@@ -204,15 +172,12 @@ function Consultation() {
     weight: "",
     pulse: "",
     resp: "",
-    noteSubjective: "",
-    noteAssessment: "",
-    notePlan: "",
   });
 
   useEffect(() => {
     let isActive = true;
 
-    fetchDiagnosisOptions()
+    fetchDiagnosisOptions(sessionDoctor.specialization)
       .then((options) => {
         if (isActive) setDiagnosisOptions(options);
       })
@@ -223,7 +188,7 @@ function Consultation() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [sessionDoctor.specialization]);
 
   useEffect(() => {
     const loadConsultation = async () => {
@@ -350,7 +315,6 @@ function Consultation() {
         setAppointment(hydratedAppointment);
         setOverview(patientOverview);
         setStep(getStepFromStatus(hydratedAppointment.status));
-        const clinicalSections = parseClinicalNotes(savedConsultation?.clinicalNotes);
 
         setForm({
           complaintsChoice: appointmentComplaint,
@@ -361,7 +325,6 @@ function Consultation() {
           weight: hydratedAppointment.weight || "",
           pulse: hydratedAppointment.pulseRate || "",
           resp: hydratedAppointment.respiratoryRate || "",
-          ...clinicalSections,
         });
       } catch (err) {
         console.error(err);
@@ -419,24 +382,25 @@ function Consultation() {
   }, [appointment, overview]);
 
   const diagnosisSelectOptions = useMemo(() => {
-    const options = new Set(DEFAULT_DIAGNOSIS_OPTIONS);
-    diagnosisOptions.forEach((diagnosis) => {
+    const doctorSpecialization =
+      appointment?.doctorSpecialization ||
+      appointment?.specialization ||
+      sessionDoctor.specialization;
+    const options = new Set(
+      filterDiagnosisOptionsBySpecialization(
+        DEFAULT_DIAGNOSIS_OPTIONS,
+        doctorSpecialization
+      )
+    );
+    filterDiagnosisOptionsBySpecialization(diagnosisOptions, doctorSpecialization).forEach((diagnosis) => {
       if (diagnosis) options.add(diagnosis);
     });
     if (form.diagnosis) options.add(form.diagnosis);
     return Array.from(options).sort((a, b) => a.localeCompare(b));
-  }, [diagnosisOptions, form.diagnosis]);
+  }, [appointment, diagnosisOptions, form.diagnosis, sessionDoctor.specialization]);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    if (e.target.name.startsWith("note")) {
-      setLastEdited(
-        new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      );
-    }
   };
 
   const saveConsultation = async () => {
@@ -467,7 +431,6 @@ function Consultation() {
         patientId: Number(appointment.patientId),
         doctorId: appointment.doctorId || appointment.doctor?.id || undefined,
         diagnosis: form.diagnosis.trim(),
-        clinicalNotes: buildClinicalNotes(form),
       };
 
       if (form.complaintsChoice.trim()) {
@@ -526,7 +489,6 @@ function Consultation() {
         consultation: {
           ...result,
           diagnosis: result.diagnosis || form.diagnosis,
-          clinicalNotes: result.clinicalNotes || buildClinicalNotes(form),
         },
       },
     });
@@ -649,34 +611,6 @@ function Consultation() {
                 />
               </div>
             ))}
-          </div>
-
-          <div className="cn-field">
-            <div className="cn-notes-card">
-              <div className="cn-notes-header">
-                <label className="cn-label">Clinical Notes</label>
-                <span>Auto Saved</span>
-              </div>
-              <div className="cn-notes-sections">
-                {CLINICAL_NOTE_SECTIONS.map((section) => (
-                  <div className="cn-note-section" key={section.key}>
-                    <p className="cn-note-section-title">{section.label}</p>
-                    <textarea
-                      className="cn-textarea cn-notes-textarea"
-                      name={section.key}
-                      value={form[section.key]}
-                      onChange={handleChange}
-                      rows={4}
-                      placeholder={`Enter ${section.label.toLowerCase()} notes`}
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="cn-notes-footer">
-                <span>Character Count: {buildClinicalNotes(form).length}</span>
-                <span>Last Edited: {lastEdited || "-"}</span>
-              </div>
-            </div>
           </div>
 
           <div className="cn-field">

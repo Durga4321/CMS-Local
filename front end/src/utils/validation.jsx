@@ -8,7 +8,7 @@ export const ADDRESS_TEXT_PATTERN = /^[A-Za-z0-9\s.,/#-]+$/;
 const REPEATED_LETTER_PATTERN = /([A-Za-z])\1{3,}/;
 const LONG_CONSONANT_RUN_PATTERN = /[bcdfghjklmnpqrstvwxyz]{5,}/i;
 const VOWEL_PATTERN = /[aeiou]/i;
-const CAPITALIZED_WORD_PATTERN = /\b[A-Za-z][A-Za-z]*(?:['-][A-Za-z]+)*\b/g;
+const FIRST_LETTER_PATTERN = /[A-Za-z]/;
 
 const hasRepeatedSubstringPattern = (text) => {
   const normalized = String(text || "").toLowerCase().replace(/[^a-z]/g, "");
@@ -108,14 +108,10 @@ export const validateCapitalizedWords = (value, label) => {
   const text = String(value ?? "").trim();
   if (!text) return "";
 
-  const words = text.match(CAPITALIZED_WORD_PATTERN) || [];
-  const invalidWord = words.find((word) => {
-    const firstLetter = word.match(/[A-Za-z]/)?.[0] || "";
-    return firstLetter && firstLetter !== firstLetter.toUpperCase();
-  });
+  const firstLetter = text.match(FIRST_LETTER_PATTERN)?.[0] || "";
 
-  return invalidWord
-    ? `${label} should have every word start with a capital letter.`
+  return firstLetter && firstLetter !== firstLetter.toUpperCase()
+    ? `${label} should start with a capital letter.`
     : "";
 };
 

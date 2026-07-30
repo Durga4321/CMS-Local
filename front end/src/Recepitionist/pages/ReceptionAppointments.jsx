@@ -12,6 +12,7 @@ import {
 } from "../receptionScope";
 import { validateText } from "../../utils/validation";
 import { formatIndianCurrency } from "../../utils/format";
+import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import {
   DUPLICATE_APPOINTMENT_MESSAGE,
   hasDuplicateAppointmentForPatientDoctorDate,
@@ -39,29 +40,6 @@ const parseSlotLabel = (slot) => {
 };
 
 const getSlotStart = (slot) => String(parseSlotLabel(slot) || "").split(" - ")[0].trim();
-
-const getSlotEnd = (slot) => String(parseSlotLabel(slot) || "").split(" - ")[1]?.trim() || "";
-
-const getMinutesFromTime = (value) => {
-  const text = String(value || "").trim();
-  const match = text.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/i);
-  if (!match) return null;
-
-  let hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  const meridiem = match[3]?.toUpperCase();
-
-  if (meridiem === "PM" && hours < 12) {
-    hours += 12;
-  }
-  if (meridiem === "AM" && hours === 12) {
-    hours = 0;
-  }
-
-  return Number.isFinite(hours) && Number.isFinite(minutes)
-    ? hours * 60 + minutes
-    : null;
-};
 
 const formatTo12Hour = (time) => {
   if (!time) return "";
@@ -116,35 +94,6 @@ const normalizeSlotStart = (value) => {
   if (meridiem === "AM" && hours === 12) hours = 0;
 
   return `${String(hours).padStart(2, "0")}:${minutes}`;
-};
-
-const isToday = (date) => {
-  const today = new Date();
-  const [year, month, day] = String(date || "").split("-").map(Number);
-
-  return (
-    today.getFullYear() === year &&
-    today.getMonth() + 1 === month &&
-    today.getDate() === day
-  );
-};
-
-const isCompletedSlot = (slotLabel, date) => {
-  if (!isToday(date)) return false;
-
-  const slotStart = getSlotStart(slotLabel);
-  const slotEnd = getSlotEnd(slotLabel);
-  const startMinutes = getMinutesFromTime(slotStart);
-  let endMinutes = getMinutesFromTime(slotEnd);
-
-  if (endMinutes === null) return false;
-  if (startMinutes !== null && endMinutes <= startMinutes) {
-    endMinutes += 12 * 60;
-  }
-
-  const now = new Date();
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  return endMinutes <= nowMinutes;
 };
 
 const getSlotStatus = (slot) => String(slot?.status || "").trim().toLowerCase();
@@ -406,6 +355,233 @@ const appendUnit = (value, unit) => {
   return text ? `${text} ${unit}` : "";
 };
 
+const escapeReceiptHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+const readFirst = (source = {}, keys = [], fallback = "") => {
+  for (const key of keys) {
+    const value = key.split(".").reduce((record, part) => record?.[part], source);
+    if (value !== undefined && value !== null && value !== "") return value;
+  }
+  return fallback;
+};
+
+const formatReceiptDateTime = (value = new Date()) => {
+  const date = new Date(value || Date.now());
+  if (Number.isNaN(date.getTime())) return String(value || "");
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const formatReceiptDate = (value = new Date()) => {
+  const date = new Date(value || Date.now());
+  if (Number.isNaN(date.getTime())) return String(value || "");
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const numberToWordsUnderOneLakh = (value) => {
+  const amount = Math.round(Number(value) || 0);
+  if (amount === 0) return "Zero";
+
+  const ones = [
+    "",
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
+  ];
+  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+  const belowHundred = (num) =>
+    num < 20 ? ones[num] : `${tens[Math.floor(num / 10)]}${num % 10 ? ` ${ones[num % 10]}` : ""}`;
+  const belowThousand = (num) =>
+    num >= 100
+      ? `${ones[Math.floor(num / 100)]} Hundred${num % 100 ? ` ${belowHundred(num % 100)}` : ""}`
+      : belowHundred(num);
+
+  if (amount >= 1000) {
+    return `${belowThousand(Math.floor(amount / 1000))} Thousand${amount % 1000 ? ` ${belowThousand(amount % 1000)}` : ""}`;
+  }
+  return belowThousand(amount);
+};
+
+const buildReceiptReference = (prefix) =>
+  `${prefix}${String(Date.now()).slice(-7)}${String(Math.floor(Math.random() * 90) + 10)}`;
+
+const printConsultationReceipt = ({
+  appointment = {},
+  patient = {},
+  doctor = {},
+  receptionist = {},
+  branchName = "",
+  fee = 0,
+  paymentMode = "",
+  slot = "",
+  vitals = {},
+  chiefComplaints = "",
+}) => {
+  const printWindow = window.open("", "_blank", "width=920,height=720");
+  if (!printWindow) return false;
+
+  const clinicName = getClinicDisplayName(
+    {
+      hospitalName: receptionist.hospitalName,
+      clinicName: receptionist.hospitalName,
+      hospitalId: receptionist.hospitalId,
+    },
+    "Clinic"
+  );
+  const patientName = readFirst(appointment, ["patientName", "PatientName"], "") || readFirst(patient, ["name", "fullName", "patientName"], "Patient");
+  const patientId = readFirst(appointment, ["patientId", "PatientId"], "") || readFirst(patient, ["id", "patientId", "PatientId", "PID"], "-");
+  const phone = readFirst(appointment, ["phone", "patientPhone", "PatientPhone"], "") || readFirst(patient, ["phone", "Phone", "phoneNumber", "PhoneNumber"], "-");
+  const age = readFirst(patient, ["age", "Age", "patientAge", "PatientAge"], "-");
+  const gender = readFirst(patient, ["gender", "Gender", "sex", "Sex"], "-");
+  const address = readFirst(patient, ["address", "Address", "location", "Location"], "-");
+  const doctorName = readFirst(appointment, ["doctorName", "DoctorName"], "") || getDoctorName(doctor) || "Doctor";
+  const specialization = getSpecializationDisplayName(readFirst(doctor, ["specialization", "Specialization"], "")) || "-";
+  const receiptNo = readFirst(appointment, ["receiptNo", "ReceiptNo", "transactionId", "TransactionId"], "") || buildReceiptReference("OP");
+  const umrNo = `UMR${String(patientId || Date.now()).replace(/\D/g, "").padStart(7, "0").slice(-7)}`;
+  const amount = Number(fee) || 0;
+  const now = new Date();
+
+  printWindow.document.write(`
+    <!doctype html>
+    <html>
+      <head>
+        <title>OP Consultation Receipt - ${escapeReceiptHtml(receiptNo)}</title>
+        <style>
+          @page { size: A5 landscape; margin: 10mm; }
+          body { margin: 0; color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
+          .bill { border: 1px solid #111; padding: 12px 14px; min-height: 128mm; box-sizing: border-box; }
+          .top { display: grid; grid-template-columns: 1.35fr 1fr; border-bottom: 1px solid #111; }
+          .clinic { text-align: center; padding: 6px 12px 10px; border-right: 1px solid #111; }
+          .clinic h1 { margin: 0 0 5px; font-size: 18px; text-transform: uppercase; }
+          .clinic p { margin: 2px 0; line-height: 1.35; }
+          .title { margin-top: 5px; font-weight: 800; text-decoration: underline; font-size: 15px; }
+          .patient { padding: 6px 0 8px 12px; }
+          .row { display: grid; grid-template-columns: 90px 10px 1fr; gap: 4px; margin: 4px 0; align-items: start; }
+          .section { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; padding: 12px 0 6px; }
+          .label { color: #333; }
+          .value { font-weight: 700; }
+          .amounts { width: 42%; margin-left: auto; margin-top: 8px; }
+          .amount-row { display: grid; grid-template-columns: 1fr 90px; gap: 12px; margin: 7px 0; }
+          .amount-row strong { text-align: right; }
+          .validity { margin-top: 10px; line-height: 1.55; }
+          .footer { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 14px; align-items: end; }
+          .barcode { font-family: "Libre Barcode 39", "Courier New", monospace; letter-spacing: 2px; font-size: 30px; line-height: 1; }
+          .barcode-text { font-size: 13px; margin-top: 2px; letter-spacing: 1px; }
+          .sign { text-align: right; font-weight: 800; padding-top: 34px; }
+          .stamp { border: 2px solid #111; border-radius: 999px; display: inline-flex; min-width: 54px; min-height: 38px; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; margin-left: 10px; }
+          @media print { button { display: none; } body { print-color-adjust: exact; } }
+        </style>
+      </head>
+      <body>
+        <div class="bill">
+          <div class="top">
+            <div class="clinic">
+              <h1>${escapeReceiptHtml(clinicName)}</h1>
+              <p>${escapeReceiptHtml(branchName || receptionist.branchName || "Branch")}</p>
+              <p>Reg. No: ${escapeReceiptHtml(String(receptionist.hospitalId || "-"))}</p>
+              <div class="title">Consultation Bill - Cum - Receipt</div>
+            </div>
+            <div class="patient">
+              <div class="row"><span class="label">Pt. Name</span><span>:</span><span class="value">${escapeReceiptHtml(patientName)}</span></div>
+              <div class="row"><span class="label">UMR No</span><span>:</span><span class="value">${escapeReceiptHtml(umrNo)}</span></div>
+              <div class="row"><span class="label">Cons No</span><span>:</span><span>${escapeReceiptHtml(receiptNo)}</span></div>
+              <div class="row"><span class="label">Age/Sex</span><span>:</span><span>${escapeReceiptHtml(age)} / ${escapeReceiptHtml(gender)}</span></div>
+              <div class="row"><span class="label">Cons Dt</span><span>:</span><span>${escapeReceiptHtml(formatReceiptDate(appointment.date || appointment.appointmentDate || new Date()))}</span></div>
+              <div class="row"><span class="label">Phone</span><span>:</span><span>${escapeReceiptHtml(phone)}</span></div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div>
+              <div class="row"><span class="label">Consultant</span><span>:</span><span class="value">Dr. ${escapeReceiptHtml(doctorName)}</span></div>
+              <div class="row"><span class="label">Ref By</span><span>:</span><span>WALKIN</span></div>
+              <div class="row"><span class="label">Visit Type</span><span>:</span><span>Normal</span></div>
+              <div class="row"><span class="label">Pay mode</span><span>:</span><span>${escapeReceiptHtml(paymentMode || "-")}</span></div>
+              <div class="row"><span class="label">Slot</span><span>:</span><span>${escapeReceiptHtml(slot || "-")}</span></div>
+              <div class="row"><span class="label">Complaint</span><span>:</span><span>${escapeReceiptHtml(chiefComplaints || "-")}</span></div>
+            </div>
+            <div>
+              <div class="row"><span class="label">Address</span><span>:</span><span>${escapeReceiptHtml(address)}</span></div>
+              <div class="row"><span class="label">Department</span><span>:</span><span>${escapeReceiptHtml(specialization)}</span></div>
+              <div class="row"><span class="label">Cons Fee</span><span>:</span><span class="value">${escapeReceiptHtml(formatIndianCurrency(amount))}</span></div>
+              <div class="row"><span class="label">BP</span><span>:</span><span>${escapeReceiptHtml(vitals.bloodPressure || "-")}</span></div>
+              <div class="row"><span class="label">Temp/Weight</span><span>:</span><span>${escapeReceiptHtml(vitals.temperature || "-")} / ${escapeReceiptHtml(vitals.weight || "-")}</span></div>
+            </div>
+          </div>
+
+          <div class="amounts">
+            <div class="amount-row"><span>Recpt Amt</span><strong>${amount.toFixed(2)}</strong></div>
+            <div class="amount-row"><span>Cash Amt</span><strong>${amount.toFixed(2)}</strong></div>
+            <div class="amount-row"><span>Due Amt</span><strong>0.00</strong></div>
+          </div>
+
+          <div class="validity">
+            <div>Validity: &lt; PAY &gt; Validity: consultation before ${escapeReceiptHtml(formatReceiptDate(new Date(Date.now() + 29 * 24 * 60 * 60 * 1000)))}</div>
+            <div>Received with thanks from ${escapeReceiptHtml(patientName)}. A sum of ${escapeReceiptHtml(formatIndianCurrency(amount))}/-</div>
+            <div>In Words: ${escapeReceiptHtml(numberToWordsUnderOneLakh(amount))} Rupees Only</div>
+          </div>
+
+          <div class="footer">
+            <div>
+              <div class="row"><span class="label">Create By</span><span>:</span><span>${escapeReceiptHtml(receptionist.name || "-")}</span></div>
+              <div class="row"><span class="label">Print By</span><span>:</span><span>${escapeReceiptHtml(receptionist.name || "-")}</span></div>
+              <div class="row"><span class="label">Create Dt</span><span>:</span><span>${escapeReceiptHtml(formatReceiptDateTime(now))}</span></div>
+              <div class="row"><span class="label">Print Dt</span><span>:</span><span>${escapeReceiptHtml(formatReceiptDateTime(now))}</span></div>
+            </div>
+            <div>
+              <div class="barcode">*${escapeReceiptHtml(umrNo)}*</div>
+              <div class="barcode-text">${escapeReceiptHtml(umrNo)}</div>
+              <div class="barcode">*${escapeReceiptHtml(receiptNo)}*</div>
+              <div class="barcode-text">${escapeReceiptHtml(receiptNo)}</div>
+              <div class="sign">(Authorised Signatory)<span class="stamp">OP</span></div>
+            </div>
+          </div>
+        </div>
+        <script>
+          window.onload = () => {
+            window.focus();
+            window.print();
+          };
+        </script>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  return true;
+};
+
 function ReceptionAppointments() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -631,6 +807,15 @@ function ReceptionAppointments() {
     return String(slot).trim();
   };
 
+  const getSlotBranchId = (slot) =>
+    String(
+      slot?.branchId ??
+        slot?.BranchId ??
+        slot?.clinicBranchId ??
+        slot?.ClinicBranchId ??
+        ""
+    ).trim();
+
   const bookedSlots = useMemo(() => {
     return new Set(
       appointments
@@ -690,9 +875,18 @@ function ReceptionAppointments() {
     }
 
     setSlotLoading(true);
-    requestJson(`Schedule/day-slots?doctorId=${form.doctorId}&date=${form.date}`)
+    const query = new URLSearchParams({
+      doctorId: String(form.doctorId),
+      date: form.date,
+    });
+    if (receptionistBranchId) query.set("branchId", receptionistBranchId);
+
+    requestJson(`Schedule/day-slots?${query.toString()}`)
       .then((data) => {
-        const slots = parseSlots(data);
+        const slots = parseSlots(data).filter((slot) => {
+          const slotBranchId = getSlotBranchId(slot);
+          return !receptionistBranchId || !slotBranchId || slotBranchId === receptionistBranchId;
+        });
         setAvailableSlots(slots);
         setSelectedSlot("");
       })
@@ -700,7 +894,7 @@ function ReceptionAppointments() {
         setAvailableSlots([]);
       })
       .finally(() => setSlotLoading(false));
-  }, [form.doctorId, form.date]);
+  }, [form.doctorId, form.date, receptionistBranchId]);
 
   const validateBookingForm = () => {
     if (!form.patientId || !form.doctorId || !selectedSlot) {
@@ -760,9 +954,15 @@ function ReceptionAppointments() {
   const submit = async () => {
     if (!validateBookingForm()) return;
 
+    const selectedSlotObject = availableSlots.find(
+      (slot) => parseSlotLabel(slot) === selectedSlot
+    );
     const selectedSlotStart = getSlotStart(selectedSlot);
     const branchIdForAppointment =
-      Number(getDoctorBranchId(selectedDoctor)) || Number(receptionistBranchId) || 0;
+      Number(getSlotBranchId(selectedSlotObject)) ||
+      Number(receptionistBranchId) ||
+      Number(getDoctorBranchId(selectedDoctor)) ||
+      0;
     const transactionId = `CONS-${Date.now()}`;
     const vitals = {
       bloodPressure: appendUnit(form.bloodPressure, vitalFieldByName.bloodPressure.unit),
@@ -810,7 +1010,19 @@ function ReceptionAppointments() {
     try {
       setBookingLoading(true);
       console.debug("Booking payload", { selectedDoctor, branchIdForAppointment, body });
-      await requestJson("Appointment", { method: "POST", body: JSON.stringify(body) });
+      const savedAppointment = await requestJson("Appointment", { method: "POST", body: JSON.stringify(body) });
+      printConsultationReceipt({
+        appointment: { ...body, ...(savedAppointment || {}) },
+        patient: selectedPatient,
+        doctor: selectedDoctor,
+        receptionist: receptionistProfile,
+        branchName: receptionistBranchName,
+        fee: consultationFee,
+        paymentMode,
+        slot: selectedSlot,
+        vitals,
+        chiefComplaints: form.chiefComplaints.trim(),
+      });
       setMessage("Payment received. Appointment booked successfully.");
       toast.success("Payment received. Appointment booked successfully");
       setSelectedSlot("");

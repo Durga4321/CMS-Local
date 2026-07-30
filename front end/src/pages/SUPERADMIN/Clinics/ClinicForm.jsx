@@ -190,9 +190,9 @@ function ClinicForm({ mode }) {
     if (name === "pincode") {
       nextValue = onlyPincodeValue(value);
     } else if (["city", "state", "country"].includes(name)) {
-      nextValue = onlyAlpha(value).trim();
+      nextValue = onlyAlpha(value);
     } else {
-      nextValue = onlyAddressText(value).trim();
+      nextValue = onlyAddressText(value);
     }
 
     setForm((current) => {

@@ -46,6 +46,11 @@ export const getLoggedInDoctor = () => {
     id: String(id || "").trim(),
     name: String(name || "").trim(),
     email: localStorage.getItem("doctorEmail") || "",
+    specialization:
+      localStorage.getItem("doctorSpecialization") ||
+      localStorage.getItem("specialization") ||
+      getClaim(claims, "Specialization", "specialization", "DoctorSpecialization", "doctorSpecialization") ||
+      "",
   };
 };
 

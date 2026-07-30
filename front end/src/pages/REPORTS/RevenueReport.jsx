@@ -301,6 +301,7 @@ const DOCTOR_API =
 
 const BILLING_API =
   apiUrl("Billing");
+const LOCAL_SERVICE_BILLS_KEY = "receptionRecentServiceBills";
 
 const parseList = (value) => {
   if (Array.isArray(value)) return value;
@@ -382,6 +383,30 @@ const buildRevenueFromBilling = (billingRows = []) => {
   return Array.from(byMonth.values());
 };
 
+const readLocalServiceBills = () => {
+  try {
+    const bills = JSON.parse(localStorage.getItem(LOCAL_SERVICE_BILLS_KEY) || "[]");
+    return Array.isArray(bills) ? bills : [];
+  } catch {
+    return [];
+  }
+};
+
+const getBillingKey = (row = {}, index = 0) =>
+  String(
+    pick(row, ["invoiceNo", "invoiceNumber", "billNumber", "billingId", "billId", "id"], "") ||
+      `${pick(row, ["patientId", "patientName"], "patient")}-${getRevenueAmount(row)}-${getRowDate(row) || index}`
+  );
+
+const dedupeBillingRows = (rows = []) => {
+  const lookup = new Map();
+  rows.forEach((row, index) => {
+    const key = getBillingKey(row, index);
+    if (!lookup.has(key)) lookup.set(key, row);
+  });
+  return Array.from(lookup.values());
+};
+
 // ================= COMPONENT =================
 
 function RevenueReport() {
@@ -451,7 +476,7 @@ function RevenueReport() {
         }
 
         const billingResult = await billingResponse.json();
-        const billingRows = parseList(billingResult).filter((row) => {
+        const billingRows = dedupeBillingRows([...parseList(billingResult), ...readLocalServiceBills()]).filter((row) => {
           if (doctorId && String(pick(row, ["doctorId", "DoctorId"], "")) !== String(doctorId)) {
             return false;
           }
