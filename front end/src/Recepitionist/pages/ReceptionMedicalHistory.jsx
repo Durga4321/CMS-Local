@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Trash2,
   Upload,
+  X,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { parseList, requestJson } from "../receptionApi";
@@ -392,13 +393,24 @@ function ReceptionMedicalHistory() {
             onSubmit={saveHistory}
             onClick={(event) => event.stopPropagation()}
           >
-            <h3>
-              {modal === "view"
-                ? "Medical History Details"
-                : modal === "edit"
-                  ? "Edit Medical History"
-                  : "Add Medical History"}
-            </h3>
+            <div className="rc-modal-header">
+              <h3>
+                {modal === "view"
+                  ? "Medical History Details"
+                  : modal === "edit"
+                    ? "Edit Medical History"
+                    : "Add Medical History"}
+              </h3>
+              <button
+                type="button"
+                className="rc-modal-close"
+                onClick={() => setModal(null)}
+                aria-label="Close"
+                title="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
             <div className="rc-form-grid">
               <label>
                 <span>Patient</span>

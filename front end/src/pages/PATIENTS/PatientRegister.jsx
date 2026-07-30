@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { apiUrl } from "../../config/api";
+import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
 import PasswordField from "../../components/PasswordField";
 import { buildAddress, emptyAddressParts, onlyPincodeValue } from "../../utils/address";
@@ -14,6 +14,56 @@ import clinicBg from '../../assests/clinic-bg.jpg';
 import "../../Login/styles/Auth.css";
 
 const REGISTER_API = apiUrl("patient-portal/register");
+
+const DOB_REGEX = /^(\d{2})\/(\d{2})\/(\d{2,4})$/;
+const MAX_DOB_AGE = 100;
+
+export const validateDobValue = (value) => {
+  if (!value?.trim()) return "Date of birth is required.";
+
+  const input = String(value).trim();
+  let date = null;
+
+  if (DOB_REGEX.test(input)) {
+    const [, day, month, yearPart] = input.match(DOB_REGEX);
+    const year = yearPart.length === 2 ? `20${yearPart}` : yearPart;
+    date = new Date(`${year}-${month}-${day}T00:00:00`);
+  } else if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+    date = new Date(`${input}T00:00:00`);
+  } else {
+    return "Use DD/MM/YYYY or browser date picker.";
+  }
+
+  if (!date || Number.isNaN(date.getTime())) return "Enter a valid date of birth.";
+
+  const parsedYear = date.getFullYear();
+  const parsedMonth = String(date.getMonth() + 1).padStart(2, "0");
+  const parsedDay = String(date.getDate()).padStart(2, "0");
+
+  if (DOB_REGEX.test(input)) {
+    const [, day, month, yearPart] = input.match(DOB_REGEX);
+    const year = yearPart.length === 2 ? `20${yearPart}` : yearPart;
+    if (parsedDay !== day || parsedMonth !== month || String(parsedYear) !== year) {
+      return "Enter a valid date of birth.";
+    }
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (date > today) return "Date of birth cannot be in the future.";
+
+  const age = today.getFullYear() - date.getFullYear() -
+    (today.getMonth() < date.getMonth() ||
+    (today.getMonth() === date.getMonth() && today.getDate() < date.getDate())
+      ? 1
+      : 0);
+
+  if (age > MAX_DOB_AGE) {
+    return `Enter a realistic date of birth. Age must be ${MAX_DOB_AGE} years or less.`;
+  }
+
+  return "";
+};
 
 function PatientRegister() {
   const navigate = useNavigate();
@@ -38,45 +88,6 @@ function PatientRegister() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [areaOptions, setAreaOptions] = useState([]);
   const [clinics, setClinics] = useState([]);
-
-  const DOB_REGEX = /^(\d{2})\/(\d{2})\/(\d{2,4})$/;
-
-  const validateDobValue = (value) => {
-    if (!value?.trim()) return "Date of birth is required.";
-
-    const input = String(value).trim();
-    let date = null;
-
-    if (DOB_REGEX.test(input)) {
-      const [, day, month, yearPart] = input.match(DOB_REGEX);
-      const year = yearPart.length === 2 ? `20${yearPart}` : yearPart;
-      date = new Date(`${year}-${month}-${day}T00:00:00`);
-    } else if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
-      date = new Date(`${input}T00:00:00`);
-    } else {
-      return "Use DD/MM/YYYY or browser date picker.";
-    }
-
-    if (!date || Number.isNaN(date.getTime())) return "Enter a valid date of birth.";
-
-    const parsedYear = date.getFullYear();
-    const parsedMonth = String(date.getMonth() + 1).padStart(2, "0");
-    const parsedDay = String(date.getDate()).padStart(2, "0");
-
-    if (DOB_REGEX.test(input)) {
-      const [, day, month, yearPart] = input.match(DOB_REGEX);
-      const year = yearPart.length === 2 ? `20${yearPart}` : yearPart;
-      if (parsedDay !== day || parsedMonth !== month || String(parsedYear) !== year) {
-        return "Enter a valid date of birth.";
-      }
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (date > today) return "Date of birth cannot be in the future.";
-
-    return "";
-  };
 
   const normalizeDobInput = (value) => {
     const input = String(value || "").trim();
@@ -110,30 +121,94 @@ function PatientRegister() {
     [form.addressParts?.area, ...areaOptions].filter(Boolean)
   );
 
+  const extractArrayFromResponse = (value) => {
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== "object") return null;
+
+    const preferredKeys = [
+      "clinics",
+      "items",
+      "data",
+      "result",
+      "results",
+      "branches",
+      "values",
+    ];
+
+    for (const key of preferredKeys) {
+      const extracted = extractArrayFromResponse(value[key]);
+      if (Array.isArray(extracted)) return extracted;
+    }
+
+    for (const key of Object.keys(value)) {
+      const extracted = extractArrayFromResponse(value[key]);
+      if (Array.isArray(extracted)) return extracted;
+    }
+
+    return null;
+  };
+
+  const fetchClinicList = async (url, headers, signal) => {
+    try {
+      const response = await fetch(url, { headers, signal });
+      console.debug("loadClinics: fetching", url, { status: response?.status });
+      if (!response?.ok) {
+        console.warn("loadClinics: non-ok status", response?.status, url);
+        return null;
+      }
+      const data = await response.json().catch(() => null);
+      console.debug("loadClinics: response data", { url, data });
+      const list = extractArrayFromResponse(data) || [];
+      return Array.isArray(list) ? list : [];
+    } catch (err) {
+      if (err && err.name === "AbortError") {
+        console.warn("loadClinics: request aborted (timeout)");
+      } else {
+        console.error("loadClinics: fetch error", err, url);
+      }
+      return null;
+    }
+  };
+
   // Fetch clinics on mount
   useEffect(() => {
     let mounted = true;
     const loadClinics = async () => {
       setLoadingClinics(true);
+      const token = localStorage.getItem("patientToken") || localStorage.getItem("token") || "";
+      const headers = { "ngrok-skip-browser-warning": "true" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
       try {
-        const response = await fetch(apiUrl("clinics"), {
-          headers: { "ngrok-skip-browser-warning": "true" },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          const list = Array.isArray(data) ? data : (data.items || data.data || []);
-          if (!mounted) return;
-          setClinics(list || []);
-        } else {
-          if (mounted) setClinics([]);
+        const primaryUrl = patientApiUrl(PATIENT_API.clinics);
+        let list = await fetchClinicList(primaryUrl, headers, controller.signal);
+
+        if (list === null || list.length === 0) {
+          const fallbackUrl = apiUrl("Clinics");
+          console.debug("loadClinics: primary endpoint returned no data, trying fallback", fallbackUrl);
+          const fallbackList = await fetchClinicList(fallbackUrl, headers, controller.signal);
+          if (Array.isArray(fallbackList) && fallbackList.length > 0) {
+            list = fallbackList;
+          }
         }
-      } catch (err) {
-        console.error("Failed to load clinics", err);
-        if (mounted) setClinics([]);
+
+        if (!mounted) return;
+
+        const normalized = (list || []).map((c) => {
+          const id = c?.id || c?.clinicId || c?.hospitalId || c?.branchId || c?._id || "";
+          const name = c?.name || c?.clinicName || c?.hospitalName || c?.branchName || c?.label || "Clinic";
+          return { id: String(id), name };
+        }).filter((x) => x && x.id);
+
+        setClinics(normalized);
       } finally {
+        clearTimeout(timeoutId);
         if (mounted) setLoadingClinics(false);
       }
     };
+
     loadClinics();
     return () => {
       mounted = false;
@@ -474,13 +549,15 @@ function PatientRegister() {
                 <select id="reg-clinic" name="hospitalId" value={form.hospitalId} onChange={handleChange} disabled={loadingClinics}>
                   {loadingClinics ? (
                     <option value="">Loading clinics...</option>
-                  ) : (
+                  ) : clinics && clinics.length > 0 ? (
                     <>
                       <option value="">Select Clinic</option>
                       {clinics.map((clinic) => (
-                        <option key={clinic.id || clinic.hospitalId} value={clinic.id || clinic.hospitalId}>{clinic.name || clinic.clinicName || 'Clinic'}</option>
+                        <option key={clinic.id} value={clinic.id}>{clinic.name}</option>
                       ))}
                     </>
+                  ) : (
+                    <option value="">No clinics available</option>
                   )}
                 </select>
                 {errors.hospitalId && <span className="error-message">{errors.hospitalId}</span>}

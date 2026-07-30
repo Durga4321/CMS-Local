@@ -23,6 +23,20 @@ const getNestedValue = (record, path) => {
 const readFirst = (record, keys) =>
   keys.reduce((value, key) => value || getNestedValue(record, key), "") || "";
 
+const getTokenSequence = (appointment = {}) => {
+  const token = readFirst(appointment, ["tokenNumber", "TokenNumber", "token", "tokenNo", "token_number"]);
+  const match = String(token || "").trim().match(/^TKN\s*0*(\d+)$/i);
+  return match ? Number(match[1]) : 0;
+};
+
+const createNextPatientToken = (appointments = []) => {
+  const highestToken = (Array.isArray(appointments) ? appointments : []).reduce(
+    (highest, appointment) => Math.max(highest, getTokenSequence(appointment)),
+    0
+  );
+  return `TKN${String(highestToken + 1).padStart(3, "0")}`;
+};
+
 const PATIENT_NOTIFICATION_TYPES = [
   'Appointment Reminder',
   'Prescription Ready',
@@ -186,6 +200,48 @@ const formatAppointmentDateTime = (value) => {
   if (!date) return "";
   if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return `${date}T00:00:00.000Z`;
   return date;
+};
+
+const normalizeAppointmentBookingDate = (value) => String(value || "").trim().slice(0, 10);
+
+const normalizeAppointmentBookingTime = (value) => {
+  const text = String(value || "").trim();
+  const match = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?/i);
+  if (!match) return text.toLowerCase();
+
+  let hour = Number(match[1]);
+  const minute = match[2];
+  const period = match[3]?.toUpperCase();
+  if (period === "PM" && hour < 12) hour += 12;
+  if (period === "AM" && hour === 12) hour = 0;
+  return `${String(hour).padStart(2, "0")}:${minute}`;
+};
+
+const isActiveAppointmentBooking = (appointment = {}) =>
+  !["cancelled", "canceled", "rejected"].includes(
+    String(readFirst(appointment, ["status", "appointmentStatus", "state"]) || "").trim().toLowerCase()
+  );
+
+export const findPatientBookingConflict = (visits = [], date, time) => {
+  const selectedDate = normalizeAppointmentBookingDate(date);
+  const selectedTime = normalizeAppointmentBookingTime(time);
+
+  const activeVisits = (Array.isArray(visits) ? visits : []).filter((visit) => isActiveAppointmentBooking(visit));
+  if (!activeVisits.length) return undefined;
+
+  const sameSlotConflict = activeVisits.find((visit) => {
+    const visitDate = normalizeAppointmentBookingDate(
+      readFirst(visit, ["date", "appointmentDate", "visitDate", "scheduledDate", "slotDate"])
+    );
+    const visitTime = normalizeAppointmentBookingTime(
+      readFirst(visit, ["startTime", "time", "slot", "appointmentTime", "slotTime"])
+    );
+    return visitDate === selectedDate && visitTime === selectedTime;
+  });
+
+  if (sameSlotConflict) return sameSlotConflict;
+
+  return activeVisits[0];
 };
 
 const readNumericId = (value) => {
@@ -628,6 +684,7 @@ function PatientRoutes() {
               prescriptions={prescriptions}
               bills={bills}
               notifications={notifications}
+              dashboardData={dashboardData}
             />
           }
         />
@@ -1026,6 +1083,7 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
   const [paymentMode, setPaymentMode] = useState("UPI");
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [loading, setLoading] = useState(true);
+  const bookingRequestRef = useRef(false);
 
   const parseApiList = (data) => {
     if (Array.isArray(data)) return data;
@@ -1353,7 +1411,221 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
       0
   ) || 0;
 
+  const handlePrintBill = (print = true) => {
+    const bill = paymentDetails?.bill;
+    if (!bill) return;
+
+    const escapeHtml = (value) => String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+    const amountToWords = (value) => {
+      const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
+      const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+      const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+      const convertHundred = (num) => {
+        let result = "";
+        if (num >= 100) {
+          result += `${ones[Math.floor(num / 100)]} Hundred`;
+          num %= 100;
+          if (num) result += " ";
+        }
+        if (num >= 20) {
+          result += tens[Math.floor(num / 10)];
+          if (num % 10) result += ` ${ones[num % 10]}`;
+        } else if (num >= 10) {
+          result += teens[num - 10];
+        } else if (num > 0) {
+          result += ones[num];
+        }
+        return result;
+      };
+      let integer = Math.floor(Math.abs(value));
+      if (!integer) return "INR ZERO ONLY";
+      const segments = [
+        { value: 10000000, label: "Crore" },
+        { value: 100000, label: "Lakh" },
+        { value: 1000, label: "Thousand" },
+        { value: 100, label: "Hundred" },
+      ];
+      let words = "";
+      for (const segment of segments) {
+        const part = Math.floor(integer / segment.value);
+        if (part) {
+          words += `${convertHundred(part)} ${segment.label} `;
+          integer %= segment.value;
+        }
+      }
+      if (integer) {
+        words += `${convertHundred(integer)} `;
+      }
+      return `INR ${words.trim().toUpperCase()} ONLY`;
+    };
+    const invoiceNumber = readFirst(bill, ["invoiceNumber", "billNumber", "referenceNumber", "id"]) || `BILL-${paymentDetails.appointmentId}`;
+    const patientName = readFirst(bill, ["patientName", "patient.name"]) || patient?.name || "Patient";
+    const doctorName = readFirst(bill, ["doctorName", "doctor.name"]) || selectedDoctor?.name || "Doctor";
+    const amount = Number(readFirst(bill, ["totalAmount", "grandTotal", "amount", "paidAmount"]) || paymentDetails.amount || 0);
+    const clinicName = readFirst(bill, ["clinicName", "branchName", "clinic.name", "branch.name"]) || selectedBranch?.name || "CMS Health Care";
+    const patientPhone = readFirst(patient || {}, ["phone", "phoneNumber", "mobile"]) || "-";
+    const patientCode = readFirst(patient || {}, ["patientCode", "code", "id"]) || "-";
+    const appointmentToken = readFirst(bill, ["tokenNumber", "appointment.tokenNumber"]) || createNextPatientToken(visits);
+    const billDate = new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" }).format(new Date());
+    const printWindow = window.open("", "_blank", "width=800,height=900");
+    if (!printWindow) return;
+
+    printWindow.document.write(`<!doctype html>
+<html>
+<head>
+  <title>Consultation Bill ${escapeHtml(invoiceNumber)}</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;background:#eef1f5;color:#1f2937;font-family:Arial,sans-serif;font-size:11px}
+    .invoice{width:780px;max-width:100%;margin:14px auto;background:#fff;border:1px solid #cbd5db;padding:16px}
+    .header{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:start;border-bottom:1px solid #cbd5db;padding-bottom:16px}
+    .header-left h1{margin:0 0 6px;font-size:20px;letter-spacing:1px;color:#0f4d3a}
+    .header-left p{margin:4px 0;font-size:12px;color:#334155}
+    .header-left .clinic-address{margin-top:8px;font-size:12px;color:#0f4d3a;font-weight:700}
+    .header-right{border:1px solid #cbd5db;padding:14px;background:#f8fafb}
+    .header-right div{display:flex;justify-content:space-between;padding:6px 0;font-size:12px}
+    .header-right div:not(:last-child){border-bottom:1px solid #e2e8f0}
+    .header-right b{color:#334155}
+    .header-right span{font-weight:700;color:#102331}
+    .header-right .status span{color:#047857}
+    .title{margin:18px 0 12px;text-align:center;font-size:16px;letter-spacing:1px;font-weight:700;color:#0f4d3a}
+    .info-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+    .info-box{border:1px solid #cbd5db;border-radius:10px;background:#f8fafb;padding:14px}
+    .info-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:12px}
+    .info-item:last-child{border-bottom:0}
+    .info-label{color:#334155}
+    .info-value{font-weight:700}
+    .service{width:100%;border-collapse:collapse;border:1px solid #cbd5db}
+    .service th,.service td{border:1px solid #cbd5db;padding:10px;text-align:left;font-size:12px}
+    .service th{background:#f8fafb;font-size:11px}
+    .service .num{text-align:right}
+    .summary-section{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-top:18px}
+    .amount-words{border:1px solid #cbd5db;border-radius:10px;background:#f8fafb;padding:14px;font-size:12px;line-height:1.6}
+    .amount-words b{font-weight:700}
+    .total-box{border:1px solid #cbd5db;border-radius:10px;padding:14px;background:#fff}
+    .total-row{display:flex;justify-content:space-between;padding:8px 0;font-size:12px;border-bottom:1px solid #e2e8f0}
+    .total-row:last-child{border-bottom:0;font-weight:700;color:#0f4d3a}
+    .total-row.total span:first-child{color:#0f4d3a}
+    .bottom{display:grid;grid-template-columns:1.5fr .85fr 1fr;gap:16px;margin-top:18px;align-items:start}
+    .notes{border:1px solid #cbd5db;border-radius:10px;background:#f8fafb;padding:14px;font-size:11px;line-height:1.6}
+    .token-group{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .token-box{border:1px solid #cbd5db;border-radius:50%;padding:18px;text-align:center;background:#fff}
+    .token-box span{display:block;color:#334155;font-size:11px;margin-bottom:8px}
+    .token-box strong{display:block;font-size:24px;color:#0f4d3a}
+    .signature{border:1px solid #cbd5db;border-radius:10px;padding:14px;text-align:center;background:#fff}
+    .signature .line{height:1px;background:#334155;margin:0 auto 10px;width:70px}
+    .signature span{display:block;font-size:12px;font-weight:700}
+    .signature em{display:block;font-size:11px;color:#334155;margin-top:4px}
+    .footer{margin-top:16px;text-align:center;font-size:11px;color:#334155}
+    .footer strong{display:block;margin-top:6px;color:#0f4d3a}
+    @media print{body{background:#fff}.invoice{margin:0;border-color:#333}}@page{size:A4;margin:10mm}
+  </style>
+</head>
+<body>
+<main class="invoice">
+  <div class="header">
+    <div class="header-left">
+      <h1>${escapeHtml(clinicName).toUpperCase()}</h1>
+      <p>Consultation and Patient Care Centre</p>
+      <p class="clinic-address">Hyderabad, Telangana, India - 500063</p>
+      <p>${escapeHtml(patientPhone)}</p>
+    </div>
+    <div class="header-right">
+      <div><b>Bill No</b><span>${escapeHtml(invoiceNumber)}</span></div>
+      <div><b>Bill Date</b><span>${escapeHtml(billDate)}</span></div>
+      <div><b>Appointment</b><span>${escapeHtml(paymentDetails.appointmentId)}</span></div>
+      <div><b>Payment Mode</b><span>${escapeHtml(paymentDetails.paymentMode)}</span></div>
+      <div class="status"><b>Status</b><span>PAID</span></div>
+    </div>
+  </div>
+  <div class="title">CONSULTATION FEE INVOICE (UPI)</div>
+  <div class="info-row">
+    <div class="info-box">
+      <div class="info-item"><span class="info-label">Patient Name</span><span class="info-value">${escapeHtml(patientName)}</span></div>
+      <div class="info-item"><span class="info-label">Patient ID</span><span class="info-value">${escapeHtml(patientCode)}</span></div>
+      <div class="info-item"><span class="info-label">Mobile No.</span><span class="info-value">${escapeHtml(patientPhone)}</span></div>
+    </div>
+    <div class="info-box">
+      <div class="info-item"><span class="info-label">Doctor</span><span class="info-value">Dr. ${escapeHtml(doctorName)}</span></div>
+      <div class="info-item"><span class="info-label">Appointment</span><span class="info-value">${escapeHtml(paymentDetails.appointmentId)}</span></div>
+      <div class="info-item"><span class="info-label">Token No.</span><span class="info-value">${escapeHtml(appointmentToken)}</span></div>
+    </div>
+  </div>
+  <table class="service">
+    <thead>
+      <tr>
+        <th>S.No.</th>
+        <th>Service / Item</th>
+        <th class="num">Qty</th>
+        <th class="num">Rate (₹)</th>
+        <th class="num">Amount (₹)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>Consultation Charges (Dr. ${escapeHtml(doctorName)})</td>
+        <td class="num">1</td>
+        <td class="num">${escapeHtml(amount.toFixed(2))}</td>
+        <td class="num">${escapeHtml(amount.toFixed(2))}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="summary-section">
+    <div class="amount-words"><b>Amount In Words</b><br/>${escapeHtml(amountToWords(amount))}</div>
+    <div class="total-box">
+      <div class="total-row"><span>Gross Amount</span><span class="num">&#8377; ${escapeHtml(amount.toFixed(2))}</span></div>
+      <div class="total-row"><span>Discount</span><span class="num">&#8377; 0.00</span></div>
+      <div class="total-row"><span>Net Amount</span><span class="num">&#8377; ${escapeHtml(amount.toFixed(2))}</span></div>
+      <div class="total-row"><span>Round Off</span><span class="num">&#8377; 0.00</span></div>
+      <div class="total-row total"><span>Total Amount Payable</span><span class="num">&#8377; ${escapeHtml(amount.toFixed(2))}</span></div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="notes">
+      <p>• Consultation charges only. Additional tests or medicines, if any, are billed separately.</p>
+      <p>• Please retain this bill for your records.</p>
+      <p>• This is a computer-generated invoice.</p>
+    </div>
+    <div class="token-group">
+      <div class="token-box"><span>OP. No.</span><strong>${escapeHtml(paymentDetails.appointmentId)}</strong></div>
+      <div class="token-box"><span>Token No.</span><strong>${escapeHtml(appointmentToken)}</strong></div>
+    </div>
+    <div class="signature">
+      <div class="line"></div>
+      <span>Authorised Signature</span>
+      <em>(Dr. ${escapeHtml(doctorName)})</em>
+    </div>
+  </div>
+  <div class="footer">
+    For any queries or support, contact: ${escapeHtml(patientPhone)}
+    <strong>*** COMPUTERISED INVOICE ***</strong>
+    Thank you for your visit. Stay healthy!
+  </div>
+</main>
+${print ? '<script>window.onload=()=>window.print()</script>' : ''}
+</body>
+</html>`);
+    printWindow.document.close();
+  };
+
   const handleConfirmBooking = async () => {
+    if (bookingRequestRef.current) return;
+
+    const conflict = findPatientBookingConflict(visits, selectedDate, selectedTime);
+    if (conflict) {
+      const message = "You already have an active appointment. Please complete or cancel the current appointment before booking another one.";
+      setBookingError(message);
+      setBookingState("error");
+      return;
+    }
+
+    bookingRequestRef.current = true;
     setBookingState('payment');
     setBookingError('');
     try {
@@ -1398,6 +1670,7 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
       const payload = {
         branchId: readNumericId(branchId),
         doctorId: readNumericId(doctorId),
+        tokenNumber: createNextPatientToken(duplicateAppointments),
         date: formatAppointmentDateTime(selectedDate),
         startTime: formatSlotTime(selectedTime),
         reasonForVisit: reasonForVisit.trim(),
@@ -1461,12 +1734,38 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
         throw new Error(successData.message || successData.title || "Payment could not be confirmed.");
       }
 
+      const billPayload = {
+        appointmentId: readNumericId(appointmentId),
+        consultationCharge: consultationFee,
+        totalAmount: consultationFee,
+        grandTotal: consultationFee,
+        payableAmount: consultationFee,
+        paymentAmount: consultationFee,
+        paidAmount: consultationFee,
+        paymentMode,
+        paymentStatus: "Paid",
+      };
+      // Patients do not have permission to create bills through the staff-only
+      // Billing endpoint. Payment confirmation creates the bill server-side;
+      // retrieve it through the existing patient bills endpoint when available.
+      const patientBillsResponse = await fetch(patientApiUrl(PATIENT_API.bills), { headers }).catch(() => null);
+      const patientBillsData = patientBillsResponse?.ok ? await patientBillsResponse.json().catch(() => []) : [];
+      const patientBills = parseApiList(patientBillsData);
+      const billData = patientBills.find((bill) => String(readFirst(bill, ["appointmentId", "appointment.id", "appointmentNumber"]) || "") === String(appointmentId)) || successData?.bill || successData?.invoice || paymentData?.bill || paymentData?.invoice || {};
+      const generatedBill = {
+        ...(Array.isArray(billData) ? billData[0] : billData),
+        ...billPayload,
+        patientName,
+        doctorName: selectedDoctor?.doctorName || selectedDoctor?.name,
+      };
+
       setPaymentDetails({
         appointmentId,
         paymentId,
         transactionId,
         amount: consultationFee,
         paymentMode,
+        bill: generatedBill,
       });
       setBookingState('success');
       setStep(5);
@@ -1474,6 +1773,8 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
     } catch (error) {
       setBookingState('error');
       setBookingError(error.message || 'Could not complete booking.');
+    } finally {
+      bookingRequestRef.current = false;
     }
   };
 
@@ -1695,10 +1996,13 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
               </div>
               {bookingError ? <p className="booking-error">{bookingError}</p> : null}
               {bookingState === 'success' && (
-                <p className="booking-success">
-                  Payment completed. Appointment confirmed
-                  {paymentDetails?.transactionId ? ` - ${paymentDetails.transactionId}` : ""}.
-                </p>
+                <div className="booking-success">
+                  <p>Payment completed and consultation bill generated{paymentDetails?.transactionId ? ` - ${paymentDetails.transactionId}` : ""}.</p>
+                  <div className="booking-success-actions">
+                    <button type="button" className="booking-button booking-button--ghost" onClick={() => handlePrintBill(false)}>View Bill</button>
+                    <button type="button" className="booking-button booking-button--secondary" onClick={handlePrintBill}>Print Bill</button>
+                  </div>
+                </div>
               )}
             </section>
           )}
@@ -1722,9 +2026,9 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
               type="button"
               className="booking-button booking-button--primary"
               onClick={handleConfirmBooking}
-              disabled={bookingState === 'payment' || !canConfirm}
+              disabled={bookingState === 'payment' || bookingState === 'success' || !canConfirm}
             >
-              {bookingState === 'payment' ? 'Processing payment...' : 'Pay Now'}
+              {bookingState === 'payment' ? 'Processing payment...' : bookingState === 'success' ? 'Payment Complete' : 'Pay Now'}
             </button>
           )}
           {step > 1 ? (
@@ -3486,13 +3790,28 @@ function PatientChangePasswordPage() {
 }
 
 function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = [], notifications = [] }) {
+  const navigate = useNavigate();
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    mobile: "",
+    address: "",
+    bloodGroup: "",
+    emergencyContactName: "",
+    emergencyContactRelationship: "",
+    emergencyContactPhone: "",
+  });
+
   const currentPatient = patient || {};
   const profileName = currentPatient.name || currentPatient.firstName || "Patient";
   const profileEmail = currentPatient.email || "Email not available";
   const profilePhone = currentPatient.mobile || currentPatient.phone || currentPatient.phoneNumber || "Mobile not available";
   const profileGender = currentPatient.gender || "Gender not available";
   const profileDob = currentPatient.dob || currentPatient.dateOfBirth || currentPatient.birthDate || "DOB not available";
-  const profileBloodGroup = currentPatient.bloodGroup || currentPatient.bloodgroup || "-";
   const profileAddress = currentPatient.address || "Address not available";
   const profileEmergencyName = currentPatient.emergencyContactName || currentPatient.emergencyName || currentPatient.emergencyContact?.name || "-";
   const profileEmergencyRelationship =
@@ -3523,6 +3842,114 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
     .join("")
     .toUpperCase();
 
+  useEffect(() => {
+    if (!editMode) {
+      setForm({
+        name: currentPatient.name || currentPatient.firstName || "",
+        email: currentPatient.email || "",
+        mobile: currentPatient.mobile || currentPatient.phone || currentPatient.phoneNumber || "",
+        address: currentPatient.address || "",
+        bloodGroup: currentPatient.bloodGroup || currentPatient.bloodgroup || "",
+        emergencyContactName:
+          currentPatient.emergencyContactName || currentPatient.emergencyName || currentPatient.emergencyContact?.name || "",
+        emergencyContactRelationship:
+          currentPatient.emergencyContactRelationship || currentPatient.emergencyRelationship || currentPatient.emergencyContact?.relationship || "",
+        emergencyContactPhone:
+          currentPatient.emergencyContactPhone || currentPatient.emergencyPhone || currentPatient.emergencyContact?.phone || "",
+      });
+    }
+  }, [currentPatient, editMode]);
+
+  const getApiHeaders = () => {
+    const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
+    return {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
+  const handleFieldChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setMessage("");
+    setMessageType("");
+  };
+
+  const saveProfile = async () => {
+    setSaving(true);
+    setMessage("");
+    setMessageType("");
+    try {
+      const profileUrl = patientApiUrl(PATIENT_API.profile);
+      const payload = {
+        name: form.name.trim(),
+        mobile: form.mobile.trim(),
+        address: form.address.trim(),
+        bloodGroup: form.bloodGroup,
+        emergencyContactName: form.emergencyContactName.trim(),
+        emergencyContactRelationship: form.emergencyContactRelationship.trim(),
+        emergencyContactPhone: form.emergencyContactPhone.trim(),
+      };
+      const response = await fetch(profileUrl, {
+        method: "PATCH",
+        headers: getApiHeaders(),
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to update profile.");
+      }
+      setMessage(data.message || "Profile updated successfully.");
+      setMessageType("success");
+      setEditMode(false);
+    } catch (error) {
+      setMessage(error.message || "Unable to update profile.");
+      setMessageType("error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSave = async (event) => {
+    event.preventDefault();
+    await saveProfile();
+  };
+
+  const renderField = (label, value, field, type = "text", disabled = false) => (
+    <label className="pd-profile-input-label">
+      <span>{label}</span>
+      <input
+        type={type}
+        value={value}
+        disabled={!editMode || disabled}
+        onChange={(e) => handleFieldChange(field, e.target.value)}
+      />
+    </label>
+  );
+
+  const renderBloodGroupField = () => (
+    <label className="pd-profile-input-label">
+      <span>Blood Group</span>
+      <select value={form.bloodGroup} disabled={!editMode} onChange={(event) => handleFieldChange("bloodGroup", event.target.value)}>
+        <option value="">Not recorded</option>
+        {["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map((group) => <option key={group} value={group}>{group}</option>)}
+      </select>
+    </label>
+  );
+
+  const formattedProfileDob = profileDob && profileDob !== "DOB not available"
+    ? String(profileDob).split("T")[0]
+    : profileDob;
+
+  const permittedFields = {
+    name: form.name,
+    mobile: form.mobile,
+    address: form.address,
+    emergencyContactName: form.emergencyContactName,
+    emergencyContactRelationship: form.emergencyContactRelationship,
+    emergencyContactPhone: form.emergencyContactPhone,
+  };
+
   return (
     <div className="patient-dashboard">
       <PatientAccountLayout active="profile">
@@ -3533,7 +3960,24 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
                 <h2>Patient Profile</h2>
                 <p>Personal details and contact information.</p>
               </div>
+              <div className="pd-profile-actions">
+                {editMode ? (
+                  <>
+                    <button type="button" className="pd-btn pd-btn--ghost" onClick={() => setEditMode(false)} disabled={saving}>
+                      Cancel
+                    </button>
+                    <button type="button" className="pd-btn pd-btn--primary" onClick={handleSave} disabled={saving}>
+                      {saving ? "Saving..." : "Save"}
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" className="pd-btn pd-btn--primary" onClick={() => setEditMode(true)}>
+                    Edit
+                  </button>
+                )}
+              </div>
             </div>
+            {message ? <p className={`pd-message pd-message--${messageType}`}>{message}</p> : null}
             <div className="pd-profile-card">
               <div className="pd-profile-avatar">{profileInitials}</div>
               <div className="pd-profile-copy">
@@ -3547,32 +3991,32 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
                 </div>
               </div>
             </div>
-            <div className="pd-profile-section-grid">
+            <form className="pd-profile-section-grid" onSubmit={handleSave}>
               <section className="pd-profile-section">
                 <h3>Personal Details</h3>
                 <div className="pd-profile-strip pd-profile-strip--expanded">
-                  <div><span>Name</span><strong>{profileName}</strong></div>
+                  {renderField("Name", form.name, "name")}
                   <div><span>Gender</span><strong>{profileGender}</strong></div>
-                  <div><span>DOB</span><strong>{profileDob}</strong></div>
-                  <div><span>Blood Group</span><strong>{profileBloodGroup}</strong></div>
+                  <div><span>DOB</span><strong>{formattedProfileDob}</strong></div>
+                  {renderBloodGroupField()}
                 </div>
               </section>
 
               <section className="pd-profile-section">
                 <h3>Contact</h3>
                 <div className="pd-profile-strip pd-profile-strip--expanded">
-                  <div><span>Mobile</span><strong>{profilePhone}</strong></div>
+                  {renderField("Mobile", form.mobile, "mobile", "text")}
                   <div><span>Email</span><strong>{profileEmail}</strong></div>
-                  <div><span>Address</span><strong>{profileAddress}</strong></div>
+                  {renderField("Address", form.address, "address")}
                 </div>
               </section>
 
               <section className="pd-profile-section">
                 <h3>Emergency Contact</h3>
                 <div className="pd-profile-strip pd-profile-strip--expanded">
-                  <div><span>Name</span><strong>{profileEmergencyName}</strong></div>
-                  <div><span>Relationship</span><strong>{profileEmergencyRelationship}</strong></div>
-                  <div><span>Phone</span><strong>{profileEmergencyPhone}</strong></div>
+                  {renderField("Name", form.emergencyContactName, "emergencyContactName")}
+                  {renderField("Relationship", form.emergencyContactRelationship, "emergencyContactRelationship")}
+                  {renderField("Phone", form.emergencyContactPhone, "emergencyContactPhone")}
                 </div>
               </section>
 
@@ -3584,7 +4028,7 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
                   <div><span>Current Medications</span><strong>{profileCurrentMedications}</strong></div>
                 </div>
               </section>
-            </div>
+            </form>
           </div>
         </div>
       </PatientAccountLayout>
