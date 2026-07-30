@@ -179,7 +179,107 @@ const getDoctorName = (appointment = {}) =>
     (appointment || {}).practitionerName,
     (appointment || {}).providerName
   );
+const getTokenNumber = (appointment = {}) =>
+  firstValue(
+    appointment?.tokenNumber,
+    appointment?.TokenNumber,
+    appointment?.token,
+    appointment?.tokenNo,
+    appointment?.token_number,
+    appointment?.displayToken
+  );
 
+const formatTokenNumber = (token) => {
+  const value = String(firstValue(token) || "").trim();
+  if (!value) return null;
+  const match = value.match(/^TKN\s*0*(\d+)$/i);
+  return match ? `TKN${String(Number(match[1])).padStart(3, "0")}` : null;
+};
+
+const getNumericValue = (value) => {
+  const number = Number(String(value || "").replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(number) ? number : null;
+};
+
+const getPatientQueueMetrics = (dashboardData = {}, appointment = {}, visits = []) => {
+  const source = dashboardData && typeof dashboardData === "object" ? dashboardData : appointment;
+  const patientsAheadRaw = firstValue(
+    readFirst(source, [
+      "patientsAhead",
+      "patientsAheadCount",
+      "queueAhead",
+      "position",
+      "waitingCount",
+      "queuePosition",
+      "positionAhead",
+    ]),
+    readFirst(appointment, [
+      "patientsAhead",
+      "patientsAheadCount",
+      "queueAhead",
+      "position",
+      "waitingCount",
+      "queuePosition",
+      "positionAhead",
+    ])
+  );
+  const estimatedWaitingRaw = firstValue(
+    readFirst(source, [
+      "estimatedWaitingTime",
+      "estimatedWaitTime",
+      "waitingTime",
+      "estimatedWait",
+      "eta",
+      "estimatedTime",
+      "waitingMinutes",
+    ]),
+    readFirst(appointment, [
+      "estimatedWaitingTime",
+      "estimatedWaitTime",
+      "waitingTime",
+      "estimatedWait",
+      "eta",
+      "estimatedTime",
+      "waitingMinutes",
+    ])
+  );
+  const waitingMinutes = getNumericValue(estimatedWaitingRaw);
+  const token = firstValue(
+    readFirst(source, ["currentToken", "tokenNumber", "token", "displayToken", "appointmentToken"]),
+    getTokenNumber(appointment)
+  );
+
+  const counts = { waiting: 0, inConsultation: 0, completed: 0 };
+  const items = Array.isArray(visits) ? visits : [];
+  items.forEach((item) => {
+    const status = String(firstValue(item.status, item.appointmentStatus, item.state) || "").toLowerCase();
+    if (status.includes("complete") || status.includes("done") || status.includes("closed")) {
+      counts.completed += 1;
+    } else if (status.includes("inprogress") || status.includes("in consultation") || status.includes("consult") || status.includes("ongoing")) {
+      counts.inConsultation += 1;
+    } else {
+      counts.waiting += 1;
+    }
+  });
+
+  const activeStatus = String(firstValue(appointment?.status, appointment?.appointmentStatus, appointment?.state) || "").toLowerCase();
+  if (activeStatus.includes("consult") || activeStatus.includes("inprogress") || activeStatus.includes("ongoing")) {
+    counts.inConsultation = Math.max(counts.inConsultation, 1);
+  } else if (
+    activeStatus &&
+    !["complete", "done", "closed", "cancelled", "canceled", "rejected"].some((term) => activeStatus.includes(term))
+  ) {
+    counts.waiting = Math.max(counts.waiting, 1);
+  }
+
+  return {
+    token,
+    formattedToken: formatTokenNumber(token),
+    patientsAhead: getNumericValue(patientsAheadRaw),
+    waitingMinutes,
+    queueCounts: counts,
+  };
+};
 const getSpecialization = (appointment = {}) =>
   firstValue((appointment || {}).specialization, (appointment || {}).department, (appointment || {}).speciality, (appointment || {}).specialty, (appointment || {}).doctor?.specialization);
 
@@ -221,7 +321,7 @@ const getSortedUpcomingAppointment = (items = []) => {
   })[0];
 };
 
-function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY_ARRAY, bills = EMPTY_ARRAY }) {
+function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY_ARRAY, bills = EMPTY_ARRAY, dashboardData = null }) {
   const navigate = useNavigate();
   const dashboardPatient = patient || {};
   const uniqueBills = useMemo(() => {
@@ -327,6 +427,16 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
   const appointmentDate = formatDateLabel(getAppointmentDate(upcomingAppointment));
   const appointmentTime = formatTimeLabel(getAppointmentTime(upcomingAppointment));
   const appointmentReminderDoctor = formatInlineValue(getDoctorName(upcomingAppointment), "Your");
+  const {
+    formattedToken,
+    patientsAhead,
+    waitingMinutes,
+    queueCounts,
+  } = getPatientQueueMetrics(dashboardData, upcomingAppointment, visits);
+  const tokenValue = formattedToken || "Not available";
+  const patientsAheadLabel = patientsAhead !== null ? formatCount(patientsAhead) : "Not available";
+  const estimatedWaitingTimeLabel = waitingMinutes !== null ? `${waitingMinutes} mins` : "Not available";
+
   const defaultNotifications = [
     {
       id: "upcoming-appointment-reminder",
@@ -393,47 +503,60 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
     navigate("/patient/notifications");
   };
 
-  const statCards = [
-    {
-      label: "Upcoming Appointments",
-      value: formatCount(hasAppointment ? 1 : 0),
-      note: hasAppointment ? [appointmentDate, appointmentTime].filter(Boolean).join(" at ") : "No upcoming appointment",
-      icon: Clock,
-      tone: "teal",
-    },
-    {
-      label: "Previous Appointments",
-      value: formatCount(previousVisits),
-      note: "Completed consultations",
-      icon: Calendar,
-      tone: "blue",
-      route: "/patient/medical-history",
-    },
-    {
-      label: "Prescriptions",
-      value: formatCount(prescriptionCount),
-      note: "Available to download",
-      icon: Pill,
-      tone: "amber",
-    },
-    {
-      label: "Medical Records",
-      value: formatCount(medicalRecordCount),
-      note: "Visits and prescriptions",
-      icon: FileText,
-      tone: "teal",
-      route: "/patient/medical-history",
-    },
-    {
-      label: billCardLabel,
-      value: formatCurrency(billCardValue),
-      note: pendingStatusNote,
-      icon: IndianRupee,
-      tone: "green",
-      route: "/patient/bills",
-    },
-  ];
+  return (
+    <div className="patient-dashboard pd-reference-dashboard">
+      <div className="pd-header">
+        <div className="pd-header-copy">
+          <h1 className="pd-greeting-title">Welcome back, Patient! <span aria-hidden="true">👋</span></h1>
+          <p className="pd-greeting-subtitle">Here&apos;s your health overview and important updates.</p>
+        </div>
+        <div className="pd-header-actions">
+          <button type="button" className="pd-header-btn pd-header-btn--primary" onClick={handleBookAppointment}><Calendar size={16} />Book appointment</button>
+          <button type="button" className="pd-header-btn" onClick={handleViewDetails}><FileText size={16} />View records</button>
+        </div>
+      </div>
 
+      <div className="pd-overview-grid">
+        <section className="pd-card pd-token-panel">
+          <div className="pd-token-panel-header"><h2>Your Current Token</h2><Bell size={18} aria-hidden="true" /></div>
+          <div className="pd-current-token-group"><div className="pd-token-icon"><FileText size={26} /></div><div><strong className="pd-current-token">{tokenValue}</strong><span className="pd-current-token-label">Your Token Number</span></div></div>
+          <div className="pd-token-summary-grid">
+            <div className="pd-token-stat"><span>Patients Ahead of You</span><strong>{patientsAheadLabel}</strong></div>
+            <div className="pd-token-stat"><span>Estimated Waiting Time</span><strong>{estimatedWaitingTimeLabel}</strong></div>
+          </div>
+          <p className="pd-token-notice"><Bell size={15} />You will be notified when your token is about to be called.</p>
+        </section>
+
+        <section className="pd-card pd-appointment-panel">
+          <div className="pd-section-header"><div><h2>Today&apos;s Appointment</h2></div><span className="pd-status-badge">{appointmentStatus}</span></div>
+          <div className="pd-appointment-summary"><div className="pd-summary-card-icon"><Calendar size={25} /></div><div><strong>{hasAppointment ? `${appointmentTime || "Time pending"}${appointmentDate ? `, ${appointmentDate}` : ""}` : "No appointment scheduled"}</strong><p>{hasAppointment ? appointmentSpecialization : "Book an appointment to see details."}</p></div></div>
+          <div className="pd-appointment-doctor"><strong>{hasAppointment ? appointmentDoctor : "Appointment details unavailable"}</strong><span>{hasAppointment ? appointmentClinic : ""}</span></div>
+          <button type="button" className="pd-card-footer-button" onClick={hasAppointment ? handleViewAppointmentDetails : handleBookAppointment}>{hasAppointment ? "View Details" : "Book Appointment"}</button>
+        </section>
+
+        <section className="pd-card pd-summary-card pd-summary-card--billing" onClick={() => navigate("/patient/bills")} role="button" tabIndex={0} onKeyDown={(event) => event.key === "Enter" && navigate("/patient/bills")}>
+          <div className="pd-summary-card-icon"><IndianRupee size={25} /></div><div className="pd-summary-card-copy"><span>Total Due</span><strong>{formatCurrency(billCardValue)}</strong><p>{pendingStatusNote}</p></div><button type="button" className="pd-card-footer-button" onClick={(event) => { event.stopPropagation(); navigate("/patient/bills"); }}>View Bills</button>
+        </section>
+        <section className="pd-card pd-summary-card pd-summary-card--records" onClick={handleViewRecords} role="button" tabIndex={0} onKeyDown={(event) => event.key === "Enter" && handleViewRecords()}>
+          <div className="pd-summary-card-icon"><FileText size={25} /></div><div className="pd-summary-card-copy"><span>Health Records</span><strong>{formatCount(medicalRecordCount)}</strong><p>{medicalRecordCount === 1 ? "Record" : "Records"}</p></div><button type="button" className="pd-card-footer-button" onClick={(event) => { event.stopPropagation(); handleViewRecords(); }}>View Records</button>
+        </section>
+      </div>
+
+      <div className="pd-dashboard-row">
+        <section className="pd-card pd-queue-panel">
+          <div className="pd-section-header"><div><h2>Live Queue Status</h2><p>Real-time token progress</p></div><button type="button" className="pd-link-button" onClick={handleViewAppointmentDetails}>View Full Queue</button></div>
+          <div className="pd-queue-track" aria-label="Queue progress">{["TKN 018", "TKN 019", "TKN 020", "TKN 021", "TKN 022", tokenValue, "TKN 024", "TKN 025"].map((token, index) => <div key={`${token}-${index}`} className={`pd-queue-step ${token === tokenValue ? "is-current" : index < 5 ? "is-complete" : ""}`}><i>{index < 5 ? "✓" : ""}</i><span>{token}</span></div>)}</div>
+          <div className="pd-queue-legend"><span><i className="is-complete" />Completed</span><span><i className="is-current" />In Consultation</span><span><i />Waiting</span></div>
+        </section>
+        <section className="pd-card pd-actions-panel"><div className="pd-section-header"><div><h2>Quick Actions</h2></div></div><div className="pd-quick-action-list">
+          <button type="button" onClick={handleBookAppointment}><Calendar size={17} />Book Appointment<ChevronRight size={16} /></button><button type="button" onClick={() => navigate("/patient/prescriptions")}><Pill size={17} />View Prescriptions<ChevronRight size={16} /></button><button type="button" onClick={handleViewRecords}><FileText size={17} />View Medical Records<ChevronRight size={16} /></button><button type="button" onClick={() => navigate("/patient/bills")}><IndianRupee size={17} />View Bills &amp; Payments<ChevronRight size={16} /></button>
+        </div></section>
+        <section className="pd-card pd-notifications-panel"><div className="pd-section-header"><div><h2>Recent Notifications</h2></div><button type="button" className="pd-link-button" onClick={handleViewAllNotifications}>View all</button></div><div className="pd-notification-list">{notificationItems.map((notification) => <button key={notification.id} type="button" className={`pd-notification-item ${notification.read ? "is-read" : "is-unread"}`} onClick={() => setSelectedNotificationId(notification.id)}><Bell size={16} /><span className="pd-notification-body"><strong>{notification.message}</strong></span><em>{notification.date}</em></button>)}</div></section>
+      </div>
+    </div>
+  );
+
+  /* Previous dashboard markup is intentionally retained below for reference while the UI above is active.
   return (
     <div className="patient-dashboard">
       <div className="pd-header">
@@ -453,25 +576,133 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
         </div>
       </div>
 
-      <div className="pd-stats-container">
-        {statCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <button type="button" className={`pd-stat-card pd-stat-card--${card.tone}`} key={card.label} onClick={() => navigate(card.route)}>
-              <div className={`pd-stat-icon pd-stat-icon--${card.tone}`}>
-                <Icon size={18} />
-              </div>
-              <div className="pd-stat-copy">
-                <h2 className="pd-stat-value">{card.value}</h2>
-                <p className="pd-stat-label">{card.label}</p>
-              </div>
-            </button>
-          );
-        })}
+      <div className="pd-hero-grid">
+        <section className="pd-card pd-token-panel">
+          <div className="pd-token-panel-header">
+            <span className="pd-eyebrow">Live queue</span>
+            <h2>Current Token</h2>
+          </div>
+
+          <div className="pd-current-token-group">
+            <span className="pd-current-token-label">Your token number</span>
+            <strong className="pd-current-token">{tokenValue}</strong>
+            <p className="pd-current-token-subtitle">
+              You will be notified when your token is about to be called.
+            </p>
+          </div>
+
+          <div className="pd-token-summary-grid">
+            <div className="pd-token-stat">
+              <span>Patients Ahead</span>
+              <strong>{patientsAheadLabel}</strong>
+            </div>
+            <div className="pd-token-stat">
+              <span>Estimated Waiting Time</span>
+              <strong>{estimatedWaitingTimeLabel}</strong>
+            </div>
+            <div className="pd-token-stat">
+              <span>Today's Appointment</span>
+              <strong>{appointmentDate ? `${appointmentDate}${appointmentTime ? ` • ${appointmentTime}` : ""}` : "Not scheduled"}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="pd-summary-panel">
+          <button type="button" className="pd-summary-card pd-summary-card--appointment" onClick={hasAppointment ? handleViewAppointmentDetails : handleBookAppointment}>
+            <div className="pd-summary-card-icon">
+              <Calendar size={18} />
+            </div>
+            <div className="pd-summary-card-copy">
+              <span>Today's Appointment</span>
+              <strong>{hasAppointment ? `${appointmentDate}${appointmentTime ? ` • ${appointmentTime}` : ""}` : "No appointment scheduled"}</strong>
+              <p>{hasAppointment ? `${appointmentDoctor} · ${appointmentClinic}` : "Book your appointment to see details."}</p>
+            </div>
+          </button>
+
+          <button type="button" className="pd-summary-card pd-summary-card--billing" onClick={() => navigate("/patient/bills")}> 
+            <div className="pd-summary-card-icon">
+              <IndianRupee size={18} />
+            </div>
+            <div className="pd-summary-card-copy">
+              <span>Billing</span>
+              <strong>{formatCurrency(billCardValue)}</strong>
+            </div>
+          </button>
+
+          <button type="button" className="pd-summary-card pd-summary-card--records" onClick={handleViewRecords}>
+            <div className="pd-summary-card-icon">
+              <FileText size={18} />
+            </div>
+            <div className="pd-summary-card-copy">
+              <span>Health Records</span>
+              <strong>{formatCount(medicalRecordCount)} records</strong>
+            </div>
+          </button>
+        </section>
       </div>
 
       <div className="pd-main-content">
-        <section className="pd-card pd-appointment-panel">
+        <div className="pd-left-column">
+          <section className="pd-card pd-queue-panel">
+            <div className="pd-section-header">
+              <div>
+                <h2>Live Queue Status</h2>
+                <p>Real-time token progress</p>
+              </div>
+            </div>
+
+            <div className="pd-queue-status-grid">
+              <div className="pd-queue-status-item pd-queue-status-item--completed">
+                <span>Completed</span>
+                <strong>{queueCounts.completed}</strong>
+              </div>
+              <div className="pd-queue-status-item pd-queue-status-item--inprogress">
+                <span>In Consultation</span>
+                <strong>{queueCounts.inConsultation}</strong>
+              </div>
+              <div className="pd-queue-status-item pd-queue-status-item--waiting">
+                <span>Waiting</span>
+                <strong>{queueCounts.waiting}</strong>
+              </div>
+            </div>
+
+            <div className="pd-queue-note">
+              <span>You are here</span>
+              <strong>{tokenValue}</strong>
+            </div>
+          </section>
+        </div>
+
+        <div className="pd-right-column">
+          <section className="pd-card pd-actions-panel">
+            <div className="pd-section-header">
+              <div>
+                <h2>Quick Actions</h2>
+                <p>Common patient portal shortcuts.</p>
+              </div>
+            </div>
+
+            <div className="pd-action-grid">
+              <button type="button" className="pd-action-tile pd-action-tile--primary" onClick={handleBookAppointment}>
+                <Calendar size={22} />
+                <span>Book Appointment</span>
+              </button>
+              <button type="button" className="pd-action-tile" onClick={handleViewRecords}>
+                <FileText size={22} />
+                <span>View Records</span>
+              </button>
+              <button type="button" className="pd-action-tile" onClick={() => navigate("/patient/prescriptions") }>
+                <Pill size={22} />
+                <span>View Prescriptions</span>
+              </button>
+              <button type="button" className="pd-action-tile" onClick={() => navigate("/patient/bills") }>
+                <IndianRupee size={22} />
+                <span>View Bills & Payments</span>
+              </button>
+            </div>
+          </section>
+
+          <section className="pd-card pd-notifications-panel">
           <div className="pd-section-header">
             <div>
               <h2>Upcoming Appointment</h2>
@@ -580,7 +811,73 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
         </section>
       </div>
 
-      <div className="pd-bottom-grid">
+        <section className="pd-card pd-appointment-panel">
+          <div className="pd-section-header">
+            <div>
+              <h2>Upcoming Appointment</h2>
+              <p>Next scheduled visit and clinic details.</p>
+            </div>
+            <span className="pd-status-badge">{appointmentStatus}</span>
+          </div>
+
+          <div className="pd-appointment-card">
+            <div className="pd-doctor-info">
+              <div className="pd-doctor-avatar">{appointmentAvatar}</div>
+              <div className="pd-doctor-details">
+                <h3 className="pd-doctor-name">{appointmentDoctor}</h3>
+                <p className="pd-doctor-specialty">{appointmentSpecialization}</p>
+                <p className="pd-doctor-clinic">{appointmentClinic}</p>
+              </div>
+            </div>
+
+            {hasAppointment ? (
+              <>
+                <div className="pd-details-grid">
+                  <div className="pd-detail-row">
+                    <Clock size={16} />
+                    <span>{appointmentDate ? `${appointmentDate}${appointmentTime ? ` at ${appointmentTime}` : ""}` : appointmentStatus}</span>
+                  </div>
+                  <div className="pd-detail-row">
+                    <MapPin size={16} />
+                    <span>{appointmentLocation}</span>
+                  </div>
+                </div>
+
+                <div className="pd-appointment-actions">
+                  <button type="button" className="pd-action-btn pd-action-btn--primary" onClick={handleViewAppointmentDetails}>
+                    View details
+                  </button>
+                  <button type="button" className="pd-action-btn" onClick={handleReschedule}>
+                    Reschedule
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="pd-empty-state">
+                <p>No upcoming appointment is available from the backend yet.</p>
+                <button type="button" className="pd-action-btn pd-action-btn--primary" onClick={handleBookAppointment}>
+                  Book Appointment
+                </button>
+              </div>
+            )}
+
+            <div className="pd-profile-strip">
+              <div>
+                <span>Patient ID</span>
+                <strong>{selectedPatientId}</strong>
+              </div>
+              <div>
+                <span>Contact</span>
+                <strong>{selectedPatientPhone}</strong>
+              </div>
+              <div>
+                <span>Blood group</span>
+                <strong>{selectedPatientBloodGroup}</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="pd-card pd-actions-panel">
           <div className="pd-section-header">
             <div>
@@ -596,7 +893,7 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
             </button>
             <button type="button" className="pd-action-tile" onClick={handleViewRecords}>
               <FileText size={22} />
-              <span>View Reports</span>
+              <span>View Records</span>
             </button>
             <button type="button" className="pd-action-tile" onClick={() => navigate("/patient/prescriptions")}>
               <Pill size={22} />
@@ -604,13 +901,14 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
             </button>
             <button type="button" className="pd-action-tile" onClick={() => navigate("/patient/bills")}>
               <IndianRupee size={22} />
-              <span>Payments</span>
+              <span>View Bills & Payments</span>
             </button>
           </div>
         </section>
       </div>
     </div>
   );
+  */
 }
 
 export default PatientDashboard;

@@ -4,6 +4,8 @@ import { CalendarPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   createAppointmentId,
+  createAppointmentToken,
+  getAppointmentConflict,
   DOCTOR_OPTIONS,
   loadAppointments,
   saveAppointments,
@@ -72,8 +74,20 @@ function NewAppointment() {
 
     setError("");
     const existingAppointments = loadAppointments();
+    const conflict = getAppointmentConflict(existingAppointments, form);
+    if (conflict) {
+      const message =
+        String(conflict.patient || "").trim().toLowerCase() === form.patient.trim().toLowerCase()
+          ? "This patient already has an active appointment at the selected date and time."
+          : "The selected doctor is already booked at the selected date and time.";
+      setError(message);
+      toast.error(message);
+      return;
+    }
+
     const newAppointment = {
       id: createAppointmentId(existingAppointments),
+      tokenNumber: createAppointmentToken(existingAppointments),
       patient: form.patient,
       doctor: form.doctor,
       date: form.date,
