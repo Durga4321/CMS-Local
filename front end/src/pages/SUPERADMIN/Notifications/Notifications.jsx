@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { Send } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Megaphone, Send } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import NotificationPanel from "../../../components/superadmin/NotificationPanel";
 import {
   createNotification,
   fetchNotificationTargetOptions,
+  fetchNotificationStats,
   fetchNotifications,
   deleteNotification,
 } from "../superAdminApi";
@@ -86,10 +87,12 @@ const saveReadNotificationKey = (notification = {}) => {
 
 function Notifications() {
   const [showForm, setShowForm] = useState(false);
+  const formRef = useRef(null);
   const [notifications, setNotifications] = useState([]);
   const [form, setForm] = useState(emptyNotification);
   const [loading, setLoading] = useState(true);
   const [targetOptions, setTargetOptions] = useState(defaultTargetOptions);
+  const [stats, setStats] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
@@ -100,6 +103,9 @@ function Notifications() {
 
     try {
       const items = await fetchNotifications();
+      fetchNotificationStats()
+        .then(setStats)
+        .catch(() => setStats(null));
 
       // apply same visibility rules as the popup (only show sent/read and matching role)
       const getCurrentRole = () =>
@@ -149,8 +155,8 @@ function Notifications() {
       setNotifications(
         filtered.map((item) =>
           readKeys.has(getNotificationKey(item)) && String(item.status || "").toLowerCase() !== "read"
-            ? { ...item, targetUsers: "Active Admins", status: "Read" }
-            : { ...item, targetUsers: "Active Admins" }
+            ? { ...item, status: "Read" }
+            : item
         )
       );
     } catch (requestError) {
@@ -223,7 +229,7 @@ function Notifications() {
     setError("");
 
     try {
-      await createNotification({ ...form, targetUsers: "Active Admins", status: "Sent" });
+      await createNotification({ ...form, status: "Sent" });
       setForm(emptyNotification);
       setFieldErrors({});
       setShowForm(false);
@@ -241,7 +247,13 @@ function Notifications() {
         title="Notifications"
         subtitle="Create and send platform notifications."
         action={
-          <button className="sa-btn sa-btn-primary" onClick={() => setShowForm((value) => !value)}>
+          <button
+            className="sa-btn sa-btn-primary"
+            onClick={() => {
+              setShowForm(true);
+              window.setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+            }}
+          >
             <Send size={16} />
             Send Notification
           </button>
@@ -249,7 +261,16 @@ function Notifications() {
       />
 
       {showForm ? (
-        <div className="sa-form-card" style={{ marginBottom: 16 }}>
+        <div className="sa-form-card sa-notification-send-card" style={{ marginBottom: 16 }} ref={formRef}>
+          <div className="sa-notification-send-header">
+            <span className="sa-notification-send-icon">
+              <Megaphone size={22} />
+            </span>
+            <div>
+              <h3>Send Notification</h3>
+              <p>Compose a message from Super Admin to the selected audience.</p>
+            </div>
+          </div>
           {error ? <div className="sa-state sa-state--error">{error}</div> : null}
           <div className="sa-form-grid">
             <div className="sa-form-field">
@@ -305,7 +326,10 @@ function Notifications() {
 
       <div className="sa-panel">
         <h3>Notification List</h3>
-        <p>Recent messages and delivery status.</p>
+        <p>
+          Recent messages and delivery status
+          {stats ? ` · ${Number(stats.total || stats.totalNotifications || notifications.length) || notifications.length} total` : ""}.
+        </p>
         {loading ? <div className="sa-state">Loading notifications...</div> : null}
         {!loading && error && !showForm ? <div className="sa-state sa-state--error">{error}</div> : null}
         {!loading && !error ? (

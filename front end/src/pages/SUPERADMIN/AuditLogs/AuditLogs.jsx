@@ -20,7 +20,9 @@ import {
 import {
   buildBranchOptions,
   fetchBranchesForHospital,
+  getStoredHospitalId,
 } from "../../../utils/branchApi";
+import { getStoredClinicName } from "../../../utils/clinicDisplay";
 
 const views = [
   { key: "all", label: "All Audit Logs" },
@@ -67,36 +69,141 @@ const roleIcons = {
 };
 
 const normalizeKey = (value = "") => String(value || "").trim().toLowerCase();
+const UNASSIGNED_BRANCH_KEYS = new Set(["unassigned", "unassigned branch", "no branch", "n/a", "na", "-"]);
+
+const firstValue = (...values) => {
+  for (const value of values) {
+    if (value !== undefined && value !== null && String(value).trim()) return value;
+  }
+  return "";
+};
+
+const getNestedText = (source = {}, paths = []) => {
+  for (const path of paths) {
+    const value = path.split(".").reduce((current, key) => current?.[key], source);
+    if (value !== undefined && value !== null && String(value).trim()) return value;
+  }
+  return "";
+};
 
 const getRowClinicKey = (row = {}) =>
-  normalizeKey(row.clinicId || row.hospitalId || row.raw?.clinicId || row.raw?.hospitalId);
+  normalizeKey(firstValue(
+    row.clinicId,
+    row.hospitalId,
+    row.assignedClinicId,
+    row.raw?.clinicId,
+    row.raw?.ClinicId,
+    row.raw?.clinicID,
+    row.raw?.ClinicID,
+    row.raw?.hospitalId,
+    row.raw?.HospitalId,
+    row.raw?.hospitalID,
+    row.raw?.HospitalID,
+    row.raw?.assignedClinicId,
+    row.raw?.AssignedClinicId,
+    getNestedText(row.raw, ["clinic.id", "clinic.clinicId", "clinic.hospitalId", "hospital.id", "hospital.hospitalId"])
+  ));
 
 const getRowClinicName = (row = {}) =>
-  normalizeKey(row.clinicName || row.hospitalName || row.assignedClinic || row.raw?.clinicName || row.raw?.hospitalName);
+  normalizeKey(firstValue(
+    row.clinicName,
+    row.hospitalName,
+    row.assignedClinic,
+    row.clinic,
+    row.raw?.clinicName,
+    row.raw?.ClinicName,
+    row.raw?.hospitalName,
+    row.raw?.HospitalName,
+    row.raw?.assignedClinic,
+    row.raw?.AssignedClinic,
+    row.raw?.clinic,
+    row.raw?.Clinic,
+    getNestedText(row.raw, ["clinic.name", "clinic.clinicName", "clinic.hospitalName", "hospital.name", "hospital.hospitalName"])
+  ));
 
 const getRowBranchKey = (row = {}) =>
-  normalizeKey(row.branchId || row.raw?.branchId || row.raw?.BranchId);
+  normalizeKey(firstValue(
+    row.branchId,
+    row.raw?.branchId,
+    row.raw?.BranchId,
+    row.raw?.branchID,
+    row.raw?.BranchID,
+    getNestedText(row.raw, ["branch.id", "branch.branchId"])
+  ));
 
 const getRowBranchName = (row = {}) =>
-  normalizeKey(row.branchName || row.raw?.branchName || row.raw?.BranchName);
+  normalizeKey(firstValue(
+    row.branchName,
+    row.branch,
+    row.raw?.branchName,
+    row.raw?.BranchName,
+    row.raw?.branch,
+    row.raw?.Branch,
+    getNestedText(row.raw, ["branch.name", "branch.branchName"])
+  ));
+
+const getClinicNameCandidates = (clinic = {}) =>
+  [
+    clinic.name,
+    clinic.clinicName,
+    clinic.hospitalName,
+    clinic.raw?.name,
+    clinic.raw?.Name,
+    clinic.raw?.clinicName,
+    clinic.raw?.ClinicName,
+    clinic.raw?.hospitalName,
+    clinic.raw?.HospitalName,
+  ]
+    .map(normalizeKey)
+    .filter(Boolean);
+
+const getBranchIdCandidates = (branch = {}) =>
+  [
+    branch.id,
+    branch.branchId,
+    branch.raw?.id,
+    branch.raw?.Id,
+    branch.raw?.branchId,
+    branch.raw?.BranchId,
+    branch.raw?.branchID,
+    branch.raw?.BranchID,
+  ]
+    .map(normalizeKey)
+    .filter(Boolean);
+
+const getBranchNameCandidates = (branch = {}) =>
+  [
+    branch.name,
+    branch.branchName,
+    branch.raw?.name,
+    branch.raw?.Name,
+    branch.raw?.branchName,
+    branch.raw?.BranchName,
+  ]
+    .map(normalizeKey)
+    .filter(Boolean);
 
 const matchesClinic = (row = {}, clinic = null) => {
   if (!clinic) return true;
-  const clinicId = normalizeKey(clinic.id);
-  const clinicName = normalizeKey(clinic.name);
+  const clinicIds = getClinicIdCandidates(clinic).map(normalizeKey);
+  const clinicNames = getClinicNameCandidates(clinic);
+  const rowClinicKey = getRowClinicKey(row);
+  const rowClinicName = getRowClinicName(row);
   return (
-    (clinicId && getRowClinicKey(row) === clinicId) ||
-    (clinicName && getRowClinicName(row) === clinicName)
+    (rowClinicKey && clinicIds.includes(rowClinicKey)) ||
+    (rowClinicName && clinicNames.includes(rowClinicName))
   );
 };
 
 const matchesBranch = (row = {}, branch = null) => {
   if (!branch) return true;
-  const branchId = normalizeKey(branch.id);
-  const branchName = normalizeKey(branch.name);
+  const branchIds = getBranchIdCandidates(branch);
+  const branchNames = getBranchNameCandidates(branch);
+  const rowBranchKey = getRowBranchKey(row);
+  const rowBranchName = getRowBranchName(row);
   return (
-    (branchId && getRowBranchKey(row) === branchId) ||
-    (branchName && getRowBranchName(row) === branchName)
+    (rowBranchKey && branchIds.includes(rowBranchKey)) ||
+    (rowBranchName && branchNames.includes(rowBranchName))
   );
 };
 
@@ -122,7 +229,18 @@ const getClinicIdCandidates = (clinic = {}) =>
   );
 
 const getBranchClinicKey = (branch = {}) =>
-  normalizeKey(branch.raw?.hospitalId || branch.raw?.HospitalId || branch.raw?.clinicId || branch.raw?.ClinicId);
+  normalizeKey(firstValue(
+    branch.hospitalId,
+    branch.clinicId,
+    branch.raw?.hospitalId,
+    branch.raw?.HospitalId,
+    branch.raw?.hospitalID,
+    branch.raw?.HospitalID,
+    branch.raw?.clinicId,
+    branch.raw?.ClinicId,
+    branch.raw?.clinicID,
+    branch.raw?.ClinicID
+  ));
 
 const filterBranchOptionsForClinic = (options = [], clinic = {}) => {
   const clinicIds = getClinicIdCandidates(clinic).map(normalizeKey);
@@ -133,8 +251,46 @@ const filterBranchOptionsForClinic = (options = [], clinic = {}) => {
     return branchClinicKey && clinicIds.includes(branchClinicKey);
   });
 
-  return related.length ? related : options;
+  return related;
 };
+
+const mergeBranchOptions = (...optionGroups) => {
+  const seen = new Set();
+  const merged = [];
+
+  optionGroups.flat().forEach((option) => {
+    const id = String(option?.id || option?.branchId || "").trim();
+    const name = String(option?.name || option?.branchName || "").trim();
+    if (!id && !name) return;
+    if (UNASSIGNED_BRANCH_KEYS.has(normalizeKey(name || id))) return;
+
+    const key = id ? `id:${normalizeKey(id)}` : `name:${normalizeKey(name)}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    merged.push({
+      ...option,
+      id: id || name,
+      name: name || id,
+    });
+  });
+
+  return merged;
+};
+
+const getBranchOptionsFromRows = (rows = [], clinic = null) =>
+  rows
+    .filter((row) => matchesClinic(row, clinic))
+    .map((row) => {
+      const id = getRowBranchKey(row);
+      const name = firstValue(row.branchName, row.branch, row.raw?.branchName, row.raw?.BranchName, row.raw?.branch, row.raw?.Branch);
+      return {
+        id: id || String(name || "").trim(),
+        name: String(name || id || "").trim(),
+        raw: row.raw || row,
+        isActive: true,
+      };
+    })
+    .filter((branch) => branch.id && branch.name && !UNASSIGNED_BRANCH_KEYS.has(normalizeKey(branch.name)));
 
 const toDateInputValue = (date) => {
   const value = date instanceof Date ? date : new Date(date);
@@ -224,13 +380,35 @@ function AuditLogs() {
   const [error, setError] = useState("");
 
   const selectedClinic = useMemo(
-    () => clinics.find((clinic) => String(clinic.id) === String(selectedClinicId)) || null,
+    () =>
+      clinics.find((clinic) =>
+        getClinicIdCandidates(clinic).some((id) => String(id) === String(selectedClinicId))
+      ) || null,
     [clinics, selectedClinicId]
   );
 
+  const derivedBranchOptions = useMemo(
+    () =>
+      selectedClinic
+        ? getBranchOptionsFromRows(
+            [...allAuditLogs, ...loginHistory, ...auditLogs, ...asList(branchWiseDashboard)],
+            selectedClinic
+          )
+        : [],
+    [allAuditLogs, auditLogs, branchWiseDashboard, loginHistory, selectedClinic]
+  );
+
+  const branchOptions = useMemo(
+    () => mergeBranchOptions(branches, derivedBranchOptions),
+    [branches, derivedBranchOptions]
+  );
+
   const selectedBranch = useMemo(
-    () => branches.find((branch) => String(branch.id) === String(selectedBranchId)) || null,
-    [branches, selectedBranchId]
+    () =>
+      branchOptions.find((branch) =>
+        getBranchIdCandidates(branch).some((id) => String(id) === String(selectedBranchId))
+      ) || null,
+    [branchOptions, selectedBranchId]
   );
 
   const loadLogs = useCallback(async (active = true) => {
@@ -342,7 +520,9 @@ function AuditLogs() {
 
   useEffect(() => {
     let active = true;
-    const clinic = clinics.find((item) => String(item.id) === String(selectedClinicId));
+    const clinic = clinics.find((item) =>
+      getClinicIdCandidates(item).some((id) => String(id) === String(selectedClinicId))
+    );
 
     setSelectedBranchId("");
     if (!clinic) {
@@ -355,11 +535,32 @@ function AuditLogs() {
     setLoadingBranches(true);
     (async () => {
       const candidates = getClinicIdCandidates(clinic);
+      const storedHospitalId = getStoredHospitalId();
+      const storedClinicName = getStoredClinicName();
+      if (
+        storedHospitalId &&
+        getClinicNameCandidates(clinic).includes(normalizeKey(storedClinicName))
+      ) {
+        candidates.unshift(String(storedHospitalId));
+      }
+      const seenBranchKeys = new Set();
+      const mergeOptions = (options = []) => {
+        const next = [];
+        options.forEach((option) => {
+          const key = `${option.id || ""}:${normalizeKey(option.name)}`;
+          if (!key.trim() || seenBranchKeys.has(key)) return;
+          seenBranchKeys.add(key);
+          next.push(option);
+        });
+        return next;
+      };
+
       for (const candidate of candidates) {
         try {
           const rows = await fetchBranchesForHospital(candidate);
-          const options = filterBranchOptionsForClinic(buildBranchOptions(rows), clinic);
-          if (options.length) return options;
+          const options = buildBranchOptions(rows);
+          const merged = mergeOptions(options);
+          if (merged.length) return merged;
         } catch {
           // Try the next clinic/hospital id shape.
         }
@@ -367,7 +568,7 @@ function AuditLogs() {
 
       try {
         const rows = await fetchBranchesForHospital("");
-        return filterBranchOptionsForClinic(buildBranchOptions(rows), clinic);
+        return mergeOptions(filterBranchOptionsForClinic(buildBranchOptions(rows), clinic));
       } catch {
         return [];
       }
@@ -681,7 +882,7 @@ function AuditLogs() {
           >
             <option value="">All Clinics</option>
             {clinics.map((clinic) => (
-              <option key={clinic.id || clinic.name} value={clinic.id}>
+              <option key={clinic.id || clinic.name} value={getClinicIdCandidates(clinic)[0] || clinic.id}>
                 {clinic.name || `Clinic ${clinic.id}`}
               </option>
             ))}
@@ -701,8 +902,8 @@ function AuditLogs() {
                   ? "Loading branches..."
                   : "All Branches"}
             </option>
-            {branches.map((branch) => (
-              <option key={branch.id || branch.name} value={branch.id}>
+            {branchOptions.map((branch) => (
+              <option key={branch.id || branch.name} value={getBranchIdCandidates(branch)[0] || branch.id}>
                 {branch.name || `Branch ${branch.id}`}
               </option>
             ))}

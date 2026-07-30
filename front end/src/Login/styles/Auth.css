@@ -1224,6 +1224,15 @@ body.auth-page-no-scroll {
   gap: clamp(11px, 1.9vh, 16px);
 }
 
+.auth-card--compact-register .auth-form > div {
+  display: grid;
+  gap: clamp(16px, 2.4vh, 22px);
+}
+
+.auth-card--compact-register .register-grid {
+  row-gap: clamp(16px, 2.4vh, 22px);
+}
+
 .form-group label,
 .auth-card--login-compact .form-group label {
   margin-bottom: 7px;
