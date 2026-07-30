@@ -9,6 +9,7 @@ export const SUPER_ADMIN_API = {
   clinics: "Clinics",
   notifications: "notifications",
   notificationSend: "notifications/send",
+  notificationStats: "notifications/stats",
   auditLogs: "AuditLogs",
   loginHistory: "AuditLogs/login-history",
   auditLogsBranchWise: "AuditLogs/dashboard/branch-wise",
@@ -812,14 +813,18 @@ export const normalizeLoginLog = (log = {}, index = 0) => {
 };
 
 const normalizeNotificationTarget = (target = "") => {
-  const value = String(target || "Active Admins").trim();
+  const value = String(target || "").trim();
   const normalized = value.toLowerCase();
 
   if (normalized.includes("admin")) return "Active Admins";
   if (normalized.includes("active user") || normalized === "active users" || normalized.includes("user"))
-    return "Active Admins";
+    return "All Active Users";
 
-  return "Active Admins";
+  if (normalized.includes("doctor")) return "Doctors";
+  if (normalized.includes("reception")) return "Receptionists";
+  if (normalized.includes("patient")) return "Patients";
+
+  return value || "Active Admins";
 };
 
 const getNotificationTarget = (notification = {}) => {
@@ -836,14 +841,6 @@ const getNotificationTarget = (notification = {}) => {
     notification.sendTo,
   ].filter(hasValue);
 
-  const candidate = targetValues.find((value) =>
-    String(value || "").toLowerCase().includes("admin")
-  );
-
-  if (candidate) {
-    return "Active Admins";
-  }
-
   return normalizeNotificationTarget(targetValues[0] || "Active Admins");
 };
 
@@ -857,7 +854,7 @@ export const normalizeNotification = (notification = {}) => ({
 });
 
 const getNotificationAudienceCode = (target = "") =>
-  normalizeNotificationTarget(target) === "Active Admins" ? "admins" : "admins";
+  normalizeNotificationTarget(target).toLowerCase().includes("admin") ? "admins" : "users";
 
 const buildNotificationPayload = (notification = {}) => {
   const targetUsers = normalizeNotificationTarget(
@@ -2335,25 +2332,85 @@ const getCurrentSessionIdentity = (ipAddress = "") => ({
     "",
 });
 
+const getAuditLookupClinic = (user = {}) => ({
+  clinicId: pick(user.raw || user, [
+    "clinicId",
+    "ClinicId",
+    "hospitalId",
+    "HospitalId",
+    "assignedClinicId",
+    "AssignedClinicId",
+  ], user.clinicId || ""),
+  clinicName: pick(user.raw || user, [
+    "clinicName",
+    "ClinicName",
+    "hospitalName",
+    "HospitalName",
+    "assignedClinic",
+    "AssignedClinic",
+    "clinic",
+  ], user.clinic || ""),
+  branchId: pick(user.raw || user, ["branchId", "BranchId", "branchID", "BranchID"], ""),
+  branchName: pick(user.raw || user, ["branchName", "BranchName", "branch", "Branch"], ""),
+});
+
+const addAuditScopeLookupValue = (lookup, key, user = {}) => {
+  const normalizedKey = normalizeString(key);
+  if (!normalizedKey || lookup.has(normalizedKey)) return;
+
+  const scope = getAuditLookupClinic(user);
+  if (scope.clinicId || scope.clinicName || scope.branchId || scope.branchName) {
+    lookup.set(normalizedKey, scope);
+  }
+};
+
+export const fetchNotificationStats = async () => {
+  try {
+    return asObject(await superAdminRequest(SUPER_ADMIN_API.notificationStats));
+  } catch {
+    const notifications = await fetchNotifications();
+    return {
+      total: notifications.length,
+      sent: notifications.filter((item) => String(item.status || "").toLowerCase() === "sent").length,
+      read: notifications.filter((item) => String(item.status || "").toLowerCase() === "read").length,
+      unread: notifications.filter((item) => String(item.status || "").toLowerCase() !== "read" && String(item.status || "").toLowerCase() !== "sent").length,
+    };
+  }
+};
+
+const addAuditScopeLookupUser = (lookup, user = {}) => {
+  addAuditScopeLookupValue(lookup, user.email, user);
+  addAuditScopeLookupValue(lookup, user.userEmail, user);
+  addAuditScopeLookupValue(lookup, user.name, user);
+  addAuditScopeLookupValue(lookup, user.userName, user);
+  addAuditScopeLookupValue(lookup, pick(user.raw || user, AUDIT_EMAIL_KEYS), user);
+  addAuditScopeLookupValue(lookup, pick(user.raw || user, AUDIT_USER_KEYS), user);
+};
+
 const buildAuditLookups = ({ users = [], admins = [], doctors = [], receptionists = [], loginLogs = [] }) => {
   const roleLookup = new Map();
   const emailLookup = new Map();
+  const scopeLookup = new Map();
 
   users.map(normalizeUser).forEach((user) => {
     addRoleLookupUser(roleLookup, user);
     addEmailLookupUser(emailLookup, user);
+    addAuditScopeLookupUser(scopeLookup, user);
   });
   admins.map(normalizeAdmin).forEach((admin) => {
     addRoleLookupUser(roleLookup, admin);
     addEmailLookupUser(emailLookup, admin);
+    addAuditScopeLookupUser(scopeLookup, admin);
   });
   doctors.forEach((doctor) => {
     addRoleLookupUser(roleLookup, doctor, "Doctor");
     addEmailLookupUser(emailLookup, doctor);
+    addAuditScopeLookupUser(scopeLookup, doctor);
   });
   receptionists.forEach((receptionist) => {
     addRoleLookupUser(roleLookup, receptionist, "Receptionist");
     addEmailLookupUser(emailLookup, receptionist);
+    addAuditScopeLookupUser(scopeLookup, receptionist);
   });
 
   addCurrentSessionRoleLookup(roleLookup);
@@ -2369,10 +2426,19 @@ const buildAuditLookups = ({ users = [], admins = [], doctors = [], receptionist
     addEmailLookupValue(emailLookup, log.userName, log.userEmail);
   });
 
-  return { roleLookup, emailLookup };
+  return { roleLookup, emailLookup, scopeLookup };
 };
 
-const withAuditFallback = (log, roleLookup, emailLookup, options = {}) => {
+const withAuditFallback = (log, roleLookup, emailLookup, scopeLookup = new Map(), options = {}) => {
+  if (
+    scopeLookup &&
+    typeof options === "object" &&
+    !(scopeLookup instanceof Map) &&
+    !("get" in scopeLookup)
+  ) {
+    options = scopeLookup;
+    scopeLookup = new Map();
+  }
   const { currentIpAddress = "", fillMissingIpAddress = false } =
     typeof options === "string"
       ? { currentIpAddress: options, fillMissingIpAddress: false }
@@ -2392,6 +2458,13 @@ const withAuditFallback = (log, roleLookup, emailLookup, options = {}) => {
     emailLookup.get(normalizeString(log.user)) ||
     emailLookup.get(normalizeString(log.userName)) ||
     (isEmailAddress(log.userName) ? log.userName : "");
+  const scope =
+    scopeLookup.get(normalizeString(log.userEmail)) ||
+    scopeLookup.get(normalizeString(log.email)) ||
+    scopeLookup.get(normalizeString(email)) ||
+    scopeLookup.get(normalizeString(log.user)) ||
+    scopeLookup.get(normalizeString(log.userName)) ||
+    {};
 
   return {
     ...log,
@@ -2399,6 +2472,10 @@ const withAuditFallback = (log, roleLookup, emailLookup, options = {}) => {
     ipAddress,
     email: email || log.email || log.userEmail,
     userEmail: email || log.userEmail || log.email,
+    clinicId: log.clinicId || scope.clinicId || "",
+    clinicName: log.clinicName || scope.clinicName || "",
+    branchId: log.branchId || scope.branchId || "",
+    branchName: log.branchName || scope.branchName || "",
   };
 };
 
@@ -2485,7 +2562,7 @@ export const fetchAuditLogs = async (filters = {}) => {
       ? asArray(loginResult.value).map(normalizeLoginLog)
       : [];
   const localLogs = readLocalList(LOCAL_AUDIT_LOGS_KEY).map(normalizeAuditLog);
-  const { roleLookup, emailLookup } = buildAuditLookups({
+  const { roleLookup, emailLookup, scopeLookup } = buildAuditLookups({
     users: usersResult.status === "fulfilled" ? asArray(usersResult.value) : [],
     admins: adminsResult.status === "fulfilled" ? asArray(adminsResult.value) : [],
     doctors: doctorsResult.status === "fulfilled" ? asArray(doctorsResult.value) : [],
@@ -2493,13 +2570,13 @@ export const fetchAuditLogs = async (filters = {}) => {
     loginLogs,
   });
   const remoteLogs = uniqueAuditLogs([...loginLogs, ...auditLogs]).map((log) =>
-    withAuditFallback(log, roleLookup, emailLookup)
+    withAuditFallback(log, roleLookup, emailLookup, scopeLookup)
   );
   const currentIpAddress = remoteLogs.length ? "" : await fetchCurrentIpAddress();
   const logs = remoteLogs.length
-    ? remoteLogs
-    : localLogs.map((log) =>
-        withAuditFallback(log, roleLookup, emailLookup, {
+      ? remoteLogs
+      : localLogs.map((log) =>
+        withAuditFallback(log, roleLookup, emailLookup, scopeLookup, {
           currentIpAddress,
           fillMissingIpAddress: true,
         })
@@ -2534,7 +2611,7 @@ export const fetchLoginHistory = async (filters = {}) => {
       : []),
     ...readLocalList(LOCAL_AUDIT_LOGS_KEY).map(normalizeAuditLog).filter(isLoginAuditLog),
   ]);
-  const { roleLookup, emailLookup } = buildAuditLookups({
+  const { roleLookup, emailLookup, scopeLookup } = buildAuditLookups({
     users: usersResult.status === "fulfilled" ? asArray(usersResult.value) : [],
     admins: adminsResult.status === "fulfilled" ? asArray(adminsResult.value) : [],
     doctors: doctorsResult.status === "fulfilled" ? asArray(doctorsResult.value) : [],
@@ -2542,7 +2619,7 @@ export const fetchLoginHistory = async (filters = {}) => {
     loginLogs,
   });
   return sortAuditLogs(
-    loginLogs.map((log) => withAuditFallback(log, roleLookup, emailLookup))
+    loginLogs.map((log) => withAuditFallback(log, roleLookup, emailLookup, scopeLookup))
   );
 };
 

@@ -66,6 +66,11 @@ export const parseApiList = (data) => {
   if (Array.isArray(data?.items)) return data.items;
   if (Array.isArray(data?.result)) return data.result;
   if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.records)) return data.records;
+  if (Array.isArray(data?.branches)) return data.branches;
+  if (Array.isArray(data?.Branches)) return data.Branches;
+  if (Array.isArray(data?.data?.branches)) return data.data.branches;
+  if (Array.isArray(data?.data?.Branches)) return data.data.Branches;
   return [];
 };
 
@@ -81,17 +86,31 @@ const fetchWithTimeout = (url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) => 
 
 export const getBranchId = (branch) => {
   const b = branch || {};
-  return b.id ?? b.branchId ?? b.BranchId ?? b.BranchID ?? "";
+  return b.id ?? b.Id ?? b.branchId ?? b.BranchId ?? b.BranchID ?? b.branchID ?? b._id ?? "";
 };
 
 export const getBranchName = (branch) => {
   const b = branch || {};
-  return b.name ?? b.branchName ?? b.BranchName ?? "";
+  return b.name ?? b.Name ?? b.branchName ?? b.BranchName ?? b.branch ?? b.Branch ?? b.locationName ?? "";
 };
 
 export const getBranchHospitalId = (branch) => {
   const b = branch || {};
-  return b.hospitalId ?? b.HospitalId ?? b.clinicId ?? b.ClinicId ?? "";
+  return (
+    b.hospitalId ??
+    b.HospitalId ??
+    b.hospitalID ??
+    b.HospitalID ??
+    b.clinicId ??
+    b.ClinicId ??
+    b.clinicID ??
+    b.ClinicID ??
+    b.hospital?.id ??
+    b.hospital?.hospitalId ??
+    b.clinic?.id ??
+    b.clinic?.clinicId ??
+    ""
+  );
 };
 
 export const getBranchIsActive = (branch) => {
@@ -148,27 +167,58 @@ export const fetchBranchesForHospital = async (hospitalId = getStoredHospitalId(
   const headers = getApiHeaders();
 
   if (targetHospitalId) {
-    try {
-      const response = await fetchWithTimeout(apiUrl(`Branch/hospital/${encodeURIComponent(targetHospitalId)}`), {
-        headers,
-      });
+    const encodedId = encodeURIComponent(targetHospitalId);
+    const scopedUrls = [
+      apiUrl(`Branch/hospital/${encodedId}`),
+      apiUrl(`Branches/hospital/${encodedId}`),
+      apiUrl(`Branch/clinic/${encodedId}`),
+      apiUrl(`Branches/clinic/${encodedId}`),
+      apiUrl(`Branch?hospitalId=${encodedId}`),
+      apiUrl(`Branches?hospitalId=${encodedId}`),
+      apiUrl(`Branch?clinicId=${encodedId}`),
+      apiUrl(`Branches?clinicId=${encodedId}`),
+    ];
 
-      if (response.ok) {
-        const data = parseApiList(await response.json().catch(() => []));
-        branchCache.set(cacheKey, { data, at: Date.now() });
-        return data;
+    for (const url of scopedUrls) {
+      try {
+        const response = await fetchWithTimeout(url, { headers });
+
+        if (response.ok) {
+          const data = parseApiList(await response.json().catch(() => []));
+          if (data.length) {
+            branchCache.set(cacheKey, { data, at: Date.now() });
+            return data;
+          }
+        }
+      } catch {
+        // Try the next endpoint shape.
       }
-    } catch (e) {
-      // Ignore network/CORS error and fall back to fetching all branches
     }
   }
 
-  const response = await fetchWithTimeout(BRANCH_API_URL, { headers });
-  if (!response.ok) {
-    throw new Error(await parseErrorMessage(response, "Unable to load branches."));
+  const allBranchUrls = [BRANCH_API_URL, apiUrl("Branches")];
+  let branches = [];
+  let lastError = null;
+
+  for (const url of allBranchUrls) {
+    try {
+      const response = await fetchWithTimeout(url, { headers });
+      if (!response.ok) {
+        lastError = new Error(await parseErrorMessage(response, "Unable to load branches."));
+        continue;
+      }
+
+      branches = parseApiList(await response.json().catch(() => []));
+      if (branches.length) break;
+    } catch (error) {
+      lastError = error;
+    }
   }
 
-  const branches = parseApiList(await response.json().catch(() => []));
+  if (!branches.length && lastError) {
+    throw lastError;
+  }
+
   if (!targetHospitalId) {
     branchCache.set(cacheKey, { data: branches, at: Date.now() });
     return branches;
@@ -176,7 +226,7 @@ export const fetchBranchesForHospital = async (hospitalId = getStoredHospitalId(
 
   const filtered = branches.filter((branch) => {
     const branchHospitalId = String(getBranchHospitalId(branch) || "").trim();
-    return !branchHospitalId || branchHospitalId === targetHospitalId;
+    return branchHospitalId === targetHospitalId;
   });
 
   branchCache.set(cacheKey, { data: filtered, at: Date.now() });
@@ -193,10 +243,14 @@ export const fetchBranchesForHospital = async (hospitalId = getStoredHospitalId(
 
 export const buildBranchOptions = (branches = []) =>
   branches
-    .map((branch) => ({
-      id: String(getBranchId(branch) || "").trim(),
-      name: String(getBranchName(branch) || "").trim(),
-      isActive: getBranchIsActive(branch),
-      raw: branch,
-    }))
+    .map((branch) => {
+      const id = String(getBranchId(branch) || "").trim();
+      const name = String(getBranchName(branch) || "").trim();
+      return {
+        id: id || name,
+        name: name || id,
+        isActive: getBranchIsActive(branch),
+        raw: branch,
+      };
+    })
     .filter((branch) => branch.id && branch.name);

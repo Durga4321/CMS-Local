@@ -14,6 +14,42 @@ const LogoIcon = () => (
 );
 
 const FORGOT_PASSWORD_API = apiUrl('Auth/forgot-password');
+const UNREGISTERED_EMAIL_MESSAGE = 'Email is not registered.';
+
+const getResponseMessage = (data = {}) =>
+  String(data?.message || data?.error || data?.title || '').trim();
+
+const isFalseValue = (value) =>
+  value === false ||
+  value === 0 ||
+  String(value).trim().toLowerCase() === 'false';
+
+const getForgotPasswordError = (data = {}) => {
+  const message = getResponseMessage(data);
+  const normalizedMessage = message.toLowerCase();
+  const isUnregistered =
+    normalizedMessage.includes('not registered') ||
+    normalizedMessage.includes('not registerd') ||
+    normalizedMessage.includes('not found') ||
+    normalizedMessage.includes('does not exist') ||
+    normalizedMessage.includes('no user') ||
+    normalizedMessage.includes('no account') ||
+    normalizedMessage.includes('invalid email') ||
+    isFalseValue(data?.isRegistered) ||
+    isFalseValue(data?.registered) ||
+    isFalseValue(data?.exists) ||
+    isFalseValue(data?.userExists);
+
+  if (isUnregistered) {
+    return UNREGISTERED_EMAIL_MESSAGE;
+  }
+
+  if (isFalseValue(data?.success) || isFalseValue(data?.succeeded)) {
+    return message || 'Failed to send OTP. Please try again.';
+  }
+
+  return '';
+};
 
 const ForgotPassword = () => {
   const toast = useToast();
@@ -53,9 +89,13 @@ const ForgotPassword = () => {
       });
 
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setError(data.message || 'Failed to send OTP. Please try again.');
-        toast.error(data.message || 'Failed to send OTP. Please try again.');
+      const forgotPasswordError =
+        getForgotPasswordError(data) ||
+        (!response.ok ? getResponseMessage(data) || 'Failed to send OTP. Please try again.' : '');
+
+      if (forgotPasswordError) {
+        setError(forgotPasswordError);
+        toast.error(forgotPasswordError);
         return;
       }
 
