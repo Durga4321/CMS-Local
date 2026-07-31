@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Printer } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Consultation.css";
 import { apiUrl } from "../../config/api";
@@ -11,10 +12,12 @@ import {
   DEFAULT_DIAGNOSIS_OPTIONS,
   fetchDiagnosisOptions,
   filterDiagnosisOptionsBySpecialization,
+  getDiagnosisTestsForSpecialization,
   mergeDiagnosisOption,
 } from "../utils/diagnosisOptions";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 import { fetchConsultationVitals, mergeStoredAppointmentVitals } from "../../utils/appointmentVitals";
+import { getClinicDisplayName } from "../../utils/clinicDisplay";
 
 const STEPS = [
   "Waiting",
@@ -28,6 +31,27 @@ const MEDICAL_HISTORY_API = apiUrl("MedicalHistory");
 const CONSULTATION_API = apiUrl("Consultation");
 
 const emptyValue = "-";
+const escapePrintHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+const formatPrintDateTime = (value = new Date()) => {
+  const date = new Date(value || Date.now());
+  if (Number.isNaN(date.getTime())) return String(value || "");
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
 const getInitials = (name) =>
   String(name || "P")
     .split(" ")
@@ -38,6 +62,17 @@ const getInitials = (name) =>
     .toUpperCase() || "P";
 
 const getDisplayDate = (value) => formatDateMMDDYYYY(value, emptyValue);
+const splitDiagnosisTests = (value) =>
+  String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const joinDiagnosisTests = (items = []) =>
+  items
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .join(", ");
 
 const pickVital = (item = {}, fallback = {}, key) =>
   item[key] ||
@@ -166,6 +201,7 @@ function Consultation() {
   const [form, setForm] = useState({
     complaintsChoice: "",
     diagnosis: "",
+    diagnosisTests: "",
     bp: "",
     sugar: "",
     temp: "",
@@ -319,6 +355,11 @@ function Consultation() {
         setForm({
           complaintsChoice: appointmentComplaint,
           diagnosis: savedConsultation?.diagnosis || "",
+          diagnosisTests:
+            savedConsultation?.diagnosisTests ||
+            savedConsultation?.diagnosticTests ||
+            savedConsultation?.tests ||
+            "",
           bp: hydratedAppointment.bloodPressure || "",
           sugar: hydratedAppointment.sugarLevel || "",
           temp: hydratedAppointment.temperature || "",
@@ -398,9 +439,71 @@ function Consultation() {
     if (form.diagnosis) options.add(form.diagnosis);
     return Array.from(options).sort((a, b) => a.localeCompare(b));
   }, [appointment, diagnosisOptions, form.diagnosis, sessionDoctor.specialization]);
+  const diagnosisTestOptions = useMemo(() => {
+    const doctorSpecialization =
+      appointment?.doctorSpecialization ||
+      appointment?.specialization ||
+      sessionDoctor.specialization;
+    const options = new Set(getDiagnosisTestsForSpecialization(doctorSpecialization));
+    splitDiagnosisTests(form.diagnosisTests).forEach((test) => options.add(test));
+    return Array.from(options).sort((a, b) => a.localeCompare(b));
+  }, [appointment, form.diagnosisTests, sessionDoctor.specialization]);
+  const selectedDiagnosisTests = useMemo(
+    () => splitDiagnosisTests(form.diagnosisTests),
+    [form.diagnosisTests]
+  );
+  const hospitalName = getClinicDisplayName("VIMS Clinic");
+  const doctorName =
+    appointment?.doctorName ||
+    sessionDoctor.name ||
+    localStorage.getItem("doctorName") ||
+    "Doctor";
+  const doctorSpecialization =
+    appointment?.doctorSpecialization ||
+    appointment?.specialization ||
+    sessionDoctor.specialization ||
+    "Consultation";
+  const consultId =
+    appointment?.appointmentId ||
+    appointment?.tokenNumber ||
+    `OP${String(Date.now()).slice(-9)}`;
+  const vitals = [
+    ["BP", form.bp],
+    ["Pulse", form.pulse],
+    ["Temp", form.temp],
+    ["Weight", form.weight],
+    ["Sugar", form.sugar],
+    ["Resp", form.resp],
+  ];
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const addDiagnosisTest = (value) => {
+    const selected = String(value || "").trim();
+    if (!selected) return;
+    setForm((prev) => ({
+      ...prev,
+      diagnosisTests: joinDiagnosisTests([
+        ...splitDiagnosisTests(prev.diagnosisTests).filter(
+          (test) => test.toLowerCase() !== selected.toLowerCase()
+        ),
+        selected,
+      ]),
+    }));
+  };
+
+  const removeDiagnosisTest = (value) => {
+    const selected = String(value || "").trim().toLowerCase();
+    setForm((prev) => ({
+      ...prev,
+      diagnosisTests: joinDiagnosisTests(
+        splitDiagnosisTests(prev.diagnosisTests).filter(
+          (test) => test.toLowerCase() !== selected
+        )
+      ),
+    }));
   };
 
   const saveConsultation = async () => {
@@ -431,6 +534,8 @@ function Consultation() {
         patientId: Number(appointment.patientId),
         doctorId: appointment.doctorId || appointment.doctor?.id || undefined,
         diagnosis: form.diagnosis.trim(),
+        diagnosisTests: form.diagnosisTests.trim(),
+        diagnosticTests: form.diagnosisTests.trim(),
       };
 
       if (form.complaintsChoice.trim()) {
@@ -489,9 +594,141 @@ function Consultation() {
         consultation: {
           ...result,
           diagnosis: result.diagnosis || form.diagnosis,
+          diagnosisTests:
+            result.diagnosisTests ||
+            result.diagnosticTests ||
+            form.diagnosisTests,
         },
       },
     });
+  };
+
+  const buildConsultationHtml = () => {
+    const printedAt = formatPrintDateTime(new Date());
+    const consultDate = formatPrintDateTime(appointment?.date || new Date());
+    const diagnosisBlock = [
+      form.diagnosis.trim(),
+      selectedDiagnosisTests.length
+        ? `Tests: ${selectedDiagnosisTests.join(", ")}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    return `
+      <!doctype html>
+      <html>
+        <head>
+          <title>Consultation - ${escapePrintHtml(appointment?.patientName || "Patient")}</title>
+          <style>
+            @page { size: A4; margin: 12mm; }
+            body { font-family: Arial, Helvetica, sans-serif; color: #1f2937; margin: 0; background: #fff; font-size: 12px; }
+            .sheet { max-width: 900px; margin: 0 auto; padding: 18px 20px; min-height: 1050px; }
+            .print-row { display: flex; justify-content: space-between; font-size: 11px; color: #111827; margin-bottom: 18px; }
+            .letterhead { text-align: center; padding-bottom: 12px; border-bottom: 1px solid #222; position: relative; }
+            .brand-left { position: absolute; left: 0; top: 56px; font-size: 16px; font-weight: 900; letter-spacing: .4px; }
+            h1 { margin: 0 0 10px; font-size: 13px; font-weight: 700; }
+            .hospital { margin: 4px 0; font-size: 16px; font-weight: 900; }
+            .muted { margin: 3px 0; color: #475569; }
+            .title { margin-top: 28px; font-size: 19px; font-weight: 900; letter-spacing: .4px; }
+            .details { display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 1px solid #222; }
+            .details > div { min-height: 120px; padding: 10px 12px; border-right: 1px solid #222; }
+            .details > div:last-child { border-right: 0; }
+            .patient-name, .doctor-name { font-size: 14px; font-weight: 900; margin-bottom: 10px; }
+            p { margin: 7px 0; }
+            .line { display: grid; grid-template-columns: 116px 10px 1fr; gap: 4px; margin: 7px 0; }
+            .line b { font-weight: 900; }
+            .vitals { padding: 18px 8px 14px; border-bottom: 1px solid #222; }
+            h3 { margin: 0 0 9px; font-size: 15px; font-weight: 900; letter-spacing: .2px; }
+            .vital-list { display: flex; flex-wrap: wrap; gap: 14px; font-weight: 900; }
+            .vital-list span { font-weight: 500; }
+            .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; padding: 18px 8px 48px; border-bottom: 1px solid #999; }
+            .two-col > div:nth-child(even) { border-left: 2px solid #333; padding-left: 22px; }
+            .section-block { min-height: 82px; white-space: pre-wrap; font-size: 14px; line-height: 1.45; }
+            .footer { display: flex; justify-content: space-between; gap: 28px; padding-top: 18px; }
+            .signature { text-align: right; min-width: 220px; padding-top: 10px; }
+            @media print { .sheet { padding: 0; } }
+          </style>
+        </head>
+        <body>
+          <main class="sheet">
+            <div class="print-row">
+              <span>${escapePrintHtml(printedAt)}</span>
+              <span>Consultation - ${escapePrintHtml(appointment?.patientName || "Patient")}</span>
+            </div>
+            <div class="letterhead">
+              <div class="brand-left">${escapePrintHtml(hospitalName)}</div>
+              <h1>${escapePrintHtml(hospitalName)} EHR</h1>
+              <p class="hospital">${escapePrintHtml(hospitalName)}</p>
+              <p class="muted">Out Patient Department</p>
+              <p class="muted">Phone/Fax: ${escapePrintHtml(localStorage.getItem("hospitalPhone") || localStorage.getItem("clinicPhone") || "-")}</p>
+              <p class="muted">Email: ${escapePrintHtml(localStorage.getItem("hospitalEmail") || localStorage.getItem("clinicEmail") || "-")}</p>
+              <div class="title">DEPARTMENT OF ${escapePrintHtml(String(doctorSpecialization).toUpperCase())}</div>
+              <div class="title" style="margin-top:6px;">OUT PATIENT ASSESSMENT RECORD</div>
+            </div>
+            <section class="details">
+              <div>
+                <div class="patient-name">${escapePrintHtml(appointment?.patientName || emptyValue)}</div>
+                <p>${escapePrintHtml(`${appointment?.age || emptyValue}Y / ${appointment?.gender || emptyValue}`)}</p>
+                <p>${escapePrintHtml(appointment?.patientCode || emptyValue)}</p>
+                <p>${escapePrintHtml(appointment?.phone || appointment?.patientPhone || emptyValue)}</p>
+              </div>
+              <div>
+                <div class="line"><b>CONSULT DATE</b><span>:</span><span>${escapePrintHtml(consultDate)}</span></div>
+                <div class="line"><b>CONSULT ID</b><span>:</span><span>${escapePrintHtml(consultId)}</span></div>
+                <div class="line"><b>CONSULT TYPE</b><span>:</span><span>WALKIN</span></div>
+                <div class="line"><b>VISIT TYPE</b><span>:</span><span>NORMAL</span></div>
+                <div class="line"><b>TRANSACTION TYPE</b><span>:</span><span>${escapePrintHtml(appointment?.paymentMode || "UPI")}</span></div>
+              </div>
+              <div>
+                <div class="doctor-name">DR. ${escapePrintHtml(doctorName)}</div>
+                <p>${escapePrintHtml(appointment?.doctorId || "")}</p>
+                <p>${escapePrintHtml(doctorSpecialization)}</p>
+                <div class="line"><b>DEPT</b><span>:</span><span>${escapePrintHtml(doctorSpecialization)}</span></div>
+              </div>
+            </section>
+            <section class="vitals">
+              <h3>VITALS</h3>
+              <div class="vital-list">
+                ${vitals.map(([label, value]) => `<b>${escapePrintHtml(label)} :</b> <span>${escapePrintHtml(value || emptyValue)}</span>`).join("")}
+              </div>
+            </section>
+            <section class="two-col">
+              <div>
+                <h3>CHIEF COMPLAINTS</h3>
+                <div class="section-block">${escapePrintHtml(form.complaintsChoice || appointment?.chiefComplaints || emptyValue)}</div>
+              </div>
+              <div>
+                <h3>DIAGNOSIS / TESTS</h3>
+                <div class="section-block">${escapePrintHtml(diagnosisBlock || emptyValue)}</div>
+              </div>
+            </section>
+            <section class="footer">
+              <div>
+                <p><b>Instructions:</b> Take medicines after food and complete the full course.</p>
+                <p><b>Follow-Up Date:</b> Select date</p>
+              </div>
+              <div class="signature">
+                <p><b>Dr. ${escapePrintHtml(doctorName)}</b></p>
+                <p>${escapePrintHtml(doctorSpecialization)}</p>
+              </div>
+            </section>
+          </main>
+        </body>
+      </html>
+    `;
+  };
+
+  const printConsultation = () => {
+    const printWindow = window.open("", "_blank", "width=820,height=960");
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    printWindow.document.write(buildConsultationHtml());
+    printWindow.document.write("<script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); };</script>");
+    printWindow.document.close();
   };
 
   useEffect(() => {
@@ -631,14 +868,49 @@ function Consultation() {
             </datalist>
           </div>
 
+          <div className="cn-field">
+            <label className="cn-label">Diagnosis Tests</label>
+            <select
+              className="cn-input"
+              value=""
+              onChange={(event) => addDiagnosisTest(event.target.value)}
+            >
+              <option value="">Select diagnosis test</option>
+              {diagnosisTestOptions.map((test) => (
+                <option value={test} key={test}>
+                  {test}
+                </option>
+              ))}
+            </select>
+            <div className="cn-test-chips">
+              {selectedDiagnosisTests.length ? (
+                selectedDiagnosisTests.map((test) => (
+                  <button type="button" key={test} onClick={() => removeDiagnosisTest(test)}>
+                    {test} <span>x</span>
+                  </button>
+                ))
+              ) : (
+                <small>Select one or more diagnosis tests</small>
+              )}
+            </div>
+          </div>
+
           <div className="cn-form-actions">
             <button
-              className="cn-btn-save"
+              className="cn-btn-submit"
               type="button"
               onClick={saveConsultation}
               disabled={saving}
             >
-              {saving ? "Saving..." : "Save Notes"}
+              {saving ? "Saving..." : "Submit"}
+            </button>
+            <button
+              className="cn-btn-print"
+              type="button"
+              onClick={printConsultation}
+              disabled={saving}
+            >
+              <Printer size={16} /> Print
             </button>
             <button
               className="cn-btn-primary"

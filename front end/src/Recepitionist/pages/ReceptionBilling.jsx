@@ -41,6 +41,27 @@ const LAST_INVOICE_STORAGE_KEY = "receptionLatestInvoice";
 const RECENT_SERVICE_BILLS_STORAGE_KEY = "receptionRecentServiceBills";
 const HALF_GST_RATE = 0.09;
 
+const getClinicWatermarkSvg = (clinicName = "Clinic") => {
+  const name = String(clinicName || "").toLowerCase();
+  const fallbackText = String(clinicName || "CLINIC")
+    .replace(/[^a-z0-9\s]/gi, " ")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+  const logo = name.includes("dental")
+    ? { text: "", color: "#0f8f8d", path: '<path d="M145 79c35-15 68-8 92 5 25 14 55 14 80 0 24-13 57-20 92-5 64 28 91 95 70 171l-45 170c-13 49-37 137-88 137-36 0-38-43-49-90-5-23-13-40-21-40s-16 17-21 40c-11 47-13 90-49 90-51 0-75-88-88-137L73 250C52 174 79 107 145 79Z" fill="none" stroke="currentColor" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>' }
+    : name.includes("pragathi")
+      ? { text: "PRAGATHI", color: "#00a86b", path: '<path d="M357 79c-93 0-168 36-213 96-43 57-55 132-30 200 64 24 139 11 196-32 60-45 96-120 96-213 0-28-22-51-49-51Z" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M263 173c-64 27-113 75-146 143" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round"/>' }
+      : name.includes("sai ram") || name.includes("primo") || name.includes("pirnav")
+        ? { text: name.includes("sai ram") ? "SAI RAM" : name.includes("primo") ? "PRIMO" : "PIRNAV", color: "#d97706", path: '<circle cx="240" cy="238" r="72" fill="none" stroke="currentColor" stroke-width="24"/><path d="M240 58v62M240 356v62M60 238h62M358 238h62M113 111l44 44M323 321l44 44M367 111l-44 44M157 321l-44 44" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round"/>' }
+        : { text: name.includes("vims") ? "VIMS" : name.includes("nri") ? "NC" : fallbackText || "CL", color: "#00a884", path: '<path d="M214 86h52c11 0 20 9 20 20v88h88c11 0 20 9 20 20v52c0 11-9 20-20 20h-88v88c0 11-9 20-20 20h-52c-11 0-20-9-20-20v-88h-88c-11 0-20-9-20-20v-52c0-11 9-20 20-20h88v-88c0-11 9-20 20-20Z" fill="none" stroke="currentColor" stroke-width="24" stroke-linejoin="round"/>' };
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 560" color="${logo.color}"><rect x="72" y="44" width="336" height="336" rx="72" fill="#f0fdfa" stroke="#7dd3fc" stroke-width="12"/><g transform="translate(0 0)">${logo.path}</g>${logo.text ? `<text x="240" y="455" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="50" font-weight="900" fill="#075eea">${escapeHtml(logo.text)}</text>` : ""}</svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+};
+
 const DIAGNOSTIC_PRICE_LIST = [
   { diagnosis: "Viral Fever", item: "CBC", price: 500 },
   { diagnosis: "Hypertension", item: "Blood Pressure Check", price: 300 },
@@ -400,7 +421,7 @@ const printServiceInvoice = ({
   });
   const title = type === "pharmacy" ? "Pharmacy GST Invoice" : "Diagnostic Test GST Invoice";
   const itemHeader = type === "pharmacy" ? "Product / Medicine" : "Diagnostic Test";
-  const logoUrl = `${window.location.origin}/logo192.png`;
+  const logoUrl = getClinicWatermarkSvg(clinicName);
   const printWindow = window.open("", "_blank", "width=980,height=720");
   if (!printWindow) return false;
 
@@ -415,8 +436,10 @@ const printServiceInvoice = ({
           .invoice { max-width: 940px; min-height: 100vh; margin: 0 auto; background: #fff; padding: 28px; border-top: 8px solid #0f9d9d; box-sizing: border-box; position: relative; overflow: hidden; }
           .invoice > *:not(.watermark) { position: relative; z-index: 1; }
           .watermark { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
-          .watermark img { width: 230px; height: 230px; object-fit: contain; opacity: .055; filter: saturate(1.4); }
+          .watermark img { width: 410px; height: 410px; object-fit: contain; opacity: .18; filter: saturate(1.35) contrast(1.08); }
           .head { display: grid; grid-template-columns: 1fr auto; gap: 20px; border-bottom: 2px solid #0f172a; padding-bottom: 14px; }
+          .clinic-title { display: flex; align-items: center; gap: 12px; }
+          .clinic-title img { width: 54px; height: 54px; object-fit: contain; border-radius: 12px; }
           .head h1 { margin: 0; font-size: 21px; color: #0f172a; }
           .head p { margin: 4px 0 0; color: #475569; font-size: 12px; }
           .badge { text-align: right; }
@@ -445,7 +468,10 @@ const printServiceInvoice = ({
           <div class="watermark"><img src="${escapeHtml(logoUrl)}" alt="" /></div>
           <section class="head">
             <div>
-              <h1>${escapeHtml(clinicName)} ${type === "pharmacy" ? "Pharmacy" : "Diagnostics"}</h1>
+              <div class="clinic-title">
+                <img src="${escapeHtml(logoUrl)}" alt="Clinic logo" />
+                <h1>${escapeHtml(clinicName)} ${type === "pharmacy" ? "Pharmacy" : "Diagnostics"}</h1>
+              </div>
               <p>${escapeHtml([clinicPhone, clinicEmail].filter(Boolean).join(" | ") || "Clinic Billing")}</p>
               <p>GSTIN: 37AAATC0000Z1Z0</p>
             </div>
@@ -1436,7 +1462,7 @@ function ReceptionBilling() {
     const paymentMode = activeInvoice.paymentMode || form.paymentMode || "-";
     const appointmentId = activeInvoice.appointmentId || form.appointmentId || "-";
     const invoiceDate = formatInvoiceDate(getInvoiceDate(activeInvoice));
-    const logoUrl = `${window.location.origin}/logo192.png`;
+    const logoUrl = getClinicWatermarkSvg(clinicName);
     const invoiceAmounts = getInvoiceAmounts({
       invoice: activeInvoice,
       form,
@@ -1475,6 +1501,27 @@ function ReceptionBilling() {
               min-height: calc(100vh - 64px);
               padding: 34px;
               box-sizing: border-box;
+              position: relative;
+              overflow: hidden;
+            }
+            .invoice > *:not(.watermark) {
+              position: relative;
+              z-index: 1;
+            }
+            .watermark {
+              position: absolute;
+              inset: 0;
+              display: grid;
+              place-items: center;
+              pointer-events: none;
+              z-index: 0;
+            }
+            .watermark img {
+              width: 390px;
+              height: 390px;
+              object-fit: contain;
+              opacity: .18;
+              filter: saturate(1.35) contrast(1.08);
             }
             .brand-row {
               display: flex;
@@ -1654,6 +1701,7 @@ function ReceptionBilling() {
         </head>
         <body>
           <main class="invoice">
+            <div class="watermark"><img src="${escapeHtml(logoUrl)}" alt="" /></div>
             <section class="brand-row">
               <div class="brand">
                 <img src="${escapeHtml(logoUrl)}" alt="Clinic logo" />

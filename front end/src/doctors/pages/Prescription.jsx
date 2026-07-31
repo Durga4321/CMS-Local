@@ -8,13 +8,9 @@ import {
   getAuthToken,
   getLoggedInDoctor,
 } from "../utils/doctorSession";
-import {
-  getDiagnosisTestsForSpecialization,
-  mergeDiagnosisOption,
-} from "../utils/diagnosisOptions";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { useToast } from "../../components/ToastProvider";
-import { validateDate, validateRequired } from "../../utils/validation";
+import { validateDate } from "../../utils/validation";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 import { fetchConsultationVitals, mergeStoredAppointmentVitals } from "../../utils/appointmentVitals";
 
@@ -72,18 +68,6 @@ const INSTRUCTION_OPTIONS = [
   "Return immediately if symptoms worsen.",
   "Continue current diet and medication plan.",
 ];
-
-const splitDiagnosisTests = (value) =>
-  String(value || "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-const joinDiagnosisTests = (items = []) =>
-  items
-    .map((item) => String(item || "").trim())
-    .filter(Boolean)
-    .join(", ");
 
 const escapePrintHtml = (value) =>
   String(value ?? "")
@@ -297,7 +281,6 @@ function Prescription() {
   const location = useLocation();
   const toast = useToast();
   const routeState = React.useMemo(() => location.state || {}, [location.state]);
-  const sessionDoctor = useMemo(() => getLoggedInDoctor(), []);
 
   const [appointment, setAppointment] = useState(null);
   const [consultation, setConsultation] = useState(routeState.consultation || null);
@@ -312,7 +295,6 @@ function Prescription() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
-  const [diagnosisOptions, setDiagnosisOptions] = useState([]);
   const [medicineSearch, setMedicineSearch] = useState("");
   const [medicineOptions, setMedicineOptions] = useState([]);
   const [typedMedicineNames, setTypedMedicineNames] = useState([]);
@@ -474,12 +456,10 @@ function Prescription() {
         setConsultation(savedConsultation);
         const resolvedDiagnosis =
           savedPrescription?.diagnosis ||
+          savedConsultation?.diagnosis ||
           "";
 
         setDiagnosis(resolvedDiagnosis);
-        setDiagnosisOptions((prev) =>
-          mergeDiagnosisOption(prev, resolvedDiagnosis)
-        );
         setInstructions(
           savedPrescription?.instructions ||
           "Take medicines after food and complete the full course."
@@ -582,25 +562,6 @@ function Prescription() {
     });
     return Array.from(options).sort((a, b) => a.localeCompare(b));
   }, [combinedMedicineOptions, medicines]);
-
-  const diagnosisSelectOptions = useMemo(() => {
-    const doctorSpecialization =
-      appointment?.doctorSpecialization ||
-      appointment?.specialization ||
-      sessionDoctor.specialization;
-    const options = new Set(
-      getDiagnosisTestsForSpecialization(doctorSpecialization)
-    );
-    diagnosisOptions.forEach((option) => {
-      if (option) options.add(option);
-    });
-    splitDiagnosisTests(diagnosis).forEach((option) => options.add(option));
-    return Array.from(options).sort((a, b) => a.localeCompare(b));
-  }, [appointment, diagnosis, diagnosisOptions, sessionDoctor.specialization]);
-  const selectedDiagnosisTests = useMemo(
-    () => splitDiagnosisTests(diagnosis),
-    [diagnosis]
-  );
 
   const updateMedicine = (id, field, value) =>
     setMedicines((prev) =>
@@ -916,7 +877,6 @@ function Prescription() {
     }
 
     const nextErrors = {
-      diagnosis: validateRequired(diagnosis, "Diagnosis tests"),
       followUp: validateDate(followUp, "Follow up date", { allowPast: false }),
     };
 
@@ -1072,45 +1032,6 @@ function Prescription() {
 
       <div className="rx-body">
         <div className="rx-form-panel">
-          <div className="rx-field">
-            <label className="rx-label">Diagnosis Tests *</label>
-            <select
-              className="rx-input"
-              value=""
-              onChange={(event) => {
-                const selected = event.target.value;
-                if (!selected) return;
-                setDiagnosis(
-                  joinDiagnosisTests([
-                    ...selectedDiagnosisTests.filter(
-                      (item) => item.toLowerCase() !== selected.toLowerCase()
-                    ),
-                    selected,
-                  ])
-                );
-                setFieldErrors((prev) => ({ ...prev, diagnosis: "" }));
-                setError("");
-              }}
-            >
-              <option value="">
-                {selectedDiagnosisTests.length ? "Add another diagnosis test" : "Select diagnosis test"}
-              </option>
-              {diagnosisSelectOptions.map((item) => (
-                <option value={item} key={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-            <small className="rx-field-hint">
-              {selectedDiagnosisTests.length
-                ? selectedDiagnosisTests.join(", ")
-                : "Select one or more diagnosis tests"}
-            </small>
-            {fieldErrors.diagnosis ? (
-              <small className="rx-field-error">{fieldErrors.diagnosis}</small>
-            ) : null}
-          </div>
-
           <div className="rx-field">
             <label className="rx-label">Medicine</label>
             <div className="rx-search-bar rx-search-bar--with-list">
@@ -1304,14 +1225,10 @@ function Prescription() {
           </div>
 
           <div className="rx-actions">
-            <button
-              className="rx-btn-draft"
-              type="button"
-              onClick={() => setMessage("Draft kept on this screen.")}
-            >
-              Save Draft
-            </button>
             <div className="rx-actions-right">
+              <button className="rx-btn-icon" type="button" onClick={printPrescription}>
+                <Printer size={16} /> Print
+              </button>
               <button
               className="rx-btn-submit"
               type="button"
@@ -1320,9 +1237,6 @@ function Prescription() {
                 title="Submit prescription"
               >
                 {submitting ? "Submitting..." : "Submit Prescription"}
-              </button>
-              <button className="rx-btn-icon" type="button" onClick={printPrescription}>
-                <Printer size={16} /> Print
               </button>
               <button className="rx-btn-icon" type="button" onClick={downloadPrescription}>
                 <Download size={16} /> Download PDF
@@ -1374,7 +1288,7 @@ function Prescription() {
                     <span>{chiefComplaint}</span>
                   </p>
                   <p>
-                    <b>Diagnosis Tests</b>
+                    <b>Diagnosis</b>
                     <span>{previewDiagnosis}</span>
                   </p>
                 </div>
