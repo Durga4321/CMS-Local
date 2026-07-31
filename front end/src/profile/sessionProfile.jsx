@@ -6,17 +6,22 @@ export const clearAllSessions = () => {
     "adminToken",
     "doctorToken",
     "receptionistToken",
+    "nurseToken",
     "adminEmail",
     "adminName",
     "doctorEmail",
     "receptionistEmail",
+    "nurseEmail",
     "adminRole",
     "doctorRole",
     "receptionistRole",
+    "nurseRole",
     "userRole",
     "doctorId",
     "doctorName",
     "receptionistName",
+    "nurseName",
+    "nurseId",
     "hospitalId",
     "hospitalName",
     "clinicName",
@@ -34,15 +39,17 @@ export const clearAllSessions = () => {
 };
 
 export const logoutAndClearSessions = async (roleType = "admin") => {
-  const role = String(localStorage.getItem("adminRole") || localStorage.getItem("doctorRole") || localStorage.getItem("receptionistRole") || localStorage.getItem("patientRole") || localStorage.getItem("userRole") || "").trim();
+  const role = String(localStorage.getItem("adminRole") || localStorage.getItem("doctorRole") || localStorage.getItem("receptionistRole") || localStorage.getItem("nurseRole") || localStorage.getItem("patientRole") || localStorage.getItem("userRole") || "").trim();
   const name = String(
     localStorage.getItem("adminName") ||
       localStorage.getItem("doctorName") ||
       localStorage.getItem("receptionistName") ||
+      localStorage.getItem("nurseName") ||
       localStorage.getItem("patientName") ||
       localStorage.getItem("adminEmail") ||
       localStorage.getItem("doctorEmail") ||
       localStorage.getItem("receptionistEmail") ||
+      localStorage.getItem("nurseEmail") ||
       localStorage.getItem("patientEmail") ||
       "User"
   ).trim();
@@ -90,6 +97,8 @@ const getSessionClaims = (roleType) => {
       ? localStorage.getItem("doctorToken")
       : roleType === "receptionist"
         ? localStorage.getItem("receptionistToken")
+        : roleType === "nurse"
+          ? localStorage.getItem("nurseToken")
         : localStorage.getItem("adminToken");
 
   return decodeJwtPayload(roleToken || localStorage.getItem("token"));
@@ -152,6 +161,20 @@ export const getRoleProfile = (roleType = "admin") => {
       branchName: getProfileBranchName(claims),
       profilePath: "/reception/profile",
       passwordPath: "/reception/profile?tab=password",
+    };
+  }
+
+  if (roleType === "nurse") {
+    const claims = getSessionClaims(roleType);
+    const email = getProfileEmail("nurseEmail", claims, "nurse account");
+    return {
+      roleType,
+      roleLabel: "Nurse",
+      name: getProfileName("nurseName", email, claims, "Nurse"),
+      email,
+      branchName: getProfileBranchName(claims),
+      profilePath: "/nurse/profile",
+      passwordPath: "/nurse/profile?tab=password",
     };
   }
 

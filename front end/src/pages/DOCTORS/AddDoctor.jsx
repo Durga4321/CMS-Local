@@ -373,15 +373,8 @@ const getApiErrorKey = (key) => {
     .toLowerCase();
 
   const map = {
-    branchid: "branchId",
-    name: "name",
-    specialization: "specialization",
-    experience: "experience",
-    qualification: "qualification",
-    consultationfee: "fees",
-    fee: "fees",
-    fees: "fees",
-    areaofexpertise: "areaofExpertise",
+      branchid: "branchIds",
+      branchids: "branchIds",
     email: "email",
     phonenumber: "phone",
     phone: "phone",
@@ -399,7 +392,7 @@ function AddDoctor() {
   const imageInputRef = useRef(null);
 
   const [form, setForm] = useState({
-    branchId: "",
+    branchIds: [],
     name: "",
     specialization: "",
     areaofExpertise: "",
@@ -542,13 +535,13 @@ function AddDoctor() {
         if (options.length === 1) {
           setForm((previous) => ({
             ...previous,
-            branchId: previous.branchId || options[0].id,
+            branchIds: previous.branchIds.length ? previous.branchIds : [options[0].id],
           }));
         }
       } catch {
         if (active) {
           setBranchOptions([]);
-          setBranchWarning("Unable to load branches. Create a branch before adding doctors.");
+          setBranchWarning("Unable to load branches. Please try again later.");
         }
       } finally {
         if (active) setLoadingBranches(false);
@@ -572,7 +565,11 @@ function AddDoctor() {
 
   const handleChange = (event) => {
     const { name } = event.target;
-    let { value } = event.target;
+    let value = event.target.value;
+
+    if (name === "branchIds") {
+      value = Array.from(event.target.selectedOptions || []).map((option) => option.value);
+    }
 
     if (name === "name") {
       value = formatTitleCase(onlyAlpha(value));
@@ -676,9 +673,16 @@ function AddDoctor() {
     return "Unable to add doctor right now.";
   }
 };
+const validateBranchSelection = (values = form) => {
+    if (!Array.isArray(values.branchIds) || values.branchIds.length === 0) {
+      return "Select at least one branch.";
+    }
+    return "";
+  };
+
   const validateForm = (values = form) => {
-  const nextErrors = {
-    branchId: validateSelected(values.branchId, "branch"),
+    const nextErrors = {
+      branchIds: validateBranchSelection(values),
     name: validateAlpha(values.name, "Doctor Name"),
     specialization: validateText(values.specialization, "Specialization"),
     areaofExpertise: validateText(values.areaofExpertise, "Area of Expertise"),
@@ -741,7 +745,9 @@ function AddDoctor() {
     setSaving(true);
 
     const requestPayload = {
-      branchId: Number(formattedForm.branchId) || 0,
+      branchIds: Array.isArray(formattedForm.branchIds)
+        ? formattedForm.branchIds.map((id) => Number(id) || 0).filter((id) => id > 0)
+        : [],
       name: formatTitleCase(formattedForm.name).trim(),
       specialization: formattedForm.specialization.trim(),
       experience: String(Number(formattedForm.experience) || 0),
@@ -752,25 +758,27 @@ function AddDoctor() {
       phoneNumber: formattedForm.phone.trim(),
       isActive: formattedForm.isActive === "true",
     };
-   const formData = new FormData();
+    const formData = new FormData();
 
-formData.append("BranchId", requestPayload.branchId);
-formData.append("Name", requestPayload.name);
-formData.append("Specialization", requestPayload.specialization);
-formData.append("Experience", requestPayload.experience);
-formData.append("Qualification", requestPayload.qualification);
-formData.append("ConsultationFee", requestPayload.consultationFee);
-formData.append("Fees", requestPayload.consultationFee);
-formData.append("AreaofExpertise", requestPayload.areaofExpertise);
-formData.append("AreaOfExpertise", requestPayload.areaofExpertise);
-formData.append("Email", requestPayload.email);
-formData.append("PhoneNumber", requestPayload.phoneNumber);
-formData.append("Phone", requestPayload.phoneNumber);
-formData.append("IsActive", requestPayload.isActive);
+    if (requestPayload.branchIds.length > 0) {
+      formData.append("BranchId", requestPayload.branchIds[0]);
+    }
+    formData.append("Name", requestPayload.name);
+    formData.append("Specialization", requestPayload.specialization);
+    formData.append("Experience", requestPayload.experience);
+    formData.append("Qualification", requestPayload.qualification);
+    formData.append("ConsultationFee", requestPayload.consultationFee);
+    formData.append("Fees", requestPayload.consultationFee);
+    formData.append("AreaofExpertise", requestPayload.areaofExpertise);
+    formData.append("AreaOfExpertise", requestPayload.areaofExpertise);
+    formData.append("Email", requestPayload.email);
+    formData.append("PhoneNumber", requestPayload.phoneNumber);
+    formData.append("Phone", requestPayload.phoneNumber);
+    formData.append("IsActive", requestPayload.isActive);
 
-if (imageFile) {
-    formData.append("Image", imageFile);
-}
+    if (imageFile) {
+      formData.append("Image", imageFile);
+    }
 
     try {
       const response = await fetch(DOCTORS_API_URL, {
@@ -783,8 +791,34 @@ if (imageFile) {
         throw new Error(await parseErrorMessage(response));
       }
 
-      toast.success("Doctor added successfully");
+      const responseData = await response.json().catch(() => null);
+      const doctorId =
+        responseData?.id ||
+        responseData?.doctorId ||
+        responseData?.DoctorId ||
+        responseData?.Id ||
+        responseData?.ID ||
+        "";
 
+      if (requestPayload.branchIds.length > 1 && doctorId) {
+        const assignResponse = await fetch(
+          apiUrl(`Doctor/${encodeURIComponent(doctorId)}/branches`),
+          {
+            method: "PUT",
+            headers: {
+              ...getApiHeaders(),
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ branchIds: requestPayload.branchIds }),
+          }
+        );
+
+        if (!assignResponse.ok) {
+          throw new Error(await parseErrorMessage(assignResponse));
+        }
+      }
+
+      toast.success("Doctor added successfully");
       navigate("/doctors");
     } catch (submitError) {
       const message = submitError.message || "Unable to add doctor right now.";
@@ -853,27 +887,27 @@ if (imageFile) {
 
           <div className="add-doctor-grid">
             <div className="add-doctor-input-group add-doctor-input-group-full">
-              <label>Branch</label>
+              <label>Branches</label>
               <select
-                name="branchId"
-                value={form.branchId}
+                name="branchIds"
+                multiple
+                value={form.branchIds}
                 onChange={handleChange}
-                className={fieldErrors.branchId ? "is-invalid" : ""}
+                className={fieldErrors.branchIds ? "is-invalid" : ""}
                 disabled={loadingBranches || saving}
                 required
+                size={Math.min(6, Math.max(3, branchOptions.length))}
               >
-                <option value="">
-                  {loadingBranches ? "Loading branches..." : "Select branch"}
-                </option>
                 {branchOptions.map((branch) => (
                   <option key={branch.id} value={branch.id}>
                     {branch.name}
                   </option>
                 ))}
               </select>
-              {fieldErrors.branchId ? (
-                <span className="add-doctor-field-error">{fieldErrors.branchId}</span>
+              {fieldErrors.branchIds ? (
+                <span className="add-doctor-field-error">{fieldErrors.branchIds}</span>
               ) : null}
+              <small>{form.branchIds.length} branch(es) selected.</small>
             </div>
 
             <div className="add-doctor-input-group">

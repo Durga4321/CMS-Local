@@ -8,6 +8,7 @@ import { ToastProvider } from "./components/ToastProvider";
 // Pages
 const DoctorApp = lazy(() => import("./doctors/DoctorApp"));
 const ReceptionistApp = lazy(() => import("./Recepitionist/ReceptionistApp"));
+const NurseApp = lazy(() => import("./Nurse/NurseApp"));
 const PatientRoutes = lazy(() => import("./pages/PATIENTS/PatientRoutes"));
 const UserProfilePage = lazy(() => import("./profile/UserProfilePage"));
 const SuperAdminDashboard = lazy(() => import("./pages/SUPERADMIN/Dashboard/Dashboard"));
@@ -26,6 +27,7 @@ const ResetPassword = lazy(() => import("./Login/Resertpassword"));
 const Dashboard = lazy(() => import("./Dashboard/Dashboard"));
 const Branches = lazy(() => import("./pages/BRANCHES/Branches"));
 const Receptionists = lazy(() => import("./pages/RECEPTIONISTS/Receptionists"));
+const Nurses = lazy(() => import("./pages/NURSES/Nurses"));
 const Doctors = lazy(() => import("./pages/DOCTORS/Doctors"));
 const AddDoctor = lazy(() => import("./pages/DOCTORS/AddDoctor"));
 const DoctorSchedule = lazy(() => import("./pages/DOCTORS/DoctorSchedule"));
@@ -94,6 +96,7 @@ function App() {
           <Route path="doctors/schedule" element={<DoctorSchedule />} />
           <Route path="DoctorSchedule/schedule" element={<Doctorschedulepage />} />
           <Route path="receptionists" element={<Receptionists />} />
+          <Route path="nurses" element={<Nurses />} />
           <Route path="roles" element={<AdminRolesPermissions />} />
           <Route path="roles-permissions" element={<Navigate to="/roles" replace />} />
           <Route path="users" element={<AdminUserManagement />} />
@@ -129,6 +132,7 @@ function App() {
         {/* ── SEPARATE DOCTOR DASHBOARD ── */}
         <Route path="/doctor/*" element={<DoctorApp />} />
         <Route path="/reception/*" element={<ReceptionistApp />} />
+        <Route path="/nurse/*" element={<NurseApp />} />
         <Route path="/patient/*" element={<PatientRoutes />} />
 
         {/* FALLBACK */}

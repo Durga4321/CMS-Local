@@ -8,7 +8,7 @@ import {
   ClipboardList,
   UserPlus,
 } from "lucide-react";
-import { formatToday, parseList, requestJson } from "../receptionApi";
+import { formatToday, parseList, requestJson as defaultRequestJson } from "../receptionApi";
 import { getReceptionistScope, scopeReceptionistRecords } from "../receptionScope";
 
 const normalizeKey = (key) => String(key || "").toLowerCase();
@@ -220,15 +220,22 @@ const getDashboardAppointmentSources = (dashboardData) => {
   );
 };
 
-function ReceptionDashboard() {
+function ReceptionDashboard({
+  hideActions = false,
+  hideCards = false,
+  title = "Reception Dashboard",
+  apiRequest = defaultRequestJson,
+  getScope = getReceptionistScope,
+  scopeRecords = scopeReceptionistRecords,
+}) {
   const navigate = useNavigate();
-  const receptionistScope = useMemo(() => getReceptionistScope(), []);
+  const receptionistScope = useMemo(() => getScope(), [getScope]);
   const [appointments, setAppointments] = useState([]);
   const [stats, setStats] = useState({ today: 0, waiting: 0, completed: 0 });
 
   useEffect(() => {
     const buildDashboardState = (appointmentSources) => {
-      const appointmentList = dedupeAppointments(scopeReceptionistRecords(
+      const appointmentList = dedupeAppointments(scopeRecords(
         appointmentSources.flatMap((source) => parseList(source)),
         receptionistScope,
         { allowMissingClinic: true, allowMissingBranch: true }
@@ -251,10 +258,10 @@ function ReceptionDashboard() {
     const loadDashboard = async () => {
       try {
         const [dashboardData, appointmentData, offlineAppointmentData, onlineAppointmentData] = await Promise.all([
-          requestJson("ReceptionistDashboard"),
-          requestJson("Appointment").catch(() => []),
-          requestJson("Appointment/offline").catch(() => []),
-          requestJson("Appointment/online").catch(() => []),
+          apiRequest("ReceptionistDashboard"),
+          apiRequest("Appointment").catch(() => []),
+          apiRequest("Appointment/offline").catch(() => []),
+          apiRequest("Appointment/online").catch(() => []),
         ]);
         buildDashboardState([
           getDashboardAppointmentSources(dashboardData),
@@ -264,9 +271,9 @@ function ReceptionDashboard() {
         ]);
       } catch (dashboardError) {
         Promise.all([
-          requestJson("Appointment").catch(() => []),
-          requestJson("Appointment/offline").catch(() => []),
-          requestJson("Appointment/online").catch(() => []),
+          apiRequest("Appointment").catch(() => []),
+          apiRequest("Appointment/offline").catch(() => []),
+          apiRequest("Appointment/online").catch(() => []),
         ])
           .then(buildDashboardState)
           .catch(() => {
@@ -286,17 +293,19 @@ function ReceptionDashboard() {
     <section className="rc-page">
       <div className="rc-page-head">
         <div>
-          <h2>Reception Dashboard</h2>
+          <h2>{title}</h2>
           <p>View today's schedule, waiting queue, and front desk actions.</p>
         </div>
-        <div className="rc-head-actions">
-          <button className="rc-btn" onClick={() => navigate("/reception/appointments")}>
-            <CalendarPlus size={16} /> Book Appointment
-          </button>
-          <button className="rc-btn primary" onClick={() => navigate("/reception/patients")}>
-            <UserPlus size={16} /> Add Patient
-          </button>
-        </div>
+        {!hideActions && (
+          <div className="rc-head-actions">
+            <button className="rc-btn" onClick={() => navigate("/reception/appointments")}>
+              <CalendarPlus size={16} /> Book Appointment
+            </button>
+            <button className="rc-btn primary" onClick={() => navigate("/reception/patients")}>
+              <UserPlus size={16} /> Add Patient
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="rc-stat-grid">
@@ -326,26 +335,28 @@ function ReceptionDashboard() {
         </article>
       </div>
 
-      <div className="rc-action-grid">
-        <button onClick={() => navigate("/reception/patients")}>
-          <UserPlus size={22} />
-          <span>
-            <strong>Patients</strong>View and register patients
-          </span>
-        </button>
-        <button onClick={() => navigate("/reception/appointments")}>
-          <CalendarPlus size={22} />
-          <span>
-            <strong>Appointments</strong>Book and manage appointments
-          </span>
-        </button>
-        <button onClick={() => navigate("/reception/billing")}>
-          <ClipboardList size={22} />
-          <span>
-            <strong>Billing</strong>Create and review invoices
-          </span>
-        </button>
-      </div>
+      {!hideCards && (
+        <div className="rc-action-grid">
+          <button onClick={() => navigate("/reception/patients")}>
+            <UserPlus size={22} />
+            <span>
+              <strong>Patients</strong>View and register patients
+            </span>
+          </button>
+          <button onClick={() => navigate("/reception/appointments")}>
+            <CalendarPlus size={22} />
+            <span>
+              <strong>Appointments</strong>Book and manage appointments
+            </span>
+          </button>
+          <button onClick={() => navigate("/reception/billing")}>
+            <ClipboardList size={22} />
+            <span>
+              <strong>Billing</strong>Create and review invoices
+            </span>
+          </button>
+        </div>
+      )}
 
       <div className="rc-card">
         <div className="rc-card-head">

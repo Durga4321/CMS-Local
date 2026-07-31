@@ -201,6 +201,109 @@ const parseListResponse = (data) => {
   return [];
 };
 
+const getScheduleValue = (schedule = {}, keys = [], fallback = "") => {
+  for (const key of keys) {
+    const value = schedule?.[key];
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return String(value).trim();
+    }
+  }
+  return fallback;
+};
+
+const parseScheduleDays = (schedule = {}) => {
+  const raw =
+    schedule?.Days ??
+    schedule?.days ??
+    schedule?.workingDays ??
+    schedule?.WorkingDays ??
+    schedule?.DayList ??
+    schedule?.daysList ??
+    schedule?.selectedDays ??
+    "";
+
+  if (Array.isArray(raw)) {
+    return raw.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+
+  if (typeof raw === "string") {
+    return raw
+      .split(/[,;|]/)
+      .map((item) => String(item || "").trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
+const parseScheduleDateValue = (schedule = {}, keys = []) => {
+  const value = getScheduleValue(schedule, keys, "");
+  return value ? String(value).slice(0, 10) : "";
+};
+
+const parseScheduleTimeValue = (schedule = {}, keys = [], fallback = "") =>
+  normalizeTime(getScheduleValue(schedule, keys, ""), fallback);
+
+const parseDoctorSchedule = (data) => {
+  if (!data) return null;
+  if (Array.isArray(data) && data.length > 0) {
+    return data[0];
+  }
+  if (data?.data && typeof data.data === "object") {
+    return data.data;
+  }
+  if (data?.result && typeof data.result === "object") {
+    return data.result;
+  }
+  if (typeof data === "object") {
+    return data;
+  }
+  return null;
+};
+
+const getScheduleId = (schedule = {}) =>
+  String(
+    schedule?.id ||
+      schedule?.Id ||
+      schedule?._id ||
+      schedule?.scheduleId ||
+      schedule?.ScheduleId ||
+      schedule?.ScheduleID ||
+      ""
+  ).trim();
+
+const fetchDoctorSchedule = async (doctorId, branchId, token) => {
+  const candidateUrls = [
+    `${SCHEDULE_API}/${encodeURIComponent(doctorId)}`,
+    `${SCHEDULE_API}/${encodeURIComponent(doctorId)}?doctorId=${encodeURIComponent(doctorId)}`,
+    `${SCHEDULE_API}/${encodeURIComponent(doctorId)}?branchId=${encodeURIComponent(branchId)}`,
+    `${SCHEDULE_API}?doctorId=${encodeURIComponent(doctorId)}`,
+    `${SCHEDULE_API}?doctorId=${encodeURIComponent(doctorId)}&branchId=${encodeURIComponent(branchId)}`,
+    `${SCHEDULE_API}/doctor/${encodeURIComponent(doctorId)}`,
+    `${SCHEDULE_API}/doctor/${encodeURIComponent(doctorId)}?branchId=${encodeURIComponent(branchId)}`,
+  ].filter(Boolean);
+
+  for (const url of candidateUrls) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (!response.ok) continue;
+
+      const data = await response.json().catch(() => null);
+      const schedule = parseDoctorSchedule(data);
+      if (schedule) return schedule;
+    } catch {
+      // Try the next candidate URL.
+    }
+  }
+
+  return null;
+};
+
 const normalizeDoctor = (doctor = {}) => ({
   id:
     doctor.id ??
@@ -306,7 +409,11 @@ const shouldTryNextScheduleSave = (message) => {
   );
 };
 
-const saveSchedulePayload = async (payload, token, { replaceExisting = false } = {}) => {
+const saveSchedulePayload = async (
+  payload,
+  token,
+  { replaceExisting = false, scheduleId = "" } = {}
+) => {
   const headers = {
     "Content-Type": "application/json",
     "ngrok-skip-browser-warning": "true",
@@ -314,6 +421,8 @@ const saveSchedulePayload = async (payload, token, { replaceExisting = false } =
   };
   const bodyPayload = {
     ...payload,
+    id: scheduleId || payload.id || payload.Id,
+    Id: scheduleId || payload.id || payload.Id,
     BranchId: payload.branchId,
     DoctorId: payload.doctorId,
     Days: payload.days,
@@ -344,7 +453,17 @@ const saveSchedulePayload = async (payload, token, { replaceExisting = false } =
     date: payload.startDate,
     overwrite: "true",
   }).toString();
+  const scheduleUrl =
+    scheduleId && scheduleId !== ""
+      ? `${SCHEDULE_API}/${encodeURIComponent(scheduleId)}`
+      : "";
   const attempts = [
+    ...(scheduleUrl
+      ? [
+          { url: scheduleUrl, method: "PUT" },
+          { url: `${scheduleUrl}?${query}`, method: "PUT" },
+        ]
+      : []),
     { url: SCHEDULE_API, method: replaceExisting ? "PUT" : "POST" },
     { url: SCHEDULE_API, method: replaceExisting ? "POST" : "PUT" },
     { url: `${SCHEDULE_API}?${query}`, method: replaceExisting ? "PUT" : "POST" },
@@ -517,6 +636,7 @@ function Schedule({ selfMode = false } = {}) {
   const [hasSaveError, setHasSaveError] = useState(false);
   const [previewDate, setPreviewDate] = useState(today);
   const [previewSlots, setPreviewSlots] = useState([]);
+  const [existingScheduleId, setExistingScheduleId] = useState("");
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
   const [slotRefreshKey, setSlotRefreshKey] = useState(0);
   const [selfDoctor, setSelfDoctor] = useState(null);
@@ -648,6 +768,52 @@ function Schedule({ selfMode = false } = {}) {
   }, [branchId, selfMode]);
 
   useEffect(() => {
+    if (!branchId || !doctorId) {
+      setPreviewSlots([]);
+      return;
+    }
+
+    const token = getAuthToken();
+    let isActive = true;
+
+    const loadDoctorSchedule = async () => {
+      const schedule = await fetchDoctorSchedule(doctorId, branchId, token).catch(() => null);
+      if (!isActive || !schedule) return;
+
+      const scheduleDays = parseScheduleDays(schedule);
+      const resolvedStartDate = parseScheduleDateValue(schedule, ["StartDate", "startDate", "start"]);
+      const resolvedEndDate = parseScheduleDateValue(schedule, ["EndDate", "endDate", "end"]);
+      const resolvedWorkStart = parseScheduleTimeValue(schedule, ["WorkStart", "workStart", "startTime", "start"]);
+      const resolvedWorkEnd = parseScheduleTimeValue(schedule, ["WorkEnd", "workEnd", "endTime", "end"]);
+      const resolvedBreakStart = parseScheduleTimeValue(schedule, ["BreakStart", "breakStart", "breakStartTime", "breakStart"]);
+      const resolvedBreakEnd = parseScheduleTimeValue(schedule, ["BreakEnd", "breakEnd", "breakEndTime", "breakEnd"]);
+      const resolvedSlotDuration = String(
+        Number(getScheduleValue(schedule, ["SlotDuration", "slotDuration", "slot"])) || DEFAULT_SCHEDULE_SETTINGS.slotDuration
+      );
+      const scheduleId = getScheduleId(schedule);
+
+      if (scheduleDays.length) setDays(scheduleDays);
+      if (resolvedStartDate) {
+        setStartDate(resolvedStartDate);
+        setPreviewDate(resolvedStartDate);
+      }
+      if (resolvedEndDate) setEndDate(resolvedEndDate);
+      if (resolvedWorkStart) setWorkStart(formatTime12Hour(resolvedWorkStart));
+      if (resolvedWorkEnd) setWorkEnd(formatTime12Hour(resolvedWorkEnd));
+      if (resolvedBreakStart) setBreakStart(formatTime12Hour(resolvedBreakStart));
+      if (resolvedBreakEnd) setBreakEnd(formatTime12Hour(resolvedBreakEnd));
+      if (resolvedSlotDuration) setSlotDuration(resolvedSlotDuration);
+      setExistingScheduleId(scheduleId);
+    };
+
+    loadDoctorSchedule();
+
+    return () => {
+      isActive = false;
+    };
+  }, [branchId, doctorId]);
+
+  useEffect(() => {
     if (!branchId || !doctorId || !previewDate) {
       setPreviewSlots([]);
       return;
@@ -739,7 +905,8 @@ function Schedule({ selfMode = false } = {}) {
     const token = getAuthToken();
     try {
       const data = await saveSchedulePayload(payload, token, {
-        replaceExisting: previewSlots.length > 0,
+        replaceExisting: Boolean(existingScheduleId),
+        scheduleId: existingScheduleId,
       });
       setHasSaveError(false);
       setSaveMessage(

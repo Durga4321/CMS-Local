@@ -850,6 +850,51 @@ const storeRecentServiceBill = (bill) => {
   return nextBills;
 };
 
+const syncRecentServiceBillsToBackend = async () => {
+  const bills = readRecentServiceBills();
+  let changed = false;
+  const nextBills = [];
+
+  for (const bill of bills) {
+    if (bill.backendSynced) {
+      nextBills.push(bill);
+      continue;
+    }
+
+    try {
+      await requestJson("Billing", {
+        method: "POST",
+        body: JSON.stringify({
+          ...bill,
+          invoiceNo: bill.invoiceNo || bill.invoiceNumber || bill.billNumber,
+          invoiceNumber: bill.invoiceNumber || bill.invoiceNo || bill.billNumber,
+          billNumber: bill.billNumber || bill.invoiceNumber || bill.invoiceNo,
+          patientId: bill.patientId || bill.PatientId,
+          PatientId: bill.PatientId || bill.patientId,
+          patientName: bill.patientName || bill.PatientName,
+          PatientName: bill.PatientName || bill.patientName,
+          appointmentId: bill.appointmentId || bill.AppointmentId || 0,
+          AppointmentId: bill.AppointmentId || bill.appointmentId || 0,
+        }),
+      });
+      nextBills.push({ ...bill, backendSynced: true });
+      changed = true;
+    } catch {
+      nextBills.push(bill);
+    }
+  }
+
+  if (changed) {
+    try {
+      localStorage.setItem(RECENT_SERVICE_BILLS_STORAGE_KEY, JSON.stringify(nextBills.slice(0, 12)));
+    } catch {
+      // Keep unsynced local bills available if storage update fails.
+    }
+  }
+
+  return nextBills;
+};
+
 const fetchInvoiceDetails = async (invoice) => {
   const invoiceId = getInvoiceId(invoice);
   if (!invoiceId) return invoice;
@@ -975,6 +1020,8 @@ function ReceptionBilling() {
           appointmentId: String(getAppointmentId(list[0]) || ""),
         }));
         setInvoice(latestInvoiceDetails);
+        const syncedRecentBills = await syncRecentServiceBillsToBackend();
+        setRecentServiceBills(syncedRecentBills);
       } catch (error) {
         setMessage(error.message);
         setMessageType("error");
@@ -1067,21 +1114,28 @@ function ReceptionBilling() {
     const hasAppointment = Boolean(selectedAppointment);
     const invoiceNo = `${billingMode === "pharmacy" ? "PH" : "DT"}-${String(Date.now()).slice(-8)}`;
     const createdAt = new Date().toISOString();
+    const appointmentPatientId = hasAppointment ? getAppointmentPatientId(selectedAppointment) : "DIRECT";
+    const appointmentPatientName = hasAppointment ? getAppointmentPatientName(selectedAppointment) : "Walk-in Patient";
+    const appointmentId = hasAppointment ? getAppointmentId(selectedAppointment) : "";
+    const appointmentBranchId = firstValue(selectedAppointment?.branchId, selectedAppointment?.BranchId, receptionistScope.branchId);
+    const appointmentBranchName = firstValue(selectedAppointment?.branchName, selectedAppointment?.BranchName, receptionistScope.branchName);
     return {
       type: billingMode,
       invoiceNo,
       createdAt,
       rows,
       totals,
-      patientName: hasAppointment ? getAppointmentPatientName(selectedAppointment) : "Walk-in Patient",
-      patientId: hasAppointment ? getAppointmentPatientId(selectedAppointment) : "DIRECT",
-      appointmentId: hasAppointment ? getAppointmentId(selectedAppointment) : "",
+      patientName: appointmentPatientName,
+      patientId: appointmentPatientId,
+      appointmentId,
       doctorName: hasAppointment ? getAppointmentDoctorName(selectedAppointment) : "Direct Billing",
       paymentMode: form.paymentMode,
       clinicName,
       clinicId,
       clinicPhone,
       clinicEmail,
+      branchId: appointmentBranchId,
+      branchName: appointmentBranchName,
       receptionistName: receptionistProfile.name,
     };
   };
@@ -1099,13 +1153,39 @@ function ReceptionBilling() {
 
     return {
       appointmentId: details.appointmentId ? Number(details.appointmentId) : 0,
+      AppointmentId: details.appointmentId ? Number(details.appointmentId) : 0,
+      appointmentNumber: details.appointmentId,
       patientId: details.patientId,
+      PatientId: details.patientId,
+      patientCode: details.patientId,
       patientName: details.patientName,
+      PatientName: details.patientName,
+      patient: {
+        id: details.patientId,
+        patientId: details.patientId,
+        name: details.patientName,
+      },
+      appointment: {
+        id: details.appointmentId,
+        appointmentId: details.appointmentId,
+        patientId: details.patientId,
+        patientName: details.patientName,
+      },
       doctorName: details.doctorName,
       clinicId: details.clinicId,
+      ClinicId: details.clinicId,
+      hospitalId: details.clinicId,
+      HospitalId: details.clinicId,
       clinicName: details.clinicName,
+      hospitalName: details.clinicName,
+      branchId: details.branchId,
+      BranchId: details.branchId,
+      branchName: details.branchName,
+      BranchName: details.branchName,
       invoiceNumber: details.invoiceNo,
+      invoiceNo: details.invoiceNo,
       billNumber: details.invoiceNo,
+      billNo: details.invoiceNo,
       invoiceType: details.type,
       billingType: isPharmacy ? "Pharmacy" : "Diagnostic",
       serviceType: isPharmacy ? "Pharmacy Billing" : "Diagnosis Test Billing",
@@ -1262,6 +1342,35 @@ function ReceptionBilling() {
 
     const body = {
       appointmentId: Number(form.appointmentId),
+      AppointmentId: Number(form.appointmentId),
+      appointmentNumber: form.appointmentId,
+      patientId: getAppointmentPatientId(selectedAppointment),
+      PatientId: getAppointmentPatientId(selectedAppointment),
+      patientCode: getAppointmentPatientId(selectedAppointment),
+      patientName: getAppointmentPatientName(selectedAppointment),
+      PatientName: getAppointmentPatientName(selectedAppointment),
+      patient: {
+        id: getAppointmentPatientId(selectedAppointment),
+        patientId: getAppointmentPatientId(selectedAppointment),
+        name: getAppointmentPatientName(selectedAppointment),
+      },
+      appointment: {
+        id: form.appointmentId,
+        appointmentId: form.appointmentId,
+        patientId: getAppointmentPatientId(selectedAppointment),
+        patientName: getAppointmentPatientName(selectedAppointment),
+      },
+      doctorName: getAppointmentDoctorName(selectedAppointment),
+      clinicId,
+      ClinicId: clinicId,
+      hospitalId: clinicId,
+      HospitalId: clinicId,
+      clinicName,
+      hospitalName: clinicName,
+      branchId: firstValue(selectedAppointment?.branchId, selectedAppointment?.BranchId, receptionistScope.branchId),
+      BranchId: firstValue(selectedAppointment?.branchId, selectedAppointment?.BranchId, receptionistScope.branchId),
+      branchName: firstValue(selectedAppointment?.branchName, selectedAppointment?.BranchName, receptionistScope.branchName),
+      BranchName: firstValue(selectedAppointment?.branchName, selectedAppointment?.BranchName, receptionistScope.branchName),
       consultationCharge: 0,
       medicineCharge: Number(form.medicineCharges || 0),
       labCharge: Number(form.labCharges || 0),

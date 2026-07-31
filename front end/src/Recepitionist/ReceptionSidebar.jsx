@@ -29,17 +29,47 @@ const items = [
       { to: "/reception/appointments/offline", label: "Offline Bookings", icon: ListChecks },
     ],
   },
-  { to: "/reception/consultant-room", label: "Consultant Room", icon: ClipboardList },
   { to: "/reception/billing", label: "Billing", icon: ClipboardList },
 ];
 
-const ReceptionClinicToothLogo = () => (
+const buildItems = ({
+  basePath = "/reception",
+  dashboardLabel = "Reception Dashboard",
+  showBilling = true,
+  showBookAppointment = true,
+  showConsultantRoom = false,
+} = {}) =>
+  [
+    ...items,
+    ...(showConsultantRoom ? [{ to: "/reception/consultant-room", label: "Consultant Room", icon: ClipboardList }] : []),
+  ]
+    .filter((item) => showBilling || item.to !== "/reception/billing")
+    .map((item) => {
+    const mapToBase = (to) => to.replace(/^\/reception/, basePath);
+    if (item.children) {
+      const children = item.children.filter((child) => showBookAppointment || child.to !== "/reception/appointments");
+      return {
+        ...item,
+        children: children.map((child) => ({
+          ...child,
+          to: mapToBase(child.to),
+        })),
+      };
+    }
+    return {
+      ...item,
+      to: mapToBase(item.to),
+      label: item.to === "/reception/dashboard" ? dashboardLabel : item.label,
+    };
+  });
+
+export const ReceptionClinicToothLogo = () => (
   <svg className="rc-clinic-tooth-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path d="M7.45 3.8c1.2-.52 2.35-.28 3.18.17.86.47 1.88.47 2.74 0 .83-.45 1.98-.69 3.18-.17 2.2.95 3.13 3.25 2.43 5.87l-1.56 5.84c-.45 1.69-1.28 4.72-3.03 4.72-1.24 0-1.31-1.49-1.68-3.08-.18-.78-.43-1.37-.71-1.37s-.53.59-.71 1.37c-.37 1.59-.44 3.08-1.68 3.08-1.75 0-2.58-3.03-3.03-4.72L5.02 9.67C4.32 7.05 5.25 4.75 7.45 3.8Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
-const getClinicLogo = (clinicName = "") => {
+export const getClinicLogo = (clinicName = "") => {
   const name = String(clinicName).toLowerCase();
   if (name.includes("dental")) return { type: "tooth", text: "", tone: "dental" };
   if (name.includes("pragathi")) return { type: "icon", icon: Leaf, text: "PRAGATHI", tone: "green" };
@@ -58,8 +88,17 @@ const getClinicLogo = (clinicName = "") => {
   return { type: "icon", icon: Cross, text: fallbackText || "CL", tone: "emerald" };
 };
 
-function ReceptionSidebar({ onClose = () => {} }) {
-  const profile = getReceptionistProfile();
+function ReceptionSidebar({
+  onClose = () => {},
+  basePath = "/reception",
+  dashboardLabel = "Reception Dashboard",
+  sectionLabel = "Front Desk",
+  profile: providedProfile = null,
+  showBilling = true,
+  showBookAppointment = true,
+  showConsultantRoom = false,
+}) {
+  const profile = providedProfile || getReceptionistProfile();
   const profileName = profile.name || "Receptionist";
   const hospitalName = getClinicDisplayName(profile, "Clinic Name");
   const branchName = String(profile.branchName || "").trim();
@@ -83,10 +122,10 @@ function ReceptionSidebar({ onClose = () => {} }) {
         </button>
       </div>
 
-      <div className="rc-section-label">Front Desk</div>
+      <div className="rc-section-label">{sectionLabel}</div>
 
       <nav className="rc-nav">
-        {items.map((item) => {
+        {buildItems({ basePath, dashboardLabel, showBilling, showBookAppointment, showConsultantRoom }).map((item) => {
           const Icon = item.icon;
           if (item.children) {
             return (
@@ -102,7 +141,7 @@ function ReceptionSidebar({ onClose = () => {} }) {
                       <NavLink
                         key={child.to}
                         to={child.to}
-                        end={child.to === "/reception/appointments"}
+                        end={child.to === `${basePath}/appointments`}
                         className={({ isActive }) => `rc-nav-link rc-nav-child${isActive ? " active" : ""}`}
                       >
                         <ChildIcon size={16} />

@@ -12,7 +12,6 @@ const TITLES = {
   "/reception/appointments/online": "Online Bookings",
   "/reception/appointments/offline": "Offline Bookings",
   "/reception/appointments": "Appointment Booking",
-  "/reception/consultant-room": "Consultant Room",
   "/reception/billing": "Billing",
 };
 

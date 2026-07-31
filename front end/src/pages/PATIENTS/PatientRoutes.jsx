@@ -3034,10 +3034,19 @@ function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     const loadSubmittedBills = async () => {
       setLoadingBills(true);
       try {
-        const responses = await Promise.allSettled([
-          fetch(patientApiUrl(PATIENT_API.bills), { headers }),
-          fetch(apiUrl("Billing"), { headers }),
-        ]);
+        const patientIds = Array.from(getPatientIdentityValues(patient || {}, visits));
+        const primaryPatientId = patientIds[0] || localStorage.getItem("patientId") || "";
+        const billingPaths = [
+          PATIENT_API.bills,
+          "Billing",
+          primaryPatientId ? `Billing/patient/${encodeURIComponent(primaryPatientId)}` : "",
+          primaryPatientId ? `Billing/by-patient/${encodeURIComponent(primaryPatientId)}` : "",
+          primaryPatientId ? `Billing?patientId=${encodeURIComponent(primaryPatientId)}` : "",
+          primaryPatientId ? `Billing?PatientId=${encodeURIComponent(primaryPatientId)}` : "",
+        ].filter(Boolean);
+        const responses = await Promise.allSettled(
+          billingPaths.map((path) => fetch(path === PATIENT_API.bills ? patientApiUrl(path) : apiUrl(path), { headers }))
+        );
         const lists = await Promise.all(responses.map(async (result) => {
           if (result.status !== "fulfilled" || !result.value?.ok) return [];
           const data = await result.value.json().catch(() => []);
@@ -3060,7 +3069,7 @@ function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
       window.removeEventListener("focus", loadSubmittedBills);
       document.removeEventListener("visibilitychange", refresh);
     };
-  }, []);
+  }, [patient, visits]);
   const formatAmount = (value) =>
     new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(value || 0));
 

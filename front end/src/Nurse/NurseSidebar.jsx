@@ -1,0 +1,130 @@
+import React from "react";
+import { NavLink } from "react-router-dom";
+import {
+  CalendarPlus,
+  ClipboardList,
+  Gauge,
+  HeartPulse,
+  ListChecks,
+  UserPlus,
+  X,
+} from "lucide-react";
+import { getInitials } from "../profile/sessionProfile";
+import { getNurseProfile } from "./nurseSession";
+import { getClinicDisplayName } from "../utils/clinicDisplay";
+import { getClinicLogo, ReceptionClinicToothLogo } from "../Recepitionist/ReceptionSidebar";
+
+const items = [
+  { to: "/nurse/dashboard", label: "Nurse Dashboard", icon: Gauge },
+  { to: "/nurse/patients", label: "Patients", icon: UserPlus },
+  { to: "/nurse/medical-history", label: "Medical History", icon: HeartPulse },
+  {
+    label: "Appointments",
+    icon: CalendarPlus,
+    children: [
+      { to: "/nurse/appointments", label: "Book Appointment", icon: CalendarPlus },
+      { to: "/nurse/appointments/online", label: "Online Bookings", icon: ListChecks },
+      { to: "/nurse/appointments/offline", label: "Offline Bookings", icon: ListChecks },
+    ],
+  },
+  { to: "/nurse/billing", label: "Billing", icon: ClipboardList },
+];
+
+const buildItems = ({ basePath = "/nurse", dashboardLabel = "Nurse Dashboard", showBilling = true, showBookAppointment = true } = {}) =>
+  items
+    .filter((item) => showBilling || item.to !== "/nurse/billing")
+    .map((item) => {
+      const mapToBase = (to) => to.replace(/^\/nurse/, basePath);
+      if (item.children) {
+        const children = item.children.filter((child) => showBookAppointment || child.to !== "/nurse/appointments");
+        return {
+          ...item,
+          children: children.map((child) => ({
+            ...child,
+            to: mapToBase(child.to),
+          })),
+        };
+      }
+      return {
+        ...item,
+        to: mapToBase(item.to),
+        label: item.to === "/nurse/dashboard" ? dashboardLabel : item.label,
+      };
+    });
+
+function NurseSidebar({ onClose = () => {}, basePath = "/nurse", dashboardLabel = "Nurse Dashboard", sectionLabel = "Nurse Desk", profile: providedProfile = null, showBilling = true, showBookAppointment = true, showConsultantRoom = false }) {
+  const profile = providedProfile || getNurseProfile();
+  const profileName = profile.name || "Nurse";
+  const hospitalName = getClinicDisplayName(profile, "Clinic Name");
+  const branchName = String(profile.branchName || "").trim();
+  const clinicLogo = getClinicLogo(hospitalName);
+  const ClinicLogoIcon = clinicLogo.icon;
+
+  return (
+    <aside className="rc-sidebar">
+      <div className="rc-brand">
+        <div className={`rc-brand-icon rc-clinic-logo rc-clinic-logo--${clinicLogo.tone}`}>
+          {clinicLogo.type === "tooth" ? <ReceptionClinicToothLogo /> : <ClinicLogoIcon size={22} />}
+          {clinicLogo.text ? <small>{clinicLogo.text}</small> : null}
+        </div>
+        <div>
+          <span>Clinic Name</span>
+          <strong>{hospitalName}</strong>
+          {branchName ? <em className="rc-brand-branch">{branchName}</em> : null}
+        </div>
+        <button className="rc-sidebar-close" onClick={onClose} type="button" aria-label="Close sidebar">
+          <X size={18} />
+        </button>
+      </div>
+
+      <div className="rc-section-label">{sectionLabel}</div>
+
+      <nav className="rc-nav">
+        {buildItems({ basePath, dashboardLabel, showBilling, showBookAppointment }).map((item) => {
+          const Icon = item.icon;
+          if (item.children) {
+            return (
+              <div className="rc-nav-group" key={item.label}>
+                <div className="rc-nav-group-title">
+                  <Icon size={17} />
+                  <span>{item.label}</span>
+                </div>
+                <div className="rc-nav-children">
+                  {item.children.map((child) => {
+                    const ChildIcon = child.icon;
+                    return (
+                      <NavLink key={child.to} to={child.to} end={child.to === `${basePath}/appointments`} className={({ isActive }) => `rc-nav-link rc-nav-child${isActive ? " active" : ""}`}>
+                        <ChildIcon size={16} />
+                        <span>{child.label}</span>
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <NavLink key={item.to} to={item.to} className={({ isActive }) => `rc-nav-link${isActive ? " active" : ""}`}>
+              <Icon size={17} />
+              <span>{item.label}</span>
+            </NavLink>
+          );
+        })}
+      </nav>
+
+      <div className="rc-sidebar-profile">
+        <div className="rc-sidebar-avatar">{getInitials(profileName)}</div>
+        <div className="rc-sidebar-profile-info">
+          <strong>{profileName}</strong>
+          <span>{hospitalName}</span>
+          <p>
+            <span className="rc-status-dot" /> Online
+          </p>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+export default NurseSidebar;

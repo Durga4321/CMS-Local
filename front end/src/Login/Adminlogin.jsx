@@ -116,6 +116,7 @@ const getDisplayName = (authData, claims, email, role) => {
   const normalizedRole = normalizeRole(role);
   if (normalizedRole === 'doctor') return 'Doctor';
   if (normalizedRole === 'receptionist') return 'Receptionist';
+  if (normalizedRole === 'nurse') return 'Nurse';
   if (normalizedRole === 'superadmin') return 'Super Admin';
   return 'Admin';
 };
@@ -233,17 +234,22 @@ const clearStoredSession = () => {
     'superAdminToken',
     'doctorToken',
     'receptionistToken',
+    'nurseToken',
     'adminRole',
     'superAdminRole',
     'doctorRole',
     'receptionistRole',
+    'nurseRole',
     'userRole',
     'adminEmail',
     'adminName',
     'doctorEmail',
     'receptionistEmail',
+    'nurseEmail',
     'receptionistName',
+    'nurseName',
     'doctorId',
+    'nurseId',
     'doctorName',
     'hospitalId',
     'hospitalName',
@@ -381,7 +387,7 @@ const AdminLogin = () => {
         );
       const normalizedRole = normalizeRole(role);
 
-      if (!['superadmin', 'admin', 'clinicadmin', 'doctor', 'receptionist', 'patient'].includes(normalizedRole)) {
+      if (!['superadmin', 'admin', 'clinicadmin', 'doctor', 'receptionist', 'nurse', 'patient'].includes(normalizedRole)) {
         setErrors({
           api: 'Access denied. This account does not have Super Admin, Admin, Doctor, or Receptionist role.',
         });
@@ -510,6 +516,17 @@ const AdminLogin = () => {
         localStorage.setItem('receptionistName', displayName);
         toast.success({ title: 'Login successful', description: 'Welcome back, Receptionist!' });
         navigate('/reception/dashboard', { replace: true });
+        return;
+      }
+
+      if (normalizedRole === 'nurse') {
+        localStorage.setItem('nurseToken', token);
+        localStorage.setItem('nurseRole', role);
+        localStorage.setItem('nurseEmail', loginEmail);
+        localStorage.setItem('nurseName', displayName);
+        localStorage.setItem('nurseId', String(authData.nurseId || getClaim(claims, 'NurseId') || ''));
+        toast.success({ title: 'Login successful', description: 'Welcome back, Nurse!' });
+        navigate('/nurse/dashboard', { replace: true });
         return;
       }
 

@@ -582,7 +582,7 @@ const printConsultationReceipt = ({
   return true;
 };
 
-function ReceptionAppointments() {
+function ReceptionAppointments({ hideActions = false }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const toast = useToast();
@@ -1027,6 +1027,11 @@ function ReceptionAppointments() {
       toast.success("Payment received. Appointment booked successfully");
       setSelectedSlot("");
       setPaymentStep(false);
+      try {
+        localStorage.setItem("appointments:updatedAt", String(Date.now()));
+      } catch (e) {
+        // ignore storage errors
+      }
       refresh();
     } catch (error) {
       console.error("Booking failed", { error, selectedDoctor, branchIdForAppointment, body });
@@ -1096,11 +1101,13 @@ function ReceptionAppointments() {
           <p>Select patient, doctor, date, lock a slot, and confirm booking.</p>
           <p>{patientCount} registered patient{patientCount === 1 ? "" : "s"} available for booking.</p>
         </div>
-        <div className="rc-head-actions">
-          <button className="rc-btn" onClick={() => navigate("/reception/dashboard")}>
-            <ArrowLeft size={16} /> Dashboard
-          </button>
-        </div>
+        {!hideActions && (
+          <div className="rc-head-actions">
+            <button className="rc-btn" onClick={() => navigate("/reception/dashboard") }>
+              <ArrowLeft size={16} /> Dashboard
+            </button>
+          </div>
+        )}
       </div>
 
       {message ? <div className="rc-alert">{message}</div> : null}
