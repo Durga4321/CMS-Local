@@ -135,6 +135,266 @@ export const DIAGNOSIS_TEST_OPTIONS = [
   "X-Ray",
 ];
 
+const normalizeSpecialization = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ");
+
+const optionSet = (items) => new Set(items.map((item) => item.toLowerCase()));
+
+const SPECIALIZATION_DIAGNOSIS_MAP = [
+  {
+    keys: ["cardiology", "cardiologist", "heart"],
+    diagnoses: [
+      "Arrhythmia",
+      "Congenital Heart Disease",
+      "Coronary Artery Disease (CAD)",
+      "Heart Attack (Myocardial Infarction)",
+      "Heart Failure",
+      "Hypertension",
+      "Peripheral Artery Disease",
+      "Pulmonary Embolism",
+      "Valve Heart Disease",
+    ],
+    tests: [
+      "2D Echocardiogram",
+      "Angiogram",
+      "Cardiac Enzyme Test",
+      "Doppler Study",
+      "ECG (Electrocardiogram)",
+      "Holter Monitoring",
+      "Lipid Profile",
+      "Treadmill Test (TMT)",
+    ],
+  },
+  {
+    keys: ["gynecology", "gynaecology", "gynecologist", "obstetrics", "obgyn"],
+    diagnoses: [
+      "Anemia",
+      "High-Risk Pregnancy",
+      "Ovarian Cyst",
+      "Polycystic Ovary Syndrome (PCOS)",
+      "Thyroid Disorders",
+      "Urinary Tract Infection (UTI)",
+    ],
+    tests: [
+      "Blood Glucose Test",
+      "Complete Blood Count (CBC)",
+      "HbA1c",
+      "Pap Smear",
+      "Thyroid Function Test (T3, T4, TSH)",
+      "Ultrasound Scan",
+      "Urine Analysis",
+    ],
+  },
+  {
+    keys: ["dermatology", "dermatologist", "skin"],
+    diagnoses: ["Acne", "Eczema", "Psoriasis", "Skin Infection", "Lupus (SLE)"],
+    tests: [
+      "Blood Culture",
+      "Clinical Microbiology",
+      "Clinical Pathology",
+      "Cytopathology",
+      "Histopathology",
+    ],
+  },
+  {
+    keys: ["neurology", "neurologist", "neuro"],
+    diagnoses: [
+      "Brain Hemorrhage",
+      "Brain Tumor",
+      "Epilepsy",
+      "Migraine",
+      "Multiple Sclerosis",
+      "Neuropathy",
+      "Parkinson's Disease",
+      "Stroke",
+    ],
+    tests: [
+      "CT Scan",
+      "EEG (Electroencephalogram)",
+      "EMG / ENMG",
+      "MRI Scan",
+      "Nerve Conduction Study (NCS)",
+    ],
+  },
+  {
+    keys: ["orthopedic", "orthopaedic", "ortho"],
+    diagnoses: [
+      "Arthritis",
+      "Back Pain",
+      "Gout",
+      "Ligament Injury",
+      "Osteoarthritis",
+      "Osteoporosis",
+      "Rheumatoid Arthritis",
+      "Spinal Disc Disease",
+      "Sports Injury",
+    ],
+    tests: ["CT Scan", "Digital X-Ray", "MRI Scan", "X-Ray"],
+  },
+  {
+    keys: ["gastroenterology", "gastroenterologist", "gastro", "gastrointestinal"],
+    diagnoses: [
+      "Appendicitis",
+      "Colon Cancer",
+      "Fatty Liver Disease",
+      "Gallstones",
+      "Gastric Ulcer",
+      "Gastritis",
+      "GERD (Acid Reflux)",
+      "Inflammatory Bowel Disease (IBD)",
+      "Liver Cirrhosis",
+      "Liver Failure",
+      "Peptic Ulcer Disease",
+    ],
+    tests: [
+      "Clinical Biochemistry",
+      "Colonoscopy",
+      "Endoscopy",
+      "Endoscopic Ultrasound (EUS)",
+      "ERCP",
+      "Liver Function Test (LFT)",
+      "Ultrasound Scan",
+    ],
+  },
+  {
+    keys: ["pulmonology", "pulmonologist", "respiratory", "chest"],
+    diagnoses: [
+      "Asthma",
+      "Chronic Obstructive Pulmonary Disease (COPD)",
+      "COVID-19",
+      "Lung Cancer",
+      "Pneumonia",
+      "Pulmonary Embolism",
+      "Tuberculosis (TB)",
+    ],
+    tests: [
+      "Bronchoscopy",
+      "CT Scan",
+      "Digital X-Ray",
+      "Pulmonary Function Test (PFT)",
+      "Radial & Convex EBUS",
+      "Thoracoscopy",
+      "X-Ray",
+    ],
+  },
+  {
+    keys: ["nephrology", "nephrologist", "urology", "urologist", "kidney"],
+    diagnoses: [
+      "Chronic Kidney Disease (CKD)",
+      "Kidney Failure",
+      "Kidney Stones",
+      "Nephrotic Syndrome",
+      "Prostate Enlargement (BPH)",
+      "Urinary Tract Infection (UTI)",
+    ],
+    tests: [
+      "Clinical Pathology",
+      "Kidney Function Test (KFT)",
+      "Ultrasound Scan",
+      "Urine Analysis",
+    ],
+  },
+  {
+    keys: ["ent", "ear nose throat"],
+    diagnoses: ["Ear Infection", "Hearing Loss", "Sinusitis", "Tonsillitis"],
+    tests: ["Audiometry", "CT Scan", "Digital X-Ray", "X-Ray"],
+  },
+  {
+    keys: ["ophthalmology", "ophthalmologist", "eye"],
+    diagnoses: ["Cataract", "Diabetic Retinopathy", "Glaucoma"],
+    tests: ["Blood Glucose Test", "Digital OPG", "HbA1c"],
+  },
+  {
+    keys: ["pediatrics", "paediatrics", "pediatrician", "child"],
+    diagnoses: [
+      "Anemia",
+      "Asthma",
+      "Dengue",
+      "Malaria",
+      "Neonatal Jaundice",
+      "Pneumonia",
+      "Prematurity",
+      "Sepsis",
+      "Viral Fever",
+    ],
+    tests: [
+      "Blood Culture",
+      "Blood Glucose Test",
+      "Clinical Microbiology",
+      "Complete Blood Count (CBC)",
+      "Urine Analysis",
+      "X-Ray",
+    ],
+  },
+  {
+    keys: ["psychiatry", "psychiatrist", "psychology"],
+    diagnoses: ["Anxiety Disorder", "Depression", "Schizophrenia"],
+    tests: ["Clinical Biochemistry", "Thyroid Function Test (T3, T4, TSH)"],
+  },
+  {
+    keys: ["general medicine", "general physician", "internal medicine", "physician"],
+    diagnoses: [
+      "Anemia",
+      "Anxiety Disorder",
+      "Asthma",
+      "COVID-19",
+      "Dengue",
+      "Diabetes Mellitus",
+      "Hypertension",
+      "Hypothyroidism",
+      "Malaria",
+      "Thyroid Disorders",
+      "Tuberculosis (TB)",
+      "Urinary Tract Infection (UTI)",
+      "Viral Fever",
+    ],
+    tests: [
+      "Blood Culture",
+      "Blood Glucose Test",
+      "Clinical Biochemistry",
+      "Complete Blood Count (CBC)",
+      "HbA1c",
+      "Kidney Function Test (KFT)",
+      "Liver Function Test (LFT)",
+      "Lipid Profile",
+      "Thyroid Function Test (T3, T4, TSH)",
+      "Urine Analysis",
+    ],
+  },
+];
+
+const getSpecializationConfig = (specialization) => {
+  const normalized = normalizeSpecialization(specialization);
+  if (!normalized) return null;
+
+  return SPECIALIZATION_DIAGNOSIS_MAP.find((entry) =>
+    entry.keys.some((key) => normalized.includes(key))
+  );
+};
+
+const filterOptionsByAllowedList = (options, allowedOptions = []) => {
+  const list = Array.isArray(options) ? options : [];
+  if (!allowedOptions.length) return list;
+
+  const allowed = optionSet(allowedOptions);
+  return list.filter((option) => allowed.has(String(option || "").trim().toLowerCase()));
+};
+
+export const filterDiagnosisOptionsBySpecialization = (options, specialization) => {
+  const config = getSpecializationConfig(specialization);
+  return config ? filterOptionsByAllowedList(options, config.diagnoses) : options;
+};
+
+export const getDiagnosisTestsForSpecialization = (specialization) => {
+  const config = getSpecializationConfig(specialization);
+  return config
+    ? filterOptionsByAllowedList(DIAGNOSIS_TEST_OPTIONS, config.tests)
+    : DIAGNOSIS_TEST_OPTIONS;
+};
+
 const getDiagnosisText = (item) => {
   if (typeof item === "string") return item;
 
@@ -175,7 +435,7 @@ export const mergeDiagnosisOption = (options, diagnosis) => {
   return exists ? list : [value, ...list];
 };
 
-export const fetchDiagnosisOptions = async () => {
+export const fetchDiagnosisOptions = async (specialization = "") => {
   const token = getAuthToken();
   const headers = {
     "ngrok-skip-browser-warning": "true",
@@ -192,5 +452,5 @@ export const fetchDiagnosisOptions = async () => {
     throw new Error(data.message || "Unable to load diagnosis list.");
   }
 
-  return normalizeDiagnosisOptions(data);
+  return filterDiagnosisOptionsBySpecialization(normalizeDiagnosisOptions(data), specialization);
 };

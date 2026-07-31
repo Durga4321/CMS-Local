@@ -72,7 +72,7 @@ function AddPatientModal({ onClose, onAdd }) {
   };
 
   const handleAddressChange = (name, value) => {
-    let nextValue = name === "pincode" ? onlyPincodeValue(value) : String(value || "").trim();
+    let nextValue = name === "pincode" ? onlyPincodeValue(value) : String(value || "");
     if (["city", "state", "country"].includes(name)) {
       nextValue = onlyAlpha(nextValue);
     } else if (name !== "pincode") {

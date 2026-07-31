@@ -235,6 +235,35 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
+.cn-test-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 28px;
+  align-items: center;
+}
+
+.cn-test-chips button {
+  border: 1px solid #99f6e4;
+  border-radius: 999px;
+  background: #ecfeff;
+  color: #0f766e;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.cn-test-chips button span {
+  margin-left: 6px;
+  color: #dc2626;
+}
+
+.cn-test-chips small {
+  color: #64748b;
+  font-size: 12px;
+}
+
 .cn-textarea {
   width: 100%;
   border: 1px solid #e2e8f0;
@@ -328,12 +357,15 @@
 /* ── Action buttons ── */
 .cn-form-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 12px;
   padding-top: 4px;
 }
 
-.cn-btn-save {
+.cn-btn-save,
+.cn-btn-submit,
+.cn-btn-print {
   border: 1px solid #e2e8f0;
   background: #fff;
   border-radius: 10px;
@@ -346,9 +378,37 @@
 }
 .cn-btn-save:hover { background: #f8fafc; }
 .cn-btn-save:disabled,
+.cn-btn-submit:disabled,
+.cn-btn-print:disabled,
 .cn-btn-primary:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+}
+
+.cn-btn-submit {
+  border-color: #86efac;
+  background: #16a34a;
+  color: #fff;
+}
+
+.cn-btn-submit:hover {
+  background: #15803d;
+}
+
+.cn-btn-print {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-color: #fbcfe8;
+  background: #fdf2f8;
+  color: #2563eb;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
+}
+
+.cn-btn-print:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
 }
 
 .cn-btn-primary {

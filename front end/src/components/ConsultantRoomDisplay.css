@@ -109,6 +109,10 @@
   color: #008e7f;
 }
 
+.cr-consultant span.is-out {
+  color: #c81e1e;
+}
+
 .cr-consultant strong {
   display: block;
   margin-top: 10px;

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Cross,
+  HeartPulse,
   Leaf,
   RefreshCw,
   Search,
@@ -119,6 +120,7 @@ const getClinicLogo = (clinicName = "") => {
 
 const getRoleMeta = (role = "") => {
   const normalized = String(role || "").toLowerCase();
+  if (normalized.includes("nurse")) return { label: "Nurse", icon: HeartPulse, tone: "nurse" };
   if (normalized.includes("reception")) return { label: "Receptionist", icon: UsersRound, tone: "receptionist" };
   if (normalized.includes("patient")) return { label: "Patient", icon: UserRound, tone: "patient" };
   if (normalized.includes("doctor")) return { label: "Doctor", icon: Stethoscope, tone: "doctor" };
@@ -157,11 +159,80 @@ const normalizeUserLogin = (record = {}, index = 0) => {
   };
 };
 
-const getRecordBranchId = (record = {}) =>
-  String(readValue(record, ["branchId", "BranchId", "branchID", "BranchID", "clinicBranchId"], "")).trim();
+const parseBranchIds = (value) => {
+  if (Array.isArray(value)) return value.flatMap(parseBranchIds);
+  if (value && typeof value === "object") {
+    return [
+      readValue(value, ["branchId", "BranchId", "id", "Id", "clinicBranchId"], ""),
+    ].filter(Boolean);
+  }
+  const text = String(value ?? "").trim();
+  if (!text) return [];
+  if ((text.startsWith("[") && text.endsWith("]")) || (text.startsWith("{") && text.endsWith("}"))) {
+    try {
+      return parseBranchIds(JSON.parse(text));
+    } catch {
+      return [];
+    }
+  }
+  return text
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+};
+
+const getRecordBranchIds = (record = {}) => {
+  const directIds = parseBranchIds(
+    readValue(record, ["branchId", "BranchId", "branchID", "BranchID", "clinicBranchId"], "")
+  );
+  const multiIds = [
+    ...parseBranchIds(record.branchIds),
+    ...parseBranchIds(record.BranchIds),
+    ...parseBranchIds(record.branchIdsJson),
+    ...parseBranchIds(record.BranchIdsJson),
+    ...parseBranchIds(record.branches),
+    ...parseBranchIds(record.Branches),
+    ...parseBranchIds(record.clinicBranches),
+    ...parseBranchIds(record.ClinicBranches),
+  ];
+  return Array.from(new Set([...directIds, ...multiIds].map((id) => String(id).trim()).filter(Boolean)));
+};
+
+const getRecordBranchId = (record = {}) => getRecordBranchIds(record)[0] || "";
 
 const getRecordBranchName = (record = {}) =>
   String(readValue(record, ["branchName", "BranchName", "branch", "Branch"], "")).trim();
+
+const normalizePhone = (value) => String(value ?? "").replace(/\D/g, "");
+
+const getPatientRecordId = (record = {}) =>
+  String(
+    readValue(record, ["id", "Id", "patientId", "PatientId", "pid", "PID"], "")
+  ).trim();
+
+const getPatientRecordPhone = (record = {}) =>
+  normalizePhone(
+    readValue(record, ["phone", "Phone", "phoneNumber", "PhoneNumber", "mobile", "Mobile", "mobileNumber", "MobileNumber"], "")
+  );
+
+const getAppointmentBranchId = (appointment = {}) =>
+  String(
+    readValue(appointment, ["branchId", "BranchId", "clinicBranchId", "ClinicBranchId"], "") ||
+      readValue(appointment.branch || appointment.Branch || {}, ["id", "Id", "branchId", "BranchId"], "") ||
+      readValue(appointment.patient || appointment.Patient || {}, ["branchId", "BranchId"], "")
+  ).trim();
+
+const getAppointmentPatientId = (appointment = {}) =>
+  String(
+    readValue(appointment, ["patientId", "PatientId", "pid", "PID"], "") ||
+      readValue(appointment.patient || appointment.Patient || {}, ["id", "Id", "patientId", "PatientId"], "")
+  ).trim();
+
+const getAppointmentPatientPhone = (appointment = {}) =>
+  normalizePhone(
+    readValue(appointment, ["phone", "Phone", "patientPhone", "PatientPhone", "mobile", "Mobile", "mobileNumber", "MobileNumber"], "") ||
+      readValue(appointment.patient || appointment.Patient || {}, ["phone", "Phone", "phoneNumber", "PhoneNumber", "mobile", "Mobile", "mobileNumber", "MobileNumber"], "")
+  );
 
 const normalizeDirectoryUser = (record = {}, roleFallback = "", index = 0, branchLookup = {}) => {
   const role = readValue(record, ["role", "Role", "roleName", "RoleName", "type", "Type"], roleFallback);
@@ -176,20 +247,25 @@ const normalizeDirectoryUser = (record = {}, roleFallback = "", index = 0, branc
     "ReceptionistId",
     "patientId",
     "PatientId",
+    "nurseId",
+    "NurseId",
   ], `${roleFallback}-${index + 1}`);
   const branchId = getRecordBranchId(record);
+  const branchIds = getRecordBranchIds(record);
   const branch = branchLookup[String(branchId)] || {};
 
   return {
     id,
     userId: id,
-    name: readValue(record, ["userName", "UserName", "name", "Name", "fullName", "FullName", "patientName", "PatientName"], ""),
+    name: readValue(record, ["userName", "UserName", "name", "Name", "fullName", "FullName", "patientName", "PatientName", "nurseName", "NurseName"], ""),
     email: readValue(record, ["email", "Email", "emailAddress", "EmailAddress"], ""),
+    phone: getPatientRecordPhone(record),
     role,
     clinicId: readValue(record, ["hospitalId", "HospitalId", "clinicId", "ClinicId"], getStoredHospitalId()),
     clinicName: readValue(record, ["hospitalName", "HospitalName", "clinicName", "ClinicName"], localStorage.getItem("hospitalName") || localStorage.getItem("clinicName") || "VIMS Clinic"),
     clinicLocation: readValue(record, ["hospitalLocation", "HospitalLocation", "clinicLocation", "ClinicLocation", "address", "Address"], ""),
     branchId,
+    branchIds,
     branchName: getRecordBranchName(record) || branch.name || "",
     branchLocation: readValue(record, ["branchLocation", "BranchLocation"], branch.raw?.address || branch.raw?.Address || ""),
     action: "",
@@ -230,8 +306,9 @@ const mergeUsers = (baseUsers = [], loginUsers = []) => {
     const key = nameLookup.get(loginNameKey) || userIdentityKey(login);
     if (key === ":") return;
     const existing = rows.get(key);
+    if (!existing) return;
     rows.set(key, {
-      ...(existing || {}),
+      ...existing,
       ...login,
       name: existing?.name || login.name,
       email: existing?.email || login.email,
@@ -326,12 +403,26 @@ function AdminUserManagement() {
         lookup[String(branch.id)] = branch;
         return lookup;
       }, {});
-      const [loginsResult, doctorsResult, receptionistsResult, patientsResult, usersResult] = await Promise.allSettled([
+      const [
+        loginsResult,
+        doctorsResult,
+        receptionistsResult,
+        patientsResult,
+        nursesResult,
+        nursesPluralResult,
+        appointmentsResult,
+        offlineAppointmentsResult,
+        onlineAppointmentsResult,
+      ] = await Promise.allSettled([
         requestJson(`Dashboard/today-logins?branchId=${encodeURIComponent(branchId)}`),
         requestJson("Doctor"),
         requestJson("Receptionist"),
         requestJson("Patient"),
-        requestJson("users"),
+        requestJson("Nurse"),
+        requestJson("Nurses"),
+        requestJson("Appointment"),
+        requestJson("Appointment/offline"),
+        requestJson("Appointment/online"),
       ]);
 
       const loginUsers =
@@ -340,6 +431,43 @@ function AdminUserManagement() {
               .map(normalizeUserLogin)
               .filter((user) => String(user.branchId || "").trim() === String(branchId))
           : [];
+      const appointmentRows = [
+        ...(appointmentsResult.status === "fulfilled" ? parseList(appointmentsResult.value) : []),
+        ...(offlineAppointmentsResult.status === "fulfilled" ? parseList(offlineAppointmentsResult.value) : []),
+        ...(onlineAppointmentsResult.status === "fulfilled" ? parseList(onlineAppointmentsResult.value) : []),
+      ].filter((appointment) => getAppointmentBranchId(appointment) === String(branchId));
+      const branchPatientIds = new Set(
+        appointmentRows.map(getAppointmentPatientId).filter(Boolean)
+      );
+      const branchPatientPhones = new Set(
+        appointmentRows.map(getAppointmentPatientPhone).filter(Boolean)
+      );
+      const patientBranchLookup = appointmentRows.reduce((lookup, appointment) => {
+        const appointmentBranchId = getAppointmentBranchId(appointment);
+        const branch = branchLookup[String(appointmentBranchId)] || {};
+        const branchName =
+          getRecordBranchName(appointment) ||
+          readValue(appointment.branch || appointment.Branch || {}, ["name", "Name", "branchName", "BranchName"], "") ||
+          branch.name ||
+          "";
+        const branchLocation =
+          readValue(appointment, ["branchLocation", "BranchLocation"], "") ||
+          readValue(appointment.branch || appointment.Branch || {}, ["address", "Address", "location", "Location"], "") ||
+          branch.raw?.address ||
+          branch.raw?.Address ||
+          "";
+        const scope = {
+          branchId: appointmentBranchId,
+          branchName,
+          branchLocation,
+        };
+        const patientId = getAppointmentPatientId(appointment);
+        const patientPhone = getAppointmentPatientPhone(appointment);
+        if (patientId) lookup[`id:${patientId}`] = scope;
+        if (patientPhone) lookup[`phone:${patientPhone}`] = scope;
+        return lookup;
+      }, {});
+
       const directoryUsers = [
         ...(doctorsResult.status === "fulfilled"
           ? parseList(doctorsResult.value).map((item, index) => normalizeDirectoryUser(item, "Doctor", index, branchLookup))
@@ -350,18 +478,37 @@ function AdminUserManagement() {
         ...(patientsResult.status === "fulfilled"
           ? parseList(patientsResult.value).map((item, index) => normalizeDirectoryUser(item, "Patient", index, branchLookup))
           : []),
-        ...(usersResult.status === "fulfilled"
-          ? parseList(usersResult.value).map((item, index) => normalizeDirectoryUser(item, "", index, branchLookup))
+        ...(nursesResult.status === "fulfilled"
+          ? parseList(nursesResult.value).map((item, index) => normalizeDirectoryUser(item, "Nurse", index, branchLookup))
+          : []),
+        ...(nursesResult.status !== "fulfilled" && nursesPluralResult.status === "fulfilled"
+          ? parseList(nursesPluralResult.value).map((item, index) => normalizeDirectoryUser(item, "Nurse", index, branchLookup))
           : []),
       ].filter((user) => {
         const userBranchId = String(user.branchId || "").trim();
+        const userBranchIds = Array.isArray(user.branchIds) ? user.branchIds.map((id) => String(id).trim()) : [];
         const userBranchName = String(user.branchName || "").trim().toLowerCase();
         const selectedBranch = branchLookup[String(branchId)];
         const selectedBranchName = String(selectedBranch?.name || "").trim().toLowerCase();
-        return (
+        const userRole = String(user.role || "").trim().toLowerCase();
+        const isPatient = userRole.includes("patient");
+        const patientId = getPatientRecordId(user.raw || user);
+        const patientPhone = getPatientRecordPhone(user.raw || user) || normalizePhone(user.phone);
+        const appointmentBranch =
+          patientBranchLookup[`id:${patientId}`] || patientBranchLookup[`phone:${patientPhone}`] || null;
+        const belongsToBranch =
           userBranchId === String(branchId) ||
-          (selectedBranchName && userBranchName === selectedBranchName)
-        );
+          userBranchIds.includes(String(branchId)) ||
+          (selectedBranchName && userBranchName === selectedBranchName) ||
+          (isPatient && (branchPatientIds.has(patientId) || branchPatientPhones.has(patientPhone)));
+
+        if (belongsToBranch && isPatient && appointmentBranch) {
+          user.branchId = user.branchId || appointmentBranch.branchId;
+          user.branchName = user.branchName || appointmentBranch.branchName;
+          user.branchLocation = user.branchLocation || appointmentBranch.branchLocation;
+        }
+
+        return belongsToBranch;
       });
 
       setUsers(mergeUsers(directoryUsers, loginUsers));

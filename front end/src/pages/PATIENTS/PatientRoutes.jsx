@@ -23,6 +23,27 @@ const getNestedValue = (record, path) => {
 const readFirst = (record, keys) =>
   keys.reduce((value, key) => value || getNestedValue(record, key), "") || "";
 
+const getClinicWatermarkSvg = (clinicName = "Clinic") => {
+  const name = String(clinicName || "").toLowerCase();
+  const fallbackText = String(clinicName || "CLINIC")
+    .replace(/[^a-z0-9\s]/gi, " ")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+  const logo = name.includes("dental")
+    ? { text: "", color: "#0f8f8d", path: '<path d="M145 79c35-15 68-8 92 5 25 14 55 14 80 0 24-13 57-20 92-5 64 28 91 95 70 171l-45 170c-13 49-37 137-88 137-36 0-38-43-49-90-5-23-13-40-21-40s-16 17-21 40c-11 47-13 90-49 90-51 0-75-88-88-137L73 250C52 174 79 107 145 79Z" fill="none" stroke="currentColor" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>' }
+    : name.includes("pragathi")
+      ? { text: "PRAGATHI", color: "#00a86b", path: '<path d="M357 79c-93 0-168 36-213 96-43 57-55 132-30 200 64 24 139 11 196-32 60-45 96-120 96-213 0-28-22-51-49-51Z" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M263 173c-64 27-113 75-146 143" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round"/>' }
+      : name.includes("sai ram") || name.includes("primo") || name.includes("pirnav")
+        ? { text: name.includes("sai ram") ? "SAI RAM" : name.includes("primo") ? "PRIMO" : "PIRNAV", color: "#d97706", path: '<circle cx="240" cy="238" r="72" fill="none" stroke="currentColor" stroke-width="24"/><path d="M240 58v62M240 356v62M60 238h62M358 238h62M113 111l44 44M323 321l44 44M367 111l-44 44M157 321l-44 44" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round"/>' }
+        : { text: name.includes("vims") ? "VIMS" : name.includes("nri") ? "NC" : fallbackText || "CL", color: "#00a884", path: '<path d="M214 86h52c11 0 20 9 20 20v88h88c11 0 20 9 20 20v52c0 11-9 20-20 20h-88v88c0 11-9 20-20 20h-52c-11 0-20-9-20-20v-88h-88c-11 0-20-9-20-20v-52c0-11 9-20 20-20h88v-88c0-11 9-20 20-20Z" fill="none" stroke="currentColor" stroke-width="24" stroke-linejoin="round"/>' };
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 560" color="${logo.color}"><rect x="72" y="44" width="336" height="336" rx="72" fill="#f0fdfa" stroke="#7dd3fc" stroke-width="12"/><g>${logo.path}</g>${logo.text ? `<text x="240" y="455" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="50" font-weight="900" fill="#075eea">${logo.text}</text>` : ""}</svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+};
+
 const getTokenSequence = (appointment = {}) => {
   const token = readFirst(appointment, ["tokenNumber", "TokenNumber", "token", "tokenNo", "token_number"]);
   const match = String(token || "").trim().match(/^TKN\s*0*(\d+)$/i);
@@ -122,14 +143,6 @@ const getBillRecordKey = (bill) => {
   }, {}));
 };
 
-const getBillAppointmentKey = (bill) =>
-  readFirst(bill, [
-    'appointmentNumber', 'appointmentNo', 'appointmentId', 'appointment.id', 'appointment_id',
-    'appointment.appointmentNumber', 'appointment.appointmentNo', 'appointment.appointmentId',
-    'invoice.appointmentId', 'invoice.appointment.id', 'invoice.appointment.appointmentNumber',
-    'bill.appointmentId', 'bill.appointment.id', 'bill.appointment.appointmentNumber',
-  ]) || '';
-
 const getBillDateValue = (bill) => {
   const date = new Date(
     readFirst(bill, ['invoiceDate', 'billDate', 'date', 'createdAt', 'updatedAt']) || ''
@@ -152,14 +165,68 @@ const selectBestBillRecord = (existing, incoming) => {
   return incoming;
 };
 
-const dedupeBillsByAppointment = (bills = []) => {
+const parseApiList = (value) => {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.data)) return value.data;
+  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.result)) return value.result;
+  if (Array.isArray(value?.bills)) return value.bills;
+  if (Array.isArray(value?.invoices)) return value.invoices;
+  return [];
+};
+
+const dedupeBillsByInvoice = (bills = []) => {
   const grouped = new Map();
-  Array.isArray(bills) && bills.forEach((bill) => {
-    const key = getBillAppointmentKey(bill) || getBillRecordKey(bill);
+  (Array.isArray(bills) ? bills : []).forEach((bill) => {
+    const key = getBillRecordKey(bill);
     const current = grouped.get(key);
     grouped.set(key, selectBestBillRecord(current, bill));
   });
-  return Array.from(grouped.values());
+  return Array.from(grouped.values()).sort((left, right) => getBillDateValue(right) - getBillDateValue(left));
+};
+
+const getPatientIdentityValues = (patient = {}, visits = []) => {
+  const values = [
+    patient?.id,
+    patient?.patientId,
+    patient?.PatientId,
+    patient?.patientCode,
+    patient?.PatientCode,
+    localStorage.getItem("patientId"),
+  ];
+  (Array.isArray(visits) ? visits : []).forEach((visit) => {
+    values.push(
+      readFirst(visit, ["patientId", "patient.id", "patient.patientId", "patientCode", "patient.patientCode"]),
+      readFirst(visit, ["appointmentId", "id", "appointmentNumber"])
+    );
+  });
+  return new Set(values.map((value) => normalizeComparable(value)).filter(Boolean));
+};
+
+const getPatientNameValues = (patient = {}, visits = []) => {
+  const values = [
+    patient?.name,
+    patient?.fullName,
+    patient?.firstName,
+    localStorage.getItem("patientName"),
+  ];
+  (Array.isArray(visits) ? visits : []).forEach((visit) => {
+    values.push(readFirst(visit, ["patientName", "patient.name", "patient.fullName", "name"]));
+  });
+  return new Set(values.map((value) => normalizeComparable(value)).filter(Boolean));
+};
+
+const billBelongsToPatient = (bill, patient = {}, visits = []) => {
+  const patientIds = getPatientIdentityValues(patient, visits);
+  const patientNames = getPatientNameValues(patient, visits);
+  const billIds = [
+    readFirst(bill, ["patientId", "PatientId", "patient.id", "patient.patientId", "patientCode", "patient.patientCode"]),
+    readFirst(bill, ["appointmentId", "appointment.id", "appointmentNumber"]),
+  ].map((value) => normalizeComparable(value)).filter(Boolean);
+  if (billIds.some((value) => patientIds.has(value))) return true;
+
+  const billName = normalizeComparable(readFirst(bill, ["patientName", "patient.name", "patient.fullName", "customerName", "name"]));
+  return Boolean(billName && patientNames.has(billName));
 };
 
 const normalizeName = (value) => {
@@ -651,8 +718,7 @@ function PatientRoutes() {
 
       if (billsRes?.ok) {
         const bData = await billsRes.json().catch(() => []);
-        const rawBills = Array.isArray(bData) ? bData : (bData.items || bData.data || []);
-        setBills(dedupeBillsByAppointment(rawBills));
+        setBills(dedupeBillsByInvoice(parseApiList(bData)));
       }
 
       if (notificationsRes?.ok) {
@@ -695,7 +761,7 @@ function PatientRoutes() {
         <Route path="history" element={<Navigate to="medical-history" replace />} />
         <Route path="reports" element={<Navigate to="medical-history" replace />} />
         <Route path="prescriptions" element={<PatientPrescriptionsPage prescriptions={prescriptions} />} />
-        <Route path="bills" element={<PatientBillsPage bills={bills} />} />
+        <Route path="bills" element={<PatientBillsPage bills={bills} patient={patient} visits={visits} />} />
         <Route path="billing" element={<Navigate to="bills" replace />} />
         <Route path="notifications" element={<PatientNotificationsPage notifications={notifications} />} />
         <Route path="profile" element={<PatientProfilePage patient={patient} visits={visits} prescriptions={prescriptions} bills={bills} notifications={notifications} />} />
@@ -1468,6 +1534,7 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
     const doctorName = readFirst(bill, ["doctorName", "doctor.name"]) || selectedDoctor?.name || "Doctor";
     const amount = Number(readFirst(bill, ["totalAmount", "grandTotal", "amount", "paidAmount"]) || paymentDetails.amount || 0);
     const clinicName = readFirst(bill, ["clinicName", "branchName", "clinic.name", "branch.name"]) || selectedBranch?.name || "CMS Health Care";
+    const watermarkUrl = getClinicWatermarkSvg(clinicName);
     const patientPhone = readFirst(patient || {}, ["phone", "phoneNumber", "mobile"]) || "-";
     const patientCode = readFirst(patient || {}, ["patientCode", "code", "id"]) || "-";
     const appointmentToken = readFirst(bill, ["tokenNumber", "appointment.tokenNumber"]) || createNextPatientToken(visits);
@@ -1482,8 +1549,13 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
   <style>
     *{box-sizing:border-box}
     body{margin:0;background:#eef1f5;color:#1f2937;font-family:Arial,sans-serif;font-size:11px}
-    .invoice{width:780px;max-width:100%;margin:14px auto;background:#fff;border:1px solid #cbd5db;padding:16px}
+    .invoice{width:780px;max-width:100%;margin:14px auto;background:#fff;border:1px solid #cbd5db;padding:16px;position:relative;overflow:hidden}
+    .invoice>*:not(.watermark){position:relative;z-index:1}
+    .watermark{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:0}
+    .watermark img{width:410px;height:410px;object-fit:contain;opacity:.18;filter:saturate(1.35) contrast(1.08)}
     .header{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:start;border-bottom:1px solid #cbd5db;padding-bottom:16px}
+    .clinic-title{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+    .clinic-title img{width:54px;height:54px;object-fit:contain;border-radius:12px}
     .header-left h1{margin:0 0 6px;font-size:20px;letter-spacing:1px;color:#0f4d3a}
     .header-left p{margin:4px 0;font-size:12px;color:#334155}
     .header-left .clinic-address{margin-top:8px;font-size:12px;color:#0f4d3a;font-weight:700}
@@ -1528,9 +1600,13 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
 </head>
 <body>
 <main class="invoice">
+  <div class="watermark"><img src="${escapeHtml(watermarkUrl)}" alt="" /></div>
   <div class="header">
     <div class="header-left">
-      <h1>${escapeHtml(clinicName).toUpperCase()}</h1>
+      <div class="clinic-title">
+        <img src="${escapeHtml(watermarkUrl)}" alt="Clinic logo" />
+        <h1>${escapeHtml(clinicName).toUpperCase()}</h1>
+      </div>
       <p>Consultation and Patient Care Centre</p>
       <p class="clinic-address">Hyderabad, Telangana, India - 500063</p>
       <p>${escapeHtml(patientPhone)}</p>
@@ -2928,18 +3004,83 @@ function PatientPrescriptionsPage({ prescriptions = [] }) {
   );
 }
 
-function PatientBillsPage({ bills = [] }) {
-  const billRecords = useMemo(() => dedupeBillsByAppointment(bills), [bills]);
+function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
+  const [apiBills, setApiBills] = useState([]);
+  const [loadingBills, setLoadingBills] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState("");
   const [downloadError, setDownloadError] = useState("");
+  const billRecords = useMemo(() => {
+    let recentServiceBills = [];
+    try {
+      const stored = JSON.parse(localStorage.getItem("receptionRecentServiceBills") || "[]");
+      recentServiceBills = Array.isArray(stored) ? stored : [];
+    } catch {
+      recentServiceBills = [];
+    }
+
+    return dedupeBillsByInvoice([...bills, ...apiBills, ...recentServiceBills])
+      .filter((bill) => billBelongsToPatient(bill, patient || {}, visits));
+  }, [apiBills, bills, patient, visits]);
+
+  useEffect(() => {
+    let isCurrent = true;
+    const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
+    const headers = {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    const loadSubmittedBills = async () => {
+      setLoadingBills(true);
+      try {
+        const responses = await Promise.allSettled([
+          fetch(patientApiUrl(PATIENT_API.bills), { headers }),
+          fetch(apiUrl("Billing"), { headers }),
+        ]);
+        const lists = await Promise.all(responses.map(async (result) => {
+          if (result.status !== "fulfilled" || !result.value?.ok) return [];
+          const data = await result.value.json().catch(() => []);
+          return parseApiList(data);
+        }));
+        if (isCurrent) setApiBills(dedupeBillsByInvoice(lists.flat()));
+      } finally {
+        if (isCurrent) setLoadingBills(false);
+      }
+    };
+
+    loadSubmittedBills();
+    const refresh = () => {
+      if (document.visibilityState === "visible") loadSubmittedBills();
+    };
+    window.addEventListener("focus", loadSubmittedBills);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      isCurrent = false;
+      window.removeEventListener("focus", loadSubmittedBills);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, []);
   const formatAmount = (value) =>
     new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(value || 0));
 
   const formatDate = (record) =>
-    readFirst(record, ['invoiceDate', 'billDate', 'date', 'createdAt']) || 'Unknown date';
+    readFirst(record, ['invoiceDate', 'billDate', 'date', 'createdAt', 'createdOn', 'updatedAt']) || 'Unknown date';
 
   const invoiceNumber = (record) =>
-    readFirst(record, ['invoiceNumber', 'billNumber', 'referenceNumber', 'id']) || 'Invoice';
+    readFirst(record, ['invoiceNo', 'invoiceNumber', 'billNo', 'billNumber', 'referenceNumber', 'transactionId', 'id']) || 'Invoice';
+
+  const billTypeLabel = (record) => {
+    const rawType = String(readFirst(record, ['invoiceType', 'billingType', 'type', 'serviceType', 'category']) || '').toLowerCase();
+    if (rawType.includes('pharmacy') || rawType.includes('medicine')) return 'Pharmacy';
+    if (rawType.includes('diagnostic') || rawType.includes('diagnosis') || rawType.includes('lab') || rawType.includes('test')) return 'Diagnostic';
+    if (getConsultationFee(record) > 0 || rawType.includes('consult')) return 'OP Bill';
+    const hasLab = Number(readFirst(record, ['labCharge', 'labCharges', 'laboratoryCharges']) || 0) > 0;
+    const hasMedicine = Number(readFirst(record, ['medicineCharge', 'medicineCharges', 'medicationCharges']) || 0) > 0;
+    if (hasLab && !hasMedicine) return 'Diagnostic';
+    if (hasMedicine && !hasLab) return 'Pharmacy';
+    return 'OP Bill';
+  };
 
   const getPatientName = (record) => {
     const rawName = readFirst(record, [
@@ -2996,18 +3137,31 @@ function PatientBillsPage({ bills = [] }) {
   const paymentStatus = (record) =>
     String(readFirst(record, ['status', 'paymentStatus', 'billStatus']) || 'Pending').toLowerCase();
 
-  const totalAmount = (record) => Number(readFirst(record, ['total', 'amount', 'invoiceAmount', 'grandTotal', 'dueAmount', 'netAmount']) || 0);
+  const totalAmount = (record) => Number(readFirst(record, ['total', 'totalAmount', 'amount', 'invoiceAmount', 'grandTotal', 'payableAmount', 'paymentAmount', 'paidAmount', 'netAmount', 'dueAmount', 'totals.total']) || 0);
   const dueAmount = (record) => Number(readFirst(record, ['dueAmount', 'balance', 'outstandingAmount']) || 0);
 
   const getLineItems = (record) => {
     if (Array.isArray(record.lineItems) && record.lineItems.length) return record.lineItems;
+    if (Array.isArray(record.rows) && record.rows.length) {
+      return record.rows.map((row) => ({
+        label: readFirst(row, ['item', 'name', 'test', 'medicine', 'diagnosis']) || 'Service item',
+        amount: (Number(readFirst(row, ['unitPrice', 'price', 'rate', 'amount']) || 0) || 0) * (Number(readFirst(row, ['quantity', 'qty']) || 1) || 1),
+      }));
+    }
+    const serviceItems = record.serviceItems || record.billItems || record.items || record.billingItems;
+    if (Array.isArray(serviceItems) && serviceItems.length) {
+      return serviceItems.map((row) => ({
+        label: readFirst(row, ['item', 'name', 'test', 'medicine', 'diagnosis']) || 'Service item',
+        amount: readFirst(row, ['amount', 'total', 'netAmount']) || ((Number(readFirst(row, ['unitPrice', 'price', 'rate']) || 0) || 0) * (Number(readFirst(row, ['quantity', 'qty']) || 1) || 1)),
+      }));
+    }
     if (record.charges && typeof record.charges === 'object') {
       return Object.entries(record.charges).map(([label, amount]) => ({ label, amount }));
     }
     return [
       { label: 'Consultation charges', amount: readFirst(record, ['consultationCharges', 'consultationCharge']) },
-      { label: 'Lab charges', amount: readFirst(record, ['labCharges', 'laboratoryCharges']) },
-      { label: 'Medicine charges', amount: readFirst(record, ['medicineCharges', 'medicationCharges']) },
+      { label: 'Lab charges', amount: readFirst(record, ['labCharge', 'labCharges', 'laboratoryCharges']) },
+      { label: 'Medicine charges', amount: readFirst(record, ['medicineCharge', 'medicineCharges', 'medicationCharges']) },
       { label: 'Other charges', amount: readFirst(record, ['otherCharges', 'miscCharges', 'serviceCharges']) },
     ].filter((item) => item.amount != null && item.amount !== '');
   };
@@ -3073,7 +3227,7 @@ function PatientBillsPage({ bills = [] }) {
   const invoiceUrl = (record) => resolveInvoiceUrl(record) || '';
 
   const getInvoiceId = (record) =>
-    readFirst(record, ['invoiceId', 'billId', 'id', '_id', 'referenceId']);
+    readFirst(record, ['invoiceId', 'billId', 'billingId', 'id', '_id', 'referenceId']);
 
   const getBillDetailUrl = (billId) =>
     patientApiUrl(`patient-portal/bills/${encodeURIComponent(billId)}`);
@@ -3100,7 +3254,7 @@ function PatientBillsPage({ bills = [] }) {
     return resolveInvoiceUrl(data) || resolveInvoiceUrl(data.invoice) || resolveInvoiceUrl(data.document) || '';
   };
 
-  const getPrintableInvoiceHtml = (record) => {
+  const getPrintableInvoiceHtml = (record, { autoPrint = true } = {}) => {
     const invoiceNumberValue = invoiceNumber(record);
     const patientName = readFirst(record, ['patientName', 'patient.name', 'name', 'customerName']) || 'Patient';
     const doctorName = readFirst(record, ['doctorName', 'doctor.name', 'provider.name', 'physician']) || 'Doctor';
@@ -3111,6 +3265,8 @@ function PatientBillsPage({ bills = [] }) {
     const paymentModeValue = displayPaymentMode(record);
     const statusValue = paymentStatus(record) === 'paid' ? 'Paid' : 'Pending';
     const lineItems = getLineItems(record);
+    const clinicName = readFirst(record, ['clinicName', 'hospitalName', 'branchName', 'clinic.name', 'hospital.name', 'branch.name']) || 'Clinic';
+    const watermarkUrl = getClinicWatermarkSvg(clinicName);
 
     const lineRows = lineItems.length
       ? lineItems.map((item) => `
@@ -3133,8 +3289,13 @@ function PatientBillsPage({ bills = [] }) {
           <title>Invoice ${invoiceNumberValue}</title>
           <style>
             body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f5f7fb; color: #0f172a; }
-            .invoice { max-width: 780px; margin: 0 auto; padding: 32px; background: #ffffff; }
+            .invoice { max-width: 780px; margin: 0 auto; padding: 32px; background: #ffffff; position: relative; overflow: hidden; }
+            .invoice > *:not(.watermark) { position: relative; z-index: 1; }
+            .watermark { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
+            .watermark img { width: 410px; height: 410px; object-fit: contain; opacity: .18; filter: saturate(1.35) contrast(1.08); }
             .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
+            .clinic-title { display: flex; align-items: center; gap: 12px; }
+            .clinic-title img { width: 54px; height: 54px; object-fit: contain; border-radius: 12px; }
             .header h1 { margin: 0; font-size: 24px; }
             .meta { text-align: right; }
             .meta span { display: block; margin-bottom: 4px; color: #475569; font-size: 13px; }
@@ -3158,9 +3319,13 @@ function PatientBillsPage({ bills = [] }) {
         </head>
         <body>
           <div class="invoice">
+            <div class="watermark"><img src="${watermarkUrl}" alt="" /></div>
             <div class="header">
               <div>
-                <h1>Invoice</h1>
+                <div class="clinic-title">
+                  <img src="${watermarkUrl}" alt="Clinic logo" />
+                  <h1>${clinicName}</h1>
+                </div>
                 <p style="margin:4px 0 0;color:#475569;">${invoiceNumberValue}</p>
               </div>
               <div class="meta">
@@ -3198,12 +3363,26 @@ function PatientBillsPage({ bills = [] }) {
             </div>
           </div>
           <script>
-            window.onload = function() {
-              window.print();
-            };
+            ${autoPrint ? "window.onload = function() { window.print(); };" : ""}
           </script>
         </body>
       </html>`;
+  };
+
+  const viewInvoice = async (record, directUrl = '') => {
+    const url = directUrl || (await getInvoiceSourceUrl(record));
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      setDownloadError('Please allow popups to view the invoice.');
+      return;
+    }
+    printWindow.document.write(getPrintableInvoiceHtml(record, { autoPrint: false }));
+    printWindow.document.close();
   };
 
   const downloadInvoice = async (record, directUrl = '', filename = '') => {
@@ -3217,7 +3396,7 @@ function PatientBillsPage({ bills = [] }) {
         setDownloadError('Please allow popups to download the invoice PDF.');
         return;
       }
-      printWindow.document.write(getPrintableInvoiceHtml(record));
+      printWindow.document.write(getPrintableInvoiceHtml(record, { autoPrint: true }));
       printWindow.document.close();
       return;
     }
@@ -3352,9 +3531,17 @@ function PatientBillsPage({ bills = [] }) {
           <div className="pb-payment-actions">
             <button
               type="button"
+              className="pb-action-btn pb-action-btn--ghost"
+              onClick={() => viewInvoice(latestBill, invoiceUrl(latestBill))}
+              disabled={!billRecords.length}
+            >
+              View Invoice
+            </button>
+            <button
+              type="button"
               className="pb-action-btn pb-action-btn--primary"
               onClick={() => downloadInvoice(latestBill, '', `${invoiceNumber(latestBill)}.pdf`)}
-              disabled={!invoiceUrl(latestBill) && !getInvoiceId(latestBill)}
+              disabled={!billRecords.length}
             >
               Download Invoice
             </button>
@@ -3395,6 +3582,7 @@ function PatientBillsPage({ bills = [] }) {
         <div className="pb-bills-overview">
           <div className="pb-invoice-list">
             <h3>Recent Bills</h3>
+            {loadingBills ? <p className="pb-download-message">Refreshing latest submitted bills...</p> : null}
             <div className="pb-table-wrap">
               <table className="pb-recent-table">
                 <thead>
@@ -3402,6 +3590,7 @@ function PatientBillsPage({ bills = [] }) {
                     <th>Date</th>
                     <th>Invoice #</th>
                     <th>Doctor / Clinic</th>
+                    <th>Type</th>
                     <th>Amount</th>
                     <th>Status</th>
                     <th />
@@ -3417,17 +3606,26 @@ function PatientBillsPage({ bills = [] }) {
                         <td>{formatDate(bill)}</td>
                         <td>{invoiceNumber(bill)}</td>
                         <td>{doctorLabel(bill)}</td>
+                        <td>{billTypeLabel(bill)}</td>
                         <td>{formatAmount(total)}</td>
                         <td><span className={`pb-status-badge pb-status-badge--${status === 'paid' ? 'paid' : 'pending'}`}>{status === 'paid' ? 'Paid' : 'Pending'}</span></td>
                         <td>
-                          <button
-                            type="button"
-                            className="pb-action-btn pb-action-btn--ghost"
-                            onClick={() => downloadInvoice(bill, invoiceLink, `${invoiceNumber(bill)}.pdf`)}
-                            disabled={!invoiceLink && !getInvoiceId(bill)}
-                          >
-                            Download
-                          </button>
+                          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              className="pb-action-btn pb-action-btn--ghost"
+                              onClick={() => viewInvoice(bill, invoiceLink)}
+                            >
+                              View
+                            </button>
+                            <button
+                              type="button"
+                              className="pb-action-btn pb-action-btn--ghost"
+                              onClick={() => downloadInvoice(bill, invoiceLink, `${invoiceNumber(bill)}.pdf`)}
+                            >
+                              Download
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

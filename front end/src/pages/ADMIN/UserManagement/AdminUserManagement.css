@@ -295,6 +295,11 @@
   color: #8b5cf6;
 }
 
+.admin-users-role--nurse {
+  background: #ecfdf5;
+  color: #059669;
+}
+
 .admin-users-role--default {
   background: #f1f5f9;
   color: #475569;

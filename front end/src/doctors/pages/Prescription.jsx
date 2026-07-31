@@ -8,13 +8,9 @@ import {
   getAuthToken,
   getLoggedInDoctor,
 } from "../utils/doctorSession";
-import {
-  DIAGNOSIS_TEST_OPTIONS,
-  mergeDiagnosisOption,
-} from "../utils/diagnosisOptions";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { useToast } from "../../components/ToastProvider";
-import { validateDate, validateRequired } from "../../utils/validation";
+import { validateDate } from "../../utils/validation";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 import { fetchConsultationVitals, mergeStoredAppointmentVitals } from "../../utils/appointmentVitals";
 
@@ -73,17 +69,26 @@ const INSTRUCTION_OPTIONS = [
   "Continue current diet and medication plan.",
 ];
 
-const splitDiagnosisTests = (value) =>
-  String(value || "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
+const escapePrintHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 
-const joinDiagnosisTests = (items = []) =>
-  items
-    .map((item) => String(item || "").trim())
-    .filter(Boolean)
-    .join(", ");
+const formatPrintDateTime = (value = new Date()) => {
+  const date = new Date(value || Date.now());
+  if (Number.isNaN(date.getTime())) return String(value || "");
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
 
 const createMedicine = () => ({
   id: Date.now() + Math.random(),
@@ -142,7 +147,14 @@ const normalizeAppointment = (item, fallback = {}) => {
       "Doctor",
     doctorSpecialization:
       item.doctorSpecialization ||
+      item.DoctorSpecialization ||
+      item.specialization ||
+      item.Specialization ||
+      item.doctor?.specialization ||
+      item.Doctor?.Specialization ||
       fallback.doctorSpecialization ||
+      fallback.specialization ||
+      localStorage.getItem("doctorSpecialization") ||
       "",
     bloodPressure: pickVital(item, fallback, "bloodPressure"),
     sugarLevel: pickVital(item, fallback, "sugarLevel"),
@@ -283,7 +295,6 @@ function Prescription() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
-  const [diagnosisOptions, setDiagnosisOptions] = useState([]);
   const [medicineSearch, setMedicineSearch] = useState("");
   const [medicineOptions, setMedicineOptions] = useState([]);
   const [typedMedicineNames, setTypedMedicineNames] = useState([]);
@@ -445,12 +456,10 @@ function Prescription() {
         setConsultation(savedConsultation);
         const resolvedDiagnosis =
           savedPrescription?.diagnosis ||
+          savedConsultation?.diagnosis ||
           "";
 
         setDiagnosis(resolvedDiagnosis);
-        setDiagnosisOptions((prev) =>
-          mergeDiagnosisOption(prev, resolvedDiagnosis)
-        );
         setInstructions(
           savedPrescription?.instructions ||
           "Take medicines after food and complete the full course."
@@ -497,7 +506,6 @@ function Prescription() {
     appointment?.symptoms ||
     consultation?.chiefComplaints ||
     emptyValue;
-  const clinicalNote = consultation?.clinicalNotes || emptyValue;
   const previewDiagnosis = diagnosis || emptyValue;
   const followUpLabel = followUp ? formatDateMMDDYYYY(followUp, emptyValue) : "Select date";
   const vitals = [
@@ -554,19 +562,6 @@ function Prescription() {
     });
     return Array.from(options).sort((a, b) => a.localeCompare(b));
   }, [combinedMedicineOptions, medicines]);
-
-  const diagnosisSelectOptions = useMemo(() => {
-    const options = new Set(DIAGNOSIS_TEST_OPTIONS);
-    diagnosisOptions.forEach((option) => {
-      if (option) options.add(option);
-    });
-    splitDiagnosisTests(diagnosis).forEach((option) => options.add(option));
-    return Array.from(options).sort((a, b) => a.localeCompare(b));
-  }, [diagnosis, diagnosisOptions]);
-  const selectedDiagnosisTests = useMemo(
-    () => splitDiagnosisTests(diagnosis),
-    [diagnosis]
-  );
 
   const updateMedicine = (id, field, value) =>
     setMedicines((prev) =>
@@ -697,89 +692,143 @@ function Prescription() {
   };
 
   const buildPrescriptionHtml = () => {
-    const rows = (validMedicines.length ? validMedicines : medicines)
+    const consultId =
+      appointment?.appointmentId || appointment?.tokenNumber || `OP${String(Date.now()).slice(-9)}`;
+    const printedAt = formatPrintDateTime(new Date());
+    const medicineRows = validMedicines
       .map(
-        (medicine) => `
+        (medicine, index) => `
           <tr>
-            <td>${medicine.medicineName || emptyValue}</td>
-            <td>${medicine.dosage || emptyValue}</td>
-            <td>${medicine.quantity || emptyValue}</td>
-            <td>${medicine.frequency || emptyValue}</td>
-            <td>${medicine.duration || emptyValue}</td>
-            <td>${medicine.notes || emptyValue}</td>
-          </tr>`
+            <td class="num">${index + 1}</td>
+            <td class="medicine">
+              <strong>${escapePrintHtml(medicine.medicineName || emptyValue)}</strong>
+              ${medicine.quantity ? `<em>Qty: ${escapePrintHtml(medicine.quantity)}</em>` : ""}
+            </td>
+            <td>${escapePrintHtml(medicine.route || "Oral")}</td>
+            <td>${escapePrintHtml(medicine.dosage || emptyValue)}</td>
+            <td>${escapePrintHtml(medicine.frequency || emptyValue)}</td>
+            <td>${escapePrintHtml(medicine.notes || emptyValue)}</td>
+            <td>${escapePrintHtml(medicine.duration || emptyValue)}</td>
+          </tr>
+          <tr class="instruction-row">
+            <td></td>
+            <td colspan="6"><b>Instructions :</b> ${escapePrintHtml(medicine.notes || instructions || "--")}</td>
+          </tr>
+        `
       )
       .join("");
+    const medicinesSection = validMedicines.length
+      ? `
+        <h3>MEDICATION PRESCRIBED</h3>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Medicine</th><th>Route</th><th>Dose</th><th>Frequency</th><th>When</th><th>Duration</th></tr>
+          </thead>
+          <tbody>${medicineRows}</tbody>
+        </table>
+      `
+      : "";
 
     return `
       <!doctype html>
       <html>
         <head>
-          <title>Prescription - ${appointment?.patientName || "Patient"}</title>
+          <title>Prescription - ${escapePrintHtml(appointment?.patientName || "Patient")}</title>
           <style>
-            body { font-family: Arial, sans-serif; color: #0f172a; padding: 28px; background: #f8fbff; }
-            .slip { max-width: 880px; margin: 0 auto; border: 1px solid #bfdbfe; border-radius: 14px; padding: 28px; background: #fff; box-shadow: inset 0 5px 0 #2563eb; }
-            .letterhead { text-align: center; border-bottom: 2px solid #2563eb; padding: 16px 12px 14px; margin: -8px -8px 18px; border-radius: 12px 12px 0 0; background: linear-gradient(135deg, #eff6ff 0%, #ecfeff 100%); }
-            h1 { margin: 0; font-size: 28px; letter-spacing: 0; color: #0f172a; }
-            .muted { color: #2563eb; font-size: 13px; font-weight: 700; margin: 4px 0; }
-            .summary { display: grid; grid-template-columns: 1fr 210px; gap: 20px; border-bottom: 1px solid #bfdbfe; padding-bottom: 16px; }
-            .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 18px; font-size: 13px; border: 1px solid #dbeafe; border-radius: 10px; padding: 12px; background: #f8fbff; }
-            .block { margin-top: 12px; font-size: 13px; }
-            .block b { display: block; margin-bottom: 4px; color: #1d4ed8; }
-            .block p { margin: 0; white-space: pre-wrap; color: #334155; }
-            .vitals { border: 1px solid #bfdbfe; border-radius: 10px; padding: 12px; font-size: 12px; background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%); }
-            .vitals b { display: block; margin-bottom: 6px; color: #1e40af; }
-            .vital-row { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid #dbeafe; padding: 6px 0; }
-            .vital-row:last-child { border-bottom: 0; }
-            .vital-row strong { text-align: right; }
-            .rx { font-size: 34px; font-weight: 900; font-style: italic; margin: 18px 0 8px; color: #1d4ed8; }
-            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-            th, td { border-bottom: 1px solid #e2e8f0; padding: 10px; text-align: left; }
-            th { color: #1e40af; font-size: 12px; background: #eff6ff; }
-            .footer { margin-top: 22px; display: flex; justify-content: space-between; gap: 24px; border-top: 1px solid #bfdbfe; padding-top: 14px; color: #334155; }
-            .signature { text-align: right; min-height: 48px; padding-bottom: 6px; }
-            .signature p { margin: 3px 0; line-height: 1.45; }
+            @page { size: A4; margin: 12mm; }
+            body { font-family: Arial, Helvetica, sans-serif; color: #343a40; margin: 0; background: #fff; font-size: 12px; }
+            .sheet { max-width: 900px; margin: 0 auto; padding: 18px 20px; }
+            .print-time { font-size: 11px; margin-bottom: 8px; }
+            .letterhead { text-align: center; padding-bottom: 12px; border-bottom: 1px solid #333; position: relative; }
+            .brand { position: absolute; left: 0; top: 42px; font-weight: 800; font-size: 16px; letter-spacing: .5px; }
+            h1 { margin: 0; font-size: 14px; font-weight: 700; }
+            .hospital { margin: 10px 0 3px; font-size: 15px; font-weight: 800; }
+            .muted { margin: 3px 0; color: #4b5563; }
+            .title { margin-top: 28px; font-size: 19px; font-weight: 900; letter-spacing: .4px; }
+            .details { display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 1px solid #333; }
+            .details > div { padding: 10px 12px; min-height: 118px; border-right: 1px solid #333; }
+            .details > div:last-child { border-right: 0; }
+            .patient-name, .doctor-name { font-weight: 900; font-size: 14px; margin-bottom: 10px; }
+            .line { display: grid; grid-template-columns: 116px 10px 1fr; gap: 4px; margin: 7px 0; }
+            .line b { font-weight: 900; }
+            .vitals { padding: 18px 8px 14px; border-bottom: 1px solid #333; }
+            .vitals h3, .two-col h3, h3 { margin: 0 0 9px; font-size: 15px; letter-spacing: .2px; }
+            .vital-list { display: flex; flex-wrap: wrap; gap: 14px; font-weight: 800; }
+            .vital-list span { font-weight: 500; }
+            .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; padding: 18px 8px; }
+            .two-col > div:nth-child(even) { border-left: 2px solid #333; padding-left: 22px; }
+            .section-block { min-height: 78px; white-space: pre-wrap; font-size: 14px; line-height: 1.45; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+            th, td { border: 1px solid #444; padding: 8px 7px; vertical-align: middle; }
+            th { font-size: 13px; font-weight: 900; background: #f5f5f5; }
+            .num { text-align: center; width: 28px; }
+            .medicine strong { display: block; font-size: 13px; }
+            .medicine em { display: block; margin-top: 8px; font-size: 11px; color: #555; }
+            .instruction-row td { font-size: 12px; padding-top: 7px; padding-bottom: 7px; }
+            .footer { display: flex; justify-content: space-between; gap: 28px; margin-top: 26px; border-top: 1px solid #999; padding-top: 14px; }
+            .signature { text-align: right; min-width: 220px; padding-top: 24px; }
+            @media print { .sheet { padding: 0; } }
           </style>
         </head>
         <body>
-          <main class="slip">
+          <main class="sheet">
+            <div class="print-time">${escapePrintHtml(printedAt)}</div>
             <div class="letterhead">
-              <h1>${hospitalName}</h1>
-              <p class="muted">Super Speciality Hospital</p>
-              <p class="muted">Token: ${appointment?.tokenNumber || emptyValue}</p>
+              <div class="brand">${escapePrintHtml(hospitalName)}</div>
+              <h1>${escapePrintHtml(hospitalName)} EHR</h1>
+              <p class="hospital">${escapePrintHtml(hospitalName)}</p>
+              <p class="muted">Out Patient Department</p>
+              <p class="muted">Phone/Fax: ${escapePrintHtml(localStorage.getItem("hospitalPhone") || localStorage.getItem("clinicPhone") || "-")}</p>
+              <p class="muted">Email: ${escapePrintHtml(localStorage.getItem("hospitalEmail") || localStorage.getItem("clinicEmail") || "-")}</p>
+              <div class="title">DEPARTMENT OF ${escapePrintHtml((appointment?.doctorSpecialization || "CONSULTATION").toUpperCase())}</div>
+              <div class="title" style="margin-top:6px;">OUT PATIENT ASSESSMENT RECORD</div>
             </div>
-            <section class="summary">
+            <section class="details">
               <div>
-                <section class="grid">
-                  <div><b>Patient:</b> ${appointment?.patientName || emptyValue}</div>
-                  <div><b>PID:</b> ${appointment?.patientCode || emptyValue}</div>
-                  <div><b>Age / Gender:</b> ${appointment?.age || emptyValue} Y / ${appointment?.gender || emptyValue}</div>
-                  <div><b>Date:</b> ${formatDateMMDDYYYY(appointment?.date || new Date())}</div>
-                </section>
-                <div class="block"><b>Chief Complaint</b><p>${chiefComplaint}</p></div>
-                <div class="block"><b>Clinical Note</b><p>${clinicalNote}</p></div>
-                <div class="block"><b>Diagnosis Tests</b><p>${previewDiagnosis}</p></div>
+                <div class="patient-name">${escapePrintHtml(appointment?.patientName || emptyValue)}</div>
+                <p>${escapePrintHtml(`${appointment?.age || emptyValue}Y / ${appointment?.gender || emptyValue}`)}</p>
+                <p>${escapePrintHtml(appointment?.patientCode || emptyValue)}</p>
+                <p>${escapePrintHtml(appointment?.phone || appointment?.patientPhone || emptyValue)}</p>
               </div>
-              <aside class="vitals">
-                <b>Vitals</b>
-                ${vitals
-        .map(([label, value]) => `<div class="vital-row"><span>${label}</span><strong>${value || emptyValue}</strong></div>`)
-        .join("")}
-              </aside>
+              <div>
+                <div class="line"><b>CONSULT DATE</b><span>:</span><span>${escapePrintHtml(formatPrintDateTime(appointment?.date || new Date()))}</span></div>
+                <div class="line"><b>CONSULT ID</b><span>:</span><span>${escapePrintHtml(consultId)}</span></div>
+                <div class="line"><b>CONSULT TYPE</b><span>:</span><span>WALKIN</span></div>
+                <div class="line"><b>VISIT TYPE</b><span>:</span><span>NORMAL</span></div>
+                <div class="line"><b>TRANSACTION TYPE</b><span>:</span><span>${escapePrintHtml(appointment?.paymentMode || "CASH")}</span></div>
+              </div>
+              <div>
+                <div class="doctor-name">DR. ${escapePrintHtml(doctorName)}</div>
+                <p>${escapePrintHtml(appointment?.doctorId || "")}</p>
+                <p>${escapePrintHtml(appointment?.doctorSpecialization || "Consultant")}</p>
+                <div class="line"><b>DEPT</b><span>:</span><span>${escapePrintHtml(appointment?.doctorSpecialization || "Consultation")}</span></div>
+              </div>
             </section>
-            <div class="rx">Rx</div>
-            <table>
-              <thead><tr><th>Medicine</th><th>Dosage</th><th>Qty</th><th>Frequency</th><th>Duration</th><th>Notes</th></tr></thead>
-              <tbody>${rows}</tbody>
-            </table>
+            <section class="vitals">
+              <h3>VITALS</h3>
+              <div class="vital-list">
+                ${vitals.map(([label, value]) => `<b>${escapePrintHtml(label)} :</b> <span>${escapePrintHtml(value || emptyValue)}</span>`).join("")}
+              </div>
+            </section>
+            <section class="two-col">
+              <div>
+                <h3>CHIEF COMPLAINTS</h3>
+                <div class="section-block">${escapePrintHtml(chiefComplaint)}</div>
+              </div>
+              <div>
+                <h3>DIAGNOSIS / TESTS</h3>
+                <div class="section-block">${escapePrintHtml(previewDiagnosis)}</div>
+              </div>
+            </section>
+            ${medicinesSection}
             <section class="footer">
               <div>
-                <p><b>Instructions:</b> ${instructions || "No instructions added."}</p>
-                <p><b>Follow-Up Date:</b> ${followUpLabel}</p>
+                <p><b>Instructions:</b> ${escapePrintHtml(instructions || "No instructions added.")}</p>
+                <p><b>Follow-Up Date:</b> ${escapePrintHtml(followUpLabel)}</p>
               </div>
               <div class="signature">
-                <p><b>Dr. ${doctorName}</b></p>
-                <p>${appointment?.doctorSpecialization || "Consultant"}</p>
+                <p><b>Dr. ${escapePrintHtml(doctorName)}</b></p>
+                <p>${escapePrintHtml(appointment?.doctorSpecialization || "Consultant")}</p>
               </div>
             </section>
           </main>
@@ -828,7 +877,6 @@ function Prescription() {
     }
 
     const nextErrors = {
-      diagnosis: validateRequired(diagnosis, "Diagnosis tests"),
       followUp: validateDate(followUp, "Follow up date", { allowPast: false }),
     };
 
@@ -984,45 +1032,6 @@ function Prescription() {
 
       <div className="rx-body">
         <div className="rx-form-panel">
-          <div className="rx-field">
-            <label className="rx-label">Diagnosis Tests *</label>
-            <select
-              className="rx-input"
-              value=""
-              onChange={(event) => {
-                const selected = event.target.value;
-                if (!selected) return;
-                setDiagnosis(
-                  joinDiagnosisTests([
-                    ...selectedDiagnosisTests.filter(
-                      (item) => item.toLowerCase() !== selected.toLowerCase()
-                    ),
-                    selected,
-                  ])
-                );
-                setFieldErrors((prev) => ({ ...prev, diagnosis: "" }));
-                setError("");
-              }}
-            >
-              <option value="">
-                {selectedDiagnosisTests.length ? "Add another diagnosis test" : "Select diagnosis test"}
-              </option>
-              {diagnosisSelectOptions.map((item) => (
-                <option value={item} key={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-            <small className="rx-field-hint">
-              {selectedDiagnosisTests.length
-                ? selectedDiagnosisTests.join(", ")
-                : "Select one or more diagnosis tests"}
-            </small>
-            {fieldErrors.diagnosis ? (
-              <small className="rx-field-error">{fieldErrors.diagnosis}</small>
-            ) : null}
-          </div>
-
           <div className="rx-field">
             <label className="rx-label">Medicine</label>
             <div className="rx-search-bar rx-search-bar--with-list">
@@ -1216,14 +1225,10 @@ function Prescription() {
           </div>
 
           <div className="rx-actions">
-            <button
-              className="rx-btn-draft"
-              type="button"
-              onClick={() => setMessage("Draft kept on this screen.")}
-            >
-              Save Draft
-            </button>
             <div className="rx-actions-right">
+              <button className="rx-btn-icon" type="button" onClick={printPrescription}>
+                <Printer size={16} /> Print
+              </button>
               <button
               className="rx-btn-submit"
               type="button"
@@ -1232,9 +1237,6 @@ function Prescription() {
                 title="Submit prescription"
               >
                 {submitting ? "Submitting..." : "Submit Prescription"}
-              </button>
-              <button className="rx-btn-icon" type="button" onClick={printPrescription}>
-                <Printer size={16} /> Print
               </button>
               <button className="rx-btn-icon" type="button" onClick={downloadPrescription}>
                 <Download size={16} /> Download PDF
@@ -1248,10 +1250,11 @@ function Prescription() {
           <div className="rx-preview-slip">
             <div className="rx-slip-header">
               <p className="rx-slip-clinic">{hospitalName}</p>
-              <p className="rx-slip-sub">Super Speciality Hospital</p>
+              <p className="rx-slip-sub">{hospitalName} EHR</p>
               <p className="rx-slip-addr">
-                Token: {appointment?.tokenNumber || emptyValue}
+                DEPARTMENT OF {(appointment?.doctorSpecialization || "Consultation").toUpperCase()}
               </p>
+              <p className="rx-slip-title">OUT PATIENT ASSESSMENT RECORD</p>
             </div>
             <div className="rx-slip-summary">
               <div className="rx-slip-main">
@@ -1269,6 +1272,15 @@ function Prescription() {
                   <p>
                     <b>Date:</b> {formatDateMMDDYYYY(appointment?.date || new Date())}
                   </p>
+                  <p>
+                    <b>Consult ID:</b> {appointment?.appointmentId || appointment?.tokenNumber || emptyValue}
+                  </p>
+                  <p>
+                    <b>Doctor:</b> Dr. {doctorName}
+                  </p>
+                  <p>
+                    <b>Dept:</b> {appointment?.doctorSpecialization || "Consultant"}
+                  </p>
                 </div>
                 <div className="rx-slip-clinical">
                   <p>
@@ -1276,11 +1288,7 @@ function Prescription() {
                     <span>{chiefComplaint}</span>
                   </p>
                   <p>
-                    <b>Clinical Note</b>
-                    <span>{clinicalNote}</span>
-                  </p>
-                  <p>
-                    <b>Diagnosis Tests</b>
+                    <b>Diagnosis</b>
                     <span>{previewDiagnosis}</span>
                   </p>
                 </div>
@@ -1295,31 +1303,45 @@ function Prescription() {
                 ))}
               </aside>
             </div>
-            <div className="rx-slip-rx">Rx</div>
-            <table className="rx-slip-table">
-              <thead>
-                <tr>
-                  <th>Medicines</th>
-                  <th>Dosage</th>
-                  <th>Qty</th>
-                  <th>Frequency</th>
-                  <th>Duration</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(validMedicines.length ? validMedicines : medicines).map((medicine, index) => (
-                  <tr key={`${medicine.medicineName}-${index}`}>
-                    <td>{medicine.medicineName || emptyValue}</td>
-                    <td>{medicine.dosage || emptyValue}</td>
-                    <td>{medicine.quantity || emptyValue}</td>
-                    <td>{medicine.frequency || emptyValue}</td>
-                    <td>{medicine.duration || emptyValue}</td>
-                    <td>{medicine.notes || emptyValue}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {validMedicines.length ? (
+              <>
+                <div className="rx-slip-rx">Medication Prescribed</div>
+                <table className="rx-slip-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Medicine</th>
+                      <th>Route</th>
+                      <th>Dose</th>
+                      <th>Frequency</th>
+                      <th>When</th>
+                      <th>Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {validMedicines.map((medicine, index) => (
+                      <React.Fragment key={`${medicine.medicineName}-${index}`}>
+                        <tr>
+                          <td>{index + 1}</td>
+                          <td>{medicine.medicineName || emptyValue}</td>
+                          <td>{medicine.route || "Oral"}</td>
+                          <td>{medicine.dosage || emptyValue}</td>
+                          <td>{medicine.frequency || emptyValue}</td>
+                          <td>{medicine.notes || emptyValue}</td>
+                          <td>{medicine.duration || emptyValue}</td>
+                        </tr>
+                        <tr className="rx-slip-instruction-row">
+                          <td />
+                          <td colSpan={6}>
+                            <b>Instructions:</b> {medicine.notes || instructions || "--"}
+                          </td>
+                        </tr>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            ) : null}
             <p className="rx-slip-instruction">
               <i>{instructions || "No instructions added."}</i>
             </p>

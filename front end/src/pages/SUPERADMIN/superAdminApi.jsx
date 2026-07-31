@@ -40,6 +40,7 @@ export const SUPER_ADMIN_API = {
 
 const LOCAL_NOTIFICATIONS_KEY = "superadmin_notifications";
 const LOCAL_AUDIT_LOGS_KEY = "superadmin_audit_logs";
+const LOCAL_SERVICE_BILLS_KEY = "receptionRecentServiceBills";
 const readLocalList = (key) => {
   try {
     const value = JSON.parse(localStorage.getItem(key) || "[]");
@@ -1072,6 +1073,21 @@ const getBillingAmount = (item = {}) =>
 
 const getBillingDate = (item = {}) =>
   pick(item, ["createdAt", "paidAt", "paymentDate", "invoiceDate", "date", "appointmentDate"], "");
+
+const getBillingRecordKey = (item = {}, index = 0) =>
+  normalizeLookupKey(
+    pick(item, ["invoiceNo", "invoiceNumber", "billNumber", "billingId", "billId", "id", "Id"], "") ||
+      `${pick(item, ["patientId", "patientName"], "patient")}-${getBillingAmount(item)}-${getBillingDate(item) || index}`
+  );
+
+const dedupeBillingRows = (rows = []) => {
+  const byKey = new Map();
+  rows.forEach((row, index) => {
+    const key = getBillingRecordKey(row, index);
+    if (!byKey.has(key)) byKey.set(key, row);
+  });
+  return Array.from(byKey.values());
+};
 
 const getMonthLabel = (value) => {
   const text = String(value || "").trim();
@@ -2544,9 +2560,8 @@ const uniqueAuditLogs = (logs = []) => {
 
 export const fetchAuditLogs = async (filters = {}) => {
   const query = buildAuditLogQuery(filters);
-  const [auditResult, loginResult, usersResult, adminsResult, doctorsResult, receptionistsResult] = await Promise.allSettled([
+  const [auditResult, usersResult, adminsResult, doctorsResult, receptionistsResult] = await Promise.allSettled([
     superAdminRequest(`${SUPER_ADMIN_API.auditLogs}${query}`),
-    superAdminRequest(`${SUPER_ADMIN_API.loginHistory}${query}`),
     superAdminRequest(SUPER_ADMIN_API.users),
     superAdminRequest(SUPER_ADMIN_API.admins),
     superAdminRequest("Doctor"),
@@ -2557,43 +2572,30 @@ export const fetchAuditLogs = async (filters = {}) => {
     auditResult.status === "fulfilled"
       ? asArray(auditResult.value).map(normalizeAuditLog)
       : [];
-  const loginLogs =
-    loginResult.status === "fulfilled"
-      ? asArray(loginResult.value).map(normalizeLoginLog)
-      : [];
-  const localLogs = readLocalList(LOCAL_AUDIT_LOGS_KEY).map(normalizeAuditLog);
+
+  if (auditResult.status === "rejected") {
+    throw auditResult.reason;
+  }
+
   const { roleLookup, emailLookup, scopeLookup } = buildAuditLookups({
     users: usersResult.status === "fulfilled" ? asArray(usersResult.value) : [],
     admins: adminsResult.status === "fulfilled" ? asArray(adminsResult.value) : [],
     doctors: doctorsResult.status === "fulfilled" ? asArray(doctorsResult.value) : [],
     receptionists: receptionistsResult.status === "fulfilled" ? asArray(receptionistsResult.value) : [],
-    loginLogs,
+    loginLogs: [],
   });
-  const remoteLogs = uniqueAuditLogs([...loginLogs, ...auditLogs]).map((log) =>
+
+  const logs = uniqueAuditLogs(auditLogs).map((log) =>
     withAuditFallback(log, roleLookup, emailLookup, scopeLookup)
   );
-  const currentIpAddress = remoteLogs.length ? "" : await fetchCurrentIpAddress();
-  const logs = remoteLogs.length
-      ? remoteLogs
-      : localLogs.map((log) =>
-        withAuditFallback(log, roleLookup, emailLookup, scopeLookup, {
-          currentIpAddress,
-          fillMissingIpAddress: true,
-        })
-      );
-
-  if (!logs.length && auditResult.status === "rejected" && loginResult.status === "rejected") {
-    throw auditResult.reason;
-  }
 
   return sortAuditLogs(logs);
 };
 
 export const fetchLoginHistory = async (filters = {}) => {
   const query = buildAuditLogQuery(filters);
-  const [loginResult, auditResult, usersResult, adminsResult, doctorsResult, receptionistsResult] = await Promise.allSettled([
+  const [loginResult, usersResult, adminsResult, doctorsResult, receptionistsResult] = await Promise.allSettled([
     superAdminRequest(`${SUPER_ADMIN_API.loginHistory}${query}`),
-    superAdminRequest(`${SUPER_ADMIN_API.auditLogs}${query}`),
     superAdminRequest(SUPER_ADMIN_API.users),
     superAdminRequest(SUPER_ADMIN_API.admins),
     superAdminRequest("Doctor"),
@@ -2604,13 +2606,7 @@ export const fetchLoginHistory = async (filters = {}) => {
     throw loginResult.reason;
   }
 
-  const loginLogs = uniqueAuditLogs([
-    ...asArray(loginResult.value).map(normalizeLoginLog),
-    ...(auditResult.status === "fulfilled"
-      ? asArray(auditResult.value).map(normalizeAuditLog).filter(isLoginAuditLog)
-      : []),
-    ...readLocalList(LOCAL_AUDIT_LOGS_KEY).map(normalizeAuditLog).filter(isLoginAuditLog),
-  ]);
+  const loginLogs = uniqueAuditLogs(asArray(loginResult.value).map(normalizeLoginLog));
   const { roleLookup, emailLookup, scopeLookup } = buildAuditLookups({
     users: usersResult.status === "fulfilled" ? asArray(usersResult.value) : [],
     admins: adminsResult.status === "fulfilled" ? asArray(adminsResult.value) : [],
@@ -2871,7 +2867,18 @@ const countDashboardAdmins = async () => {
 };
 
 export const fetchDashboardData = async () => {
-  const [dashboard, summary, reportsSummary, revenueTrend, userActivity, auditLogs, loginHistory, clinicsResult, usersResult] = await Promise.allSettled([
+  const [
+    dashboard,
+    summary,
+    reportsSummary,
+    revenueTrend,
+    userActivity,
+    auditLogs,
+    loginHistory,
+    clinicsResult,
+    usersResult,
+    billingResult,
+  ] = await Promise.allSettled([
     superAdminRequestFirst([SUPER_ADMIN_API.dashboard, SUPER_ADMIN_API.dashboardCompat]),
     superAdminRequestFirst([SUPER_ADMIN_API.dashboardSummary, SUPER_ADMIN_API.dashboardSummaryCompat]),
     superAdminRequest(SUPER_ADMIN_API.reportsSummary),
@@ -2881,6 +2888,7 @@ export const fetchDashboardData = async () => {
     superAdminRequest(SUPER_ADMIN_API.loginHistory),
     superAdminRequest(SUPER_ADMIN_API.clinics),
     superAdminRequest(SUPER_ADMIN_API.users),
+    superAdminRequest(SUPER_ADMIN_API.billing),
   ]);
 
   const dashboardData = dashboard.status === "fulfilled" ? asObject(dashboard.value) : {};
@@ -2898,6 +2906,11 @@ export const fetchDashboardData = async () => {
   
   // Get actual counts from fetched data for consistency with lists
   const clinicRows = clinicsResult.status === "fulfilled" ? asArray(clinicsResult.value) : [];
+  const billingRows = dedupeBillingRows([
+    ...(billingResult.status === "fulfilled" ? asArray(billingResult.value) : []),
+    ...readLocalList(LOCAL_SERVICE_BILLS_KEY),
+  ]);
+  const billingRevenue = billingRows.reduce((sum, row) => sum + getBillingAmount(row), 0);
   const actualClinicCount = clinicRows.length;
   
   const userRows = usersResult.status === "fulfilled" ? asArray(usersResult.value).filter((u) => !u.isDeleted) : [];
@@ -2911,7 +2924,7 @@ export const fetchDashboardData = async () => {
     totalClinics: actualClinicCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalClinics", "clinics", "clinicCount"]),
     clinics: actualClinicCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalClinics", "clinics", "clinicCount"]),
     clinicCount: actualClinicCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalClinics", "clinics", "clinicCount"]),
-    totalRevenue: getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalRevenue", "revenue", "revenueSummary"]),
+    totalRevenue: billingRevenue || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalRevenue", "revenue", "revenueSummary"]),
     totalAdmins: adminCount,
     admins: adminCount,
     adminCount,
@@ -2922,7 +2935,9 @@ export const fetchDashboardData = async () => {
     activeUserCount: activeUserCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["activeUsers", "activeUserCount"]),
   };
   
-  const dashboardRevenueData = buildMonthlyRevenueRows(asArray(revenueData));
+  const dashboardRevenueData = billingRows.length
+    ? buildRevenueChart(billingRows)
+    : buildMonthlyRevenueRows(asArray(revenueData));
   const totalUsers = nextSummary.totalUsers;
 
   return {
@@ -2952,7 +2967,7 @@ export const fetchDashboardData = async () => {
 };
 
 export const fetchReports = async () => {
-  const [summary, revenueTrend, topClinics, userActivity, revenue, activity, clinics, admins, users] = await Promise.allSettled([
+  const [summary, revenueTrend, topClinics, userActivity, revenue, activity, clinics, admins, users, billing] = await Promise.allSettled([
     superAdminRequest(SUPER_ADMIN_API.reportsSummary),
     superAdminRequest(SUPER_ADMIN_API.reportsRevenueTrend),
     superAdminRequest(SUPER_ADMIN_API.reportsTopClinics),
@@ -2962,6 +2977,7 @@ export const fetchReports = async () => {
     superAdminRequest(SUPER_ADMIN_API.clinics),
     superAdminRequest(SUPER_ADMIN_API.admins),
     superAdminRequest(SUPER_ADMIN_API.users),
+    superAdminRequest(SUPER_ADMIN_API.billing),
   ]);
 
   const topClinicRows = topClinics.status === "fulfilled" ? asArray(topClinics.value) : [];
@@ -2980,11 +2996,17 @@ export const fetchReports = async () => {
   const clinicRows = clinics.status === "fulfilled" ? asArray(clinics.value) : [];
   const adminRows = admins.status === "fulfilled" ? asArray(admins.value) : [];
   const userRows = users.status === "fulfilled" ? asArray(users.value) : [];
+  const billingRows = dedupeBillingRows([
+    ...(billing.status === "fulfilled" ? asArray(billing.value) : []),
+    ...readLocalList(LOCAL_SERVICE_BILLS_KEY),
+  ]);
   const rows = topClinicRows.length
-    ? enrichReportRows({ rows: topClinicRows, clinicRows, adminRows, userRows })
-    : revenueRows.length
-      ? enrichReportRows({ rows: revenueRows, clinicRows, adminRows, userRows })
-    : buildAdminRevenueRows({ clinicRows, adminRows, userRows });
+    ? enrichReportRows({ rows: topClinicRows, clinicRows, adminRows, userRows, billingRows })
+    : billingRows.length
+      ? buildAdminRevenueRows({ billingRows, clinicRows, adminRows, userRows })
+      : revenueRows.length
+        ? enrichReportRows({ rows: revenueRows, clinicRows, adminRows, userRows, billingRows })
+    : buildAdminRevenueRows({ billingRows, clinicRows, adminRows, userRows });
 
   // Filter out any rows whose clinic is not present in the clinics list.
   const clinicLookupIds = new Set(clinicRows.map((c) => String(pick(c, ["id", "clinicId", "HospitalId", "_id"], "")).trim()).filter(Boolean));
@@ -3082,11 +3104,12 @@ export const fetchReports = async () => {
     totalAdmins: adminCount,
     admins: adminCount,
     adminCount,
+    totalRevenue: finalRows.reduce((sum, row) => sum + toNumber(row.revenue), 0),
   };
 
   return {
     rows: finalRows,
-    chartData: mergeReportChartData({ revenueRows, activityRows, rows: finalRows }),
+    chartData: mergeReportChartData({ revenueRows, activityRows, billingRows, rows: finalRows }),
     activityRows: activityRows.map(normalizeActivity),
     summary: nextSummary,
     error:
