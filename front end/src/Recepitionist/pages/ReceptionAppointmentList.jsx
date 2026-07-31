@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Plus, RefreshCw, Search, SlidersHorizontal, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "../../components/ToastProvider";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 import { applyTimeOrderedTokens, filterAppointments, getAppointmentValue, getBookingType } from "./appointmentListUtils";
 import { getReceptionistScope, scopeReceptionistRecords } from "../receptionScope";
-import { requestJson } from "../receptionApi";
+import { requestJson as defaultRequestJson } from "../receptionApi";
 import {
   getAppointmentRecordId,
   mergeStoredAppointmentVitals,
@@ -70,10 +70,22 @@ const getVitalValue = (appointment = {}, name) =>
     )
   );
 
-function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingType, emptyState }) {
+function ReceptionAppointmentList({
+  title,
+  subtitle,
+  fetchAppointments,
+  bookingType,
+  emptyState,
+  hideActions = false,
+  apiRequest = defaultRequestJson,
+  getScope = getReceptionistScope,
+  scopeRecords = scopeReceptionistRecords,
+}) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith("/nurse") ? "/nurse" : "/reception";
   const toast = useToast();
-  const receptionistScope = useMemo(() => getReceptionistScope(), []);
+  const receptionistScope = useMemo(() => getScope(), [getScope]);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -91,7 +103,7 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
     setError("");
 
     try {
-      const data = scopeReceptionistRecords(await fetchAppointments(), receptionistScope);
+      const data = scopeRecords(await fetchAppointments(), receptionistScope);
       const nextAppointments = applyTimeOrderedTokens(data.map(mergeStoredAppointmentVitals)).filter((item) => {
         const currentBookingType = getBookingType(item);
         return currentBookingType === bookingType;
@@ -204,7 +216,9 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
       vitals,
     };
     const saveAttempts = [
+      { path: `Appointment/${appointmentId}/vitals`, method: "PUT" },
       { path: `Appointment/online/${appointmentId}/vitals`, method: "PUT" },
+      { path: `Nurse/appointments/${appointmentId}/vitals`, method: "PUT" },
     ];
 
     try {
@@ -213,7 +227,7 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
 
       for (const attempt of saveAttempts) {
         try {
-          saved = await requestJson(attempt.path, {
+          saved = await apiRequest(attempt.path, {
             method: attempt.method,
             body: JSON.stringify(payload),
           });
@@ -251,14 +265,16 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
           <h2>{title}</h2>
           <p>{subtitle}</p>
         </div>
-        <div className="rc-head-actions">
-          <button className="rc-btn ghost" onClick={loadAppointments} type="button">
-            <RefreshCw size={16} /> Refresh
-          </button>
-          <button className="rc-btn" onClick={() => navigate("/reception/appointments")} type="button">
-            <ArrowLeft size={16} /> Back
-          </button>
-        </div>
+        {!hideActions && (
+          <div className="rc-head-actions">
+            <button className="rc-btn ghost" onClick={loadAppointments} type="button">
+              <RefreshCw size={16} /> Refresh
+            </button>
+            <button className="rc-btn" onClick={() => navigate(`${basePath}/appointments`)} type="button">
+              <ArrowLeft size={16} /> Back
+            </button>
+          </div>
+        )}
       </div>
 
       {error ? <div className="rc-alert error">{error}</div> : null}
@@ -334,7 +350,7 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
                     <th>Payment</th>
                     <th>Booking Type</th>
                     <th>Status</th>
-                    {bookingType === "Online" ? <th>Vitals</th> : null}
+                    <th>Vitals</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -352,19 +368,17 @@ function ReceptionAppointmentList({ title, subtitle, fetchAppointments, bookingT
                       <td>{getAppointmentValue(item, ["paymentStatus", "PaymentStatus", "payment.status", "billing.paymentStatus"], "-")}</td>
                       <td>{getBookingType(item)}</td>
                       <td>{getAppointmentValue(item, ["status", "appointmentStatus", "AppointmentStatus", "Status"], "-")}</td>
-                      {bookingType === "Online" ? (
-                        <td>
-                          <button
-                            className="rc-icon-btn"
-                            type="button"
-                            aria-label="Add vitals"
-                            title="Add vitals"
-                            onClick={() => openVitals(item)}
-                          >
-                            <Plus size={16} />
-                          </button>
-                        </td>
-                      ) : null}
+                      <td>
+                        <button
+                          className="rc-icon-btn"
+                          type="button"
+                          aria-label="Add vitals"
+                          title="Add vitals"
+                          onClick={() => openVitals(item)}
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

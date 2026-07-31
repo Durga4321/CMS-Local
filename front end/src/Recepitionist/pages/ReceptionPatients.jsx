@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { parseList, requestJson } from "../receptionApi";
+import { parseList, requestJson as defaultRequestJson } from "../receptionApi";
 import {
   getReceptionistScope,
   getRecordBranchId,
@@ -349,10 +349,17 @@ const toPatientPayload = (patient = {}, overrides = {}) => {
   };
 };
 
-function ReceptionPatients() {
+function ReceptionPatients({
+  hideActions = false,
+  basePath = "/reception",
+  showAddPatient = true,
+  apiRequest = defaultRequestJson,
+  getScope = getReceptionistScope,
+  scopeRecords = scopeReceptionistRecords,
+}) {
   const navigate = useNavigate();
   const toast = useToast();
-  const receptionistScope = useMemo(() => getReceptionistScope(), []);
+  const receptionistScope = useMemo(() => getScope(), [getScope]);
   const [patients, setPatients] = useState([]);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -362,10 +369,10 @@ function ReceptionPatients() {
 
   const fetchPatients = useCallback(() =>
     Promise.all([
-      requestJson("Patient"),
-      requestJson("Appointment").catch(() => []),
-      requestJson("Appointment/offline").catch(() => []),
-      requestJson("Appointment/online").catch(() => []),
+      apiRequest("Patient"),
+      apiRequest("Appointment").catch(() => []),
+      apiRequest("Appointment/offline").catch(() => []),
+      apiRequest("Appointment/online").catch(() => []),
     ])
       .then(([data, appointmentData, offlineAppointmentData, onlineAppointmentData]) => {
         const branchAppointments = [
@@ -374,12 +381,12 @@ function ReceptionPatients() {
           ...parseList(onlineAppointmentData),
         ];
         const branchPatientIds = new Set(
-          scopeReceptionistRecords(branchAppointments, receptionistScope)
+          scopeRecords(branchAppointments, receptionistScope)
             .map(getAppointmentPatientId)
             .filter(Boolean)
         );
         const branchPatientPhones = new Set(
-          scopeReceptionistRecords(branchAppointments, receptionistScope)
+          scopeRecords(branchAppointments, receptionistScope)
             .map(getAppointmentPatientPhone)
             .filter(Boolean)
         );
@@ -401,7 +408,7 @@ function ReceptionPatients() {
         setMessage(error.message);
         toast.error(error.message || "Unable to load patients.");
       }),
-  [receptionistScope, toast]);
+  [receptionistScope, toast, apiRequest, scopeRecords]);
 
   useEffect(() => {
     fetchPatients();
@@ -721,13 +728,13 @@ function ReceptionPatients() {
 
     try {
       if (modal === "edit" && form.id) {
-        const result = await requestJson(`Patient/${form.id}`, {
+        const result = await apiRequest(`Patient/${form.id}`, {
           method: "PUT",
           body: JSON.stringify(body),
         });
         rememberOfflinePatientScope({ ...form, ...body, ...(result || {}) }, receptionistScope);
       } else {
-        const result = await requestJson("Patient", { method: "POST", body: JSON.stringify(body) });
+        const result = await apiRequest("Patient", { method: "POST", body: JSON.stringify(body) });
         rememberOfflinePatientScope({ ...form, ...body, ...(result || {}) }, receptionistScope);
       }
       setModal(null);
@@ -750,7 +757,7 @@ function ReceptionPatients() {
 
     if (!window.confirm("Delete this patient?")) return;
     try {
-      await requestJson(`Patient/${patientId}`, { method: "DELETE" });
+      await apiRequest(`Patient/${patientId}`, { method: "DELETE" });
       setMessage("");
       setPatients((previous) =>
         previous.filter((item) => String(item.id) !== String(patientId))
@@ -772,21 +779,25 @@ function ReceptionPatients() {
             or remove outdated entries.
           </p>
         </div>
-        <div className="rc-head-actions">
-          <button
-            className="rc-btn"
-            onClick={openAdd}
-            title="Add patient"
-          >
-            <Plus size={16} /> Add Patient
-          </button>
-          <button className="rc-btn ghost" onClick={fetchPatients}>
-            <RefreshCw size={16} /> Refresh
-          </button>
-          <button className="rc-btn" onClick={() => navigate("/reception/dashboard")}>
-            <ArrowLeft size={16} /> Dashboard
-          </button>
-        </div>
+        {!hideActions && (
+          <div className="rc-head-actions">
+            {showAddPatient ? (
+              <button
+                className="rc-btn"
+                onClick={openAdd}
+                title="Add patient"
+              >
+                <Plus size={16} /> Add Patient
+              </button>
+            ) : null}
+            <button className="rc-btn ghost" onClick={fetchPatients}>
+              <RefreshCw size={16} /> Refresh
+            </button>
+            <button className="rc-btn" onClick={() => navigate(`${basePath}/dashboard`) }>
+              <ArrowLeft size={16} /> Dashboard
+            </button>
+          </div>
+        )}
       </div>
 
       {message ? <div className="rc-alert">{message}</div> : null}
@@ -840,7 +851,7 @@ function ReceptionPatients() {
                 </button>
                 <button
                   onClick={() =>
-                    navigate(`/reception/medical-history?patientId=${patient.id}`)
+                    navigate(`${basePath}/medical-history?patientId=${patient.id}`)
                   }
                 >
                   <HeartPulse size={15} /> Medical History

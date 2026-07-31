@@ -26,6 +26,8 @@ const parseList = (data) => {
   if (Array.isArray(data?.result)) return data.result;
   if (Array.isArray(data?.users)) return data.users;
   if (Array.isArray(data?.logins)) return data.logins;
+  if (Array.isArray(data?.staff)) return data.staff;
+  if (Array.isArray(data?.Staff)) return data.Staff;
   return [];
 };
 
@@ -410,6 +412,7 @@ function AdminUserManagement() {
         patientsResult,
         nursesResult,
         nursesPluralResult,
+        staffResult,
         appointmentsResult,
         offlineAppointmentsResult,
         onlineAppointmentsResult,
@@ -420,6 +423,7 @@ function AdminUserManagement() {
         requestJson("Patient"),
         requestJson("Nurse"),
         requestJson("Nurses"),
+        requestJson("Staff"),
         requestJson("Appointment"),
         requestJson("Appointment/offline"),
         requestJson("Appointment/online"),
@@ -483,6 +487,16 @@ function AdminUserManagement() {
           : []),
         ...(nursesResult.status !== "fulfilled" && nursesPluralResult.status === "fulfilled"
           ? parseList(nursesPluralResult.value).map((item, index) => normalizeDirectoryUser(item, "Nurse", index, branchLookup))
+          : []),
+        ...(staffResult.status === "fulfilled"
+          ? parseList(staffResult.value).map((item, index) =>
+              normalizeDirectoryUser(
+                item,
+                readValue(item, ["role", "Role", "roleName", "RoleName", "type", "Type"], "Staff"),
+                index,
+                branchLookup
+              )
+            )
           : []),
       ].filter((user) => {
         const userBranchId = String(user.branchId || "").trim();

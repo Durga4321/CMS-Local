@@ -206,7 +206,11 @@ const getDoctorBranchName = (doctor = {}, branchNameById = {}) =>
   "";
 
 const getInitialEditForm = (doctor = {}) => ({
-
+  branchIds: Array.isArray(doctor.branchIds)
+    ? doctor.branchIds.map((id) => String(id || "")).filter(Boolean)
+    : doctor.branchId || doctor.BranchId || doctor.branchID || doctor.BranchID
+      ? [String(doctor.branchId ?? doctor.BranchId ?? doctor.branchID ?? doctor.BranchID)]
+      : [],
   name: cleanFormValue(doctor.name),
   specialization: cleanFormValue(doctor.specialization),
   areaofExpertise: cleanFormValue(getDoctorAreaOfExpertise(doctor)),
@@ -239,6 +243,8 @@ const getErrorKey = (key) => {
     .toLowerCase();
 
   const map = {
+    branchid: "branchIds",
+    branchids: "branchIds",
     name: "name",
     specialization: "specialization",
     experience: "experience",
@@ -270,6 +276,9 @@ const getValidationMessages = (data) => {
 
 const validateEditForm = (form) => {
   const errors = getEmptyEditErrors();
+  errors.branchIds = Array.isArray(form.branchIds) && form.branchIds.length > 0
+    ? ""
+    : "Select at least one branch.";
   errors.name = validateAlpha(form.name, "Name");
   errors.specialization = validateText(form.specialization, "Specialization");
   errors.areaofExpertise = validateText(form.areaofExpertise, "Area of expertise");
@@ -303,6 +312,12 @@ const buildDoctorUpdateBody = ({
         ? form.isActive
         : getDoctorIsActive(doctor);
 
+  const branchIds = Array.isArray(form.branchIds)
+    ? form.branchIds.map((id) => String(id || "")).filter(Boolean)
+    : form.branchId || doctor.branchId || doctor.BranchId || doctor.branchID || doctor.BranchID
+      ? [String(form.branchIds || form.branchId || doctor.branchId || doctor.BranchId || doctor.branchID || doctor.BranchID)]
+      : [];
+
   const body = {
     name: cleanFormValue(form.name ?? doctor.name),
     specialization: cleanFormValue(form.specialization ?? doctor.specialization),
@@ -314,7 +329,8 @@ const buildDoctorUpdateBody = ({
     consultationFee: Number(form.fees ?? getDoctorFee(doctor) ?? 0) || 0,
     email: cleanFormValue(form.email ?? doctor.email),
     phoneNumber: cleanFormValue(form.phone ?? getDoctorPhone(doctor)),
-    branchId: form.branchId ?? getDoctorBranchId(doctor),
+    branchIds,
+    branchId: branchIds[0] || getDoctorBranchId(doctor),
     isActive: nextIsActive,
   };
 
@@ -759,19 +775,23 @@ function Doctors() {
   };
 
   const handleEditFieldChange = (event) => {
-    const { name, value } = event.target;
-    let nextValue = value;
+    const { name } = event.target;
+    let nextValue = event.target.value;
+
+    if (name === "branchIds") {
+      nextValue = Array.from(event.target.selectedOptions || []).map((option) => option.value);
+    }
 
     if (name === "name") {
-      nextValue = formatTitleCase(onlyAlpha(value));
+      nextValue = formatTitleCase(onlyAlpha(nextValue));
     }
 
     if (name === "phone") {
-      nextValue = onlyIndianMobileValue(value);
+      nextValue = onlyIndianMobileValue(nextValue);
     }
 
     if (["experience", "fees"].includes(name)) {
-      nextValue = onlyNumberValue(value);
+      nextValue = onlyNumberValue(nextValue);
       if (name === "experience") {
         nextValue = nextValue.slice(0, 2);
       }
@@ -780,11 +800,11 @@ function Doctors() {
     setEditForm((previous) => {
       const nextForm = {
         ...previous,
-        [name]: name === "isActive" ? value === "true" : nextValue,
+        [name]: name === "isActive" ? nextValue === "true" : nextValue,
       };
 
       if (name === "specialization") {
-        const nextExpertiseOptions = getExpertiseOptionsForSpecialization(value);
+        const nextExpertiseOptions = getExpertiseOptionsForSpecialization(nextValue);
         nextForm.areaofExpertise = nextExpertiseOptions.includes(previous.areaofExpertise)
           ? previous.areaofExpertise
           : "";
@@ -940,6 +960,28 @@ function Doctors() {
         const apiError = await parseEditError(response);
         setEditFieldErrors(apiError.fieldErrors);
         throw new Error(apiError.message);
+      }
+
+      if (Array.isArray(requestBody.branchIds) && requestBody.branchIds.length > 0) {
+        const assignResponse = await fetch(
+          apiUrl(`Doctor/${encodeURIComponent(editingDoctor.id)}/branches`),
+          {
+            method: "PUT",
+            headers: {
+              ...getApiHeaders(),
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              branchIds: requestBody.branchIds
+                .map((id) => Number(id) || 0)
+                .filter((id) => id > 0),
+            }),
+          }
+        );
+
+        if (!assignResponse.ok) {
+          throw new Error(await parseErrorMessage(assignResponse));
+        }
       }
 
       await fetchDoctors();
@@ -1415,6 +1457,33 @@ function Doctors() {
                       {editFieldErrors.specialization}
                     </span>
                   ) : null}
+                </div>
+
+                <div className="doctor-edit-field">
+                  <label htmlFor="edit-branchIds">Branches</label>
+                  <select
+                    id="edit-branchIds"
+                    name="branchIds"
+                    multiple
+                    value={editForm.branchIds}
+                    onChange={handleEditFieldChange}
+                    className={editFieldErrors.branchIds ? "is-invalid" : ""}
+                    aria-invalid={Boolean(editFieldErrors.branchIds)}
+                    disabled={branchOptions.length === 0}
+                    size={Math.min(6, Math.max(3, branchOptions.length))}
+                  >
+                    {branchOptions.map((branch) => (
+                      <option key={branch.id} value={String(branch.id)}>
+                        {branch.name}
+                      </option>
+                    ))}
+                  </select>
+                  {editFieldErrors.branchIds ? (
+                    <span className="doctor-edit-field-error">
+                      {editFieldErrors.branchIds}
+                    </span>
+                  ) : null}
+                  <small>{editForm.branchIds.length} branch(es) selected.</small>
                 </div>
 
                 <div className="doctor-edit-field">

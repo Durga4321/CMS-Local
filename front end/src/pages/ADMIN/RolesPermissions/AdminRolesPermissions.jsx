@@ -4,8 +4,8 @@ import { apiUrl } from "../../../config/api";
 
 const PERMISSIONS = ["View", "Create", "Edit", "Delete"];
 const GENERAL_MODULE = "General";
-const DEFAULT_BACKEND_MODULES = ["Dashboard", "Appointments", "Patients", "Billing", "Reports", "Schedule", "Prescriptions", "Doctor", "Receptionist"];
-const STAFF_ROLE_KEYS = new Set(["doctor", "receptionist"]);
+const DEFAULT_BACKEND_MODULES = ["Dashboard", "Appointments", "Patients", "Billing", "Reports", "Schedule", "Prescriptions", "Doctor", "Receptionist", "Nurse"];
+const STAFF_ROLE_KEYS = new Set(["doctor", "receptionist", "nurse"]);
 
 const getToken = () =>
   localStorage.getItem("token") ||
@@ -33,6 +33,10 @@ const parseEligibleUsers = (data) => {
     ...(Array.isArray(source?.Doctors) ? source.Doctors.map((user) => ({ role: "Doctor", ...user })) : []),
     ...(Array.isArray(source?.receptionists) ? source.receptionists.map((user) => ({ role: "Receptionist", ...user })) : []),
     ...(Array.isArray(source?.Receptionists) ? source.Receptionists.map((user) => ({ role: "Receptionist", ...user })) : []),
+    ...(Array.isArray(source?.nurses) ? source.nurses.map((user) => ({ role: "Nurse", ...user })) : []),
+    ...(Array.isArray(source?.Nurses) ? source.Nurses.map((user) => ({ role: "Nurse", ...user })) : []),
+    ...(Array.isArray(source?.staff) ? source.staff.map((user) => ({ role: "Nurse", ...user })) : []),
+    ...(Array.isArray(source?.Staff) ? source.Staff.map((user) => ({ role: "Nurse", ...user })) : []),
   ];
 };
 
@@ -182,6 +186,7 @@ const emptyForm = {
 const emptyRoleMatrix = {
   Doctor: ["View"],
   Receptionist: ["View"],
+  Nurse: ["View"],
 };
 
 const buildPermissionPayload = (
@@ -329,6 +334,11 @@ function AdminRolesPermissions() {
         Receptionist: normalizePermissionList(
           detailedAssignments
             .filter((assignment) => normalizeKey(assignment.role) === "receptionist")
+            .flatMap((assignment) => assignment.permissions || [])
+        ),
+        Nurse: normalizePermissionList(
+          detailedAssignments
+            .filter((assignment) => normalizeKey(assignment.role) === "nurse")
             .flatMap((assignment) => assignment.permissions || [])
         ),
       });
@@ -562,6 +572,7 @@ function AdminRolesPermissions() {
               <select value={form.role} onChange={(event) => updateForm("role", event.target.value)}>
                 <option value="Doctor">Doctor</option>
                 <option value="Receptionist">Receptionist</option>
+                <option value="Nurse">Nurse</option>
               </select>
             </div>
           </div>
@@ -645,7 +656,7 @@ function AdminRolesPermissions() {
 
       <div className="sa-form-card" style={{ marginTop: 24 }}>
         <h3>Assign Permissions</h3>
-        <p className="sa-form-subtitle">Permission matrix for doctor and receptionist users.</p>
+        <p className="sa-form-subtitle">Permission matrix for doctor, receptionist, and nurse users.</p>
         <div className="sa-permission-matrix sa-permission-matrix--assign">
           <div className="sa-permission-head">
             <span>Role</span>
@@ -654,7 +665,7 @@ function AdminRolesPermissions() {
             ))}
             <span>Actions</span>
           </div>
-          {["Doctor", "Receptionist"].map((role) => {
+          {['Doctor', 'Receptionist', 'Nurse'].map((role) => {
             const permissions = normalizePermissionList(roleMatrix[role]);
 
             return (

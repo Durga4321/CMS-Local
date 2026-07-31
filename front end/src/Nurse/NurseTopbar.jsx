@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import NotificationPopup from "../components/NotificationPopup";
 import UserProfileMenu from "../profile/UserProfileMenu";
 
-function ReceptionTopbar({ title, onMenu, areaLabel = "Reception", roleType = "receptionist" }) {
+function NurseTopbar({ title, onMenu, areaLabel = "Nurse", roleType = "nurse" }) {
   const location = useLocation();
   const crumbs = location.pathname
     .split("/")
@@ -45,4 +45,4 @@ function ReceptionTopbar({ title, onMenu, areaLabel = "Reception", roleType = "r
   );
 }
 
-export default ReceptionTopbar;
+export default NurseTopbar;

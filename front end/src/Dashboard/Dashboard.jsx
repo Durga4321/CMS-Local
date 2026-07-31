@@ -31,6 +31,7 @@ import {
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { apiUrl } from "../config/api";
+import { getStoredHospitalId } from "../utils/branchApi";
 import {
   formatCompactIndianCurrency,
   formatIndianCurrency,
@@ -263,8 +264,16 @@ function Dashboard() {
             : {}),
         };
 
+        const storedHospitalId = getStoredHospitalId();
+        const urlParams = new URLSearchParams();
+        if (storedHospitalId) {
+          urlParams.set("hospitalId", String(storedHospitalId));
+          urlParams.set("clinicId", String(storedHospitalId));
+        }
+        const dashboardUrl = urlParams.toString() ? `${API}?${urlParams.toString()}` : API;
+
         const response =
-          await fetchWithTimeout(API, {
+          await fetchWithTimeout(dashboardUrl, {
             headers,
           });
 

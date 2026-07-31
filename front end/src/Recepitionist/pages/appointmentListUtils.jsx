@@ -30,8 +30,8 @@ export const getBookingType = (item) => {
   const value = getAppointmentValue(item, ["bookingType", "BookingType", "type", "Type"], "");
   const normalized = normalizeText(value);
 
-  if (normalized === "online") return "Online";
-  if (normalized === "offline") return "Offline";
+  if (normalized.includes("online")) return "Online";
+  if (normalized.includes("offline") || normalized.includes("walk")) return "Offline";
   return value || "Unknown";
 };
 

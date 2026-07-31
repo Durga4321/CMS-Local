@@ -1,43 +1,3 @@
-// import React, { useEffect, useState } from "react";
-
-// import "./RevenueReport.css";
-
-// import { ArrowLeft, Download } from "lucide-react";
-
-// import {
-//   LineChart,
-//   Line,
-//   XAxis,
-//   YAxis,
-//   Tooltip,
-//   ResponsiveContainer,
-//   CartesianGrid,
-// } from "recharts";
-
-// import { useNavigate } from "react-router-dom";
-
-// // ================= APIs =================
-
-// const REPORT_API =
-//   "/api/Report/revenue";
-
-// const DOCTOR_API =
-//   "/api/Doctor";
-
-// // ================= COMPONENT =================
-
-// function RevenueReport() {
-//   const navigate = useNavigate();
-
-//   const [data, setData] = useState([]);
-
-//   const [doctors, setDoctors] = useState([]);
-
-//   const [loading, setLoading] = useState(false);
-
-//   const [fromDate, setFromDate] = useState("");
-
-//   const [toDate, setToDate] = useState("");
 
 //   const [doctorId, setDoctorId] = useState(0);
 
@@ -269,8 +229,6 @@
 //   );
 // }
 
-// export default RevenueReport;
-
 import React, { useCallback, useEffect, useState } from "react";
 
 import "./RevenueReport.css";
@@ -289,6 +247,7 @@ import {
 } from "recharts";
 
 import { apiUrl } from "../../config/api";
+import { getStoredHospitalId } from "../../utils/branchApi";
 import { formatIndianCurrency } from "../../utils/format";
 
 // ================= API =================
@@ -398,6 +357,26 @@ const getBillingKey = (row = {}, index = 0) =>
       `${pick(row, ["patientId", "patientName"], "patient")}-${getRevenueAmount(row)}-${getRowDate(row) || index}`
   );
 
+const getBillingRowClinicId = (row = {}) =>
+  String(
+    pick(row, [
+      "hospitalId",
+      "HospitalId",
+      "clinicId",
+      "ClinicId",
+      "assignedClinicId",
+      "AssignedClinicId",
+      "clinicID",
+      "hospitalID",
+    ], "")
+  ).trim();
+
+const matchesStoredClinic = (row = {}, storedClinicId = "") => {
+  if (!storedClinicId) return true;
+  const clinicId = getBillingRowClinicId(row);
+  return Boolean(clinicId) && String(clinicId) === String(storedClinicId);
+};
+
 const dedupeBillingRows = (rows = []) => {
   const lookup = new Map();
   rows.forEach((row, index) => {
@@ -444,10 +423,15 @@ function RevenueReport() {
     try {
       setLoading(true);
 
+      const storedHospitalId = getStoredHospitalId();
       const params = new URLSearchParams();
       if (doctorId) params.set("doctorId", String(doctorId));
       if (fromDate) params.set("fromDate", fromDate);
       if (toDate) params.set("toDate", toDate);
+      if (storedHospitalId) {
+        params.set("hospitalId", String(storedHospitalId));
+        params.set("clinicId", String(storedHospitalId));
+      }
 
       const query = params.toString();
       const url = query ? `${REPORT_API}?${query}` : REPORT_API;
@@ -478,6 +462,10 @@ function RevenueReport() {
         const billingResult = await billingResponse.json();
         const billingRows = dedupeBillingRows([...parseList(billingResult), ...readLocalServiceBills()]).filter((row) => {
           if (doctorId && String(pick(row, ["doctorId", "DoctorId"], "")) !== String(doctorId)) {
+            return false;
+          }
+
+          if (storedHospitalId && !matchesStoredClinic(row, String(storedHospitalId))) {
             return false;
           }
 

@@ -217,6 +217,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  height: 100%;
   margin: 0;
   color: inherit;
   font-size: 42px;
@@ -275,6 +277,10 @@
 
 .receptionists-row > .receptionists-cell:nth-child(7)::before {
   content: "Created";
+}
+
+.receptionists-row > .receptionists-cell:nth-child(8)::before {
+  content: "Role";
 }
 
 .receptionists-status-cell {

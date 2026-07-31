@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { parseList, requestJson } from "../receptionApi";
+import { parseList, requestJson as defaultRequestJson } from "../receptionApi";
 import {
   getReceptionistScope,
   scopeReceptionistRecords,
@@ -50,11 +50,17 @@ const getPatientName = (record, patientsById) => {
   );
 };
 
-function ReceptionMedicalHistory() {
+function ReceptionMedicalHistory({
+  hideActions = false,
+  basePath = "/reception",
+  apiRequest = defaultRequestJson,
+  getScope = getReceptionistScope,
+  scopeRecords = scopeReceptionistRecords,
+}) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedPatientId = String(searchParams.get("patientId") || "").trim();
-  const receptionistScope = useMemo(() => getReceptionistScope(), []);
+  const receptionistScope = useMemo(() => getScope(), [getScope]);
   const handledPatientHistoryLink = useRef("");
   const [histories, setHistories] = useState([]);
   const [patients, setPatients] = useState([]);
@@ -82,11 +88,18 @@ function ReceptionMedicalHistory() {
 
   const loadPatients = useCallback(async () => {
     const [patientData, appointmentData] = await Promise.all([
-      requestJson("Patient"),
-      requestJson("Appointment").catch(() => []),
+      apiRequest("Patient"),
+      Promise.all([
+        apiRequest("Appointment").catch(() => []),
+        apiRequest("Appointment/offline").catch(() => []),
+        apiRequest("Appointment/online").catch(() => []),
+      ]).then((results) => results.flatMap((result) => parseList(result))),
     ]);
     const branchPatientIds = new Set(
-      scopeReceptionistRecords(parseList(appointmentData), receptionistScope)
+      scopeRecords(parseList(appointmentData), receptionistScope, {
+        allowMissingClinic: true,
+        allowMissingBranch: true,
+      })
         .map(getAppointmentPatientId)
         .map((id) => String(id || "").trim())
         .filter(Boolean)
@@ -96,10 +109,13 @@ function ReceptionMedicalHistory() {
       const patientId = String(patient.id || patient.patientId || patient.PatientId || "").trim();
       return (
         branchPatientIds.has(patientId) ||
-        scopeReceptionistRecords([patient], receptionistScope).length > 0
+        scopeRecords([patient], receptionistScope, {
+          allowMissingClinic: true,
+          allowMissingBranch: true,
+        }).length > 0
       );
     });
-  }, [receptionistScope]);
+  }, [apiRequest, receptionistScope, scopeRecords]);
 
   const fetchHistories = useCallback(async (patientList) => {
     try {
@@ -109,7 +125,7 @@ function ReceptionMedicalHistory() {
 
       const historyResults = await Promise.all(
         nextPatients.map((patient) =>
-          requestJson(`MedicalHistory/${patient.id}`)
+          apiRequest(`MedicalHistory/${patient.id}`)
             .then((data) => ({ ...data, patientId: data?.patientId || patient.id }))
             .catch(() => null)
         )
@@ -148,7 +164,10 @@ function ReceptionMedicalHistory() {
   const fetchAppointments = useCallback(async () => {
     try {
       setAppointments(
-        scopeReceptionistRecords(parseList(await requestJson("Appointment")), receptionistScope)
+        scopeRecords(parseList(await apiRequest("Appointment")), receptionistScope, {
+          allowMissingClinic: true,
+          allowMissingBranch: true,
+        })
       );
     } catch {
       setAppointments([]);
@@ -227,7 +246,7 @@ function ReceptionMedicalHistory() {
     const data = new FormData();
     data.append("file", documentFile);
 
-    await requestJson(`Appointment/${appointmentId}/documents`, {
+    await apiRequest(`Appointment/${appointmentId}/documents`, {
       method: "POST",
       body: data,
     });
@@ -252,7 +271,7 @@ function ReceptionMedicalHistory() {
     }, receptionistScope);
 
     try {
-      await requestJson("MedicalHistory", {
+      await apiRequest("MedicalHistory", {
         method: "POST",
         body: JSON.stringify(body),
       });
@@ -277,7 +296,7 @@ function ReceptionMedicalHistory() {
     if (!window.confirm("Delete this medical history record?")) return;
 
     try {
-      await requestJson(`MedicalHistory/${historyId}`, { method: "DELETE" });
+      await apiRequest(`MedicalHistory/${historyId}`, { method: "DELETE" });
       await fetchHistories();
     } catch (error) {
       setMessage(error.message || "Unable to delete medical history.");
@@ -294,25 +313,27 @@ function ReceptionMedicalHistory() {
             and surgery history.
           </p>
         </div>
-        <div className="rc-head-actions">
-          <button
-            className="rc-btn primary"
-            onClick={openAdd}
-            title="Add history"
-          >
-            <FilePlus2 size={16} /> Add History
-          </button>
-          <button
-            className="rc-btn ghost"
-            onClick={() => fetchHistories(patients)}
-            disabled={loading}
-          >
-            <RefreshCw size={16} /> Refresh
-          </button>
-          <button className="rc-btn" onClick={() => navigate("/reception/dashboard")}>
-            <ArrowLeft size={16} /> Dashboard
-          </button>
-        </div>
+        {!hideActions && (
+          <div className="rc-head-actions">
+            <button
+              className="rc-btn primary"
+              onClick={openAdd}
+              title="Add history"
+            >
+              <FilePlus2 size={16} /> Add History
+            </button>
+            <button
+              className="rc-btn ghost"
+              onClick={() => fetchHistories(patients)}
+              disabled={loading}
+            >
+              <RefreshCw size={16} /> Refresh
+            </button>
+            <button className="rc-btn" onClick={() => navigate(`${basePath}/dashboard`) }>
+              <ArrowLeft size={16} /> Dashboard
+            </button>
+          </div>
+        )}
       </div>
 
       {message ? <div className="rc-alert">{message}</div> : null}
@@ -365,7 +386,7 @@ function ReceptionMedicalHistory() {
                   </button>
                   <button
                     onClick={() =>
-                      navigate(`/reception/appointments?patientId=${getPatientId(record)}`)
+                      navigate(`${basePath}/appointments?patientId=${getPatientId(record)}`)
                     }
                   >
                     <CalendarPlus size={15} /> Book Appointment

@@ -29,6 +29,7 @@ const items = [
   { to: "/branches", label: "Branches", icon: Building2 },
   { to: "/doctors", label: "Doctors", icon: Stethoscope },
   { to: "/receptionists", label: "Receptionists", icon: UserCheck },
+  { to: "/nurses", label: "Nurses", icon: UserCog },
   { to: "/patients", label: "Patients", icon: UserRound },
   { to: "/appointments", label: "Appointments", icon: CalendarDays },
   { to: "/DoctorSchedule/schedule", label: "Schedule Settings", icon: Settings2 },
@@ -96,7 +97,13 @@ function Sidebar({ open = false, onClose = () => {} }) {
     location.pathname === "/patient" ||
     location.pathname.startsWith("/patient/");
   const navItems = isSuperAdmin ? superAdminItems : isPatient ? patientItems : items;
-  const profile = isPatient ? getRoleProfile('patient') : getRoleProfile("admin");
+  let profile;
+  if (isSuperAdmin) profile = getRoleProfile("admin");
+  else if (location.pathname.startsWith("/doctor")) profile = getRoleProfile("doctor");
+  else if (location.pathname.startsWith("/reception")) profile = getRoleProfile("receptionist");
+  else if (location.pathname.startsWith("/nurse")) profile = getRoleProfile("nurse");
+  else if (isPatient) profile = getRoleProfile("patient");
+  else profile = getRoleProfile("admin");
   const profileName = profile.name;
   const profileSub = isSuperAdmin ? "Super Admin" : isPatient ? "Patient" : getClinicDisplayName(profile, "Admin");
   const brandName = isSuperAdmin ? "CMS" : isPatient ? "Patient Portal" : getClinicDisplayName(profile, "CMS");
