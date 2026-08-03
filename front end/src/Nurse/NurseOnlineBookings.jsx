@@ -1,7 +1,7 @@
 import React from "react";
 import ReceptionAppointmentList from "../Recepitionist/pages/ReceptionAppointmentList";
 import { getOfflineAppointments, getOnlineAppointments, requestJson as nurseRequestJson } from "../Recepitionist/receptionApi";
-import { getNurseScope } from "./nurseScope";
+import { getNurseScope, scopeNurseRecords } from "./nurseScope";
 
 const getAllAppointments = async () => {
   const [onlineAppointments, offlineAppointments] = await Promise.all([
@@ -9,7 +9,7 @@ const getAllAppointments = async () => {
     getOfflineAppointments(),
   ]);
 
-  return [...onlineAppointments, ...offlineAppointments];
+  return scopeNurseRecords([...onlineAppointments, ...offlineAppointments]);
 };
 
 function NurseOnlineBookings() {
@@ -22,7 +22,7 @@ function NurseOnlineBookings() {
       emptyState="No online bookings found for the current filters."
       apiRequest={nurseRequestJson}
       getScope={getNurseScope}
-      scopeRecords={(records) => records}
+      scopeRecords={scopeNurseRecords}
     />
   );
 }

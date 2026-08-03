@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
-  CalendarPlus,
   Eye,
   FilePlus2,
   HeartPulse,
@@ -77,6 +76,14 @@ function ReceptionMedicalHistory({
 
   const rows = useMemo(() => [...histories].reverse(), [histories]);
 
+  const hasHistoryContent = (record = {}) =>
+    Boolean(
+      String(record.allergies || "").trim() ||
+        String(record.chronicDiseases || "").trim() ||
+        String(record.currentMedications || "").trim() ||
+        String(record.surgeries || "").trim()
+    );
+
   const selectedPatientAppointments = useMemo(() => {
     const patientId = String(form.patientId || "").trim();
     if (!patientId) return [];
@@ -135,11 +142,7 @@ function ReceptionMedicalHistory({
         historyResults.filter(
           (record) =>
             record &&
-            (record.patientId ||
-              record.allergies ||
-              record.chronicDiseases ||
-              record.currentMedications ||
-              record.surgeries)
+            hasHistoryContent(record)
         )
       );
       setMessage("");
@@ -385,18 +388,12 @@ function ReceptionMedicalHistory({
                     <Pencil size={15} />
                   </button>
                   <button
-                    onClick={() =>
-                      navigate(`${basePath}/appointments?patientId=${getPatientId(record)}`)
-                    }
-                  >
-                    <CalendarPlus size={15} /> Book Appointment
-                  </button>
-                  <button
                     className="danger"
                     onClick={() => deleteHistory(record)}
                     title="Delete medical history"
+                    aria-label="Delete medical history"
                   >
-                    <Trash2 size={15} /> Delete
+                    <Trash2 size={15} />
                   </button>
                 </span>
               </div>

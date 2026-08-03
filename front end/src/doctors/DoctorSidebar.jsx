@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   CalendarClock,
@@ -12,6 +12,8 @@ import {
 import "./DoctorSidebar.css";
 import { getRoleProfile } from "../profile/sessionProfile";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
+import { apiUrl } from "../config/api";
+import { getAuthToken, getLoggedInDoctor } from "./utils/doctorSession";
 
 const NAV_ITEMS = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/doctor/dashboard" },
@@ -55,13 +57,111 @@ const getClinicLogo = (clinicName = "") => {
   return { type: "icon", icon: Cross, text: fallbackText || "CL", tone: "emerald" };
 };
 
+const parseList = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.branches)) return data.branches;
+  return [];
+};
+
+const getBranchId = (branch = {}) =>
+  String(
+    typeof branch === "object"
+      ? branch.branchId ?? branch.BranchId ?? branch.id ?? branch.Id ?? branch.clinicBranchId ?? ""
+      : branch
+  ).trim();
+
+const getBranchName = (branch = {}) =>
+  String(
+    typeof branch === "object"
+      ? branch.branchName ?? branch.BranchName ?? branch.name ?? branch.Name ?? branch.branch ?? ""
+      : branch
+  ).trim();
+
+const rememberDoctorBranch = (branch = {}) => {
+  const branchId = getBranchId(branch);
+  const branchName = getBranchName(branch);
+  if (!branchId) return;
+
+  localStorage.setItem("doctorBranchId", branchId);
+  localStorage.setItem("DoctorBranchId", branchId);
+  localStorage.setItem("branchId", branchId);
+  localStorage.setItem("BranchId", branchId);
+  if (branchName) {
+    localStorage.setItem("doctorBranchName", branchName);
+    localStorage.setItem("DoctorBranchName", branchName);
+    localStorage.setItem("branchName", branchName);
+    localStorage.setItem("BranchName", branchName);
+  }
+
+  window.dispatchEvent(
+    new CustomEvent("doctorBranchChanged", {
+      detail: { branchId, branchName },
+    })
+  );
+};
+
 function DoctorSidebar() {
   const profile = getRoleProfile("doctor");
   const hospitalName = getClinicDisplayName(profile, "Clinic Name");
-  const branchName = String(profile.branchName || "").trim();
+  const doctor = getLoggedInDoctor();
+  const [branchOptions, setBranchOptions] = useState([]);
+  const [activeBranchId, setActiveBranchId] = useState(String(doctor.branchId || "").trim());
+  const branchName = useMemo(() => {
+    const selectedBranch = branchOptions.find((branch) => getBranchId(branch) === String(activeBranchId));
+    return getBranchName(selectedBranch) || String(localStorage.getItem("doctorBranchName") || profile.branchName || "").trim();
+  }, [activeBranchId, branchOptions, profile.branchName]);
   const displayName = profile.name || "Dr. Doctor";
   const clinicLogo = getClinicLogo(hospitalName);
   const ClinicLogoIcon = clinicLogo.icon;
+
+  useEffect(() => {
+    let isCurrent = true;
+    const loadBranches = async () => {
+      const doctorId = doctor.id;
+      if (!doctorId) return;
+      const token = getAuthToken();
+      const headers = { "ngrok-skip-browser-warning": "true" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const response = await fetch(apiUrl(`Doctor/${encodeURIComponent(doctorId)}/branches`), { headers }).catch(() => null);
+      if (!response?.ok) return;
+      const data = await response.json().catch(() => null);
+      const branches = parseList(data)
+        .map((branch) => ({
+          ...((branch && typeof branch === "object") ? branch : {}),
+          id: getBranchId(branch),
+          branchId: getBranchId(branch),
+          name: getBranchName(branch) || getBranchId(branch),
+          branchName: getBranchName(branch) || getBranchId(branch),
+        }))
+        .filter((branch) => branch.id);
+      if (!isCurrent) return;
+      setBranchOptions(branches);
+      const storedBranchId = String(localStorage.getItem("doctorBranchId") || localStorage.getItem("branchId") || "").trim();
+      const matchedBranch = branches.find((branch) => String(branch.id) === storedBranchId);
+      const nextBranch = matchedBranch || branches[0];
+      if (nextBranch && (!storedBranchId || !matchedBranch)) {
+        rememberDoctorBranch(nextBranch);
+      }
+      if (nextBranch) setActiveBranchId(String(nextBranch.id));
+    };
+
+    loadBranches();
+    return () => {
+      isCurrent = false;
+    };
+  }, [doctor.id]);
+
+  useEffect(() => {
+    const handleBranchChanged = (event) => {
+      const nextBranchId = String(event.detail?.branchId || localStorage.getItem("doctorBranchId") || "").trim();
+      if (nextBranchId) setActiveBranchId(nextBranchId);
+    };
+
+    window.addEventListener("doctorBranchChanged", handleBranchChanged);
+    return () => window.removeEventListener("doctorBranchChanged", handleBranchChanged);
+  }, []);
 
   return (
     <aside className="dr-sidebar">
@@ -97,6 +197,9 @@ function DoctorSidebar() {
         <div className="dr-sidebar-profile-info">
           <p className="dr-sidebar-profile-name">{displayName}</p>
           <p className="dr-sidebar-profile-role">{hospitalName}</p>
+          {branchName ? (
+            <p className="dr-sidebar-profile-branch">{branchName}</p>
+          ) : null}
           <p className="dr-sidebar-profile-status">
             <span className="dr-status-dot" /> Online
           </p>

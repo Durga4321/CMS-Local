@@ -35,6 +35,116 @@ export const getBookingType = (item) => {
   return value || "Unknown";
 };
 
+const normalizePatientKey = (appointment = {}) => {
+  const patientId = getAppointmentValue(appointment, [
+    "patientId",
+    "PatientId",
+    "pid",
+    "PID",
+    "patient.id",
+    "patient.patientId",
+    "Patient.Id",
+    "Patient.PatientId",
+  ]);
+  if (patientId) return `patient-id:${normalizeText(patientId)}`;
+
+  const patientCode = getAppointmentValue(appointment, [
+    "patientCode",
+    "PatientCode",
+    "patient.code",
+    "patient.patientCode",
+    "Patient.Code",
+    "Patient.PatientCode",
+  ]);
+  if (patientCode) return `patient-code:${normalizeText(patientCode)}`;
+
+  const patientPhone = String(
+    getAppointmentValue(appointment, [
+      "phone",
+      "Phone",
+      "phoneNumber",
+      "PhoneNumber",
+      "mobile",
+      "Mobile",
+      "mobileNumber",
+      "MobileNumber",
+      "patient.phone",
+      "patient.Phone",
+      "patient.phoneNumber",
+      "patient.PatientPhone",
+    ], "")
+  ).replace(/\D/g, "");
+
+  const patientName = normalizeText(
+    getAppointmentValue(appointment, [
+      "patientName",
+      "PatientName",
+      "name",
+      "Name",
+      "patient.name",
+      "patient.fullName",
+      "Patient.Name",
+      "Patient.FullName",
+    ], "")
+  );
+
+  if (patientName && patientPhone) return `patient-name-phone:${patientName}:${patientPhone}`;
+  if (patientName) return `patient-name:${patientName}`;
+  return "";
+};
+
+const normalizeDoctorKey = (appointment = {}) =>
+  normalizeText(
+    getAppointmentValue(appointment, [
+      "doctorId",
+      "DoctorId",
+      "doctor.id",
+      "doctor.doctorId",
+      "Doctor.Id",
+      "Doctor.DoctorId",
+      "doctorName",
+      "DoctorName",
+      "doctor.name",
+      "doctor.doctorName",
+      "Doctor.Name",
+      "Doctor.DoctorName",
+      "doctor",
+    ], "")
+  );
+
+const getAppointmentDateKeyFromItem = (item) =>
+  normalizeDateKey(getAppointmentValue(item, dateKeys, ""));
+
+export const getAppointmentDateKey = (item) =>
+  getAppointmentDateKeyFromItem(item);
+
+export const dedupeSameDayAppointments = (appointments = []) => {
+  const seen = new Set();
+
+  return (appointments || []).filter((appointment) => {
+    const appointmentId = getAppointmentValue(appointment, ["appointmentId", "AppointmentId", "id", "Id"], "");
+    if (appointmentId) {
+      const key = `appointment:${normalizeText(appointmentId)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }
+
+    const patientKey = normalizePatientKey(appointment);
+    const dateKey = getAppointmentDateKey(appointment);
+    const doctorKey = normalizeDoctorKey(appointment) || "unknown-doctor";
+    const bookingType = normalizeText(getBookingType(appointment) || "");
+
+    if (!patientKey || !dateKey) return true;
+
+    const key = `same-day:${patientKey}:${dateKey}:${bookingType}:${doctorKey}`;
+    if (seen.has(key)) return false;
+
+    seen.add(key);
+    return true;
+  });
+};
+
 const tokenKeys = ["tokenNumber", "token", "TokenNumber", "tokenNo", "token_number"];
 const dateKeys = ["date", "appointmentDate", "AppointmentDate", "scheduledDate", "slotDate", "SlotDate", "bookingDate", "BookingDate"];
 const timeKeys = ["time", "slot", "Slot", "startTime", "StartTime", "slotTime", "SlotTime", "timeSlot", "TimeSlot", "appointmentTime", "AppointmentTime"];
@@ -66,9 +176,6 @@ const parseTimeToMinutes = (value) => {
   return hours * 60 + minutes;
 };
 
-const getAppointmentDateKey = (item) =>
-  normalizeDateKey(getAppointmentValue(item, dateKeys, ""));
-
 const getAppointmentTimeMinutes = (item) =>
   parseTimeToMinutes(getAppointmentValue(item, timeKeys, ""));
 
@@ -78,7 +185,7 @@ export const applyTimeOrderedTokens = (appointments = []) => {
   const sorted = appointments
     .map((item, originalIndex) => ({ item, originalIndex }))
     .sort((left, right) => {
-      const dateCompare = getAppointmentDateKey(left.item).localeCompare(getAppointmentDateKey(right.item));
+      const dateCompare = getAppointmentDateKeyFromItem(left.item).localeCompare(getAppointmentDateKeyFromItem(right.item));
       if (dateCompare) return dateCompare;
 
       const timeCompare = getAppointmentTimeMinutes(left.item) - getAppointmentTimeMinutes(right.item);

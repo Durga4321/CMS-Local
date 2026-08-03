@@ -11,6 +11,7 @@ import {
   Pill,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { patientApiUrl, PATIENT_API } from "../../config/api";
 
 const EMPTY_ARRAY = [];
 
@@ -157,6 +158,16 @@ const getAppointmentStatus = (appointment = {}) => {
   return status ? String(status) : "Scheduled";
 };
 
+const getAppointmentId = (appointment = {}) =>
+  firstValue(
+    appointment?.appointmentId,
+    appointment?.AppointmentId,
+    appointment?.id,
+    appointment?.Id,
+    appointment?.appointment?.appointmentId,
+    appointment?.appointment?.id
+  );
+
 const getAppointmentDate = (appointment = {}) =>
   firstValue(
     (appointment || {}).date,
@@ -195,6 +206,12 @@ const formatTokenNumber = (token) => {
   if (!value) return null;
   const match = value.match(/^TKN\s*0*(\d+)$/i);
   return match ? `TKN${String(Number(match[1])).padStart(3, "0")}` : null;
+};
+
+const normalizeDisplayToken = (token) => {
+  const value = String(firstValue(token) || "").trim();
+  if (!value) return "Not available";
+  return formatTokenNumber(value) || value;
 };
 
 const getNumericValue = (value) => {
@@ -281,6 +298,54 @@ const getPatientQueueMetrics = (dashboardData = {}, appointment = {}, visits = [
     queueCounts: counts,
   };
 };
+
+const parseApiObject = (data) => {
+  if (!data || typeof data !== "object") return {};
+  if (data.data && typeof data.data === "object" && !Array.isArray(data.data)) return data.data;
+  if (data.item && typeof data.item === "object") return data.item;
+  if (data.result && typeof data.result === "object" && !Array.isArray(data.result)) return data.result;
+  return data;
+};
+
+const parseApiList = (data) => {
+  if (Array.isArray(data)) return data;
+  if (!data || typeof data !== "object") return [];
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.data)) return data.data;
+  if (Array.isArray(data.queue)) return data.queue;
+  if (Array.isArray(data.tokens)) return data.tokens;
+  if (Array.isArray(data.queueItems)) return data.queueItems;
+  if (Array.isArray(data.appointments)) return data.appointments;
+  return [];
+};
+
+const normalizeQueueStatus = (status) => {
+  const value = String(status || "").trim().toLowerCase();
+  if (value.includes("complete") || value.includes("done") || value.includes("served") || value.includes("closed")) return "completed";
+  if (value.includes("consult") || value.includes("progress") || value.includes("current") || value.includes("called")) return "current";
+  return "waiting";
+};
+
+const normalizeQueueStep = (item = {}, index = 0, currentToken = "") => {
+  const token = normalizeDisplayToken(
+    firstValue(
+      item.tokenNumber,
+      item.TokenNumber,
+      item.token,
+      item.Token,
+      item.displayToken,
+      item.appointmentToken,
+      item.currentToken
+    )
+  );
+  const status = normalizeQueueStatus(firstValue(item.status, item.Status, item.queueStatus, item.state));
+  const current = currentToken && token === currentToken;
+  return {
+    id: firstValue(item.id, item.appointmentId, item.queueId, `${token}-${index}`),
+    token,
+    status: current ? "current" : status,
+  };
+};
 const getSpecialization = (appointment = {}) =>
   firstValue((appointment || {}).specialization, (appointment || {}).department, (appointment || {}).speciality, (appointment || {}).specialty, (appointment || {}).doctor?.specialization);
 
@@ -325,6 +390,13 @@ const getSortedUpcomingAppointment = (items = []) => {
 function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY_ARRAY, bills = EMPTY_ARRAY, dashboardData = null }) {
   const navigate = useNavigate();
   const dashboardPatient = patient || {};
+  const [liveQueue, setLiveQueue] = useState({
+    token: "",
+    patientsAhead: null,
+    waitingMinutes: null,
+    counts: null,
+    steps: [],
+  });
   const uniqueBills = useMemo(() => {
     const seen = new Set();
     return (Array.isArray(bills) ? bills : []).filter((bill) => {
@@ -388,6 +460,7 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
     });
   }, [bills]);
   const upcomingAppointment = getSortedUpcomingAppointment(visits);
+  const upcomingAppointmentId = getAppointmentId(upcomingAppointment);
   const previousVisits = Array.isArray(visits) ? visits.length : 0;
   const prescriptionCount = Array.isArray(prescriptions) ? prescriptions.length : 0;
   const medicalRecordCount = previousVisits + prescriptionCount;
@@ -437,11 +510,97 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
     formattedToken,
     patientsAhead,
     waitingMinutes,
-    queueCounts,
   } = getPatientQueueMetrics(dashboardData, upcomingAppointment, visits);
-  const tokenValue = formattedToken || "Not available";
-  const patientsAheadLabel = patientsAhead !== null ? formatCount(patientsAhead) : "Not available";
-  const estimatedWaitingTimeLabel = waitingMinutes !== null ? `${waitingMinutes} mins` : "Not available";
+  const tokenValue = normalizeDisplayToken(liveQueue.token || formattedToken || getTokenNumber(upcomingAppointment));
+  const patientsAheadValue = liveQueue.patientsAhead !== null ? liveQueue.patientsAhead : patientsAhead;
+  const waitingMinutesValue = liveQueue.waitingMinutes !== null ? liveQueue.waitingMinutes : waitingMinutes;
+  const patientsAheadLabel = patientsAheadValue !== null ? formatCount(patientsAheadValue) : "Not available";
+  const estimatedWaitingTimeLabel = waitingMinutesValue !== null ? `${waitingMinutesValue} mins` : "Not available";
+  const queueSteps = liveQueue.steps.length
+    ? liveQueue.steps
+    : tokenValue !== "Not available"
+      ? [{ id: tokenValue, token: tokenValue, status: "current" }]
+      : [];
+
+  useEffect(() => {
+    if (!upcomingAppointmentId) {
+      setLiveQueue({ token: "", patientsAhead: null, waitingMinutes: null, counts: null, steps: [] });
+      return undefined;
+    }
+
+    let isActive = true;
+    const headers = {
+      "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true",
+      ...(localStorage.getItem("patientToken") || localStorage.getItem("token")
+        ? { Authorization: `Bearer ${localStorage.getItem("patientToken") || localStorage.getItem("token")}` }
+        : {}),
+    };
+
+    const loadLiveQueue = async () => {
+      try {
+        const [queueResponse, tokenResponse] = await Promise.all([
+          fetch(patientApiUrl(PATIENT_API.appointmentQueueStatus, { id: upcomingAppointmentId }), { headers }).catch(() => null),
+          fetch(patientApiUrl(PATIENT_API.appointmentToken, { id: upcomingAppointmentId }), { headers }).catch(() => null),
+        ]);
+
+        const queueData = queueResponse?.ok ? await queueResponse.json().catch(() => null) : null;
+        const tokenData = tokenResponse?.ok ? await tokenResponse.json().catch(() => null) : null;
+        const queueObject = parseApiObject(queueData);
+        const tokenObject = parseApiObject(tokenData);
+        const liveToken = normalizeDisplayToken(
+          firstValue(
+            tokenObject.tokenNumber,
+            tokenObject.TokenNumber,
+            tokenObject.token,
+            tokenObject.Token,
+            tokenObject.displayToken,
+            tokenObject.currentToken,
+            queueObject.tokenNumber,
+            queueObject.currentToken,
+            queueObject.appointmentToken
+          )
+        );
+        const queueList = parseApiList(queueData);
+        const steps = queueList
+          .map((item, index) => normalizeQueueStep(item, index, liveToken))
+          .filter((item) => item.token && item.token !== "Not available");
+        const hasCurrentStep = steps.some((item) => item.status === "current");
+        const resolvedSteps = steps.length
+          ? hasCurrentStep
+            ? steps
+            : [...steps, { id: liveToken, token: liveToken, status: "current" }]
+          : liveToken !== "Not available"
+            ? [{ id: liveToken, token: liveToken, status: "current" }]
+            : [];
+        const counts = resolvedSteps.length
+          ? {
+              completed: resolvedSteps.filter((item) => item.status === "completed").length,
+              inConsultation: resolvedSteps.filter((item) => item.status === "current").length,
+              waiting: resolvedSteps.filter((item) => item.status === "waiting").length,
+            }
+          : null;
+
+        if (!isActive) return;
+        setLiveQueue({
+          token: liveToken !== "Not available" ? liveToken : "",
+          patientsAhead: getNumericValue(firstValue(queueObject.patientsAhead, queueObject.queueAhead, queueObject.positionAhead, queueObject.waitingBefore)),
+          waitingMinutes: getNumericValue(firstValue(queueObject.estimatedWaitingTime, queueObject.estimatedWaitTime, queueObject.waitingMinutes, queueObject.eta)),
+          counts,
+          steps: resolvedSteps,
+        });
+      } catch {
+        if (isActive) setLiveQueue((current) => ({ ...current, steps: current.steps || [] }));
+      }
+    };
+
+    loadLiveQueue();
+    const intervalId = window.setInterval(loadLiveQueue, 30000);
+    return () => {
+      isActive = false;
+      window.clearInterval(intervalId);
+    };
+  }, [upcomingAppointmentId]);
 
   const defaultNotifications = [
     {
@@ -551,7 +710,21 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
       <div className="pd-dashboard-row">
         <section className="pd-card pd-queue-panel">
           <div className="pd-section-header"><div><h2>Live Queue Status</h2><p>Real-time token progress</p></div><button type="button" className="pd-link-button" onClick={handleViewAppointmentDetails}>View Full Queue</button></div>
-          <div className="pd-queue-track" aria-label="Queue progress">{["TKN 018", "TKN 019", "TKN 020", "TKN 021", "TKN 022", tokenValue, "TKN 024", "TKN 025"].map((token, index) => <div key={`${token}-${index}`} className={`pd-queue-step ${token === tokenValue ? "is-current" : index < 5 ? "is-complete" : ""}`}><i>{index < 5 ? "✓" : ""}</i><span>{token}</span></div>)}</div>
+          <div className="pd-queue-track" aria-label="Queue progress">
+            {queueSteps.length ? (
+              queueSteps.map((item, index) => (
+                <div
+                  key={`${item.id}-${index}`}
+                  className={`pd-queue-step ${item.status === "current" ? "is-current" : item.status === "completed" ? "is-complete" : ""}`}
+                >
+                  <i>{item.status === "completed" ? "✓" : ""}</i>
+                  <span>{item.token}</span>
+                </div>
+              ))
+            ) : (
+              <p className="pd-empty-text">Queue status not available yet.</p>
+            )}
+          </div>
           <div className="pd-queue-legend"><span><i className="is-complete" />Completed</span><span><i className="is-current" />In Consultation</span><span><i />Waiting</span></div>
         </section>
         <section className="pd-card pd-actions-panel"><div className="pd-section-header"><div><h2>Quick Actions</h2></div></div><div className="pd-quick-action-list">

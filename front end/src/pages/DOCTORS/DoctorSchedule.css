@@ -40,6 +40,13 @@
   font-weight: 700;
 }
 
+.schedule-assignment-note {
+  margin: -4px 0 12px;
+  color: #0f766e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .days {
   display: flex;
   gap: 8px;

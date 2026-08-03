@@ -91,12 +91,19 @@ function DoctorAppointments() {
       const headers = { "ngrok-skip-browser-warning": "true" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const response = await fetch(APPOINTMENTS_API, { headers });
+      const doctor = getLoggedInDoctor();
+      const params = new URLSearchParams();
+      if (doctor.id) params.set("doctorId", doctor.id);
+      if (doctor.branchId) params.set("branchId", doctor.branchId);
+      const response = await fetch(
+        params.toString() ? `${APPOINTMENTS_API}?${params.toString()}` : APPOINTMENTS_API,
+        { headers }
+      );
       if (!response.ok) throw new Error("Unable to load appointments.");
 
       const data = await response.json();
       let appts = Array.isArray(data) ? data : [];
-      appts = filterByLoggedInDoctor(appts, getLoggedInDoctor());
+      appts = filterByLoggedInDoctor(appts, doctor);
 
       appts.sort((a, b) => new Date(b.date) - new Date(a.date));
       setAppointments(appts);
@@ -111,6 +118,12 @@ function DoctorAppointments() {
 
   useEffect(() => {
     fetchAppointments();
+  }, []);
+
+  useEffect(() => {
+    const handleBranchChanged = () => fetchAppointments({ silent: true });
+    window.addEventListener("doctorBranchChanged", handleBranchChanged);
+    return () => window.removeEventListener("doctorBranchChanged", handleBranchChanged);
   }, []);
 
   useEffect(() => {

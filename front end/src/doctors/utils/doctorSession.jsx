@@ -46,6 +46,18 @@ export const getLoggedInDoctor = () => {
     id: String(id || "").trim(),
     name: String(name || "").trim(),
     email: localStorage.getItem("doctorEmail") || "",
+    branchId:
+      localStorage.getItem("doctorBranchId") ||
+      localStorage.getItem("branchId") ||
+      localStorage.getItem("BranchId") ||
+      getClaim(claims, "BranchId", "branchId") ||
+      "",
+    branchName:
+      localStorage.getItem("doctorBranchName") ||
+      localStorage.getItem("branchName") ||
+      localStorage.getItem("BranchName") ||
+      getClaim(claims, "BranchName", "branchName") ||
+      "",
     specialization:
       localStorage.getItem("doctorSpecialization") ||
       localStorage.getItem("specialization") ||
@@ -79,6 +91,29 @@ export const getRecordDoctorName = (record) =>
   record?.appointment?.doctor?.name ||
   "";
 
+export const getRecordBranchId = (record) =>
+  record?.branchId ??
+  record?.BranchId ??
+  record?.branchID ??
+  record?.clinicBranchId ??
+  record?.ClinicBranchId ??
+  record?.branch?.id ??
+  record?.branch?.branchId ??
+  record?.Branch?.Id ??
+  record?.appointment?.branchId ??
+  record?.appointment?.BranchId ??
+  "";
+
+export const getRecordBranchName = (record) =>
+  record?.branchName ||
+  record?.BranchName ||
+  record?.branch?.name ||
+  record?.branch?.branchName ||
+  record?.Branch?.Name ||
+  record?.appointment?.branchName ||
+  record?.appointment?.BranchName ||
+  "";
+
 export const hasDoctorReference = (record) =>
   Boolean(getRecordDoctorId(record) || getRecordDoctorName(record));
 
@@ -110,5 +145,15 @@ export const filterByLoggedInDoctor = (
   const list = Array.isArray(records) ? records : [];
   if (!doctor?.id && !doctor?.name) return list;
 
-  return list.filter((record) => isAssignedToLoggedInDoctor(record, doctor));
+  const doctorBranchId = String(doctor?.branchId || "").trim();
+  const doctorBranchName = normalizeDoctorName(doctor?.branchName);
+
+  return list.filter((record) => {
+    if (!isAssignedToLoggedInDoctor(record, doctor)) return false;
+    const recordBranchId = String(getRecordBranchId(record) || "").trim();
+    const recordBranchName = normalizeDoctorName(getRecordBranchName(record));
+    if (doctorBranchId && recordBranchId) return recordBranchId === doctorBranchId;
+    if (doctorBranchName && recordBranchName) return recordBranchName === doctorBranchName;
+    return true;
+  });
 };

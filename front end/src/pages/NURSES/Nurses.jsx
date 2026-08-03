@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle, Pencil, Plus, RefreshCw, Search, ShieldPlus, Trash2, UserRoundCheck, X } from "lucide-react";
+import { CheckCircle, Pencil, Plus, RefreshCw, Search, ShieldPlus, Trash2, ToggleLeft, ToggleRight, UserRoundCheck, X } from "lucide-react";
 import "../RECEPTIONISTS/Receptionists.css";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
@@ -15,7 +15,9 @@ import {
   validateStrongPassword,
 } from "../../utils/validation";
 
-const REGISTER_NURSE_API = apiUrl("Auth/register-nurse");
+const STAFF_URL = apiUrl("Staff");
+const NURSES_URL = apiUrl("Nurses");
+const STAFF_TOGGLE_STATUS = (id) => apiUrl(`Staff/${encodeURIComponent(id)}/toggle-status`);
 
 const parseList = (data) => {
   if (Array.isArray(data)) return data;
@@ -82,15 +84,6 @@ const getErrorMessage = async (response, fallback) => {
   }
 };
 
-const fetchNurses = async () => {
-  const endpoints = [apiUrl("Nurse"), apiUrl("Nurses"), apiUrl("Staff")];
-  for (const endpoint of endpoints) {
-    const response = await fetch(endpoint, { headers: getApiHeaders() }).catch(() => null);
-    if (response?.ok) return parseList(await response.json().catch(() => []));
-  }
-  return [];
-};
-
 const emptyForm = {
   name: "",
   email: "",
@@ -116,11 +109,54 @@ function Nurses() {
   const [form, setForm] = useState(emptyForm);
   const [fieldErrors, setFieldErrors] = useState({});
   const [message, setMessage] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
+  const [editingNurse, setEditingNurse] = useState(null);
 
   const branchNameById = useMemo(
     () => branches.reduce((lookup, branch) => ({ ...lookup, [String(branch.id)]: branch.name }), {}),
     [branches]
   );
+
+  const fetchNurses = async () => {
+    const query = hospitalId ? `?hospitalId=${encodeURIComponent(hospitalId)}` : "";
+    const candidatePaths = [
+      "Nurses",
+      "Nurse",
+      `Staff${query}`,
+      `Staff?role=Nurse${query ? `&hospitalId=${encodeURIComponent(hospitalId)}` : ""}`,
+      `Staff?role=nurse${query ? `&hospitalId=${encodeURIComponent(hospitalId)}` : ""}`,
+      "Staff/Nurse",
+      "Staff/nurse",
+    ];
+
+    let lastError = null;
+
+    for (const path of candidatePaths) {
+      try {
+        const response = await fetch(apiUrl(path), {
+          headers: getApiHeaders(),
+        });
+
+        if (!response.ok) {
+          lastError = new Error(await getErrorMessage(response, "Unable to load nurses."));
+          continue;
+        }
+
+        const data = await response.json().catch(() => null);
+        const list = parseList(data);
+        if (list.length) {
+          return list;
+        }
+
+        // If response is OK and zero results, return empty list immediately.
+        return list;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error("Unable to load nurses.");
+  };
 
   const loadNurses = useCallback(async () => {
     setLoading(true);
@@ -131,7 +167,7 @@ function Nurses() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [hospitalId, toast]);
 
   useEffect(() => {
     loadNurses();
@@ -177,7 +213,22 @@ function Nurses() {
   };
 
   const openModal = () => {
+    setEditingNurse(null);
     setForm(emptyForm);
+    setFieldErrors({});
+    setMessage("");
+    setModalOpen(true);
+  };
+
+  const openEditModal = (nurse) => {
+    setEditingNurse(nurse);
+    setForm({
+      name: getNurseName(nurse) || "",
+      email: getNurseEmail(nurse) || "",
+      phone: getNursePhone(nurse) || "",
+      password: "",
+      branchId: String(getNurseBranchId(nurse) || ""),
+    });
     setFieldErrors({});
     setMessage("");
     setModalOpen(true);
@@ -185,6 +236,7 @@ function Nurses() {
 
   const closeModal = () => {
     if (saving) return;
+    setEditingNurse(null);
     setModalOpen(false);
   };
 
@@ -197,27 +249,115 @@ function Nurses() {
         name: form.name.trim(),
         email: form.email.trim(),
         phone: form.phone.trim(),
-        password: form.password,
+        password: form.password || undefined,
         hospitalId: Number(hospitalId) || hospitalId,
         branchId: Number(form.branchId) || form.branchId,
+        role: "Nurse",
       };
-      const response = await fetch(REGISTER_NURSE_API, {
-        method: "POST",
-        headers: getApiHeaders()["Authorization"]
-          ? { ...getApiHeaders(), "Content-Type": "application/json" }
-          : { ...getApiHeaders(), "Content-Type": "application/json" },
+      const isEditing = Boolean(editingNurse?.id);
+      const url = isEditing ? `${STAFF_URL}/${encodeURIComponent(editingNurse.id)}` : STAFF_URL;
+      const response = await fetch(url, {
+        method: isEditing ? "PUT" : "POST",
+        headers: {
+          ...getApiHeaders(),
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) throw new Error(await getErrorMessage(response, "Unable to register nurse."));
-      toast.success("Nurse registered successfully.");
-      setMessage("Nurse registered successfully.");
+
+      if (!response.ok) {
+        throw new Error(await getErrorMessage(response, isEditing ? "Unable to update nurse." : "Unable to create nurse."));
+      }
+
+      const result = await response.json().catch(() => null);
+      const saved = result || {};
+      if (isEditing) {
+        setNurses((previous) =>
+          previous.map((item) =>
+            String(getNurseId(item)) === String(editingNurse.id)
+              ? { ...item, ...saved, branchId: payload.branchId, name: payload.name, email: payload.email, phone: payload.phone }
+              : item
+          )
+        );
+        toast.success("Nurse updated successfully.");
+        setMessage("Nurse updated successfully.");
+      } else {
+        toast.success("Nurse created successfully.");
+        setMessage("Nurse created successfully.");
+        await loadNurses();
+      }
+
       setModalOpen(false);
-      await loadNurses();
+      setEditingNurse(null);
     } catch (error) {
-      setFieldErrors({ form: error.message || "Unable to register nurse." });
-      toast.error(error.message || "Unable to register nurse.");
+      setFieldErrors({ form: error.message || (editingNurse ? "Unable to update nurse." : "Unable to create nurse.") });
+      toast.error(error.message || (editingNurse ? "Unable to update nurse." : "Unable to create nurse."));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const toggleNurseStatus = async (nurse) => {
+    const nurseId = getNurseId(nurse);
+    if (!nurseId || deletingId) return;
+    setDeletingId(nurseId);
+    setMessage("");
+    try {
+      const response = await fetch(STAFF_TOGGLE_STATUS(nurseId), {
+        method: "PATCH",
+        headers: {
+          ...getApiHeaders(),
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(await getErrorMessage(response, "Unable to update nurse status."));
+      }
+
+      const updated = await response.json().catch(() => null);
+      setNurses((previous) =>
+        previous.map((item) =>
+          String(getNurseId(item)) === String(nurseId)
+            ? { ...item, ...(updated || {}), isActive: updated?.isActive ?? !item.isActive }
+            : item
+        )
+      );
+      const nextStatus = updated?.isActive ? "Active" : updated?.isActive === false ? "Inactive" : getNurseStatus(nurse).toLowerCase().includes("inactive") ? "Active" : "Inactive";
+      toast.success(`Nurse status updated to ${nextStatus}.`);
+      setMessage(`Nurse status updated to ${nextStatus}.`);
+    } catch (error) {
+      toast.error(error.message || "Unable to update nurse status.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleDeleteNurse = async (nurse) => {
+    const nurseId = getNurseId(nurse);
+    if (!nurseId || deletingId) return;
+    const name = getNurseName(nurse);
+    const confirmed = window.confirm(`Delete nurse ${name || "this nurse"}?`);
+    if (!confirmed) return;
+    setDeletingId(nurseId);
+    setMessage("");
+    try {
+      const response = await fetch(`${STAFF_URL}/${encodeURIComponent(nurseId)}`, {
+        method: "DELETE",
+        headers: getApiHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error(await getErrorMessage(response, "Unable to delete nurse."));
+      }
+
+      setNurses((previous) => previous.filter((item) => String(getNurseId(item)) !== String(nurseId)));
+      toast.success("Nurse deleted successfully.");
+      setMessage("Nurse deleted successfully.");
+    } catch (error) {
+      toast.error(error.message || "Unable to delete nurse.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -286,24 +426,27 @@ function Nurses() {
                 <button
                   type="button"
                   className="receptionists-action-button"
-                  onClick={() => toast.info("Edit nurse coming soon")}
+                  onClick={() => openEditModal(nurse)}
                   title="Edit nurse"
+                  disabled={deletingId === String(getNurseId(nurse))}
                 >
                   <Pencil size={16} />
                 </button>
                 <button
                   type="button"
                   className="receptionists-action-button"
-                  onClick={() => toast.info("View nurse details coming soon")}
-                  title="View nurse"
+                  onClick={() => toggleNurseStatus(nurse)}
+                  title={status.toLowerCase().includes("inactive") ? "Activate nurse" : "Deactivate nurse"}
+                  disabled={deletingId === String(getNurseId(nurse))}
                 >
-                  <CheckCircle size={16} />
+                  {status.toLowerCase().includes("inactive") ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}
                 </button>
                 <button
                   type="button"
                   className="receptionists-action-button receptionists-action-danger"
-                  onClick={() => toast.info("Delete nurse coming soon")}
+                  onClick={() => handleDeleteNurse(nurse)}
                   title="Delete nurse"
+                  disabled={deletingId === String(getNurseId(nurse))}
                 >
                   <Trash2 size={16} />
                 </button>

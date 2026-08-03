@@ -93,6 +93,22 @@ const normalizeAppointment = (item, fallback = {}) => {
     appointmentId: item.appointmentId || item.id || fallback.appointmentId,
     patientId: item.patientId || fallback.patientId,
     doctorId: item.doctorId || item.DoctorId || item.doctor?.id || item.Doctor?.Id || fallback.doctorId,
+    branchId:
+      item.branchId ||
+      item.BranchId ||
+      item.clinicBranchId ||
+      item.ClinicBranchId ||
+      item.branch?.id ||
+      item.Branch?.Id ||
+      fallback.branchId ||
+      "",
+    branchName:
+      item.branchName ||
+      item.BranchName ||
+      item.branch?.name ||
+      item.Branch?.Name ||
+      fallback.branchName ||
+      "",
     doctorSpecialization:
       item.doctorSpecialization ||
       item.DoctorSpecialization ||
@@ -252,8 +268,16 @@ function Consultation() {
         };
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
+        const currentDoctor = getLoggedInDoctor();
+        const params = new URLSearchParams();
+        if (currentDoctor.id) params.set("doctorId", currentDoctor.id);
+        if (currentDoctor.branchId) params.set("branchId", currentDoctor.branchId);
+        const appointmentsUrl = params.toString()
+          ? `${APPOINTMENTS_API}?${params.toString()}`
+          : APPOINTMENTS_API;
+
         let apiAppointments = [];
-        const appointmentsResponse = await fetch(APPOINTMENTS_API, {
+        const appointmentsResponse = await fetch(appointmentsUrl, {
           headers,
         });
 
@@ -262,7 +286,7 @@ function Consultation() {
           let rawAppointments = Array.isArray(data) ? data : [];
           rawAppointments = filterByLoggedInDoctor(
             rawAppointments,
-            getLoggedInDoctor()
+            currentDoctor
           );
 
           apiAppointments = rawAppointments.map((item) =>
@@ -529,29 +553,61 @@ function Consultation() {
       };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
+      const appointmentId = Number(appointment.appointmentId);
+      const patientId = Number(appointment.patientId);
+      const chiefComplaints = form.complaintsChoice.trim();
+      const diagnosis = form.diagnosis.trim();
+      const diagnosisTests = form.diagnosisTests.trim();
+      const clinicalNotes = [
+        chiefComplaints ? `Chief Complaints: ${chiefComplaints}` : "",
+        form.bp.trim() ? `Blood Pressure: ${form.bp.trim()}` : "",
+        form.sugar.trim() ? `Sugar Level: ${form.sugar.trim()}` : "",
+        form.temp.trim() ? `Temperature: ${form.temp.trim()}` : "",
+        form.weight.trim() ? `Weight: ${form.weight.trim()}` : "",
+        form.pulse.trim() ? `Pulse Rate: ${form.pulse.trim()}` : "",
+        form.resp.trim() ? `Respiratory Rate: ${form.resp.trim()}` : "",
+        diagnosisTests ? `Diagnosis Tests: ${diagnosisTests}` : "",
+      ].filter(Boolean).join("\n");
+
       const requestBody = {
-        appointmentId: Number(appointment.appointmentId),
-        patientId: Number(appointment.patientId),
-        doctorId: appointment.doctorId || appointment.doctor?.id || undefined,
-        diagnosis: form.diagnosis.trim(),
-        diagnosisTests: form.diagnosisTests.trim(),
-        diagnosticTests: form.diagnosisTests.trim(),
+        appointmentId,
+        AppointmentId: appointmentId,
+        patientId,
+        PatientId: patientId,
+        diagnosis,
+        Diagnosis: diagnosis,
+        clinicalNotes,
+        ClinicalNotes: clinicalNotes,
       };
 
-      if (form.complaintsChoice.trim()) {
-        requestBody.chiefComplaints = form.complaintsChoice.trim();
-      }
-
-      const response = await fetch(CONSULTATION_API, {
+      let response = await fetch(CONSULTATION_API, {
         method: "POST",
         headers,
         body: JSON.stringify(requestBody),
       });
 
-      const data = await response.json().catch(() => ({}));
+      let data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.message || "Unable to save consultation.");
+        response = await fetch(CONSULTATION_API, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            AppointmentId: appointmentId,
+            PatientId: patientId,
+            Diagnosis: diagnosis,
+            ClinicalNotes: clinicalNotes || "-",
+          }),
+        });
+        data = await response.json().catch(() => ({}));
+      }
+
+      if (!response.ok) {
+        const validationMessage =
+          data?.errors && typeof data.errors === "object"
+            ? Object.values(data.errors).flat().filter(Boolean).join(" ")
+            : "";
+        throw new Error(data.message || validationMessage || data.title || "Unable to save consultation.");
       }
 
       const updatedStatus = "In Progress";

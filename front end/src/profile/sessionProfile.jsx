@@ -129,6 +129,8 @@ const getProfileName = (storedKey, email, claims, fallback) => {
 };
 
 const getProfileBranchName = (claims) =>
+  localStorage.getItem("doctorBranchName") ||
+  localStorage.getItem("DoctorBranchName") ||
   localStorage.getItem("branchName") ||
   localStorage.getItem("BranchName") ||
   getClaim(claims, "BranchName", "branchName", "Branch", "branch") ||

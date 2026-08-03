@@ -92,6 +92,9 @@ const isSentNotification = (notification = {}) =>
 const isReadNotification = (notification = {}) =>
   String(notification.status || "").toLowerCase() === "read";
 
+const isUnreadNotification = (notification = {}) =>
+  !isSentNotification(notification) && !isReadNotification(notification);
+
 const getStatusLabel = (notification = {}) =>
   isReadNotification(notification) ? "Read" : "Unread";
 
@@ -101,7 +104,7 @@ const getAudienceLabel = (notification = {}) => {
 };
 
 const isVisibleNotification = (notification = {}) =>
-  isSentNotification(notification) || isReadNotification(notification);
+  isSentNotification(notification) || isReadNotification(notification) || isUnreadNotification(notification);
 
 const ADMIN_ROLES = ["admin", "clinicadmin"];
 const ACTIVE_USER_ROLES = [

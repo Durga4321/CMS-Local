@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import "./DoctorSchedule.css";
 import { apiUrl } from "../../config/api";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
@@ -106,6 +105,12 @@ const formatSlotTime = (value) => formatTime12Hour(value, "");
 const formatScheduleTimeInput = (value, fallback) =>
   formatTime12Hour(value, fallback);
 
+const getSlotStartValue = (slot = {}) =>
+  slot.start || slot.startTime || slot.StartTime || slot.workStart || slot.WorkStart || "";
+
+const getSlotEndValue = (slot = {}) =>
+  slot.end || slot.endTime || slot.EndTime || slot.workEnd || slot.WorkEnd || "";
+
 const isTodayDate = (value) => value === toDateInputValue(new Date());
 
 const isCompletedSlot = (slotEnd, date) => {
@@ -127,6 +132,25 @@ const isTimeOutSlot = (slot) => {
 };
 
 const isBookedSlot = (slot) => getSlotStatus(slot) === "booked" || slot?.isBooked;
+
+const getRecordBranchId = (record = {}) =>
+  String(
+    record.branchId ??
+      record.BranchId ??
+      record.branchID ??
+      record.clinicBranchId ??
+      record.ClinicBranchId ??
+      record.branch?.id ??
+      record.Branch?.Id ??
+      record.appointment?.branchId ??
+      record.appointment?.BranchId ??
+      ""
+  ).trim();
+
+const slotBelongsToBranch = (slot = {}, selectedBranchId = "") => {
+  const slotBranchId = getRecordBranchId(slot);
+  return Boolean(slotBranchId) && slotBranchId === String(selectedBranchId || "").trim();
+};
 
 const resolveScheduleTimes = ({
   workStart,
@@ -201,6 +225,135 @@ const parseListResponse = (data) => {
   return [];
 };
 
+const getDoctorIdValue = (doctor = {}) =>
+  String(
+    doctor.id ??
+      doctor.Id ??
+      doctor.doctorId ??
+      doctor.DoctorId ??
+      doctor.doctorID ??
+      doctor.userId ??
+      ""
+  ).trim();
+
+const getBranchAssignmentId = (branch = {}) => {
+  if (branch === null || branch === undefined) return "";
+  if (typeof branch !== "object") return String(branch).trim();
+  return String(
+    branch.id ??
+      branch.Id ??
+      branch.branchId ??
+      branch.BranchId ??
+      branch.branchID ??
+      branch.BranchID ??
+      branch.clinicBranchId ??
+      branch.ClinicBranchId ??
+      ""
+  ).trim();
+};
+
+const getBranchAssignmentName = (branch = {}) => {
+  if (!branch || typeof branch !== "object") return "";
+  return String(
+    branch.name ??
+      branch.Name ??
+      branch.branchName ??
+      branch.BranchName ??
+      branch.branch ??
+      branch.Branch ??
+      ""
+  ).trim();
+};
+
+const readDoctorBranchAssignments = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.branches)) return data.branches;
+  if (Array.isArray(data?.Branches)) return data.Branches;
+  if (Array.isArray(data?.branchIds)) return data.branchIds;
+  if (Array.isArray(data?.BranchIds)) return data.BranchIds;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.result)) return data.result;
+  return [];
+};
+
+const fetchDoctorBranchAssignments = async (doctorId, token) => {
+  if (!doctorId) return [];
+  try {
+    const response = await fetch(apiUrl(`Doctor/${encodeURIComponent(doctorId)}/branches`), {
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    if (!response.ok) return [];
+    return readDoctorBranchAssignments(await response.json().catch(() => []));
+  } catch {
+    return [];
+  }
+};
+
+const mergeDoctorBranches = (doctor = {}, branchAssignments = []) => {
+  const branchIds = branchAssignments.map(getBranchAssignmentId).filter(Boolean);
+  const branchObjects = branchAssignments
+    .map((branch) => ({
+      id: getBranchAssignmentId(branch),
+      branchId: getBranchAssignmentId(branch),
+      name: getBranchAssignmentName(branch),
+      branchName: getBranchAssignmentName(branch),
+    }))
+    .filter((branch) => branch.id || branch.name);
+
+  return {
+    ...doctor,
+    branchIds: branchIds.length ? branchIds : doctor.branchIds,
+    BranchIds: branchIds.length ? branchIds : doctor.BranchIds,
+    branches: branchObjects.length ? branchObjects : doctor.branches,
+    Branches: branchObjects.length ? branchObjects : doctor.Branches,
+  };
+};
+
+const buildDoctorBranchOptions = (doctor = {}, allBranches = []) => {
+  const assignments = [
+    ...(Array.isArray(doctor.branches) ? doctor.branches : []),
+    ...(Array.isArray(doctor.Branches) ? doctor.Branches : []),
+  ];
+  const branchIds = [
+    ...(Array.isArray(doctor.branchIds) ? doctor.branchIds : []),
+    ...(Array.isArray(doctor.BranchIds) ? doctor.BranchIds : []),
+    ...assignments.map(getBranchAssignmentId),
+    doctor.branchId,
+    doctor.BranchId,
+  ].map((value) => String(value || "").trim()).filter(Boolean);
+
+  const optionsById = new Map();
+  branchIds.forEach((id) => {
+    const branch =
+      allBranches.find((item) => String(item.id) === id) ||
+      assignments.find((item) => getBranchAssignmentId(item) === id) ||
+      null;
+    const name = branch?.name || branch?.branchName || getBranchAssignmentName(branch) || id;
+    optionsById.set(id, { id, name });
+  });
+
+  assignments.forEach((branch) => {
+    const id = getBranchAssignmentId(branch);
+    const name = getBranchAssignmentName(branch);
+    if (id && !optionsById.has(id)) optionsById.set(id, { id, name: name || id });
+  });
+
+  return Array.from(optionsById.values()).filter((branch) => branch.id);
+};
+
+const rememberDoctorBranch = (branch = {}) => {
+  if (!branch?.id) return;
+  localStorage.setItem("doctorBranchId", String(branch.id));
+  localStorage.setItem("DoctorBranchId", String(branch.id));
+  if (branch.name) {
+    localStorage.setItem("doctorBranchName", String(branch.name));
+    localStorage.setItem("DoctorBranchName", String(branch.name));
+  }
+};
+
 const getScheduleValue = (schedule = {}, keys = [], fallback = "") => {
   for (const key of keys) {
     const value = schedule?.[key];
@@ -269,17 +422,102 @@ const getScheduleId = (schedule = {}) =>
       schedule?.scheduleId ||
       schedule?.ScheduleId ||
       schedule?.ScheduleID ||
+      schedule?.doctorScheduleId ||
+      schedule?.DoctorScheduleId ||
+      schedule?.availabilityId ||
+      schedule?.AvailabilityId ||
       ""
   ).trim();
 
+const getExplicitScheduleId = (schedule = {}) =>
+  String(
+    schedule?.scheduleId ||
+      schedule?.ScheduleId ||
+      schedule?.ScheduleID ||
+      schedule?.doctorScheduleId ||
+      schedule?.DoctorScheduleId ||
+      schedule?.availabilityId ||
+      schedule?.AvailabilityId ||
+      ""
+  ).trim();
+
+const getScheduleIdFromRows = (rows = []) => {
+  for (const row of rows) {
+    const scheduleId = getScheduleId(row);
+    if (scheduleId) return scheduleId;
+  }
+  return "";
+};
+
+const getScheduleIdsFromRows = (rows = []) =>
+  Array.from(
+    new Set(
+      rows
+        .map((row) => getExplicitScheduleId(row))
+        .filter((id) => id && id !== "0")
+    )
+  );
+
+const fetchDaySlots = async (doctorId, branchId, date, token) => {
+  if (!doctorId || !branchId || !date) return [];
+
+  const query = new URLSearchParams({
+    doctorId: String(doctorId),
+    branchId: String(branchId),
+    date,
+  }).toString();
+  const response = await fetch(`${SCHEDULE_API}/day-slots?${query}`, {
+    headers: {
+      "ngrok-skip-browser-warning": "true",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) return [];
+
+  const rows = parseListResponse(await response.json().catch(() => []));
+  return rows.filter((slot) => !getRecordBranchId(slot) || slotBelongsToBranch(slot, branchId));
+};
+
+const fetchSlotsForDates = async (doctorId, branchId, dates = [], token) => {
+  const results = await Promise.all(
+    dates.map((date) => fetchDaySlots(doctorId, branchId, date, token).catch(() => []))
+  );
+  return results.flat();
+};
+
+const buildPreviewSlotsFromPayload = (payload) => {
+  const startMinutes = timeToMinutes(payload.workStart);
+  const endMinutes = timeToMinutes(payload.workEnd);
+  const breakStartMinutes = timeToMinutes(payload.breakStart);
+  const breakEndMinutes = timeToMinutes(payload.breakEnd);
+  const duration = Number(payload.slotDuration) || 15;
+  if (startMinutes === null || endMinutes === null || endMinutes <= startMinutes) return [];
+
+  const slots = [];
+  for (let current = startMinutes; current + duration <= endMinutes; current += duration) {
+    const slotEnd = current + duration;
+    const overlapsBreak =
+      breakStartMinutes !== null &&
+      breakEndMinutes !== null &&
+      current < breakEndMinutes &&
+      slotEnd > breakStartMinutes;
+    if (overlapsBreak) continue;
+    slots.push({
+      startTime: minutesToTime(current),
+      endTime: minutesToTime(slotEnd),
+      status: "Available",
+      branchId: payload.branchId,
+      doctorId: payload.doctorId,
+    });
+  }
+  return slots;
+};
+
 const fetchDoctorSchedule = async (doctorId, branchId, token) => {
   const candidateUrls = [
-    `${SCHEDULE_API}/${encodeURIComponent(doctorId)}`,
-    `${SCHEDULE_API}/${encodeURIComponent(doctorId)}?doctorId=${encodeURIComponent(doctorId)}`,
     `${SCHEDULE_API}/${encodeURIComponent(doctorId)}?branchId=${encodeURIComponent(branchId)}`,
-    `${SCHEDULE_API}?doctorId=${encodeURIComponent(doctorId)}`,
     `${SCHEDULE_API}?doctorId=${encodeURIComponent(doctorId)}&branchId=${encodeURIComponent(branchId)}`,
-    `${SCHEDULE_API}/doctor/${encodeURIComponent(doctorId)}`,
     `${SCHEDULE_API}/doctor/${encodeURIComponent(doctorId)}?branchId=${encodeURIComponent(branchId)}`,
   ].filter(Boolean);
 
@@ -295,7 +533,18 @@ const fetchDoctorSchedule = async (doctorId, branchId, token) => {
 
       const data = await response.json().catch(() => null);
       const schedule = parseDoctorSchedule(data);
-      if (schedule) return schedule;
+      if (schedule && (!getRecordBranchId(schedule) || getRecordBranchId(schedule) === String(branchId))) return schedule;
+
+      const rows = parseListResponse(data).filter((row) => slotBelongsToBranch(row, branchId));
+      const scheduleId = getScheduleIdFromRows(rows);
+      if (scheduleId) {
+        return {
+          id: scheduleId,
+          Id: scheduleId,
+          branchId,
+          BranchId: branchId,
+        };
+      }
     } catch {
       // Try the next candidate URL.
     }
@@ -306,12 +555,7 @@ const fetchDoctorSchedule = async (doctorId, branchId, token) => {
 
 const normalizeDoctor = (doctor = {}) => ({
   id:
-    doctor.id ??
-    doctor.doctorId ??
-    doctor.DoctorId ??
-    doctor.doctorID ??
-    doctor.userId ??
-    "",
+    getDoctorIdValue(doctor),
   name:
     doctor.name ||
     doctor.doctorName ||
@@ -344,33 +588,34 @@ const fetchDoctorsForBranch = async (branchId, token) => {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  try {
-    const response = await fetch(
-      apiUrl(`Doctor/branch/${encodeURIComponent(branchId)}`),
-      { headers }
-    );
-
-    if (response.ok) {
-      return parseListResponse(await response.json().catch(() => []));
-    }
-  } catch {
-    // Fall back to all doctors if the branch endpoint is unavailable.
-  }
-
   const response = await fetch(DOCTORS_API, { headers });
   if (!response.ok) throw new Error("Unable to load doctors.");
 
   const selectedBranchId = String(branchId);
-  return parseListResponse(await response.json().catch(() => [])).filter(
-    (doctor) =>
-      String(
-        doctor.branchId ??
-          doctor.BranchId ??
-          doctor.branchID ??
-          doctor.clinicBranchId ??
-          ""
-      ) === selectedBranchId
+  const allDoctors = parseListResponse(await response.json().catch(() => []));
+  const enrichedDoctors = await Promise.all(
+    allDoctors.map(async (doctor) => {
+      const assignments = await fetchDoctorBranchAssignments(getDoctorIdValue(doctor), token);
+      return mergeDoctorBranches(doctor, assignments);
+    })
   );
+
+  return enrichedDoctors.filter((doctor) => {
+    const assignmentIds = [
+      ...(Array.isArray(doctor.branchIds) ? doctor.branchIds : []),
+      ...(Array.isArray(doctor.BranchIds) ? doctor.BranchIds : []),
+      ...(Array.isArray(doctor.branches) ? doctor.branches.map(getBranchAssignmentId) : []),
+      ...(Array.isArray(doctor.Branches) ? doctor.Branches.map(getBranchAssignmentId) : []),
+    ].map((id) => String(id || "").trim());
+    const directBranchId = String(
+      doctor.branchId ??
+        doctor.BranchId ??
+        doctor.branchID ??
+        doctor.clinicBranchId ??
+        ""
+    ).trim();
+    return assignmentIds.includes(selectedBranchId) || directBranchId === selectedBranchId;
+  });
 };
 
 const getApiErrorMessage = async (response, fallback) => {
@@ -400,6 +645,8 @@ const shouldTryNextScheduleSave = (message) => {
     !text ||
     text.includes("unable to create") ||
     text.includes("already") ||
+    text.includes("overlap") ||
+    text.includes("overlapping") ||
     text.includes("exist") ||
     text.includes("duplicate") ||
     text.includes("conflict") ||
@@ -425,14 +672,38 @@ const saveSchedulePayload = async (
     Id: scheduleId || payload.id || payload.Id,
     BranchId: payload.branchId,
     DoctorId: payload.doctorId,
+    branchID: payload.branchId,
+    doctorID: payload.doctorId,
     Days: payload.days,
+    days: payload.days,
+    WorkingDays: payload.days,
+    workingDays: payload.days,
     StartDate: payload.startDate,
+    startDate: payload.startDate,
+    Date: payload.startDate,
+    date: payload.startDate,
+    ScheduleDate: payload.startDate,
+    scheduleDate: payload.startDate,
     EndDate: payload.endDate,
+    endDate: payload.endDate,
     WorkStart: payload.workStart,
+    workStart: payload.workStart,
+    StartTime: payload.workStart,
+    startTime: payload.workStart,
     WorkEnd: payload.workEnd,
+    workEnd: payload.workEnd,
+    EndTime: payload.workEnd,
+    endTime: payload.workEnd,
     BreakStart: payload.breakStart,
+    breakStart: payload.breakStart,
+    BreakStartTime: payload.breakStart,
+    breakStartTime: payload.breakStart,
     BreakEnd: payload.breakEnd,
+    breakEnd: payload.breakEnd,
+    BreakEndTime: payload.breakEnd,
+    breakEndTime: payload.breakEnd,
     SlotDuration: payload.slotDuration,
+    slotDuration: payload.slotDuration,
     dates: payload.dates,
     Dates: payload.dates,
     scheduledDates: payload.dates,
@@ -448,32 +719,20 @@ const saveSchedulePayload = async (
   const query = new URLSearchParams({
     doctorId: String(payload.doctorId),
     branchId: String(payload.branchId),
+    date: payload.startDate,
     startDate: payload.startDate,
     endDate: payload.endDate,
-    date: payload.startDate,
-    overwrite: "true",
   }).toString();
-  const scheduleUrl =
-    scheduleId && scheduleId !== ""
-      ? `${SCHEDULE_API}/${encodeURIComponent(scheduleId)}`
-      : "";
   const attempts = [
-    ...(scheduleUrl
+    ...(scheduleId
       ? [
-          { url: scheduleUrl, method: "PUT" },
-          { url: `${scheduleUrl}?${query}`, method: "PUT" },
+          { url: `${SCHEDULE_API}/${encodeURIComponent(scheduleId)}`, method: "PUT" },
+          { url: `${SCHEDULE_API}/${encodeURIComponent(scheduleId)}?${query}`, method: "PUT" },
         ]
       : []),
-    { url: SCHEDULE_API, method: replaceExisting ? "PUT" : "POST" },
-    { url: SCHEDULE_API, method: replaceExisting ? "POST" : "PUT" },
-    { url: `${SCHEDULE_API}?${query}`, method: replaceExisting ? "PUT" : "POST" },
-    { url: `${SCHEDULE_API}/${encodeURIComponent(payload.doctorId)}`, method: "PUT" },
-    { url: `${SCHEDULE_API}/${encodeURIComponent(payload.doctorId)}?${query}`, method: "PUT" },
-    { url: `${SCHEDULE_API}/doctor/${encodeURIComponent(payload.doctorId)}`, method: "PUT" },
-    { url: `${SCHEDULE_API}/doctor/${encodeURIComponent(payload.doctorId)}?${query}`, method: "PUT" },
-    { url: `${SCHEDULE_API}/update`, method: "POST" },
-    { url: `${SCHEDULE_API}/replace`, method: "POST" },
-    { url: `${SCHEDULE_API}/regenerate`, method: "POST" },
+    ...(!replaceExisting || !scheduleId
+      ? [{ url: SCHEDULE_API, method: "POST" }]
+      : []),
   ];
   let lastError = "";
   let firstSpecificError = "";
@@ -603,7 +862,6 @@ const resolveSelfDoctorBranch = (doctor = {}, branchOptions = []) => {
 };
 
 function Schedule({ selfMode = false } = {}) {
-  const navigate = useNavigate();
   const sessionDoctor = useMemo(() => getLoggedInDoctor(), []);
   const today = useMemo(() => toDateInputValue(new Date()), []);
   const defaultEndDate = useMemo(
@@ -637,13 +895,43 @@ function Schedule({ selfMode = false } = {}) {
   const [previewDate, setPreviewDate] = useState(today);
   const [previewSlots, setPreviewSlots] = useState([]);
   const [existingScheduleId, setExistingScheduleId] = useState("");
+  const [hasSavedSchedule, setHasSavedSchedule] = useState(false);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
   const [slotRefreshKey, setSlotRefreshKey] = useState(0);
   const [selfDoctor, setSelfDoctor] = useState(null);
 
+  const selectedDoctor = useMemo(
+    () => doctors.find((doctor) => String(doctor.id) === String(doctorId)) || null,
+    [doctorId, doctors]
+  );
+
+  const selectedDoctorBranchNames = useMemo(() => {
+    if (!selectedDoctor) return [];
+    const names = [
+      ...(Array.isArray(selectedDoctor.branches)
+        ? selectedDoctor.branches.map(getBranchAssignmentName)
+        : []),
+      ...(Array.isArray(selectedDoctor.Branches)
+        ? selectedDoctor.Branches.map(getBranchAssignmentName)
+        : []),
+      selectedDoctor.branchName,
+      selectedDoctor.BranchName,
+    ].filter(Boolean);
+    return Array.from(new Set(names));
+  }, [selectedDoctor]);
+
   const scheduledDates = useMemo(
     () => buildScheduledDates(startDate, endDate, days),
     [days, endDate, startDate]
+  );
+
+  const visiblePreviewSlots = useMemo(
+    () =>
+      previewSlots.filter((slot) => {
+        const slotEnd = formatSlotTime(getSlotEndValue(slot));
+        return isBookedSlot(slot) || (!isTimeOutSlot(slot) && !isCompletedSlot(slotEnd, previewDate));
+      }),
+    [previewDate, previewSlots]
   );
 
   useEffect(() => {
@@ -657,7 +945,7 @@ function Schedule({ selfMode = false } = {}) {
       }),
       fetchBranchesForHospital(hospitalId),
       selfMode ? fetchAllDoctors(getAuthToken()) : Promise.resolve([]),
-    ]).then(([settingsResult, branchesResult, doctorsResult]) => {
+    ]).then(async ([settingsResult, branchesResult, doctorsResult]) => {
       if (settingsResult.status === "fulfilled") {
         const settings =
           settingsResult.value?.data || settingsResult.value || {};
@@ -692,6 +980,7 @@ function Schedule({ selfMode = false } = {}) {
       }
 
       if (selfMode) {
+        const token = getAuthToken();
         const doctor =
           doctorsResult?.status === "fulfilled"
             ? findLoggedInDoctorRecord(doctorsResult.value, sessionDoctor)
@@ -703,9 +992,16 @@ function Schedule({ selfMode = false } = {}) {
           branchName: getStoredDoctorBranchName(),
         };
         const baseDoctor = doctor || fallbackDoctor;
-        const resolvedBranch = resolveSelfDoctorBranch(baseDoctor, nextBranchOptions);
+        const branchAssignments = await fetchDoctorBranchAssignments(getDoctorIdValue(baseDoctor), token);
+        const mergedDoctor = mergeDoctorBranches(baseDoctor, branchAssignments);
+        const selfBranchOptions = buildDoctorBranchOptions(mergedDoctor, nextBranchOptions);
+        if (selfBranchOptions.length) setBranchOptions(selfBranchOptions);
+        const resolvedBranch = resolveSelfDoctorBranch(
+          mergedDoctor,
+          selfBranchOptions.length ? selfBranchOptions : nextBranchOptions
+        );
         const resolvedDoctor = {
-          ...baseDoctor,
+          ...mergedDoctor,
           branchId: resolvedBranch.id,
           branchName: resolvedBranch.name,
         };
@@ -770,6 +1066,8 @@ function Schedule({ selfMode = false } = {}) {
   useEffect(() => {
     if (!branchId || !doctorId) {
       setPreviewSlots([]);
+      setExistingScheduleId("");
+      setHasSavedSchedule(false);
       return;
     }
 
@@ -777,6 +1075,8 @@ function Schedule({ selfMode = false } = {}) {
     let isActive = true;
 
     const loadDoctorSchedule = async () => {
+      setExistingScheduleId("");
+      setHasSavedSchedule(false);
       const schedule = await fetchDoctorSchedule(doctorId, branchId, token).catch(() => null);
       if (!isActive || !schedule) return;
 
@@ -804,6 +1104,7 @@ function Schedule({ selfMode = false } = {}) {
       if (resolvedBreakEnd) setBreakEnd(formatTime12Hour(resolvedBreakEnd));
       if (resolvedSlotDuration) setSlotDuration(resolvedSlotDuration);
       setExistingScheduleId(scheduleId);
+      setHasSavedSchedule(true);
     };
 
     loadDoctorSchedule();
@@ -821,25 +1122,57 @@ function Schedule({ selfMode = false } = {}) {
 
     setIsFetchingSlots(true);
     const token = getAuthToken();
-    fetch(
-      `${SCHEDULE_API}/day-slots?doctorId=${encodeURIComponent(
-        doctorId
-      )}&date=${encodeURIComponent(previewDate)}`,
-      {
-        headers: {
-          "ngrok-skip-browser-warning": "true",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      }
-    )
-      .then((response) => {
-        if (!response.ok) throw new Error("Failed to fetch slots");
-        return response.json();
+    const resolvedTimes = resolveScheduleTimes({
+      workStart,
+      workEnd,
+      breakStart,
+      breakEnd,
+      slotDuration,
+    });
+    const previewPayload = {
+      branchId: Number(branchId),
+      doctorId: Number(doctorId),
+      workStart: formatTimeForApi(resolvedTimes.workStart),
+      workEnd: formatTimeForApi(resolvedTimes.workEnd),
+      breakStart: formatTimeForApi(resolvedTimes.breakStart),
+      breakEnd: formatTimeForApi(resolvedTimes.breakEnd),
+      slotDuration: resolvedTimes.slotDuration,
+    };
+    const generatedSlots = buildPreviewSlotsFromPayload(previewPayload);
+    setPreviewSlots(generatedSlots);
+    fetchDaySlots(doctorId, branchId, previewDate, token)
+      .then((rows) => {
+        setHasSavedSchedule(rows.length > 0);
       })
-      .then((data) => setPreviewSlots(parseListResponse(data)))
-      .catch(() => setPreviewSlots([]))
+      .catch(() => {})
       .finally(() => setIsFetchingSlots(false));
-  }, [branchId, doctorId, previewDate, slotRefreshKey]);
+  }, [branchId, doctorId, previewDate, workStart, workEnd, breakStart, breakEnd, slotDuration, slotRefreshKey]);
+
+  useEffect(() => {
+    if (!branchId || !doctorId || scheduledDates.length === 0) {
+      setHasSavedSchedule(false);
+      return;
+    }
+
+    const token = getAuthToken();
+    let isActive = true;
+    fetchSlotsForDates(
+      doctorId,
+      branchId,
+      scheduledDates.map((date) => date.value),
+      token
+    )
+      .then((rows) => {
+        if (isActive) setHasSavedSchedule(rows.length > 0);
+      })
+      .catch(() => {
+        if (isActive) setHasSavedSchedule(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [branchId, doctorId, scheduledDates, slotRefreshKey]);
 
   const toggleDay = (fullDay) => {
     setSaveMessage("");
@@ -904,21 +1237,70 @@ function Schedule({ selfMode = false } = {}) {
 
     const token = getAuthToken();
     try {
+      const existingRows = await fetchSlotsForDates(
+        doctorId,
+        branchId,
+        scheduledDates.map((date) => date.value),
+        token
+      ).catch(() => []);
+      const rowScheduleIds = getScheduleIdsFromRows(existingRows);
+      const shouldUpdate = Boolean(hasSavedSchedule || existingScheduleId || rowScheduleIds.length);
+      const resolvedScheduleId = existingScheduleId || rowScheduleIds[0] || "";
+
       const data = await saveSchedulePayload(payload, token, {
-        replaceExisting: Boolean(existingScheduleId),
-        scheduleId: existingScheduleId,
+        replaceExisting: shouldUpdate,
+        scheduleId: resolvedScheduleId || (shouldUpdate ? String(doctorId) : ""),
       });
+      rememberDoctorBranch(branchOptions.find((branch) => String(branch.id) === String(branchId)));
       setHasSaveError(false);
+      setHasSavedSchedule(true);
+      setExistingScheduleId(getScheduleId(data) || resolvedScheduleId);
+      setPreviewSlots(buildPreviewSlotsFromPayload(payload));
       setSaveMessage(
         data?.message ||
-          `Schedule saved for ${scheduledDates.length} working days.`
+          `Schedule ${shouldUpdate ? "updated" : "saved"} for ${scheduledDates.length} working days.`
       );
       setPreviewDate(scheduledDates[0].value);
       setSlotRefreshKey((value) => value + 1);
-      navigate(selfMode ? "/doctor/schedule" : "/doctors", { replace: true });
     } catch (error) {
+      const message = String(error.message || "");
+      const canReplaceAfterOverlap = /overlap|overlapping|already|exist|duplicate|conflict/i.test(message);
+
+      if (canReplaceAfterOverlap) {
+        try {
+          const rowsByDates = await fetchSlotsForDates(
+            doctorId,
+            branchId,
+            scheduledDates.map((date) => date.value),
+            token
+          );
+          const ids = getScheduleIdsFromRows(rowsByDates);
+          const updateId = ids[0] || existingScheduleId || String(doctorId);
+          const data = await saveSchedulePayload(payload, token, {
+            replaceExisting: true,
+            scheduleId: updateId,
+          });
+          rememberDoctorBranch(branchOptions.find((branch) => String(branch.id) === String(branchId)));
+          setHasSaveError(false);
+          setHasSavedSchedule(true);
+          setExistingScheduleId(getScheduleId(data) || updateId);
+          setPreviewSlots(buildPreviewSlotsFromPayload(payload));
+          setSaveMessage(
+            data?.message ||
+              `Schedule updated for ${scheduledDates.length} working days.`
+          );
+          setPreviewDate(scheduledDates[0].value);
+          setSlotRefreshKey((value) => value + 1);
+          return;
+        } catch (retryError) {
+          setHasSaveError(true);
+          setSaveMessage(retryError.message || message || "Unable to update the schedule.");
+          return;
+        }
+      }
+
       setHasSaveError(true);
-      setSaveMessage(error.message || "Unable to create the schedule.");
+      setSaveMessage(message || "Unable to create the schedule.");
     } finally {
       setIsSaving(false);
     }
@@ -944,11 +1326,35 @@ function Schedule({ selfMode = false } = {}) {
           {selfMode ? (
             <>
               <label>Branch</label>
-              <div className="schedule-static-field">
-                {selfDoctor?.branchName ||
-                  branchOptions.find((branch) => String(branch.id) === String(branchId))?.name ||
-                  "Assigned branch"}
-              </div>
+              {branchOptions.length > 1 ? (
+                <select
+                  value={branchId}
+                  onChange={(event) => {
+                    const nextBranchId = event.target.value;
+                    const nextBranch = branchOptions.find((branch) => String(branch.id) === String(nextBranchId));
+                    setBranchId(nextBranchId);
+                    setSelfDoctor((doctor) => ({
+                      ...(doctor || {}),
+                      branchId: nextBranchId,
+                      branchName: nextBranch?.name || "",
+                    }));
+                    rememberDoctorBranch(nextBranch);
+                    setSaveMessage("");
+                  }}
+                >
+                  {branchOptions.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="schedule-static-field">
+                  {selfDoctor?.branchName ||
+                    branchOptions.find((branch) => String(branch.id) === String(branchId))?.name ||
+                    "Assigned branch"}
+                </div>
+              )}
 
               <label>Doctor</label>
               <div className="schedule-static-field">
@@ -997,6 +1403,11 @@ function Schedule({ selfMode = false } = {}) {
                   </option>
                 ))}
               </select>
+              {selectedDoctorBranchNames.length > 1 ? (
+                <p className="schedule-assignment-note">
+                  Assigned branches: {selectedDoctorBranchNames.join(", ")}
+                </p>
+              ) : null}
             </>
           )}
 
@@ -1141,7 +1552,7 @@ function Schedule({ selfMode = false } = {}) {
           >
             {isSaving
               ? "Saving..."
-              : `Save Schedule (${scheduledDates.length} days)`}
+              : `${existingScheduleId || hasSavedSchedule ? "Update" : "Save"} Schedule (${scheduledDates.length} days)`}
           </button>
 
           {saveMessage && (
@@ -1187,22 +1598,13 @@ function Schedule({ selfMode = false } = {}) {
               <p className="slots-msg">Select a branch to view slots.</p>
             ) : !doctorId ? (
               <p className="slots-msg">Select a doctor to view slots.</p>
-            ) : previewSlots.length > 0 ? (
-              previewSlots.map((slot, index) => {
-                const slotStart = formatSlotTime(slot.start || slot.startTime || "");
-                const slotEnd = formatSlotTime(slot.end || slot.endTime || "");
+            ) : visiblePreviewSlots.length > 0 ? (
+              visiblePreviewSlots.map((slot, index) => {
+                const slotStart = formatSlotTime(getSlotStartValue(slot));
+                const slotEnd = formatSlotTime(getSlotEndValue(slot));
                 const isBooked = isBookedSlot(slot);
-                const isCompleted = !isBooked && (isTimeOutSlot(slot) || isCompletedSlot(slotEnd, previewDate));
-                const statusClass = isBooked
-                  ? "booked"
-                  : isCompleted
-                    ? "completed"
-                    : "available";
-                const statusLabel = isBooked
-                  ? "Booked"
-                  : isCompleted
-                    ? "Time Out"
-                    : "Available";
+                const statusClass = isBooked ? "booked" : "available";
+                const statusLabel = isBooked ? "Booked" : "Available";
 
                 return (
                   <div className="slot" key={`${slotStart}-${slotEnd}-${index}`}>

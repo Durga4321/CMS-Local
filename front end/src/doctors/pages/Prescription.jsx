@@ -344,7 +344,15 @@ function Prescription() {
         };
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
-        const appointmentsResponse = await fetch(APPOINTMENTS_API, {
+        const currentDoctor = getLoggedInDoctor();
+        const params = new URLSearchParams();
+        if (currentDoctor.id) params.set("doctorId", currentDoctor.id);
+        if (currentDoctor.branchId) params.set("branchId", currentDoctor.branchId);
+        const appointmentsUrl = params.toString()
+          ? `${APPOINTMENTS_API}?${params.toString()}`
+          : APPOINTMENTS_API;
+
+        const appointmentsResponse = await fetch(appointmentsUrl, {
           headers,
         });
 
@@ -353,7 +361,7 @@ function Prescription() {
           let rawAppointments = Array.isArray(appointmentsData) ? appointmentsData : [];
           rawAppointments = filterByLoggedInDoctor(
             rawAppointments,
-            getLoggedInDoctor()
+            currentDoctor
           );
 
           const appointments = rawAppointments.map((item) =>

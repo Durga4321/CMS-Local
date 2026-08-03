@@ -6,7 +6,7 @@ import {
   parseList,
   requestJson as nurseRequestJson,
 } from "../Recepitionist/receptionApi";
-import { getNurseScope } from "./nurseScope";
+import { getNurseScope, scopeNurseRecords } from "./nurseScope";
 
 const firstText = (...values) =>
   values
@@ -71,6 +71,46 @@ const getAppointmentPatient = (appointment = {}) => ({
     appointment.patient?.age,
     appointment.Patient?.Age
   ),
+  hospitalId: firstText(
+    appointment.hospitalId,
+    appointment.HospitalId,
+    appointment.clinicId,
+    appointment.ClinicId,
+    appointment.patient?.hospitalId,
+    appointment.patient?.clinicId,
+    appointment.Patient?.HospitalId,
+    appointment.Patient?.ClinicId
+  ),
+  clinicId: firstText(
+    appointment.clinicId,
+    appointment.ClinicId,
+    appointment.hospitalId,
+    appointment.HospitalId,
+    appointment.patient?.clinicId,
+    appointment.patient?.hospitalId,
+    appointment.Patient?.ClinicId,
+    appointment.Patient?.HospitalId
+  ),
+  branchId: firstText(
+    appointment.branchId,
+    appointment.BranchId,
+    appointment.branchID,
+    appointment.BranchID,
+    appointment.clinicBranchId,
+    appointment.ClinicBranchId,
+    appointment.patient?.branchId,
+    appointment.patient?.BranchId,
+    appointment.Patient?.BranchId
+  ),
+  branchName: firstText(
+    appointment.branchName,
+    appointment.BranchName,
+    appointment.branch,
+    appointment.Branch,
+    appointment.patient?.branchName,
+    appointment.patient?.BranchName,
+    appointment.Patient?.BranchName
+  ),
 });
 
 const mergePatient = (patient = {}, appointmentPatient = {}) => ({
@@ -80,6 +120,10 @@ const mergePatient = (patient = {}, appointmentPatient = {}) => ({
   name: firstText(patient.name, patient.fullName, patient.PatientName, appointmentPatient.name),
   phone: firstText(patient.phone, patient.mobile, patient.phoneNumber, appointmentPatient.phone),
   age: firstText(patient.age, appointmentPatient.age),
+  hospitalId: firstText(patient.hospitalId, patient.HospitalId, patient.clinicId, patient.ClinicId, appointmentPatient.hospitalId),
+  clinicId: firstText(patient.clinicId, patient.ClinicId, patient.hospitalId, patient.HospitalId, appointmentPatient.clinicId),
+  branchId: firstText(patient.branchId, patient.BranchId, patient.clinicBranchId, patient.ClinicBranchId, appointmentPatient.branchId),
+  branchName: firstText(patient.branchName, patient.BranchName, patient.branch, patient.Branch, appointmentPatient.branchName),
 });
 
 const mergePatientsFromAppointments = (patients = [], appointments = []) => {
@@ -120,11 +164,11 @@ export const nursePatientsRequestJson = async (path, options = {}) => {
   const method = String(options.method || "GET").toUpperCase();
 
   if (method === "GET" && /^Appointment\/online$/i.test(raw)) {
-    return getOnlineAppointments();
+    return scopeNurseRecords(await getOnlineAppointments());
   }
 
   if (method === "GET" && /^Appointment\/offline$/i.test(raw)) {
-    return getOfflineAppointments();
+    return scopeNurseRecords(await getOfflineAppointments());
   }
 
   if (method === "GET" && /^Appointment$/i.test(raw)) {
@@ -132,7 +176,7 @@ export const nursePatientsRequestJson = async (path, options = {}) => {
       getOnlineAppointments().catch(() => []),
       getOfflineAppointments().catch(() => []),
     ]);
-    return [...onlineAppointments, ...offlineAppointments];
+    return scopeNurseRecords([...onlineAppointments, ...offlineAppointments]);
   }
 
   if (method === "GET" && /^Patient$/i.test(raw)) {
@@ -142,12 +186,16 @@ export const nursePatientsRequestJson = async (path, options = {}) => {
       getOfflineAppointments().catch(() => []),
     ]);
 
-    return mergePatientsFromAppointments(patients, [...parseList(onlineAppointments), ...parseList(offlineAppointments)]);
+    return scopeNurseRecords(
+      mergePatientsFromAppointments(patients, [...parseList(onlineAppointments), ...parseList(offlineAppointments)])
+    );
   }
 
   if (method === "GET" && /^Nurse\/patients$/i.test(raw)) {
     try {
-      return await nurseRequestJson("Nurse/patients", options);
+      return scopeNurseRecords(await nurseRequestJson("Nurse/patients", options), getNurseScope(), {
+        allowMissingBranch: false,
+      });
     } catch {
       return [];
     }
@@ -163,7 +211,7 @@ function NursePatients() {
       showAddPatient={false}
       apiRequest={nursePatientsRequestJson}
       getScope={getNurseScope}
-      scopeRecords={(records) => records}
+      scopeRecords={scopeNurseRecords}
     />
   );
 }

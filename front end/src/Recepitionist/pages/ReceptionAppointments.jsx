@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CheckCircle, CreditCard } from "lucide-react";
+import { ArrowLeft, CheckCircle, CreditCard, Eye, Printer } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "../../components/ToastProvider";
 import { formatToday, parseList, requestJson } from "../receptionApi";
@@ -259,100 +259,9 @@ const CHIEF_COMPLAINT_OPTIONS = [
   "Other",
 ];
 
-const VITAL_FIELDS = [
-  {
-    name: "bloodPressure",
-    label: "Blood Pressure",
-    unit: "mmHg",
-    type: "bloodPressure",
-    placeholder: "120/80",
-  },
-  {
-    name: "sugarLevel",
-    label: "Sugar Level",
-    unit: "mg/dL",
-    type: "decimal",
-    placeholder: "100",
-  },
-  {
-    name: "temperature",
-    label: "Temperature",
-    unit: "F",
-    type: "decimal",
-    placeholder: "98.6",
-  },
-  {
-    name: "weight",
-    label: "Weight",
-    unit: "kg",
-    type: "decimal",
-    placeholder: "70",
-  },
-  {
-    name: "pulseRate",
-    label: "Pulse Rate",
-    unit: "bpm",
-    type: "integer",
-    placeholder: "72",
-  },
-  {
-    name: "respiratoryRate",
-    label: "Respiratory Rate",
-    unit: "breaths/min",
-    type: "integer",
-    placeholder: "16",
-  },
-];
-
-const vitalFieldByName = VITAL_FIELDS.reduce((fields, field) => {
-  fields[field.name] = field;
-  return fields;
-}, {});
-
-const sanitizeVitalValue = (value, type) => {
-  const text = String(value || "");
-
-  if (type === "bloodPressure") {
-    return text
-      .replace(/[^\d/]/g, "")
-      .replace(/\/{2,}/g, "/")
-      .replace(/^(\d*\/\d*)\/.*$/, "$1");
-  }
-
-  if (type === "integer") {
-    return text.replace(/\D/g, "");
-  }
-
-  return text
-    .replace(/[^\d.]/g, "")
-    .replace(/(\..*)\./g, "$1");
-};
-
-const validateVitalValue = (value, field) => {
-  const text = String(value || "").trim();
-  if (!text) return "";
-
-  if (field.type === "bloodPressure") {
-    return /^\d{2,3}\/\d{2,3}$/.test(text)
-      ? ""
-      : "Enter blood pressure like 120/80.";
-  }
-
-  if (field.type === "integer") {
-    return /^\d+$/.test(text) ? "" : `${field.label} must be a number.`;
-  }
-
-  return /^\d+(\.\d+)?$/.test(text) ? "" : `${field.label} must be a number.`;
-};
-
 const validateChiefComplaintsLive = (value) => {
   const text = String(value || "").trim();
   return text ? validateText(text, "Chief complaints") : "";
-};
-
-const appendUnit = (value, unit) => {
-  const text = String(value || "").trim();
-  return text ? `${text} ${unit}` : "";
 };
 
 const escapeReceiptHtml = (value) =>
@@ -536,8 +445,6 @@ const printConsultationReceipt = ({
               <div class="row"><span class="label">Address</span><span>:</span><span>${escapeReceiptHtml(address)}</span></div>
               <div class="row"><span class="label">Department</span><span>:</span><span>${escapeReceiptHtml(specialization)}</span></div>
               <div class="row"><span class="label">Cons Fee</span><span>:</span><span class="value">${escapeReceiptHtml(formatIndianCurrency(amount))}</span></div>
-              <div class="row"><span class="label">BP</span><span>:</span><span>${escapeReceiptHtml(vitals.bloodPressure || "-")}</span></div>
-              <div class="row"><span class="label">Temp/Weight</span><span>:</span><span>${escapeReceiptHtml(vitals.temperature || "-")} / ${escapeReceiptHtml(vitals.weight || "-")}</span></div>
             </div>
           </div>
 
@@ -611,17 +518,13 @@ function ReceptionAppointments({ hideActions = false }) {
   const [paymentStep, setPaymentStep] = useState(false);
   const [paymentMode, setPaymentMode] = useState("UPI");
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [lastReceipt, setLastReceipt] = useState(null);
+  const [showReceiptPreview, setShowReceiptPreview] = useState(false);
   const [form, setForm] = useState({
     patientId: "",
     doctorId: "",
     date: formatToday(),
     chiefComplaints: "",
-    bloodPressure: "",
-    sugarLevel: "",
-    temperature: "",
-    weight: "",
-    pulseRate: "",
-    respiratoryRate: "",
   });
 
   const refresh = useCallback(() => {
@@ -918,11 +821,7 @@ function ReceptionAppointments({ hideActions = false }) {
       return false;
     }
 
-    const nextFieldErrors = VITAL_FIELDS.reduce((errors, field) => {
-      const error = validateVitalValue(form[field.name], field);
-      if (error) errors[field.name] = error;
-      return errors;
-    }, {});
+    const nextFieldErrors = {};
 
     const chiefComplaintsError = validateText(
       form.chiefComplaints,
@@ -963,19 +862,20 @@ function ReceptionAppointments({ hideActions = false }) {
       Number(receptionistBranchId) ||
       Number(getDoctorBranchId(selectedDoctor)) ||
       0;
+    const branchNameForAppointment =
+      getRecordBranchName(selectedSlotObject) ||
+      getRecordBranchName(selectedDoctor) ||
+      receptionistBranchName ||
+      "";
     const transactionId = `CONS-${Date.now()}`;
-    const vitals = {
-      bloodPressure: appendUnit(form.bloodPressure, vitalFieldByName.bloodPressure.unit),
-      sugarLevel: appendUnit(form.sugarLevel, vitalFieldByName.sugarLevel.unit),
-      temperature: appendUnit(form.temperature, vitalFieldByName.temperature.unit),
-      weight: appendUnit(form.weight, vitalFieldByName.weight.unit),
-      pulseRate: appendUnit(form.pulseRate, vitalFieldByName.pulseRate.unit),
-      respiratoryRate: appendUnit(form.respiratoryRate, vitalFieldByName.respiratoryRate.unit),
-    };
+    const vitals = {};
     const body = {
       hospitalId: Number(receptionistHospitalId) || 0,
       clinicId: Number(receptionistHospitalId) || 0,
       branchId: branchIdForAppointment,
+      BranchId: branchIdForAppointment,
+      branchName: branchNameForAppointment,
+      BranchName: branchNameForAppointment,
       doctorId: Number(form.doctorId),
       patientId: Number(form.patientId),
       patientName: getPatientName(selectedPatient),
@@ -992,18 +892,6 @@ function ReceptionAppointments({ hideActions = false }) {
       paymentStatus: "Paid",
       status: "Scheduled",
       chiefComplaints: form.chiefComplaints.trim(),
-      bloodPressure: vitals.bloodPressure,
-      bloodPressureUnit: vitalFieldByName.bloodPressure.unit,
-      sugarLevel: vitals.sugarLevel,
-      sugarLevelUnit: vitalFieldByName.sugarLevel.unit,
-      temperature: vitals.temperature,
-      temperatureUnit: vitalFieldByName.temperature.unit,
-      weight: vitals.weight,
-      weightUnit: vitalFieldByName.weight.unit,
-      pulseRate: vitals.pulseRate,
-      pulseRateUnit: vitalFieldByName.pulseRate.unit,
-      respiratoryRate: vitals.respiratoryRate,
-      respiratoryRateUnit: vitalFieldByName.respiratoryRate.unit,
       vitals,
     };
 
@@ -1011,18 +899,20 @@ function ReceptionAppointments({ hideActions = false }) {
       setBookingLoading(true);
       console.debug("Booking payload", { selectedDoctor, branchIdForAppointment, body });
       const savedAppointment = await requestJson("Appointment", { method: "POST", body: JSON.stringify(body) });
-      printConsultationReceipt({
+      const receiptData = {
         appointment: { ...body, ...(savedAppointment || {}) },
         patient: selectedPatient,
         doctor: selectedDoctor,
         receptionist: receptionistProfile,
-        branchName: receptionistBranchName,
+        branchName: branchNameForAppointment,
         fee: consultationFee,
         paymentMode,
         slot: selectedSlot,
         vitals,
         chiefComplaints: form.chiefComplaints.trim(),
-      });
+      };
+      setLastReceipt(receiptData);
+      setShowReceiptPreview(false);
       setMessage("Payment received. Appointment booked successfully.");
       toast.success("Payment received. Appointment booked successfully");
       setSelectedSlot("");
@@ -1044,22 +934,16 @@ function ReceptionAppointments({ hideActions = false }) {
   };
 
   const setField = (name, value) => {
-    const vitalField = vitalFieldByName[name];
-    const nextValue = vitalField
-      ? sanitizeVitalValue(value, vitalField.type)
-      : value;
+    const nextValue = value;
 
     setForm((prev) => ({ ...prev, [name]: nextValue }));
     if (["patientId", "doctorId", "date"].includes(name)) {
       setPaymentStep(false);
+      setLastReceipt(null);
+      setShowReceiptPreview(false);
     }
 
-    if (vitalField) {
-      setFieldErrors((prev) => ({
-        ...prev,
-        [name]: validateVitalValue(nextValue, vitalField),
-      }));
-    } else if (name === "chiefComplaints") {
+    if (name === "chiefComplaints") {
       setFieldErrors((prev) => ({
         ...prev,
         chiefComplaints: validateChiefComplaintsLive(nextValue),
@@ -1092,6 +976,32 @@ function ReceptionAppointments({ hideActions = false }) {
     setPatientSearch("");
     setIsPatientMenuOpen(true);
   };
+
+  const printLastReceipt = () => {
+    if (!lastReceipt) return;
+    const printed = printConsultationReceipt(lastReceipt);
+    if (!printed) {
+      toast.error("Unable to open print preview. Please allow pop-ups and try again.");
+    }
+  };
+
+  const receiptAppointment = lastReceipt?.appointment || {};
+  const receiptPatient = lastReceipt?.patient || {};
+  const receiptDoctor = lastReceipt?.doctor || {};
+  const receiptPatientName =
+    readFirst(receiptAppointment, ["patientName", "PatientName"], "") ||
+    readFirst(receiptPatient, ["name", "fullName", "patientName"], "Patient");
+  const receiptPatientId =
+    readFirst(receiptAppointment, ["patientId", "PatientId"], "") ||
+    readFirst(receiptPatient, ["id", "patientId", "PatientId", "PID"], "-");
+  const receiptPhone =
+    readFirst(receiptAppointment, ["phone", "patientPhone", "PatientPhone"], "") ||
+    readFirst(receiptPatient, ["phone", "Phone", "phoneNumber", "PhoneNumber"], "-");
+  const receiptDoctorName =
+    readFirst(receiptAppointment, ["doctorName", "DoctorName"], "") ||
+    getDoctorName(receiptDoctor) ||
+    "Doctor";
+  const receiptDate = receiptAppointment.date || receiptAppointment.appointmentDate || "";
 
   return (
     <section className="rc-page">
@@ -1203,25 +1113,6 @@ function ReceptionAppointments({ hideActions = false }) {
               </small>
             ) : null}
           </label>
-
-          {VITAL_FIELDS.map((field) => (
-            <label key={field.name}>
-              <span>{field.label}</span>
-              <div className="rc-unit-input">
-                <input
-                  value={form[field.name]}
-                  onChange={(e) => setField(field.name, e.target.value)}
-                  placeholder={field.placeholder}
-                  inputMode={field.type === "bloodPressure" ? "numeric" : "decimal"}
-                  className={fieldErrors[field.name] ? "is-invalid" : ""}
-                />
-                <span>{field.unit}</span>
-              </div>
-              {fieldErrors[field.name] ? (
-                <small className="rc-field-error">{fieldErrors[field.name]}</small>
-              ) : null}
-            </label>
-          ))}
         </div>
 
         <div className="rc-slot-panel">
@@ -1305,6 +1196,50 @@ function ReceptionAppointments({ hideActions = false }) {
               >
                 <CreditCard size={16} /> {bookingLoading ? "Processing..." : "Pay Now"}
               </button>
+            </div>
+          ) : null}
+          {lastReceipt ? (
+            <div className="rc-booking-receipt-actions">
+              <div>
+                <strong>Booking confirmed</strong>
+                <span>{receiptPatientName} with Dr. {receiptDoctorName}</span>
+              </div>
+              <div className="rc-booking-receipt-buttons">
+                <button
+                  type="button"
+                  className="rc-receipt-preview-btn"
+                  onClick={() => setShowReceiptPreview((value) => !value)}
+                >
+                  <Eye size={16} /> {showReceiptPreview ? "Hide Preview" : "Preview"}
+                </button>
+                <button type="button" className="rc-receipt-print-btn" onClick={printLastReceipt}>
+                  <Printer size={16} /> Print
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {lastReceipt && showReceiptPreview ? (
+            <div className="rc-booking-receipt-preview">
+              <div className="rc-receipt-preview-head">
+                <strong>Consultation Receipt Preview</strong>
+                <span>{formatReceiptDate(receiptDate || new Date())}</span>
+              </div>
+              <div className="rc-receipt-preview-grid">
+                <span>Patient</span>
+                <strong>{receiptPatientName}</strong>
+                <span>Patient ID</span>
+                <strong>{receiptPatientId}</strong>
+                <span>Phone</span>
+                <strong>{receiptPhone || "-"}</strong>
+                <span>Doctor</span>
+                <strong>Dr. {receiptDoctorName}</strong>
+                <span>Slot</span>
+                <strong>{lastReceipt.slot || "-"}</strong>
+                <span>Payment</span>
+                <strong>{lastReceipt.paymentMode || "-"} - {formatIndianCurrency(lastReceipt.fee)}</strong>
+                <span>Complaint</span>
+                <strong>{lastReceipt.chiefComplaints || "-"}</strong>
+              </div>
             </div>
           ) : null}
         </div>
