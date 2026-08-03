@@ -198,13 +198,19 @@ function DoctorDashboard() {
       };
       if (token) headers["Authorization"] = `Bearer ${token}`;
       const doctor = getLoggedInDoctor();
-      const dashboardUrl = doctor.id
-        ? `${DASHBOARD_API}?doctorId=${encodeURIComponent(doctor.id)}`
+      const params = new URLSearchParams();
+      if (doctor.id) params.set("doctorId", doctor.id);
+      if (doctor.branchId) params.set("branchId", doctor.branchId);
+      const dashboardUrl = params.toString()
+        ? `${DASHBOARD_API}?${params.toString()}`
         : DASHBOARD_API;
 
       const [response, appointmentsResponse] = await Promise.all([
         fetch(dashboardUrl, { headers }),
-        fetch(APPOINTMENTS_API, { headers }).catch(() => null),
+        fetch(
+          params.toString() ? `${APPOINTMENTS_API}?${params.toString()}` : APPOINTMENTS_API,
+          { headers }
+        ).catch(() => null),
       ]);
 
       if (!response.ok) {
@@ -235,6 +241,12 @@ function DoctorDashboard() {
     );
 
     return () => window.clearInterval(refreshTimer);
+  }, [fetchDashboard]);
+
+  useEffect(() => {
+    const handleBranchChanged = () => fetchDashboard({ silent: true });
+    window.addEventListener("doctorBranchChanged", handleBranchChanged);
+    return () => window.removeEventListener("doctorBranchChanged", handleBranchChanged);
   }, [fetchDashboard]);
 
   const patients = useMemo(

@@ -172,6 +172,55 @@
   padding: 4px 9px;
 }
 
+.user-profile-branch-switch {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: 1px solid #d9eef0;
+  border-radius: 12px;
+  background: #f8feff;
+}
+
+.user-profile-branch-switch span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.user-profile-branch-switch select,
+.user-profile-branch-switch strong {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #b7dde2;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #082033;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.user-profile-branch-switch select {
+  padding: 0 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.user-profile-branch-switch select:focus {
+  border-color: #0f9d9d;
+  box-shadow: 0 0 0 3px rgba(15, 157, 157, 0.13);
+}
+
+.user-profile-branch-switch strong {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+}
+
 .user-profile-dropdown button {
   width: 100%;
   min-height: 64px;

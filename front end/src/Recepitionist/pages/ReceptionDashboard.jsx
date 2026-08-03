@@ -337,22 +337,22 @@ function ReceptionDashboard({
 
       {!hideCards && (
         <div className="rc-action-grid">
-          <button onClick={() => navigate("/reception/patients")}>
-            <UserPlus size={22} />
-            <span>
-              <strong>Patients</strong>View and register patients
-            </span>
-          </button>
-          <button onClick={() => navigate("/reception/appointments")}>
-            <CalendarPlus size={22} />
-            <span>
-              <strong>Appointments</strong>Book and manage appointments
-            </span>
-          </button>
-          <button onClick={() => navigate("/reception/billing")}>
+          <button onClick={() => navigate("/reception/appointments")}> 
             <ClipboardList size={22} />
             <span>
-              <strong>Billing</strong>Create and review invoices
+              <strong>OP Billing</strong> Book and manage outpatient billing (open appointment)
+            </span>
+          </button>
+          <button onClick={() => navigate("/reception/billing?mode=diagnostic")}>
+            <ClipboardList size={22} />
+            <span>
+              <strong>Diagnostic Billing</strong> Create diagnostic invoices
+            </span>
+          </button>
+          <button onClick={() => navigate("/reception/billing?mode=pharmacy")}>
+            <ClipboardList size={22} />
+            <span>
+              <strong>Pharmacy Billing</strong> Create pharmacy invoices
             </span>
           </button>
         </div>

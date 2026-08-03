@@ -196,11 +196,11 @@
     0 4px 20px rgba(15, 23, 42, 0.04);
 }
 
-.thead {
+.doctor-wise-report-page .thead {
   display: grid;
 
   grid-template-columns:
-    minmax(60px, 0.4fr) 2fr 2fr 1fr 1fr;
+    minmax(60px, 0.4fr) 2fr 1.6fr 1.1fr 1fr 1.2fr;
 
   padding: 18px 24px;
 
@@ -216,11 +216,11 @@
   text-align: center;
 }
 
-.row {
+.doctor-wise-report-page .row {
   display: grid;
 
   grid-template-columns:
-    minmax(60px, 0.4fr) 2fr 2fr 1fr 1fr;
+    minmax(60px, 0.4fr) 2fr 1.6fr 1.1fr 1fr 1.2fr;
 
   padding: 18px 24px;
 
@@ -236,7 +236,7 @@
   color: #0f172a;
 }
 
-.row:last-child {
+.doctor-wise-report-page .row:last-child {
   border-bottom: none;
 }
 
@@ -282,8 +282,8 @@
     width: 100%;
   }
 
-  .thead,
-  .row {
+  .doctor-wise-report-page .thead,
+  .doctor-wise-report-page .row {
     padding: 14px;
     font-size: 14px;
   }
@@ -299,9 +299,9 @@
     overflow-x: auto;
   }
 
-  .thead,
-  .row {
-    min-width: 700px;
+  .doctor-wise-report-page .thead,
+  .doctor-wise-report-page .row {
+    min-width: 860px;
   }
 
   .report-header h2 {

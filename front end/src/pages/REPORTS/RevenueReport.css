@@ -204,10 +204,10 @@
     0 4px 20px rgba(15, 23, 42, 0.04);
 }
 
-.thead {
+.revenue-report-page .thead {
   display: grid;
 
-  grid-template-columns: minmax(60px, 0.4fr) 1fr 1fr 1fr;
+  grid-template-columns: minmax(60px, 0.35fr) 1fr 1.2fr repeat(7, 1fr);
 
   padding: 18px 24px;
 
@@ -222,10 +222,10 @@
   background: #f8fafc;
 }
 
-.row {
+.revenue-report-page .row {
   display: grid;
 
-  grid-template-columns: minmax(60px, 0.4fr) 1fr 1fr 1fr;
+  grid-template-columns: minmax(60px, 0.35fr) 1fr 1.2fr repeat(7, 1fr);
 
   padding: 18px 24px;
 
@@ -240,7 +240,7 @@
   font-size: 15px;
 }
 
-.row:last-child {
+.revenue-report-page .row:last-child {
   border-bottom: none;
 }
 
@@ -292,8 +292,8 @@
     width: 100%;
   }
 
-  .thead,
-  .row {
+  .revenue-report-page .thead,
+  .revenue-report-page .row {
     padding: 16px;
     font-size: 14px;
   }
@@ -313,9 +313,9 @@
     overflow-x: auto;
   }
 
-  .thead,
-  .row {
-    min-width: 500px;
+  .revenue-report-page .thead,
+  .revenue-report-page .row {
+    min-width: 1280px;
   }
 
   .report-header h2 {

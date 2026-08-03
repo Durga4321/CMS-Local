@@ -1,4 +1,4 @@
-import { applyTimeOrderedTokens, filterAppointments, getBookingType } from "./appointmentListUtils";
+import { applyTimeOrderedTokens, dedupeSameDayAppointments, filterAppointments, getBookingType } from "./appointmentListUtils";
 
 describe("appointment list utilities", () => {
   it("returns the correct booking type from common payload shapes", () => {
@@ -52,5 +52,22 @@ describe("appointment list utilities", () => {
     expect(appointments.find((item) => item.id === 1).displayTokenNumber).toBe("TKN002");
     expect(appointments.find((item) => item.id === 3).displayTokenNumber).toBe("TKN003");
     expect(appointments.find((item) => item.id === 4).displayTokenNumber).toBe("TKN001");
+  });
+
+  it("deduplicates same patient same-day appointments across merged records", () => {
+    const rawAppointments = [
+      { appointmentId: "A1", patientId: "P1", doctorId: "D1", date: "2026-08-10", bookingType: "Offline" },
+      { appointmentId: "A1", patientId: "P1", doctorId: "D1", date: "2026-08-10", bookingType: "Offline" },
+      { patientId: "P2", doctorId: "D1", date: "2026-08-10", bookingType: "Online" },
+      { patientId: "P2", doctorId: "D1", date: "2026-08-11", bookingType: "Online" },
+      { patientId: "P3", doctorId: "D2", date: "2026-08-10", bookingType: "Online" },
+      { patientId: "P3", doctorId: "D2", date: "2026-08-10", bookingType: "Online" },
+    ];
+
+    const result = dedupeSameDayAppointments(rawAppointments);
+
+    expect(result).toHaveLength(4);
+    expect(result.map((item) => item.patientId)).toEqual(["P1", "P2", "P2", "P3"]);
+    expect(result.some((item) => item.date === "2026-08-11")).toBe(true);
   });
 });

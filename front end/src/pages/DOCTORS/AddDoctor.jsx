@@ -225,6 +225,7 @@ import {
   buildBranchOptions,
   fetchBranchesForHospital,
   getApiHeaders,
+  getJsonHeaders,
   getStoredHospitalId,
 } from "../../utils/branchApi";
 import {
@@ -255,6 +256,42 @@ const DOCTOR_SPECIALIZATIONS_API_URL =
 
 const DOCTOR_QUALIFICATIONS_API_URL =
   apiUrl("Doctor/qualifications");
+
+const getBranchAssignmentId = (branch = {}) => {
+  if (branch === null || branch === undefined) return 0;
+  if (typeof branch !== "object") return Number(branch) || 0;
+  return Number(
+    branch.id ??
+      branch.Id ??
+      branch.branchId ??
+      branch.BranchId ??
+      branch.branchID ??
+      branch.BranchID ??
+      branch.clinicBranchId ??
+      branch.ClinicBranchId ??
+      0
+  ) || 0;
+};
+
+const readBranchAssignmentIds = (data) => {
+  if (Array.isArray(data)) {
+    return data.map(getBranchAssignmentId).filter((id) => id > 0);
+  }
+
+  if (Array.isArray(data?.branchIds)) {
+    return data.branchIds.map(getBranchAssignmentId).filter((id) => id > 0);
+  }
+
+  if (Array.isArray(data?.Branches)) {
+    return data.Branches.map(getBranchAssignmentId).filter((id) => id > 0);
+  }
+
+  if (Array.isArray(data?.branches)) {
+    return data.branches.map(getBranchAssignmentId).filter((id) => id > 0);
+  }
+
+  return [];
+};
 
 const QUALIFICATION_OPTIONS = [
   { value: "MBBS", label: "Bachelor of Medicine and Bachelor of Surgery (MBBS)" },
@@ -567,10 +604,6 @@ function AddDoctor() {
     const { name } = event.target;
     let value = event.target.value;
 
-    if (name === "branchIds") {
-      value = Array.from(event.target.selectedOptions || []).map((option) => option.value);
-    }
-
     if (name === "name") {
       value = formatTitleCase(onlyAlpha(value));
     }
@@ -614,6 +647,21 @@ function AddDoctor() {
       return nextForm;
     });
     setFieldErrors((previous) => ({ ...previous, [name]: "" }));
+  };
+
+  const handleBranchCheckboxChange = (event) => {
+    const branchId = String(event.target.value);
+    setForm((previous) => {
+      const nextBranchIds = previous.branchIds.includes(branchId)
+        ? previous.branchIds.filter((id) => id !== branchId)
+        : [...previous.branchIds, branchId];
+
+      return {
+        ...previous,
+        branchIds: nextBranchIds,
+      };
+    });
+    setFieldErrors((previous) => ({ ...previous, branchIds: "" }));
   };
 
   const handleFeeBlur = () => {
@@ -760,9 +808,6 @@ const validateBranchSelection = (values = form) => {
     };
     const formData = new FormData();
 
-    if (requestPayload.branchIds.length > 0) {
-      formData.append("BranchId", requestPayload.branchIds[0]);
-    }
     formData.append("Name", requestPayload.name);
     formData.append("Specialization", requestPayload.specialization);
     formData.append("Experience", requestPayload.experience);
@@ -792,29 +837,69 @@ const validateBranchSelection = (values = form) => {
       }
 
       const responseData = await response.json().catch(() => null);
-      const doctorId =
+      let doctorId =
         responseData?.id ||
         responseData?.doctorId ||
         responseData?.DoctorId ||
         responseData?.Id ||
         responseData?.ID ||
+        responseData?.doctor?.id ||
+        responseData?.data?.id ||
+        responseData?.data?.doctorId ||
         "";
 
-      if (requestPayload.branchIds.length > 1 && doctorId) {
+      if (!doctorId) {
+        const locationHeader =
+          response.headers.get("location") || response.headers.get("Location") || "";
+        if (locationHeader) {
+          const parsedId = String(locationHeader).trim().split("/").filter(Boolean).pop();
+          if (parsedId) {
+            doctorId = parsedId;
+          }
+        }
+      }
+
+      if (requestPayload.branchIds.length > 0 && !doctorId) {
+        throw new Error(
+          "Doctor created, but branch assignment could not proceed because the new doctor ID was not returned."
+        );
+      }
+
+      if (requestPayload.branchIds.length > 0 && doctorId) {
+        const payloadBranchIds = requestPayload.branchIds.map((id) => Number(id) || 0).filter((id) => id > 0);
+
         const assignResponse = await fetch(
           apiUrl(`Doctor/${encodeURIComponent(doctorId)}/branches`),
           {
             method: "PUT",
-            headers: {
-              ...getApiHeaders(),
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ branchIds: requestPayload.branchIds }),
+            headers: getJsonHeaders(),
+            body: JSON.stringify({ branchIds: payloadBranchIds }),
           }
         );
 
         if (!assignResponse.ok) {
           throw new Error(await parseErrorMessage(assignResponse));
+        }
+
+        // Verify the server persisted multiple branches
+        try {
+          const verifyResp = await fetch(
+            apiUrl(`Doctor/${encodeURIComponent(doctorId)}/branches`),
+            { headers: getApiHeaders() }
+          );
+          if (verifyResp.ok) {
+            const serverBranches = await verifyResp.json().catch(() => null);
+            const serverBranchIds = readBranchAssignmentIds(serverBranches);
+
+            const missing = payloadBranchIds.filter((id) => !serverBranchIds.includes(id));
+            if (missing.length > 0) {
+              throw new Error(
+                `Branch assignment incomplete. Server saved branches: ${serverBranchIds.join(", ")}`
+              );
+            }
+          }
+        } catch (verifyError) {
+          throw new Error(verifyError.message || "Branch verification failed after create.");
         }
       }
 
@@ -887,23 +972,25 @@ const validateBranchSelection = (values = form) => {
 
           <div className="add-doctor-grid">
             <div className="add-doctor-input-group add-doctor-input-group-full">
-              <label>Branches</label>
-              <select
-                name="branchIds"
-                multiple
-                value={form.branchIds}
-                onChange={handleChange}
-                className={fieldErrors.branchIds ? "is-invalid" : ""}
-                disabled={loadingBranches || saving}
-                required
-                size={Math.min(6, Math.max(3, branchOptions.length))}
-              >
+              <label>Branches (select multiple)</label>
+              <div className="branch-checkbox-grid">
                 {branchOptions.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
+                  <label
+                    key={branch.id}
+                    className="branch-checkbox-item"
+                  >
+                    <input
+                      type="checkbox"
+                      name="branchIds"
+                      value={String(branch.id)}
+                      checked={form.branchIds.includes(String(branch.id))}
+                      onChange={handleBranchCheckboxChange}
+                      disabled={loadingBranches || saving}
+                    />
                     {branch.name}
-                  </option>
+                  </label>
                 ))}
-              </select>
+              </div>
               {fieldErrors.branchIds ? (
                 <span className="add-doctor-field-error">{fieldErrors.branchIds}</span>
               ) : null}

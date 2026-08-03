@@ -191,6 +191,30 @@ function Reports() {
     },
     { key: "name", label: "Clinic", width: "minmax(170px, 1fr)" },
     {
+      key: "opRevenue",
+      label: "OP",
+      width: "minmax(110px, 0.7fr)",
+      render: (clinic) => formatIndianCurrency(clinic.opRevenue),
+    },
+    {
+      key: "diagnosticRevenue",
+      label: "Diagnostic",
+      width: "minmax(120px, 0.75fr)",
+      render: (clinic) => formatIndianCurrency(clinic.diagnosticRevenue),
+    },
+    {
+      key: "pharmacyRevenue",
+      label: "Pharmacy",
+      width: "minmax(120px, 0.75fr)",
+      render: (clinic) => formatIndianCurrency(clinic.pharmacyRevenue),
+    },
+    {
+      key: "gstAmount",
+      label: "GST",
+      width: "minmax(110px, 0.7fr)",
+      render: (clinic) => formatIndianCurrency(clinic.gstAmount),
+    },
+    {
       key: "revenue",
       label: "Total Revenue",
       width: "minmax(140px, 0.8fr)",
@@ -249,16 +273,6 @@ function Reports() {
     const clinicCount = backendSummary?.clinicCount || backendSummary?.clinics || filteredRows.length;
     const activeClinicRows = filteredRows.filter((row) => row.status === "Active").length;
     const activeClinics = Math.min(activeClinicRows, clinicCount);
-
-    // Prefer backend-provided revenue only; clinic counts are derived from filtered clinic rows.
-    if (backendSummary) {
-      return {
-        totalRevenue: backendSummary.totalRevenue || filteredRows.reduce((sum, row) => sum + toNumber(row.revenue), 0),
-        activeClinics,
-        clinicCount,
-      };
-    }
-
     const totalRevenue = filteredRows.reduce((sum, row) => sum + toNumber(row.revenue), 0);
 
     return {
@@ -346,7 +360,13 @@ function Reports() {
         Admin: getAdminDisplayName(row.adminName),
         "Admin Email": row.adminEmail || "-",
         Clinic: row.name || "-",
-        Revenue: formatIndianCurrency(row.revenue),
+        "OP Revenue": formatIndianCurrency(row.opRevenue),
+        "Diagnostic Revenue": formatIndianCurrency(row.diagnosticRevenue),
+        "Pharmacy Revenue": formatIndianCurrency(row.pharmacyRevenue),
+        CGST: formatIndianCurrency(row.cgstAmount),
+        SGST: formatIndianCurrency(row.sgstAmount),
+        "Total GST": formatIndianCurrency(row.gstAmount),
+        "Total Revenue": formatIndianCurrency(row.revenue),
         Status: row.status || "-",
         Performance: getPerformance(row),
       })),
@@ -365,12 +385,18 @@ function Reports() {
   const summaryRows = useMemo(
     () => [
       { Metric: "Total Revenue", Value: formatIndianCurrency(reportSummary.totalRevenue) },
+      { Metric: "OP Revenue", Value: formatIndianCurrency(filteredRows.reduce((sum, row) => sum + toNumber(row.opRevenue), 0)) },
+      { Metric: "Diagnostic Revenue", Value: formatIndianCurrency(filteredRows.reduce((sum, row) => sum + toNumber(row.diagnosticRevenue), 0)) },
+      { Metric: "Pharmacy Revenue", Value: formatIndianCurrency(filteredRows.reduce((sum, row) => sum + toNumber(row.pharmacyRevenue), 0)) },
+      { Metric: "CGST", Value: formatIndianCurrency(filteredRows.reduce((sum, row) => sum + toNumber(row.cgstAmount), 0)) },
+      { Metric: "SGST", Value: formatIndianCurrency(filteredRows.reduce((sum, row) => sum + toNumber(row.sgstAmount), 0)) },
+      { Metric: "Total GST", Value: formatIndianCurrency(filteredRows.reduce((sum, row) => sum + toNumber(row.gstAmount), 0)) },
       { Metric: "Clinic Count", Value: reportSummary.clinicCount.toLocaleString("en-IN") },
       { Metric: "Date Range", Value: `${startDate || "All"} to ${endDate || "All"}` },
       { Metric: "Filter", Value: status },
       { Metric: "Search", Value: search.trim() || "All records" },
     ],
-    [endDate, reportSummary, search, startDate, status]
+    [endDate, filteredRows, reportSummary, search, startDate, status]
   );
 
   const hasReportContent = exportRows.length > 0 || chartRows.length > 0;
@@ -382,7 +408,13 @@ function Reports() {
       "Admin",
       "Admin Email",
       "Clinic",
-      "Revenue",
+      "OP Revenue",
+      "Diagnostic Revenue",
+      "Pharmacy Revenue",
+      "CGST",
+      "SGST",
+      "Total GST",
+      "Total Revenue",
       "Status",
       "Performance",
     ]);
@@ -416,6 +448,10 @@ function Reports() {
           <div class="metrics">
             <div class="metric"><b>${formatIndianCurrency(reportSummary.totalRevenue)}</b><span>Total Revenue</span></div>
             <div class="metric"><b>${reportSummary.clinicCount.toLocaleString("en-IN")}</b><span>Clinic Count</span></div>
+            <div class="metric"><b>${formatIndianCurrency(filteredRows.reduce((sum, row) => sum + toNumber(row.opRevenue), 0))}</b><span>OP Revenue</span></div>
+            <div class="metric"><b>${formatIndianCurrency(filteredRows.reduce((sum, row) => sum + toNumber(row.diagnosticRevenue), 0))}</b><span>Diagnostic Revenue</span></div>
+            <div class="metric"><b>${formatIndianCurrency(filteredRows.reduce((sum, row) => sum + toNumber(row.pharmacyRevenue), 0))}</b><span>Pharmacy Revenue</span></div>
+            <div class="metric"><b>${formatIndianCurrency(filteredRows.reduce((sum, row) => sum + toNumber(row.gstAmount), 0))}</b><span>Total GST</span></div>
           </div>
           <h3>Summary Metrics</h3>
           <table border="1"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${summaryHtml}</tbody></table>
@@ -435,8 +471,8 @@ function Reports() {
           <table border="1"><thead><tr><th>Period</th><th>Revenue</th></tr></thead><tbody>${chartHtml || '<tr><td colspan="2">No chart data found.</td></tr>'}</tbody></table>
           <h3>Clinic Data</h3>
           <table border="1">
-            <thead><tr><th>Admin</th><th>Admin Email</th><th>Clinic</th><th>Revenue</th><th>Status</th><th>Performance</th></tr></thead>
-            <tbody>${rowsHtml || '<tr><td colspan="6">No clinic records found.</td></tr>'}</tbody>
+            <thead><tr><th>Admin</th><th>Admin Email</th><th>Clinic</th><th>OP Revenue</th><th>Diagnostic Revenue</th><th>Pharmacy Revenue</th><th>CGST</th><th>SGST</th><th>Total GST</th><th>Total Revenue</th><th>Status</th><th>Performance</th></tr></thead>
+            <tbody>${rowsHtml || '<tr><td colspan="12">No clinic records found.</td></tr>'}</tbody>
           </table>
         </body>
       </html>

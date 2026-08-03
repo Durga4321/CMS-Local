@@ -10,8 +10,14 @@ import NurseOnlineBookings from "./NurseOnlineBookings";
 import NurseOfflineBookings from "./NurseOfflineBookings";
 import UserProfilePage from "../profile/UserProfilePage";
 import ConsultantRoomDisplay from "../components/ConsultantRoomDisplay";
-import { requestJson as nurseRequestJson } from "../Recepitionist/receptionApi";
 import { getNurseScope, scopeNurseRecords } from "./nurseScope";
+import { nursePatientsRequestJson } from "./NursePatients";
+
+const strictScopeNurseRecords = (records = [], scope = getNurseScope()) =>
+  scopeNurseRecords(records, scope, {
+    allowMissingClinic: false,
+    allowMissingBranch: false,
+  });
 
 function NurseApp() {
   return (
@@ -25,9 +31,9 @@ function NurseApp() {
               hideActions
               hideCards
               title="Nurse Dashboard"
-              apiRequest={nurseRequestJson}
+              apiRequest={nursePatientsRequestJson}
               getScope={getNurseScope}
-              scopeRecords={scopeNurseRecords}
+              scopeRecords={strictScopeNurseRecords}
             />
           }
         />

@@ -247,6 +247,16 @@
   text-overflow: ellipsis;
 }
 
+.dr-sidebar-profile-branch {
+  margin: 0;
+  font-size: 10px;
+  color: #0f6f76;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .dr-sidebar-profile-status {
   margin: 3px 0 0;
   font-size: 10px;

@@ -13,16 +13,78 @@ export const getRecordClinicId = (record = {}) =>
       record.ClinicId,
       record.patient?.hospitalId,
       record.patient?.clinicId,
+      record.patient?.HospitalId,
+      record.patient?.ClinicId,
+      record.Patient?.hospitalId,
+      record.Patient?.clinicId,
+      record.Patient?.HospitalId,
+      record.Patient?.ClinicId,
       record.appointment?.hospitalId,
-      record.appointment?.clinicId
+      record.appointment?.clinicId,
+      record.appointment?.HospitalId,
+      record.appointment?.ClinicId,
+      record.Appointment?.hospitalId,
+      record.Appointment?.clinicId,
+      record.Appointment?.HospitalId,
+      record.Appointment?.ClinicId
     )
   );
 
 export const getRecordBranchId = (record = {}) =>
-  normalizeId(firstValue(record.branchId, record.BranchId, record.patient?.branchId, record.appointment?.branchId));
+  normalizeId(
+    firstValue(
+      record.branchId,
+      record.BranchId,
+      record.branchID,
+      record.BranchID,
+      record.clinicBranchId,
+      record.ClinicBranchId,
+      record.patient?.branchId,
+      record.patient?.BranchId,
+      record.patient?.branchID,
+      record.patient?.BranchID,
+      record.patient?.clinicBranchId,
+      record.patient?.ClinicBranchId,
+      record.Patient?.branchId,
+      record.Patient?.BranchId,
+      record.Patient?.clinicBranchId,
+      record.Patient?.ClinicBranchId,
+      record.appointment?.branchId,
+      record.appointment?.BranchId,
+      record.appointment?.clinicBranchId,
+      record.appointment?.ClinicBranchId,
+      record.Appointment?.branchId,
+      record.Appointment?.BranchId,
+      record.Appointment?.clinicBranchId,
+      record.Appointment?.ClinicBranchId
+    )
+  );
 
 export const getRecordBranchName = (record = {}) =>
-  normalizeText(firstValue(record.branchName, record.BranchName, record.patient?.branchName, record.appointment?.branchName));
+  normalizeText(
+    firstValue(
+      record.branchName,
+      record.BranchName,
+      record.branch,
+      record.Branch,
+      record.patient?.branchName,
+      record.patient?.BranchName,
+      record.patient?.branch,
+      record.patient?.Branch,
+      record.Patient?.branchName,
+      record.Patient?.BranchName,
+      record.Patient?.branch,
+      record.Patient?.Branch,
+      record.appointment?.branchName,
+      record.appointment?.BranchName,
+      record.appointment?.branch,
+      record.appointment?.Branch,
+      record.Appointment?.branchName,
+      record.Appointment?.BranchName,
+      record.Appointment?.branch,
+      record.Appointment?.Branch
+    )
+  );
 
 export const getNurseScope = () => {
   const profile = getNurseProfile();

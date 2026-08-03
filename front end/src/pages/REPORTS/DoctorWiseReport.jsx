@@ -130,6 +130,7 @@ import React,
 {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -152,15 +153,140 @@ import {
 } from "recharts";
 
 import { apiUrl } from "../../config/api";
+import { getApiHeaders } from "../../utils/branchApi";
+import {
+  appointmentToOpRevenueRow,
+  dedupeBillingRows,
+  getBillingType,
+  getMonthLabel,
+  getMonthSortKey,
+  getRevenueAmount,
+  getRowDate,
+  isPaidAppointment,
+  parseList,
+  pick,
+} from "../../utils/billingRevenue";
 import { formatIndianCurrency } from "../../utils/format";
 
 // ================= APIs =================
 
-const REPORT_API =
-  apiUrl("Report/doctor-wise");
-
 const DOCTOR_API =
   apiUrl("Doctor");
+const BILLING_API =
+  apiUrl("Billing");
+const APPOINTMENT_API =
+  apiUrl("Appointment");
+
+const normalizeId = (value) => String(value ?? "").trim();
+
+const getDoctorId = (doctor = {}) =>
+  normalizeId(doctor.id ?? doctor.Id ?? doctor.doctorId ?? doctor.DoctorId);
+
+const getDoctorName = (doctor = {}) =>
+  String(doctor.name ?? doctor.Name ?? doctor.doctorName ?? doctor.DoctorName ?? "").trim();
+
+const getDoctorSpecialization = (doctor = {}) =>
+  String(doctor.specialization ?? doctor.Specialization ?? "-").trim() || "-";
+
+const getRowDoctorId = (row = {}) =>
+  normalizeId(pick(row, ["doctorId", "DoctorId", "doctor.id", "Doctor.Id", "doctor.doctorId", "Doctor.DoctorId"], ""));
+
+const getRowDoctorName = (row = {}) =>
+  String(pick(row, ["doctorName", "DoctorName", "doctor.name", "Doctor.Name", "doctor", "Doctor"], "")).trim();
+
+const getRowSpecialization = (row = {}) =>
+  String(pick(row, ["specialization", "Specialization", "doctor.specialization", "Doctor.Specialization"], "-")).trim() || "-";
+
+const fetchJsonOrEmpty = async (url, headers) => {
+  try {
+    const response = await fetch(url, { headers });
+    if (!response.ok) return [];
+    return await response.json().catch(() => []);
+  } catch {
+    return [];
+  }
+};
+
+const fetchBillingRows = async ({ fromDate, toDate, doctorId, headers }) => {
+  const params = new URLSearchParams();
+  if (doctorId) params.set("doctorId", String(doctorId));
+  if (fromDate) params.set("fromDate", fromDate);
+  if (toDate) params.set("toDate", toDate);
+  params.set("pageSize", "10000");
+  params.set("limit", "10000");
+  params.set("includeAll", "true");
+  params.set("all", "true");
+
+  const query = params.toString();
+  const urls = [
+    `${BILLING_API}?${query}`,
+    apiUrl(`Billing/all?${query}`),
+    apiUrl(`Billing/history?${query}`),
+  ];
+
+  const responses = await Promise.all(urls.map((url) => fetchJsonOrEmpty(url, headers)));
+  return dedupeBillingRows(responses.flatMap(parseList));
+};
+
+const withinDateRange = (row = {}, fromDate = "", toDate = "") => {
+  const value = getRowDate(row);
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return true;
+  if (fromDate && date < new Date(fromDate)) return false;
+  if (toDate) {
+    const end = new Date(toDate);
+    end.setHours(23, 59, 59, 999);
+    if (date > end) return false;
+  }
+  return true;
+};
+
+const groupDoctorRevenue = (rows = [], doctors = [], selectedDoctorId = "") => {
+  const doctorLookup = doctors.reduce((lookup, doctor) => {
+    const id = getDoctorId(doctor);
+    if (id) {
+      lookup[id] = {
+        doctorId: id,
+        doctorName: getDoctorName(doctor),
+        specialization: getDoctorSpecialization(doctor),
+      };
+    }
+    return lookup;
+  }, {});
+
+  const grouped = new Map();
+  rows.forEach((row, index) => {
+    if (getBillingType(row) !== "op") return;
+    const rowDoctorId = getRowDoctorId(row);
+    if (selectedDoctorId && rowDoctorId && rowDoctorId !== String(selectedDoctorId)) return;
+    const doctor = doctorLookup[rowDoctorId] || {};
+    const doctorName = doctor.doctorName || getRowDoctorName(row) || "Unknown Doctor";
+    if (selectedDoctorId && !rowDoctorId && doctorName === "Unknown Doctor") return;
+    const date = getRowDate(row);
+    const month = getMonthLabel(date, index);
+    const monthSort = getMonthSortKey(date);
+    const key = `${monthSort}|${rowDoctorId || doctorName}`;
+    const current = grouped.get(key) || {
+      month,
+      monthSort,
+      doctorId: rowDoctorId,
+      doctorName,
+      chartLabel: `${doctorName} ${month}`,
+      specialization: doctor.specialization || getRowSpecialization(row),
+      appointments: 0,
+      revenue: 0,
+    };
+    current.appointments += 1;
+    current.revenue += getRevenueAmount(row);
+    grouped.set(key, current);
+  });
+
+  return Array.from(grouped.values()).sort((left, right) => {
+    const monthCompare = String(left.monthSort).localeCompare(String(right.monthSort));
+    if (monthCompare) return monthCompare;
+    return String(left.doctorName).localeCompare(String(right.doctorName));
+  });
+};
 
 // ================= COMPONENT =================
 
@@ -183,7 +309,12 @@ function DoctorWiseReport() {
     useState("");
 
   const [doctorId, setDoctorId] =
-    useState(0);
+    useState("");
+  const doctorsRef = useRef([]);
+
+  useEffect(() => {
+    doctorsRef.current = doctors;
+  }, [doctors]);
 
   // ================= LOAD =================
 
@@ -193,20 +324,16 @@ function DoctorWiseReport() {
       try {
 
         const response =
-          await fetch(
-            DOCTOR_API,
-            {
-              headers: {
-                "ngrok-skip-browser-warning":
-                  "true",
-              },
-            }
-          );
+          await fetch(DOCTOR_API, {
+            headers: getApiHeaders(),
+          });
 
         const result =
           await response.json();
 
-        setDoctors(result);
+        const nextDoctors = parseList(result);
+        doctorsRef.current = nextDoctors;
+        setDoctors(nextDoctors);
 
       } catch (error) {
 
@@ -223,31 +350,24 @@ function DoctorWiseReport() {
 
         setLoading(true);
 
-        let url =
-          `${REPORT_API}?doctorId=${doctorId}`;
+        const headers = getApiHeaders();
+        const [billingRows, appointmentResult] = await Promise.all([
+          fetchBillingRows({ fromDate, toDate, doctorId, headers }),
+          fetchJsonOrEmpty(APPOINTMENT_API, headers),
+        ]);
+        const paidAppointmentRows = parseList(appointmentResult)
+          .filter(isPaidAppointment)
+          .filter((row) => withinDateRange(row, fromDate, toDate))
+          .map(appointmentToOpRevenueRow);
+        const opRows = dedupeBillingRows([
+          ...billingRows,
+          ...paidAppointmentRows,
+        ]).filter((row) => withinDateRange(row, fromDate, toDate));
 
-        if (fromDate) {
-          url += `&fromDate=${fromDate}`;
-        }
-
-        if (toDate) {
-          url += `&toDate=${toDate}`;
-        }
-
-        const response =
-          await fetch(url, {
-            headers: {
-              "ngrok-skip-browser-warning":
-                "true",
-            },
-          });
-
-        const result =
-          await response.json();
-
-        setData(result);
+        setData(groupDoctorRevenue(opRows, doctorsRef.current, doctorId));
       } catch (error) {
         console.log(error);
+        setData([]);
       } finally {
         setLoading(false);
       }
@@ -257,55 +377,113 @@ function DoctorWiseReport() {
 
   useEffect(() => {
 
-    fetchDoctors();
+    let isMounted = true;
+    const loadInitialData = async () => {
+      await fetchDoctors();
+      if (isMounted) await fetchReport();
+    };
+    loadInitialData();
+    return () => {
+      isMounted = false;
+    };
 
-    fetchReport();
+  }, []);
 
-  }, [fetchDoctors, fetchReport]);
+  // ================= EXPORT PDF =================
 
-  // ================= EXPORT CSV =================
+  const exportPDF = () => {
+    const generatedAt = new Date().toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    const selectedDoctor = doctors.find((doctor) => getDoctorId(doctor) === String(doctorId));
+    const totals = data.reduce(
+      (sum, row) => ({
+        appointments: sum.appointments + Number(row.appointments || 0),
+        revenue: sum.revenue + Number(row.revenue || 0),
+      }),
+      { appointments: 0, revenue: 0 }
+    );
+    const rowsHtml = data.length
+      ? data
+          .map(
+            (row, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${row.month}</td>
+                <td>${row.doctorName}</td>
+                <td>${row.specialization}</td>
+                <td>${row.appointments}</td>
+                <td>${formatIndianCurrency(row.revenue)}</td>
+              </tr>
+            `
+          )
+          .join("")
+      : `<tr><td colspan="6" class="empty-row">No OP billing data found.</td></tr>`;
 
-  const exportCSV = () => {
+    const reportWindow = window.open("", "_blank", "width=980,height=900");
+    if (!reportWindow) return;
 
-    const rows = [
-      [
-        "Doctor",
-        "Specialization",
-        "Appointments",
-        "Revenue",
-      ],
-
-      ...data.map((x) => [
-        x.doctorName,
-        x.specialization,
-        x.appointments,
-        x.revenue,
-      ]),
-    ];
-
-    const csvContent =
-      rows
-        .map((e) => e.join(","))
-        .join("\n");
-
-    const blob =
-      new Blob([csvContent], {
-        type: "text/csv",
-      });
-
-    const url =
-      window.URL.createObjectURL(blob);
-
-    const a =
-      document.createElement("a");
-
-    a.href = url;
-
-    a.download =
-      "doctor-wise-report.csv";
-
-    a.click();
+    reportWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>Doctor-wise OP Revenue Report</title>
+          <style>
+            body { margin: 0; background: #f5f7fb; color: #111827; font-family: Arial, sans-serif; }
+            main { max-width: 1100px; margin: 0 auto; background: #fff; min-height: 100vh; padding: 32px; box-sizing: border-box; }
+            header { display: flex; justify-content: space-between; gap: 20px; border-bottom: 2px solid #0f9d9d; padding-bottom: 18px; }
+            h1 { margin: 0 0 8px; font-size: 28px; }
+            p { margin: 4px 0; color: #475569; }
+            .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 22px 0; }
+            .metric { border: 1px solid #dbe7ee; border-radius: 10px; padding: 14px; }
+            .metric span { display: block; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+            .metric b { display: block; margin-top: 7px; font-size: 22px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+            th, td { border: 1px solid #e2e8f0; padding: 11px 10px; text-align: left; }
+            th { background: #edf4f7; color: #334155; }
+            td:nth-child(1), td:nth-child(5), td:nth-child(6) { text-align: right; }
+            .empty-row { text-align: center !important; color: #64748b; }
+            footer { margin-top: 24px; color: #64748b; font-size: 12px; }
+            @media print { body { background: #fff; } main { padding: 0; } }
+          </style>
+        </head>
+        <body>
+          <main>
+            <header>
+              <div>
+                <h1>Doctor-wise OP Revenue Report</h1>
+                <p>Monthly doctor revenue based on paid OP bills.</p>
+              </div>
+              <div>
+                <p>Generated: ${generatedAt}</p>
+                <p>Doctor: ${selectedDoctor ? getDoctorName(selectedDoctor) : "All doctors"}</p>
+                <p>Period: ${fromDate || "Start"} to ${toDate || "Today"}</p>
+              </div>
+            </header>
+            <section class="metrics">
+              <div class="metric"><span>Total OP Appointments</span><b>${totals.appointments}</b></div>
+              <div class="metric"><span>Total OP Revenue</span><b>${formatIndianCurrency(totals.revenue)}</b></div>
+            </section>
+            <table>
+              <thead>
+                <tr><th>S.No.</th><th>Month</th><th>Doctor</th><th>Specialization</th><th>OP Bills</th><th>OP Revenue</th></tr>
+              </thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+            <footer>This report is generated from saved backend OP billing records.</footer>
+          </main>
+          <script>window.onload = () => { window.print(); };</script>
+        </body>
+      </html>
+    `);
+    reportWindow.document.close();
   };
+
 
   return (
     <div className="report-page doctor-wise-report-page">
@@ -337,12 +515,12 @@ function DoctorWiseReport() {
 
         <button
           className="export"
-          onClick={exportCSV}
+          onClick={exportPDF}
         >
 
           <Download size={16} />
 
-          Export CSV
+          Export PDF
 
         </button>
 
@@ -392,14 +570,12 @@ function DoctorWiseReport() {
             value={doctorId}
             onChange={(e) =>
               setDoctorId(
-                Number(
-                  e.target.value
-                )
+                e.target.value
               )
             }
           >
 
-            <option value={0}>
+            <option value="">
               All doctors
             </option>
 
@@ -407,11 +583,11 @@ function DoctorWiseReport() {
               (doctor) => (
 
                 <option
-                  key={doctor.id}
-                  value={doctor.id}
+                  key={getDoctorId(doctor)}
+                  value={getDoctorId(doctor)}
                 >
 
-                  Dr. {doctor.name}
+                  Dr. {getDoctorName(doctor)}
 
                 </option>
               )
@@ -471,7 +647,7 @@ function DoctorWiseReport() {
               />
 
               <XAxis
-                dataKey="doctorName"
+                dataKey={doctorId ? "month" : "chartLabel"}
                 tick={{
                   fontSize: 14,
                 }}
@@ -495,13 +671,13 @@ function DoctorWiseReport() {
                 formatter={(
                   value
                 ) => [
-                    `${value} appointments`,
-                    "Count",
+                    formatIndianCurrency(value),
+                    "OP Revenue",
                   ]}
               />
 
               <Bar
-                dataKey="appointments"
+                dataKey="revenue"
 
                 fill="#159a8c"
 
@@ -535,9 +711,11 @@ function DoctorWiseReport() {
 
           <span>Specialization</span>
 
-          <span>Appointments</span>
+          <span>Month</span>
 
-          <span>Revenue</span>
+          <span>OP Bills</span>
+
+          <span>OP Revenue</span>
 
         </div>
 
@@ -555,6 +733,10 @@ function DoctorWiseReport() {
 
             <span>
               {d.specialization}
+            </span>
+
+            <span>
+              {d.month}
             </span>
 
             <span>

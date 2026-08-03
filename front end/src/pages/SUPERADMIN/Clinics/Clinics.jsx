@@ -124,13 +124,13 @@ function Clinics() {
     {
       key: "serial",
       label: "S.No.",
-      width: "38px",
+      width: "34px",
       render: (_clinic, index) => index + 1,
     },
     {
       key: "name",
       label: "Clinic Name",
-      width: "minmax(180px, 1fr)",
+      width: "minmax(150px, 0.9fr)",
       render: (clinic) => {
         const logo = getClinicLogo(clinic.name);
         const LogoIcon = logo.icon;
@@ -148,7 +148,7 @@ function Clinics() {
     {
       key: "address",
       label: "Address",
-      width: "minmax(250px, 1.35fr)",
+      width: "minmax(230px, 1.25fr)",
       render: (clinic) => (
         <span className="sa-clinic-icon-text">
           <MapPin size={13} />
@@ -159,7 +159,7 @@ function Clinics() {
     {
       key: "contactNumber",
       label: "Contact Number",
-      width: "minmax(126px, 0.7fr)",
+      width: "minmax(118px, 0.62fr)",
       render: (clinic) => (
         <span className="sa-clinic-icon-text sa-clinic-icon-text--phone">
           <Phone size={13} />
@@ -170,7 +170,7 @@ function Clinics() {
     {
       key: "email",
       label: "Email",
-      width: "minmax(180px, 0.95fr)",
+      width: "minmax(145px, 0.68fr)",
       cellClassName: "sa-table-cell--nowrap",
       render: (clinic) => (
         <span title={clinic.email || ""} className="sa-table-text-overflow">
@@ -181,7 +181,7 @@ function Clinics() {
     {
       key: "status",
       label: "Status",
-      width: "86px",
+      width: "96px",
       render: (clinic) => (
         <span className={`sa-badge sa-clinic-status ${clinic.status === "Active" ? "is-active" : "is-danger"}`}>
           <i />
@@ -192,7 +192,7 @@ function Clinics() {
     {
       key: "actions",
       label: "Actions",
-      width: "118px",
+      width: "116px",
       cellClassName: "sa-table-cell--actions",
       render: (clinic) => {
         const isActive = String(clinic.status || "").trim().toLowerCase() === "active";

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ReceptionAppointmentList from "../Recepitionist/pages/ReceptionAppointmentList";
 import { getOfflineAppointments, getOnlineAppointments, requestJson as nurseRequestJson } from "../Recepitionist/receptionApi";
-import { getNurseScope } from "./nurseScope";
+import { getNurseScope, scopeNurseRecords } from "./nurseScope";
 
 function NurseOfflineBookings() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -32,7 +32,7 @@ function NurseOfflineBookings() {
         getOfflineAppointments(),
       ]);
 
-      return [...onlineAppointments, ...offlineAppointments];
+      return scopeNurseRecords([...onlineAppointments, ...offlineAppointments]);
     };
   }, [refreshKey]);
 
@@ -45,7 +45,7 @@ function NurseOfflineBookings() {
       emptyState="No offline bookings found for the current filters."
       apiRequest={nurseRequestJson}
       getScope={getNurseScope}
-      scopeRecords={(records) => records}
+      scopeRecords={scopeNurseRecords}
     />
   );
 }

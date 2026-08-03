@@ -19,14 +19,11 @@ import { getClinicDisplayName } from "../utils/clinicDisplay";
 const items = [
   { to: "/reception/dashboard", label: "Reception Dashboard", icon: Gauge },
   { to: "/reception/patients", label: "Patients", icon: UserPlus },
-  { to: "/reception/medical-history", label: "Medical History", icon: HeartPulse },
   {
     label: "Appointments",
     icon: CalendarPlus,
     children: [
       { to: "/reception/appointments", label: "Book Appointment", icon: CalendarPlus },
-      { to: "/reception/appointments/online", label: "Online Bookings", icon: ListChecks },
-      { to: "/reception/appointments/offline", label: "Offline Bookings", icon: ListChecks },
     ],
   },
   { to: "/reception/billing", label: "Billing", icon: ClipboardList },

@@ -37,12 +37,20 @@ import {
   formatIndianCurrency,
 } from "../utils/format";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
+import {
+  appointmentToOpRevenueRow,
+  dedupeBillingRows,
+  getRevenueAmount,
+  isPaidAppointment,
+  parseList as parseRevenueList,
+} from "../utils/billingRevenue";
 
 /* ================= API ================= */
 
 const API = apiUrl("Dashboard");
 const APPOINTMENT_API = apiUrl("Appointment");
 const RECEPTIONIST_API = apiUrl("Receptionist");
+const BILLING_API = apiUrl("Billing");
 const REQUEST_TIMEOUT_MS = 3500;
 
 const getAdminToken = () =>
@@ -306,11 +314,13 @@ function Dashboard() {
         Promise.allSettled([
           fetchWithTimeout(`${API}/ClincData`, { headers }, 2500),
           fetchWithTimeout(APPOINTMENT_API, { headers }, 2500),
+          fetchWithTimeout(BILLING_API, { headers }, 2500),
           receptionistCount === null || receptionistCount === 0
             ? fetchWithTimeout(RECEPTIONIST_API, { headers }, 2500)
             : Promise.resolve(null),
-        ]).then(async ([clinicResult, appointmentResult, receptionistResult]) => {
+        ]).then(async ([clinicResult, appointmentResult, billingResult, receptionistResult]) => {
           let nextMerged = { ...data };
+          let appointmentData = [];
 
         if (clinicResult.status === "fulfilled" && clinicResult.value?.ok) {
           const clinicData = await clinicResult.value.json().catch(() => ({}));
@@ -325,11 +335,32 @@ function Dashboard() {
         }
 
         if (appointmentResult.status === "fulfilled" && appointmentResult.value?.ok) {
-          const appointmentData = await appointmentResult.value.json().catch(() => []);
+          appointmentData = await appointmentResult.value.json().catch(() => []);
           nextMerged = {
             ...nextMerged,
             todayAppointments: countTodayAppointments(appointmentData),
           };
+        }
+
+        if (billingResult.status === "fulfilled" && billingResult.value?.ok) {
+          const billingData = await billingResult.value.json().catch(() => []);
+          const paidAppointmentRows = parseRevenueList(appointmentData)
+            .filter(isPaidAppointment)
+            .map(appointmentToOpRevenueRow);
+          const revenueRows = dedupeBillingRows([
+            ...parseRevenueList(billingData),
+            ...paidAppointmentRows,
+          ]);
+          const billingRevenue = revenueRows.reduce(
+            (sum, row) => sum + getRevenueAmount(row),
+            0
+          );
+          if (billingRevenue > 0) {
+            nextMerged = {
+              ...nextMerged,
+              totalRevenue: billingRevenue,
+            };
+          }
         }
 
         if (receptionistResult.status === "fulfilled" && receptionistResult.value?.ok) {

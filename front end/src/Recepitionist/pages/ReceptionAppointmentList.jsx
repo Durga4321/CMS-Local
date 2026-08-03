@@ -61,6 +61,22 @@ const getAppointmentId = (appointment = {}) =>
   getAppointmentRecordId(appointment) ||
   getAppointmentValue(appointment, ["appointmentId", "AppointmentId", "id", "Id"], "");
 
+const getAppointmentRowKey = (appointment = {}, index = 0) => {
+  const parts = [
+    getAppointmentId(appointment),
+    getAppointmentValue(appointment, ["patientId", "PatientId", "patientCode", "patient.PatientId", "patient.patientId"], ""),
+    getAppointmentValue(appointment, ["date", "appointmentDate", "AppointmentDate", "scheduledDate", "slotDate", "SlotDate", "bookingDate", "BookingDate"], ""),
+    getAppointmentValue(appointment, ["time", "slot", "Slot", "startTime", "StartTime", "slotTime", "SlotTime", "timeSlot", "TimeSlot", "appointmentTime", "AppointmentTime"], ""),
+    getAppointmentValue(appointment, ["doctorId", "DoctorId", "doctorName", "DoctorName", "doctor.name"], ""),
+    getBookingType(appointment),
+    index,
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  return parts.join("|") || `appointment-row-${index}`;
+};
+
 const getVitalValue = (appointment = {}, name) =>
   stripUnit(
     getAppointmentValue(
@@ -355,7 +371,7 @@ function ReceptionAppointmentList({
                 </thead>
                 <tbody>
                   {visibleAppointments.map((item, index) => (
-                    <tr key={`${item.id || item.appointmentId || index}`}>
+                    <tr key={getAppointmentRowKey(item, index)}>
                       <td>{getAppointmentValue(item, ["displayTokenNumber", "orderedTokenNumber", "tokenNumber", "token", "TokenNumber", "tokenNo", "token_number"], "-")}</td>
                       <td>{getAppointmentValue(item, ["patientCode", "patient.code", "patient.patientCode", "PatientCode"], "-")}</td>
                       <td>{getAppointmentValue(item, ["patientName", "patient.name", "patient.fullName", "PatientName"], "-")}</td>

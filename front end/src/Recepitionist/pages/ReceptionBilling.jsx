@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, CheckCircle, Edit3, Eye, FileText, Minus, Printer } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { parseList, requestJson } from "../receptionApi";
 import { getReceptionistProfile } from "../receptionSession";
 import {
@@ -453,11 +453,11 @@ const printServiceInvoice = ({
           .info b { color: #111827; }
           table { width: 100%; border-collapse: collapse; margin-top: 12px; }
           th, td { border: 1px solid #d6e1e7; padding: 9px 8px; font-size: 12px; text-align: left; }
-          th { background: #0f172a; color: #fff; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+          th { background: #eaf8f6; color: #0f172a; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
           td.num, th.num { text-align: center; }
           td.money, th.money { text-align: right; font-variant-numeric: tabular-nums; }
           tfoot td { background: #f0fdfa; border-top: 2px solid #0f9d9d; color: #0f172a; font-weight: 900; }
-          tfoot td:last-child { background: #0f172a; color: #fff; }
+          tfoot td:last-child { background: #d9f7f3; color: #0f172a; }
           .foot { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-top: 28px; border-top: 1px dashed #94a3b8; padding-top: 14px; color: #475569; font-size: 12px; }
           .sign { color: #0f172a; font-weight: 900; text-align: center; min-width: 190px; padding-top: 28px; border-top: 1px solid #64748b; }
           @media print { body { background: #fff; } .invoice { border-top-color: #111827; padding: 0; } }
@@ -686,6 +686,95 @@ const getAppointmentTime = (appointment = {}) => {
   );
 };
 
+const getAppointmentDate = (appointment = {}) =>
+  firstValue(
+    appointment?.createdAt,
+    appointment?.CreatedAt,
+    appointment?.appointmentDate,
+    appointment?.AppointmentDate,
+    appointment?.date,
+    appointment?.Date,
+    appointment?.slotDate,
+    appointment?.SlotDate
+  ) || new Date();
+
+const getAppointmentPaidAmount = (appointment = {}) =>
+  readAmount(
+    appointment,
+    [
+      "paidAmount",
+      "PaidAmount",
+      "consultationFee",
+      "ConsultationFee",
+      "consultationCharge",
+      "ConsultationCharge",
+      "amount",
+      "Amount",
+      "totalAmount",
+      "TotalAmount",
+    ],
+    0
+  );
+
+const isPaidAppointmentBooking = (appointment = {}) => {
+  const status = String(
+    firstValue(
+      appointment.paymentStatus,
+      appointment.PaymentStatus,
+      appointment.payment?.status,
+      appointment.Payment?.Status,
+      appointment.status,
+      appointment.Status
+    ) || ""
+  ).toLowerCase();
+
+  return status.includes("paid") || getAppointmentPaidAmount(appointment) > 0;
+};
+
+const appointmentToOpBill = (appointment = {}) => {
+  const appointmentId = getAppointmentId(appointment);
+  const amount = getAppointmentPaidAmount(appointment);
+  const createdAt = getAppointmentDate(appointment);
+
+  return normalizeServiceBill({
+    ...appointment,
+    type: "consultation",
+    invoiceType: "consultation",
+    billingType: "Consultation",
+    serviceType: "OP Billing",
+    invoiceNo:
+      appointment.invoiceNo ||
+      appointment.invoiceNumber ||
+      appointment.receiptNo ||
+      appointment.ReceiptNo ||
+      appointment.transactionId ||
+      appointment.TransactionId ||
+      (appointmentId ? `OP-${appointmentId}` : ""),
+    appointmentId,
+    patientId: getAppointmentPatientId(appointment),
+    patientName: getAppointmentPatientName(appointment),
+    doctorName: getAppointmentDoctorName(appointment),
+    createdAt,
+    billDate: createdAt,
+    invoiceDate: createdAt,
+    consultationCharge: amount,
+    consultationCharges: amount,
+    totalAmount: amount,
+    grandTotal: amount,
+    netAmount: amount,
+    paidAmount: amount,
+    amount,
+    paymentStatus: "Paid",
+    status: "Paid",
+    paymentMode:
+      appointment.paymentMode ||
+      appointment.PaymentMode ||
+      appointment.payment?.mode ||
+      appointment.Payment?.Mode ||
+      "-",
+  });
+};
+
 const fetchBillingAppointments = async () => {
   const [appointments, billingAppointments] = await Promise.all([
     requestJson("Appointment").catch(() => null),
@@ -850,6 +939,65 @@ const storeRecentServiceBill = (bill) => {
   return nextBills;
 };
 
+const getServiceBillType = (bill = {}) => {
+  const rawType = String(
+    bill.type ||
+      bill.invoiceType ||
+      bill.billingType ||
+      bill.serviceType ||
+      bill.BillingType ||
+      bill.InvoiceType ||
+      ""
+  ).toLowerCase();
+
+  if (rawType.includes("pharmacy") || rawType.includes("medicine")) return "pharmacy";
+  if (rawType.includes("diagnostic") || rawType.includes("diagnosis") || rawType.includes("lab") || rawType.includes("test")) return "diagnostic";
+  if (rawType.includes("consultation") || rawType.includes("op")) return "consultation";
+
+  const medicine = readAmount(bill, AMOUNT_KEYS.medicine, 0);
+  const lab = readAmount(bill, AMOUNT_KEYS.lab, 0);
+  if (medicine > 0 && lab === 0) return "pharmacy";
+  if (lab > 0 && medicine === 0) return "diagnostic";
+  return "consultation";
+};
+
+const normalizeServiceBill = (bill = {}) => {
+  const type = getServiceBillType(bill);
+  return {
+    ...bill,
+    type,
+    invoiceType: type,
+    billingType:
+      type === "pharmacy"
+        ? "Pharmacy"
+        : type === "diagnostic"
+          ? "Diagnostic"
+          : "Consultation",
+    invoiceNo: bill.invoiceNo || bill.invoiceNumber || bill.billNumber || bill.billNo,
+    invoiceNumber: bill.invoiceNumber || bill.invoiceNo || bill.billNumber || bill.billNo,
+    billNumber: bill.billNumber || bill.invoiceNumber || bill.invoiceNo || bill.billNo,
+    patientName: bill.patientName || bill.PatientName || bill.patient?.name || bill.Patient?.Name,
+    patientId: bill.patientId || bill.PatientId || bill.patient?.patientId || bill.Patient?.PatientId,
+    doctorName: bill.doctorName || bill.DoctorName || bill.doctor?.name || bill.Doctor?.Name,
+    createdAt: bill.createdAt || bill.CreatedAt || bill.invoiceDate || bill.billDate,
+    totalAmount: readAmount(bill, AMOUNT_KEYS.total, bill.totalAmount || bill.paidAmount || 0),
+  };
+};
+
+const mergeRecentServiceBills = (...billGroups) => {
+  const byInvoice = new Map();
+
+  billGroups.flat().filter(Boolean).map(normalizeServiceBill).forEach((bill) => {
+    const key = String(bill.invoiceNo || bill.invoiceNumber || bill.billNumber || `${bill.type}-${bill.createdAt}-${bill.patientId}`);
+    if (!key) return;
+    byInvoice.set(key, { ...(byInvoice.get(key) || {}), ...bill });
+  });
+
+  return Array.from(byInvoice.values())
+    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+    .slice(0, 30);
+};
+
 const syncRecentServiceBillsToBackend = async () => {
   const bills = readRecentServiceBills();
   let changed = false;
@@ -924,6 +1072,7 @@ const fetchInvoiceDetails = async (invoice) => {
 
 function ReceptionBilling() {
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
   const receptionistProfile = getReceptionistProfile();
   const receptionistScope = useMemo(() => getReceptionistScope(), []);
@@ -946,7 +1095,19 @@ function ReceptionBilling() {
   const [messageType, setMessageType] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [invoice, setInvoice] = useState(null);
-  const [billingMode, setBillingMode] = useState("diagnostic");
+  const getInitialBillingMode = () => {
+    try {
+      const qp = new URLSearchParams(location?.search || window.location.search || "");
+      const q = (qp.get("mode") || qp.get("type") || (location && location.state && location.state.mode) || "").toString().toLowerCase();
+      if (q === "pharmacy") return "pharmacy";
+      if (q === "diagnostic" || q === "diagnosis") return "diagnostic";
+      return "consultation";
+    } catch {
+      return "consultation";
+    }
+  };
+
+  const [billingMode, setBillingMode] = useState(getInitialBillingMode);
   const [diagnosticRows, setDiagnosticRows] = useState([]);
   const [pharmacyRows, setPharmacyRows] = useState([]);
   const [recentServiceBills, setRecentServiceBills] = useState(() => readRecentServiceBills());
@@ -959,6 +1120,12 @@ function ReceptionBilling() {
   });
 
   useEffect(() => {
+    const qp = new URLSearchParams(location?.search || window.location.search || "");
+    const q = (qp.get("mode") || qp.get("type") || (location?.state && location.state.mode) || "").toString().toLowerCase();
+    if (q === "pharmacy") setBillingMode("pharmacy");
+    else if (q === "diagnostic" || q === "diagnosis") setBillingMode("diagnostic");
+    else if (q === "consultation" || q === "appointment" || !q) setBillingMode("consultation");
+
     const loadBillingData = async () => {
       try {
         const [appointmentsResult, invoicesResult] = await Promise.allSettled([
@@ -995,7 +1162,7 @@ function ReceptionBilling() {
           : scopeReceptionistRecords(bookedAppointments, receptionistScope, {
               allowMissingBranch: true,
             });
-        const invoiceList = parseList(invoicesData);
+        const invoiceList = parseList(invoicesData).map(normalizeServiceBill);
         const scopedInvoices = scopeReceptionistRecords(invoiceList, receptionistScope);
         const fallbackScopedInvoices = scopeReceptionistRecords(invoiceList, receptionistScope, {
           allowMissingClinic: true,
@@ -1009,7 +1176,7 @@ function ReceptionBilling() {
         const latestInvoice =
           getLatestInvoice(scopedInvoices) ||
           getLatestInvoice(fallbackScopedInvoices) ||
-          readStoredLatestInvoice();
+          (invoicesResult.status !== "fulfilled" ? readStoredLatestInvoice() : null);
         const latestInvoiceDetails = latestInvoice
           ? await fetchInvoiceDetails(latestInvoice)
           : null;
@@ -1021,7 +1188,7 @@ function ReceptionBilling() {
         }));
         setInvoice(latestInvoiceDetails);
         const syncedRecentBills = await syncRecentServiceBillsToBackend();
-        setRecentServiceBills(syncedRecentBills);
+        setRecentServiceBills(mergeRecentServiceBills(invoiceList, syncedRecentBills));
       } catch (error) {
         setMessage(error.message);
         setMessageType("error");
@@ -1100,6 +1267,22 @@ function ReceptionBilling() {
     quantity: billingMode === "pharmacy" ? Number(row.quantity) || 1 : 1,
   }));
   const serviceDisplayTotals = getBillingTotals(serviceDisplayRows);
+  const visibleRecentServiceBills = useMemo(
+    () => {
+      if (billingMode === "consultation") {
+        return appointments
+          .filter(isPaidAppointmentBooking)
+          .map(appointmentToOpBill)
+          .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+          .slice(0, 30);
+      }
+
+      return recentServiceBills.filter(
+        (bill) => getServiceBillType(bill) === billingMode
+      );
+    },
+    [appointments, billingMode, recentServiceBills]
+  );
   const getValidServiceRows = () =>
     activeServiceRows
       .filter((row) => row.diagnosis && row.item && Number(row.quantity || 1) > 0)
@@ -1118,7 +1301,13 @@ function ReceptionBilling() {
     const appointmentPatientName = hasAppointment ? getAppointmentPatientName(selectedAppointment) : "Walk-in Patient";
     const appointmentId = hasAppointment ? getAppointmentId(selectedAppointment) : "";
     const appointmentBranchId = firstValue(selectedAppointment?.branchId, selectedAppointment?.BranchId, receptionistScope.branchId);
-    const appointmentBranchName = firstValue(selectedAppointment?.branchName, selectedAppointment?.BranchName, receptionistScope.branchName);
+    const appointmentBranchName = firstValue(
+      selectedAppointment?.branchName,
+      selectedAppointment?.BranchName,
+      selectedAppointment?.branch?.name,
+      selectedAppointment?.Branch?.Name,
+      receptionistScope.branchName
+    );
     return {
       type: billingMode,
       invoiceNo,
@@ -1199,6 +1388,7 @@ function ReceptionBilling() {
       cgstAmount: details.totals.cgst,
       sgstAmount: details.totals.sgst,
       gstAmount: details.totals.gst,
+      gstPercentage: 18,
       totalAmount: details.totals.total,
       grandTotal: details.totals.total,
       netAmount: details.totals.total,
@@ -1232,16 +1422,11 @@ function ReceptionBilling() {
     let savedInvoice = {};
     if (save) {
       const payload = buildServiceBillingPayload(details);
-      try {
-        const response = await requestJson("Billing", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
-        savedInvoice = Array.isArray(response) ? response[0] || {} : response || {};
-      } catch (error) {
-        console.warn("Unable to save service bill to Billing API:", error);
-        savedInvoice = {};
-      }
+      const response = await requestJson("Billing", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      savedInvoice = Array.isArray(response) ? response[0] || {} : response || {};
 
       const invoiceShape = {
         ...payload,
@@ -1263,7 +1448,9 @@ function ReceptionBilling() {
       };
       setInvoice(invoiceShape);
       storeLatestInvoice(invoiceShape);
-      setRecentServiceBills(storeRecentServiceBill(invoiceShape));
+      setRecentServiceBills((prev) =>
+        mergeRecentServiceBills([invoiceShape], storeRecentServiceBill(invoiceShape), prev)
+      );
       showMessage(`${billingMode === "pharmacy" ? "Pharmacy" : "Diagnostic test"} bill generated successfully`, "success", { autoHide: true });
       printServiceInvoice({ ...details, invoiceNo: invoiceShape.invoiceNo, autoPrint });
       return true;
@@ -1340,6 +1527,13 @@ function ReceptionBilling() {
       invoiceWindow.document.close();
     }
 
+    const consultationCharge = Number(form.medicineCharges || 0) + Number(form.labCharges || 0);
+    const subtotal = consultationCharge;
+    const cgstAmount = subtotal * HALF_GST_RATE;
+    const sgstAmount = subtotal * HALF_GST_RATE;
+    const gstAmount = cgstAmount + sgstAmount;
+    const totalAmount = subtotal + gstAmount;
+
     const body = {
       appointmentId: Number(form.appointmentId),
       AppointmentId: Number(form.appointmentId),
@@ -1371,16 +1565,36 @@ function ReceptionBilling() {
       BranchId: firstValue(selectedAppointment?.branchId, selectedAppointment?.BranchId, receptionistScope.branchId),
       branchName: firstValue(selectedAppointment?.branchName, selectedAppointment?.BranchName, receptionistScope.branchName),
       BranchName: firstValue(selectedAppointment?.branchName, selectedAppointment?.BranchName, receptionistScope.branchName),
-      consultationCharge: 0,
-      medicineCharge: Number(form.medicineCharges || 0),
-      labCharge: Number(form.labCharges || 0),
-      totalAmount: total,
-      grandTotal: total,
-      payableAmount: total,
-      paymentAmount: total,
-      paidAmount: total,
+      consultationCharge,
+      consultationCharges: consultationCharge,
+      medicineCharge: 0,
+      medicineCharges: 0,
+      labCharge: 0,
+      labCharges: 0,
+      subtotal,
+      taxableAmount: subtotal,
+      cgstAmount,
+      sgstAmount,
+      gstAmount,
+      gstPercentage: 18,
+      totalAmount,
+      grandTotal: totalAmount,
+      netAmount: totalAmount,
+      payableAmount: totalAmount,
+      paymentAmount: totalAmount,
+      paidAmount: totalAmount,
+      amount: totalAmount,
+      revenue: totalAmount,
+      billingType: "Consultation",
+      invoiceType: "consultation",
+      serviceType: "Consultation Billing",
       paymentMode: String(form.paymentMode || ""),
       PaymentMode: String(form.paymentMode || ""),
+      paymentStatus: "Paid",
+      status: "Paid",
+      createdAt: new Date().toISOString(),
+      billDate: new Date().toISOString(),
+      invoiceDate: new Date().toISOString(),
     };
 
     try {
@@ -1393,14 +1607,25 @@ function ReceptionBilling() {
       const nextInvoice = {
         ...(invoiceData || {}),
         ...body,
-        consultationCharge: 0,
-        medicineCharge: Number(form.medicineCharges || 0),
-        labCharge: Number(form.labCharges || 0),
-        totalAmount: total,
-        grandTotal: total,
-        payableAmount: total,
-        paymentAmount: total,
-        paidAmount: total,
+        consultationCharge,
+        consultationCharges: consultationCharge,
+        medicineCharge: 0,
+        medicineCharges: 0,
+        labCharge: 0,
+        labCharges: 0,
+        subtotal,
+        taxableAmount: subtotal,
+        cgstAmount,
+        sgstAmount,
+        gstAmount,
+        totalAmount,
+        grandTotal: totalAmount,
+        netAmount: totalAmount,
+        payableAmount: totalAmount,
+        paymentAmount: totalAmount,
+        paidAmount: totalAmount,
+        amount: totalAmount,
+        revenue: totalAmount,
         patientName:
           invoiceData?.patientName ||
           getAppointmentPatientName(selectedAppointment),
@@ -1410,6 +1635,9 @@ function ReceptionBilling() {
       };
       setInvoice(nextInvoice);
       storeLatestInvoice(nextInvoice);
+      setRecentServiceBills((prev) =>
+        mergeRecentServiceBills([nextInvoice], storeRecentServiceBill(nextInvoice), prev)
+      );
       const text = invoiceData?.message || "Bill generated successfully";
       showMessage(text, "success", { autoHide: true });
       downloadInvoicePdf(nextInvoice, invoiceWindow);
@@ -1456,6 +1684,13 @@ function ReceptionBilling() {
   };
 
   const viewRecentServiceBill = (bill) => {
+    const billType = getServiceBillType(bill);
+    if (billType === "consultation") {
+      setInvoice(bill);
+      downloadInvoicePdf(bill);
+      return;
+    }
+
     const rows = Array.isArray(bill.rows)
       ? bill.rows
       : Array.isArray(bill.serviceItems)
@@ -1470,7 +1705,6 @@ function ReceptionBilling() {
       unitPrice: Number(row.unitPrice ?? row.price ?? row.rate ?? row.amount) || 0,
       quantity: Number(row.quantity ?? row.qty) || 1,
     }));
-    const billType = String(bill.type || bill.invoiceType || "diagnostic").toLowerCase();
     const totals =
       bill.totals ||
       getBillingTotals(
@@ -1498,7 +1732,20 @@ function ReceptionBilling() {
   };
 
   const editRecentServiceBill = (bill) => {
-    const nextMode = String(bill.type || bill.invoiceType || "diagnostic").toLowerCase();
+    const nextMode = getServiceBillType(bill);
+    if (nextMode === "consultation") {
+      setBillingMode("consultation");
+      setForm((prev) => ({
+        ...prev,
+        appointmentId: bill.appointmentId ? String(bill.appointmentId) : prev.appointmentId,
+        paymentMode: bill.paymentMode || prev.paymentMode,
+        medicineCharges: formatAmountInput(readAmount(bill, AMOUNT_KEYS.medicine, 0), { emptyValue: "" }),
+        labCharges: formatAmountInput(readAmount(bill, AMOUNT_KEYS.lab, 0), { emptyValue: "" }),
+      }));
+      showMessage("OP bill loaded for editing. Submit again to generate the updated invoice.", "success", { autoHide: true });
+      return;
+    }
+
     const rows = Array.isArray(bill.rows) ? bill.rows : Array.isArray(bill.serviceItems) ? bill.serviceItems : [];
     const normalizedRows = rows.map((row) => ({
       id: Date.now() + Math.random(),
@@ -1897,6 +2144,7 @@ function ReceptionBilling() {
 
       <div className="rc-billing-tabs" role="tablist" aria-label="Billing module">
         {[
+          ["consultation", "OP Billing"],
           ["diagnostic", "Diagnosis Test Billing"],
           ["pharmacy", "Pharmacy Billing"],
         ].map(([mode, label]) => (
@@ -1916,20 +2164,17 @@ function ReceptionBilling() {
       </div>
 
       <div className="rc-billing-layout">
+        {billingMode !== "consultation" ? (
         <form className="rc-card rc-billing-form" onSubmit={generate} noValidate>
           <div className="rc-billing-card-head">
             <div>
               <h3>
                 {billingMode === "pharmacy"
                   ? "Generate Pharmacy Bill"
-                  : billingMode === "diagnostic"
-                    ? "Generate Diagnosis Test Bill"
-                    : "Generate Bill"}
+                  : "Generate Diagnosis Test Bill"}
               </h3>
               <p>
-                {billingMode === "consultation"
-                  ? "Review patient and charge details before creating the invoice."
-                  : "Select items and collect payment without appointment access."}
+                Select items and collect payment without appointment access.
               </p>
             </div>
           </div>
@@ -2111,18 +2356,27 @@ function ReceptionBilling() {
           </button>
         )}
       </form>
+        ) : null}
 
         <section className="rc-card rc-latest-bills">
           <div className="rc-latest-bills-head">
             <div>
               <h3>Latest Bills</h3>
-              <p>Submitted diagnostic and pharmacy invoices.</p>
+              <p>
+                Submitted{" "}
+                {billingMode === "pharmacy"
+                  ? "pharmacy"
+                  : billingMode === "diagnostic"
+                    ? "diagnostic"
+                    : "OP"}{" "}
+                invoices.
+              </p>
             </div>
           </div>
-          {recentServiceBills.length ? (
+          {visibleRecentServiceBills.length ? (
             <div className="rc-latest-bills-list">
-              {recentServiceBills.map((bill, index) => {
-                const billType = String(bill.type || bill.invoiceType || "diagnostic").toLowerCase();
+              {visibleRecentServiceBills.map((bill, index) => {
+                const billType = getServiceBillType(bill);
                 const invoiceNo = bill.invoiceNo || bill.invoiceNumber || bill.billNumber || `BILL-${index + 1}`;
                 const amount = Number(bill.totalAmount ?? bill.netAmount ?? bill.grandTotal ?? bill.paidAmount) || 0;
                 const createdAt = bill.createdAt || bill.invoiceDate || bill.billDate;
@@ -2134,7 +2388,7 @@ function ReceptionBilling() {
                     <div className="rc-latest-bill-main">
                       <strong>{bill.patientName || "Walk-in Patient"}</strong>
                       <span>
-                        {invoiceNo} | {billType === "pharmacy" ? "Pharmacy" : "Diagnostic"} |{" "}
+                        {invoiceNo} | {billType === "pharmacy" ? "Pharmacy" : billType === "diagnostic" ? "Diagnostic" : "OP"} |{" "}
                         {createdAt ? formatInvoiceDate(createdAt) : "Just now"}
                       </span>
                     </div>
@@ -2152,7 +2406,9 @@ function ReceptionBilling() {
               })}
             </div>
           ) : (
-            <div className="rc-latest-bills-empty">No submitted bills yet.</div>
+            <div className="rc-latest-bills-empty">
+              No submitted {billingMode === "pharmacy" ? "pharmacy" : billingMode === "diagnostic" ? "diagnostic" : "OP"} bills yet.
+            </div>
           )}
         </section>
 
@@ -2162,4 +2418,3 @@ function ReceptionBilling() {
 }
 
 export default ReceptionBilling;
-

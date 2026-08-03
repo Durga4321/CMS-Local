@@ -142,7 +142,11 @@ function Notifications() {
       const isReadNotification = (notification = {}) =>
         String(notification.status || "").toLowerCase() === "read";
 
-      const isVisibleNotification = (notification = {}) => isSentNotification(notification) || isReadNotification(notification);
+      const isUnreadNotification = (notification = {}) =>
+        !isSentNotification(notification) && !isReadNotification(notification);
+
+      const isVisibleNotification = (notification = {}) =>
+        isSentNotification(notification) || isReadNotification(notification) || isUnreadNotification(notification);
 
       const role = normalizeRole(getCurrentRole());
       const isSuper = role === "superadmin";

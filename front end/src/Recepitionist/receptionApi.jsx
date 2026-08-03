@@ -119,14 +119,16 @@ const requestJsonFallback = async (paths = [], options = {}) => {
 
 const readAppointmentId = (appointment = {}) =>
   String(
-    appointment.id ??
-      appointment.Id ??
-      appointment.appointmentId ??
+    appointment.appointmentId ??
       appointment.AppointmentId ??
       appointment.appointmentID ??
       appointment.AppointmentID ??
+      appointment.appointment?.appointmentId ??
+      appointment.Appointment?.AppointmentId ??
       appointment.appointment?.id ??
       appointment.Appointment?.Id ??
+      appointment.id ??
+      appointment.Id ??
       ""
   ).trim();
 
@@ -280,22 +282,16 @@ const getAppointmentFingerprint = (record = {}) => {
 const mergeRecordsByIdentity = (records = []) => {
   const merged = [];
   const byAppointmentId = new Map();
-  const byPatientId = new Map();
-  const byPatientPhone = new Map();
   const byFingerprint = new Map();
 
   records.forEach((record) => {
     if (!record || typeof record !== "object") return;
 
     const appointmentId = readAppointmentId(record);
-    const patientId = readPatientId(record);
-    const patientPhone = readPatientPhone(record);
     const fingerprint = getAppointmentFingerprint(record);
     const existing =
       (appointmentId && byAppointmentId.get(appointmentId)) ||
-      (fingerprint && byFingerprint.get(fingerprint)) ||
-      (patientId && byPatientId.get(patientId)) ||
-      (patientPhone && byPatientPhone.get(patientPhone));
+      (fingerprint && byFingerprint.get(fingerprint));
 
     if (existing) {
       Object.assign(existing, { ...existing, ...record });
@@ -306,8 +302,6 @@ const mergeRecordsByIdentity = (records = []) => {
     merged.push(next);
     if (appointmentId) byAppointmentId.set(appointmentId, next);
     if (fingerprint) byFingerprint.set(fingerprint, next);
-    if (patientId) byPatientId.set(patientId, next);
-    if (patientPhone) byPatientPhone.set(patientPhone, next);
   });
 
   return merged;
@@ -345,7 +339,7 @@ export const getOnlineAppointments = async () =>
       ? await requestAppointmentSources(["Appointment/online", "Appointment", "Nurse/print-queue", "ReceptionistDashboard"])
       : parseList(await requestJsonFallback(["Appointment/online"])),
     "Online"
-  );
+  ).filter((a) => String(a.bookingType || a.BookingType || a.type || a.Type || "").toLowerCase() === "online");
 
 export const getOfflineAppointments = async () =>
   withBookingTypeFallback(
@@ -353,4 +347,4 @@ export const getOfflineAppointments = async () =>
       ? await requestAppointmentSources(["Appointment/offline", "Appointment", "Nurse/print-queue", "ReceptionistDashboard"])
       : parseList(await requestJsonFallback(["Appointment/offline"])),
     "Offline"
-  );
+  ).filter((a) => String(a.bookingType || a.BookingType || a.type || a.Type || "").toLowerCase() === "offline");

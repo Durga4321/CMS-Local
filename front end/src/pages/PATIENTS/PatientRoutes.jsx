@@ -187,33 +187,68 @@ const dedupeBillsByInvoice = (bills = []) => {
   return Array.from(grouped.values()).sort((left, right) => getBillDateValue(right) - getBillDateValue(left));
 };
 
+const parseAppointmentIdFromText = (text = '') => {
+  const regex = /(APT-[0-9A-Za-z-]+)/i;
+  const match = String(text || '').match(regex);
+  return match ? match[1] : null;
+};
+
 const getPatientIdentityValues = (patient = {}, visits = []) => {
   const values = [
     patient?.id,
+    patient?.Id,
     patient?.patientId,
     patient?.PatientId,
+    patient?.patientID,
     patient?.patientCode,
     patient?.PatientCode,
+    patient?.code,
+    patient?.Code,
+    patient?.userId,
+    patient?.UserId,
     localStorage.getItem("patientId"),
+    localStorage.getItem("PatientId"),
+    localStorage.getItem("patientCode"),
+    localStorage.getItem("userId"),
   ];
   (Array.isArray(visits) ? visits : []).forEach((visit) => {
     values.push(
-      readFirst(visit, ["patientId", "patient.id", "patient.patientId", "patientCode", "patient.patientCode"]),
-      readFirst(visit, ["appointmentId", "id", "appointmentNumber"])
+      readFirst(visit, ["patientId", "PatientId", "patient.id", "patient.Id", "patient.patientId", "patient.PatientId", "patientCode", "PatientCode", "patient.patientCode", "patient.PatientCode"]),
+      readFirst(visit, ["appointmentId", "AppointmentId", "id", "Id", "appointmentNumber", "AppointmentNumber"])
     );
   });
   return new Set(values.map((value) => normalizeComparable(value)).filter(Boolean));
 };
 
 const getPatientNameValues = (patient = {}, visits = []) => {
+  const firstName = patient?.firstName || patient?.FirstName || "";
+  const lastName = patient?.lastName || patient?.LastName || "";
   const values = [
     patient?.name,
+    patient?.Name,
     patient?.fullName,
+    patient?.FullName,
+    patient?.patientName,
+    patient?.PatientName,
+    patient?.displayName,
+    patient?.DisplayName,
     patient?.firstName,
+    patient?.FirstName,
+    patient?.lastName,
+    patient?.LastName,
+    firstName || lastName ? `${firstName} ${lastName}` : "",
     localStorage.getItem("patientName"),
+    localStorage.getItem("PatientName"),
+    localStorage.getItem("name"),
+    localStorage.getItem("fullName"),
   ];
   (Array.isArray(visits) ? visits : []).forEach((visit) => {
-    values.push(readFirst(visit, ["patientName", "patient.name", "patient.fullName", "name"]));
+    const visitFirstName = readFirst(visit, ["patient.firstName", "patient.FirstName", "firstName", "FirstName"]);
+    const visitLastName = readFirst(visit, ["patient.lastName", "patient.LastName", "lastName", "LastName"]);
+    values.push(
+      readFirst(visit, ["patientName", "PatientName", "patient.name", "patient.Name", "patient.fullName", "patient.FullName", "name", "Name"]),
+      visitFirstName || visitLastName ? `${visitFirstName} ${visitLastName}` : ""
+    );
   });
   return new Set(values.map((value) => normalizeComparable(value)).filter(Boolean));
 };
@@ -222,13 +257,104 @@ const billBelongsToPatient = (bill, patient = {}, visits = []) => {
   const patientIds = getPatientIdentityValues(patient, visits);
   const patientNames = getPatientNameValues(patient, visits);
   const billIds = [
-    readFirst(bill, ["patientId", "PatientId", "patient.id", "patient.patientId", "patientCode", "patient.patientCode"]),
-    readFirst(bill, ["appointmentId", "appointment.id", "appointmentNumber"]),
+    readFirst(bill, [
+      "patientId",
+      "PatientId",
+      "patientID",
+      "patient.id",
+      "patient.Id",
+      "patient.patientId",
+      "patient.PatientId",
+      "invoice.patientId",
+      "invoice.PatientId",
+      "bill.patientId",
+      "bill.PatientId",
+      "patientCode",
+      "PatientCode",
+      "patient.patientCode",
+      "patient.PatientCode",
+    ]),
+    readFirst(bill, ["appointmentId", "AppointmentId", "appointment.id", "appointment.Id", "appointmentNumber", "AppointmentNumber", "appointmentNo", "AppointmentNo"]),
   ].map((value) => normalizeComparable(value)).filter(Boolean);
   if (billIds.some((value) => patientIds.has(value))) return true;
 
-  const billName = normalizeComparable(readFirst(bill, ["patientName", "patient.name", "patient.fullName", "customerName", "name"]));
-  return Boolean(billName && patientNames.has(billName));
+  const billFirstName = readFirst(bill, ["patient.firstName", "patient.FirstName", "firstName", "FirstName"]);
+  const billLastName = readFirst(bill, ["patient.lastName", "patient.LastName", "lastName", "LastName"]);
+  const billNames = [
+    readFirst(bill, [
+      "patientName",
+      "PatientName",
+      "patient.name",
+      "patient.Name",
+      "patient.fullName",
+      "patient.FullName",
+      "customerName",
+      "CustomerName",
+      "name",
+      "Name",
+    ]),
+    billFirstName || billLastName ? `${billFirstName} ${billLastName}` : "",
+  ].map((value) => normalizeComparable(value)).filter(Boolean);
+  return billNames.some((value) => patientNames.has(value));
+};
+
+const getAppointmentIdentityValues = (visits = []) =>
+  new Set(
+    (Array.isArray(visits) ? visits : [])
+      .flatMap((visit) => [
+        readFirst(visit, ["appointmentId", "AppointmentId", "id", "Id", "appointmentNumber", "AppointmentNumber", "appointmentNo", "AppointmentNo"]),
+        readFirst(visit, ["appointment.id", "appointment.Id", "appointment.appointmentId", "appointment.AppointmentId"]),
+      ])
+      .map((value) => normalizeComparable(value))
+      .filter(Boolean)
+  );
+
+const appointmentBelongsToPatient = (appointment, patient = {}) => {
+  const patientIds = getPatientIdentityValues(patient);
+  const patientNames = getPatientNameValues(patient);
+  const appointmentIds = [
+    readFirst(appointment, ["patientId", "PatientId", "patient.id", "patient.Id", "patient.patientId", "patient.PatientId", "patientCode", "PatientCode"]),
+  ].map((value) => normalizeComparable(value)).filter(Boolean);
+  if (appointmentIds.some((value) => patientIds.has(value))) return true;
+
+  const firstName = readFirst(appointment, ["patient.firstName", "patient.FirstName", "firstName", "FirstName"]);
+  const lastName = readFirst(appointment, ["patient.lastName", "patient.LastName", "lastName", "LastName"]);
+  const appointmentNames = [
+    readFirst(appointment, ["patientName", "PatientName", "patient.name", "patient.Name", "patient.fullName", "patient.FullName", "name", "Name"]),
+    firstName || lastName ? `${firstName} ${lastName}` : "",
+  ].map((value) => normalizeComparable(value)).filter(Boolean);
+  if (appointmentNames.some((value) => patientNames.has(value))) return true;
+
+  return !appointmentIds.length && !appointmentNames.length;
+};
+
+const notificationBelongsToPatient = (notification, patient = {}, visits = []) => {
+  const patientIds = getPatientIdentityValues(patient, visits);
+  const patientNames = getPatientNameValues(patient, visits);
+  const appointmentIds = getAppointmentIdentityValues(visits);
+  const notificationPatientIds = [
+    readFirst(notification, ["patientId", "PatientId", "patient.id", "patient.Id", "patient.patientId", "patient.PatientId", "data.patientId", "data.PatientId"]),
+  ].map((value) => normalizeComparable(value)).filter(Boolean);
+  if (notificationPatientIds.length) return notificationPatientIds.some((value) => patientIds.has(value));
+
+  const firstName = readFirst(notification, ["patient.firstName", "patient.FirstName", "data.patientFirstName", "data.FirstName"]);
+  const lastName = readFirst(notification, ["patient.lastName", "patient.LastName", "data.patientLastName", "data.LastName"]);
+  const notificationNames = [
+    readFirst(notification, ["patientName", "PatientName", "patient.name", "patient.Name", "patient.fullName", "patient.FullName", "data.patientName", "data.PatientName"]),
+    firstName || lastName ? `${firstName} ${lastName}` : "",
+  ].map((value) => normalizeComparable(value)).filter(Boolean);
+  if (notificationNames.length) return notificationNames.some((value) => patientNames.has(value));
+
+  const notificationAppointmentIds = [
+    readFirst(notification, ["appointmentId", "AppointmentId", "appointment.id", "appointment.Id", "appointmentNumber", "AppointmentNumber", "data.appointmentId", "data.AppointmentId", "data.appointmentNumber"]),
+    parseAppointmentIdFromText([
+      readFirst(notification, ["title", "subject", "name"]),
+      readFirst(notification, ["message", "body", "description", "content"]),
+    ].filter(Boolean).join(" ")),
+  ].map((value) => normalizeComparable(value)).filter(Boolean);
+  if (notificationAppointmentIds.length) return notificationAppointmentIds.some((value) => appointmentIds.has(value));
+
+  return true;
 };
 
 const normalizeName = (value) => {
@@ -711,11 +837,15 @@ function PatientRoutes() {
       ]);
 
       const profileData = profileRes?.ok ? await profileRes.json().catch(() => null) : null;
+      const effectivePatient = profileData || patient || {};
       if (profileData) setPatient(profileData);
 
       const appointmentsData = appointmentsRes?.ok ? await appointmentsRes.json().catch(() => []) : [];
       const appointmentsList = Array.isArray(appointmentsData) ? appointmentsData : (appointmentsData.items || appointmentsData.data || []);
-      setVisits(appointmentsList);
+      const patientAppointments = appointmentsList.filter((appointment) =>
+        appointmentBelongsToPatient(appointment, effectivePatient)
+      );
+      setVisits(patientAppointments);
 
       if (prescriptionsRes?.ok) {
         const rxData = await prescriptionsRes.json().catch(() => []);
@@ -737,15 +867,19 @@ function PatientRoutes() {
         }
       })();
 
-      setBills(dedupeBillsByInvoice([
+      const patientBills = dedupeBillsByInvoice([
         ...parseApiList(bData),
         ...parseApiList(billingData),
         ...storedRecentServiceBills,
-      ]));
+      ]).filter((bill) => billBelongsToPatient(bill, effectivePatient, patientAppointments));
+      setBills(patientBills);
 
       if (notificationsRes?.ok) {
         const nData = await notificationsRes.json().catch(() => []);
-        setNotifications(Array.isArray(nData) ? nData : (nData.items || nData.data || []));
+        const notificationList = Array.isArray(nData) ? nData : (nData.items || nData.data || []);
+        setNotifications(notificationList.filter((notification) =>
+          notificationBelongsToPatient(notification, effectivePatient, patientAppointments)
+        ));
       }
 
       const dashboardJson = dashboardRes?.ok ? await dashboardRes.json().catch(() => null) : null;
@@ -1240,6 +1374,92 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
     return [];
   };
 
+  const getDoctorBranchIds = (doctor) => {
+    const ids = new Set();
+    const directKeys = [
+      'branchId',
+      'BranchId',
+      'clinicId',
+      'ClinicId',
+      'hospitalId',
+      'HospitalId',
+      'branch.id',
+      'branch.branchId',
+      'clinic.id',
+      'clinic.clinicId',
+    ];
+    directKeys.forEach((key) => {
+      const value = readFirst(doctor, [key]);
+      if (value !== undefined && value !== null && value !== '') ids.add(String(value));
+    });
+
+    const arrays = [
+      doctor?.branchIds,
+      doctor?.BranchIds,
+      doctor?.branches,
+      doctor?.Branches,
+      doctor?.doctorBranches,
+      doctor?.DoctorBranches,
+    ];
+    arrays.flatMap((value) => (Array.isArray(value) ? value : [])).forEach((branch) => {
+      if (branch === undefined || branch === null || branch === '') return;
+      if (typeof branch === 'object') {
+        const branchId = readFirst(branch, ['branchId', 'BranchId', 'id', 'Id', 'clinicId', 'ClinicId']);
+        if (branchId !== undefined && branchId !== null && branchId !== '') ids.add(String(branchId));
+        return;
+      }
+      ids.add(String(branch));
+    });
+
+    return Array.from(ids);
+  };
+
+  const getDoctorBranchNames = (doctor) => {
+    const names = new Set();
+    const directName = readFirst(doctor, ['branchName', 'BranchName', 'clinicName', 'ClinicName', 'branch.name', 'clinic.name']);
+    if (directName) names.add(normalizeComparable(directName));
+    [doctor?.branches, doctor?.Branches, doctor?.doctorBranches, doctor?.DoctorBranches]
+      .flatMap((value) => (Array.isArray(value) ? value : []))
+      .forEach((branch) => {
+        const name = typeof branch === 'object'
+          ? readFirst(branch, ['branchName', 'BranchName', 'name', 'Name', 'clinicName', 'ClinicName'])
+          : '';
+        if (name) names.add(normalizeComparable(name));
+      });
+    return Array.from(names);
+  };
+
+  const normalizePatientDoctor = (doctor, { branchId = "", departmentName = "" } = {}) => {
+    const normalizedBranchIds = getDoctorBranchIds(doctor);
+    const normalizedBranchNames = getDoctorBranchNames(doctor);
+    const directBranchId =
+      readFirst(doctor, ['branchId', 'BranchId', 'clinicId', 'ClinicId', 'hospitalId', 'HospitalId']) ||
+      branchId;
+    if (directBranchId && !normalizedBranchIds.includes(String(directBranchId))) {
+      normalizedBranchIds.push(String(directBranchId));
+    }
+
+    return {
+      ...doctor,
+      id: readFirst(doctor, ['doctorId', 'DoctorId', 'id', 'Id', 'userId', 'UserId']),
+      name: readFirst(doctor, ['doctorName', 'DoctorName', 'name', 'Name', 'fullName', 'FullName']) || 'Doctor',
+      specialty:
+        readFirst(doctor, ['department', 'Department', 'departmentName', 'DepartmentName', 'specialty', 'Specialty', 'specialization', 'Specialization']) ||
+        departmentName,
+      department:
+        readFirst(doctor, ['department', 'Department', 'departmentName', 'DepartmentName', 'specialty', 'Specialty', 'specialization', 'Specialization']) ||
+        departmentName,
+      departmentId: readFirst(doctor, ['departmentId', 'DepartmentId', 'specialtyId', 'SpecialtyId', 'department.id']),
+      branchId: directBranchId,
+      branchIds: normalizedBranchIds,
+      branchNames: normalizedBranchNames,
+      qualification: readFirst(doctor, ['qualification', 'Qualification']) || '',
+      experience: readFirst(doctor, ['experience', 'Experience']) || 0,
+      consultationFee: readFirst(doctor, ['consultationFee', 'ConsultationFee', 'fee', 'fees']) || 0,
+      availableToday: Boolean(readFirst(doctor, ['availableToday', 'AvailableToday', 'isAvailable', 'IsAvailable'])),
+    };
+  };
+
   const getApiHeaders = () => {
     const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
     return {
@@ -1325,24 +1545,39 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
       try {
         setDoctors([]);
         const headers = getApiHeaders();
-        const params = new URLSearchParams({
-          branchId: String(branchId),
-          department: String(departmentName),
-        });
-        const doctorsUrl = `${patientApiUrl(PATIENT_API.doctors)}?${params.toString()}`;
-        const response = await fetch(doctorsUrl, { headers }).catch(() => null);
-        const data = response?.ok ? await response.json().catch(() => null) : null;
-        const doctorList = parseApiList(data);
-        setDoctors(doctorList.map((doctor) => ({
-          ...doctor,
-          id: doctor.doctorId || doctor.id,
-          name: doctor.doctorName || doctor.name || 'Doctor',
-          specialty: doctor.department || departmentName,
-          qualification: doctor.qualification || '',
-          experience: doctor.experience || 0,
-          consultationFee: doctor.consultationFee || 0,
-          availableToday: doctor.availableToday || false,
-        })));
+        const requestUrls = [
+          `${patientApiUrl(PATIENT_API.doctors)}?${new URLSearchParams({
+            branchId: String(branchId),
+            department: String(departmentName),
+          }).toString()}`,
+          `${patientApiUrl(PATIENT_API.doctors)}?${new URLSearchParams({
+            branchId: String(branchId),
+            specialization: String(departmentName),
+          }).toString()}`,
+          `${patientApiUrl(PATIENT_API.doctors)}?${new URLSearchParams({
+            branchId: String(branchId),
+            departmentName: String(departmentName),
+          }).toString()}`,
+          patientApiUrl(PATIENT_API.doctors),
+        ];
+        const responses = await Promise.allSettled(
+          requestUrls.map((url) => fetch(url, { headers }))
+        );
+        const doctorRows = [];
+        for (const result of responses) {
+          if (result.status !== 'fulfilled' || !result.value?.ok) continue;
+          const data = await result.value.json().catch(() => null);
+          doctorRows.push(...parseApiList(data));
+        }
+        const uniqueDoctors = Array.from(
+          new Map(
+            doctorRows
+              .map((doctor) => normalizePatientDoctor(doctor, { branchId, departmentName }))
+              .filter((doctor) => doctor.id)
+              .map((doctor) => [String(doctor.id), doctor])
+          ).values()
+        );
+        setDoctors(uniqueDoctors);
       } catch (err) {
         setDoctors([]);
       }
@@ -1366,18 +1601,22 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
       }
 
       try {
+        const branchId = selectedBranch?.id || selectedBranch?.branchId;
+        const params = new URLSearchParams({ date: selectedDate });
+        if (branchId) params.set('branchId', String(branchId));
         const slotsUrl = patientApiUrl(PATIENT_API.doctorSlots, { doctorId });
-        const response = await fetch(`${slotsUrl}?date=${encodeURIComponent(selectedDate)}`, { headers }).catch(() => null);
+        const response = await fetch(`${slotsUrl}?${params.toString()}`, { headers }).catch(() => null);
         const data = response?.ok ? await response.json().catch(() => null) : null;
         const slotList = parseApiList(data);
         // API returns {start, end, status} objects
         setSlots(slotList.map((slot) => ({
           ...slot,
-          id: `${doctorId}-${selectedDate}-${slot.start || slot.time}`,
+          id: slot.id || slot.slotId || `${doctorId}-${branchId || 'branch'}-${selectedDate}-${slot.start || slot.startTime || slot.time}`,
           doctorId: String(doctorId),
+          branchId: String(branchId || slot.branchId || slot.clinicId || ''),
           date: selectedDate,
-          time: slot.start || slot.time || '',
-          end: slot.end || '',
+          time: slot.start || slot.startTime || slot.time || slot.slotTime || '',
+          end: slot.end || slot.endTime || '',
           status: slot.status || 'Available',
         })));
       } catch (err) {
@@ -1386,78 +1625,33 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
     };
 
     fetchSlots();
-  }, [selectedDoctor, selectedDate]);
+  }, [selectedBranch, selectedDoctor, selectedDate]);
 
   const branchOptions = useMemo(() => {
-    if (branches.length) return branches;
-
-    const ids = new Map();
-    visits.forEach((visit) => {
-      const id = readId(visit, ['branchId', 'clinicId', 'clinic.id', 'hospitalId', 'clinic.clinicId']);
-      const name = normalizeName(readFirst(visit, ['branchName', 'clinicName', 'clinic.name', 'hospitalName', 'clinic']));
-      const address = readFirst(visit, ['branchAddress', 'clinicAddress', 'clinic.address', 'hospitalAddress']);
-      if (id && name && !ids.has(id)) ids.set(id, { id, name, address });
-    });
-    return Array.from(ids.values());
-  }, [branches, visits]);
+    return branches;
+  }, [branches]);
 
   const departmentOptions = useMemo(() => {
-    if (departments.length) {
-      return departments.map((department) => {
-        if (typeof department === 'string') return { id: department, name: department };
-        return normalizeDepartmentOption(department, selectedBranch?.id);
-      });
-    }
-
-    const ids = new Map();
-    visits.forEach((visit) => {
-      const id = readId(visit, ['departmentId', 'department.id', 'specialtyId']);
-      const name = normalizeName(readFirst(visit, ['departmentName', 'department.name', 'specialty', 'speciality']));
-      const branchId = readId(visit, ['branchId', 'clinicId', 'clinic.id', 'hospitalId', 'clinic.clinicId']);
-      if (id && name && !ids.has(id)) ids.set(id, { id, name, branchId });
+    return departments.map((department) => {
+      if (typeof department === 'string') return { id: department, name: department };
+      return normalizeDepartmentOption(department, selectedBranch?.id);
     });
-    return Array.from(ids.values());
-  }, [departments, selectedBranch, visits]);
+  }, [departments, selectedBranch]);
 
   const doctorOptions = useMemo(() => {
-    if (doctors.length) {
-      return doctors.map((doctor) => ({
-        ...doctor,
-        id: doctor.doctorId || doctor.id,
-        name: doctor.doctorName || doctor.name || 'Doctor',
-        specialty: doctor.department || selectedDepartment?.name || '',
-      }));
-    }
-
-    const ids = new Map();
-    visits.forEach((visit) => {
-      const doctor = visit.doctor || (visit.doctorName ? visit : {});
-      const id = readId(doctor, ['id', 'doctorId', 'userId']);
-      const name = normalizeName(readFirst(doctor, ['name', 'doctorName', 'fullName']));
-      const specialty = normalizeName(readFirst(doctor, ['specialty', 'speciality', 'departmentName']));
-      const departmentId = readId(visit, ['departmentId', 'department.id', 'specialtyId']);
-      const branchId = readId(visit, ['branchId', 'clinicId', 'clinic.id', 'hospitalId', 'clinic.clinicId']);
-      if (id && name && !ids.has(id)) ids.set(id, { id, name, specialty, departmentId, branchId });
-    });
-    return Array.from(ids.values());
-  }, [doctors, selectedBranch, selectedDepartment, visits]);
+    return doctors.map((doctor) => ({
+      ...doctor,
+      id: doctor.doctorId || doctor.id,
+      name: doctor.doctorName || doctor.name || 'Doctor',
+      specialty: doctor.department || doctor.departmentName || doctor.specialty || doctor.specialization || selectedDepartment?.name || '',
+      branchIds: doctor.branchIds || getDoctorBranchIds(doctor),
+      branchNames: doctor.branchNames || getDoctorBranchNames(doctor),
+    }));
+  }, [doctors, selectedDepartment]);
 
   const slotOptions = useMemo(() => {
-    if (slots.length) {
-      return slots;
-    }
-
-    return visits
-      .map((visit) => {
-        const doctorId = readId(visit, ['doctorId', 'doctor.id', 'doctor.doctorId']);
-        const date = readFirst(visit, ['date', 'appointmentDate', 'visitDate']);
-        const time = readFirst(visit, ['time', 'slot', 'appointmentTime']);
-        const branchId = readId(visit, ['branchId', 'clinicId', 'clinic.id', 'hospitalId', 'clinic.clinicId']);
-        const departmentId = readId(visit, ['departmentId', 'department.id', 'specialtyId']);
-        return doctorId && date && time ? { id: `${doctorId}-${date}-${time}`, doctorId, date, time, branchId, departmentId } : null;
-      })
-      .filter(Boolean);
-  }, [slots, selectedDoctor, selectedDate, visits]);
+    return slots;
+  }, [slots]);
 
   const filteredDepartments = useMemo(
     () => {
@@ -1491,9 +1685,23 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
           normalizeComparable(doctorDepartmentId) !== selectedDepartmentName
         )
           return false;
-        if (doctorDepartmentName && selectedDepartmentName && doctorDepartmentName !== selectedDepartmentName) return false;
-        if (selectedBranchId && doctor.branchId && String(doctor.branchId) !== selectedBranchId) return false;
-        if (selectedBranchId && doctor.clinicId && String(doctor.clinicId) !== selectedBranchId) return false;
+        if (
+          doctorDepartmentName &&
+          selectedDepartmentName &&
+          doctorDepartmentName !== selectedDepartmentName &&
+          !doctorDepartmentName.includes(selectedDepartmentName) &&
+          !selectedDepartmentName.includes(doctorDepartmentName)
+        )
+          return false;
+        if (selectedBranchId) {
+          const doctorBranchIds = doctor.branchIds || getDoctorBranchIds(doctor);
+          const doctorBranchNames = doctor.branchNames || getDoctorBranchNames(doctor);
+          const selectedBranchName = normalizeComparable(selectedBranch?.name || selectedBranch?.branchName);
+          if (doctorBranchIds.length && !doctorBranchIds.includes(selectedBranchId)) return false;
+          if (!doctorBranchIds.length && doctorBranchNames.length && selectedBranchName && !doctorBranchNames.includes(selectedBranchName)) return false;
+          if (!doctorBranchIds.length && !doctorBranchNames.length && doctor.branchId && String(doctor.branchId) !== selectedBranchId) return false;
+          if (!doctorBranchIds.length && !doctorBranchNames.length && doctor.clinicId && String(doctor.clinicId) !== selectedBranchId) return false;
+        }
         return true;
       });
     },
@@ -1506,12 +1714,16 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
       const selectedDoctorId = String(selectedDoctor.id || selectedDoctor.doctorId || selectedDoctor.userId || "");
 
       return slotOptions.filter((slot) => {
+        const slotStatus = normalizeComparable(slot.status || slot.slotStatus || slot.availabilityStatus);
+        if (slotStatus && !['available', 'open', 'free'].includes(slotStatus)) return false;
         if (slot.doctorId && String(slot.doctorId) !== selectedDoctorId) return false;
         if (selectedDate && slot.date && slot.date !== selectedDate) return false;
+        const selectedBranchId = String(selectedBranch?.id || selectedBranch?.branchId || "");
+        if (selectedBranchId && slot.branchId && String(slot.branchId) !== selectedBranchId) return false;
         return true;
       });
     },
-    [slotOptions, selectedDoctor, selectedDate]
+    [slotOptions, selectedBranch, selectedDoctor, selectedDate]
   );
 
   const availableTimes = useMemo(
@@ -2198,8 +2410,14 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
 
   const patientId = String(
     patient?.id ||
+    patient?.Id ||
     patient?.patientId ||
+    patient?.PatientId ||
+    patient?.patientCode ||
+    patient?.PatientCode ||
     localStorage.getItem("patientId") ||
+    localStorage.getItem("PatientId") ||
+    localStorage.getItem("patientCode") ||
     ""
   ).trim();
 
@@ -2222,13 +2440,34 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
       setLoadingHistory(true);
       setHistoryError("");
       try {
-        const historyUrl = apiUrl(`MedicalHistory/${encodeURIComponent(patientId)}`);
-        const response = await fetch(historyUrl, { headers });
-        if (!response.ok) {
-          throw new Error('Unable to load medical history.');
+        const historyUrls = [
+          patientApiUrl(PATIENT_API.medicalHistory),
+          `${patientApiUrl(PATIENT_API.medicalHistory)}?patientId=${encodeURIComponent(patientId)}`,
+          apiUrl(`MedicalHistory/${encodeURIComponent(patientId)}`),
+          `${apiUrl('MedicalHistory')}?patientId=${encodeURIComponent(patientId)}`,
+          `${apiUrl('MedicalHistory')}?PatientId=${encodeURIComponent(patientId)}`,
+        ];
+
+        let historyData = null;
+        let hadServerError = false;
+        for (const historyUrl of historyUrls) {
+          const response = await fetch(historyUrl, { headers }).catch(() => null);
+          if (!response) continue;
+          if (response.ok) {
+            const data = await response.json().catch(() => null);
+            const records = normalizeRecords(data);
+            historyData = records.length ? records.filter(belongsToCurrentPatient) : data;
+            break;
+          }
+          if (response.status >= 500 || response.status === 403) {
+            hadServerError = true;
+          }
         }
-        const data = await response.json().catch(() => null);
-        if (isCurrent) setHistory(data);
+
+        if (isCurrent) {
+          setHistory(historyData);
+          setHistoryError(historyData || !hadServerError ? "" : "Unable to load medical history.");
+        }
       } catch (error) {
         if (isCurrent) setHistoryError(error.message || 'Unable to load medical history.');
       } finally {
@@ -2268,10 +2507,33 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
       return (Number.isNaN(rightTime) ? 0 : rightTime) - (Number.isNaN(leftTime) ? 0 : leftTime);
     });
 
-  const currentPatientId = normalizeComparable(patientId);
+  const currentPatientIds = getPatientIdentityValues(patient || {}, visits);
+  const currentPatientNames = getPatientNameValues(patient || {}, visits);
   const belongsToCurrentPatient = (record) => {
-    const recordPatientId = readFirst(record, ["patientId", "patient.id", "patient.patientId"]);
-    return !recordPatientId || normalizeComparable(recordPatientId) === currentPatientId;
+    const recordPatientId = readFirst(record, [
+      "patientId",
+      "PatientId",
+      "patient.id",
+      "patient.Id",
+      "patient.patientId",
+      "patient.PatientId",
+      "patientCode",
+      "PatientCode",
+      "patient.patientCode",
+      "patient.PatientCode",
+    ]);
+    const normalizedRecordPatientId = normalizeComparable(recordPatientId);
+    if (normalizedRecordPatientId) return currentPatientIds.has(normalizedRecordPatientId);
+
+    const firstName = readFirst(record, ["patient.firstName", "patient.FirstName", "firstName", "FirstName"]);
+    const lastName = readFirst(record, ["patient.lastName", "patient.LastName", "lastName", "LastName"]);
+    const recordNames = [
+      readFirst(record, ["patientName", "PatientName", "patient.name", "patient.Name", "patient.fullName", "patient.FullName", "name", "Name"]),
+      firstName || lastName ? `${firstName} ${lastName}` : "",
+    ].map((value) => normalizeComparable(value)).filter(Boolean);
+    if (recordNames.length) return recordNames.some((value) => currentPatientNames.has(value));
+
+    return true;
   };
 
   const historyRecord = Array.isArray(history) ? history.find(belongsToCurrentPatient) || history[0] || null : history;
@@ -4049,144 +4311,97 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   const totalDueAmount = billRecords.reduce((sum, bill) => sum + (dueAmount(bill) || 0), 0);
   const totalPaidAmount = billRecords.reduce((sum, bill) => sum + ((paymentStatus(bill) === 'paid') ? totalAmount(bill) : 0), 0);
   const hasInvoiceData = Boolean(latestBill && Object.keys(latestBill).length > 0);
+  const billDateValue = (record) => {
+    const raw = readFirst(record, ['invoiceDate', 'billDate', 'date', 'createdAt', 'createdOn', 'updatedAt']);
+    const parsed = raw ? new Date(raw) : null;
+    return parsed && !Number.isNaN(parsed.getTime()) ? parsed.getTime() : 0;
+  };
+  const latestBillSections = [
+    {
+      key: 'op',
+      title: 'OP Bills',
+      bills: billRecords
+        .filter((bill) => billTypeLabel(bill) === 'OP Bill')
+        .sort((a, b) => billDateValue(b) - billDateValue(a)),
+    },
+    {
+      key: 'diagnostic',
+      title: 'Diagnostic Bills',
+      bills: billRecords
+        .filter((bill) => billTypeLabel(bill) === 'Diagnostic')
+        .sort((a, b) => billDateValue(b) - billDateValue(a)),
+    },
+    {
+      key: 'pharmacy',
+      title: 'Pharmacy Bills',
+      bills: billRecords
+        .filter((bill) => billTypeLabel(bill) === 'Pharmacy')
+        .sort((a, b) => billDateValue(b) - billDateValue(a)),
+    },
+  ];
 
   return (
     <PatientPageShell
       title="Billing"
-      subtitle="Review charges, invoices, and pending payments."
+      subtitle="Latest invoices generated by reception."
     >
-      <div className="pb-invoice-actions">
-        <button
-          type="button"
-          className="pb-action-btn pb-action-btn--primary"
-          onClick={() => downloadInvoice(latestBill)}
-          disabled={!hasInvoiceData}
-        >
-          <Download size={16} />
-          Download Invoice
-        </button>
-        <button
-          type="button"
-          className="pb-action-btn pb-action-btn--ghost"
-          onClick={() => viewInvoice(latestBill)}
-          disabled={!hasInvoiceData}
-        >
-          <Eye size={16} />
-          View Invoice
-        </button>
-      </div>
       {downloadStatus ? <div className="pb-invoice-status pb-invoice-status--success">{downloadStatus}</div> : null}
       {downloadError ? <div className="pb-invoice-status pb-invoice-status--error">{downloadError}</div> : null}
-      <section className="pb-invoice-card pb-invoice-page">
-        <div className="pb-invoice-header">
-          <div className="pb-invoice-brand">
-            <div className="pb-invoice-logo">
-              <img src={latestWatermarkUrl} alt="Clinic logo" />
-            </div>
+      {loadingBills ? <div className="pd-selected-notification">Loading latest bills...</div> : null}
+      {latestBillSections.map((section) => (
+        <section className="pd-card" key={section.key}>
+          <div className="pd-section-header">
             <div>
-              <h3>{latestClinicName}</h3>
-              <p>{latestClinicAddress}</p>
-              <p>{latestClinicPhone}</p>
-              {latestClinicEmail ? <p>{latestClinicEmail}</p> : null}
-              {latestClinicGst ? <p>GSTIN: {latestClinicGst}</p> : null}
+              <h2>{section.title}</h2>
+              <p>{section.bills.length ? `${section.bills.length} invoice(s) generated by reception.` : 'No invoice generated yet.'}</p>
             </div>
           </div>
-          <div className="pb-invoice-meta">
-            <span className="pb-invoice-type">DIAGNOSTIC TEST GST INVOICE</span>
-            <h3>{latestBillNumber || 'DT-000000'}</h3>
-            <span className="pb-invoice-date">Inv. Date: {latestInvoiceDate}</span>
-          </div>
-        </div>
-
-        <div className="pb-invoice-divider" />
-
-        <div className="pb-invoice-sections">
-          <div className="pb-invoice-section pb-invoice-entity-card">
-            <span>PATIENT</span>
-            <div className="pb-invoice-fields">
-              <div className="pb-invoice-field">
-                <strong>Name</strong>
-                <span>{latestPatientName || 'N/A'}</span>
-              </div>
-              {latestPatientId ? (
-                <div className="pb-invoice-field">
-                  <strong>Patient ID</strong>
-                  <span>{latestPatientId}</span>
-                </div>
-              ) : null}
-              <div className="pb-invoice-field">
-                <strong>Ref. Doctor</strong>
-                <span>{latestDoctorName}</span>
-              </div>
+          {section.bills.length ? (
+            <div className="pd-notification-list">
+              {section.bills.map((bill, index) => {
+                const invoiceNo = invoiceNumber(bill);
+                const billKey = getInvoiceId(bill) || `${section.key}-${invoiceNo}-${index}`;
+                const status = paymentStatus(bill);
+                const statusLabel = status === 'paid' || status === 'completed' ? 'Paid' : formatTitleCase(status);
+                return (
+                  <div className="pd-notification-item" key={billKey}>
+                    <span className="pd-notification-dot">
+                      <FileText size={20} />
+                    </span>
+                    <span className="pd-notification-body">
+                      <strong>{invoiceNo}</strong>
+                      <span>{billTypeLabel(bill)} | {formatDate(bill)} | {readFirst(bill, ['clinicName', 'branchName', 'hospitalName', 'clinic.name', 'branch.name']) || 'Clinic'}</span>
+                      <em>{getPatientName(bill)} | {statusLabel} | {formatAmount(totalAmount(bill))}</em>
+                    </span>
+                    <span className="pd-prescription-actions">
+                      <button
+                        type="button"
+                        className="pd-prescription-btn pd-prescription-btn--ghost"
+                        onClick={() => viewInvoice(bill)}
+                      >
+                        <Eye size={15} />
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        className="pd-prescription-btn pd-prescription-btn--primary"
+                        onClick={() => downloadInvoice(bill)}
+                      >
+                        <Download size={15} />
+                        Download
+                      </button>
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-          </div>
-          <div className="pb-invoice-section pb-invoice-entity-card pb-invoice-payment-card">
-            <span>PAYMENT</span>
-            <div className="pb-invoice-fields">
-              <div className="pb-invoice-field">
-                <strong>Mode</strong>
-                <span>{displayPaymentMode(latestBill)}</span>
-              </div>
-              <div className="pb-invoice-field">
-                <strong>Generated By</strong>
-                <span>{latestPatientName || 'N/A'}</span>
-              </div>
-              <div className="pb-invoice-field">
-                <strong>GST</strong>
-                <span>{latestGstLabel}</span>
-              </div>
+          ) : (
+            <div className="pd-selected-notification">
+              <p>No {section.title.toLowerCase()} found.</p>
             </div>
-          </div>
-        </div>
-
-        <div className="pb-invoice-table-wrap">
-          <table className="pb-invoice-table">
-            <thead>
-              <tr>
-                <th>SNO</th>
-                <th>DIAGNOSTIC TEST</th>
-                <th>AMOUNT</th>
-                <th>CGST</th>
-                <th>SGST</th>
-                <th>NET AMOUNT</th>
-              </tr>
-            </thead>
-            <tbody>
-              {latestInvoiceRows.map((item, index) => (
-                <tr key={`${item.label}-${index}`}>
-                  <td>{index + 1}</td>
-                  <td>{item.label}</td>
-                  <td>{formatAmount(item.amount || 0)}</td>
-                  <td>{formatAmount(item.cgst || 0)}</td>
-                  <td>{formatAmount(item.sgst || 0)}</td>
-                  <td>{formatAmount(item.netAmount || item.amount || 0)}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="pb-invoice-total-row">
-                <td colSpan="2">Total</td>
-                <td>{formatAmount(latestSubtotal)}</td>
-                <td>{formatAmount(latestCgstAmount)}</td>
-                <td>{formatAmount(latestSgstAmount)}</td>
-                <td>{formatAmount(latestNetAmount)}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        <div className="pb-invoice-watermark">{latestClinicName.toUpperCase()}</div>
-
-        <div className="pb-invoice-footer">
-          <div className="pb-invoice-note">
-            <p>Diagnostic services are billed as per selected tests.</p>
-            <p>Print on: {latestInvoiceDate}</p>
-          </div>
-          <div className="pb-invoice-signature">
-            <span>Authorized Signature</span>
-          </div>
-        </div>
-      </section>
+          )}
+        </section>
+      ))}
     </PatientPageShell>
   );
 }
@@ -4201,6 +4416,50 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
   const formatNotificationCount = (value) => Number(value || 0).toLocaleString("en-IN");
   const [sortOrder, setSortOrder] = useState("newest");
   const [page, setPage] = useState(1);
+
+  const formatNotificationDate = (value) => {
+    if (!value) return 'New';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return String(value);
+    return parsed.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
+  const getNotificationTimeValue = (value) => {
+    const parsed = value ? new Date(value) : null;
+    return parsed && !Number.isNaN(parsed.getTime()) ? parsed.getTime() : 0;
+  };
+
+  const getPrescriptionDate = (prescription) =>
+    readFirst(prescription, ['prescriptionDate', 'date', 'createdAt', 'createdOn', 'updatedAt', 'appointmentDate']);
+
+  const getPrescriptionDoctor = (prescription) =>
+    readFirst(prescription, ['doctorName', 'doctor.name', 'doctor.fullName', 'prescribedBy', 'providerName']) || 'doctor';
+
+  const getPrescriptionTitle = (prescription) =>
+    readFirst(prescription, ['diagnosis', 'title', 'condition', 'chiefComplaint', 'appointment.reasonForVisit']) || 'Prescription';
+
+  const getPrescriptionId = (prescription, index) =>
+    readFirst(prescription, ['prescriptionId', 'id', '_id', 'referenceId']) || `prescription-${index}`;
+
+  const getBillDate = (bill) =>
+    readFirst(bill, ['invoiceDate', 'billDate', 'date', 'createdAt', 'createdOn', 'updatedAt']);
+
+  const getBillNumber = (bill, index) =>
+    readFirst(bill, ['invoiceNo', 'invoiceNumber', 'billNo', 'billNumber', 'referenceNumber', 'transactionId', 'id']) || `Bill ${index + 1}`;
+
+  const getBillAmount = (bill) =>
+    Number(readFirst(bill, ['total', 'totalAmount', 'amount', 'invoiceAmount', 'grandTotal', 'payableAmount', 'paymentAmount', 'paidAmount', 'netAmount']) || 0);
+
+  const getBillType = (bill) => {
+    const rawType = String(readFirst(bill, ['invoiceType', 'billingType', 'type', 'serviceType', 'category']) || '').toLowerCase();
+    if (rawType.includes('pharmacy') || rawType.includes('medicine')) return 'Pharmacy';
+    if (rawType.includes('diagnostic') || rawType.includes('diagnosis') || rawType.includes('lab') || rawType.includes('test')) return 'Diagnostic';
+    return 'OP';
+  };
 
   const defaultNotifications = useMemo(() => notificationTypes.map((type, index) => ({
     id: `default-${index}`,
@@ -4240,34 +4499,50 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
 
   const deriveNotificationRows = useCallback((rows) => {
     const derived = [...rows];
-    const hasType = (type) => derived.some((notification) => notification.type === type);
+    const existingIds = new Set(derived.map((notification) => String(notification.id)));
 
-    if (prescriptionCount > 0 && !hasType('Prescription Ready')) {
-      derived.unshift({
-        id: 'derived-prescription-ready',
-        title: 'Prescription Ready',
-        message: `${formatNotificationCount(prescriptionCount)} prescription record${prescriptionCount === 1 ? '' : 's'} available to view.`,
-        date: 'Ready now',
-        type: 'Prescription Ready',
-        read: false,
-        url: '/patient/prescriptions',
+    prescriptions
+      .slice()
+      .sort((a, b) => getNotificationTimeValue(getPrescriptionDate(b)) - getNotificationTimeValue(getPrescriptionDate(a)))
+      .forEach((prescription, index) => {
+        const prescriptionId = getPrescriptionId(prescription, index);
+        const id = `derived-prescription-${prescriptionId}`;
+        if (existingIds.has(id)) return;
+        existingIds.add(id);
+        derived.unshift({
+          id,
+          title: 'Prescription Ready',
+          message: `${getPrescriptionTitle(prescription)} prescription submitted by ${getPrescriptionDoctor(prescription)} is ready.`,
+          date: formatNotificationDate(getPrescriptionDate(prescription)),
+          sortTime: getNotificationTimeValue(getPrescriptionDate(prescription)),
+          type: 'Prescription Ready',
+          read: false,
+          url: '/patient/prescriptions',
+        });
       });
-    }
 
-    if (billCount > 0 && !hasType('Bill Generated')) {
-      derived.unshift({
-        id: 'derived-bill-generated',
-        title: 'Bill Generated',
-        message: `${formatNotificationCount(billCount)} bill${billCount === 1 ? '' : 's'} available to review.`,
-        date: 'New',
-        type: 'Bill Generated',
-        read: false,
-        url: '/patient/bills',
+    bills
+      .slice()
+      .sort((a, b) => getNotificationTimeValue(getBillDate(b)) - getNotificationTimeValue(getBillDate(a)))
+      .forEach((bill, index) => {
+        const billNo = getBillNumber(bill, index);
+        const id = `derived-bill-${billNo}`;
+        if (existingIds.has(id)) return;
+        existingIds.add(id);
+        derived.unshift({
+          id,
+          title: 'Bill Generated',
+          message: `${getBillType(bill)} bill ${billNo} generated by reception for ${formatIndianCurrency(getBillAmount(bill))}.`,
+          date: formatNotificationDate(getBillDate(bill)),
+          sortTime: getNotificationTimeValue(getBillDate(bill)),
+          type: 'Bill Generated',
+          read: false,
+          url: '/patient/bills',
+        });
       });
-    }
 
     return derived.length ? derived : defaultNotifications;
-  }, [defaultNotifications, formatNotificationCount, billCount, prescriptionCount]);
+  }, [bills, defaultNotifications, prescriptions]);
 
   const [notificationRows, setNotificationRows] = useState(() =>
     deriveNotificationRows((notifications.length ? notifications : defaultNotifications).map(normalizeNotification))
@@ -4297,6 +4572,11 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
     });
 
     return filtered.sort((a, b) => {
+      const aTime = Number(a.sortTime || getNotificationTimeValue(a.date));
+      const bTime = Number(b.sortTime || getNotificationTimeValue(b.date));
+      if (aTime || bTime) {
+        return sortOrder === 'oldest' ? aTime - bTime : bTime - aTime;
+      }
       if (sortOrder === 'oldest') {
         return String(a.date).localeCompare(String(b.date));
       }
@@ -4341,22 +4621,24 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
   };
 
   const viewNotification = (notification) => {
+    markNotificationAsRead(notification.id);
+
     // Prescription and billing notifications can also carry an appointment ID.
     // Their destination must remain the corresponding patient record, not the
     // appointment that produced it.
     if (notification.type === 'Prescription Ready') {
-      window.location.assign('/patient/prescriptions');
+      navigate('/patient/prescriptions');
       return;
     }
 
     if (notification.type === 'Bill Generated') {
-      window.location.assign('/patient/bills');
+      navigate('/patient/bills');
       return;
     }
 
     const appointmentId = getNotificationAppointmentId(notification);
     if (appointmentId) {
-      window.location.assign(`/patient/appointments?appointmentId=${encodeURIComponent(appointmentId)}`);
+      navigate(`/patient/appointments?appointmentId=${encodeURIComponent(appointmentId)}`);
       return;
     }
 

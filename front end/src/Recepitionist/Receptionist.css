@@ -1889,6 +1889,112 @@
   font-variant-numeric: tabular-nums;
 }
 
+.rc-booking-receipt-actions {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #eff6ff;
+  padding: 12px;
+}
+
+.rc-booking-receipt-actions strong {
+  display: block;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.rc-booking-receipt-actions span {
+  display: block;
+  margin-top: 3px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rc-booking-receipt-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rc-booking-receipt-buttons button {
+  min-height: 38px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.rc-receipt-preview-btn {
+  background: #ffffff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.rc-receipt-print-btn {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #c2410c;
+}
+
+.rc-booking-receipt-preview {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #d9e1ec;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.rc-receipt-preview-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+  border-bottom: 1px solid #e5edf6;
+  padding-bottom: 10px;
+}
+
+.rc-receipt-preview-head strong {
+  color: #071120;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.rc-receipt-preview-head span {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.rc-receipt-preview-grid {
+  display: grid;
+  grid-template-columns: minmax(86px, auto) minmax(0, 1fr);
+  gap: 8px 12px;
+}
+
+.rc-receipt-preview-grid span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.rc-receipt-preview-grid strong {
+  min-width: 0;
+  color: #071120;
+  font-size: 12px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
 .rc-patient-summary,
 .rc-total,
 .rc-invoice-box {
@@ -2037,19 +2143,30 @@
 .rc-icon-btn {
   width: 34px;
   height: 34px;
-  border: 1px solid #d9e1ec;
-  border-radius: 8px;
-  background: #fff;
+  min-width: 34px;
+  border: 1px solid #dbe3ed;
+  border-radius: 10px;
+  background: #ffffff;
   color: #071120;
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  padding: 0;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease, color 0.16s ease;
+}
+
+.rc-icon-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
 }
 
 .rc-icon-btn:disabled {
   color: #8a95a6;
   background: #f1f4f7;
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .rc-invoice-menu {

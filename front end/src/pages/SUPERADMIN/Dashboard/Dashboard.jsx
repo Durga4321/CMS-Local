@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Activity, Building2, IndianRupee, ShieldCheck } from "lucide-react";
+import { Activity, Building2, IndianRupee, LogIn, LogOut, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../../components/superadmin/Header";
 import DashboardCards from "../../../components/superadmin/DashboardCards";
@@ -12,6 +12,19 @@ const formatCurrency = (value) =>
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(value);
+
+const getActivityTone = (activity = {}) => {
+  const text = `${activity.title || ""} ${activity.detail || ""}`.toLowerCase();
+  if (text.includes("logout") || text.includes("logged out") || text.includes("signed out")) return "logout";
+  if (text.includes("login") || text.includes("logged in") || text.includes("signed in")) return "login";
+  return "default";
+};
+
+const getActivityIcon = (tone) => {
+  if (tone === "logout") return LogOut;
+  if (tone === "login") return LogIn;
+  return Activity;
+};
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -98,25 +111,46 @@ function Dashboard() {
       <DashboardCards cards={cards} />
 
       <div className="sa-grid">
-        <div className="sa-panel">
-          <h3>Charts & Statistics</h3>
-          <p>Revenue growth across all clinics.</p>
+        <div className="sa-panel sa-panel--highlighted">
+          <div className="sa-panel__header">
+            <div>
+              <h3>Charts & Statistics</h3>
+              <p>Revenue growth across all clinics.</p>
+            </div>
+            <button type="button" className="sa-chip">This Month</button>
+          </div>
+
           <Charts data={revenueData} dataKey="revenue" />
+
         </div>
 
-        <div className="sa-panel">
-          <h3>Recent Activities</h3>
-          <p>Latest platform events.</p>
+        <div className="sa-panel sa-panel--activity">
+          <div className="sa-panel__header sa-activity-panel-header">
+            <div>
+              <h3>Recent Activities</h3>
+              <p>Latest platform events.</p>
+            </div>
+            <button type="button" className="sa-btn sa-btn--ghost">View All</button>
+          </div>
+
           <div className="sa-activity-list">
-            {activities.length ? activities.map((activity) => (
-              <div className="sa-activity-item" key={activity.id}>
-                <div>
-                  <b>{activity.title}</b>
-                  <p>{activity.detail}</p>
+            {activities.length ? activities.map((activity) => {
+              const tone = getActivityTone(activity);
+              const Icon = getActivityIcon(tone);
+
+              return (
+                <div className={`sa-activity-item sa-activity-item--${tone}`} key={activity.id || `${activity.title}-${activity.time}`}>
+                  <div className={`sa-activity-icon sa-activity-icon--${tone}`}>
+                    <Icon size={17} />
+                  </div>
+                  <div className="sa-activity-copy">
+                    <b>{activity.title}</b>
+                    <p>{activity.detail}</p>
+                  </div>
+                  <span>{activity.time}</span>
                 </div>
-                <span>{activity.time}</span>
-              </div>
-            )) : (
+              );
+            }) : (
               <div className="sa-empty-state">
                 <span className="sa-empty-state-icon">
                   <Activity size={28} />

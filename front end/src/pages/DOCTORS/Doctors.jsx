@@ -17,6 +17,7 @@ import AuthImage, {
 import { apiUrl } from "../../config/api";
 import {
   getApiHeaders,
+  getJsonHeaders,
   fetchBranchesForHospital,
   buildBranchOptions,
 } from "../../utils/branchApi";
@@ -197,13 +198,139 @@ const getDoctorAreaOfExpertise = (doctor = {}) =>
 const getDoctorBranchId = (doctor = {}) =>
   doctor.branchId ?? doctor.BranchId ?? doctor.branchID ?? doctor.BranchID ?? "";
 
-const getDoctorBranchName = (doctor = {}, branchNameById = {}) =>
-  doctor.branchName ??
-  doctor.BranchName ??
-  doctor.branch?.name ??
-  doctor.branch?.branchName ??
-  branchNameById[String(getDoctorBranchId(doctor) || "")] ??
-  "";
+const getBranchAssignmentId = (branch = {}) => {
+  if (branch === null || branch === undefined) return 0;
+  if (typeof branch !== "object") return Number(branch) || 0;
+  return Number(
+    branch.id ??
+      branch.Id ??
+      branch.branchId ??
+      branch.BranchId ??
+      branch.branchID ??
+      branch.BranchID ??
+      branch.clinicBranchId ??
+      branch.ClinicBranchId ??
+      0
+  ) || 0;
+};
+
+const readBranchAssignmentIds = (data) => {
+  if (Array.isArray(data)) {
+    return data.map(getBranchAssignmentId).filter((id) => id > 0);
+  }
+
+  if (Array.isArray(data?.branchIds)) {
+    return data.branchIds.map(getBranchAssignmentId).filter((id) => id > 0);
+  }
+
+  if (Array.isArray(data?.Branches)) {
+    return data.Branches.map(getBranchAssignmentId).filter((id) => id > 0);
+  }
+
+  if (Array.isArray(data?.branches)) {
+    return data.branches.map(getBranchAssignmentId).filter((id) => id > 0);
+  }
+
+  return [];
+};
+
+const readBranchAssignmentObjects = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.branches)) return data.branches;
+  if (Array.isArray(data?.Branches)) return data.Branches;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.result)) return data.result;
+  if (Array.isArray(data?.records)) return data.records;
+  return [];
+};
+
+const getBranchAssignmentName = (branch = {}) => {
+  if (branch === null || branch === undefined) return "";
+  if (typeof branch !== "object") return "";
+  return String(
+    branch.name ??
+      branch.Name ??
+      branch.branchName ??
+      branch.BranchName ??
+      branch.branch ??
+      branch.Branch ??
+      ""
+  ).trim();
+};
+
+const mergeDoctorBranchAssignments = (doctor = {}, branches = []) => {
+  const assignedBranchIds = branches
+    .map(getBranchAssignmentId)
+    .filter((id) => id > 0);
+  const fallbackBranchId = Number(getDoctorBranchId(doctor)) || 0;
+  const branchIds = Array.from(
+    new Set([
+      ...assignedBranchIds,
+      ...(assignedBranchIds.length ? [] : fallbackBranchId ? [fallbackBranchId] : []),
+    ])
+  );
+  const branchObjects = branches
+    .map((branch) => ({
+      id: getBranchAssignmentId(branch),
+      branchId: getBranchAssignmentId(branch),
+      name: getBranchAssignmentName(branch),
+      branchName: getBranchAssignmentName(branch),
+    }))
+    .filter((branch) => branch.id || branch.name);
+
+  return {
+    ...doctor,
+    branchIds: branchIds.map(String),
+    BranchIds: branchIds,
+    branches: branchObjects.length ? branchObjects : doctor.branches,
+    Branches: branchObjects.length ? branchObjects : doctor.Branches,
+  };
+};
+
+const getDoctorBranchName = (doctor = {}, branchNameById = {}) => {
+  const branchIds = Array.isArray(doctor.branchIds)
+    ? doctor.branchIds.map((id) => String(id || "")).filter(Boolean)
+    : [];
+
+  if (branchIds.length > 0) {
+    const names = branchIds
+      .map((branchId) => branchNameById[String(branchId)] || String(branchId))
+      .filter((name) => String(name || "").trim() !== "");
+    if (names.length > 0) {
+      return names.join(", ");
+    }
+  }
+
+  // If the API returned full branch objects, prefer those
+  const branchObjects = Array.isArray(doctor.branches)
+    ? doctor.branches
+    : Array.isArray(doctor.Branches)
+    ? doctor.Branches
+    : [];
+
+  if (branchObjects.length > 0) {
+    const names = branchObjects
+      .map((b) => {
+        if (!b) return "";
+        return (
+          b.name ?? b.Name ?? b.branchName ?? b.BranchName ??
+          (typeof b === "string" ? b : "")
+        );
+      })
+      .filter((n) => String(n || "").trim() !== "");
+
+    if (names.length > 0) return names.join(", ");
+  }
+
+  return (
+    doctor.branchName ??
+    doctor.BranchName ??
+    doctor.branch?.name ??
+    doctor.branch?.branchName ??
+    branchNameById[String(getDoctorBranchId(doctor) || "")] ??
+    ""
+  );
+};
 
 const getInitialEditForm = (doctor = {}) => ({
   branchIds: Array.isArray(doctor.branchIds)
@@ -398,6 +525,16 @@ function Doctors() {
     navigate("/doctors/add");
   };
 
+  const fetchDoctorBranchAssignments = async (doctorId) => {
+    if (!doctorId) return [];
+    const response = await fetch(apiUrl(`Doctor/${encodeURIComponent(doctorId)}/branches`), {
+      headers: getApiHeaders(),
+    });
+    if (!response.ok) return [];
+    const data = await response.json().catch(() => []);
+    return readBranchAssignmentObjects(data);
+  };
+
   const fetchDoctors = async () => {
     setLoading(true);
     setError("");
@@ -414,7 +551,15 @@ function Doctors() {
       }
 
       const data = await response.json();
-      setDoctors(parseDoctorsResponse(data));
+      const doctorRows = parseDoctorsResponse(data);
+      const enrichedDoctors = await Promise.all(
+        doctorRows.map(async (doctor) => {
+          const doctorId = doctor.id ?? doctor.Id ?? doctor.doctorId ?? doctor.DoctorId;
+          const branches = await fetchDoctorBranchAssignments(doctorId).catch(() => []);
+          return mergeDoctorBranchAssignments(doctor, branches);
+        })
+      );
+      setDoctors(enrichedDoctors);
 
     } catch (fetchError) {
       setError(fetchError.message || "Unable to load doctors right now.");
@@ -499,6 +644,7 @@ function Doctors() {
 
   const buildDoctorUpdateFormData = (requestBody, { removeImage = false } = {}) => {
     const formData = new FormData();
+
     const fieldMap = {
       BranchId: requestBody.branchId,
       Name: requestBody.name,
@@ -778,10 +924,6 @@ function Doctors() {
     const { name } = event.target;
     let nextValue = event.target.value;
 
-    if (name === "branchIds") {
-      nextValue = Array.from(event.target.selectedOptions || []).map((option) => option.value);
-    }
-
     if (name === "name") {
       nextValue = formatTitleCase(onlyAlpha(nextValue));
     }
@@ -876,6 +1018,21 @@ function Doctors() {
     }));
   };
 
+  const handleEditBranchCheckboxChange = (event) => {
+    const branchId = String(event.target.value);
+    setEditForm((previous) => {
+      const nextBranchIds = previous.branchIds.includes(branchId)
+        ? previous.branchIds.filter((id) => id !== branchId)
+        : [...previous.branchIds, branchId];
+
+      return {
+        ...previous,
+        branchIds: nextBranchIds,
+      };
+    });
+    setEditFieldErrors((previous) => ({ ...previous, branchIds: "" }));
+  };
+
   const handleSaveEditDoctor = async (event) => {
     event.preventDefault();
 
@@ -963,24 +1120,74 @@ function Doctors() {
       }
 
       if (Array.isArray(requestBody.branchIds) && requestBody.branchIds.length > 0) {
+        const payloadBranchIds = requestBody.branchIds
+          .map((id) => Number(id) || 0)
+          .filter((id) => id > 0);
+
         const assignResponse = await fetch(
           apiUrl(`Doctor/${encodeURIComponent(editingDoctor.id)}/branches`),
           {
             method: "PUT",
-            headers: {
-              ...getApiHeaders(),
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              branchIds: requestBody.branchIds
-                .map((id) => Number(id) || 0)
-                .filter((id) => id > 0),
-            }),
+            headers: getJsonHeaders(),
+            body: JSON.stringify({ branchIds: payloadBranchIds }),
           }
         );
 
         if (!assignResponse.ok) {
           throw new Error(await parseErrorMessage(assignResponse));
+        }
+
+        const assignResult = await assignResponse.clone().json().catch(() => null);
+        const assignedBranches = readBranchAssignmentObjects(assignResult);
+        const assignedBranchIds =
+          readBranchAssignmentIds(assignResult).length > 0
+            ? readBranchAssignmentIds(assignResult)
+            : payloadBranchIds;
+        const branchObjects =
+          assignedBranches.length > 0
+            ? assignedBranches
+            : assignedBranchIds.map((id) => ({
+                branchId: id,
+                branchName: branchNameById[String(id)] || String(id),
+              }));
+        const nextBranchDoctor = mergeDoctorBranchAssignments(
+          { ...editingDoctor, branchIds: assignedBranchIds.map(String) },
+          branchObjects
+        );
+        setEditingDoctor(nextBranchDoctor);
+        setEditForm((previous) => ({
+          ...previous,
+          branchIds: assignedBranchIds.map(String),
+        }));
+        setDoctors((previous) =>
+          previous.map((doctor) =>
+            String(doctor.id ?? doctor.Id ?? doctor.doctorId ?? doctor.DoctorId) === String(editingDoctor.id)
+              ? mergeDoctorBranchAssignments({ ...doctor, branchIds: assignedBranchIds.map(String) }, branchObjects)
+              : doctor
+          )
+        );
+
+        // Verify server persisted the branch assignments
+        try {
+          const verifyResp = await fetch(
+            apiUrl(`Doctor/${encodeURIComponent(editingDoctor.id)}/branches`),
+            {
+            headers: getApiHeaders(),
+            }
+          );
+          if (verifyResp.ok) {
+            const serverBranches = await verifyResp.json().catch(() => null);
+            const serverBranchIds = readBranchAssignmentIds(serverBranches);
+
+            const missing = payloadBranchIds.filter((id) => !serverBranchIds.includes(id));
+            if (missing.length > 0) {
+              throw new Error(
+                `Branch assignment incomplete. Server saved branches: ${serverBranchIds.join(", ")}`
+              );
+            }
+          }
+        } catch (verifyError) {
+          throw new Error(verifyError.message || "Branch verification failed after update.");
         }
       }
 
@@ -1460,24 +1667,22 @@ function Doctors() {
                 </div>
 
                 <div className="doctor-edit-field">
-                  <label htmlFor="edit-branchIds">Branches</label>
-                  <select
-                    id="edit-branchIds"
-                    name="branchIds"
-                    multiple
-                    value={editForm.branchIds}
-                    onChange={handleEditFieldChange}
-                    className={editFieldErrors.branchIds ? "is-invalid" : ""}
-                    aria-invalid={Boolean(editFieldErrors.branchIds)}
-                    disabled={branchOptions.length === 0}
-                    size={Math.min(6, Math.max(3, branchOptions.length))}
-                  >
+                  <label htmlFor="edit-branchIds">Branches (select multiple)</label>
+                  <div className="branch-checkbox-grid">
                     {branchOptions.map((branch) => (
-                      <option key={branch.id} value={String(branch.id)}>
+                      <label key={branch.id} className="branch-checkbox-item">
+                        <input
+                          type="checkbox"
+                          name="branchIds"
+                          value={String(branch.id)}
+                          checked={editForm.branchIds.includes(String(branch.id))}
+                          onChange={handleEditBranchCheckboxChange}
+                          disabled={branchOptions.length === 0}
+                        />
                         {branch.name}
-                      </option>
+                      </label>
                     ))}
-                  </select>
+                  </div>
                   {editFieldErrors.branchIds ? (
                     <span className="doctor-edit-field-error">
                       {editFieldErrors.branchIds}

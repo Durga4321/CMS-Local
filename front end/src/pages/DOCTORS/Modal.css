@@ -110,6 +110,40 @@
   min-width: 0;
 }
 
+.branch-checkbox-grid,
+.doctor-edit-branch-checkbox-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+.branch-checkbox-item,
+.doctor-edit-branch-checkbox-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 1px solid #dbe3ed;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 13px;
+  min-width: auto;
+}
+
+.branch-checkbox-item input,
+.doctor-edit-branch-checkbox-item input {
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  min-height: 14px;
+  margin: 0;
+  padding: 0;
+  appearance: auto;
+  -webkit-appearance: checkbox;
+  accent-color: #0f9d9d;
+}
+
 .add-doctor-input-group-full {
   grid-column: 1 / -1;
 }
