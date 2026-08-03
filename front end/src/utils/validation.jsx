@@ -8,7 +8,6 @@ export const ADDRESS_TEXT_PATTERN = /^[A-Za-z0-9\s.,/#-]+$/;
 const REPEATED_LETTER_PATTERN = /([A-Za-z])\1{3,}/;
 const LONG_CONSONANT_RUN_PATTERN = /[bcdfghjklmnpqrstvwxyz]{5,}/i;
 const VOWEL_PATTERN = /[aeiou]/i;
-const FIRST_LETTER_PATTERN = /[A-Za-z]/;
 
 const hasRepeatedSubstringPattern = (text) => {
   const normalized = String(text || "").toLowerCase().replace(/[^a-z]/g, "");
@@ -104,24 +103,11 @@ export const hasMeaningfulText = (value) => {
   );
 };
 
-export const validateCapitalizedWords = (value, label) => {
-  const text = String(value ?? "").trim();
-  if (!text) return "";
-
-  const firstLetter = text.match(FIRST_LETTER_PATTERN)?.[0] || "";
-
-  return firstLetter && firstLetter !== firstLetter.toUpperCase()
-    ? `${label} should start with a capital letter.`
-    : "";
-};
-
 export const validateAlpha = (value, label) => {
   const required = validateRequired(value, label);
   if (required) return required;
   const text = String(value).trim();
   if (!ALPHA_PATTERN.test(text)) return `${label} should contain alphabets only.`;
-  const capitalizationError = validateCapitalizedWords(text, label);
-  if (capitalizationError) return capitalizationError;
   return hasMeaningfulText(text)
     ? ""
     : `${label} must be valid text, not random characters.`;
@@ -160,9 +146,6 @@ export const validateName = (value, label) => {
     return `${label} must be a valid name.`;
   }
 
-  const capitalizationError = validateCapitalizedWords(normalized, label);
-  if (capitalizationError) return capitalizationError;
-
   const lettersOnly = normalized.replace(/[^A-Za-z]/g, "");
   if (lettersOnly.length < 2) {
     return `${label} must be valid text, not random characters.`;
@@ -187,9 +170,6 @@ export const validateClinicName = (value, label) => {
     return `${label} must be valid text, not random characters.`;
   }
 
-  const capitalizationError = validateCapitalizedWords(text, label);
-  if (capitalizationError) return capitalizationError;
-
   if (!/\bclinic\b$/i.test(text)) {
     return `Enter a valid clinic name (e.g., RJS Clinic, SLS clinic etc.).`;
   }
@@ -207,7 +187,7 @@ export const validateText = (value, label) => {
   // Allow abbreviations and common text patterns (e.g., "NA", "n/a", "Bone Splints")
   const hasValidChars = /^[A-Za-z0-9\s.,'/&()-]+$/.test(text);
   if (hasValidChars && text.length >= 2) {
-    return validateCapitalizedWords(text, label);
+    return "";
   }
   return hasMeaningfulText(text)
     ? ""

@@ -37,7 +37,23 @@ const getNestedValue = (record, path) => {
 const readFirst = (record, keys) =>
   keys.reduce((value, key) => value || getNestedValue(record, key), "") || "";
 
-const getBillStatus = (bill) => String(bill?.status || bill?.paymentStatus || bill?.state || "").toLowerCase();
+const getBillStatus = (bill) => String(
+  firstValue(
+    readFirst(bill, ['status', 'paymentStatus', 'state', 'paymentState', 'statusText', 'paymentStatusText', 'billingStatus', 'invoice.status', 'invoice.paymentStatus', 'bill.status', 'bill.paymentStatus']),
+    ''
+  ) || ''
+).toLowerCase();
+
+const isBillPendingStatus = (status) => {
+  const normalized = String(status || '').trim().toLowerCase();
+  if (!normalized) return false;
+  return ['pending', 'unpaid', 'due', 'not paid', 'notpaid', 'partial', 'outstanding'].some((term) => normalized.includes(term));
+};
+
+const isBillPaidStatus = (status) => {
+  const normalized = String(status || '').trim().toLowerCase();
+  return ['paid', 'completed', 'settled', 'closed'].some((term) => normalized.includes(term));
+};
 
 const getBillAppointmentKey = (bill) =>
   firstValue(
@@ -53,7 +69,7 @@ const getBillAppointmentKey = (bill) =>
 const getBillDateValue = (bill) => {
   const date = new Date(
     firstValue(
-      readFirst(bill, ['invoiceDate', 'billDate', 'date', 'createdAt', 'updatedAt']),
+      readFirst(bill, ['invoiceDate', 'billDate', 'date', 'createdAt', 'updatedAt', 'invoice.createdAt', 'invoice.updatedAt', 'bill.createdAt', 'bill.updatedAt']),
       ''
     )
   );
@@ -87,39 +103,24 @@ const dedupeBillsByAppointment = (bills = []) => {
 
 const getBillTotalAmount = (bill) => {
   const amount = firstValue(
-    bill?.amount,
-    bill?.total,
-    bill?.invoiceAmount,
-    bill?.grandTotal,
-    bill?.paymentAmount,
-    bill?.paidAmount,
-    bill?.dueAmount,
-    bill?.balance,
-    bill?.outstandingAmount
+    readFirst(bill, ['totalAmount', 'grandTotal', 'invoiceAmount', 'netAmount', 'total', 'amount', 'billingAmount', 'invoiceTotal', 'payableAmount', 'paymentAmount', 'paidAmount', 'dueAmount', 'balance', 'outstandingAmount', 'totals.total', 'invoice.totalAmount', 'invoice.grandTotal', 'invoice.amount', 'invoice.netAmount', 'bill.totalAmount', 'bill.grandTotal', 'bill.amount', 'bill.netAmount']),
+    0
   );
   return toAmount(amount);
 };
 
 const getBillDueAmount = (bill) => {
   const amount = firstValue(
-    bill?.dueAmount,
-    bill?.balance,
-    bill?.outstandingAmount,
-    bill?.remainingAmount,
-    bill?.amount,
-    bill?.total
+    readFirst(bill, ['dueAmount', 'amountDue', 'balance', 'outstandingAmount', 'remainingAmount', 'totalAmount', 'grandTotal', 'invoiceAmount', 'netAmount', 'total', 'amount', 'paidAmount', 'paymentAmount', 'payableAmount', 'totals.dueAmount', 'invoice.dueAmount', 'bill.dueAmount']),
+    0
   );
   return toAmount(amount);
 };
 
 const getBillPaidAmount = (bill) => {
   const amount = firstValue(
-    bill?.paidAmount,
-    bill?.paymentAmount,
-    bill?.amount,
-    bill?.total,
-    bill?.invoiceAmount,
-    bill?.grandTotal
+    readFirst(bill, ['paidAmount', 'paymentAmount', 'amountPaid', 'totalAmount', 'grandTotal', 'invoiceAmount', 'netAmount', 'total', 'amount', 'billingAmount', 'payableAmount', 'invoice.paidAmount', 'bill.paidAmount']),
+    0
   );
   return toAmount(amount);
 };
@@ -393,35 +394,40 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
   const pendingBillsAmount = Array.isArray(uniqueBills)
     ? uniqueBills.reduce((total, bill) => {
         const status = getBillStatus(bill);
-        const isPending = !status || status.includes("pending") || status.includes("unpaid") || status.includes("due");
+        const isPending = !status ? getBillDueAmount(bill) > 0 : isBillPendingStatus(status);
         return isPending ? total + getBillDueAmount(bill) : total;
       }, 0)
     : 0;
-  const totalPaidAmount = Array.isArray(uniqueBills)
-    ? uniqueBills.reduce((total, bill) => {
-        const status = getBillStatus(bill);
-        return status === "paid" ? total + getBillPaidAmount(bill) : total;
-      }, 0)
-    : 0;
+  const latestBill = Array.isArray(uniqueBills) && uniqueBills.length
+    ? [...uniqueBills].sort((left, right) => getBillDateValue(right) - getBillDateValue(left))[0]
+    : null;
+  const latestBillAmount = latestBill ? getBillTotalAmount(latestBill) : 0;
+  const firstBill = Array.isArray(uniqueBills) && uniqueBills.length ? uniqueBills[0] : null;
   const hasBills = Array.isArray(uniqueBills) && uniqueBills.length > 0;
   const hasPendingBills = Array.isArray(uniqueBills)
     ? uniqueBills.some((bill) => {
         const status = getBillStatus(bill);
-        return !status || status.includes("pending") || status.includes("unpaid") || status.includes("due");
+        if (!status) return getBillDueAmount(bill) > 0;
+        return isBillPendingStatus(status);
       })
     : false;
   const pendingStatusNote = hasBills
     ? hasPendingBills
       ? "Payment due"
-      : "Paid"
+      : "All bills paid"
     : "No bills yet";
   const billCardLabel = hasBills
     ? hasPendingBills
-      ? "Bills Pending"
-      : "Bills Paid"
-    : "Billing";
-  const billCardValue = hasPendingBills ? pendingBillsAmount : totalPaidAmount;
+      ? "Total Due"
+      : "Latest Bill"
+    : "Total Due";
+  const billCardValue = hasPendingBills ? pendingBillsAmount : latestBillAmount;
   const selectedPatientId = formatInlineValue(dashboardPatient.patientCode || dashboardPatient.id, "-");
+
+  if (process.env.NODE_ENV !== 'production' && firstBill) {
+    console.debug('PatientDashboard: first bill', firstBill);
+    console.debug('Extracted latestBillAmount', latestBillAmount, 'pendingBillsAmount', pendingBillsAmount, 'hasPendingBills', hasPendingBills);
+  }
   const selectedPatientPhone = formatInlineValue(dashboardPatient.phone, "Phone not available");
   const selectedPatientBloodGroup = formatInlineValue(dashboardPatient.bloodGroup || dashboardPatient.bloodgroup, "-");
   const appointmentDate = formatDateLabel(getAppointmentDate(upcomingAppointment));
@@ -535,7 +541,7 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
         </section>
 
         <section className="pd-card pd-summary-card pd-summary-card--billing" onClick={() => navigate("/patient/bills")} role="button" tabIndex={0} onKeyDown={(event) => event.key === "Enter" && navigate("/patient/bills")}>
-          <div className="pd-summary-card-icon"><IndianRupee size={25} /></div><div className="pd-summary-card-copy"><span>Total Due</span><strong>{formatCurrency(billCardValue)}</strong><p>{pendingStatusNote}</p></div><button type="button" className="pd-card-footer-button" onClick={(event) => { event.stopPropagation(); navigate("/patient/bills"); }}>View Bills</button>
+          <div className="pd-summary-card-icon"><IndianRupee size={25} /></div><div className="pd-summary-card-copy"><span>{billCardLabel}</span><strong>{formatCurrency(billCardValue)}</strong><p>{pendingStatusNote}</p></div><button type="button" className="pd-card-footer-button" onClick={(event) => { event.stopPropagation(); navigate("/patient/bills"); }}>View Bills</button>
         </section>
         <section className="pd-card pd-summary-card pd-summary-card--records" onClick={handleViewRecords} role="button" tabIndex={0} onKeyDown={(event) => event.key === "Enter" && handleViewRecords()}>
           <div className="pd-summary-card-icon"><FileText size={25} /></div><div className="pd-summary-card-copy"><span>Health Records</span><strong>{formatCount(medicalRecordCount)}</strong><p>{medicalRecordCount === 1 ? "Record" : "Records"}</p></div><button type="button" className="pd-card-footer-button" onClick={(event) => { event.stopPropagation(); handleViewRecords(); }}>View Records</button>
