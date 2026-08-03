@@ -17,6 +17,7 @@ const REGISTER_API = apiUrl("patient-portal/register");
 
 const DOB_REGEX = /^(\d{2})\/(\d{2})\/(\d{2,4})$/;
 const MAX_DOB_AGE = 100;
+const BLOOD_GROUP_OPTIONS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 export const validateDobValue = (value) => {
   if (!value?.trim()) return "Date of birth is required.";
@@ -74,6 +75,7 @@ function PatientRegister() {
     firstName: "",
     lastName: "",
     gender: "",
+    bloodGroup: "",
     dob: "",
     mobile: "",
     email: "",
@@ -390,6 +392,7 @@ function PatientRegister() {
       const lastNameError = validateName(form.lastName, "Last name");
       if (lastNameError) nextErrors.lastName = lastNameError;
       if (!form.gender) nextErrors.gender = "Please select gender.";
+      if (!form.bloodGroup) nextErrors.bloodGroup = "Please select a blood group.";
       const dobError = validateDobValue(form.dob);
       if (dobError) nextErrors.dob = dobError;
     }
@@ -471,6 +474,7 @@ function PatientRegister() {
       firstName: formatTitleCase(form.firstName.trim()),
       lastName: formatTitleCase(form.lastName.trim()),
       gender: form.gender,
+      bloodGroup: form.bloodGroup,
       dateOfBirth: getDobPayloadValue(form.dob),
       mobileNumber: form.mobile,
       email: form.email.trim(),
@@ -583,6 +587,21 @@ function PatientRegister() {
                     <option value="Other">Other</option>
                   </select>
                   {errors.gender && <span className="error-message">{errors.gender}</span>}
+                </div>
+                <div className="form-group">
+                  <label htmlFor="reg-blood-group">Blood Group</label>
+                  <select
+                    id="reg-blood-group"
+                    name="bloodGroup"
+                    value={form.bloodGroup}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select blood group</option>
+                    {BLOOD_GROUP_OPTIONS.map((bloodGroup) => (
+                      <option key={bloodGroup} value={bloodGroup}>{bloodGroup}</option>
+                    ))}
+                  </select>
+                  {errors.bloodGroup && <span className="error-message">{errors.bloodGroup}</span>}
                 </div>
                 <div className="form-group">
                   <label htmlFor="reg-dob">DOB</label>

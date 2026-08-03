@@ -57,6 +57,15 @@ const isCurrentUserSuperAdmin = () =>
 const SuperAdminRoute = ({ children }) =>
   isCurrentUserSuperAdmin() ? children : <Navigate to="/dashboard" replace />;
 
+const PatientRoute = ({ children }) => {
+  const patientToken = localStorage.getItem("patientToken");
+  const patientRole = normalizeRole(localStorage.getItem("patientRole") || localStorage.getItem("userRole"));
+
+  return patientToken || patientRole === "patient"
+    ? children
+    : <Navigate to="/login/patient" replace />;
+};
+
 function App() {
   return (
     <ToastProvider>
@@ -133,7 +142,7 @@ function App() {
         <Route path="/doctor/*" element={<DoctorApp />} />
         <Route path="/reception/*" element={<ReceptionistApp />} />
         <Route path="/nurse/*" element={<NurseApp />} />
-        <Route path="/patient/*" element={<PatientRoutes />} />
+        <Route path="/patient/*" element={<PatientRoute><PatientRoutes /></PatientRoute>} />
 
         {/* FALLBACK */}
         <Route path="*" element={<Navigate to="/login" replace />} />
