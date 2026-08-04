@@ -336,7 +336,7 @@ export const formatToday = () => {
 export const getOnlineAppointments = async () =>
   withBookingTypeFallback(
     isNurseSession()
-      ? await requestAppointmentSources(["Appointment/online", "Appointment", "Nurse/print-queue", "ReceptionistDashboard"])
+      ? await requestAppointmentSources(["Appointment", "Nurse/print-queue"])
       : parseList(await requestJsonFallback(["Appointment/online"])),
     "Online"
   ).filter((a) => String(a.bookingType || a.BookingType || a.type || a.Type || "").toLowerCase() === "online");
@@ -344,7 +344,7 @@ export const getOnlineAppointments = async () =>
 export const getOfflineAppointments = async () =>
   withBookingTypeFallback(
     isNurseSession()
-      ? await requestAppointmentSources(["Appointment/offline", "Appointment", "Nurse/print-queue", "ReceptionistDashboard"])
+      ? await requestAppointmentSources(["Appointment", "Nurse/print-queue"])
       : parseList(await requestJsonFallback(["Appointment/offline"])),
     "Offline"
   ).filter((a) => String(a.bookingType || a.BookingType || a.type || a.Type || "").toLowerCase() === "offline");

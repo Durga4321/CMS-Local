@@ -158,6 +158,18 @@ const getAppointmentStatus = (appointment = {}) => {
   return status ? String(status) : "Scheduled";
 };
 
+const normalizeStatus = (value) => String(value || "").trim().toLowerCase();
+
+const isCancelledAppointment = (appointment = {}) => {
+  const status = normalizeStatus(firstValue(appointment?.status, appointment?.appointmentStatus, appointment?.state));
+  return ["cancelled", "canceled", "rejected", "void", "deleted"].some((term) => status.includes(term));
+};
+
+const isCompletedAppointment = (appointment = {}) => {
+  const status = normalizeStatus(firstValue(appointment?.status, appointment?.appointmentStatus, appointment?.state));
+  return ["complete", "completed", "done", "closed", "visited", "consulted"].some((term) => status.includes(term));
+};
+
 const getAppointmentId = (appointment = {}) =>
   firstValue(
     appointment?.appointmentId,
@@ -181,6 +193,33 @@ const getAppointmentDate = (appointment = {}) =>
 
 const getAppointmentTime = (appointment = {}) =>
   firstValue((appointment || {}).time, (appointment || {}).slot, (appointment || {}).timeRange, (appointment || {}).scheduleTime, (appointment || {}).startTime, (appointment || {}).endTime);
+
+const getAppointmentTimestamp = (appointment = {}) => {
+  const dateValue = getAppointmentDate(appointment);
+  const timeValue = getAppointmentTime(appointment);
+  if (!dateValue && !timeValue) return 0;
+  const directDate = new Date(dateValue);
+  if (Number.isFinite(directDate.getTime()) && directDate.getHours()) return directDate.getTime();
+  const joined = [dateValue, timeValue].filter(Boolean).join(" ");
+  const parsed = new Date(joined);
+  if (Number.isFinite(parsed.getTime())) return parsed.getTime();
+  return Number.isFinite(directDate.getTime()) ? directDate.getTime() : 0;
+};
+
+const toDateKey = (value) => {
+  const parsed = new Date(value);
+  if (!Number.isFinite(parsed.getTime())) return "";
+  return [
+    parsed.getFullYear(),
+    String(parsed.getMonth() + 1).padStart(2, "0"),
+    String(parsed.getDate()).padStart(2, "0"),
+  ].join("-");
+};
+
+const isTodayAppointment = (appointment = {}) => {
+  const date = getAppointmentDate(appointment);
+  return date ? toDateKey(date) === toDateKey(new Date()) : false;
+};
 
 const getDoctorName = (appointment = {}) =>
   firstValue(
@@ -349,11 +388,40 @@ const normalizeQueueStep = (item = {}, index = 0, currentToken = "") => {
 const getSpecialization = (appointment = {}) =>
   firstValue((appointment || {}).specialization, (appointment || {}).department, (appointment || {}).speciality, (appointment || {}).specialty, (appointment || {}).doctor?.specialization);
 
-const getClinicName = (appointment = {}) =>
-  firstValue((appointment || {}).clinic, (appointment || {}).clinicName, (appointment || {}).hospitalName, (appointment || {}).departmentName);
+const getClinicName = (appointment = {}) => {
+  const source = appointment || {};
+  const branchName = firstValue(
+    source.branchName,
+    source.BranchName,
+    source.branch?.name,
+    source.Branch?.Name,
+    source.branch,
+    source.Branch
+  );
+  const clinicName = firstValue(
+    source.clinicName,
+    source.ClinicName,
+    source.hospitalName,
+    source.HospitalName,
+    source.clinic?.name,
+    source.Clinic?.Name,
+    source.hospital?.name,
+    source.Hospital?.Name,
+    source.clinic,
+    source.Clinic,
+    source.hospital,
+    source.Hospital
+  );
+  const values = [branchName, clinicName]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+  const uniqueValues = Array.from(new Set(values.map((value) => value.toLowerCase())))
+    .map((key) => values.find((value) => value.toLowerCase() === key));
+  return uniqueValues.join(" / ") || firstValue(source.departmentName, source.department);
+};
 
 const getLocation = (appointment = {}) =>
-  firstValue((appointment || {}).location, (appointment || {}).room, (appointment || {}).branch, (appointment || {}).site, (appointment || {}).clinicAddress, getClinicName(appointment));
+  firstValue((appointment || {}).location, (appointment || {}).room, (appointment || {}).site, (appointment || {}).clinicAddress, getClinicName(appointment));
 
 const getAppointmentAvatar = (appointment = {}) => {
   const doctorName = String(getDoctorName(appointment) || "").trim();
@@ -367,7 +435,10 @@ const getAppointmentAvatar = (appointment = {}) => {
 };
 
 const getSortedUpcomingAppointment = (items = []) => {
-  const list = Array.isArray(items) ? items.filter(Boolean) : [];
+  const now = Date.now();
+  const list = Array.isArray(items)
+    ? items.filter((item) => item && !isCancelledAppointment(item) && !isCompletedAppointment(item))
+    : [];
   if (!list.length) return null;
 
   const score = (item) => {
@@ -381,13 +452,38 @@ const getSortedUpcomingAppointment = (items = []) => {
     const leftScore = score(left);
     const rightScore = score(right);
     if (leftScore !== rightScore) return leftScore - rightScore;
-    const leftTime = new Date(firstValue(getAppointmentDate(left), left.createdAt, left.updatedAt) || 0).getTime();
-    const rightTime = new Date(firstValue(getAppointmentDate(right), right.createdAt, right.updatedAt) || 0).getTime();
+    const leftTime = getAppointmentTimestamp(left) || new Date(firstValue(getAppointmentDate(left), left.createdAt, left.updatedAt) || 0).getTime();
+    const rightTime = getAppointmentTimestamp(right) || new Date(firstValue(getAppointmentDate(right), right.createdAt, right.updatedAt) || 0).getTime();
+    const leftFuture = leftTime >= now ? 0 : 1;
+    const rightFuture = rightTime >= now ? 0 : 1;
+    if (leftFuture !== rightFuture) return leftFuture - rightFuture;
     return leftTime - rightTime;
   })[0];
 };
 
-function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY_ARRAY, bills = EMPTY_ARRAY, dashboardData = null }) {
+const normalizeDashboardNotification = (notification = {}, index = 0) => {
+  const message = firstValue(
+    notification.message,
+    notification.description,
+    notification.body,
+    notification.content,
+    notification.text,
+    notification.title,
+    notification.notification?.message,
+    notification.notification?.title
+  );
+  if (!message) return null;
+  const createdAt = firstValue(notification.createdAt, notification.date, notification.notificationDate, notification.updatedAt);
+  return {
+    id: String(firstValue(notification.id, notification.notificationId, notification._id, `notification-${index}`)),
+    title: firstValue(notification.title, notification.type, "Notification"),
+    message: String(message),
+    date: formatDateLabel(createdAt) || formatInlineValue(createdAt, "Recent"),
+    read: Boolean(firstValue(notification.read, notification.isRead, notification.readAt)),
+  };
+};
+
+function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY_ARRAY, bills = EMPTY_ARRAY, notifications = EMPTY_ARRAY, dashboardData = null }) {
   const navigate = useNavigate();
   const dashboardPatient = patient || {};
   const [liveQueue, setLiveQueue] = useState({
@@ -459,9 +555,17 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
       return true;
     });
   }, [bills]);
-  const upcomingAppointment = getSortedUpcomingAppointment(visits);
+  const activeVisits = useMemo(
+    () => (Array.isArray(visits) ? visits.filter((visit) => visit && !isCancelledAppointment(visit)) : []),
+    [visits]
+  );
+  const todayActiveVisits = useMemo(
+    () => activeVisits.filter((visit) => !isCompletedAppointment(visit) && isTodayAppointment(visit)),
+    [activeVisits]
+  );
+  const upcomingAppointment = getSortedUpcomingAppointment(todayActiveVisits.length ? todayActiveVisits : activeVisits);
   const upcomingAppointmentId = getAppointmentId(upcomingAppointment);
-  const previousVisits = Array.isArray(visits) ? visits.length : 0;
+  const previousVisits = activeVisits.filter(isCompletedAppointment).length;
   const prescriptionCount = Array.isArray(prescriptions) ? prescriptions.length : 0;
   const medicalRecordCount = previousVisits + prescriptionCount;
   const pendingBillsAmount = Array.isArray(uniqueBills)
@@ -510,8 +614,11 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
     formattedToken,
     patientsAhead,
     waitingMinutes,
-  } = getPatientQueueMetrics(dashboardData, upcomingAppointment, visits);
-  const tokenValue = normalizeDisplayToken(liveQueue.token || formattedToken || getTokenNumber(upcomingAppointment));
+  } = getPatientQueueMetrics(dashboardData, upcomingAppointment, activeVisits);
+  const hasQueueAppointment = Boolean(upcomingAppointmentId);
+  const tokenValue = hasQueueAppointment
+    ? normalizeDisplayToken(liveQueue.token || formattedToken || getTokenNumber(upcomingAppointment))
+    : "Not available";
   const patientsAheadValue = liveQueue.patientsAhead !== null ? liveQueue.patientsAhead : patientsAhead;
   const waitingMinutesValue = liveQueue.waitingMinutes !== null ? liveQueue.waitingMinutes : waitingMinutes;
   const patientsAheadLabel = patientsAheadValue !== null ? formatCount(patientsAheadValue) : "Not available";
@@ -603,31 +710,32 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
   }, [upcomingAppointmentId]);
 
   const defaultNotifications = [
-    {
+    upcomingAppointment && {
       id: "upcoming-appointment-reminder",
       title: "Upcoming Appointment Reminder",
-      message: upcomingAppointment
-        ? `${appointmentReminderDoctor} appointment${appointmentDate ? ` on ${appointmentDate}` : ""}${appointmentTime ? ` at ${appointmentTime}` : ""}.`
-        : "No upcoming appointment is scheduled yet.",
+      message: `${appointmentReminderDoctor} appointment${appointmentDate ? ` on ${appointmentDate}` : ""}${appointmentTime ? ` at ${appointmentTime}` : ""}.`,
       date: appointmentDate || "Today",
       read: false,
     },
-    {
+    prescriptionCount > 0 && {
       id: "prescription-ready",
       title: "Prescription Ready",
-      message: prescriptionCount ? `${formatCount(prescriptionCount)} prescription record${prescriptionCount === 1 ? "" : "s"} available to view.` : "No prescription is ready yet.",
-      date: prescriptionCount ? "Ready now" : "Pending",
-      read: prescriptionCount === 0,
+      message: `${formatCount(prescriptionCount)} prescription record${prescriptionCount === 1 ? "" : "s"} available to view.`,
+      date: "Ready now",
+      read: false,
     },
-    {
+    pendingBillsAmount > 0 && {
       id: "payment-due",
       title: "Payment due",
-      message: pendingBillsAmount ? `${formatCurrency(pendingBillsAmount)} pending for payment.` : "No payment is due right now.",
-      date: pendingBillsAmount ? "Due" : "Clear",
-      read: pendingBillsAmount === 0,
+      message: `${formatCurrency(pendingBillsAmount)} pending for payment.`,
+      date: "Due",
+      read: false,
     },
-  ];
-  const notificationItems = defaultNotifications;
+  ].filter(Boolean);
+  const backendNotifications = (Array.isArray(notifications) ? notifications : [])
+    .map(normalizeDashboardNotification)
+    .filter(Boolean);
+  const notificationItems = backendNotifications.length ? backendNotifications.slice(0, 3) : defaultNotifications.slice(0, 3);
   const notificationSummary = notificationItems.length ? `${notificationItems.length} updates` : "No notifications yet";
 
   const [selectedNotificationId, setSelectedNotificationId] = useState(notificationItems[0]?.id ?? null);

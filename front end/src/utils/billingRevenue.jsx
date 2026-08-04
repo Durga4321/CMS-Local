@@ -118,23 +118,51 @@ export const getBillingType = (row = {}) => {
   const rawType = String(
     pick(row, ["invoiceType", "billingType", "type", "serviceType", "category", "BillingType", "InvoiceType"], "")
   ).toLowerCase();
+  const consultation = toNumber(pick(row, ["consultationCharge", "consultationCharges", "consultationFee", "opCharge", "opCharges", "opRevenue"], 0));
+  const medicine = toNumber(pick(row, ["medicineCharge", "medicineCharges", "pharmacyCharge", "pharmacyCharges", "pharmacyRevenue"], 0));
+  const lab = toNumber(pick(row, ["labCharge", "labCharges", "diagnosticCharge", "diagnosticCharges", "diagnosticRevenue"], 0));
 
+  if ((rawType.includes("consultation") || rawType.includes("op") || rawType.includes("patient portal")) && !rawType.includes("pharmacy") && !rawType.includes("diagnostic")) return "op";
+  if (consultation > 0 && lab === 0 && medicine === 0) return "op";
   if (rawType.includes("pharmacy") || rawType.includes("medicine")) return "pharmacy";
   if (rawType.includes("diagnostic") || rawType.includes("diagnosis") || rawType.includes("lab") || rawType.includes("test")) return "diagnostic";
-  if (rawType.includes("consultation") || rawType.includes("op")) return "op";
-
-  const medicine = toNumber(pick(row, ["medicineCharge", "medicineCharges", "pharmacyCharge", "pharmacyCharges"], 0));
-  const lab = toNumber(pick(row, ["labCharge", "labCharges", "diagnosticCharge", "diagnosticCharges"], 0));
   if (medicine > 0 && lab === 0) return "pharmacy";
   if (lab > 0 && medicine === 0) return "diagnostic";
   return "op";
+};
+
+export const getRevenueBreakdown = (row = {}) => {
+  const opAmount = toNumber(pick(row, ["opRevenue", "consultationCharge", "consultationCharges", "consultationFee", "opCharge", "opCharges"], 0));
+  const diagnosticAmount = toNumber(pick(row, ["diagnosticRevenue", "labCharge", "labCharges", "diagnosticCharge", "diagnosticCharges", "testCharge", "testCharges"], 0));
+  const pharmacyAmount = toNumber(pick(row, ["pharmacyRevenue", "medicineCharge", "medicineCharges", "pharmacyCharge", "pharmacyCharges", "medicationCharges"], 0));
+  const hasBreakdown = opAmount > 0 || diagnosticAmount > 0 || pharmacyAmount > 0;
+  if (hasBreakdown) {
+    return {
+      opRevenue: opAmount,
+      diagnosticRevenue: diagnosticAmount,
+      pharmacyRevenue: pharmacyAmount,
+      revenue: opAmount + diagnosticAmount + pharmacyAmount,
+    };
+  }
+
+  const amount = getRevenueAmount(row);
+  const type = getBillingType(row);
+  return {
+    opRevenue: type === "op" ? amount : 0,
+    diagnosticRevenue: type === "diagnostic" ? amount : 0,
+    pharmacyRevenue: type === "pharmacy" ? amount : 0,
+    revenue: amount,
+  };
 };
 
 export const getBranchId = (row = {}) =>
   String(pick(row, ["branchId", "BranchId", "clinicBranchId", "ClinicBranchId", "branch.id", "Branch.Id"], "")).trim();
 
 export const getBranchName = (row = {}) =>
-  String(pick(row, ["branchName", "BranchName", "branch.name", "Branch.Name", "branch", "Branch"], "") || "Unassigned Branch").trim();
+  String(
+    pick(row, ["branchName", "BranchName", "branch.name", "Branch.Name", "branch", "Branch", "__selectedBranchName"], "") ||
+      "Unassigned Branch"
+  ).trim();
 
 export const getClinicId = (row = {}) =>
   String(pick(row, ["hospitalId", "HospitalId", "clinicId", "ClinicId", "assignedClinicId", "AssignedClinicId"], "")).trim();
@@ -144,8 +172,10 @@ export const getDoctorId = (row = {}) =>
 
 export const getBillingKey = (row = {}, index = 0) =>
   String(
-    pick(row, ["invoiceNo", "InvoiceNo", "invoiceNumber", "InvoiceNumber", "billNumber", "BillNumber", "billingId", "BillingId", "billId", "BillId", "id", "Id"], "") ||
-      `${getBillingType(row)}-${pick(row, ["appointmentId", "AppointmentId"], "")}-${pick(row, ["patientId", "patientName"], "patient")}-${getRevenueAmount(row)}-${getRowDate(row) || index}`
+    getBillingType(row) === "op" && pick(row, ["appointmentId", "AppointmentId"], "")
+      ? `op-appointment-${pick(row, ["appointmentId", "AppointmentId"], "")}`
+      : pick(row, ["invoiceNo", "InvoiceNo", "invoiceNumber", "InvoiceNumber", "billNumber", "BillNumber", "billingId", "BillingId", "billId", "BillId", "id", "Id"], "") ||
+        `${getBillingType(row)}-${pick(row, ["appointmentId", "AppointmentId"], "")}-${pick(row, ["patientId", "patientName"], "patient")}-${getRevenueAmount(row)}-${getRowDate(row) || index}`
   );
 
 export const dedupeBillingRows = (rows = []) => {
@@ -156,6 +186,23 @@ export const dedupeBillingRows = (rows = []) => {
   });
   return Array.from(lookup.values());
 };
+
+export const PATIENT_PORTAL_OP_BILLS_KEY = "patientPortalRecentOpBills";
+export const RECEPTION_RECENT_SERVICE_BILLS_KEY = "receptionRecentServiceBills";
+
+export const readLocalBillingRows = (key) => {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(value) ? value : [];
+  } catch {
+    return [];
+  }
+};
+
+export const readLocalRevenueBillingRows = () => [
+  ...readLocalBillingRows(RECEPTION_RECENT_SERVICE_BILLS_KEY),
+  ...readLocalBillingRows(PATIENT_PORTAL_OP_BILLS_KEY),
+];
 
 export const isPaidAppointment = (appointment = {}) => {
   const status = String(pick(appointment, ["paymentStatus", "PaymentStatus", "payment.status", "Payment.Status", "status", "Status"], "")).toLowerCase();
@@ -226,17 +273,16 @@ export const groupRevenueByMonthBranch = (rows = []) => {
       revenue: 0,
       growth: 0,
     };
-    const amount = getRevenueAmount(row);
-    const type = getBillingType(row);
+    const breakdown = getRevenueBreakdown(row);
 
-    if (type === "pharmacy") current.pharmacyRevenue += amount;
-    else if (type === "diagnostic") current.diagnosticRevenue += amount;
-    else current.opRevenue += amount;
+    current.opRevenue += breakdown.opRevenue;
+    current.diagnosticRevenue += breakdown.diagnosticRevenue;
+    current.pharmacyRevenue += breakdown.pharmacyRevenue;
 
     current.cgstAmount += getCgstAmount(row);
     current.sgstAmount += getSgstAmount(row);
     current.gstAmount += getGstAmount(row);
-    current.revenue += amount;
+    current.revenue += getRevenueAmount(row) || breakdown.revenue;
     byKey.set(key, current);
   });
 

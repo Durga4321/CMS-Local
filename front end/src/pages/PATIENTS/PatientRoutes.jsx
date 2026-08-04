@@ -9,6 +9,7 @@ import PatientDashboard from "./PatientDashboard";
 import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
 import { validateStrongPassword } from "../../utils/validation";
 import { formatIndianCurrency, formatTitleCase } from "../../utils/format";
+import { PATIENT_PORTAL_OP_BILLS_KEY } from "../../utils/billingRevenue";
 import {
   DUPLICATE_APPOINTMENT_MESSAGE,
   hasDuplicateAppointmentForPatientDoctorDate,
@@ -64,6 +65,45 @@ const PATIENT_NOTIFICATION_TYPES = [
   'Bill Generated',
   'Follow-up Reminder',
 ];
+
+const storePatientPortalOpBill = (bill) => {
+  if (!bill) return [];
+  try {
+    const existing = JSON.parse(localStorage.getItem(PATIENT_PORTAL_OP_BILLS_KEY) || "[]");
+    const rows = Array.isArray(existing) ? existing : [];
+    const next = dedupeBillsByInvoice([bill, ...rows]).slice(0, 100);
+    localStorage.setItem(PATIENT_PORTAL_OP_BILLS_KEY, JSON.stringify(next));
+    return next;
+  } catch {
+    localStorage.setItem(PATIENT_PORTAL_OP_BILLS_KEY, JSON.stringify([bill]));
+    return [bill];
+  }
+};
+
+const readPatientPortalOpBills = () => {
+  try {
+    const rows = JSON.parse(localStorage.getItem(PATIENT_PORTAL_OP_BILLS_KEY) || "[]");
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+};
+
+const getBillSourceText = (bill = {}) =>
+  [
+    readFirst(bill, ["source", "billingSource", "bookingSource", "paymentSource", "createdByRole", "createdBy", "module"]),
+    readFirst(bill, ["appointment.source", "appointment.bookingSource", "appointment.createdByRole"]),
+  ].join(" ").toLowerCase();
+
+const isPatientPortalBill = (bill = {}) => {
+  const source = getBillSourceText(bill);
+  return source.includes("patient-portal") || source.includes("patient portal") || source.includes("online");
+};
+
+const isReceptionBill = (bill = {}) => {
+  const source = getBillSourceText(bill);
+  return source.includes("reception") || source.includes("receptionist") || source.includes("offline");
+};
 
 const PATIENT_PASSWORD_REQUIREMENTS = [
   { label: "Minimum 8 characters", test: (value) => value.length >= 8 },
@@ -170,10 +210,23 @@ const selectBestBillRecord = (existing, incoming) => {
 const parseApiList = (value) => {
   if (Array.isArray(value)) return value;
   if (Array.isArray(value?.data)) return value.data;
+  if (Array.isArray(value?.data?.items)) return value.data.items;
+  if (Array.isArray(value?.data?.records)) return value.data.records;
+  if (Array.isArray(value?.data?.medicalHistory)) return value.data.medicalHistory;
+  if (Array.isArray(value?.data?.prescriptions)) return value.data.prescriptions;
   if (Array.isArray(value?.items)) return value.items;
   if (Array.isArray(value?.result)) return value.result;
+  if (Array.isArray(value?.result?.items)) return value.result.items;
+  if (Array.isArray(value?.result?.records)) return value.result.records;
+  if (Array.isArray(value?.result?.medicalHistory)) return value.result.medicalHistory;
+  if (Array.isArray(value?.result?.prescriptions)) return value.result.prescriptions;
   if (Array.isArray(value?.bills)) return value.bills;
   if (Array.isArray(value?.invoices)) return value.invoices;
+  if (Array.isArray(value?.medicalHistory)) return value.medicalHistory;
+  if (Array.isArray(value?.history)) return value.history;
+  if (Array.isArray(value?.prescriptions)) return value.prescriptions;
+  if (Array.isArray(value?.records)) return value.records;
+  if (value && typeof value === "object") return [value];
   return [];
 };
 
@@ -185,6 +238,33 @@ const dedupeBillsByInvoice = (bills = []) => {
     grouped.set(key, selectBestBillRecord(current, bill));
   });
   return Array.from(grouped.values()).sort((left, right) => getBillDateValue(right) - getBillDateValue(left));
+};
+
+const dedupeNotificationsById = (notifications = []) => {
+  const grouped = new Map();
+  (Array.isArray(notifications) ? notifications : []).forEach((notification, index) => {
+    if (!notification) return;
+    const key = String(
+      readFirst(notification, [
+        "id",
+        "_id",
+        "notificationId",
+        "NotificationId",
+        "referenceId",
+        "data.id",
+        "data.notificationId",
+      ]) ||
+      [
+        readFirst(notification, ["type", "category", "notificationType"]),
+        readFirst(notification, ["title", "subject", "name"]),
+        readFirst(notification, ["message", "body", "description", "content"]),
+        readFirst(notification, ["date", "createdAt", "scheduledAt", "updatedAt"]),
+      ].filter(Boolean).join("|") ||
+      `notification-${index}`
+    ).trim();
+    grouped.set(key, notification);
+  });
+  return Array.from(grouped.values());
 };
 
 const parseAppointmentIdFromText = (text = '') => {
@@ -309,6 +389,36 @@ const getAppointmentIdentityValues = (visits = []) =>
       .filter(Boolean)
   );
 
+const buildPatientScopedPaths = (basePath, patient = {}, visits = []) => {
+  const patientIds = Array.from(getPatientIdentityValues(patient, visits));
+  const patientNames = Array.from(getPatientNameValues(patient, visits));
+  const appointmentIds = Array.from(getAppointmentIdentityValues(visits));
+  const paths = new Set([basePath]);
+
+  patientIds.forEach((id) => {
+    paths.add(`${basePath}?patientId=${encodeURIComponent(id)}`);
+    paths.add(`${basePath}?PatientId=${encodeURIComponent(id)}`);
+    paths.add(`${basePath}?patientCode=${encodeURIComponent(id)}`);
+    paths.add(`${basePath}?PatientCode=${encodeURIComponent(id)}`);
+    paths.add(`${basePath}/${encodeURIComponent(id)}`);
+  });
+
+  patientNames.forEach((name) => {
+    paths.add(`${basePath}?patientName=${encodeURIComponent(name)}`);
+    paths.add(`${basePath}?PatientName=${encodeURIComponent(name)}`);
+    paths.add(`${basePath}?name=${encodeURIComponent(name)}`);
+  });
+
+  appointmentIds.forEach((id) => {
+    paths.add(`${basePath}?appointmentId=${encodeURIComponent(id)}`);
+    paths.add(`${basePath}?AppointmentId=${encodeURIComponent(id)}`);
+    paths.add(`${basePath}?appointmentNumber=${encodeURIComponent(id)}`);
+    paths.add(`${basePath}?AppointmentNumber=${encodeURIComponent(id)}`);
+  });
+
+  return Array.from(paths);
+};
+
 const appointmentBelongsToPatient = (appointment, patient = {}) => {
   const patientIds = getPatientIdentityValues(patient);
   const patientNames = getPatientNameValues(patient);
@@ -333,20 +443,41 @@ const notificationBelongsToPatient = (notification, patient = {}, visits = []) =
   const patientNames = getPatientNameValues(patient, visits);
   const appointmentIds = getAppointmentIdentityValues(visits);
   const notificationPatientIds = [
-    readFirst(notification, ["patientId", "PatientId", "patient.id", "patient.Id", "patient.patientId", "patient.PatientId", "data.patientId", "data.PatientId"]),
+    readFirst(notification, [
+      "patientId",
+      "PatientId",
+      "patientID",
+      "patient.id",
+      "patient.Id",
+      "patient.patientId",
+      "patient.PatientId",
+      "patientCode",
+      "PatientCode",
+      "patient.patientCode",
+      "patient.PatientCode",
+      "data.patientId",
+      "data.PatientId",
+      "data.patientID",
+      "data.patient.id",
+      "data.patient.Id",
+      "data.patient.patientId",
+      "data.patient.PatientId",
+      "data.patientCode",
+      "data.PatientCode",
+    ]),
   ].map((value) => normalizeComparable(value)).filter(Boolean);
   if (notificationPatientIds.length) return notificationPatientIds.some((value) => patientIds.has(value));
 
-  const firstName = readFirst(notification, ["patient.firstName", "patient.FirstName", "data.patientFirstName", "data.FirstName"]);
-  const lastName = readFirst(notification, ["patient.lastName", "patient.LastName", "data.patientLastName", "data.LastName"]);
+  const firstName = readFirst(notification, ["patient.firstName", "patient.FirstName", "data.patientFirstName", "data.FirstName", "data.patient.firstName", "data.patient.FirstName"]);
+  const lastName = readFirst(notification, ["patient.lastName", "patient.LastName", "data.patientLastName", "data.LastName", "data.patient.lastName", "data.patient.LastName"]);
   const notificationNames = [
-    readFirst(notification, ["patientName", "PatientName", "patient.name", "patient.Name", "patient.fullName", "patient.FullName", "data.patientName", "data.PatientName"]),
+    readFirst(notification, ["patientName", "PatientName", "patient.name", "patient.Name", "patient.fullName", "patient.FullName", "data.patientName", "data.PatientName", "data.patient.name", "data.patient.Name", "data.patient.fullName", "data.patient.FullName"]),
     firstName || lastName ? `${firstName} ${lastName}` : "",
   ].map((value) => normalizeComparable(value)).filter(Boolean);
   if (notificationNames.length) return notificationNames.some((value) => patientNames.has(value));
 
   const notificationAppointmentIds = [
-    readFirst(notification, ["appointmentId", "AppointmentId", "appointment.id", "appointment.Id", "appointmentNumber", "AppointmentNumber", "data.appointmentId", "data.AppointmentId", "data.appointmentNumber"]),
+    readFirst(notification, ["appointmentId", "AppointmentId", "appointment.id", "appointment.Id", "appointment.appointmentId", "appointment.AppointmentId", "appointmentNumber", "AppointmentNumber", "appointmentNo", "AppointmentNo", "data.appointmentId", "data.AppointmentId", "data.appointment.id", "data.appointment.Id", "data.appointmentNumber", "data.AppointmentNumber"]),
     parseAppointmentIdFromText([
       readFirst(notification, ["title", "subject", "name"]),
       readFirst(notification, ["message", "body", "description", "content"]),
@@ -354,7 +485,7 @@ const notificationBelongsToPatient = (notification, patient = {}, visits = []) =
   ].map((value) => normalizeComparable(value)).filter(Boolean);
   if (notificationAppointmentIds.length) return notificationAppointmentIds.some((value) => appointmentIds.has(value));
 
-  return true;
+  return false;
 };
 
 const normalizeName = (value) => {
@@ -469,7 +600,43 @@ const getAppointmentDoctor = (appointment) =>
   readFirst(appointment, ["doctor", "doctorName", "doctor.name", "providerName", "practitionerName"]) || "Doctor assigned";
 
 const getAppointmentClinic = (appointment) =>
-  readFirst(appointment, ["clinic", "clinicName", "hospitalName", "hospital", "branch"]) || "Clinic details unavailable";
+  {
+    const branchName = readFirst(appointment, [
+      "branchName",
+      "BranchName",
+      "branch.name",
+      "Branch.Name",
+      "branch",
+      "Branch",
+      "appointment.branchName",
+      "appointment.BranchName",
+      "appointment.branch.name",
+    ]);
+    const clinicName = readFirst(appointment, [
+      "clinicName",
+      "ClinicName",
+      "hospitalName",
+      "HospitalName",
+      "clinic.name",
+      "Clinic.Name",
+      "hospital.name",
+      "Hospital.Name",
+      "clinic",
+      "Clinic",
+      "hospital",
+      "Hospital",
+      "appointment.clinicName",
+      "appointment.ClinicName",
+      "appointment.hospitalName",
+      "appointment.HospitalName",
+    ]);
+    const values = [branchName, clinicName]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+    const uniqueValues = Array.from(new Set(values.map((value) => value.toLowerCase())))
+      .map((key) => values.find((value) => value.toLowerCase() === key));
+    return uniqueValues.length ? uniqueValues.join(" / ") : "Clinic details unavailable";
+  };
 
 const getAppointmentDate = (appointment) =>
   readFirst(appointment, ["date", "appointmentDate", "scheduledDate", "visitDate", "createdAt"]);
@@ -823,16 +990,14 @@ function PatientRoutes() {
         appointmentsRes,
         prescriptionsRes,
         billsRes,
-        billingRes,
         notificationsRes,
         dashboardRes,
       ] = await Promise.all([
         fetch(patientApiUrl(PATIENT_API.profile), { headers }).catch(() => null),
         fetch(patientApiUrl(PATIENT_API.appointments), { headers }).catch(() => null),
-        fetch(patientApiUrl(PATIENT_API.prescriptions), { headers }).catch(() => null),
-        fetch(patientApiUrl(PATIENT_API.bills), { headers }).catch(() => null),
-        fetch(apiUrl("Billing"), { headers }).catch(() => null),
-        fetch(patientApiUrl(PATIENT_API.notifications), { headers }).catch(() => null),
+        fetch(patientApiUrl(PATIENT_API.prescriptions), { headers, cache: "no-store" }).catch(() => null),
+        fetch(patientApiUrl(PATIENT_API.bills), { headers, cache: "no-store" }).catch(() => null),
+        fetch(patientApiUrl(PATIENT_API.notifications), { headers, cache: "no-store" }).catch(() => null),
         fetch(patientApiUrl(PATIENT_API.dashboard), { headers }).catch(() => null),
       ]);
 
@@ -847,40 +1012,55 @@ function PatientRoutes() {
       );
       setVisits(patientAppointments);
 
-      if (prescriptionsRes?.ok) {
-        const rxData = await prescriptionsRes.json().catch(() => []);
-        setPrescriptions(Array.isArray(rxData) ? rxData : (rxData.items || rxData.data || []));
-      }
-
-      const [bData, billingData] = await Promise.all([
-        billsRes?.ok ? billsRes.json().catch(() => []) : Promise.resolve([]),
-        billingRes?.ok ? billingRes.json().catch(() => []) : Promise.resolve([]),
+      const prescriptionPaths = buildPatientScopedPaths(PATIENT_API.prescriptions, effectivePatient, patientAppointments)
+        .filter((path) => path !== PATIENT_API.prescriptions);
+      const [rxData, prescriptionResults] = await Promise.all([
+        prescriptionsRes?.ok ? prescriptionsRes.json().catch(() => []) : Promise.resolve([]),
+        Promise.allSettled(
+          prescriptionPaths.map((path) => fetch(patientApiUrl(path), { headers, cache: "no-store" }))
+        ),
       ]);
+      const prescriptionLists = await Promise.all(
+        prescriptionResults.map(async (result) => {
+          if (result.status !== "fulfilled" || !result.value?.ok) return [];
+          return parseApiList(await result.value.json().catch(() => []));
+        })
+      );
+      const patientPrescriptions = parseApiList([
+        ...parseApiList(rxData),
+        ...prescriptionLists.flat(),
+      ]).filter((prescription) => appointmentBelongsToPatient(prescription, effectivePatient));
+      setPrescriptions(patientPrescriptions);
 
-      const storedRecentServiceBills = (() => {
-        try {
-          const stored = localStorage.getItem("receptionRecentServiceBills") || "[]";
-          const parsed = JSON.parse(stored);
-          return Array.isArray(parsed) ? parsed : [];
-        } catch {
-          return [];
-        }
-      })();
-
+      const bData = billsRes?.ok ? await billsRes.json().catch(() => []) : [];
+      const storedPatientPortalBills = readPatientPortalOpBills();
       const patientBills = dedupeBillsByInvoice([
         ...parseApiList(bData),
-        ...parseApiList(billingData),
-        ...storedRecentServiceBills,
+        ...storedPatientPortalBills,
       ]).filter((bill) => billBelongsToPatient(bill, effectivePatient, patientAppointments));
       setBills(patientBills);
 
-      if (notificationsRes?.ok) {
-        const nData = await notificationsRes.json().catch(() => []);
-        const notificationList = Array.isArray(nData) ? nData : (nData.items || nData.data || []);
-        setNotifications(notificationList.filter((notification) =>
-          notificationBelongsToPatient(notification, effectivePatient, patientAppointments)
-        ));
-      }
+      const notificationPaths = buildPatientScopedPaths(PATIENT_API.notifications, effectivePatient, patientAppointments)
+        .filter((path) => path !== PATIENT_API.notifications);
+      const [nData, notificationResults] = await Promise.all([
+        notificationsRes?.ok ? notificationsRes.json().catch(() => []) : Promise.resolve([]),
+        Promise.allSettled(
+          notificationPaths.map((path) => fetch(patientApiUrl(path), { headers, cache: "no-store" }))
+        ),
+      ]);
+      const notificationLists = await Promise.all(
+        notificationResults.map(async (result) => {
+          if (result.status !== "fulfilled" || !result.value?.ok) return [];
+          return parseApiList(await result.value.json().catch(() => []));
+        })
+      );
+      const notificationList = dedupeNotificationsById([
+        ...parseApiList(nData),
+        ...notificationLists.flat(),
+      ]);
+      setNotifications(notificationList.filter((notification) =>
+        notificationBelongsToPatient(notification, effectivePatient, patientAppointments)
+      ));
 
       const dashboardJson = dashboardRes?.ok ? await dashboardRes.json().catch(() => null) : null;
       if (dashboardJson) setDashboardData(dashboardJson);
@@ -923,10 +1103,10 @@ function PatientRoutes() {
         <Route path="medical-history" element={<PatientMedicalHistoryPage patient={patient} visits={visits} prescriptions={prescriptions} />} />
         <Route path="history" element={<Navigate to="medical-history" replace />} />
         <Route path="reports" element={<Navigate to="medical-history" replace />} />
-        <Route path="prescriptions" element={<PatientPrescriptionsPage prescriptions={prescriptions} />} />
+        <Route path="prescriptions" element={<PatientPrescriptionsPage prescriptions={prescriptions} patient={patient} visits={visits} />} />
         <Route path="bills" element={<PatientBillsPage bills={bills} patient={patient} visits={visits} />} />
         <Route path="billing" element={<Navigate to="bills" replace />} />
-        <Route path="notifications" element={<PatientNotificationsPage notifications={notifications} prescriptions={prescriptions} bills={bills} />} />
+        <Route path="notifications" element={<PatientNotificationsPage notifications={notifications} prescriptions={prescriptions} bills={bills} patient={patient} visits={visits} />} />
         <Route path="profile" element={<PatientProfilePage patient={patient} visits={visits} prescriptions={prescriptions} bills={bills} notifications={notifications} onProfileUpdated={(updatedPatient) => setPatient(updatedPatient)} />} />
         <Route path="change-password" element={<PatientChangePasswordPage />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
@@ -1482,6 +1662,9 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
           ...b,
           id: b.branchId || b.id,
           name: b.branchName || b.name || 'Branch',
+          branchName: b.branchName || b.name || 'Branch',
+          clinicName: b.clinicName || b.hospitalName || b.clinic?.name || b.hospital?.name || '',
+          hospitalName: b.hospitalName || b.clinicName || b.hospital?.name || b.clinic?.name || '',
           address: b.address || '',
           phone: b.phone || '',
         })));
@@ -1992,7 +2175,11 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
     try {
       const branchId = selectedBranch?.branchId || selectedBranch?.id;
       const doctorId = selectedDoctor?.doctorId || selectedDoctor?.id;
-      const patientId = localStorage.getItem("patientId") || "";
+      const patientId =
+        readFirst(patient || {}, ["id", "Id", "patientId", "PatientId", "patientCode", "PatientCode"]) ||
+        localStorage.getItem("patientId") ||
+        localStorage.getItem("PatientId") ||
+        "";
       const patientName =
         readFirst(patient || {}, ["name", "patientName", "fullName", "displayName"]) ||
         localStorage.getItem("patientName") ||
@@ -2116,9 +2303,44 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
       const generatedBill = {
         ...(Array.isArray(billData) ? billData[0] : billData),
         ...billPayload,
+        patientId: readNumericId(patientId),
+        PatientId: readNumericId(patientId),
+        patientCode: patientId,
+        PatientCode: patientId,
         patientName,
+        PatientName: patientName,
+        patient: {
+          id: readNumericId(patientId),
+          patientId: readNumericId(patientId),
+          patientCode: patientId,
+          name: patientName,
+        },
+        doctorId: readNumericId(doctorId),
         doctorName: selectedDoctor?.doctorName || selectedDoctor?.name,
+        branchId: readNumericId(branchId),
+        BranchId: readNumericId(branchId),
+        branchName: selectedBranch?.branchName || selectedBranch?.name || "",
+        clinicName: selectedBranch?.clinicName || selectedBranch?.hospitalName || "",
+        appointmentId: readNumericId(appointmentId),
+        AppointmentId: readNumericId(appointmentId),
+        appointmentNumber: appointmentId,
+        invoiceNo: readFirst(billData, ["invoiceNo", "invoiceNumber", "billNumber"]) || `OP-${appointmentId}`,
+        invoiceNumber: readFirst(billData, ["invoiceNumber", "invoiceNo", "billNumber"]) || `OP-${appointmentId}`,
+        billNumber: readFirst(billData, ["billNumber", "invoiceNumber", "invoiceNo"]) || `OP-${appointmentId}`,
+        invoiceType: "op",
+        billingType: "OP",
+        serviceType: "Patient Portal OP Billing",
+        source: "patient-portal",
+        billingSource: "patient-portal",
+        bookingSource: "online",
+        paymentSource: "patient-portal",
+        revenue: consultationFee,
+        status: "Paid",
+        createdAt: new Date().toISOString(),
+        billDate: new Date().toISOString(),
+        invoiceDate: new Date().toISOString(),
       };
+      storePatientPortalOpBill(generatedBill);
 
       setPaymentDetails({
         appointmentId,
@@ -2441,23 +2663,24 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
       setHistoryError("");
       try {
         const historyUrls = [
-          patientApiUrl(PATIENT_API.medicalHistory),
-          `${patientApiUrl(PATIENT_API.medicalHistory)}?patientId=${encodeURIComponent(patientId)}`,
-          apiUrl(`MedicalHistory/${encodeURIComponent(patientId)}`),
-          `${apiUrl('MedicalHistory')}?patientId=${encodeURIComponent(patientId)}`,
-          `${apiUrl('MedicalHistory')}?PatientId=${encodeURIComponent(patientId)}`,
+          ...buildPatientScopedPaths(PATIENT_API.medicalHistory, patient || {}, visits).map((path) => patientApiUrl(path)),
+          ...buildPatientScopedPaths("MedicalHistory", patient || {}, visits).map((path) => apiUrl(path)),
         ];
 
         let historyData = null;
         let hadServerError = false;
         for (const historyUrl of historyUrls) {
-          const response = await fetch(historyUrl, { headers }).catch(() => null);
+          const response = await fetch(historyUrl, { headers, cache: "no-store" }).catch(() => null);
           if (!response) continue;
           if (response.ok) {
             const data = await response.json().catch(() => null);
-            const records = normalizeRecords(data);
-            historyData = records.length ? records.filter(belongsToCurrentPatient) : data;
-            break;
+            const records = normalizeHistoryRecords(data).filter(belongsToCurrentPatient);
+            if (records.length) {
+              historyData = records;
+              break;
+            }
+            historyData = null;
+            continue;
           }
           if (response.status >= 500 || response.status === 403) {
             hadServerError = true;
@@ -2482,7 +2705,7 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
       isCurrent = false;
       window.clearInterval(refreshTimer);
     };
-  }, [patientId]);
+  }, [patient, patientId, visits]);
 
   const normalizeList = (value) => {
     if (!value && value !== 0) return [];
@@ -2498,6 +2721,36 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
     if (Array.isArray(value?.data)) return value.data.filter(Boolean);
     if (Array.isArray(value?.items)) return value.items.filter(Boolean);
     return [];
+  };
+
+  const normalizeHistoryRecords = (value) => {
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (!value || typeof value !== "object") return [];
+    if (Array.isArray(value.data)) return value.data.filter(Boolean);
+    if (Array.isArray(value.items)) return value.items.filter(Boolean);
+    if (Array.isArray(value.records)) return value.records.filter(Boolean);
+    if (Array.isArray(value.medicalHistory)) return value.medicalHistory.filter(Boolean);
+    if (Array.isArray(value.history)) return value.history.filter(Boolean);
+    if (Array.isArray(value.data?.medicalHistory)) return value.data.medicalHistory.filter(Boolean);
+    if (Array.isArray(value.data?.history)) return value.data.history.filter(Boolean);
+    if (Array.isArray(value.result?.medicalHistory)) return value.result.medicalHistory.filter(Boolean);
+    if (Array.isArray(value.result?.history)) return value.result.history.filter(Boolean);
+    const candidate = value.data && typeof value.data === "object" ? value.data : value.result && typeof value.result === "object" ? value.result : value;
+    const hasMedicalHistoryFields = [
+      "medicalConditions",
+      "diagnosedConditions",
+      "chronicConditions",
+      "chronicDiseases",
+      "allergies",
+      "allergyList",
+      "currentMedications",
+      "medications",
+      "reports",
+      "labReports",
+      "prescriptions",
+      "visits",
+    ].some((key) => candidate?.[key] != null && String(candidate[key]).trim() !== "");
+    return hasMedicalHistoryFields ? [candidate] : [];
   };
 
   const newestFirst = (records, dateReader) =>
@@ -2540,16 +2793,14 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
 
   const chronicConditions = normalizeList(
     historyRecord?.chronicConditions ||
-    historyRecord?.chronicDiseases ||
-    patient?.chronicDiseases ||
-    patient?.chronicConditions
+    historyRecord?.chronicDiseases
   );
-  const allergies = normalizeList(historyRecord?.allergies || historyRecord?.allergyList || historyRecord?.allergy || patient?.allergies);
+  const allergies = normalizeList(historyRecord?.allergies || historyRecord?.allergyList || historyRecord?.allergy);
   const currentMedications = normalizeList(
-    historyRecord?.currentMedications || historyRecord?.medications || historyRecord?.drugs || patient?.currentMedications
+    historyRecord?.currentMedications || historyRecord?.medications || historyRecord?.drugs
   );
 
-  const medicalConditions = normalizeList(historyRecord?.medicalConditions || historyRecord?.conditions || historyRecord?.surgeries);
+  const medicalConditions = normalizeList(historyRecord?.medicalConditions || historyRecord?.diagnosedConditions);
 
   const historyVisits = normalizeRecords(historyRecord?.visits).length
     ? normalizeRecords(historyRecord?.visits)
@@ -3029,12 +3280,11 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
                       {values.length > 5 ? <span className="mh-chip mh-chip--more">+{values.length - 5} more</span> : null}
                     </div>
                   ) : (
-                    <strong>Not recorded</strong>
+                    <strong className="mh-condition-empty">Not recorded</strong>
                   )}
                 </div>
               ))}
             </div>
-            <button type="button" className="mh-link-button">View all conditions</button>
           </div>
         </div>
 
@@ -3167,13 +3417,50 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
   );
 }
 
-function PatientPrescriptionsPage({ prescriptions = [] }) {
-  const prescriptionRecords = Array.isArray(prescriptions) ? prescriptions : [];
+function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits = [] }) {
+  const [apiPrescriptions, setApiPrescriptions] = useState([]);
+  const prescriptionRecords = useMemo(
+    () =>
+      parseApiList([...parseApiList(prescriptions), ...apiPrescriptions])
+        .filter((prescription) => appointmentBelongsToPatient(prescription, patient || {})),
+    [apiPrescriptions, patient, prescriptions]
+  );
   const [selectedPrescription, setSelectedPrescription] = useState(prescriptionRecords[0] || null);
 
   useEffect(() => {
     setSelectedPrescription(prescriptionRecords[0] || null);
   }, [prescriptionRecords]);
+
+  useEffect(() => {
+    let isCurrent = true;
+    const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
+    const headers = {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    const loadPrescriptions = async () => {
+      const paths = buildPatientScopedPaths(PATIENT_API.prescriptions, patient || {}, visits);
+      const responses = await Promise.allSettled(
+        paths.map((path) => fetch(patientApiUrl(path), { headers, cache: 'no-store' }))
+      );
+      const lists = await Promise.all(
+        responses.map(async (result) => {
+          if (result.status !== 'fulfilled' || !result.value?.ok) return [];
+          return parseApiList(await result.value.json().catch(() => []));
+        })
+      );
+      if (isCurrent) setApiPrescriptions(lists.flat());
+    };
+
+    loadPrescriptions();
+    window.addEventListener('focus', loadPrescriptions);
+    return () => {
+      isCurrent = false;
+      window.removeEventListener('focus', loadPrescriptions);
+    };
+  }, [patient, visits]);
 
   const formatDate = (record) =>
     formatPatientDate(
@@ -3752,18 +4039,52 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   const [loadingBills, setLoadingBills] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState("");
   const [downloadError, setDownloadError] = useState("");
-  const billRecords = useMemo(() => {
-    let recentServiceBills = [];
-    try {
-      const stored = JSON.parse(localStorage.getItem("receptionRecentServiceBills") || "[]");
-      recentServiceBills = Array.isArray(stored) ? stored : [];
-    } catch {
-      recentServiceBills = [];
-    }
+  const getPatientPortalOpBillsForCurrentPatient = useCallback(() => {
+    const patientId =
+      readFirst(patient || {}, ["id", "Id", "patientId", "PatientId", "patientCode", "PatientCode"]) ||
+      localStorage.getItem("patientId") ||
+      localStorage.getItem("PatientId") ||
+      "";
+    const patientName =
+      readFirst(patient || {}, ["name", "Name", "patientName", "PatientName", "fullName", "FullName", "displayName"]) ||
+      localStorage.getItem("patientName") ||
+      "";
 
-    return dedupeBillsByInvoice([...bills, ...apiBills, ...recentServiceBills])
-      .filter((bill) => billBelongsToPatient(bill, patient || {}, visits));
-  }, [apiBills, bills, patient, visits]);
+    return readPatientPortalOpBills().map((bill) => ({
+      ...bill,
+      patientId: bill.patientId || bill.PatientId || patientId,
+      PatientId: bill.PatientId || bill.patientId || patientId,
+      patientCode: bill.patientCode || bill.PatientCode || patientId,
+      PatientCode: bill.PatientCode || bill.patientCode || patientId,
+      patientName: bill.patientName || bill.PatientName || patientName,
+      PatientName: bill.PatientName || bill.patientName || patientName,
+      patient: bill.patient || {
+        id: patientId,
+        patientId,
+        patientCode: patientId,
+        name: patientName,
+      },
+      invoiceType: bill.invoiceType || "op",
+      billingType: bill.billingType || "OP",
+      serviceType: bill.serviceType || "Patient Portal OP Billing",
+      source: bill.source || "patient-portal",
+      billingSource: bill.billingSource || "patient-portal",
+      bookingSource: bill.bookingSource || "online",
+    }));
+  }, [patient]);
+
+  const billRecords = useMemo(() => {
+    const localPatientPortalBills = getPatientPortalOpBillsForCurrentPatient();
+    const backendBills = dedupeBillsByInvoice([
+      ...bills,
+      ...apiBills,
+    ]).filter((bill) => billBelongsToPatient(bill, patient || {}, visits));
+
+    return dedupeBillsByInvoice([
+      ...backendBills,
+      ...localPatientPortalBills,
+    ]);
+  }, [apiBills, bills, getPatientPortalOpBillsForCurrentPatient, patient, visits]);
 
   useEffect(() => {
     let isCurrent = true;
@@ -3777,25 +4098,12 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     const loadSubmittedBills = async () => {
       setLoadingBills(true);
       try {
-        const patientIds = Array.from(getPatientIdentityValues(patient || {}, visits));
-        const primaryPatientId = patientIds[0] || localStorage.getItem("patientId") || "";
-        const billingPaths = [
-          PATIENT_API.bills,
-          "Billing",
-          primaryPatientId ? `Billing/patient/${encodeURIComponent(primaryPatientId)}` : "",
-          primaryPatientId ? `Billing/by-patient/${encodeURIComponent(primaryPatientId)}` : "",
-          primaryPatientId ? `Billing?patientId=${encodeURIComponent(primaryPatientId)}` : "",
-          primaryPatientId ? `Billing?PatientId=${encodeURIComponent(primaryPatientId)}` : "",
-        ].filter(Boolean);
-        const responses = await Promise.allSettled(
-          billingPaths.map((path) => fetch(path === PATIENT_API.bills ? patientApiUrl(path) : apiUrl(path), { headers }))
-        );
-        const lists = await Promise.all(responses.map(async (result) => {
-          if (result.status !== "fulfilled" || !result.value?.ok) return [];
-          const data = await result.value.json().catch(() => []);
-          return parseApiList(data);
-        }));
-        if (isCurrent) setApiBills(dedupeBillsByInvoice(lists.flat()));
+        const response = await fetch(patientApiUrl(PATIENT_API.bills), { headers, cache: "no-store" }).catch(() => null);
+        const data = response?.ok ? await response.json().catch(() => []) : [];
+        const nextBills = dedupeBillsByInvoice([
+          ...parseApiList(data),
+        ]).filter((bill) => billBelongsToPatient(bill, patient || {}, visits));
+        if (isCurrent) setApiBills(nextBills);
       } finally {
         if (isCurrent) setLoadingBills(false);
       }
@@ -3832,6 +4140,17 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     if (hasLab && !hasMedicine) return 'Diagnostic';
     if (hasMedicine && !hasLab) return 'Pharmacy';
     return 'OP Bill';
+  };
+
+  const getBranchClinicLabel = (record) => {
+    const branchName = readFirst(record, ['branchName', 'BranchName', 'branch.name', 'Branch.Name', 'branch', 'Branch']);
+    const clinicName = readFirst(record, ['clinicName', 'ClinicName', 'hospitalName', 'HospitalName', 'clinic.name', 'Clinic.Name', 'hospital.name', 'Hospital.Name', 'clinic', 'Clinic', 'hospital', 'Hospital']);
+    const values = [branchName, clinicName]
+      .map((value) => String(value || '').trim())
+      .filter(Boolean);
+    const uniqueValues = Array.from(new Set(values.map((value) => value.toLowerCase())))
+      .map((key) => values.find((value) => value.toLowerCase() === key));
+    return uniqueValues.length ? uniqueValues.join(' / ') : 'Clinic';
   };
 
   const getPatientName = (record) => {
@@ -4029,7 +4348,38 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     readFirst(record, ['invoiceId', 'billId', 'billingId', 'id', '_id', 'referenceId']);
 
   const getBillDetailUrl = (billId) =>
-    patientApiUrl(`patient-portal/bills/${encodeURIComponent(billId)}`);
+    patientApiUrl(PATIENT_API.billDetails, { id: billId });
+
+  const normalizeBillDetailResponse = (data) => {
+    if (!data) return {};
+    if (Array.isArray(data)) return data[0] || {};
+    if (Array.isArray(data.data)) return data.data[0] || {};
+    if (data.data && typeof data.data === 'object') return data.data;
+    if (data.result && typeof data.result === 'object' && !Array.isArray(data.result)) return data.result;
+    if (data.bill && typeof data.bill === 'object') return data.bill;
+    if (data.invoice && typeof data.invoice === 'object') return data.invoice;
+    return typeof data === 'object' ? data : {};
+  };
+
+  const fetchPatientBillDetails = async (record) => {
+    const invoiceId = getInvoiceId(record);
+    if (!invoiceId) return record;
+
+    const response = await fetch(getBillDetailUrl(invoiceId), {
+      headers: getApiHeaders(),
+      cache: "no-store",
+    }).catch(() => null);
+    if (!response?.ok) return record;
+
+    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+    if (contentType.includes('pdf') || contentType.includes('octet-stream') || contentType.includes('binary')) {
+      return record;
+    }
+
+    const data = await response.json().catch(() => null);
+    const details = normalizeBillDetailResponse(data);
+    return { ...record, ...details };
+  };
 
   const getInvoiceSourceUrl = async (record) => {
     const directUrl = invoiceUrl(record);
@@ -4169,7 +4519,8 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   };
 
   const viewInvoice = async (record, directUrl = '') => {
-    const url = directUrl || (await getInvoiceSourceUrl(record));
+    const detailedRecord = directUrl ? record : await fetchPatientBillDetails(record);
+    const url = directUrl || (await getInvoiceSourceUrl(detailedRecord));
     if (url) {
       window.open(url, '_blank', 'noopener,noreferrer');
       return;
@@ -4180,12 +4531,13 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
       setDownloadError('Please allow popups to view the invoice.');
       return;
     }
-    printWindow.document.write(getPrintableInvoiceHtml(record, { autoPrint: false }));
+    printWindow.document.write(getPrintableInvoiceHtml(detailedRecord, { autoPrint: false }));
     printWindow.document.close();
   };
 
   const printInvoice = async (record) => {
-    const directUrl = await getInvoiceSourceUrl(record);
+    const detailedRecord = await fetchPatientBillDetails(record);
+    const directUrl = await getInvoiceSourceUrl(detailedRecord);
     if (directUrl) {
       window.open(directUrl, '_blank', 'noopener,noreferrer');
       return;
@@ -4196,12 +4548,13 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
       setDownloadError('Please allow popups to view the invoice print preview.');
       return;
     }
-    printWindow.document.write(getPrintableInvoiceHtml(record, { autoPrint: true }));
+    printWindow.document.write(getPrintableInvoiceHtml(detailedRecord, { autoPrint: true }));
     printWindow.document.close();
   };
 
   const downloadInvoice = async (record, directUrl = '', filename = '') => {
-    const url = directUrl || (await getInvoiceSourceUrl(record));
+    const detailedRecord = directUrl ? record : await fetchPatientBillDetails(record);
+    const url = directUrl || (await getInvoiceSourceUrl(detailedRecord));
     if (!url) {
       setDownloadStatus('Invoice is being prepared for PDF download.');
       setDownloadError('');
@@ -4211,7 +4564,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
         setDownloadError('Please allow popups to download the invoice PDF.');
         return;
       }
-      printWindow.document.write(getPrintableInvoiceHtml(record, { autoPrint: true }));
+      printWindow.document.write(getPrintableInvoiceHtml(detailedRecord, { autoPrint: true }));
       printWindow.document.close();
       return;
     }
@@ -4239,14 +4592,72 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     }
   };
 
-  const payLabel = (record) => {
-    const mode = displayPaymentMode(record);
-    return paymentUrl(record) ? `Pay by ${mode}` : 'Payment unavailable';
+  const isBillPaid = (record) => {
+    const status = paymentStatus(record);
+    return status === 'paid' || status === 'completed' || status === 'success';
   };
 
-  const payInvoice = (url) => {
-    if (!url) return;
-    window.open(url, '_blank', 'noopener,noreferrer');
+  const payInvoice = async (record) => {
+    const invoiceId = getInvoiceId(record);
+    if (!invoiceId) {
+      setDownloadError('Bill id is not available for payment.');
+      return;
+    }
+
+    const amount = dueAmount(record) || totalAmount(record);
+    setDownloadStatus('Processing payment...');
+    setDownloadError('');
+
+    try {
+      const response = await fetch(patientApiUrl(PATIENT_API.billPay, { id: invoiceId }), {
+        method: 'POST',
+        headers: getApiHeaders(),
+        body: JSON.stringify({
+          amount,
+          paymentAmount: amount,
+          paymentMode: displayPaymentMode(record) || 'UPI',
+          paymentStatus: 'Paid',
+        }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.message || data?.title || 'Payment could not be completed.');
+      }
+
+      const paidDetails = normalizeBillDetailResponse(data);
+      const paidBill = {
+        ...record,
+        ...paidDetails,
+        status: 'Paid',
+        paymentStatus: 'Paid',
+        paidAmount: amount,
+        paymentAmount: amount,
+        dueAmount: 0,
+        balance: 0,
+        outstandingAmount: 0,
+        updatedAt: new Date().toISOString(),
+      };
+
+      setApiBills((current) => dedupeBillsByInvoice([
+        paidBill,
+        ...current.filter((bill) => String(getInvoiceId(bill)) !== String(invoiceId)),
+      ]));
+
+      try {
+        const stored = readPatientPortalOpBills();
+        const nextStored = stored.map((bill) =>
+          String(getInvoiceId(bill)) === String(invoiceId) ? { ...bill, ...paidBill } : bill
+        );
+        localStorage.setItem(PATIENT_PORTAL_OP_BILLS_KEY, JSON.stringify(nextStored));
+      } catch {
+        // Local fallback updates are best-effort only.
+      }
+
+      setDownloadStatus('Payment completed successfully.');
+    } catch (error) {
+      setDownloadStatus('');
+      setDownloadError(error.message || 'Unable to complete payment. Please try again.');
+    }
   };
 
   const latestBill = billRecords[0] || {};
@@ -4305,8 +4716,6 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     { label: 'GST / Tax', amount: latestGst },
     { label: 'Other Charges', amount: latestOtherCharges },
   ].filter((item) => item.amount != null && Number(item.amount) !== 0);
-  const paymentOptions = ['UPI', 'Card', 'Netbanking'];
-  const statusOptions = ['Paid', 'Pending', 'Refunded'];
   const totalBillsAmount = billRecords.reduce((sum, bill) => sum + totalAmount(bill), 0);
   const totalDueAmount = billRecords.reduce((sum, bill) => sum + (dueAmount(bill) || 0), 0);
   const totalPaidAmount = billRecords.reduce((sum, bill) => sum + ((paymentStatus(bill) === 'paid') ? totalAmount(bill) : 0), 0);
@@ -4343,7 +4752,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   return (
     <PatientPageShell
       title="Billing"
-      subtitle="Latest invoices generated by reception."
+      subtitle="Latest OP, diagnostic, and pharmacy invoices."
     >
       {downloadStatus ? <div className="pb-invoice-status pb-invoice-status--success">{downloadStatus}</div> : null}
       {downloadError ? <div className="pb-invoice-status pb-invoice-status--error">{downloadError}</div> : null}
@@ -4363,6 +4772,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
                 const billKey = getInvoiceId(bill) || `${section.key}-${invoiceNo}-${index}`;
                 const status = paymentStatus(bill);
                 const statusLabel = status === 'paid' || status === 'completed' ? 'Paid' : formatTitleCase(status);
+                const paid = isBillPaid(bill);
                 return (
                   <div className="pd-notification-item" key={billKey}>
                     <span className="pd-notification-dot">
@@ -4370,7 +4780,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
                     </span>
                     <span className="pd-notification-body">
                       <strong>{invoiceNo}</strong>
-                      <span>{billTypeLabel(bill)} | {formatDate(bill)} | {readFirst(bill, ['clinicName', 'branchName', 'hospitalName', 'clinic.name', 'branch.name']) || 'Clinic'}</span>
+                      <span>{billTypeLabel(bill)} | {formatDate(bill)} | {getBranchClinicLabel(bill)}</span>
                       <em>{getPatientName(bill)} | {statusLabel} | {formatAmount(totalAmount(bill))}</em>
                     </span>
                     <span className="pd-prescription-actions">
@@ -4390,6 +4800,16 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
                         <Download size={15} />
                         Download
                       </button>
+                      {!paid ? (
+                        <button
+                          type="button"
+                          className="pd-prescription-btn pd-prescription-btn--primary"
+                          onClick={() => payInvoice(bill)}
+                        >
+                          <CreditCard size={15} />
+                          Pay
+                        </button>
+                      ) : null}
                     </span>
                   </div>
                 );
@@ -4406,9 +4826,11 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   );
 }
 
-function PatientNotificationsPage({ notifications = [], prescriptions = [], bills = [] }) {
+function PatientNotificationsPage({ notifications = [], prescriptions = [], bills = [], patient = null, visits = [] }) {
   const navigate = useNavigate();
   const notificationTypes = PATIENT_NOTIFICATION_TYPES;
+  const [apiNotifications, setApiNotifications] = useState([]);
+  const [pendingNotificationActions, setPendingNotificationActions] = useState({});
   const [selectedType, setSelectedType] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const prescriptionCount = Array.isArray(prescriptions) ? prescriptions.length : 0;
@@ -4445,6 +4867,34 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
   const getPrescriptionId = (prescription, index) =>
     readFirst(prescription, ['prescriptionId', 'id', '_id', 'referenceId']) || `prescription-${index}`;
 
+  const hasPrescriptionContent = (prescription) => {
+    if (!prescription) return false;
+    const medicineFields = [
+      prescription.medicines,
+      prescription.medications,
+      prescription.medicineList,
+      prescription.prescribedMedicines,
+      prescription.items,
+      prescription.drugs,
+    ];
+    if (medicineFields.some((value) => Array.isArray(value) && value.length)) return true;
+    return Boolean(readFirst(prescription, [
+      'prescriptionId',
+      'prescriptionDate',
+      'prescribedOn',
+      'medicine',
+      'medicineName',
+      'drugName',
+      'medication',
+      'advice',
+      'instructions',
+      'prescriptionNote',
+      'notes',
+      'doctorNotes',
+      'diagnosis',
+    ]));
+  };
+
   const getBillDate = (bill) =>
     readFirst(bill, ['invoiceDate', 'billDate', 'date', 'createdAt', 'createdOn', 'updatedAt']);
 
@@ -4452,7 +4902,7 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
     readFirst(bill, ['invoiceNo', 'invoiceNumber', 'billNo', 'billNumber', 'referenceNumber', 'transactionId', 'id']) || `Bill ${index + 1}`;
 
   const getBillAmount = (bill) =>
-    Number(readFirst(bill, ['total', 'totalAmount', 'amount', 'invoiceAmount', 'grandTotal', 'payableAmount', 'paymentAmount', 'paidAmount', 'netAmount']) || 0);
+    Number(String(readFirst(bill, ['total', 'totalAmount', 'amount', 'invoiceAmount', 'grandTotal', 'payableAmount', 'paymentAmount', 'paidAmount', 'netAmount']) || 0).replace(/[^0-9.-]/g, ''));
 
   const getBillType = (bill) => {
     const rawType = String(readFirst(bill, ['invoiceType', 'billingType', 'type', 'serviceType', 'category']) || '').toLowerCase();
@@ -4461,15 +4911,65 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
     return 'OP';
   };
 
-  const defaultNotifications = useMemo(() => notificationTypes.map((type, index) => ({
-    id: `default-${index}`,
-    title: type,
-    message: `${type} notification will be shown here when available.`,
-    date: 'No date',
-    type,
-    read: true,
-    url: '',
-  })), [notificationTypes]);
+  const getAppointmentDate = (appointment) =>
+    readFirst(appointment, ['appointmentDate', 'date', 'scheduledDate', 'visitDate', 'slotDate', 'createdAt']);
+
+  const getAppointmentTime = (appointment) =>
+    formatSlotTime(readFirst(appointment, ['time', 'slot', 'appointmentTime', 'startTime', 'scheduledTime']));
+
+  const getAppointmentDoctor = (appointment) =>
+    readFirst(appointment, ['doctorName', 'doctor.name', 'doctor.fullName', 'providerName']) || 'doctor';
+
+  const getAppointmentId = (appointment, index) =>
+    readFirst(appointment, ['appointmentId', 'id', '_id', 'appointmentNumber', 'appointmentNo']) || `appointment-${index}`;
+
+  const getFollowUpDate = (record) =>
+    readFirst(record, [
+      'followUpDate',
+      'followupDate',
+      'nextFollowUpDate',
+      'nextVisitDate',
+      'reviewDate',
+      'revisitDate',
+      'consultation.followUpDate',
+      'consultation.nextFollowUpDate',
+    ]);
+
+  const getApiHeaders = () => {
+    const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
+    return {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
+  useEffect(() => {
+    let isCurrent = true;
+    const loadNotifications = async () => {
+      const paths = buildPatientScopedPaths(PATIENT_API.notifications, patient || {}, visits);
+      const responses = await Promise.allSettled(
+        paths.map((path) => fetch(patientApiUrl(path), { headers: getApiHeaders(), cache: 'no-store' }))
+      );
+      const lists = await Promise.all(
+        responses.map(async (result) => {
+          if (result.status !== 'fulfilled' || !result.value?.ok) return [];
+          return parseApiList(await result.value.json().catch(() => []));
+        })
+      );
+      const scoped = lists.flat().filter((notification) =>
+        notificationBelongsToPatient(notification, patient || {}, visits)
+      );
+      if (isCurrent) setApiNotifications(scoped);
+    };
+
+    loadNotifications();
+    window.addEventListener('focus', loadNotifications);
+    return () => {
+      isCurrent = false;
+      window.removeEventListener('focus', loadNotifications);
+    };
+  }, [patient, visits]);
 
   const normalizeNotification = useCallback((notification, index) => {
     const title = readFirst(notification, ['title', 'subject', 'name']) || notificationTypes[index % notificationTypes.length];
@@ -4478,7 +4978,7 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
     const rawType = readFirst(notification, ['type', 'category', 'notificationType']);
     const searchable = `${rawType} ${title} ${message}`.toLowerCase();
     const type =
-      notificationTypes.find((item) => searchable.includes(item.toLowerCase().replace('-', ''))) ||
+      notificationTypes.find((item) => searchable.includes(item.toLowerCase().replace(/[\s-]+/g, ''))) ||
       (searchable.includes('appointment') ? 'Appointment Reminder' : '') ||
       (searchable.includes('prescription') ? 'Prescription Ready' : '') ||
       (searchable.includes('bill') || searchable.includes('invoice') ? 'Bill Generated' : '') ||
@@ -4488,6 +4988,7 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
     return {
       ...notification,
       id: notification.id || notification.notificationId || `notification-${index}`,
+      backendId: notification.id || notification.notificationId,
       title,
       message,
       date,
@@ -4501,7 +5002,35 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
     const derived = [...rows];
     const existingIds = new Set(derived.map((notification) => String(notification.id)));
 
+    visits
+      .filter((appointment) => {
+        const status = String(readFirst(appointment, ['status', 'appointmentStatus', 'state']) || '').toLowerCase();
+        return !['cancelled', 'canceled', 'rejected', 'deleted'].some((term) => status.includes(term));
+      })
+      .slice()
+      .sort((a, b) => getNotificationTimeValue(getAppointmentDate(b)) - getNotificationTimeValue(getAppointmentDate(a)))
+      .forEach((appointment, index) => {
+        const appointmentId = getAppointmentId(appointment, index);
+        const id = `derived-appointment-${appointmentId}`;
+        if (existingIds.has(id)) return;
+        existingIds.add(id);
+        const appointmentDate = getAppointmentDate(appointment);
+        const appointmentTime = getAppointmentTime(appointment);
+        derived.unshift({
+          id,
+          title: 'Appointment Reminder',
+          message: `Appointment with ${getAppointmentDoctor(appointment)}${appointmentDate ? ` on ${formatPatientDate(appointmentDate)}` : ''}${appointmentTime ? ` at ${appointmentTime}` : ''}.`,
+          date: formatNotificationDate(appointmentDate),
+          sortTime: getNotificationTimeValue(appointmentDate),
+          type: 'Appointment Reminder',
+          read: false,
+          url: '/patient/appointments',
+          appointmentId,
+        });
+      });
+
     prescriptions
+      .filter(hasPrescriptionContent)
       .slice()
       .sort((a, b) => getNotificationTimeValue(getPrescriptionDate(b)) - getNotificationTimeValue(getPrescriptionDate(a)))
       .forEach((prescription, index) => {
@@ -4541,17 +5070,47 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
         });
       });
 
-    return derived.length ? derived : defaultNotifications;
-  }, [bills, defaultNotifications, prescriptions]);
+    [...prescriptions, ...visits]
+      .filter((record) => getFollowUpDate(record))
+      .sort((a, b) => getNotificationTimeValue(getFollowUpDate(b)) - getNotificationTimeValue(getFollowUpDate(a)))
+      .forEach((record, index) => {
+        const followUpDate = getFollowUpDate(record);
+        const appointmentId = readFirst(record, ['appointmentId', 'appointment.id', 'id']);
+        const id = `derived-followup-${appointmentId || followUpDate || index}`;
+        if (existingIds.has(id)) return;
+        existingIds.add(id);
+        derived.unshift({
+          id,
+          title: 'Follow-up Reminder',
+          message: `Follow-up reminder${followUpDate ? ` for ${formatPatientDate(followUpDate)}` : ''}${getPrescriptionDoctor(record) ? ` with ${getPrescriptionDoctor(record)}` : ''}.`,
+          date: formatNotificationDate(followUpDate),
+          sortTime: getNotificationTimeValue(followUpDate),
+          type: 'Follow-up Reminder',
+          read: false,
+          url: '/patient/appointments',
+          appointmentId,
+        });
+      });
+
+    return dedupeNotificationsById(derived);
+  }, [bills, prescriptions, visits]);
+
+  const scopedNotifications = useMemo(
+    () =>
+      [...parseApiList(notifications), ...apiNotifications].filter((notification) =>
+        notificationBelongsToPatient(notification, patient || {}, visits)
+      ),
+    [apiNotifications, notifications, patient, visits]
+  );
 
   const [notificationRows, setNotificationRows] = useState(() =>
-    deriveNotificationRows((notifications.length ? notifications : defaultNotifications).map(normalizeNotification))
+    deriveNotificationRows(scopedNotifications.map(normalizeNotification))
   );
 
   useEffect(() => {
-    setNotificationRows(deriveNotificationRows((notifications.length ? notifications : defaultNotifications).map(normalizeNotification)));
+    setNotificationRows(deriveNotificationRows(scopedNotifications.map(normalizeNotification)));
     setPage(1);
-  }, [defaultNotifications, normalizeNotification, notifications, deriveNotificationRows]);
+  }, [normalizeNotification, scopedNotifications, deriveNotificationRows]);
 
   const notificationSummary = useMemo(() => {
     const counts = notificationRows.reduce((acc, notification) => {
@@ -4621,7 +5180,7 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
   };
 
   const viewNotification = (notification) => {
-    markNotificationAsRead(notification.id);
+    markNotificationAsRead(notification);
 
     // Prescription and billing notifications can also carry an appointment ID.
     // Their destination must remain the corresponding patient record, not the
@@ -4657,24 +5216,99 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
     setPage(1);
   };
 
-  const markNotificationAsRead = (notificationId) => {
-    setNotificationRows((rows) =>
-      rows.map((notification) =>
-        notification.id === notificationId ? { ...notification, read: true } : notification
-      )
+  const getBackendNotificationId = (notification) => {
+    const rawId = notification?.backendId || notification?.notificationId || notification?.id;
+    const text = String(rawId || "");
+    return text.startsWith("derived-") || text.startsWith("default-") ? "" : rawId;
+  };
+
+  const runNotificationAction = async (notification, action, optimisticUpdate) => {
+    const notificationId = notification?.id;
+    const backendId = getBackendNotificationId(notification);
+    const actionKey = `${notificationId}-${action}`;
+    if (!notificationId) return;
+
+    const previousRows = notificationRows;
+    optimisticUpdate();
+    setPendingNotificationActions((actions) => ({ ...actions, [actionKey]: true }));
+
+    if (!backendId) {
+      setPendingNotificationActions((actions) => {
+        const next = { ...actions };
+        delete next[actionKey];
+        return next;
+      });
+      return;
+    }
+
+    const url = patientApiUrl(
+      action === "read" ? PATIENT_API.notificationRead : PATIENT_API.notificationDelete,
+      { id: backendId }
     );
+
+    try {
+      const response = await fetch(url, {
+        method: action === "read" ? "PATCH" : "DELETE",
+        headers: getApiHeaders(),
+        ...(action === "read" ? { body: JSON.stringify({ read: true, isRead: true }) } : {}),
+      });
+      if (!response.ok) throw new Error(`Unable to ${action} notification.`);
+    } catch (error) {
+      setNotificationRows(previousRows);
+      window.alert(error.message || "Unable to update notification.");
+    } finally {
+      setPendingNotificationActions((actions) => {
+        const next = { ...actions };
+        delete next[actionKey];
+        return next;
+      });
+    }
+  };
+
+  const markNotificationAsRead = (notification) => {
+    if (!notification || notification.read) return;
+    runNotificationAction(notification, "read", () => {
+      setNotificationRows((rows) =>
+        rows.map((item) =>
+          item.id === notification.id ? { ...item, read: true } : item
+        )
+      );
+    });
   };
 
   const markAllAsRead = () => {
-    setNotificationRows((rows) => rows.map((notification) => ({ ...notification, read: true })));
+    const unreadNotifications = notificationRows.filter((notification) => !notification.read);
+    setNotificationRows((rows) =>
+      rows.map((notification) => ({ ...notification, read: true }))
+    );
+    unreadNotifications.forEach((notification) => {
+      const backendId = getBackendNotificationId(notification);
+      if (!backendId) return;
+      fetch(patientApiUrl(PATIENT_API.notificationRead, { id: backendId }), {
+        method: "PATCH",
+        headers: getApiHeaders(),
+        body: JSON.stringify({ read: true, isRead: true }),
+      }).catch(() => {});
+    });
   };
 
-  const deleteNotification = (notificationId) => {
-    setNotificationRows((rows) => rows.filter((notification) => notification.id !== notificationId));
+  const deleteNotification = (notification) => {
+    runNotificationAction(notification, "delete", () => {
+      setNotificationRows((rows) => rows.filter((item) => item.id !== notification.id));
+    });
   };
 
   const deleteAllNotifications = () => {
+    const rowsToDelete = notificationRows;
     setNotificationRows([]);
+    rowsToDelete.forEach((notification) => {
+      const backendId = getBackendNotificationId(notification);
+      if (!backendId) return;
+      fetch(patientApiUrl(PATIENT_API.notificationDelete, { id: backendId }), {
+        method: "DELETE",
+        headers: getApiHeaders(),
+      }).catch(() => {});
+    });
   };
 
   const getTypeIcon = (type) => {
@@ -4748,6 +5382,8 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
           {pageNotifications.length ? (
             pageNotifications.map((notification) => {
               const typeClass = `type-${notification.type?.toLowerCase().replace(/\s+/g, '-')}`;
+              const readPending = Boolean(pendingNotificationActions[`${notification.id}-read`]);
+              const deletePending = Boolean(pendingNotificationActions[`${notification.id}-delete`]);
               return (
                 <div
                   key={notification.id}
@@ -4774,15 +5410,20 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
                       <button
                         type="button"
                         className="pd-notification-btn pd-notification-btn--primary"
-                        onClick={() => markNotificationAsRead(notification.id)}
-                        disabled={notification.read}
+                        onClick={() => markNotificationAsRead(notification)}
+                        disabled={notification.read || readPending || deletePending}
                       >
                         <Check size={14} />
-                        Mark as Read
+                        {readPending ? 'Saving...' : 'Mark as Read'}
                       </button>
-                      <button type="button" className="pd-notification-btn pd-notification-btn--danger" onClick={() => deleteNotification(notification.id)}>
+                      <button
+                        type="button"
+                        className="pd-notification-btn pd-notification-btn--danger"
+                        onClick={() => deleteNotification(notification)}
+                        disabled={deletePending}
+                      >
                         <Trash2 size={14} />
-                        Delete
+                        {deletePending ? 'Deleting...' : 'Delete'}
                       </button>
                     </div>
                   </div>
