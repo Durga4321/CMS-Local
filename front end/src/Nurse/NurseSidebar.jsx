@@ -12,7 +12,7 @@ import {
 import { getInitials } from "../profile/sessionProfile";
 import { getNurseProfile } from "./nurseSession";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
-import { getClinicLogo, ReceptionClinicToothLogo } from "../Recepitionist/ReceptionSidebar";
+import { useClinicInvoiceBranding } from "../utils/clinicBranding";
 
 const items = [
   { to: "/nurse/dashboard", label: "Nurse Dashboard", icon: Gauge },
@@ -57,15 +57,16 @@ function NurseSidebar({ onClose = () => {}, basePath = "/nurse", dashboardLabel 
   const profileName = profile.name || "Nurse";
   const hospitalName = getClinicDisplayName(profile, "Clinic Name");
   const branchName = String(profile.branchName || "").trim();
-  const clinicLogo = getClinicLogo(hospitalName);
-  const ClinicLogoIcon = clinicLogo.icon;
+  const clinicBranding = useClinicInvoiceBranding({
+    clinicId: profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "",
+    clinicName: hospitalName,
+  });
 
   return (
     <aside className="rc-sidebar">
       <div className="rc-brand">
-        <div className={`rc-brand-icon rc-clinic-logo rc-clinic-logo--${clinicLogo.tone}`}>
-          {clinicLogo.type === "tooth" ? <ReceptionClinicToothLogo /> : <ClinicLogoIcon size={22} />}
-          {clinicLogo.text ? <small>{clinicLogo.text}</small> : null}
+        <div className="rc-brand-icon rc-clinic-logo rc-clinic-logo--emerald">
+          <img src={clinicBranding.logoUrl} alt="" />
         </div>
         <div>
           <span>Clinic Name</span>

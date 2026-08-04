@@ -10,9 +10,6 @@ function NotificationPanel({ items = [], onDelete = () => {}, onRead = () => {} 
   const isSent = (item = {}) => String(item.status || "").toLowerCase() === "sent";
   const getNotificationKey = (item = {}) =>
     item.id || [item.title, item.message, item.targetUsers].join("|");
-  const getAudienceLabel = (item = {}) =>
-    String(item.targetUsers || item.targetAudience || item.audience || "").trim();
-  const shouldShowAudience = (item = {}) => isSent(item) && Boolean(getAudienceLabel(item));
   const getNotificationTone = (item = {}, index = 0) => {
     const text = `${item.title || ""} ${item.message || ""}`.toLowerCase();
     if (text.includes("payment") || text.includes("paid") || text.includes("invoice") || text.includes("bill")) {
@@ -70,7 +67,6 @@ function NotificationPanel({ items = [], onDelete = () => {}, onRead = () => {} 
           <div className="sa-notification-detail-header">
             <div>
               <b>{activeNotification.title}</b>
-              {shouldShowAudience(activeNotification) ? <span>{getAudienceLabel(activeNotification)}</span> : null}
             </div>
             <button
               className="sa-notification-close"
@@ -128,7 +124,6 @@ function NotificationPanel({ items = [], onDelete = () => {}, onRead = () => {} 
               <div>
                 <b>{item.title}</b>
                 <p>{item.message}</p>
-                {shouldShowAudience(item) ? <span><Megaphone size={13} /> {getAudienceLabel(item)}</span> : null}
               </div>
             </button>
             <div className="sa-notification-actions">

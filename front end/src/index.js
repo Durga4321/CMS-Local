@@ -30,6 +30,8 @@ const clearInvalidStoredTokens = () => {
     "adminToken",
     "doctorToken",
     "receptionistToken",
+    "nurseToken",
+    "labToken",
   ].forEach((key) => {
     if (INVALID_STATIC_TOKENS.has(localStorage.getItem(key))) {
       localStorage.removeItem(key);
@@ -89,6 +91,8 @@ const getApiCacheKey = (input, init = {}) => {
     localStorage.getItem("adminToken") ||
     localStorage.getItem("doctorToken") ||
     localStorage.getItem("receptionistToken") ||
+    localStorage.getItem("nurseToken") ||
+    localStorage.getItem("labToken") ||
     "";
 
   return `${getRequestMethod(input, init)}:${url}:${tokenScope.slice(-16)}`;
@@ -124,7 +128,9 @@ window.fetch = (input, init = {}) => {
     localStorage.getItem("token") ||
     localStorage.getItem("adminToken") ||
     localStorage.getItem("doctorToken") ||
-    localStorage.getItem("receptionistToken");
+    localStorage.getItem("receptionistToken") ||
+    localStorage.getItem("nurseToken") ||
+    localStorage.getItem("labToken");
 
   const requestHeaders =
     typeof Request !== "undefined" &&

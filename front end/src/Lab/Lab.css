@@ -1,0 +1,87 @@
+.lab-profile-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.6fr);
+  gap: 16px;
+  padding: 22px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(236, 253, 245, 0.95), rgba(255, 255, 255, 0.98));
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.lab-profile-card span {
+  color: #047857;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.lab-profile-card h2,
+.lab-profile-card p {
+  margin: 4px 0 0;
+}
+
+.lab-page-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lab-search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: min(420px, 100%);
+  margin-bottom: 16px;
+  padding: 11px 13px;
+  border: 1px solid #d7e3df;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.lab-search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  color: #0f172a;
+}
+
+.lab-table .rc-table-head,
+.lab-table .rc-table-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.lab-table .rc-table-head:has(span:nth-child(5)),
+.lab-table .rc-table-row:has(span:nth-child(5)) {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) 150px;
+}
+
+.lab-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.lab-row-actions button {
+  width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #cfe5dd;
+  border-radius: 8px;
+  color: #047857;
+  background: #f8fffc;
+  cursor: pointer;
+}
+
+.lab-row-actions button:hover {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+@media (max-width: 760px) {
+  .lab-profile-card {
+    grid-template-columns: 1fr;
+  }
+}

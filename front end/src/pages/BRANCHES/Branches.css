@@ -133,6 +133,13 @@
   stroke-width: 2.3;
 }
 
+.branches-clinic-logo img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  display: block;
+}
+
 .branches-clinic-logo small {
   max-width: 31px;
   color: #1d65c1;

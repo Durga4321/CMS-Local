@@ -227,6 +227,13 @@
   stroke-width: 2.3;
 }
 
+.admin-users-clinic-logo img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  display: block;
+}
+
 .admin-users-clinic-logo small {
   max-width: 23px;
   color: #1d65c1;

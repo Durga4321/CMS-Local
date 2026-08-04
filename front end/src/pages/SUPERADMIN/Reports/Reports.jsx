@@ -5,6 +5,7 @@ import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
 import { fetchReports } from "../superAdminApi";
 import { formatIndianCurrency } from "../../../utils/format";
+import { getDefaultClinicLogo } from "../../../utils/clinicBranding";
 
 const downloadFile = (filename, content, type) => {
   const blob = new Blob([content], { type });
@@ -418,6 +419,7 @@ function Reports() {
       "Status",
       "Performance",
     ]);
+    const platformLogo = getDefaultClinicLogo("CMS");
 
     return `
       <html>
@@ -429,6 +431,8 @@ function Reports() {
             h1 { margin: 0 0 6px; font-size: 22px; }
             h2 { margin: 24px 0 10px; font-size: 16px; }
             p { margin: 0 0 14px; color: #475569; }
+            .brand { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px; text-align: center; }
+            .brand img { width: 64px; height: 64px; object-fit: contain; }
             table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
             th, td { border: 1px solid #dbe3ed; padding: 10px; text-align: left; font-size: 12px; }
             th { background: #f1f5f9; }
@@ -443,7 +447,13 @@ function Reports() {
           </style>
         </head>
         <body>
-          <h1>Clinic Reports</h1>
+          <div class="brand">
+            <img src="${platformLogo}" alt="CMS logo" />
+            <div>
+              <h1>CMS</h1>
+              <p>Clinic Reports</p>
+            </div>
+          </div>
           <p>Generated ${htmlEscape(formatDateTime(new Date()))}</p>
           <div class="metrics">
             <div class="metric"><b>${formatIndianCurrency(reportSummary.totalRevenue)}</b><span>Total Revenue</span></div>

@@ -16,6 +16,9 @@ import {
 } from "../../utils/validation";
 import { formatIndianCurrency } from "../../utils/format";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
+import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
+import { fetchLabMasterTests, normalizeLabTests } from "../../utils/labMaster";
+import { clearPendingDiagnosticRequest, getPendingDiagnosticRequest } from "../../utils/diagnosticRequests";
 
 const escapeHtml = (value) =>
   String(value ?? "")
@@ -40,94 +43,6 @@ const amountFormat = (value) => (Number(value) || 0).toFixed(2);
 const LAST_INVOICE_STORAGE_KEY = "receptionLatestInvoice";
 const RECENT_SERVICE_BILLS_STORAGE_KEY = "receptionRecentServiceBills";
 const HALF_GST_RATE = 0.09;
-
-const getClinicWatermarkSvg = (clinicName = "Clinic") => {
-  const name = String(clinicName || "").toLowerCase();
-  const fallbackText = String(clinicName || "CLINIC")
-    .replace(/[^a-z0-9\s]/gi, " ")
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
-  const logo = name.includes("dental")
-    ? { text: "", color: "#0f8f8d", path: '<path d="M145 79c35-15 68-8 92 5 25 14 55 14 80 0 24-13 57-20 92-5 64 28 91 95 70 171l-45 170c-13 49-37 137-88 137-36 0-38-43-49-90-5-23-13-40-21-40s-16 17-21 40c-11 47-13 90-49 90-51 0-75-88-88-137L73 250C52 174 79 107 145 79Z" fill="none" stroke="currentColor" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>' }
-    : name.includes("pragathi")
-      ? { text: "PRAGATHI", color: "#00a86b", path: '<path d="M357 79c-93 0-168 36-213 96-43 57-55 132-30 200 64 24 139 11 196-32 60-45 96-120 96-213 0-28-22-51-49-51Z" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M263 173c-64 27-113 75-146 143" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round"/>' }
-      : name.includes("sai ram") || name.includes("primo") || name.includes("pirnav")
-        ? { text: name.includes("sai ram") ? "SAI RAM" : name.includes("primo") ? "PRIMO" : "PIRNAV", color: "#d97706", path: '<circle cx="240" cy="238" r="72" fill="none" stroke="currentColor" stroke-width="24"/><path d="M240 58v62M240 356v62M60 238h62M358 238h62M113 111l44 44M323 321l44 44M367 111l-44 44M157 321l-44 44" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round"/>' }
-        : { text: name.includes("vims") ? "VIMS" : name.includes("nri") ? "NC" : fallbackText || "CL", color: "#00a884", path: '<path d="M214 86h52c11 0 20 9 20 20v88h88c11 0 20 9 20 20v52c0 11-9 20-20 20h-88v88c0 11-9 20-20 20h-52c-11 0-20-9-20-20v-88h-88c-11 0-20-9-20-20v-52c0-11 9-20 20-20h88v-88c0-11 9-20 20-20Z" fill="none" stroke="currentColor" stroke-width="24" stroke-linejoin="round"/>' };
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 560" color="${logo.color}"><rect x="72" y="44" width="336" height="336" rx="72" fill="#f0fdfa" stroke="#7dd3fc" stroke-width="12"/><g transform="translate(0 0)">${logo.path}</g>${logo.text ? `<text x="240" y="455" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="50" font-weight="900" fill="#075eea">${escapeHtml(logo.text)}</text>` : ""}</svg>`;
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-};
-
-const DIAGNOSTIC_PRICE_LIST = [
-  { diagnosis: "Viral Fever", item: "CBC", price: 500 },
-  { diagnosis: "Hypertension", item: "Blood Pressure Check", price: 300 },
-  { diagnosis: "Diabetes Mellitus", item: "Blood Glucose Test", price: 500 },
-  { diagnosis: "Anemia", item: "CBC", price: 450 },
-  { diagnosis: "Asthma", item: "Pulmonary Function Test (PFT)", price: 1200 },
-  { diagnosis: "COPD", item: "PFT", price: 1500 },
-  { diagnosis: "Pneumonia", item: "Chest X-Ray", price: 1200 },
-  { diagnosis: "Tuberculosis", item: "Chest X-Ray", price: 1000 },
-  { diagnosis: "COVID-19", item: "RT-PCR", price: 900 },
-  { diagnosis: "Dengue", item: "CBC + NS1 Test", price: 1200 },
-  { diagnosis: "Malaria", item: "Blood Smear Test", price: 800 },
-  { diagnosis: "Heart Attack", item: "ECG", price: 800 },
-  { diagnosis: "Coronary Artery Disease", item: "ECG", price: 800 },
-  { diagnosis: "Heart Failure", item: "Echocardiogram", price: 2000 },
-  { diagnosis: "Arrhythmia", item: "Holter Monitoring", price: 2500 },
-  { diagnosis: "Stroke", item: "CT Scan", price: 3500 },
-  { diagnosis: "Migraine", item: "MRI Brain", price: 4000 },
-  { diagnosis: "Epilepsy", item: "EEG", price: 2000 },
-  { diagnosis: "Brain Tumor", item: "MRI Brain", price: 5000 },
-  { diagnosis: "Parkinson's Disease", item: "MRI Brain", price: 4000 },
-  { diagnosis: "Kidney Stones", item: "Ultrasound", price: 1200 },
-  { diagnosis: "Chronic Kidney Disease", item: "Kidney Function Test", price: 700 },
-  { diagnosis: "Kidney Failure", item: "Kidney Function Test", price: 700 },
-  { diagnosis: "Urinary Tract Infection", item: "Urine Analysis", price: 400 },
-  { diagnosis: "Gallstones", item: "Ultrasound", price: 1200 },
-  { diagnosis: "Gastritis", item: "Endoscopy", price: 2500 },
-  { diagnosis: "Peptic Ulcer", item: "Endoscopy", price: 2500 },
-  { diagnosis: "GERD", item: "Endoscopy", price: 2500 },
-  { diagnosis: "Colon Cancer", item: "Colonoscopy", price: 3500 },
-  { diagnosis: "Liver Disease", item: "Liver Function Test", price: 800 },
-  { diagnosis: "Pancreatitis", item: "CT Scan", price: 3500 },
-  { diagnosis: "Appendicitis", item: "Ultrasound", price: 1500 },
-  { diagnosis: "Hernia", item: "Ultrasound", price: 1200 },
-  { diagnosis: "Arthritis", item: "X-Ray", price: 600 },
-  { diagnosis: "Osteoarthritis", item: "X-Ray", price: 600 },
-  { diagnosis: "Osteoporosis", item: "X-Ray", price: 700 },
-  { diagnosis: "Fracture", item: "X-Ray", price: 600 },
-  { diagnosis: "Ligament Injury", item: "MRI", price: 4000 },
-  { diagnosis: "Cataract", item: "Eye Examination", price: 500 },
-  { diagnosis: "Glaucoma", item: "Eye Pressure Test", price: 700 },
-  { diagnosis: "Diabetic Retinopathy", item: "Fundus Examination", price: 800 },
-  { diagnosis: "Hearing Loss", item: "Audiometry", price: 800 },
-  { diagnosis: "Sinusitis", item: "CT PNS", price: 2500 },
-  { diagnosis: "Tonsillitis", item: "ENT Examination", price: 400 },
-  { diagnosis: "Acne", item: "Skin Examination", price: 300 },
-  { diagnosis: "Psoriasis", item: "Skin Examination", price: 500 },
-  { diagnosis: "Eczema", item: "Skin Examination", price: 500 },
-  { diagnosis: "Skin Infection", item: "Skin Examination", price: 400 },
-  { diagnosis: "Thyroid Disorders", item: "Thyroid Function Test", price: 900 },
-  { diagnosis: "PCOS", item: "Pelvic Ultrasound", price: 1200 },
-  { diagnosis: "Ovarian Cyst", item: "Pelvic Ultrasound", price: 1200 },
-  { diagnosis: "Pregnancy", item: "Obstetric Ultrasound", price: 1500 },
-  { diagnosis: "Breast Cancer", item: "Mammography", price: 2500 },
-  { diagnosis: "Lung Cancer", item: "CT Chest", price: 4000 },
-  { diagnosis: "Leukemia", item: "CBC", price: 700 },
-  { diagnosis: "Depression", item: "Psychiatric Evaluation", price: 700 },
-  { diagnosis: "Anxiety Disorder", item: "Psychiatric Evaluation", price: 700 },
-  { diagnosis: "Schizophrenia", item: "Psychiatric Evaluation", price: 900 },
-  { diagnosis: "Rheumatoid Arthritis", item: "Rheumatoid Factor Test", price: 900 },
-  { diagnosis: "Lupus", item: "ANA Test", price: 1500 },
-  { diagnosis: "Gout", item: "Uric Acid Test", price: 500 },
-  { diagnosis: "Varicose Veins", item: "Doppler Study", price: 2000 },
-  { diagnosis: "Peripheral Artery Disease", item: "Doppler Study", price: 2000 },
-  { diagnosis: "Prostate Enlargement", item: "Ultrasound", price: 1200 },
-];
 
 const PHARMACY_PRICE_LIST = [
   { diagnosis: "Viral Fever", item: "Paracetamol 500 mg", price: 30 },
@@ -371,6 +286,7 @@ const formatInvoiceDate = (value = new Date()) => {
 const createBillingRow = (priceList) => {
   const item = priceList[0] || { diagnosis: "", item: "", price: 0 };
   return {
+    ...item,
     id: Date.now() + Math.random(),
     diagnosis: item.diagnosis,
     item: item.item,
@@ -378,6 +294,61 @@ const createBillingRow = (priceList) => {
     quantity: 1,
   };
 };
+
+const splitDiagnosticTests = (value) =>
+  String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const readAppointmentDiagnosticTests = (appointment = {}) => {
+  const explicitTests = firstValue(
+    appointment.diagnosisTests,
+    appointment.DiagnosisTests,
+    appointment.diagnosticTests,
+    appointment.DiagnosticTests,
+    appointment.tests,
+    appointment.Tests,
+    appointment.consultation?.diagnosisTests,
+    appointment.Consultation?.DiagnosisTests,
+    appointment.consultation?.diagnosticTests,
+    appointment.Consultation?.DiagnosticTests,
+    appointment.latestConsultation?.diagnosisTests,
+    appointment.LatestConsultation?.DiagnosisTests
+  );
+  if (explicitTests) return explicitTests;
+
+  const notes = String(
+    firstValue(
+      appointment.clinicalNotes,
+      appointment.ClinicalNotes,
+      appointment.notes,
+      appointment.Notes,
+      appointment.consultation?.clinicalNotes,
+      appointment.Consultation?.ClinicalNotes,
+      appointment.latestConsultation?.clinicalNotes,
+      appointment.LatestConsultation?.ClinicalNotes,
+      ""
+    ) || ""
+  );
+  return notes.match(/Diagnosis Tests\s*:\s*([^\n\r]+)/i)?.[1] || "";
+};
+
+const readAppointmentDiagnosis = (appointment = {}) =>
+  firstValue(
+    appointment.diagnosis,
+    appointment.Diagnosis,
+    appointment.consultation?.diagnosis,
+    appointment.Consultation?.Diagnosis,
+    appointment.latestConsultation?.diagnosis,
+    appointment.LatestConsultation?.Diagnosis
+  );
+
+const getPriceListItemName = (item = {}) =>
+  String(firstValue(item.item, item.testName, item.TestName, item.name, item.Name, item.serviceName, item.testCode, item.TestCode, "") || "").trim();
+
+const getPriceListItemKey = (item = {}, index = 0) =>
+  String(firstValue(item.id, item.testId, item.labTestId, item.testCode, item.TestCode, getPriceListItemName(item), index) || index);
 
 const getBillingTotals = (rows = []) => {
   const subtotal = rows.reduce(
@@ -405,6 +376,7 @@ const printServiceInvoice = ({
   doctorName,
   paymentMode,
   clinicName,
+  clinicId,
   clinicPhone,
   clinicEmail,
   receptionistName,
@@ -421,7 +393,12 @@ const printServiceInvoice = ({
   });
   const title = type === "pharmacy" ? "Pharmacy GST Invoice" : "Diagnostic Test GST Invoice";
   const itemHeader = type === "pharmacy" ? "Product / Medicine" : "Diagnostic Test";
-  const logoUrl = getClinicWatermarkSvg(clinicName);
+  const branding = getClinicInvoiceBranding({ clinicId, clinicName });
+  const logoUrl = branding.logoUrl;
+  const headerTitle = branding.headerTitle || clinicName;
+  const headerSubtitle = branding.headerSubtitle || "Clinic Billing";
+  const footerNote = branding.footerNote;
+  const accentColor = branding.accentColor || "#0f9d9d";
   const printWindow = window.open("", "_blank", "width=980,height=720");
   if (!printWindow) return false;
 
@@ -433,7 +410,7 @@ const printServiceInvoice = ({
         <style>
           @page { size: A4; margin: 14mm; }
           body { margin: 0; color: #111827; font-family: Arial, Helvetica, sans-serif; background: #f3f8fb; }
-          .invoice { max-width: 940px; min-height: 100vh; margin: 0 auto; background: #fff; padding: 28px; border-top: 8px solid #0f9d9d; box-sizing: border-box; position: relative; overflow: hidden; }
+          .invoice { max-width: 940px; min-height: 100vh; margin: 0 auto; background: #fff; padding: 28px; border-top: 8px solid ${escapeHtml(accentColor)}; box-sizing: border-box; position: relative; overflow: hidden; }
           .invoice > *:not(.watermark) { position: relative; z-index: 1; }
           .watermark { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
           .watermark img { width: 410px; height: 410px; object-fit: contain; opacity: .18; filter: saturate(1.35) contrast(1.08); }
@@ -456,7 +433,7 @@ const printServiceInvoice = ({
           th { background: #eaf8f6; color: #0f172a; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
           td.num, th.num { text-align: center; }
           td.money, th.money { text-align: right; font-variant-numeric: tabular-nums; }
-          tfoot td { background: #f0fdfa; border-top: 2px solid #0f9d9d; color: #0f172a; font-weight: 900; }
+          tfoot td { background: #f0fdfa; border-top: 2px solid ${escapeHtml(accentColor)}; color: #0f172a; font-weight: 900; }
           tfoot td:last-child { background: #d9f7f3; color: #0f172a; }
           .foot { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-top: 28px; border-top: 1px dashed #94a3b8; padding-top: 14px; color: #475569; font-size: 12px; }
           .sign { color: #0f172a; font-weight: 900; text-align: center; min-width: 190px; padding-top: 28px; border-top: 1px solid #64748b; }
@@ -470,9 +447,9 @@ const printServiceInvoice = ({
             <div>
               <div class="clinic-title">
                 <img src="${escapeHtml(logoUrl)}" alt="Clinic logo" />
-                <h1>${escapeHtml(clinicName)} ${type === "pharmacy" ? "Pharmacy" : "Diagnostics"}</h1>
+                <h1>${escapeHtml(headerTitle)} ${type === "pharmacy" ? "Pharmacy" : "Diagnostics"}</h1>
               </div>
-              <p>${escapeHtml([clinicPhone, clinicEmail].filter(Boolean).join(" | ") || "Clinic Billing")}</p>
+              <p>${escapeHtml([headerSubtitle, clinicPhone, clinicEmail].filter(Boolean).join(" | "))}</p>
               <p>GSTIN: 37AAATC0000Z1Z0</p>
             </div>
             <div class="badge">
@@ -542,7 +519,7 @@ const printServiceInvoice = ({
             </tfoot>
           </table>
           <section class="foot">
-            <p>${type === "pharmacy" ? "Goods once sold are not to be returned." : "Diagnostic services are billed as per selected tests."}<br />Print on: ${escapeHtml(invoiceDate)}</p>
+            <p>${escapeHtml(footerNote)}<br />Print on: ${escapeHtml(invoiceDate)}</p>
             <div class="sign">Authorized Signature</div>
           </section>
         </main>
@@ -1226,6 +1203,8 @@ function ReceptionBilling() {
 
   const [billingMode, setBillingMode] = useState(getInitialBillingMode);
   const [diagnosticRows, setDiagnosticRows] = useState([]);
+  const [labMasterPriceList, setLabMasterPriceList] = useState([]);
+  const [labMasterLoading, setLabMasterLoading] = useState(false);
   const [pharmacyRows, setPharmacyRows] = useState([]);
   const [recentServiceBills, setRecentServiceBills] = useState(() => readRecentServiceBills());
   const [editingBill, setEditingBill] = useState(null);
@@ -1348,6 +1327,45 @@ function ReceptionBilling() {
     setServiceSearch("");
   }, [billingMode]);
 
+  useEffect(() => {
+    let isActive = true;
+    setLabMasterLoading(true);
+
+    const loadLabMasterTests = async () => {
+      try {
+        return await fetchLabMasterTests();
+      } catch (primaryError) {
+        console.warn("Unable to load lab master with shared helper.", primaryError);
+        const data = await requestJson("Lab/master");
+        return normalizeLabTests(data);
+      }
+    };
+
+    loadLabMasterTests()
+      .then((tests) => {
+        if (!isActive) return;
+        setLabMasterPriceList(
+          tests.map((test) => ({
+            ...test,
+            diagnosis: test.diagnosis || test.category || "Lab",
+            item: getPriceListItemName(test),
+            price: Number(test.price) || 0,
+          })).filter((test) => test.item)
+        );
+      })
+      .catch((err) => {
+        console.warn("Unable to load lab master tests.", err);
+        if (isActive) setLabMasterPriceList([]);
+      })
+      .finally(() => {
+        if (isActive) setLabMasterLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
   const clearMessageTimer = () => {
     if (messageTimer.current) {
       window.clearTimeout(messageTimer.current);
@@ -1375,11 +1393,43 @@ function ReceptionBilling() {
     );
   }, [appointments, form.appointmentId]);
 
+  useEffect(() => {
+    if (billingMode !== "diagnostic" || !selectedAppointment || !labMasterPriceList.length) return;
+
+    const pendingRequest = getPendingDiagnosticRequest({
+      appointmentId: getAppointmentId(selectedAppointment),
+      patientId: getAppointmentPatientId(selectedAppointment),
+      patientName: getAppointmentPatientName(selectedAppointment),
+    });
+    const requestedTests = [
+      ...splitDiagnosticTests(readAppointmentDiagnosticTests(selectedAppointment)),
+      ...(Array.isArray(pendingRequest?.tests) ? pendingRequest.tests : splitDiagnosticTests(pendingRequest?.tests)),
+    ];
+    if (!requestedTests.length) return;
+
+    const diagnosis = readAppointmentDiagnosis(selectedAppointment) || pendingRequest?.diagnosis || "Lab";
+    setDiagnosticRows((rows) => {
+      const existing = new Set(rows.map((row) => String(row.item || "").trim().toLowerCase()));
+      const nextRows = requestedTests
+        .map((testName) => {
+          const matched = labMasterPriceList.find(
+            (test) => getPriceListItemName(test).toLowerCase() === String(testName).trim().toLowerCase()
+          );
+          if (!matched || existing.has(String(matched.item || "").trim().toLowerCase())) return null;
+          existing.add(String(matched.item || "").trim().toLowerCase());
+          return createBillingRow([{ ...matched, diagnosis: matched.diagnosis || diagnosis }]);
+        })
+        .filter(Boolean);
+
+      return nextRows.length ? [...rows, ...nextRows] : rows;
+    });
+  }, [billingMode, labMasterPriceList, selectedAppointment]);
+
   const medicineCharges = Number(form.medicineCharges || 0);
   const labCharges = Number(form.labCharges || 0);
   const total = medicineCharges + labCharges;
   const activeServiceRows = billingMode === "pharmacy" ? pharmacyRows : diagnosticRows;
-  const activePriceList = billingMode === "pharmacy" ? PHARMACY_PRICE_LIST : DIAGNOSTIC_PRICE_LIST;
+  const activePriceList = billingMode === "pharmacy" ? PHARMACY_PRICE_LIST : labMasterPriceList;
   const serviceDisplayRows = activeServiceRows.map((row) => ({
     ...row,
     quantity: billingMode === "pharmacy" ? Number(row.quantity) || 1 : 1,
@@ -1454,11 +1504,16 @@ function ReceptionBilling() {
   const buildServiceBillingPayload = (details) => {
     const isPharmacy = details.type === "pharmacy";
     const serviceItems = details.rows.map((row) => ({
+      labTestId: row.id || row.testId || row.labTestId || "",
+      LabTestId: row.id || row.testId || row.labTestId || "",
       diagnosis: row.diagnosis,
       item: row.item,
+      testName: row.item,
+      TestName: row.item,
       name: row.item,
       quantity: Number(row.quantity) || 1,
       unitPrice: Number(row.unitPrice) || 0,
+      price: Number(row.unitPrice) || 0,
       amount: (Number(row.unitPrice) || 0) * (Number(row.quantity) || 1),
     }));
 
@@ -1600,6 +1655,13 @@ function ReceptionBilling() {
       setRecentServiceBills((prev) =>
         mergeRecentServiceBills([invoiceShape], storeRecentServiceBill(invoiceShape), prev)
       );
+      if (details.type === "diagnostic") {
+        clearPendingDiagnosticRequest({
+          appointmentId: details.appointmentId,
+          patientId: details.patientId,
+          patientName: details.patientName,
+        });
+      }
       setEditingBill(null);
       showMessage(`${billingMode === "pharmacy" ? "Pharmacy" : "Diagnostic test"} bill ${canUpdate ? "updated" : "generated"} successfully`, "success", { autoHide: true });
       printServiceInvoice({ ...details, invoiceNo: invoiceShape.invoiceNo, autoPrint });
@@ -1834,10 +1896,10 @@ function ReceptionBilling() {
 
   const addSelectedServiceItem = (value) => {
     const normalizedValue = String(value || "").trim().toLowerCase();
-    const matched =
+      const matched =
       activePriceList.find(
         (item) =>
-          String(item.item || "").trim().toLowerCase() === normalizedValue ||
+          getPriceListItemName(item).toLowerCase() === normalizedValue ||
           String(item.diagnosis || "").trim().toLowerCase() === normalizedValue
       ) || null;
 
@@ -1863,6 +1925,14 @@ function ReceptionBilling() {
     const quantity = Math.max(1, Number.parseInt(value, 10) || 1);
     setPharmacyRows((rows) =>
       rows.map((row) => (row.id === rowId ? { ...row, quantity } : row))
+    );
+  };
+
+  const updateServiceUnitPrice = (rowId, value) => {
+    const amount = Math.max(0, Number(value) || 0);
+    const setter = billingMode === "pharmacy" ? setPharmacyRows : setDiagnosticRows;
+    setter((rows) =>
+      rows.map((row) => (row.id === rowId ? { ...row, unitPrice: amount, price: amount } : row))
     );
   };
 
@@ -2036,7 +2106,12 @@ function ReceptionBilling() {
     const paymentMode = activeInvoice.paymentMode || form.paymentMode || "-";
     const appointmentId = activeInvoice.appointmentId || form.appointmentId || "-";
     const invoiceDate = formatInvoiceDate(getInvoiceDate(activeInvoice));
-    const logoUrl = getClinicWatermarkSvg(clinicName);
+    const branding = getClinicInvoiceBranding({ clinicId, clinicName });
+    const logoUrl = branding.logoUrl;
+    const headerTitle = branding.headerTitle || clinicName;
+    const headerSubtitle = branding.headerSubtitle || "Clinic Management System";
+    const footerNote = branding.footerNote;
+    const accentColor = branding.accentColor || "#12a4a1";
     const invoiceAmounts = getInvoiceAmounts({
       invoice: activeInvoice,
       form,
@@ -2102,7 +2177,7 @@ function ReceptionBilling() {
               justify-content: space-between;
               gap: 22px;
               padding-bottom: 24px;
-              border-bottom: 3px solid #12a4a1;
+              border-bottom: 3px solid ${escapeHtml(accentColor)};
             }
             .brand {
               display: flex;
@@ -2280,8 +2355,8 @@ function ReceptionBilling() {
               <div class="brand">
                 <img src="${escapeHtml(logoUrl)}" alt="Clinic logo" />
                 <div>
-                  <h1>${escapeHtml(clinicName)}</h1>
-                  <p>${escapeHtml([clinicId ? `Clinic ID: ${clinicId}` : "", clinicPhone, clinicEmail].filter(Boolean).join(" | ") || "Clinic Management System")}</p>
+                  <h1>${escapeHtml(headerTitle)}</h1>
+                  <p>${escapeHtml([headerSubtitle, clinicId ? `Clinic ID: ${clinicId}` : "", clinicPhone, clinicEmail].filter(Boolean).join(" | "))}</p>
                 </div>
               </div>
               <div class="invoice-id">
@@ -2330,7 +2405,7 @@ function ReceptionBilling() {
             </div>
 
             <section class="footer">
-              <p class="foot-note">Thank you for choosing ${escapeHtml(clinicName)}. This is a computer-generated invoice.</p>
+              <p class="foot-note">${escapeHtml(footerNote)}</p>
               <div class="signature">Authorized Signature</div>
             </section>
           </main>
@@ -2486,14 +2561,23 @@ function ReceptionBilling() {
               <input
                 value={serviceSearch}
                 list={`${billingMode}-billing-items`}
-                placeholder="Select"
+                placeholder={
+                  billingMode === "diagnostic"
+                    ? activePriceList.length
+                      ? "Search or select lab test"
+                      : labMasterLoading
+                        ? "Loading lab tests..."
+                        : "No lab file tests available"
+                    : "Search or select medicine"
+                }
                 onChange={(event) => updateServiceSearch(event.target.value)}
+                disabled={billingMode === "diagnostic" && labMasterLoading && !activePriceList.length}
               />
             </label>
             <div className="rc-service-table">
               <datalist id={`${billingMode}-billing-items`}>
-                {activePriceList.map((item) => (
-                  <option key={`${item.diagnosis}-${item.item}`} value={item.item} />
+                {activePriceList.map((item, index) => (
+                  <option key={`${item.diagnosis}-${getPriceListItemKey(item, index)}`} value={getPriceListItemName(item)} />
                 ))}
               </datalist>
               <div className={`rc-service-grid rc-service-grid-head ${billingMode === "diagnostic" ? "is-diagnostic" : ""}`}>
@@ -2524,7 +2608,15 @@ function ReceptionBilling() {
                         aria-label={`Quantity for ${row.item}`}
                       />
                     ) : null}
-                    <strong>{formatCurrency(lineAmount)}</strong>
+                    <input
+                      className="rc-service-amount-input"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={Number(row.unitPrice) || 0}
+                      onChange={(event) => updateServiceUnitPrice(row.id, event.target.value)}
+                      aria-label={`Amount for ${row.item}`}
+                    />
                     <strong>{formatCurrency(lineCgst)}</strong>
                     <strong>{formatCurrency(lineSgst)}</strong>
                     <strong>{formatCurrency(lineTotal)}</strong>

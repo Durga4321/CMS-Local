@@ -10,10 +10,12 @@ import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
 import { validateStrongPassword } from "../../utils/validation";
 import { formatIndianCurrency, formatTitleCase } from "../../utils/format";
 import { PATIENT_PORTAL_OP_BILLS_KEY } from "../../utils/billingRevenue";
+import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 import {
   DUPLICATE_APPOINTMENT_MESSAGE,
   hasDuplicateAppointmentForPatientDoctorDate,
 } from "../../utils/appointmentDuplicateValidation";
+import { isDoctorBranchLeaveDate } from "../../utils/doctorBranchLeave";
 
 const getNestedValue = (record, path) => {
   if (record == null) return undefined;
@@ -23,27 +25,6 @@ const getNestedValue = (record, path) => {
 
 const readFirst = (record, keys) =>
   keys.reduce((value, key) => value || getNestedValue(record, key), "") || "";
-
-const getClinicWatermarkSvg = (clinicName = "Clinic") => {
-  const name = String(clinicName || "").toLowerCase();
-  const fallbackText = String(clinicName || "CLINIC")
-    .replace(/[^a-z0-9\s]/gi, " ")
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
-  const logo = name.includes("dental")
-    ? { text: "", color: "#0f8f8d", path: '<path d="M145 79c35-15 68-8 92 5 25 14 55 14 80 0 24-13 57-20 92-5 64 28 91 95 70 171l-45 170c-13 49-37 137-88 137-36 0-38-43-49-90-5-23-13-40-21-40s-16 17-21 40c-11 47-13 90-49 90-51 0-75-88-88-137L73 250C52 174 79 107 145 79Z" fill="none" stroke="currentColor" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>' }
-    : name.includes("pragathi")
-      ? { text: "PRAGATHI", color: "#00a86b", path: '<path d="M357 79c-93 0-168 36-213 96-43 57-55 132-30 200 64 24 139 11 196-32 60-45 96-120 96-213 0-28-22-51-49-51Z" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M263 173c-64 27-113 75-146 143" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round"/>' }
-      : name.includes("sai ram") || name.includes("primo") || name.includes("pirnav")
-        ? { text: name.includes("sai ram") ? "SAI RAM" : name.includes("primo") ? "PRIMO" : "PIRNAV", color: "#d97706", path: '<circle cx="240" cy="238" r="72" fill="none" stroke="currentColor" stroke-width="24"/><path d="M240 58v62M240 356v62M60 238h62M358 238h62M113 111l44 44M323 321l44 44M367 111l-44 44M157 321l-44 44" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round"/>' }
-        : { text: name.includes("vims") ? "VIMS" : name.includes("nri") ? "NC" : fallbackText || "CL", color: "#00a884", path: '<path d="M214 86h52c11 0 20 9 20 20v88h88c11 0 20 9 20 20v52c0 11-9 20-20 20h-88v88c0 11-9 20-20 20h-52c-11 0-20-9-20-20v-88h-88c-11 0-20-9-20-20v-52c0-11 9-20 20-20h88v-88c0-11 9-20 20-20Z" fill="none" stroke="currentColor" stroke-width="24" stroke-linejoin="round"/>' };
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 500" color="${logo.color}"><rect x="72" y="44" width="336" height="336" rx="72" fill="#f0fdfa" stroke="#7dd3fc" stroke-width="12"/><g>${logo.path}</g>${logo.text ? `<text x="240" y="455" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="50" font-weight="900" fill="#075eea">${logo.text}</text>` : ""}</svg>`;
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-};
 
 const getTokenSequence = (appointment = {}) => {
   const token = readFirst(appointment, ["tokenNumber", "TokenNumber", "token", "tokenNo", "token_number"]);
@@ -1785,6 +1766,10 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
 
       try {
         const branchId = selectedBranch?.id || selectedBranch?.branchId;
+        if (isDoctorBranchLeaveDate(doctorId, branchId, selectedDate)) {
+          setSlots([]);
+          return;
+        }
         const params = new URLSearchParams({ date: selectedDate });
         if (branchId) params.set('branchId', String(branchId));
         const slotsUrl = patientApiUrl(PATIENT_API.doctorSlots, { doctorId });
@@ -2002,7 +1987,14 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
     const doctorName = readFirst(bill, ["doctorName", "doctor.name"]) || selectedDoctor?.name || "Doctor";
     const amount = Number(readFirst(bill, ["totalAmount", "grandTotal", "amount", "paidAmount"]) || paymentDetails.amount || 0);
     const clinicName = readFirst(bill, ["clinicName", "branchName", "clinic.name", "branch.name"]) || selectedBranch?.name || "CMS Health Care";
-    const watermarkUrl = getClinicWatermarkSvg(clinicName);
+    const clinicId = readFirst(bill, ["clinicId", "hospitalId", "clinic.id", "hospital.id"]) || selectedBranch?.clinicId || selectedBranch?.hospitalId || "";
+    const branding = getClinicInvoiceBranding({ clinicId, clinicName });
+    const watermarkUrl = branding.watermarkUrl;
+    const logoUrl = branding.logoUrl;
+    const headerTitle = branding.headerTitle || clinicName;
+    const headerSubtitle = branding.headerSubtitle;
+    const footerNote = branding.footerNote;
+    const accentColor = branding.accentColor || "#0f4d3a";
     const patientPhone = readFirst(patient || {}, ["phone", "phoneNumber", "mobile"]) || "-";
     const patientCode = readFirst(patient || {}, ["patientCode", "code", "id"]) || "-";
     const appointmentToken = readFirst(bill, ["tokenNumber", "appointment.tokenNumber"]) || createNextPatientToken(visits);
@@ -2024,16 +2016,16 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
     .header{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:start;border-bottom:1px solid #cbd5db;padding-bottom:16px}
     .clinic-title{display:flex;align-items:center;gap:12px;margin-bottom:6px}
     .clinic-title img{width:54px;height:54px;object-fit:contain;border-radius:12px}
-    .header-left h1{margin:0 0 6px;font-size:20px;letter-spacing:1px;color:#0f4d3a}
+    .header-left h1{margin:0 0 6px;font-size:20px;letter-spacing:1px;color:${escapeHtml(accentColor)}}
     .header-left p{margin:4px 0;font-size:12px;color:#334155}
-    .header-left .clinic-address{margin-top:8px;font-size:12px;color:#0f4d3a;font-weight:700}
+    .header-left .clinic-address{margin-top:8px;font-size:12px;color:${escapeHtml(accentColor)};font-weight:700}
     .header-right{border:1px solid #cbd5db;padding:14px;background:#f8fafb}
     .header-right div{display:flex;justify-content:space-between;padding:6px 0;font-size:12px}
     .header-right div:not(:last-child){border-bottom:1px solid #e2e8f0}
     .header-right b{color:#334155}
     .header-right span{font-weight:700;color:#102331}
     .header-right .status span{color:#047857}
-    .title{margin:18px 0 12px;text-align:center;font-size:16px;letter-spacing:1px;font-weight:700;color:#0f4d3a}
+    .title{margin:18px 0 12px;text-align:center;font-size:16px;letter-spacing:1px;font-weight:700;color:${escapeHtml(accentColor)}}
     .info-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
     .info-box{border:1px solid #cbd5db;border-radius:10px;background:#f8fafb;padding:14px}
     .info-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:12px}
@@ -2049,20 +2041,20 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
     .amount-words b{font-weight:700}
     .total-box{border:1px solid #cbd5db;border-radius:10px;padding:14px;background:#fff}
     .total-row{display:flex;justify-content:space-between;padding:8px 0;font-size:12px;border-bottom:1px solid #e2e8f0}
-    .total-row:last-child{border-bottom:0;font-weight:700;color:#0f4d3a}
-    .total-row.total span:first-child{color:#0f4d3a}
+    .total-row:last-child{border-bottom:0;font-weight:700;color:${escapeHtml(accentColor)}}
+    .total-row.total span:first-child{color:${escapeHtml(accentColor)}}
     .bottom{display:grid;grid-template-columns:1.5fr .85fr 1fr;gap:16px;margin-top:18px;align-items:start}
     .notes{border:1px solid #cbd5db;border-radius:10px;background:#f8fafb;padding:14px;font-size:11px;line-height:1.6}
     .token-group{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .token-box{border:1px solid #cbd5db;border-radius:50%;padding:18px;text-align:center;background:#fff}
     .token-box span{display:block;color:#334155;font-size:11px;margin-bottom:8px}
-    .token-box strong{display:block;font-size:24px;color:#0f4d3a}
+    .token-box strong{display:block;font-size:24px;color:${escapeHtml(accentColor)}}
     .signature{border:1px solid #cbd5db;border-radius:10px;padding:14px;text-align:center;background:#fff}
     .signature .line{height:1px;background:#334155;margin:0 auto 10px;width:70px}
     .signature span{display:block;font-size:12px;font-weight:700}
     .signature em{display:block;font-size:11px;color:#334155;margin-top:4px}
     .footer{margin-top:16px;text-align:center;font-size:11px;color:#334155}
-    .footer strong{display:block;margin-top:6px;color:#0f4d3a}
+    .footer strong{display:block;margin-top:6px;color:${escapeHtml(accentColor)}}
     @media print{body{background:#fff}.invoice{margin:0;border-color:#333}}@page{size:A4;margin:10mm}
   </style>
 </head>
@@ -2072,10 +2064,10 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
   <div class="header">
     <div class="header-left">
       <div class="clinic-title">
-        <img src="${escapeHtml(watermarkUrl)}" alt="Clinic logo" />
-        <h1>${escapeHtml(clinicName).toUpperCase()}</h1>
+        <img src="${escapeHtml(logoUrl)}" alt="Clinic logo" />
+        <h1>${escapeHtml(headerTitle).toUpperCase()}</h1>
       </div>
-      <p>Consultation and Patient Care Centre</p>
+      <p>${escapeHtml(headerSubtitle)}</p>
       <p class="clinic-address">Hyderabad, Telangana, India - 500063</p>
       <p>${escapeHtml(patientPhone)}</p>
     </div>
@@ -2134,7 +2126,7 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
     <div class="notes">
       <p>• Consultation charges only. Additional tests or medicines, if any, are billed separately.</p>
       <p>• Please retain this bill for your records.</p>
-      <p>• This is a computer-generated invoice.</p>
+    <p>• ${escapeHtml(footerNote)}</p>
     </div>
     <div class="token-group">
       <div class="token-box"><span>OP. No.</span><strong>${escapeHtml(paymentDetails.appointmentId)}</strong></div>
@@ -4404,6 +4396,12 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   };
 
   const getPrintableInvoiceHtml = (record, { autoPrint = true } = {}) => {
+    const escapeHtml = (value) => String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
     const invoiceNumberValue = invoiceNumber(record);
     const patientName = readFirst(record, ['patientName', 'patient.name', 'name', 'customerName']) || 'Patient';
     const doctorName = readFirst(record, ['doctorName', 'doctor.name', 'provider.name', 'physician']) || 'Doctor';
@@ -4415,12 +4413,23 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     const statusValue = paymentStatus(record) === 'paid' ? 'Paid' : 'Pending';
     const lineItems = getLineItems(record);
     const clinicName = readFirst(record, ['clinicName', 'hospitalName', 'branchName', 'clinic.name', 'hospital.name', 'branch.name']) || 'Clinic';
-    const watermarkUrl = getClinicWatermarkSvg(clinicName);
+    const clinicId = readFirst(record, ['clinicId', 'hospitalId', 'ClinicId', 'HospitalId', 'clinic.id', 'hospital.id']) || '';
+    const branchName = readFirst(record, ['branchName', 'BranchName', 'branch.name', 'Branch.Name']) || clinicName;
+    const clinicAddress = readFirst(record, ['clinicAddress', 'hospitalAddress', 'branchAddress', 'address', 'clinic.address', 'hospital.address', 'branch.address']) || '';
+    const clinicPhone = readFirst(record, ['clinicPhone', 'hospitalPhone', 'branchPhone', 'phone', 'clinic.phone', 'hospital.phone', 'branch.phone']) || '';
+    const clinicEmail = readFirst(record, ['clinicEmail', 'hospitalEmail', 'branchEmail', 'email', 'clinic.email', 'hospital.email', 'branch.email']) || '';
+    const branding = getClinicInvoiceBranding({ clinicId, clinicName });
+    const watermarkUrl = branding.watermarkUrl;
+    const logoUrl = branding.logoUrl;
+    const headerTitle = branding.headerTitle || clinicName;
+    const headerSubtitle = branding.headerSubtitle;
+    const footerNote = branding.footerNote;
+    const accentColor = branding.accentColor || "#111827";
 
     const lineRows = lineItems.length
       ? lineItems.map((item) => `
           <tr>
-            <td>${item.label}</td>
+            <td>${escapeHtml(item.label)}</td>
             <td style="text-align:right;">${formatAmount(item.amount)}</td>
           </tr>
         `).join('')
@@ -4437,61 +4446,76 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
           <meta charset="utf-8" />
           <title>Invoice ${invoiceNumberValue}</title>
           <style>
-            body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f5f7fb; color: #0f172a; }
-            .invoice { max-width: 780px; margin: 0 auto; padding: 32px; background: #ffffff; position: relative; overflow: hidden; }
+            * { box-sizing: border-box; }
+            body { margin: 0; padding: 18px; font-family: Arial, sans-serif; background: #eef2f7; color: #0f172a; }
+            .invoice { max-width: 820px; margin: 0 auto; padding: 28px; background: #ffffff; border: 1px solid #d9e2ec; border-radius: 10px; position: relative; overflow: hidden; }
             .invoice > *:not(.watermark) { position: relative; z-index: 1; }
             .watermark { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
-            .watermark img { width: 410px; height: 410px; object-fit: contain; opacity: .18; filter: saturate(1.35) contrast(1.08); }
-            .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
+            .watermark img { width: 260px; height: 260px; object-fit: contain; opacity: .055; filter: saturate(1.1) contrast(1.02); }
+            .header { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 22px; align-items: flex-start; padding-bottom: 18px; border-bottom: 2px solid ${escapeHtml(accentColor)}; margin-bottom: 22px; }
             .clinic-title { display: flex; align-items: center; gap: 12px; }
-            .clinic-title img { width: 54px; height: 54px; object-fit: contain; border-radius: 12px; }
-            .header h1 { margin: 0; font-size: 24px; }
-            .meta { text-align: right; }
-            .meta span { display: block; margin-bottom: 4px; color: #475569; font-size: 13px; }
+            .clinic-title img { width: 58px; height: 58px; object-fit: contain; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; padding: 4px; }
+            .header h1 { margin: 0; font-size: 24px; line-height: 1.15; color: #0f172a; }
+            .clinic-subtitle { margin: 5px 0 0; color: #475569; font-size: 13px; }
+            .clinic-details { margin: 10px 0 0; display: grid; gap: 3px; color: #334155; font-size: 12px; line-height: 1.35; }
+            .meta { text-align: right; border: 1px solid #dbe4ee; border-radius: 8px; padding: 12px; background: #f8fafc; }
+            .meta h2 { margin: 0 0 10px; font-size: 15px; color: ${escapeHtml(accentColor)}; letter-spacing: .5px; text-transform: uppercase; }
+            .meta span { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; color: #475569; font-size: 12px; }
+            .meta b { color: #0f172a; font-weight: 700; }
             .section { margin-bottom: 24px; }
             .section h2 { margin: 0 0 12px; font-size: 14px; color: #0f172a; letter-spacing: .8px; text-transform: uppercase; }
             .info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-            .info-card { padding: 14px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; }
-            .info-card strong { display: block; font-size: 15px; margin-top: 6px; }
+            .info-card { padding: 14px 16px; background: #f8fafc; border: 1px solid #dbe4ee; border-radius: 8px; display: grid; gap: 6px; }
+            .info-card strong { display: block; font-size: 14px; color: #0f172a; }
+            .info-card span { display: block; color: #334155; font-size: 13px; }
             table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-            th, td { padding: 14px 12px; border-bottom: 1px solid #e2e8f0; }
-            th { text-align: left; background: #111827; color: white; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+            th, td { padding: 12px; border: 1px solid #dbe4ee; font-size: 13px; }
+            th { text-align: left; background: ${escapeHtml(accentColor)}; color: white; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
             td:last-child { text-align: right; }
-            .summary { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 18px; background: #111827; color: #ffffff; border-radius: 12px; }
+            .summary { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding: 16px 18px; background: ${escapeHtml(accentColor)}; color: #ffffff; border-radius: 8px; }
             .summary div { font-size: 16px; }
-            .footer { margin-top: 32px; font-size: 12px; color: #475569; }
+            .footer { margin-top: 26px; padding-top: 14px; border-top: 1px solid #dbe4ee; font-size: 12px; color: #475569; }
             @media print {
-              body { background: #ffffff; }
-              .invoice { box-shadow: none; margin: 0; }
+              body { background: #ffffff; padding: 0; }
+              .invoice { box-shadow: none; margin: 0; border-radius: 0; border-color: #94a3b8; }
             }
+            @page { size: A4; margin: 10mm; }
           </style>
         </head>
         <body>
           <div class="invoice">
-            <div class="watermark"><img src="${watermarkUrl}" alt="" /></div>
+            <div class="watermark"><img src="${escapeHtml(watermarkUrl)}" alt="" /></div>
             <div class="header">
               <div>
                 <div class="clinic-title">
-                  <img src="${watermarkUrl}" alt="Clinic logo" />
-                  <h1>${clinicName}</h1>
+                  <img src="${escapeHtml(logoUrl)}" alt="Clinic logo" />
+                  <h1>${escapeHtml(headerTitle)}</h1>
                 </div>
-                <p style="margin:4px 0 0;color:#475569;">${invoiceNumberValue}</p>
+                <p class="clinic-subtitle">${escapeHtml(headerSubtitle)}</p>
+                <div class="clinic-details">
+                  <span><b>Branch:</b> ${escapeHtml(branchName)}</span>
+                  ${clinicAddress ? `<span>${escapeHtml(clinicAddress)}</span>` : ""}
+                  ${clinicPhone ? `<span>Phone: ${escapeHtml(clinicPhone)}</span>` : ""}
+                  ${clinicEmail ? `<span>Email: ${escapeHtml(clinicEmail)}</span>` : ""}
+                </div>
               </div>
               <div class="meta">
-                <span>Date: ${billDate}</span>
-                <span>Status: ${statusValue}</span>
-                <span>Payment: ${paymentModeValue}</span>
+                <h2>Invoice</h2>
+                <span><b>No</b> ${escapeHtml(invoiceNumberValue)}</span>
+                <span><b>Date</b> ${escapeHtml(billDate)}</span>
+                <span><b>Status</b> ${escapeHtml(statusValue)}</span>
+                <span><b>Payment</b> ${escapeHtml(paymentModeValue)}</span>
               </div>
             </div>
             <div class="info-grid">
               <div class="info-card">
                 <strong>Patient</strong>
-                <span>${patientName}</span>
-                <span>Appointment: ${appointmentNumber}</span>
+                <span>${escapeHtml(patientName)}</span>
+                <span>Appointment: ${escapeHtml(appointmentNumber)}</span>
               </div>
               <div class="info-card">
                 <strong>Doctor</strong>
-                <span>${doctorName}</span>
+                <span>${escapeHtml(doctorName)}</span>
               </div>
             </div>
             <div class="section">
@@ -4508,7 +4532,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
               <div>${total}</div>
             </div>
             <div class="footer">
-              <p>Thank you for choosing our clinic. Please retain this invoice for your records.</p>
+              <p>${footerNote}</p>
             </div>
           </div>
           <script>
@@ -4520,12 +4544,6 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
 
   const viewInvoice = async (record, directUrl = '') => {
     const detailedRecord = directUrl ? record : await fetchPatientBillDetails(record);
-    const url = directUrl || (await getInvoiceSourceUrl(detailedRecord));
-    if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       setDownloadError('Please allow popups to view the invoice.');
@@ -4537,12 +4555,6 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
 
   const printInvoice = async (record) => {
     const detailedRecord = await fetchPatientBillDetails(record);
-    const directUrl = await getInvoiceSourceUrl(detailedRecord);
-    if (directUrl) {
-      window.open(directUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       setDownloadError('Please allow popups to view the invoice print preview.');
@@ -4553,43 +4565,19 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   };
 
   const downloadInvoice = async (record, directUrl = '', filename = '') => {
+    void filename;
     const detailedRecord = directUrl ? record : await fetchPatientBillDetails(record);
-    const url = directUrl || (await getInvoiceSourceUrl(detailedRecord));
-    if (!url) {
-      setDownloadStatus('Invoice is being prepared for PDF download.');
-      setDownloadError('');
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) {
-        setDownloadStatus('');
-        setDownloadError('Please allow popups to download the invoice PDF.');
-        return;
-      }
-      printWindow.document.write(getPrintableInvoiceHtml(detailedRecord, { autoPrint: true }));
-      printWindow.document.close();
+    setDownloadStatus('Invoice is being prepared for PDF download.');
+    setDownloadError('');
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      setDownloadStatus('');
+      setDownloadError('Please allow popups to download the invoice PDF.');
       return;
     }
-
-    setDownloadStatus('');
-    setDownloadError('');
-
-    try {
-      const response = await fetch(url, { headers: getApiHeaders() });
-      if (!response.ok) throw new Error('Unable to download invoice.');
-      const blob = await response.blob();
-      const downloadName = filename || url.split('/').pop().split('?')[0] || 'invoice.pdf';
-      const objectUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = objectUrl;
-      anchor.download = downloadName;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(objectUrl);
-      setDownloadStatus('Invoice downloaded successfully.');
-    } catch (error) {
-      setDownloadError('Unable to download invoice. Please try again.');
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
+    printWindow.document.write(getPrintableInvoiceHtml(detailedRecord, { autoPrint: true }));
+    printWindow.document.close();
+    window.setTimeout(() => setDownloadStatus(''), 1200);
   };
 
   const isBillPaid = (record) => {
@@ -4708,7 +4696,6 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   const latestTotalTax = latestCgstAmount + latestSgstAmount;
   const latestNetAmount = totalAmount(latestBill);
   const latestAmountDue = dueAmount(latestBill);
-  const latestWatermarkUrl = getClinicWatermarkSvg(latestClinicName);
   const latestSummaryLineItems = [
     { label: 'Consultation Fee', amount: latestConsultationFee },
     { label: 'Lab Charges', amount: latestLabCharges },

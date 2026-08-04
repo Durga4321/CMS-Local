@@ -121,7 +121,9 @@ function UserProfilePage({ roleType = "admin" }) {
         localStorage.getItem("token") ||
         localStorage.getItem("adminToken") ||
         localStorage.getItem("doctorToken") ||
-        localStorage.getItem("receptionistToken");
+        localStorage.getItem("receptionistToken") ||
+        localStorage.getItem("nurseToken") ||
+        localStorage.getItem("labToken");
       const response = await fetch(apiUrl("Auth/change-password"), {
         method: "POST",
         headers: {

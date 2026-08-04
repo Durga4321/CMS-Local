@@ -26,6 +26,7 @@ import {
   CalendarCheck,
   IndianRupee,
   UserPlus,
+  UserCog,
   UserRoundCheck,
 } from "lucide-react";
 
@@ -52,6 +53,7 @@ const API = apiUrl("Dashboard");
 const APPOINTMENT_API = apiUrl("Appointment");
 const RECEPTIONIST_API = apiUrl("Receptionist");
 const BILLING_API = apiUrl("Billing");
+const STAFF_API = apiUrl("Staff");
 const REQUEST_TIMEOUT_MS = 3500;
 
 const getAdminToken = () =>
@@ -119,7 +121,23 @@ const parseList = (data) => {
   if (Array.isArray(data?.items)) return data.items;
   if (Array.isArray(data?.result)) return data.result;
   if (Array.isArray(data?.appointments)) return data.appointments;
+  if (Array.isArray(data?.nurses)) return data.nurses;
+  if (Array.isArray(data?.Nurses)) return data.Nurses;
+  if (Array.isArray(data?.staff)) return data.staff;
+  if (Array.isArray(data?.Staff)) return data.Staff;
   return [];
+};
+
+const isNurseRecord = (record = {}) => {
+  const role = String(
+    pickValue(record, ["role", "Role", "staffRole", "StaffRole", "userRole", "UserRole"], "")
+  ).trim().toLowerCase();
+
+  if (role) return role === "nurse" || role.includes("nurse");
+
+  return Boolean(
+    pickValue(record, ["nurseId", "NurseId"], "")
+  );
 };
 
 const formatToday = () => {
@@ -311,6 +329,18 @@ function Dashboard() {
             ],
             null
           );
+        const nurseCount =
+          pickValue(
+            merged,
+            [
+              "totalNurses",
+              "nurseCount",
+              "nurses",
+              "nurseTotal",
+              "nurse_count",
+            ],
+            null
+          );
 
         Promise.allSettled([
           fetchWithTimeout(`${API}/ClincData`, { headers }, 2500),
@@ -319,7 +349,16 @@ function Dashboard() {
           receptionistCount === null || receptionistCount === 0
             ? fetchWithTimeout(RECEPTIONIST_API, { headers }, 2500)
             : Promise.resolve(null),
-        ]).then(async ([clinicResult, appointmentResult, billingResult, receptionistResult]) => {
+          nurseCount === null || nurseCount === 0
+            ? fetchWithTimeout(
+                storedHospitalId
+                  ? `${STAFF_API}?role=Nurse&hospitalId=${encodeURIComponent(storedHospitalId)}`
+                  : `${STAFF_API}?role=Nurse`,
+                { headers },
+                2500
+              )
+            : Promise.resolve(null),
+        ]).then(async ([clinicResult, appointmentResult, billingResult, receptionistResult, nurseResult]) => {
           let nextMerged = { ...data };
           let appointmentData = [];
 
@@ -374,6 +413,16 @@ function Dashboard() {
           nextMerged = {
             ...nextMerged,
             receptionistCount: receptionists.length,
+          };
+        }
+
+        if (nurseResult.status === "fulfilled" && nurseResult.value?.ok) {
+          const nurseData = await nurseResult.value.json().catch(() => []);
+          const nurseRows = parseList(nurseData);
+          const nurses = nurseRows.filter(isNurseRecord);
+          nextMerged = {
+            ...nextMerged,
+            nurseCount: nurses.length || nurseRows.length,
           };
         }
 
@@ -605,6 +654,29 @@ function Dashboard() {
         "green",
       route:
         "/receptionists",
+    },
+    {
+      label:
+        "Total Nurses",
+      value:
+        formatNumber(
+          getDashboardMetricValue(
+            [
+              "totalNurses",
+              "nurseCount",
+              "nurses",
+              "nurseTotal",
+              "nurse_count",
+            ],
+            0
+          )
+        ),
+      icon:
+        UserCog,
+      color:
+        "amber",
+      route:
+        "/nurses",
     },
     {
       label:

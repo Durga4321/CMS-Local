@@ -405,6 +405,15 @@
   object-fit: cover;
 }
 
+.receptionists-image-filename {
+  max-width: 260px;
+  color: #64748b;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .receptionists-image-button,
 .receptionists-image-remove {
   position: absolute;

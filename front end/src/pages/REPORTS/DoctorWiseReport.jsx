@@ -168,6 +168,8 @@ import {
   readLocalRevenueBillingRows,
 } from "../../utils/billingRevenue";
 import { formatIndianCurrency } from "../../utils/format";
+import { getClinicDisplayName } from "../../utils/clinicDisplay";
+import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 
 // ================= APIs =================
 
@@ -402,6 +404,15 @@ function DoctorWiseReport() {
       minute: "2-digit",
       hour12: true,
     });
+    const clinicName = getClinicDisplayName(
+      {
+        hospitalName: localStorage.getItem("hospitalName") || localStorage.getItem("clinicName"),
+        clinicName: localStorage.getItem("clinicName"),
+      },
+      "Clinic"
+    );
+    const clinicId = localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "";
+    const branding = getClinicInvoiceBranding({ clinicId, clinicName });
     const selectedDoctor = doctors.find((doctor) => getDoctorId(doctor) === String(doctorId));
     const totals = data.reduce(
       (sum, row) => ({
@@ -439,6 +450,8 @@ function DoctorWiseReport() {
             body { margin: 0; background: #f5f7fb; color: #111827; font-family: Arial, sans-serif; }
             main { max-width: 1100px; margin: 0 auto; background: #fff; min-height: 100vh; padding: 32px; box-sizing: border-box; }
             header { display: flex; justify-content: space-between; gap: 20px; border-bottom: 2px solid #0f9d9d; padding-bottom: 18px; }
+            .brand { display: flex; align-items: center; gap: 14px; }
+            .brand img { width: 62px; height: 62px; object-fit: contain; }
             h1 { margin: 0 0 8px; font-size: 28px; }
             p { margin: 4px 0; color: #475569; }
             .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 22px 0; }
@@ -457,9 +470,13 @@ function DoctorWiseReport() {
         <body>
           <main>
             <header>
-              <div>
-                <h1>Doctor-wise OP Revenue Report</h1>
+              <div class="brand">
+                <img src="${branding.logoUrl}" alt="Clinic logo" />
+                <div>
+                <h1>${branding.headerTitle}</h1>
                 <p>Monthly doctor revenue based on paid OP bills.</p>
+                <p>Doctor-wise OP Revenue Report</p>
+                </div>
               </div>
               <div>
                 <p>Generated: ${generatedAt}</p>

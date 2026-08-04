@@ -98,11 +98,6 @@ const isUnreadNotification = (notification = {}) =>
 const getStatusLabel = (notification = {}) =>
   isReadNotification(notification) ? "Read" : "Unread";
 
-const getAudienceLabel = (notification = {}) => {
-  const target = String(notification.targetUsers || "").toLowerCase();
-  return target.includes("admin") || target.includes("user") ? "Active Admins" : "Active Admins";
-};
-
 const isVisibleNotification = (notification = {}) =>
   isSentNotification(notification) || isReadNotification(notification) || isUnreadNotification(notification);
 
@@ -293,7 +288,6 @@ function NotificationPopup({ isSuperAdmin = false }) {
                     <div>
                       <b>{item.title}</b>
                       <p>{item.message}</p>
-                      <small>{getAudienceLabel(item)}</small>
                     </div>
                     <span
                       className={`notification-status ${

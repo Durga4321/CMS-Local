@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Cross, Eye, Leaf, Pencil, Phone, Plus, Sun, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
+import { Eye, Pencil, Phone, Plus, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
@@ -22,6 +22,7 @@ import {
   validateMobile,
 } from "../../../utils/validation";
 import { validateUniqueMobileNumber } from "../../../utils/mobileUniqueness";
+import { getClinicInvoiceBranding } from "../../../utils/clinicBranding";
 
 const emptyAdmin = {
   fullName: "",
@@ -120,27 +121,6 @@ const mergeAdmins = (adminRows = [], userRows = []) => {
 const getInitials = (value = "") => {
   const parts = String(value || "Admin").trim().split(/\s+/).filter(Boolean);
   return (parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : parts[0]?.slice(0, 2) || "A").toUpperCase();
-};
-
-const ToothLogo = () => (
-  <svg className="sa-clinic-tooth-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path
-      d="M7.45 3.8c1.2-.52 2.35-.28 3.18.17.86.47 1.88.47 2.74 0 .83-.45 1.98-.69 3.18-.17 2.2.95 3.13 3.25 2.43 5.87l-1.56 5.84c-.45 1.69-1.28 4.72-3.03 4.72-1.24 0-1.31-1.49-1.68-3.08-.18-.78-.43-1.37-.71-1.37s-.53.59-.71 1.37c-.37 1.59-.44 3.08-1.68 3.08-1.75 0-2.58-3.03-3.03-4.72L5.02 9.67C4.32 7.05 5.25 4.75 7.45 3.8Z"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const getClinicLogo = (clinicName = "") => {
-  const name = String(clinicName).toLowerCase();
-  if (name.includes("dental")) return { type: "tooth", tone: "dental" };
-  if (name.includes("pragathi")) return { type: "icon", icon: Leaf, tone: "green" };
-  if (name.includes("sai ram")) return { type: "icon", icon: Sun, tone: "sky" };
-  if (name.includes("primo") || name.includes("pirnav")) return { type: "icon", icon: Sun, tone: "amber" };
-  return { type: "icon", icon: Cross, tone: "emerald" };
 };
 
 function Admins() {
@@ -532,12 +512,14 @@ function Admins() {
               label: "Assigned Clinic",
               width: "minmax(160px, 0.8fr)",
               render: (admin) => {
-                const logo = getClinicLogo(admin.assignedClinic);
-                const LogoIcon = logo.icon;
+                const branding = getClinicInvoiceBranding({
+                  clinicId: getAdminClinicId(admin, clinics),
+                  clinicName: getAdminClinicName(admin, clinics),
+                });
                 return (
                   <span className="sa-admin-clinic-cell">
-                    <span className={`sa-admin-clinic-logo sa-admin-clinic-logo--${logo.tone}`}>
-                      {logo.type === "tooth" ? <ToothLogo /> : <LogoIcon size={15} />}
+                    <span className="sa-admin-clinic-logo sa-admin-clinic-logo--emerald">
+                      <img src={branding.logoUrl} alt="" />
                     </span>
                     <span>{admin.assignedClinic || "-"}</span>
                   </span>

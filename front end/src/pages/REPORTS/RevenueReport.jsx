@@ -255,6 +255,8 @@ import {
   getStoredHospitalId,
 } from "../../utils/branchApi";
 import { formatIndianCurrency } from "../../utils/format";
+import { getClinicDisplayName } from "../../utils/clinicDisplay";
+import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 import {
   appointmentToOpRevenueRow,
   dedupeBillingRows as dedupeRevenueRows,
@@ -442,6 +444,14 @@ const fetchBillingHistoryRows = async ({ params, headers }) => {
   return dedupeRevenueRows(responses.flatMap(parseRevenueList));
 };
 
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
 // ================= COMPONENT =================
 
 function RevenueReport() {
@@ -575,6 +585,27 @@ function RevenueReport() {
   // ================= EXPORT PDF =================
 
   const exportPDF = () => {
+    const storedHospitalId = getStoredHospitalId();
+    const clinicName = getClinicDisplayName({
+      clinicName: localStorage.getItem("clinicName"),
+      hospitalName: localStorage.getItem("hospitalName"),
+      name: localStorage.getItem("clinicName"),
+    }, "Clinic");
+    const clinicPhone =
+      localStorage.getItem("clinicPhone") ||
+      localStorage.getItem("hospitalPhone") ||
+      localStorage.getItem("contactNumber") ||
+      "";
+    const clinicEmail =
+      localStorage.getItem("clinicEmail") ||
+      localStorage.getItem("hospitalEmail") ||
+      localStorage.getItem("adminEmail") ||
+      "";
+    const clinicAddress =
+      localStorage.getItem("clinicAddress") ||
+      localStorage.getItem("hospitalAddress") ||
+      "";
+    const branding = getClinicInvoiceBranding({ clinicId: storedHospitalId, clinicName });
     const generatedAt = new Date().toLocaleString("en-IN", {
       day: "2-digit",
       month: "short",
@@ -615,9 +646,13 @@ function RevenueReport() {
             @page { size: A4 landscape; margin: 12mm; }
             body { margin: 0; color: #0f172a; font-family: Arial, Helvetica, sans-serif; }
             .report { padding: 18px; }
-            .head { display: flex; justify-content: space-between; gap: 18px; border-bottom: 2px solid #0f766e; padding-bottom: 12px; }
-            h1 { margin: 0 0 5px; font-size: 24px; }
-            p { margin: 3px 0; color: #475569; font-size: 12px; }
+            .clinic-head { text-align: center; border-bottom: 2px solid ${escapeHtml(branding.accentColor)}; padding-bottom: 14px; margin-bottom: 14px; }
+            .clinic-head img { display: block; width: 88px; height: 88px; object-fit: contain; margin: 0 auto 8px; }
+            .clinic-head h1 { margin: 0; font-size: 25px; color: #0f172a; }
+            .clinic-head p { margin: 4px 0 0; color: #475569; font-size: 12px; }
+            .report-title { display: flex; justify-content: space-between; gap: 18px; align-items: end; margin-bottom: 12px; }
+            .report-title h2 { margin: 0 0 4px; font-size: 20px; }
+            .report-title p { margin: 0; color: #475569; font-size: 12px; }
             .summary { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 14px 0; }
             .metric { border: 1px solid #dbeafe; border-radius: 8px; padding: 9px; background: #f8fafc; }
             .metric span { display: block; color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; }
@@ -632,17 +667,18 @@ function RevenueReport() {
         </head>
         <body>
           <main class="report">
-            <section class="head">
+            <section class="clinic-head">
+              <img src="${escapeHtml(branding.logoUrl)}" alt="Clinic logo" />
+              <h1>${escapeHtml(branding.headerTitle || clinicName)}</h1>
+              <p>${escapeHtml([branding.headerSubtitle, clinicPhone, clinicEmail].filter(Boolean).join(" | "))}</p>
+              ${clinicAddress ? `<p>${escapeHtml(clinicAddress)}</p>` : ""}
+            </section>
+            <section class="report-title">
               <div>
-                <h1>Revenue Report</h1>
+                <h2>Revenue Report</h2>
                 <p>Branch-wise monthly revenue including GST amounts.</p>
-                <p>Generated: ${generatedAt}</p>
               </div>
-              <div>
-                <p>From: ${fromDate || "All"}</p>
-                <p>To: ${toDate || "All"}</p>
-                <p>Branch: ${branchId ? (branches.find((branch) => String(getBranchOptionId(branch)) === String(branchId)) ? getBranchOptionName(branches.find((branch) => String(getBranchOptionId(branch)) === String(branchId))) : branchId) : "All Branches"}</p>
-              </div>
+              <p>Generated: ${escapeHtml(generatedAt)}</p>
             </section>
             <section class="summary">
               <div class="metric"><span>OP</span><b>${formatIndianCurrency(totals.opRevenue)}</b></div>

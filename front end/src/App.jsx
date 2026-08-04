@@ -9,6 +9,7 @@ import { ToastProvider } from "./components/ToastProvider";
 const DoctorApp = lazy(() => import("./doctors/DoctorApp"));
 const ReceptionistApp = lazy(() => import("./Recepitionist/ReceptionistApp"));
 const NurseApp = lazy(() => import("./Nurse/NurseApp"));
+const LabApp = lazy(() => import("./Lab/LabApp"));
 const PatientRoutes = lazy(() => import("./pages/PATIENTS/PatientRoutes"));
 const UserProfilePage = lazy(() => import("./profile/UserProfilePage"));
 const SuperAdminDashboard = lazy(() => import("./pages/SUPERADMIN/Dashboard/Dashboard"));
@@ -28,11 +29,14 @@ const Dashboard = lazy(() => import("./Dashboard/Dashboard"));
 const Branches = lazy(() => import("./pages/BRANCHES/Branches"));
 const Receptionists = lazy(() => import("./pages/RECEPTIONISTS/Receptionists"));
 const Nurses = lazy(() => import("./pages/NURSES/Nurses"));
+const LabTechnicians = lazy(() => import("./pages/LABTECHNICIANS/LabTechnicians"));
+const LabFiles = lazy(() => import("./pages/LABFILES/LabFiles"));
 const Doctors = lazy(() => import("./pages/DOCTORS/Doctors"));
 const AddDoctor = lazy(() => import("./pages/DOCTORS/AddDoctor"));
 const DoctorSchedule = lazy(() => import("./pages/DOCTORS/DoctorSchedule"));
 const AdminRolesPermissions = lazy(() => import("./pages/ADMIN/RolesPermissions/AdminRolesPermissions"));
 const AdminUserManagement = lazy(() => import("./pages/ADMIN/UserManagement/AdminUserManagement"));
+const AdminSettings = lazy(() => import("./pages/ADMIN/Settings/AdminSettings"));
 const Patients = lazy(() => import("./pages/PATIENTS/Patients"));
 const PatientDetails = lazy(() => import("./pages/PATIENTS/PatientDetails"));
 const PatientDashboard = lazy(() => import("./pages/PATIENTS/PatientDashboard"));
@@ -106,9 +110,12 @@ function App() {
           <Route path="DoctorSchedule/schedule" element={<Doctorschedulepage />} />
           <Route path="receptionists" element={<Receptionists />} />
           <Route path="nurses" element={<Nurses />} />
+          <Route path="lab-technicians" element={<LabTechnicians />} />
+          <Route path="lab-files" element={<LabFiles />} />
           <Route path="roles" element={<AdminRolesPermissions />} />
           <Route path="roles-permissions" element={<Navigate to="/roles" replace />} />
           <Route path="users" element={<AdminUserManagement />} />
+          <Route path="settings" element={<AdminSettings />} />
 
           <Route path="patients" element={<Patients />} />
           <Route path="patients/dashboard" element={<PatientDashboard />} />
@@ -142,6 +149,7 @@ function App() {
         <Route path="/doctor/*" element={<DoctorApp />} />
         <Route path="/reception/*" element={<ReceptionistApp />} />
         <Route path="/nurse/*" element={<NurseApp />} />
+        <Route path="/lab/*" element={<LabApp />} />
         <Route path="/patient/*" element={<PatientRoute><PatientRoutes /></PatientRoute>} />
 
         {/* FALLBACK */}
