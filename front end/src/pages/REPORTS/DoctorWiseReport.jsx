@@ -165,6 +165,7 @@ import {
   isPaidAppointment,
   parseList,
   pick,
+  readLocalRevenueBillingRows,
 } from "../../utils/billingRevenue";
 import { formatIndianCurrency } from "../../utils/format";
 
@@ -361,6 +362,7 @@ function DoctorWiseReport() {
           .map(appointmentToOpRevenueRow);
         const opRows = dedupeBillingRows([
           ...billingRows,
+          ...readLocalRevenueBillingRows(),
           ...paidAppointmentRows,
         ]).filter((row) => withinDateRange(row, fromDate, toDate));
 

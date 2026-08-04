@@ -51,6 +51,7 @@ export const PATIENT_API = {
   prescriptions: "patient-portal/prescriptions",
   prescriptionById: "patient-portal/prescriptions/{id}",
   bills: "patient-portal/bills",
+  billDetails: "patient-portal/bills/{id}",
   billPay: "patient-portal/bills/{id}/pay",
   notifications: "patient-portal/notifications",
   notificationRead: "patient-portal/notifications/{id}/read",

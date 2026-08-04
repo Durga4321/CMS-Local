@@ -170,10 +170,6 @@ export const validateClinicName = (value, label) => {
     return `${label} must be valid text, not random characters.`;
   }
 
-  if (!/\bclinic\b$/i.test(text)) {
-    return `Enter a valid clinic name (e.g., RJS Clinic, SLS clinic etc.).`;
-  }
-
   const lettersOnly = text.replace(/[^A-Za-z]/g, "");
   return lettersOnly.length >= 2
     ? ""

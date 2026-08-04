@@ -43,6 +43,7 @@ import {
   getRevenueAmount,
   isPaidAppointment,
   parseList as parseRevenueList,
+  readLocalRevenueBillingRows,
 } from "../utils/billingRevenue";
 
 /* ================= API ================= */
@@ -349,6 +350,7 @@ function Dashboard() {
             .map(appointmentToOpRevenueRow);
           const revenueRows = dedupeBillingRows([
             ...parseRevenueList(billingData),
+            ...readLocalRevenueBillingRows(),
             ...paidAppointmentRows,
           ]);
           const billingRevenue = revenueRows.reduce(

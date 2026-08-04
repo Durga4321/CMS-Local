@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, CheckCircle, Edit3, Eye, FileText, Minus, Printer } from "lucide-react";
+import { ArrowLeft, CheckCircle, Edit3, Eye, FileText, Minus, Printer, Trash2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { parseList, requestJson } from "../receptionApi";
 import { getReceptionistProfile } from "../receptionSession";
@@ -580,6 +580,72 @@ const getInvoiceId = (invoice) =>
     invoice?.InvoiceId
   ) || "";
 
+const hasBackendBillingId = (invoice) =>
+  Boolean(
+    firstValue(
+      invoice?.billingId,
+      invoice?.BillingId,
+      invoice?.billId,
+      invoice?.BillId,
+      invoice?.invoiceId,
+      invoice?.InvoiceId,
+      invoice?.backendSynced ? invoice?.id : "",
+      invoice?.backendSynced ? invoice?.Id : ""
+    )
+  );
+
+const updateBillingPayment = async (bill, payment = {}) => {
+  const billId = getInvoiceId(bill);
+  if (!billId) return null;
+  try {
+    return await requestJson(`Billing/${billId}/payment`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        billId,
+        BillId: billId,
+        paymentStatus: payment.paymentStatus || bill.paymentStatus || "Paid",
+        status: payment.status || bill.status || "Paid",
+        paymentMode: payment.paymentMode || bill.paymentMode || bill.PaymentMode || "UPI",
+        PaymentMode: payment.paymentMode || bill.paymentMode || bill.PaymentMode || "UPI",
+        paidAmount: Number(payment.paidAmount ?? bill.paidAmount ?? bill.totalAmount ?? 0) || 0,
+        PaidAmount: Number(payment.paidAmount ?? bill.paidAmount ?? bill.totalAmount ?? 0) || 0,
+        paymentAmount: Number(payment.paymentAmount ?? bill.paymentAmount ?? bill.totalAmount ?? 0) || 0,
+        PaymentAmount: Number(payment.paymentAmount ?? bill.paymentAmount ?? bill.totalAmount ?? 0) || 0,
+        paidAt: new Date().toISOString(),
+      }),
+    });
+  } catch (error) {
+    console.warn("Unable to update billing payment status:", error.message);
+    return null;
+  }
+};
+
+const updateBillingBill = async (bill, payload = {}) => {
+  const billId = getInvoiceId(bill);
+  if (!billId) return null;
+
+  return requestJson(`Billing/${billId}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      ...payload,
+      id: billId,
+      Id: billId,
+      billId,
+      BillId: billId,
+    }),
+  });
+};
+
+const deleteBillingBill = async (bill) => {
+  const billId = getInvoiceId(bill);
+  if (!billId) return false;
+
+  await requestJson(`Billing/${billId}`, {
+    method: "DELETE",
+  });
+  return true;
+};
+
 const getInvoiceStatus = (invoice) =>
   firstValue(invoice?.paymentStatus, invoice?.invoiceStatus, invoice?.billingStatus, invoice?.status) ||
   "Paid";
@@ -925,15 +991,42 @@ const readRecentServiceBills = () => {
 const storeRecentServiceBill = (bill) => {
   if (!bill || typeof bill !== "object") return [];
 
+  const billId = getInvoiceId(bill);
   const nextBills = [
     bill,
-    ...readRecentServiceBills().filter((item) => String(item.invoiceNo) !== String(bill.invoiceNo)),
+    ...readRecentServiceBills().filter((item) => {
+      const sameId = billId && String(getInvoiceId(item)) === String(billId);
+      const sameInvoice =
+        String(item.invoiceNo || item.invoiceNumber || item.billNumber || "") ===
+        String(bill.invoiceNo || bill.invoiceNumber || bill.billNumber || "");
+      return !(sameId || sameInvoice);
+    }),
   ].slice(0, 12);
 
   try {
     localStorage.setItem(RECENT_SERVICE_BILLS_STORAGE_KEY, JSON.stringify(nextBills));
   } catch {
     // Local recent bills are a convenience; Billing API remains the source for revenue.
+  }
+
+  return nextBills;
+};
+
+const removeRecentServiceBill = (bill) => {
+  const billId = getInvoiceId(bill);
+  const invoiceNo = bill?.invoiceNo || bill?.invoiceNumber || bill?.billNumber || "";
+  const nextBills = readRecentServiceBills().filter((item) => {
+    const sameId = billId && String(getInvoiceId(item)) === String(billId);
+    const sameInvoice =
+      invoiceNo &&
+      String(item.invoiceNo || item.invoiceNumber || item.billNumber || "") === String(invoiceNo);
+    return !(sameId || sameInvoice);
+  });
+
+  try {
+    localStorage.setItem(RECENT_SERVICE_BILLS_STORAGE_KEY, JSON.stringify(nextBills));
+  } catch {
+    // Billing API is the source of truth; local latest-bills cache is best-effort.
   }
 
   return nextBills;
@@ -963,6 +1056,13 @@ const getServiceBillType = (bill = {}) => {
 
 const normalizeServiceBill = (bill = {}) => {
   const type = getServiceBillType(bill);
+  const consultationCharge = readAmount(bill, AMOUNT_KEYS.consultation, 0);
+  const medicineCharge = readAmount(bill, AMOUNT_KEYS.medicine, 0);
+  const labCharge = readAmount(bill, AMOUNT_KEYS.lab, 0);
+  const totalAmount = readAmount(bill, AMOUNT_KEYS.total, bill.totalAmount || bill.paidAmount || 0);
+  const cgstAmount = readAmount(bill, ["cgstAmount", "CGSTAmount", "cgst", "CGST"], 0);
+  const sgstAmount = readAmount(bill, ["sgstAmount", "SGSTAmount", "sgst", "SGST"], 0);
+  const gstAmount = readAmount(bill, ["gstAmount", "GSTAmount", "gst", "GST", "taxAmount", "TaxAmount"], cgstAmount + sgstAmount);
   return {
     ...bill,
     type,
@@ -980,7 +1080,26 @@ const normalizeServiceBill = (bill = {}) => {
     patientId: bill.patientId || bill.PatientId || bill.patient?.patientId || bill.Patient?.PatientId,
     doctorName: bill.doctorName || bill.DoctorName || bill.doctor?.name || bill.Doctor?.Name,
     createdAt: bill.createdAt || bill.CreatedAt || bill.invoiceDate || bill.billDate,
-    totalAmount: readAmount(bill, AMOUNT_KEYS.total, bill.totalAmount || bill.paidAmount || 0),
+    consultationCharge,
+    consultationCharges: consultationCharge,
+    medicineCharge,
+    medicineCharges: medicineCharge,
+    labCharge,
+    labCharges: labCharge,
+    cgstAmount,
+    CGSTAmount: cgstAmount,
+    sgstAmount,
+    SGSTAmount: sgstAmount,
+    gstAmount,
+    GSTAmount: gstAmount,
+    totalAmount,
+    grandTotal: readAmount(bill, ["grandTotal", "GrandTotal"], totalAmount),
+    netAmount: readAmount(bill, ["netAmount", "NetAmount"], totalAmount),
+    payableAmount: readAmount(bill, ["payableAmount", "PayableAmount"], totalAmount),
+    paymentAmount: readAmount(bill, ["paymentAmount", "PaymentAmount"], totalAmount),
+    paidAmount: readAmount(bill, ["paidAmount", "PaidAmount"], totalAmount),
+    amount: readAmount(bill, ["amount", "Amount"], totalAmount),
+    revenue: readAmount(bill, ["revenue", "Revenue"], totalAmount),
   };
 };
 
@@ -1049,8 +1168,6 @@ const fetchInvoiceDetails = async (invoice) => {
 
   const detailPaths = [
     `Billing/${invoiceId}`,
-    `Billing/details/${invoiceId}`,
-    `Billing/invoice/${invoiceId}`,
   ];
 
   for (const path of detailPaths) {
@@ -1111,6 +1228,7 @@ function ReceptionBilling() {
   const [diagnosticRows, setDiagnosticRows] = useState([]);
   const [pharmacyRows, setPharmacyRows] = useState([]);
   const [recentServiceBills, setRecentServiceBills] = useState(() => readRecentServiceBills());
+  const [editingBill, setEditingBill] = useState(null);
   const [serviceSearch, setServiceSearch] = useState("");
   const [form, setForm] = useState({
     appointmentId: "",
@@ -1162,7 +1280,7 @@ function ReceptionBilling() {
           : scopeReceptionistRecords(bookedAppointments, receptionistScope, {
               allowMissingBranch: true,
             });
-        const invoiceList = parseList(invoicesData).map(normalizeServiceBill);
+        const invoiceList = parseList(invoicesData).map((bill) => normalizeServiceBill({ ...bill, backendSynced: true }));
         const scopedInvoices = scopeReceptionistRecords(invoiceList, receptionistScope);
         const fallbackScopedInvoices = scopeReceptionistRecords(invoiceList, receptionistScope, {
           allowMissingClinic: true,
@@ -1270,9 +1388,13 @@ function ReceptionBilling() {
   const visibleRecentServiceBills = useMemo(
     () => {
       if (billingMode === "consultation") {
-        return appointments
+        const backendOpBills = recentServiceBills.filter(
+          (bill) => getServiceBillType(bill) === "consultation"
+        );
+        const appointmentOpBills = appointments
           .filter(isPaidAppointmentBooking)
-          .map(appointmentToOpBill)
+          .map(appointmentToOpBill);
+        return mergeRecentServiceBills(backendOpBills, appointmentOpBills)
           .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
           .slice(0, 30);
       }
@@ -1376,18 +1498,28 @@ function ReceptionBilling() {
       billNumber: details.invoiceNo,
       billNo: details.invoiceNo,
       invoiceType: details.type,
+      InvoiceType: details.type,
       billingType: isPharmacy ? "Pharmacy" : "Diagnostic",
+      BillingType: isPharmacy ? "Pharmacy" : "Diagnostic",
       serviceType: isPharmacy ? "Pharmacy Billing" : "Diagnosis Test Billing",
+      ServiceType: isPharmacy ? "Pharmacy Billing" : "Diagnosis Test Billing",
       consultationCharge: 0,
+      consultationCharges: 0,
+      opRevenue: 0,
       medicineCharge: isPharmacy ? details.totals.total : 0,
       medicineCharges: isPharmacy ? details.totals.total : 0,
+      pharmacyRevenue: isPharmacy ? details.totals.total : 0,
       labCharge: isPharmacy ? 0 : details.totals.total,
       labCharges: isPharmacy ? 0 : details.totals.total,
+      diagnosticRevenue: isPharmacy ? 0 : details.totals.total,
       subtotal: details.totals.subtotal,
       taxableAmount: details.totals.subtotal,
       cgstAmount: details.totals.cgst,
+      CGSTAmount: details.totals.cgst,
       sgstAmount: details.totals.sgst,
+      SGSTAmount: details.totals.sgst,
       gstAmount: details.totals.gst,
+      GSTAmount: details.totals.gst,
       gstPercentage: 18,
       totalAmount: details.totals.total,
       grandTotal: details.totals.total,
@@ -1397,10 +1529,15 @@ function ReceptionBilling() {
       paidAmount: details.totals.total,
       amount: details.totals.total,
       revenue: details.totals.total,
+      source: "reception",
+      billingSource: "reception",
+      bookingSource: "offline",
       paymentMode: details.paymentMode,
       PaymentMode: details.paymentMode,
       paymentStatus: "Paid",
+      PaymentStatus: "Paid",
       status: "Paid",
+      Status: "Paid",
       createdAt: details.createdAt,
       billDate: details.createdAt,
       invoiceDate: details.createdAt,
@@ -1422,18 +1559,22 @@ function ReceptionBilling() {
     let savedInvoice = {};
     if (save) {
       const payload = buildServiceBillingPayload(details);
-      const response = await requestJson("Billing", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      const canUpdate = editingBill && getInvoiceId(editingBill) && getServiceBillType(editingBill) === details.type;
+      const response = canUpdate
+        ? await updateBillingBill(editingBill, payload)
+        : await requestJson("Billing", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
       savedInvoice = Array.isArray(response) ? response[0] || {} : response || {};
 
       const invoiceShape = {
         ...payload,
+        ...(canUpdate ? editingBill : {}),
         ...savedInvoice,
-        invoiceNo: savedInvoice.invoiceNo || savedInvoice.invoiceNumber || savedInvoice.billNumber || details.invoiceNo,
-        invoiceNumber: savedInvoice.invoiceNumber || savedInvoice.billNumber || details.invoiceNo,
-        billNumber: savedInvoice.billNumber || savedInvoice.invoiceNumber || details.invoiceNo,
+        invoiceNo: savedInvoice.invoiceNo || savedInvoice.invoiceNumber || savedInvoice.billNumber || editingBill?.invoiceNo || editingBill?.invoiceNumber || editingBill?.billNumber || details.invoiceNo,
+        invoiceNumber: savedInvoice.invoiceNumber || savedInvoice.billNumber || editingBill?.invoiceNumber || editingBill?.billNumber || editingBill?.invoiceNo || details.invoiceNo,
+        billNumber: savedInvoice.billNumber || savedInvoice.invoiceNumber || editingBill?.billNumber || editingBill?.invoiceNumber || editingBill?.invoiceNo || details.invoiceNo,
         createdAt: savedInvoice.createdAt || savedInvoice.billDate || details.createdAt,
         type: details.type,
         rows: details.rows,
@@ -1445,13 +1586,22 @@ function ReceptionBilling() {
         invoiceType: details.type,
         totalAmount: details.totals.total,
         paidAmount: details.totals.total,
+        backendSynced: true,
       };
+      const paymentUpdate = await updateBillingPayment(invoiceShape, {
+        paymentMode: details.paymentMode,
+        paidAmount: details.totals.total,
+      });
+      if (paymentUpdate && typeof paymentUpdate === "object") {
+        Object.assign(invoiceShape, Array.isArray(paymentUpdate) ? paymentUpdate[0] || {} : paymentUpdate);
+      }
       setInvoice(invoiceShape);
       storeLatestInvoice(invoiceShape);
       setRecentServiceBills((prev) =>
         mergeRecentServiceBills([invoiceShape], storeRecentServiceBill(invoiceShape), prev)
       );
-      showMessage(`${billingMode === "pharmacy" ? "Pharmacy" : "Diagnostic test"} bill generated successfully`, "success", { autoHide: true });
+      setEditingBill(null);
+      showMessage(`${billingMode === "pharmacy" ? "Pharmacy" : "Diagnostic test"} bill ${canUpdate ? "updated" : "generated"} successfully`, "success", { autoHide: true });
       printServiceInvoice({ ...details, invoiceNo: invoiceShape.invoiceNo, autoPrint });
       return true;
     }
@@ -1567,15 +1717,21 @@ function ReceptionBilling() {
       BranchName: firstValue(selectedAppointment?.branchName, selectedAppointment?.BranchName, receptionistScope.branchName),
       consultationCharge,
       consultationCharges: consultationCharge,
+      opRevenue: consultationCharge,
       medicineCharge: 0,
       medicineCharges: 0,
+      pharmacyRevenue: 0,
       labCharge: 0,
       labCharges: 0,
+      diagnosticRevenue: 0,
       subtotal,
       taxableAmount: subtotal,
       cgstAmount,
+      CGSTAmount: cgstAmount,
       sgstAmount,
+      SGSTAmount: sgstAmount,
       gstAmount,
+      GSTAmount: gstAmount,
       gstPercentage: 18,
       totalAmount,
       grandTotal: totalAmount,
@@ -1585,28 +1741,46 @@ function ReceptionBilling() {
       paidAmount: totalAmount,
       amount: totalAmount,
       revenue: totalAmount,
+      invoiceNo: editingBill?.invoiceNo || editingBill?.invoiceNumber || editingBill?.billNumber,
+      invoiceNumber: editingBill?.invoiceNumber || editingBill?.billNumber || editingBill?.invoiceNo,
+      billNumber: editingBill?.billNumber || editingBill?.invoiceNumber || editingBill?.invoiceNo,
       billingType: "Consultation",
+      BillingType: "Consultation",
       invoiceType: "consultation",
+      InvoiceType: "consultation",
       serviceType: "Consultation Billing",
+      ServiceType: "Consultation Billing",
+      source: "reception",
+      billingSource: "reception",
+      bookingSource: "offline",
       paymentMode: String(form.paymentMode || ""),
       PaymentMode: String(form.paymentMode || ""),
       paymentStatus: "Paid",
+      PaymentStatus: "Paid",
       status: "Paid",
+      Status: "Paid",
       createdAt: new Date().toISOString(),
       billDate: new Date().toISOString(),
       invoiceDate: new Date().toISOString(),
     };
 
     try {
-      const data = await requestJson("Billing", {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
+      const canUpdate = editingBill && getInvoiceId(editingBill) && getServiceBillType(editingBill) === "consultation";
+      const data = canUpdate
+        ? await updateBillingBill(editingBill, body)
+        : await requestJson("Billing", {
+            method: "POST",
+            body: JSON.stringify(body),
+          });
 
       const invoiceData = Array.isArray(data) ? data[0] : data;
       const nextInvoice = {
         ...(invoiceData || {}),
+        ...(canUpdate ? editingBill : {}),
         ...body,
+        invoiceNo: invoiceData?.invoiceNo || invoiceData?.invoiceNumber || editingBill?.invoiceNo || editingBill?.invoiceNumber || editingBill?.billNumber,
+        invoiceNumber: invoiceData?.invoiceNumber || invoiceData?.billNumber || editingBill?.invoiceNumber || editingBill?.billNumber || editingBill?.invoiceNo,
+        billNumber: invoiceData?.billNumber || invoiceData?.invoiceNumber || editingBill?.billNumber || editingBill?.invoiceNumber || editingBill?.invoiceNo,
         consultationCharge,
         consultationCharges: consultationCharge,
         medicineCharge: 0,
@@ -1632,13 +1806,22 @@ function ReceptionBilling() {
         doctorName:
           invoiceData?.doctorName ||
           getAppointmentDoctorName(selectedAppointment),
+        backendSynced: true,
       };
+      const paymentUpdate = await updateBillingPayment(nextInvoice, {
+        paymentMode: form.paymentMode,
+        paidAmount: totalAmount,
+      });
+      if (paymentUpdate && typeof paymentUpdate === "object") {
+        Object.assign(nextInvoice, Array.isArray(paymentUpdate) ? paymentUpdate[0] || {} : paymentUpdate);
+      }
       setInvoice(nextInvoice);
       storeLatestInvoice(nextInvoice);
       setRecentServiceBills((prev) =>
         mergeRecentServiceBills([nextInvoice], storeRecentServiceBill(nextInvoice), prev)
       );
-      const text = invoiceData?.message || "Bill generated successfully";
+      setEditingBill(null);
+      const text = invoiceData?.message || `Bill ${canUpdate ? "updated" : "generated"} successfully`;
       showMessage(text, "success", { autoHide: true });
       downloadInvoicePdf(nextInvoice, invoiceWindow);
     } catch (error) {
@@ -1733,6 +1916,7 @@ function ReceptionBilling() {
 
   const editRecentServiceBill = (bill) => {
     const nextMode = getServiceBillType(bill);
+    setEditingBill(bill);
     if (nextMode === "consultation") {
       setBillingMode("consultation");
       setForm((prev) => ({
@@ -1767,6 +1951,40 @@ function ReceptionBilling() {
       paymentMode: bill.paymentMode || prev.paymentMode,
     }));
     showMessage("Bill loaded for editing. Submit again to generate the updated invoice.", "success", { autoHide: true });
+  };
+
+  const deleteRecentServiceBill = async (bill) => {
+    const billId = getInvoiceId(bill);
+    if (!billId) {
+      showMessage("Bill id is not available for delete.", "error");
+      toast.error("Bill id is not available for delete.");
+      return;
+    }
+
+    const confirmed = window.confirm("Delete this bill permanently?");
+    if (!confirmed) return;
+
+    try {
+      await deleteBillingBill(bill);
+      const nextStoredBills = removeRecentServiceBill(bill);
+      setRecentServiceBills((prev) =>
+        mergeRecentServiceBills(
+          prev.filter((item) => String(getInvoiceId(item)) !== String(billId)),
+          nextStoredBills
+        )
+      );
+      if (String(getInvoiceId(invoice)) === String(billId)) {
+        setInvoice(null);
+      }
+      if (String(getInvoiceId(editingBill)) === String(billId)) {
+        setEditingBill(null);
+      }
+      showMessage("Bill deleted successfully.", "success", { autoHide: true });
+      toast.success("Bill deleted successfully.");
+    } catch (error) {
+      showMessage(error.message || "Unable to delete bill.", "error");
+      toast.error(error.message || "Unable to delete bill.");
+    }
   };
 
   const setField = (name, value) => {
@@ -2380,6 +2598,7 @@ function ReceptionBilling() {
                 const invoiceNo = bill.invoiceNo || bill.invoiceNumber || bill.billNumber || `BILL-${index + 1}`;
                 const amount = Number(bill.totalAmount ?? bill.netAmount ?? bill.grandTotal ?? bill.paidAmount) || 0;
                 const createdAt = bill.createdAt || bill.invoiceDate || bill.billDate;
+                const canManageBill = hasBackendBillingId(bill);
                 return (
                   <article className="rc-latest-bill-row" key={`${invoiceNo}-${index}`}>
                     <div className="rc-latest-bill-pdf">
@@ -2397,9 +2616,16 @@ function ReceptionBilling() {
                       <button type="button" onClick={() => viewRecentServiceBill(bill)} aria-label="View bill PDF">
                         <FileText size={16} />
                       </button>
-                      <button type="button" onClick={() => editRecentServiceBill(bill)} aria-label="Edit bill">
-                        <Edit3 size={16} />
-                      </button>
+                      {canManageBill ? (
+                        <>
+                          <button type="button" onClick={() => editRecentServiceBill(bill)} aria-label="Edit bill">
+                            <Edit3 size={16} />
+                          </button>
+                          <button type="button" onClick={() => deleteRecentServiceBill(bill)} aria-label="Delete bill">
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      ) : null}
                     </div>
                   </article>
                 );

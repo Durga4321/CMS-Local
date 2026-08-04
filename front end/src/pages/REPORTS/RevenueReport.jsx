@@ -265,6 +265,7 @@ import {
   isPaidAppointment,
   parseList as parseRevenueList,
   passesRevenueFilters,
+  readLocalRevenueBillingRows,
 } from "../../utils/billingRevenue";
 
 // ================= API =================
@@ -276,8 +277,6 @@ const BILLING_API =
   apiUrl("Billing");
 const APPOINTMENT_API =
   apiUrl("Appointment");
-const LOCAL_SERVICE_BILLS_KEY = "receptionRecentServiceBills";
-
 const parseList = (value) => {
   if (Array.isArray(value)) return value;
   if (!value || typeof value !== "object") return [];
@@ -345,16 +344,74 @@ const normalizeRevenueRows = (value) =>
     }))
     .filter((row) => row.month || row.revenue);
 
-const readLocalServiceBills = () => {
-  try {
-    const bills = JSON.parse(localStorage.getItem(LOCAL_SERVICE_BILLS_KEY) || "[]");
-    return Array.isArray(bills) ? bills : [];
-  } catch {
-    return [];
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
+
+const readValue = (record = {}, keys = []) => {
+  for (const key of keys) {
+    const value = String(key).split(".").reduce((current, part) => (
+      current && current[part] !== undefined ? current[part] : undefined
+    ), record);
+    if (value !== undefined && value !== null && value !== "") return value;
   }
+  return "";
 };
 
-const normalizeText = (value) => String(value || "").trim().toLowerCase();
+const getAppointmentLookupKey = (record = {}) =>
+  String(readValue(record, [
+    "appointmentId",
+    "AppointmentId",
+    "appointment.id",
+    "appointment.Id",
+    "appointment.appointmentId",
+    "appointment.AppointmentId",
+    "appointmentNumber",
+    "AppointmentNumber",
+    "appointmentNo",
+    "AppointmentNo",
+    "id",
+    "Id",
+  ]) || "").trim().toLowerCase();
+
+const buildAppointmentBranchLookup = (appointments = []) => {
+  const lookup = new Map();
+  parseRevenueList(appointments).forEach((appointment) => {
+    const key = getAppointmentLookupKey(appointment);
+    if (!key) return;
+    lookup.set(key, {
+      branchId: readValue(appointment, ["branchId", "BranchId", "clinicBranchId", "ClinicBranchId", "branch.id", "Branch.Id"]),
+      branchName: readValue(appointment, ["branchName", "BranchName", "branch.name", "Branch.Name", "branch", "Branch"]),
+    });
+  });
+  return lookup;
+};
+
+const enrichBillingBranch = (row = {}, { appointmentLookup, branches }) => {
+  const rowBranchId = getRevenueBranchId(row);
+  const rowBranchName = getRevenueBranchName(row);
+  if (rowBranchId && normalizeText(rowBranchName) !== "unassigned branch") return row;
+
+  const branchFromAppointment = appointmentLookup.get(getAppointmentLookupKey(row));
+  const branchFromId = rowBranchId
+    ? branches.find((branch) => String(getBranchOptionId(branch)) === String(rowBranchId))
+    : null;
+  const onlyBranch = branches.length === 1 ? branches[0] : null;
+  const branch = branchFromAppointment || (
+    branchFromId
+      ? { branchId: getBranchOptionId(branchFromId), branchName: getBranchOptionName(branchFromId) }
+      : onlyBranch
+        ? { branchId: getBranchOptionId(onlyBranch), branchName: getBranchOptionName(onlyBranch) }
+        : null
+  );
+
+  if (!branch?.branchId && !branch?.branchName) return row;
+  return {
+    ...row,
+    branchId: row.branchId || row.BranchId || branch.branchId,
+    BranchId: row.BranchId || row.branchId || branch.branchId,
+    branchName: normalizeText(rowBranchName) === "unassigned branch" ? branch.branchName : row.branchName || branch.branchName,
+    BranchName: normalizeText(rowBranchName) === "unassigned branch" ? branch.branchName : row.BranchName || branch.branchName,
+  };
+};
 
 const fetchJsonOrEmpty = async (url, headers) => {
   try {
@@ -450,14 +507,16 @@ function RevenueReport() {
         (branch) => String(getBranchOptionId(branch)) === String(branchId)
       );
       const selectedBranchName = selectedBranch ? getBranchOptionName(selectedBranch) : "";
+      const appointmentBranchLookup = buildAppointmentBranchLookup(appointmentResult);
       const paidAppointmentRows = parseRevenueList(appointmentResult)
         .filter(isPaidAppointment)
         .map(appointmentToOpRevenueRow);
       const billingRows = dedupeRevenueRows([
         ...backendBillingRows,
-        ...readLocalServiceBills(),
+        ...readLocalRevenueBillingRows(),
         ...paidAppointmentRows,
       ])
+        .map((row) => enrichBillingBranch(row, { appointmentLookup: appointmentBranchLookup, branches }))
         .map((row) => ({ ...row, __selectedBranchName: selectedBranchName }))
         .filter((row) => {
           const rowBranchId = getRevenueBranchId(row);
