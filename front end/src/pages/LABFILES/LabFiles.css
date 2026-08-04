@@ -1,0 +1,122 @@
+.lab-files-export {
+  background: #0f766e;
+}
+
+.lab-files-table {
+  display: grid;
+  border: 1px solid #d8e4e8;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.lab-files-head,
+.lab-files-row {
+  display: grid;
+  grid-template-columns: 1.35fr 0.95fr 1fr 1fr 0.65fr 0.75fr 112px;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 18px;
+}
+
+.lab-files-head {
+  color: #64748b;
+  font-weight: 800;
+  background: #f8fafc;
+}
+
+.lab-files-row {
+  border-top: 1px solid #edf2f5;
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.lab-files-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.lab-files-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lab-files-actions button {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #d8e4e8;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.lab-files-actions button:hover {
+  background: #f0fdfa;
+  border-color: #99f6e4;
+  color: #0f766e;
+}
+
+.lab-files-actions button.danger {
+  color: #ef4444;
+}
+
+.lab-files-actions button.danger:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.lab-files-modal {
+  max-width: 920px;
+}
+
+.lab-files-form {
+  max-height: min(62vh, 620px);
+  overflow-y: auto;
+  align-items: start;
+}
+
+.lab-files-wide-field {
+  grid-column: 1 / -1;
+}
+
+.lab-files-form .receptionists-field textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 12px 13px;
+  font-size: 14px;
+  line-height: 1.45;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.lab-files-form .receptionists-field textarea:focus {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+.lab-files-wide-field textarea {
+  min-height: 86px;
+  resize: vertical;
+}
+
+@media (max-width: 900px) {
+  .lab-files-head {
+    display: none;
+  }
+
+  .lab-files-row {
+    grid-template-columns: 1fr;
+  }
+
+  .lab-files-actions {
+    justify-content: flex-start;
+  }
+}

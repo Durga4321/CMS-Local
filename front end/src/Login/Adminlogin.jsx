@@ -99,6 +99,7 @@ const getDisplayName = (authData, claims, email, role) => {
     authData.adminName,
     authData.doctorName,
     authData.receptionistName,
+    authData.labName,
     getClaim(
       claims,
       'name',
@@ -117,6 +118,7 @@ const getDisplayName = (authData, claims, email, role) => {
   if (normalizedRole === 'doctor') return 'Doctor';
   if (normalizedRole === 'receptionist') return 'Receptionist';
   if (normalizedRole === 'nurse') return 'Nurse';
+  if (normalizedRole === 'labtechnician' || normalizedRole === 'lab') return 'Lab Technician';
   if (normalizedRole === 'superadmin') return 'Super Admin';
   return 'Admin';
 };
@@ -235,21 +237,26 @@ const clearStoredSession = () => {
     'doctorToken',
     'receptionistToken',
     'nurseToken',
+    'labToken',
     'adminRole',
     'superAdminRole',
     'doctorRole',
     'receptionistRole',
     'nurseRole',
+    'labRole',
     'userRole',
     'adminEmail',
     'adminName',
     'doctorEmail',
     'receptionistEmail',
     'nurseEmail',
+    'labEmail',
     'receptionistName',
     'nurseName',
+    'labName',
     'doctorId',
     'nurseId',
+    'labId',
     'doctorName',
     'hospitalId',
     'hospitalName',
@@ -387,7 +394,7 @@ const AdminLogin = () => {
         );
       const normalizedRole = normalizeRole(role);
 
-      if (!['superadmin', 'admin', 'clinicadmin', 'doctor', 'receptionist', 'nurse', 'patient'].includes(normalizedRole)) {
+      if (!['superadmin', 'admin', 'clinicadmin', 'doctor', 'receptionist', 'nurse', 'labtechnician', 'lab', 'patient'].includes(normalizedRole)) {
         setErrors({
           api: 'Access denied. This account does not have Super Admin, Admin, Doctor, or Receptionist role.',
         });
@@ -527,6 +534,17 @@ const AdminLogin = () => {
         localStorage.setItem('nurseId', String(authData.nurseId || getClaim(claims, 'NurseId') || ''));
         toast.success({ title: 'Login successful', description: 'Welcome back, Nurse!' });
         navigate('/nurse/dashboard', { replace: true });
+        return;
+      }
+
+      if (normalizedRole === 'labtechnician' || normalizedRole === 'lab') {
+        localStorage.setItem('labToken', token);
+        localStorage.setItem('labRole', role);
+        localStorage.setItem('labEmail', loginEmail);
+        localStorage.setItem('labName', displayName);
+        localStorage.setItem('labId', String(authData.labId || authData.labTechnicianId || getClaim(claims, 'LabId', 'LabTechnicianId') || ''));
+        toast.success({ title: 'Login successful', description: 'Welcome back, Lab Technician!' });
+        navigate('/lab/dashboard', { replace: true });
         return;
       }
 

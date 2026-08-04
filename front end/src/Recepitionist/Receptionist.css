@@ -62,6 +62,13 @@
   stroke-width: 2.3;
 }
 
+.rc-clinic-logo img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  display: block;
+}
+
 .rc-clinic-logo small {
   max-width: 36px;
   color: #1d65c1;
@@ -1118,6 +1125,24 @@
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
+}
+
+.rc-service-amount-input {
+  height: 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #071120;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+  padding: 0 10px;
+  outline: none;
+}
+
+.rc-service-amount-input:focus {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
 }
 
 .rc-service-grid strong {

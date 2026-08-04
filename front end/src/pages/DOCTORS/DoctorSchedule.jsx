@@ -9,12 +9,18 @@ import {
   getStoredHospitalId,
   getAuthToken,
 } from "../../utils/branchApi";
+import {
+  clearDoctorBranchLeaveDates,
+  isDoctorBranchLeaveDate,
+  saveDoctorBranchLeaveDates,
+} from "../../utils/doctorBranchLeave";
 import { getSpecializationDisplayName } from "./doctorExpertiseOptions";
 import { getLoggedInDoctor, normalizeDoctorName } from "../../doctors/utils/doctorSession";
 
 const DOCTORS_API = apiUrl("Doctor");
 const SCHEDULE_API = apiUrl("Schedule");
 const SCHEDULE_SETTINGS_API = apiUrl("ScheduleSettings");
+const DOCTOR_BRANCH_SCHEDULE_DRAFTS_KEY = "doctorBranchScheduleDrafts";
 
 const DAY_MAPPING = [
   { short: "Mon", full: "Monday", dayIndex: 1 },
@@ -150,6 +156,33 @@ const getRecordBranchId = (record = {}) =>
 const slotBelongsToBranch = (slot = {}, selectedBranchId = "") => {
   const slotBranchId = getRecordBranchId(slot);
   return Boolean(slotBranchId) && slotBranchId === String(selectedBranchId || "").trim();
+};
+
+const getDoctorBranchScheduleKey = (doctorId, branchId) =>
+  `${String(doctorId || "").trim()}::${String(branchId || "").trim()}`;
+
+const readScheduleDrafts = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(DOCTOR_BRANCH_SCHEDULE_DRAFTS_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const readScheduleDraft = (doctorId, branchId) =>
+  readScheduleDrafts()[getDoctorBranchScheduleKey(doctorId, branchId)] || null;
+
+const saveScheduleDraft = (doctorId, branchId, payload) => {
+  if (!doctorId || !branchId) return;
+  const drafts = readScheduleDrafts();
+  drafts[getDoctorBranchScheduleKey(doctorId, branchId)] = {
+    ...payload,
+    branchId: String(branchId),
+    doctorId: String(doctorId),
+    savedAt: new Date().toISOString(),
+  };
+  localStorage.setItem(DOCTOR_BRANCH_SCHEDULE_DRAFTS_KEY, JSON.stringify(drafts));
 };
 
 const resolveScheduleTimes = ({
@@ -533,7 +566,7 @@ const fetchDoctorSchedule = async (doctorId, branchId, token) => {
 
       const data = await response.json().catch(() => null);
       const schedule = parseDoctorSchedule(data);
-      if (schedule && (!getRecordBranchId(schedule) || getRecordBranchId(schedule) === String(branchId))) return schedule;
+      if (schedule && getRecordBranchId(schedule) === String(branchId)) return schedule;
 
       const rows = parseListResponse(data).filter((row) => slotBelongsToBranch(row, branchId));
       const scheduleId = getScheduleIdFromRows(rows);
@@ -704,6 +737,12 @@ const saveSchedulePayload = async (
     breakEndTime: payload.breakEnd,
     SlotDuration: payload.slotDuration,
     slotDuration: payload.slotDuration,
+    IsLeave: Boolean(payload.isLeave),
+    isLeave: Boolean(payload.isLeave),
+    Leave: Boolean(payload.isLeave),
+    leave: Boolean(payload.isLeave),
+    Status: payload.status || (payload.isLeave ? "Leave" : "Available"),
+    status: payload.status || (payload.isLeave ? "Leave" : "Available"),
     dates: payload.dates,
     Dates: payload.dates,
     scheduledDates: payload.dates,
@@ -889,6 +928,7 @@ function Schedule({ selfMode = false } = {}) {
   const [slotDuration, setSlotDuration] = useState(
     String(DEFAULT_SCHEDULE_SETTINGS.slotDuration)
   );
+  const [scheduleType, setScheduleType] = useState("available");
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [hasSaveError, setHasSaveError] = useState(false);
@@ -1077,6 +1117,34 @@ function Schedule({ selfMode = false } = {}) {
     const loadDoctorSchedule = async () => {
       setExistingScheduleId("");
       setHasSavedSchedule(false);
+      setDays(DEFAULT_WORKING_DAYS);
+      setStartDate(today);
+      setEndDate(defaultEndDate);
+      setPreviewDate(today);
+      setWorkStart(formatTime12Hour(DEFAULT_SCHEDULE_SETTINGS.clinicOpen));
+      setWorkEnd(formatTime12Hour(DEFAULT_SCHEDULE_SETTINGS.clinicClose));
+      setBreakStart(formatTime12Hour("13:00"));
+      setBreakEnd(formatTime12Hour("14:00"));
+      setSlotDuration(String(DEFAULT_SCHEDULE_SETTINGS.slotDuration));
+      setScheduleType("available");
+
+      const draft = readScheduleDraft(doctorId, branchId);
+      if (draft) {
+        setScheduleType(draft.isLeave ? "leave" : "available");
+        const draftDays = Array.isArray(draft.days) ? draft.days : parseScheduleDays(draft);
+        if (draftDays.length) setDays(draftDays);
+        if (draft.startDate) {
+          setStartDate(draft.startDate);
+          setPreviewDate(draft.startDate);
+        }
+        if (draft.endDate) setEndDate(draft.endDate);
+        if (draft.workStart) setWorkStart(formatTime12Hour(draft.workStart));
+        if (draft.workEnd) setWorkEnd(formatTime12Hour(draft.workEnd));
+        if (draft.breakStart) setBreakStart(formatTime12Hour(draft.breakStart));
+        if (draft.breakEnd) setBreakEnd(formatTime12Hour(draft.breakEnd));
+        if (draft.slotDuration) setSlotDuration(String(draft.slotDuration));
+      }
+
       const schedule = await fetchDoctorSchedule(doctorId, branchId, token).catch(() => null);
       if (!isActive || !schedule) return;
 
@@ -1112,7 +1180,7 @@ function Schedule({ selfMode = false } = {}) {
     return () => {
       isActive = false;
     };
-  }, [branchId, doctorId]);
+  }, [branchId, defaultEndDate, doctorId, today]);
 
   useEffect(() => {
     if (!branchId || !doctorId || !previewDate) {
@@ -1120,7 +1188,7 @@ function Schedule({ selfMode = false } = {}) {
       return;
     }
 
-    setIsFetchingSlots(true);
+      setIsFetchingSlots(true);
     const token = getAuthToken();
     const resolvedTimes = resolveScheduleTimes({
       workStart,
@@ -1139,14 +1207,20 @@ function Schedule({ selfMode = false } = {}) {
       slotDuration: resolvedTimes.slotDuration,
     };
     const generatedSlots = buildPreviewSlotsFromPayload(previewPayload);
-    setPreviewSlots(generatedSlots);
+    const isLeaveDate = scheduleType === "leave" || isDoctorBranchLeaveDate(doctorId, branchId, previewDate);
+    setPreviewSlots(isLeaveDate ? [] : generatedSlots);
     fetchDaySlots(doctorId, branchId, previewDate, token)
       .then((rows) => {
         setHasSavedSchedule(rows.length > 0);
+        if (isLeaveDate) {
+          setPreviewSlots([]);
+        } else if (rows.length > 0) {
+          setPreviewSlots(rows);
+        }
       })
       .catch(() => {})
       .finally(() => setIsFetchingSlots(false));
-  }, [branchId, doctorId, previewDate, workStart, workEnd, breakStart, breakEnd, slotDuration, slotRefreshKey]);
+  }, [branchId, doctorId, previewDate, workStart, workEnd, breakStart, breakEnd, slotDuration, scheduleType, slotRefreshKey]);
 
   useEffect(() => {
     if (!branchId || !doctorId || scheduledDates.length === 0) {
@@ -1233,6 +1307,10 @@ function Schedule({ selfMode = false } = {}) {
       breakEnd: formatTimeForApi(resolvedTimes.breakEnd),
       slotDuration: resolvedTimes.slotDuration,
       dates: scheduledDates.map((date) => date.value),
+      isLeave: scheduleType === "leave",
+      IsLeave: scheduleType === "leave",
+      status: scheduleType === "leave" ? "Leave" : "Available",
+      Status: scheduleType === "leave" ? "Leave" : "Available",
     };
 
     const token = getAuthToken();
@@ -1251,14 +1329,20 @@ function Schedule({ selfMode = false } = {}) {
         replaceExisting: shouldUpdate,
         scheduleId: resolvedScheduleId || (shouldUpdate ? String(doctorId) : ""),
       });
+      if (scheduleType === "leave") {
+        saveDoctorBranchLeaveDates(doctorId, branchId, payload.dates);
+      } else {
+        clearDoctorBranchLeaveDates(doctorId, branchId, payload.dates);
+      }
       rememberDoctorBranch(branchOptions.find((branch) => String(branch.id) === String(branchId)));
+      saveScheduleDraft(doctorId, branchId, payload);
       setHasSaveError(false);
       setHasSavedSchedule(true);
       setExistingScheduleId(getScheduleId(data) || resolvedScheduleId);
-      setPreviewSlots(buildPreviewSlotsFromPayload(payload));
+      setPreviewSlots(scheduleType === "leave" ? [] : buildPreviewSlotsFromPayload(payload));
       setSaveMessage(
         data?.message ||
-          `Schedule ${shouldUpdate ? "updated" : "saved"} for ${scheduledDates.length} working days.`
+          `${scheduleType === "leave" ? "Leave" : "Schedule"} ${shouldUpdate ? "updated" : "saved"} for ${scheduledDates.length} working days.`
       );
       setPreviewDate(scheduledDates[0].value);
       setSlotRefreshKey((value) => value + 1);
@@ -1280,14 +1364,20 @@ function Schedule({ selfMode = false } = {}) {
             replaceExisting: true,
             scheduleId: updateId,
           });
+          if (scheduleType === "leave") {
+            saveDoctorBranchLeaveDates(doctorId, branchId, payload.dates);
+          } else {
+            clearDoctorBranchLeaveDates(doctorId, branchId, payload.dates);
+          }
           rememberDoctorBranch(branchOptions.find((branch) => String(branch.id) === String(branchId)));
+          saveScheduleDraft(doctorId, branchId, payload);
           setHasSaveError(false);
           setHasSavedSchedule(true);
           setExistingScheduleId(getScheduleId(data) || updateId);
-          setPreviewSlots(buildPreviewSlotsFromPayload(payload));
+          setPreviewSlots(scheduleType === "leave" ? [] : buildPreviewSlotsFromPayload(payload));
           setSaveMessage(
             data?.message ||
-              `Schedule updated for ${scheduledDates.length} working days.`
+              `${scheduleType === "leave" ? "Leave" : "Schedule"} updated for ${scheduledDates.length} working days.`
           );
           setPreviewDate(scheduledDates[0].value);
           setSlotRefreshKey((value) => value + 1);
@@ -1411,6 +1501,19 @@ function Schedule({ selfMode = false } = {}) {
             </>
           )}
 
+          <label htmlFor="schedule-type">Availability</label>
+          <select
+            id="schedule-type"
+            value={scheduleType}
+            onChange={(event) => {
+              setScheduleType(event.target.value);
+              setSaveMessage("");
+            }}
+          >
+            <option value="available">Available slots</option>
+            <option value="leave">Leave - no slots</option>
+          </select>
+
           <h4>Working Days</h4>
           <div className="days" aria-label="Working days">
             {DAY_MAPPING.map((day) => (
@@ -1461,6 +1564,7 @@ function Schedule({ selfMode = false } = {}) {
                 type="text"
                 placeholder="09:00 AM"
                 value={workStart}
+                disabled={scheduleType === "leave"}
                 onChange={(event) => {
                   setWorkStart(event.target.value);
                   setSaveMessage("");
@@ -1480,6 +1584,7 @@ function Schedule({ selfMode = false } = {}) {
                 type="text"
                 placeholder="06:00 PM"
                 value={workEnd}
+                disabled={scheduleType === "leave"}
                 onChange={(event) => {
                   setWorkEnd(event.target.value);
                   setSaveMessage("");
@@ -1499,6 +1604,7 @@ function Schedule({ selfMode = false } = {}) {
                 type="text"
                 placeholder="01:00 PM"
                 value={breakStart}
+                disabled={scheduleType === "leave"}
                 onChange={(event) => {
                   setBreakStart(event.target.value);
                   setSaveMessage("");
@@ -1516,6 +1622,7 @@ function Schedule({ selfMode = false } = {}) {
                 type="text"
                 placeholder="02:00 PM"
                 value={breakEnd}
+                disabled={scheduleType === "leave"}
                 onChange={(event) => {
                   setBreakEnd(event.target.value);
                   setSaveMessage("");
@@ -1531,6 +1638,7 @@ function Schedule({ selfMode = false } = {}) {
               <select
                 id="schedule-slot-duration"
                 value={slotDuration}
+                disabled={scheduleType === "leave"}
                 onChange={(event) => {
                   setSlotDuration(event.target.value);
                   setSaveMessage("");
@@ -1552,7 +1660,7 @@ function Schedule({ selfMode = false } = {}) {
           >
             {isSaving
               ? "Saving..."
-              : `${existingScheduleId || hasSavedSchedule ? "Update" : "Save"} Schedule (${scheduledDates.length} days)`}
+              : `${existingScheduleId || hasSavedSchedule ? "Update" : "Save"} ${scheduleType === "leave" ? "Leave" : "Schedule"} (${scheduledDates.length} days)`}
           </button>
 
           {saveMessage && (

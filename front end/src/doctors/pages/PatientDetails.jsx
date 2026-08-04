@@ -13,6 +13,8 @@ import {
 } from "../utils/doctorSession";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 import { fetchConsultationVitals } from "../../utils/appointmentVitals";
+import { getClinicDisplayName } from "../../utils/clinicDisplay";
+import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 
 const OVERVIEW_API = apiUrl("Overview/patient");
 const APPOINTMENTS_API = apiUrl("Appointment");
@@ -576,6 +578,15 @@ function PatientDetails() {
           )
           .join("")
       : `<p>No past prescriptions found.</p>`;
+    const clinicName = getClinicDisplayName(
+      {
+        hospitalName: sourceAppointment?.hospitalName || sourceAppointment?.clinicName || localStorage.getItem("hospitalName") || localStorage.getItem("clinicName"),
+        clinicName: sourceAppointment?.clinicName || localStorage.getItem("clinicName"),
+      },
+      "Clinic"
+    );
+    const clinicId = sourceAppointment?.hospitalId || sourceAppointment?.clinicId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "";
+    const branding = getClinicInvoiceBranding({ clinicId, clinicName });
 
     printWindow.document.write(`
       <!doctype html>
@@ -584,6 +595,8 @@ function PatientDetails() {
           <title>Patient History - ${patient.name}</title>
           <style>
             body { font-family: Arial, sans-serif; color: #0f172a; padding: 28px; }
+            .brand { display: flex; align-items: center; gap: 14px; border-bottom: 2px solid #0f9d9d; padding-bottom: 14px; margin-bottom: 18px; }
+            .brand img { width: 62px; height: 62px; object-fit: contain; }
             h1 { margin: 0 0 8px; }
             h2 { margin-top: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
             .meta { color: #475569; margin: 3px 0; }
@@ -596,7 +609,14 @@ function PatientDetails() {
           </style>
         </head>
         <body>
-          <h1>Patient History</h1>
+          <div class="brand">
+            <img src="${branding.logoUrl}" alt="Clinic logo" />
+            <div>
+              <h1>${branding.headerTitle}</h1>
+              <p class="meta">${branding.headerSubtitle}</p>
+              <p class="meta">Patient History</p>
+            </div>
+          </div>
           <p class="meta"><b>${patient.name}</b> | PID: ${patient.patientCode}</p>
           <p class="meta">${patient.age} Years / ${patient.gender} | Blood Group: ${patient.bloodGroup}</p>
           <p class="meta">Phone: ${patient.phone} | Email: ${patient.email}</p>

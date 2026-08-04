@@ -13,10 +13,12 @@ import {
 import { validateText } from "../../utils/validation";
 import { formatIndianCurrency } from "../../utils/format";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
+import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 import {
   DUPLICATE_APPOINTMENT_MESSAGE,
   hasDuplicateAppointmentForPatientDoctorDate,
 } from "../../utils/appointmentDuplicateValidation";
+import { isDoctorBranchLeaveDate } from "../../utils/doctorBranchLeave";
 import { getSpecializationDisplayName } from "../../pages/DOCTORS/doctorExpertiseOptions";
 
 const parseSlotLabel = (slot) => {
@@ -369,6 +371,9 @@ const printConsultationReceipt = ({
     },
     "Clinic"
   );
+  const clinicId = receptionist.hospitalId || receptionist.clinicId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "";
+  const branding = getClinicInvoiceBranding({ clinicId, clinicName });
+  const logoUrl = branding.logoUrl;
   const patientName = readFirst(appointment, ["patientName", "PatientName"], "") || readFirst(patient, ["name", "fullName", "patientName"], "Patient");
   const patientId = readFirst(appointment, ["patientId", "PatientId"], "") || readFirst(patient, ["id", "patientId", "PatientId", "PID"], "-");
   const phone = readFirst(appointment, ["phone", "patientPhone", "PatientPhone"], "") || readFirst(patient, ["phone", "Phone", "phoneNumber", "PhoneNumber"], "-");
@@ -393,6 +398,7 @@ const printConsultationReceipt = ({
           .bill { border: 1px solid #111; padding: 12px 14px; min-height: 128mm; box-sizing: border-box; }
           .top { display: grid; grid-template-columns: 1.35fr 1fr; border-bottom: 1px solid #111; }
           .clinic { text-align: center; padding: 6px 12px 10px; border-right: 1px solid #111; }
+          .clinic-logo { width: 58px; height: 58px; object-fit: contain; display: block; margin: 0 auto 5px; }
           .clinic h1 { margin: 0 0 5px; font-size: 18px; text-transform: uppercase; }
           .clinic p { margin: 2px 0; line-height: 1.35; }
           .title { margin-top: 5px; font-weight: 800; text-decoration: underline; font-size: 15px; }
@@ -417,7 +423,8 @@ const printConsultationReceipt = ({
         <div class="bill">
           <div class="top">
             <div class="clinic">
-              <h1>${escapeReceiptHtml(clinicName)}</h1>
+              <img class="clinic-logo" src="${escapeReceiptHtml(logoUrl)}" alt="Clinic logo" />
+              <h1>${escapeReceiptHtml(branding.headerTitle || clinicName)}</h1>
               <p>${escapeReceiptHtml(branchName || receptionist.branchName || "Branch")}</p>
               <p>Reg. No: ${escapeReceiptHtml(String(receptionist.hospitalId || "-"))}</p>
               <div class="title">Consultation Bill - Cum - Receipt</div>
@@ -783,6 +790,13 @@ function ReceptionAppointments({ hideActions = false }) {
       date: form.date,
     });
     if (receptionistBranchId) query.set("branchId", receptionistBranchId);
+
+    if (isDoctorBranchLeaveDate(form.doctorId, receptionistBranchId, form.date)) {
+      setAvailableSlots([]);
+      setSelectedSlot("");
+      setSlotLoading(false);
+      return;
+    }
 
     requestJson(`Schedule/day-slots?${query.toString()}`)
       .then((data) => {

@@ -12,12 +12,14 @@ import {
   DEFAULT_DIAGNOSIS_OPTIONS,
   fetchDiagnosisOptions,
   filterDiagnosisOptionsBySpecialization,
-  getDiagnosisTestsForSpecialization,
   mergeDiagnosisOption,
 } from "../utils/diagnosisOptions";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 import { fetchConsultationVitals, mergeStoredAppointmentVitals } from "../../utils/appointmentVitals";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
+import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
+import { fetchLabMasterTests, filterLabTestsBySpecialization } from "../../utils/labMaster";
+import { savePendingDiagnosticRequest } from "../../utils/diagnosticRequests";
 
 const STEPS = [
   "Waiting",
@@ -214,6 +216,7 @@ function Consultation() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [diagnosisOptions, setDiagnosisOptions] = useState([]);
+  const [labTests, setLabTests] = useState([]);
   const [form, setForm] = useState({
     complaintsChoice: "",
     diagnosis: "",
@@ -241,6 +244,23 @@ function Consultation() {
       isActive = false;
     };
   }, [sessionDoctor.specialization]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    fetchLabMasterTests()
+      .then((tests) => {
+        if (isActive) setLabTests(tests);
+      })
+      .catch((err) => {
+        console.warn("Unable to load lab test master.", err);
+        if (isActive) setLabTests([]);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     const loadConsultation = async () => {
@@ -468,15 +488,24 @@ function Consultation() {
       appointment?.doctorSpecialization ||
       appointment?.specialization ||
       sessionDoctor.specialization;
-    const options = new Set(getDiagnosisTestsForSpecialization(doctorSpecialization));
+    const sourceTests = filterLabTestsBySpecialization(labTests, doctorSpecialization).map((test) => test.item);
+    const options = new Set(sourceTests);
     splitDiagnosisTests(form.diagnosisTests).forEach((test) => options.add(test));
     return Array.from(options).sort((a, b) => a.localeCompare(b));
-  }, [appointment, form.diagnosisTests, sessionDoctor.specialization]);
+  }, [appointment, form.diagnosisTests, labTests, sessionDoctor.specialization]);
   const selectedDiagnosisTests = useMemo(
     () => splitDiagnosisTests(form.diagnosisTests),
     [form.diagnosisTests]
   );
-  const hospitalName = getClinicDisplayName("VIMS Clinic");
+  const hospitalName = getClinicDisplayName(
+    {
+      hospitalName: appointment?.hospitalName || appointment?.clinicName || localStorage.getItem("hospitalName") || localStorage.getItem("clinicName"),
+      clinicName: appointment?.clinicName || localStorage.getItem("clinicName"),
+    },
+    "Clinic"
+  );
+  const hospitalId = appointment?.hospitalId || appointment?.clinicId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "";
+  const clinicBranding = getClinicInvoiceBranding({ clinicId: hospitalId, clinicName: hospitalName });
   const doctorName =
     appointment?.doctorName ||
     sessionDoctor.name ||
@@ -576,6 +605,10 @@ function Consultation() {
         PatientId: patientId,
         diagnosis,
         Diagnosis: diagnosis,
+        diagnosisTests,
+        DiagnosisTests: diagnosisTests,
+        diagnosticTests: diagnosisTests,
+        DiagnosticTests: diagnosisTests,
         clinicalNotes,
         ClinicalNotes: clinicalNotes,
       };
@@ -596,6 +629,8 @@ function Consultation() {
             AppointmentId: appointmentId,
             PatientId: patientId,
             Diagnosis: diagnosis,
+            DiagnosisTests: diagnosisTests,
+            DiagnosticTests: diagnosisTests,
             ClinicalNotes: clinicalNotes || "-",
           }),
         });
@@ -622,6 +657,22 @@ function Consultation() {
         mergeDiagnosisOption(prev, form.diagnosis)
       );
       setMessage(data.message || "Consultation saved.");
+
+      if (diagnosisTests) {
+        savePendingDiagnosticRequest({
+          appointmentId,
+          patientId,
+          patientName: appointment.patientName,
+          patientPhone: appointment.phone || appointment.patientPhone,
+          doctorName,
+          diagnosis,
+          tests: diagnosisTests,
+          clinicId: hospitalId,
+          clinicName: hospitalName,
+          branchId: appointment.branchId,
+          branchName: appointment.branchName,
+        });
+      }
 
       window.dispatchEvent(new CustomEvent("appointmentStatusUpdated", {
         detail: { appointmentId: appointment.appointmentId, status: updatedStatus },
@@ -659,9 +710,18 @@ function Consultation() {
     });
   };
 
+  const handleSubmitConsultation = async () => {
+    const result = await saveConsultation();
+    if (result) printConsultation();
+  };
+
   const buildConsultationHtml = () => {
     const printedAt = formatPrintDateTime(new Date());
     const consultDate = formatPrintDateTime(appointment?.date || new Date());
+    const logoUrl = clinicBranding.logoUrl;
+    const watermarkUrl = clinicBranding.watermarkUrl;
+    const headerTitle = clinicBranding.headerTitle || hospitalName;
+    const headerSubtitle = clinicBranding.headerSubtitle || "Out Patient Department";
     const diagnosisBlock = [
       form.diagnosis.trim(),
       selectedDiagnosisTests.length
@@ -679,10 +739,15 @@ function Consultation() {
           <style>
             @page { size: A4; margin: 12mm; }
             body { font-family: Arial, Helvetica, sans-serif; color: #1f2937; margin: 0; background: #fff; font-size: 12px; }
-            .sheet { max-width: 900px; margin: 0 auto; padding: 18px 20px; min-height: 1050px; }
+            .sheet { max-width: 900px; margin: 0 auto; padding: 18px 20px; min-height: 1050px; position: relative; overflow: hidden; }
+            .watermark { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
+            .watermark img { width: 420px; height: 420px; object-fit: contain; opacity: .08; }
+            .sheet > *:not(.watermark) { position: relative; z-index: 1; }
             .print-row { display: flex; justify-content: space-between; font-size: 11px; color: #111827; margin-bottom: 18px; }
             .letterhead { text-align: center; padding-bottom: 12px; border-bottom: 1px solid #222; position: relative; }
-            .brand-left { position: absolute; left: 0; top: 56px; font-size: 16px; font-weight: 900; letter-spacing: .4px; }
+            .brand-logo { width: 72px; height: 72px; object-fit: contain; display: block; margin: 0 auto 6px; }
+            .brand-left { position: absolute; left: 0; top: 48px; display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 900; letter-spacing: .4px; text-align: left; }
+            .brand-left img { width: 42px; height: 42px; object-fit: contain; }
             h1 { margin: 0 0 10px; font-size: 13px; font-weight: 700; }
             .hospital { margin: 4px 0; font-size: 16px; font-weight: 900; }
             .muted { margin: 3px 0; color: #475569; }
@@ -708,15 +773,17 @@ function Consultation() {
         </head>
         <body>
           <main class="sheet">
+            <div class="watermark"><img src="${escapePrintHtml(watermarkUrl)}" alt="" /></div>
             <div class="print-row">
               <span>${escapePrintHtml(printedAt)}</span>
               <span>Consultation - ${escapePrintHtml(appointment?.patientName || "Patient")}</span>
             </div>
             <div class="letterhead">
-              <div class="brand-left">${escapePrintHtml(hospitalName)}</div>
-              <h1>${escapePrintHtml(hospitalName)} EHR</h1>
-              <p class="hospital">${escapePrintHtml(hospitalName)}</p>
-              <p class="muted">Out Patient Department</p>
+              <div class="brand-left"><img src="${escapePrintHtml(logoUrl)}" alt="Clinic logo" /><span>${escapePrintHtml(headerTitle)}</span></div>
+              <img class="brand-logo" src="${escapePrintHtml(logoUrl)}" alt="Clinic logo" />
+              <h1>${escapePrintHtml(headerTitle)} EHR</h1>
+              <p class="hospital">${escapePrintHtml(headerTitle)}</p>
+              <p class="muted">${escapePrintHtml(headerSubtitle)}</p>
               <p class="muted">Phone/Fax: ${escapePrintHtml(localStorage.getItem("hospitalPhone") || localStorage.getItem("clinicPhone") || "-")}</p>
               <p class="muted">Email: ${escapePrintHtml(localStorage.getItem("hospitalEmail") || localStorage.getItem("clinicEmail") || "-")}</p>
               <div class="title">DEPARTMENT OF ${escapePrintHtml(String(doctorSpecialization).toUpperCase())}</div>
@@ -931,7 +998,9 @@ function Consultation() {
               value=""
               onChange={(event) => addDiagnosisTest(event.target.value)}
             >
-              <option value="">Select diagnosis test</option>
+              <option value="">
+                {diagnosisTestOptions.length ? "Select diagnosis test" : "No lab file tests available"}
+              </option>
               {diagnosisTestOptions.map((test) => (
                 <option value={test} key={test}>
                   {test}
@@ -955,7 +1024,7 @@ function Consultation() {
             <button
               className="cn-btn-submit"
               type="button"
-              onClick={saveConsultation}
+              onClick={handleSubmitConsultation}
               disabled={saving}
             >
               {saving ? "Saving..." : "Submit"}

@@ -1,40 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Camera, Cross, Eye, Leaf, MapPin, Pencil, Phone, Plus, Sun, Trash2 } from "lucide-react";
+import { Camera, Eye, MapPin, Pencil, Phone, Plus, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
 import { deleteClinic, fetchClinics, updateClinicStatus } from "../superAdminApi";
-
-const ToothLogo = () => (
-  <svg className="sa-clinic-tooth-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path
-      d="M7.45 3.8c1.2-.52 2.35-.28 3.18.17.86.47 1.88.47 2.74 0 .83-.45 1.98-.69 3.18-.17 2.2.95 3.13 3.25 2.43 5.87l-1.56 5.84c-.45 1.69-1.28 4.72-3.03 4.72-1.24 0-1.31-1.49-1.68-3.08-.18-.78-.43-1.37-.71-1.37s-.53.59-.71 1.37c-.37 1.59-.44 3.08-1.68 3.08-1.75 0-2.58-3.03-3.03-4.72L5.02 9.67C4.32 7.05 5.25 4.75 7.45 3.8Z"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const getClinicLogo = (clinicName = "") => {
-  const name = String(clinicName).toLowerCase();
-  if (name.includes("dental")) return { type: "tooth", text: "", tone: "dental" };
-  if (name.includes("primo")) return { type: "icon", icon: Sun, text: "PRIMO", tone: "amber" };
-  if (name.includes("pirnav")) return { type: "icon", icon: Sun, text: "PIRNAV", tone: "amber" };
-  if (name.includes("pragathi")) return { type: "icon", icon: Leaf, text: "PRAGATHI", tone: "green" };
-  if (name.includes("sai ram")) return { type: "icon", icon: Sun, text: "SAI RAM", tone: "sky" };
-  if (name.includes("vims")) return { type: "icon", icon: Cross, text: "VIMS", tone: "emerald" };
-  const fallbackText = String(clinicName || "CLINIC")
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
-  return { type: "icon", icon: Cross, text: fallbackText || "CL", tone: "emerald" };
-};
+import { getClinicInvoiceBranding } from "../../../utils/clinicBranding";
 
 function Clinics() {
   const navigate = useNavigate();
@@ -132,13 +103,14 @@ function Clinics() {
       label: "Clinic Name",
       width: "minmax(150px, 0.9fr)",
       render: (clinic) => {
-        const logo = getClinicLogo(clinic.name);
-        const LogoIcon = logo.icon;
+        const branding = getClinicInvoiceBranding({
+          clinicId: clinic.id || clinic.clinicId || clinic.hospitalId,
+          clinicName: clinic.name,
+        });
         return (
           <div className="sa-clinic-name-cell">
-            <span className={`sa-clinic-logo sa-clinic-logo--${logo.tone}`}>
-              {logo.type === "tooth" ? <ToothLogo /> : <LogoIcon size={16} />}
-              <small>{logo.text}</small>
+            <span className="sa-clinic-logo sa-clinic-logo--emerald">
+              <img src={branding.logoUrl} alt="" />
             </span>
             <b>{clinic.name || "-"}</b>
           </div>

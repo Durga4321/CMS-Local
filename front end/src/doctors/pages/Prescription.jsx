@@ -9,6 +9,7 @@ import {
   getLoggedInDoctor,
 } from "../utils/doctorSession";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
+import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 import { useToast } from "../../components/ToastProvider";
 import { validateDate } from "../../utils/validation";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
@@ -507,7 +508,15 @@ function Prescription() {
     };
   }, []);
 
-  const hospitalName = getClinicDisplayName({}, "Clinic Name");
+  const hospitalName = getClinicDisplayName(
+    {
+      hospitalName: appointment?.hospitalName || appointment?.clinicName || localStorage.getItem("hospitalName") || localStorage.getItem("clinicName"),
+      clinicName: appointment?.clinicName || localStorage.getItem("clinicName"),
+    },
+    "Clinic"
+  );
+  const hospitalId = appointment?.hospitalId || appointment?.clinicId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "";
+  const clinicBranding = getClinicInvoiceBranding({ clinicId: hospitalId, clinicName: hospitalName });
   const doctorName = localStorage.getItem("doctorName") || appointment?.doctorName || "Doctor";
   const chiefComplaint =
     appointment?.chiefComplaints ||
@@ -703,6 +712,10 @@ function Prescription() {
     const consultId =
       appointment?.appointmentId || appointment?.tokenNumber || `OP${String(Date.now()).slice(-9)}`;
     const printedAt = formatPrintDateTime(new Date());
+    const logoUrl = clinicBranding.logoUrl;
+    const watermarkUrl = clinicBranding.watermarkUrl;
+    const headerTitle = clinicBranding.headerTitle || hospitalName;
+    const headerSubtitle = clinicBranding.headerSubtitle || "Out Patient Department";
     const medicineRows = validMedicines
       .map(
         (medicine, index) => `
@@ -745,10 +758,15 @@ function Prescription() {
           <style>
             @page { size: A4; margin: 12mm; }
             body { font-family: Arial, Helvetica, sans-serif; color: #343a40; margin: 0; background: #fff; font-size: 12px; }
-            .sheet { max-width: 900px; margin: 0 auto; padding: 18px 20px; }
+            .sheet { max-width: 900px; margin: 0 auto; padding: 18px 20px; position: relative; overflow: hidden; }
+            .watermark { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
+            .watermark img { width: 420px; height: 420px; object-fit: contain; opacity: .08; }
+            .sheet > *:not(.watermark) { position: relative; z-index: 1; }
             .print-time { font-size: 11px; margin-bottom: 8px; }
             .letterhead { text-align: center; padding-bottom: 12px; border-bottom: 1px solid #333; position: relative; }
-            .brand { position: absolute; left: 0; top: 42px; font-weight: 800; font-size: 16px; letter-spacing: .5px; }
+            .brand-logo { width: 72px; height: 72px; object-fit: contain; display: block; margin: 0 auto 6px; }
+            .brand { position: absolute; left: 0; top: 42px; display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 16px; letter-spacing: .5px; text-align: left; }
+            .brand img { width: 42px; height: 42px; object-fit: contain; }
             h1 { margin: 0; font-size: 14px; font-weight: 700; }
             .hospital { margin: 10px 0 3px; font-size: 15px; font-weight: 800; }
             .muted { margin: 3px 0; color: #4b5563; }
@@ -780,12 +798,14 @@ function Prescription() {
         </head>
         <body>
           <main class="sheet">
+            <div class="watermark"><img src="${escapePrintHtml(watermarkUrl)}" alt="" /></div>
             <div class="print-time">${escapePrintHtml(printedAt)}</div>
             <div class="letterhead">
-              <div class="brand">${escapePrintHtml(hospitalName)}</div>
-              <h1>${escapePrintHtml(hospitalName)} EHR</h1>
-              <p class="hospital">${escapePrintHtml(hospitalName)}</p>
-              <p class="muted">Out Patient Department</p>
+              <div class="brand"><img src="${escapePrintHtml(logoUrl)}" alt="Clinic logo" /><span>${escapePrintHtml(headerTitle)}</span></div>
+              <img class="brand-logo" src="${escapePrintHtml(logoUrl)}" alt="Clinic logo" />
+              <h1>${escapePrintHtml(headerTitle)} EHR</h1>
+              <p class="hospital">${escapePrintHtml(headerTitle)}</p>
+              <p class="muted">${escapePrintHtml(headerSubtitle)}</p>
               <p class="muted">Phone/Fax: ${escapePrintHtml(localStorage.getItem("hospitalPhone") || localStorage.getItem("clinicPhone") || "-")}</p>
               <p class="muted">Email: ${escapePrintHtml(localStorage.getItem("hospitalEmail") || localStorage.getItem("clinicEmail") || "-")}</p>
               <div class="title">DEPARTMENT OF ${escapePrintHtml((appointment?.doctorSpecialization || "CONSULTATION").toUpperCase())}</div>

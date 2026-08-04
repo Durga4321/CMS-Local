@@ -63,6 +63,13 @@
   stroke-width: 2.3;
 }
 
+.dr-clinic-logo img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  display: block;
+}
+
 .dr-clinic-logo small {
   max-width: 36px;
   color: #1d65c1;

@@ -7,21 +7,26 @@ export const clearAllSessions = () => {
     "doctorToken",
     "receptionistToken",
     "nurseToken",
+    "labToken",
     "adminEmail",
     "adminName",
     "doctorEmail",
     "receptionistEmail",
     "nurseEmail",
+    "labEmail",
     "adminRole",
     "doctorRole",
     "receptionistRole",
     "nurseRole",
+    "labRole",
     "userRole",
     "doctorId",
     "doctorName",
     "receptionistName",
     "nurseName",
     "nurseId",
+    "labName",
+    "labId",
     "hospitalId",
     "hospitalName",
     "clinicName",
@@ -39,17 +44,19 @@ export const clearAllSessions = () => {
 };
 
 export const logoutAndClearSessions = async (roleType = "admin") => {
-  const role = String(localStorage.getItem("adminRole") || localStorage.getItem("doctorRole") || localStorage.getItem("receptionistRole") || localStorage.getItem("nurseRole") || localStorage.getItem("patientRole") || localStorage.getItem("userRole") || "").trim();
+  const role = String(localStorage.getItem("adminRole") || localStorage.getItem("doctorRole") || localStorage.getItem("receptionistRole") || localStorage.getItem("nurseRole") || localStorage.getItem("labRole") || localStorage.getItem("patientRole") || localStorage.getItem("userRole") || "").trim();
   const name = String(
     localStorage.getItem("adminName") ||
       localStorage.getItem("doctorName") ||
       localStorage.getItem("receptionistName") ||
       localStorage.getItem("nurseName") ||
+      localStorage.getItem("labName") ||
       localStorage.getItem("patientName") ||
       localStorage.getItem("adminEmail") ||
       localStorage.getItem("doctorEmail") ||
       localStorage.getItem("receptionistEmail") ||
       localStorage.getItem("nurseEmail") ||
+      localStorage.getItem("labEmail") ||
       localStorage.getItem("patientEmail") ||
       "User"
   ).trim();
@@ -99,6 +106,8 @@ const getSessionClaims = (roleType) => {
         ? localStorage.getItem("receptionistToken")
         : roleType === "nurse"
           ? localStorage.getItem("nurseToken")
+          : roleType === "lab"
+            ? localStorage.getItem("labToken")
         : localStorage.getItem("adminToken");
 
   return decodeJwtPayload(roleToken || localStorage.getItem("token"));
@@ -177,6 +186,20 @@ export const getRoleProfile = (roleType = "admin") => {
       branchName: getProfileBranchName(claims),
       profilePath: "/nurse/profile",
       passwordPath: "/nurse/profile?tab=password",
+    };
+  }
+
+  if (roleType === "lab") {
+    const claims = getSessionClaims(roleType);
+    const email = getProfileEmail("labEmail", claims, "lab account");
+    return {
+      roleType,
+      roleLabel: "Lab Technician",
+      name: getProfileName("labName", email, claims, "Lab Technician"),
+      email,
+      branchName: getProfileBranchName(claims),
+      profilePath: "/lab/profile",
+      passwordPath: "/lab/profile?tab=password",
     };
   }
 

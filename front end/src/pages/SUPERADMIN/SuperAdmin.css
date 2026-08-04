@@ -1358,6 +1358,13 @@
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
+.sa-clinic-logo img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+}
+
 .sa-clinic-logo--emerald {
   color: #10b981;
 }
@@ -1382,26 +1389,6 @@
 
 .sa-clinic-logo--sky {
   color: #0ea5e9;
-}
-
-.sa-clinic-logo small {
-  max-width: 28px;
-  color: #1d65c1;
-  font-size: 6px;
-  font-weight: 900;
-  line-height: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sa-clinic-logo--dental small {
-  display: none;
-}
-
-.sa-clinic-tooth-svg {
-  color: #1d7ff2;
-  filter: drop-shadow(0 1px 0 rgba(29, 127, 242, 0.08));
 }
 
 /* Super admin role table and notifications refresh. */
@@ -2118,6 +2105,13 @@
   align-items: center;
   justify-content: center;
   color: #2563eb;
+}
+
+.sa-admin-clinic-logo img {
+  width: 19px;
+  height: 19px;
+  object-fit: contain;
+  display: block;
 }
 
 .sa-admin-clinic-logo--emerald {

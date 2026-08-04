@@ -1,0 +1,136 @@
+.lab-tech-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 30px;
+}
+
+.lab-tech-card {
+  min-height: 620px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #dfe8ee;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.07);
+  overflow: hidden;
+}
+
+.lab-tech-card-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 44px 36px 26px;
+  text-align: center;
+}
+
+.lab-tech-avatar {
+  width: 138px;
+  height: 138px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 12px;
+  border: 1px solid #cceff0;
+  border-radius: 50%;
+  outline: 12px solid #eefafa;
+  background: #eaf7f7;
+  color: #159a9d;
+  font-size: 56px;
+  font-weight: 900;
+}
+
+.lab-tech-card-head h3,
+.lab-tech-card-head p {
+  margin: 0;
+  color: #00979a;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.lab-tech-card-head p {
+  margin-top: 8px;
+}
+
+.lab-tech-card-details {
+  padding: 0 36px;
+}
+
+.lab-tech-card-details div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: center;
+  min-height: 64px;
+  border-top: 1px solid #edf2f5;
+}
+
+.lab-tech-card-details div:last-child {
+  border-bottom: 1px solid #edf2f5;
+}
+
+.lab-tech-card-details span {
+  color: #61738b;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.lab-tech-card-details strong {
+  min-width: 0;
+  color: #1c2d46;
+  font-size: 16px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.lab-tech-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  width: 100%;
+  border-radius: 999px;
+  font-weight: 900;
+}
+
+.lab-tech-status-pill.active {
+  color: #047857;
+  background: #d8f9e4;
+}
+
+.lab-tech-status-pill.inactive {
+  color: #b42318;
+  background: #fee4e2;
+}
+
+.lab-tech-card-actions {
+  justify-content: center;
+  gap: 14px;
+  margin-top: auto;
+  padding: 28px 24px 30px;
+}
+
+.lab-tech-card-actions .receptionists-action-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  background: #fff;
+}
+
+@media (max-width: 760px) {
+  .lab-tech-card-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .lab-tech-card {
+    min-height: auto;
+  }
+
+  .lab-tech-card-details,
+  .lab-tech-card-head {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .lab-tech-card-details div {
+    grid-template-columns: 92px minmax(0, 1fr);
+  }
+}

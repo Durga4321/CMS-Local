@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle, Pencil, Plus, RefreshCw, Search, ShieldPlus, Trash2, ToggleLeft, ToggleRight, UserRoundCheck, X } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Camera, CheckCircle, Pencil, Plus, RefreshCw, Search, ShieldPlus, Trash2, ToggleLeft, ToggleRight, X } from "lucide-react";
 import "../RECEPTIONISTS/Receptionists.css";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
@@ -18,6 +18,7 @@ import {
 const STAFF_URL = apiUrl("Staff");
 const NURSES_URL = apiUrl("Nurses");
 const STAFF_TOGGLE_STATUS = (id) => apiUrl(`Staff/${encodeURIComponent(id)}/toggle-status`);
+const NURSE_URL = apiUrl("Nurse");
 
 const parseList = (data) => {
   if (Array.isArray(data)) return data;
@@ -84,12 +85,53 @@ const getErrorMessage = async (response, fallback) => {
   }
 };
 
+const buildStaffFormData = (payload = {}, imageFile = null) => {
+  const body = new FormData();
+  body.append("Name", payload.Name || "");
+  body.append("Email", payload.Email || "");
+  body.append("Phone", payload.Phone || "");
+  body.append("Role", payload.Role || "Nurse");
+  body.append("Password", payload.Password || "");
+  body.append("IsActive", String(payload.IsActive ?? true));
+  body.append("BranchId", String(payload.BranchId || ""));
+  body.append("Image", imageFile || new Blob([]), imageFile?.name || "");
+  return body;
+};
+
+const requestNurseSave = async ({ urls = [], method, payload, imageFile, fallbackMessage }) => {
+  let lastError = null;
+
+  for (const url of urls) {
+    try {
+      const body = buildStaffFormData(payload, imageFile);
+      const response = await fetch(url, {
+        method,
+        headers: {
+          ...getApiHeaders(),
+        },
+        body,
+      });
+
+      if (response.ok) {
+        return response.json().catch(() => ({}));
+      }
+
+      lastError = new Error(await getErrorMessage(response, fallbackMessage));
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error(fallbackMessage);
+};
+
 const emptyForm = {
   name: "",
   email: "",
   phone: "",
   password: "",
   branchId: "",
+  isActive: true,
 };
 
 function Nurses() {
@@ -111,6 +153,8 @@ function Nurses() {
   const [message, setMessage] = useState("");
   const [deletingId, setDeletingId] = useState(null);
   const [editingNurse, setEditingNurse] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const imageInputRef = useRef(null);
 
   const branchNameById = useMemo(
     () => branches.reduce((lookup, branch) => ({ ...lookup, [String(branch.id)]: branch.name }), {}),
@@ -215,6 +259,7 @@ function Nurses() {
   const openModal = () => {
     setEditingNurse(null);
     setForm(emptyForm);
+    setImageFile(null);
     setFieldErrors({});
     setMessage("");
     setModalOpen(true);
@@ -228,7 +273,9 @@ function Nurses() {
       phone: getNursePhone(nurse) || "",
       password: "",
       branchId: String(getNurseBranchId(nurse) || ""),
+      isActive: !getNurseStatus(nurse).toLowerCase().includes("inactive"),
     });
+    setImageFile(null);
     setFieldErrors({});
     setMessage("");
     setModalOpen(true);
@@ -247,34 +294,74 @@ function Nurses() {
     try {
       const payload = {
         name: form.name.trim(),
+        Name: form.name.trim(),
+        nurseName: form.name.trim(),
+        NurseName: form.name.trim(),
+        fullName: form.name.trim(),
+        FullName: form.name.trim(),
         email: form.email.trim(),
+        Email: form.email.trim(),
+        emailAddress: form.email.trim(),
+        EmailAddress: form.email.trim(),
+        nurseEmail: form.email.trim(),
+        NurseEmail: form.email.trim(),
+        userEmail: form.email.trim(),
+        UserEmail: form.email.trim(),
         phone: form.phone.trim(),
+        Phone: form.phone.trim(),
+        phoneNumber: form.phone.trim(),
+        PhoneNumber: form.phone.trim(),
+        mobile: form.phone.trim(),
+        Mobile: form.phone.trim(),
+        mobileNumber: form.phone.trim(),
+        MobileNumber: form.phone.trim(),
+        nursePhone: form.phone.trim(),
+        NursePhone: form.phone.trim(),
+        contactNumber: form.phone.trim(),
+        ContactNumber: form.phone.trim(),
         password: form.password || undefined,
+        Password: form.password || undefined,
         hospitalId: Number(hospitalId) || hospitalId,
+        HospitalId: Number(hospitalId) || hospitalId,
+        clinicId: Number(hospitalId) || hospitalId,
+        ClinicId: Number(hospitalId) || hospitalId,
         branchId: Number(form.branchId) || form.branchId,
+        BranchId: Number(form.branchId) || form.branchId,
         role: "Nurse",
+        Role: "Nurse",
+        roleName: "Nurse",
+        RoleName: "Nurse",
+        type: "Nurse",
+        Type: "Nurse",
+        staffRole: "Nurse",
+        StaffRole: "Nurse",
+        IsActive: Boolean(form.isActive),
       };
-      const isEditing = Boolean(editingNurse?.id);
-      const url = isEditing ? `${STAFF_URL}/${encodeURIComponent(editingNurse.id)}` : STAFF_URL;
-      const response = await fetch(url, {
+      const editingId = getNurseId(editingNurse || {});
+      const isEditing = Boolean(editingId);
+      const encodedId = encodeURIComponent(editingId);
+      const result = await requestNurseSave({
+        urls: isEditing
+          ? [
+              `${NURSES_URL}/${encodedId}`,
+              `${NURSE_URL}/${encodedId}`,
+              `${STAFF_URL}/${encodedId}`,
+            ]
+          : [
+              NURSES_URL,
+              NURSE_URL,
+              STAFF_URL,
+            ],
         method: isEditing ? "PUT" : "POST",
-        headers: {
-          ...getApiHeaders(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        payload,
+        imageFile,
+        fallbackMessage: isEditing ? "Unable to update nurse." : "Unable to create nurse.",
       });
-
-      if (!response.ok) {
-        throw new Error(await getErrorMessage(response, isEditing ? "Unable to update nurse." : "Unable to create nurse."));
-      }
-
-      const result = await response.json().catch(() => null);
       const saved = result || {};
       if (isEditing) {
         setNurses((previous) =>
           previous.map((item) =>
-            String(getNurseId(item)) === String(editingNurse.id)
+            String(getNurseId(item)) === String(editingId)
               ? { ...item, ...saved, branchId: payload.branchId, name: payload.name, email: payload.email, phone: payload.phone }
               : item
           )
@@ -289,6 +376,7 @@ function Nurses() {
 
       setModalOpen(false);
       setEditingNurse(null);
+      setImageFile(null);
     } catch (error) {
       setFieldErrors({ form: error.message || (editingNurse ? "Unable to update nurse." : "Unable to create nurse.") });
       toast.error(error.message || (editingNurse ? "Unable to update nurse." : "Unable to create nurse."));
@@ -474,10 +562,25 @@ function Nurses() {
 
             <form className="receptionists-form" onSubmit={handleSubmit} noValidate>
               <div className="receptionists-image-upload">
-                <div className="receptionists-image-circle">
+                <button
+                  type="button"
+                  className="receptionists-image-circle"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={saving}
+                  title="Upload nurse image"
+                >
                   <span>{(form.name || "N").slice(0, 1).toUpperCase()}</span>
-                  <UserRoundCheck size={18} className="receptionists-image-button" />
-                </div>
+                  <Camera size={18} className="receptionists-image-button" />
+                </button>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={(event) => setImageFile(event.target.files?.[0] || null)}
+                  disabled={saving}
+                />
+                {imageFile ? <span className="receptionists-image-filename">{imageFile.name}</span> : null}
               </div>
 
               <div className="receptionists-field">
@@ -507,6 +610,18 @@ function Nurses() {
                   {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
                 </select>
                 {fieldErrors.branchId ? <span className="receptionists-field-error">{fieldErrors.branchId}</span> : null}
+              </div>
+              <div className="receptionists-field">
+                <label htmlFor="nurse-is-active">Is Active</label>
+                <select
+                  id="nurse-is-active"
+                  value={form.isActive ? "Active" : "Inactive"}
+                  onChange={(event) => updateField("isActive", event.target.value === "Active")}
+                  disabled={saving}
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
               </div>
 
               {fieldErrors.form ? <div className="receptionists-error receptionists-form-message">{fieldErrors.form}</div> : null}
