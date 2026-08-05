@@ -19,6 +19,7 @@ import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 import { fetchLabMasterTests, normalizeLabTests } from "../../utils/labMaster";
 import { clearPendingDiagnosticRequest, getPendingDiagnosticRequest } from "../../utils/diagnosticRequests";
+import { RECEPTION_RECENT_SERVICE_BILLS_KEY as RECENT_SERVICE_BILLS_STORAGE_KEY } from "../../utils/billingRevenue";
 
 const escapeHtml = (value) =>
   String(value ?? "")
@@ -41,7 +42,6 @@ const formatAmountInput = (value, { emptyValue = "0.00" } = {}) => {
 const formatCurrency = (value) => formatIndianCurrency(value);
 const amountFormat = (value) => (Number(value) || 0).toFixed(2);
 const LAST_INVOICE_STORAGE_KEY = "receptionLatestInvoice";
-const RECENT_SERVICE_BILLS_STORAGE_KEY = "receptionRecentServiceBills";
 const HALF_GST_RATE = 0.09;
 
 const PHARMACY_PRICE_LIST = [
@@ -398,6 +398,11 @@ const printServiceInvoice = ({
   const headerTitle = branding.headerTitle || clinicName;
   const headerSubtitle = branding.headerSubtitle || "Clinic Billing";
   const footerNote = branding.footerNote;
+  const brandingClinicAddress = branding.clinicAddress || "";
+  const brandingClinicPhone = branding.clinicPhone || clinicPhone || "";
+  const brandingClinicEmail = branding.clinicEmail || clinicEmail || "";
+  const brandingGstNumber = branding.gstNumber || "";
+  const brandingRegistrationNumber = branding.registrationNumber || "";
   const accentColor = branding.accentColor || "#0f9d9d";
   const printWindow = window.open("", "_blank", "width=980,height=720");
   if (!printWindow) return false;
@@ -449,8 +454,10 @@ const printServiceInvoice = ({
                 <img src="${escapeHtml(logoUrl)}" alt="Clinic logo" />
                 <h1>${escapeHtml(headerTitle)} ${type === "pharmacy" ? "Pharmacy" : "Diagnostics"}</h1>
               </div>
-              <p>${escapeHtml([headerSubtitle, clinicPhone, clinicEmail].filter(Boolean).join(" | "))}</p>
-              <p>GSTIN: 37AAATC0000Z1Z0</p>
+              <p>${escapeHtml([headerSubtitle, brandingClinicPhone, brandingClinicEmail].filter(Boolean).join(" | "))}</p>
+              ${brandingClinicAddress ? `<p>${escapeHtml(brandingClinicAddress)}</p>` : ""}
+              ${brandingGstNumber ? `<p>GSTIN: ${escapeHtml(brandingGstNumber)}</p>` : ""}
+              ${brandingRegistrationNumber ? `<p>Reg No: ${escapeHtml(brandingRegistrationNumber)}</p>` : ""}
             </div>
             <div class="badge">
               <span>${escapeHtml(title)}</span>
@@ -782,8 +789,10 @@ const appointmentToOpBill = (appointment = {}) => {
   return normalizeServiceBill({
     ...appointment,
     type: "consultation",
-    invoiceType: "consultation",
-    billingType: "Consultation",
+    invoiceType: "op",
+    InvoiceType: "op",
+    billingType: "OP",
+    BillingType: "OP",
     serviceType: "OP Billing",
     invoiceNo:
       appointment.invoiceNo ||
@@ -982,6 +991,9 @@ const storeRecentServiceBill = (bill) => {
 
   try {
     localStorage.setItem(RECENT_SERVICE_BILLS_STORAGE_KEY, JSON.stringify(nextBills));
+    if (getServiceBillType(bill) === "diagnostic") {
+      window.dispatchEvent(new CustomEvent("receptionDiagnosticBillingCompleted", { detail: bill }));
+    }
   } catch {
     // Local recent bills are a convenience; Billing API remains the source for revenue.
   }
@@ -1048,8 +1060,14 @@ const normalizeServiceBill = (bill = {}) => {
       type === "pharmacy"
         ? "Pharmacy"
         : type === "diagnostic"
-          ? "Diagnostic"
-          : "Consultation",
+          ? "Lab"
+          : "OP",
+    BillingType:
+      type === "pharmacy"
+        ? "Pharmacy"
+        : type === "diagnostic"
+          ? "Lab"
+          : "OP",
     invoiceNo: bill.invoiceNo || bill.invoiceNumber || bill.billNumber || bill.billNo,
     invoiceNumber: bill.invoiceNumber || bill.invoiceNo || bill.billNumber || bill.billNo,
     billNumber: bill.billNumber || bill.invoiceNumber || bill.invoiceNo || bill.billNo,
@@ -1503,6 +1521,9 @@ function ReceptionBilling() {
 
   const buildServiceBillingPayload = (details) => {
     const isPharmacy = details.type === "pharmacy";
+    const billingTypeLabel = isPharmacy ? "Pharmacy" : "Lab";
+    const invoiceTypeValue = isPharmacy ? "pharmacy" : "diagnostic";
+    const serviceTypeLabel = isPharmacy ? "Pharmacy Billing" : "Diagnostic Billing";
     const serviceItems = details.rows.map((row) => ({
       labTestId: row.id || row.testId || row.labTestId || "",
       LabTestId: row.id || row.testId || row.labTestId || "",
@@ -1552,12 +1573,12 @@ function ReceptionBilling() {
       invoiceNo: details.invoiceNo,
       billNumber: details.invoiceNo,
       billNo: details.invoiceNo,
-      invoiceType: details.type,
-      InvoiceType: details.type,
-      billingType: isPharmacy ? "Pharmacy" : "Diagnostic",
-      BillingType: isPharmacy ? "Pharmacy" : "Diagnostic",
-      serviceType: isPharmacy ? "Pharmacy Billing" : "Diagnosis Test Billing",
-      ServiceType: isPharmacy ? "Pharmacy Billing" : "Diagnosis Test Billing",
+      invoiceType: invoiceTypeValue,
+      InvoiceType: invoiceTypeValue,
+      billingType: billingTypeLabel,
+      BillingType: billingTypeLabel,
+      serviceType: serviceTypeLabel,
+      ServiceType: serviceTypeLabel,
       consultationCharge: 0,
       consultationCharges: 0,
       opRevenue: 0,
@@ -1638,7 +1659,12 @@ function ReceptionBilling() {
         patientId: details.patientId,
         doctorName: details.doctorName,
         paymentMode: details.paymentMode,
-        invoiceType: details.type,
+        invoiceType: details.type === "pharmacy" ? "pharmacy" : "diagnostic",
+        InvoiceType: details.type === "pharmacy" ? "pharmacy" : "diagnostic",
+        billingType: details.type === "pharmacy" ? "Pharmacy" : "Lab",
+        BillingType: details.type === "pharmacy" ? "Pharmacy" : "Lab",
+        serviceType: details.type === "pharmacy" ? "Pharmacy Billing" : "Diagnostic Billing",
+        ServiceType: details.type === "pharmacy" ? "Pharmacy Billing" : "Diagnostic Billing",
         totalAmount: details.totals.total,
         paidAmount: details.totals.total,
         backendSynced: true,
@@ -1806,12 +1832,12 @@ function ReceptionBilling() {
       invoiceNo: editingBill?.invoiceNo || editingBill?.invoiceNumber || editingBill?.billNumber,
       invoiceNumber: editingBill?.invoiceNumber || editingBill?.billNumber || editingBill?.invoiceNo,
       billNumber: editingBill?.billNumber || editingBill?.invoiceNumber || editingBill?.invoiceNo,
-      billingType: "Consultation",
-      BillingType: "Consultation",
-      invoiceType: "consultation",
-      InvoiceType: "consultation",
-      serviceType: "Consultation Billing",
-      ServiceType: "Consultation Billing",
+      billingType: "OP",
+      BillingType: "OP",
+      invoiceType: "op",
+      InvoiceType: "op",
+      serviceType: "OP Billing",
+      ServiceType: "OP Billing",
       source: "reception",
       billingSource: "reception",
       bookingSource: "offline",
@@ -1862,6 +1888,12 @@ function ReceptionBilling() {
         paidAmount: totalAmount,
         amount: totalAmount,
         revenue: totalAmount,
+        billingType: "OP",
+        BillingType: "OP",
+        invoiceType: "op",
+        InvoiceType: "op",
+        serviceType: "OP Billing",
+        ServiceType: "OP Billing",
         patientName:
           invoiceData?.patientName ||
           getAppointmentPatientName(selectedAppointment),

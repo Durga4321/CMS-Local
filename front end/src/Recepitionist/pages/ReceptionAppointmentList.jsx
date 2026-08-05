@@ -23,17 +23,18 @@ const emptyVitals = {
   respiratoryRate: "",
 };
 const vitalFields = [
-  { name: "bloodPressure", label: "Blood Pressure", unit: "mmHg", placeholder: "120/80" },
+  { name: "bloodPressure", label: "BP", unit: "mmHg", placeholder: "120/80" },
   { name: "sugarLevel", label: "Sugar Level", unit: "mg/dL", placeholder: "100" },
   { name: "temperature", label: "Temperature", unit: "F", placeholder: "98.6" },
   { name: "weight", label: "Weight", unit: "kg", placeholder: "70" },
-  { name: "pulseRate", label: "Pulse Rate", unit: "bpm", placeholder: "72" },
-  { name: "respiratoryRate", label: "Respiratory Rate", unit: "breaths/min", placeholder: "16" },
+  { name: "pulseRate", label: "PBRM", unit: "bpm", placeholder: "72" },
+  { name: "respiratoryRate", label: "SpO2", unit: "%", placeholder: "98" },
 ];
 
 const stripUnit = (value) =>
   String(value || "")
     .replace(/\s*(mmhg|mg\/dl|f|kg|bpm|breaths\/min)\s*$/i, "")
+    .replace(/\s*%\s*$/i, "")
     .trim();
 
 const appendUnit = (value, unit) => {
@@ -228,7 +229,7 @@ function ReceptionAppointmentList({
       temperatureUnit: "F",
       weightUnit: "kg",
       pulseRateUnit: "bpm",
-      respiratoryRateUnit: "breaths/min",
+      respiratoryRateUnit: "%",
       vitals,
     };
     const saveAttempts = [

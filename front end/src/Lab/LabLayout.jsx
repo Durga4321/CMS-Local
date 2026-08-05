@@ -11,6 +11,7 @@ const TITLES = {
   "/lab/patients": "Patients",
   "/lab/diagnosis-tests": "Diagnosis Tests",
   "/lab/sample-collection": "Sample Collection",
+  "/lab/report-create": "Create Report",
   "/lab/imports": "Imports",
   "/lab/exports": "Exports",
   "/lab/reports": "Reports",

@@ -169,7 +169,7 @@ function AppointmentModal({
             <div className="appointment-modal-grid appointment-modal-vitals">
 
               <DetailItem
-                label="Blood Pressure"
+                label="BP"
                 value={
                   data.vitals?.bloodPressure ||
                   data.bloodPressure
@@ -201,7 +201,7 @@ function AppointmentModal({
               />
 
               <DetailItem
-                label="Pulse Rate"
+                label="PBRM"
                 value={
                   data.vitals?.pulseRate ||
                   data.pulseRate
@@ -209,7 +209,7 @@ function AppointmentModal({
               />
 
               <DetailItem
-                label="Respiratory Rate"
+                label="SpO2"
                 value={
                   data.vitals?.respiratoryRate ||
                   data.respiratoryRate

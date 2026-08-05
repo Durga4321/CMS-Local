@@ -527,11 +527,11 @@ function Prescription() {
   const followUpLabel = followUp ? formatDateMMDDYYYY(followUp, emptyValue) : "Select date";
   const vitals = [
     ["BP", appointment?.bloodPressure],
-    ["Pulse", appointment?.pulseRate],
+    ["PBRM", appointment?.pulseRate],
     ["Temp", appointment?.temperature],
     ["Weight", appointment?.weight],
     ["Sugar", appointment?.sugarLevel],
-    ["Resp", appointment?.respiratoryRate],
+    ["SpO2", appointment?.respiratoryRate],
   ];
 
   const validMedicines = useMemo(

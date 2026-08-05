@@ -67,6 +67,8 @@ const downloadLabExport = async () => {
   window.URL.revokeObjectURL(url);
 };
 
+const LAB_MASTER_QUERY = "pageSize=10000&limit=10000&includeAll=true&all=true";
+
 function LabFiles() {
   const toast = useToast();
   const fileInputRef = useRef(null);
@@ -83,7 +85,7 @@ function LabFiles() {
     try {
       const savedRows = getImportedLabFileRows();
       if (savedRows.length) setRows(savedRows);
-      const response = await fetch(apiUrl("Lab/master"), { headers: getApiHeaders() });
+      const response = await fetch(apiUrl(`Lab/master?${LAB_MASTER_QUERY}`), { headers: getApiHeaders() });
       if (!response.ok) throw new Error(await getErrorMessage(response, "Unable to load lab file data."));
       const list = parseList(await response.json().catch(() => null));
       cacheLabMasterTests(list);
@@ -121,7 +123,7 @@ function LabFiles() {
       });
       if (!response.ok) throw new Error(await getErrorMessage(response, "Unable to import lab file."));
       toast.success("Lab file imported successfully.");
-      const importedResponse = await fetch(apiUrl("Lab/master"), { headers: getApiHeaders() });
+      const importedResponse = await fetch(apiUrl(`Lab/master?${LAB_MASTER_QUERY}`), { headers: getApiHeaders() });
       if (!importedResponse.ok) throw new Error(await getErrorMessage(importedResponse, "Imported file saved, but unable to reload lab records."));
       const importedRows = parseList(await importedResponse.json().catch(() => null));
       saveImportedLabFileRows(importedRows);

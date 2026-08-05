@@ -254,12 +254,120 @@
   border-bottom: none;
 }
 
+.daily-count-btn {
+  min-width: 42px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #0f172a;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.daily-count-btn:hover:not(:disabled) {
+  border-color: #99d9d2;
+  background: #ecfdf5;
+  color: #0f766e;
+}
+
+.daily-count-btn:disabled {
+  cursor: default;
+  color: #64748b;
+}
+
 .empty,
 .empty-table {
   color: #64748b;
   padding: 30px;
   font-size: 15px;
   text-align: center;
+}
+
+.daily-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.48);
+}
+
+.daily-modal {
+  width: min(1120px, 100%);
+  max-height: min(780px, calc(100vh - 48px));
+  overflow: hidden;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+}
+
+.daily-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.daily-modal-header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #0f172a;
+}
+
+.daily-modal-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+}
+
+.daily-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.daily-detail-table {
+  max-height: 620px;
+  overflow: auto;
+}
+
+.daily-detail-head,
+.daily-detail-row {
+  display: grid;
+  grid-template-columns: 70px minmax(170px, 1.2fr) minmax(170px, 1.1fr) minmax(110px, 0.7fr) minmax(130px, 0.8fr) minmax(120px, 0.7fr);
+  gap: 14px;
+  align-items: center;
+  padding: 15px 24px;
+}
+
+.daily-detail-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 700;
+  border-bottom: 1px solid #e5edf5;
+}
+
+.daily-detail-row {
+  border-bottom: 1px solid #f1f5f9;
+  color: #0f172a;
+}
+
+.daily-detail-row:last-child {
+  border-bottom: none;
 }
 
 /* MOBILE */
@@ -316,5 +424,15 @@
 
   .chart-card {
     padding: 18px;
+  }
+
+  .daily-detail-head,
+  .daily-detail-row {
+    grid-template-columns: 46px minmax(130px, 1fr) minmax(130px, 1fr);
+  }
+
+  .daily-detail-head span:nth-child(n + 4),
+  .daily-detail-row span:nth-child(n + 4) {
+    display: none;
   }
 }

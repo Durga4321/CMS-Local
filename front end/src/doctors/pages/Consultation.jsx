@@ -488,11 +488,11 @@ function Consultation() {
       appointment?.doctorSpecialization ||
       appointment?.specialization ||
       sessionDoctor.specialization;
-    const sourceTests = filterLabTestsBySpecialization(labTests, doctorSpecialization).map((test) => test.item);
-    const options = new Set(sourceTests);
-    splitDiagnosisTests(form.diagnosisTests).forEach((test) => options.add(test));
+    const options = new Set(
+      filterLabTestsBySpecialization(labTests, doctorSpecialization).map((test) => test.item)
+    );
     return Array.from(options).sort((a, b) => a.localeCompare(b));
-  }, [appointment, form.diagnosisTests, labTests, sessionDoctor.specialization]);
+  }, [appointment, labTests, sessionDoctor.specialization]);
   const selectedDiagnosisTests = useMemo(
     () => splitDiagnosisTests(form.diagnosisTests),
     [form.diagnosisTests]
@@ -522,11 +522,11 @@ function Consultation() {
     `OP${String(Date.now()).slice(-9)}`;
   const vitals = [
     ["BP", form.bp],
-    ["Pulse", form.pulse],
+    ["PBRM", form.pulse],
     ["Temp", form.temp],
     ["Weight", form.weight],
     ["Sugar", form.sugar],
-    ["Resp", form.resp],
+    ["SpO2", form.resp],
   ];
 
   const handleChange = (e) => {
@@ -589,12 +589,12 @@ function Consultation() {
       const diagnosisTests = form.diagnosisTests.trim();
       const clinicalNotes = [
         chiefComplaints ? `Chief Complaints: ${chiefComplaints}` : "",
-        form.bp.trim() ? `Blood Pressure: ${form.bp.trim()}` : "",
+        form.bp.trim() ? `BP: ${form.bp.trim()}` : "",
         form.sugar.trim() ? `Sugar Level: ${form.sugar.trim()}` : "",
         form.temp.trim() ? `Temperature: ${form.temp.trim()}` : "",
         form.weight.trim() ? `Weight: ${form.weight.trim()}` : "",
-        form.pulse.trim() ? `Pulse Rate: ${form.pulse.trim()}` : "",
-        form.resp.trim() ? `Respiratory Rate: ${form.resp.trim()}` : "",
+        form.pulse.trim() ? `PBRM: ${form.pulse.trim()}` : "",
+        form.resp.trim() ? `SpO2: ${form.resp.trim()}` : "",
         diagnosisTests ? `Diagnosis Tests: ${diagnosisTests}` : "",
       ].filter(Boolean).join("\n");
 
@@ -927,10 +927,11 @@ function Consultation() {
             <p className="cn-panel-heading">Vitals</p>
             {[
               ["BP", form.bp || emptyValue],
-              ["Pulse", form.pulse || emptyValue],
+              ["PBRM", form.pulse || emptyValue],
               ["Temperature", form.temp || emptyValue],
               ["Weight", form.weight || emptyValue],
               ["Sugar (R)", form.sugar || emptyValue],
+              ["SpO2", form.resp || emptyValue],
             ].map(([key, value]) => (
               <div className="cn-history-row" key={key}>
                 <span className="cn-history-key">{key}</span>
@@ -954,12 +955,12 @@ function Consultation() {
 
           <div className="cn-vitals-grid">
             {[
-              ["Blood Pressure", "bp", form.bp],
+              ["BP", "bp", form.bp],
               ["Sugar Level", "sugar", form.sugar],
               ["Temperature", "temp", form.temp],
               ["Weight", "weight", form.weight],
-              ["Pulse Rate", "pulse", form.pulse],
-              ["Respiratory Rate", "resp", form.resp],
+              ["PBRM", "pulse", form.pulse],
+              ["SpO2", "resp", form.resp],
             ].map(([label, name, value]) => (
               <div className="cn-field" key={name}>
                 <label className="cn-label">{label}</label>

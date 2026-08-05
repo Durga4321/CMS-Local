@@ -90,50 +90,6 @@ export const DEFAULT_DIAGNOSIS_OPTIONS = [
   "Viral Fever",
 ];
 
-export const DIAGNOSIS_TEST_OPTIONS = [
-  "2D Echocardiogram",
-  "Angiogram",
-  "Audiometry",
-  "Blood Culture",
-  "Blood Glucose Test",
-  "Bronchoscopy",
-  "Cardiac Enzyme Test",
-  "Clinical Biochemistry",
-  "Clinical Microbiology",
-  "Clinical Pathology",
-  "Colonoscopy",
-  "Complete Blood Count (CBC)",
-  "CT Scan",
-  "Cytopathology",
-  "Digital OPG",
-  "Digital X-Ray",
-  "Doppler Study",
-  "ECG (Electrocardiogram)",
-  "EEG (Electroencephalogram)",
-  "EMG / ENMG",
-  "Endoscopy",
-  "Endoscopic Ultrasound (EUS)",
-  "ERCP",
-  "HbA1c",
-  "Histopathology",
-  "Holter Monitoring",
-  "Kidney Function Test (KFT)",
-  "Liver Function Test (LFT)",
-  "Lipid Profile",
-  "Mammography",
-  "MRI Scan",
-  "Molecular Biology (RT-PCR)",
-  "Nerve Conduction Study (NCS)",
-  "Pap Smear",
-  "Pulmonary Function Test (PFT)",
-  "Radial & Convex EBUS",
-  "Thyroid Function Test (T3, T4, TSH)",
-  "Thoracoscopy",
-  "Treadmill Test (TMT)",
-  "Ultrasound Scan",
-  "Urine Analysis",
-  "X-Ray",
-];
 
 const normalizeSpecialization = (value) =>
   String(value || "")
@@ -157,16 +113,6 @@ const SPECIALIZATION_DIAGNOSIS_MAP = [
       "Pulmonary Embolism",
       "Valve Heart Disease",
     ],
-    tests: [
-      "2D Echocardiogram",
-      "Angiogram",
-      "Cardiac Enzyme Test",
-      "Doppler Study",
-      "ECG (Electrocardiogram)",
-      "Holter Monitoring",
-      "Lipid Profile",
-      "Treadmill Test (TMT)",
-    ],
   },
   {
     keys: ["gynecology", "gynaecology", "gynecologist", "obstetrics", "obgyn"],
@@ -178,26 +124,10 @@ const SPECIALIZATION_DIAGNOSIS_MAP = [
       "Thyroid Disorders",
       "Urinary Tract Infection (UTI)",
     ],
-    tests: [
-      "Blood Glucose Test",
-      "Complete Blood Count (CBC)",
-      "HbA1c",
-      "Pap Smear",
-      "Thyroid Function Test (T3, T4, TSH)",
-      "Ultrasound Scan",
-      "Urine Analysis",
-    ],
   },
   {
     keys: ["dermatology", "dermatologist", "skin"],
     diagnoses: ["Acne", "Eczema", "Psoriasis", "Skin Infection", "Lupus (SLE)"],
-    tests: [
-      "Blood Culture",
-      "Clinical Microbiology",
-      "Clinical Pathology",
-      "Cytopathology",
-      "Histopathology",
-    ],
   },
   {
     keys: ["neurology", "neurologist", "neuro"],
@@ -210,13 +140,6 @@ const SPECIALIZATION_DIAGNOSIS_MAP = [
       "Neuropathy",
       "Parkinson's Disease",
       "Stroke",
-    ],
-    tests: [
-      "CT Scan",
-      "EEG (Electroencephalogram)",
-      "EMG / ENMG",
-      "MRI Scan",
-      "Nerve Conduction Study (NCS)",
     ],
   },
   {
@@ -232,7 +155,6 @@ const SPECIALIZATION_DIAGNOSIS_MAP = [
       "Spinal Disc Disease",
       "Sports Injury",
     ],
-    tests: ["CT Scan", "Digital X-Ray", "MRI Scan", "X-Ray"],
   },
   {
     keys: ["gastroenterology", "gastroenterologist", "gastro", "gastrointestinal"],
@@ -249,15 +171,6 @@ const SPECIALIZATION_DIAGNOSIS_MAP = [
       "Liver Failure",
       "Peptic Ulcer Disease",
     ],
-    tests: [
-      "Clinical Biochemistry",
-      "Colonoscopy",
-      "Endoscopy",
-      "Endoscopic Ultrasound (EUS)",
-      "ERCP",
-      "Liver Function Test (LFT)",
-      "Ultrasound Scan",
-    ],
   },
   {
     keys: ["pulmonology", "pulmonologist", "respiratory", "chest"],
@@ -270,15 +183,6 @@ const SPECIALIZATION_DIAGNOSIS_MAP = [
       "Pulmonary Embolism",
       "Tuberculosis (TB)",
     ],
-    tests: [
-      "Bronchoscopy",
-      "CT Scan",
-      "Digital X-Ray",
-      "Pulmonary Function Test (PFT)",
-      "Radial & Convex EBUS",
-      "Thoracoscopy",
-      "X-Ray",
-    ],
   },
   {
     keys: ["nephrology", "nephrologist", "urology", "urologist", "kidney"],
@@ -290,22 +194,14 @@ const SPECIALIZATION_DIAGNOSIS_MAP = [
       "Prostate Enlargement (BPH)",
       "Urinary Tract Infection (UTI)",
     ],
-    tests: [
-      "Clinical Pathology",
-      "Kidney Function Test (KFT)",
-      "Ultrasound Scan",
-      "Urine Analysis",
-    ],
   },
   {
     keys: ["ent", "ear nose throat"],
     diagnoses: ["Ear Infection", "Hearing Loss", "Sinusitis", "Tonsillitis"],
-    tests: ["Audiometry", "CT Scan", "Digital X-Ray", "X-Ray"],
   },
   {
     keys: ["ophthalmology", "ophthalmologist", "eye"],
     diagnoses: ["Cataract", "Diabetic Retinopathy", "Glaucoma"],
-    tests: ["Blood Glucose Test", "Digital OPG", "HbA1c"],
   },
   {
     keys: ["pediatrics", "paediatrics", "pediatrician", "child"],
@@ -320,19 +216,10 @@ const SPECIALIZATION_DIAGNOSIS_MAP = [
       "Sepsis",
       "Viral Fever",
     ],
-    tests: [
-      "Blood Culture",
-      "Blood Glucose Test",
-      "Clinical Microbiology",
-      "Complete Blood Count (CBC)",
-      "Urine Analysis",
-      "X-Ray",
-    ],
   },
   {
     keys: ["psychiatry", "psychiatrist", "psychology"],
     diagnoses: ["Anxiety Disorder", "Depression", "Schizophrenia"],
-    tests: ["Clinical Biochemistry", "Thyroid Function Test (T3, T4, TSH)"],
   },
   {
     keys: ["general medicine", "general physician", "internal medicine", "physician"],
@@ -350,18 +237,6 @@ const SPECIALIZATION_DIAGNOSIS_MAP = [
       "Tuberculosis (TB)",
       "Urinary Tract Infection (UTI)",
       "Viral Fever",
-    ],
-    tests: [
-      "Blood Culture",
-      "Blood Glucose Test",
-      "Clinical Biochemistry",
-      "Complete Blood Count (CBC)",
-      "HbA1c",
-      "Kidney Function Test (KFT)",
-      "Liver Function Test (LFT)",
-      "Lipid Profile",
-      "Thyroid Function Test (T3, T4, TSH)",
-      "Urine Analysis",
     ],
   },
 ];
@@ -388,12 +263,6 @@ export const filterDiagnosisOptionsBySpecialization = (options, specialization) 
   return config ? filterOptionsByAllowedList(options, config.diagnoses) : options;
 };
 
-export const getDiagnosisTestsForSpecialization = (specialization) => {
-  const config = getSpecializationConfig(specialization);
-  return config
-    ? filterOptionsByAllowedList(DIAGNOSIS_TEST_OPTIONS, config.tests)
-    : DIAGNOSIS_TEST_OPTIONS;
-};
 
 const getDiagnosisText = (item) => {
   if (typeof item === "string") return item;
@@ -454,3 +323,4 @@ export const fetchDiagnosisOptions = async (specialization = "") => {
 
   return filterDiagnosisOptionsBySpecialization(normalizeDiagnosisOptions(data), specialization);
 };
+

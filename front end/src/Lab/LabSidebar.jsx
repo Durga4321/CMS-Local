@@ -11,6 +11,7 @@ const items = [
   { to: "/lab/patients", label: "Patients", icon: UserRound },
   { to: "/lab/diagnosis-tests", label: "Diagnosis Tests", icon: FlaskConical },
   { to: "/lab/sample-collection", label: "Sample Collection", icon: TestTube2 },
+  { to: "/lab/report-create", label: "Create Report", icon: FileBarChart2 },
   { to: "/lab/reports", label: "Reports", icon: FileBarChart2 },
 ];
 

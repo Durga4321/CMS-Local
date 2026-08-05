@@ -1,7 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle, Download, FileText, Play, RefreshCw, Search, TestTube2 } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { downloadBlob, firstSuccessfulList, parseList, requestJson } from "./labApi";
 import { getLabProfile } from "./labSession";
+import { getClinicDisplayName } from "../utils/clinicDisplay";
+import { getClinicInvoiceBranding } from "../utils/clinicBranding";
+import { downloadLabReportHtml, getReportName, printLabReport } from "./labReportTemplate";
+import { readGeneratedLabReports } from "./labReportStore";
+import { fetchLabMasterTests } from "../utils/labMaster";
+import {
+  dedupeBillingRows,
+  readLocalBillingRows,
+  RECEPTION_RECENT_SERVICE_BILLS_KEY,
+} from "../utils/billingRevenue";
 
 const readFirst = (record = {}, keys = [], fallback = "-") => {
   for (const key of keys) {
@@ -25,11 +36,9 @@ const pageConfig = {
     paths: ["Lab/orders", "Billing/diagnostic", "Billing/diagnostics", "Reception/diagnostic-bills", "DiagnosticBilling", "Billing"],
     columns: [
       ["Patient", ["patientName", "PatientName", "name", "Name", "fullName"]],
-      ["Code", ["patientCode", "PatientCode", "umrNo", "UMRNo", "id", "Id"]],
+      ["Visit Date", ["visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"]],
       ["Phone", ["phone", "Phone", "mobile", "Mobile", "phoneNumber", "patient.phone", "Patient.Phone"]],
       ["Tests", ["__labTestNames", "testName", "TestName", "labTestName", "items", "serviceItems", "billItems"]],
-      ["Amount", ["__labAmount", "totalAmount", "grandTotal", "labCharges", "labCharge", "amount"]],
-      ["Branch", ["branchName", "BranchName", "branch.name"]],
     ],
   },
   tests: {
@@ -46,11 +55,12 @@ const pageConfig = {
   samples: {
     title: "Sample Collection",
     subtitle: "Samples waiting, collected, processed, and reported by the lab.",
-    paths: ["Lab/orders"],
+    paths: ["Lab/orders", "Billing/diagnostic", "Billing/diagnostics", "Reception/diagnostic-bills", "DiagnosticBilling", "Billing"],
     columns: [
-      ["Sample", ["sampleType", "SampleType", "sampleName", "name", "Name"]],
       ["Patient", ["patientName", "PatientName", "patient.name"]],
-      ["Collected", ["collectedAt", "CollectedAt", "collectionDate", "createdAt"]],
+      ["Visit Date", ["visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"]],
+      ["Phone", ["phone", "Phone", "mobile", "Mobile", "phoneNumber", "patient.phone", "Patient.Phone"]],
+      ["Tests", ["__labTestNames", "testName", "TestName", "labTestName", "items", "serviceItems", "billItems"]],
       ["Status", ["status", "Status", "sampleStatus"]],
     ],
   },
@@ -59,7 +69,7 @@ const pageConfig = {
     subtitle: "Lab reports and diagnostic result records.",
     paths: ["Lab/doctor/reports", "Lab/patient/reports"],
     columns: [
-      ["Report", ["reportName", "ReportName", "title", "name", "Name"]],
+      ["Report", ["reportName", "ReportName", "reportTitle", "title", "__labTestNames", "testName", "TestName"]],
       ["Patient", ["patientName", "PatientName", "patient.name"]],
       ["Date", ["reportDate", "createdAt", "CreatedAt", "date"]],
       ["Status", ["status", "Status"]],
@@ -112,10 +122,11 @@ const getServiceBillType = (record = {}) =>
 
 const isDiagnosticRecord = (record = {}) => {
   const source = normalizeText(record.__sourcePath);
-  if (source.includes("lab/orders") || source.includes("diagnostic")) return true;
+  if (source.includes("lab/orders") || source.includes("diagnostic") || source.includes("labgeneratedreports")) return true;
   const typeText = getServiceBillType(record);
   const labAmount = Number(readFirst(record, ["labCharges", "labCharge", "diagnosticRevenue"], 0)) || 0;
-  return /diagnostic|diagnosis|lab|test/.test(typeText) || labAmount > 0;
+  const reportName = readFirst(record, ["reportName", "ReportName", "reportTitle", "testName", "TestName"], "");
+  return /diagnostic|diagnosis|lab|test/.test(typeText) || labAmount > 0 || Boolean(reportName);
 };
 
 const getLineItems = (record = {}) => {
@@ -160,9 +171,78 @@ const enrichLabPatientRow = (record = {}) => ({
   __labAmount: getPatientLabAmount(record),
 });
 
+const getRecordDateValue = (record = {}) =>
+  readFirst(record, ["visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"], "");
+
+const isToday = (value) => {
+  const date = new Date(value || "");
+  if (Number.isNaN(date.getTime())) return false;
+  const today = new Date();
+  return date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
+};
+
+const isPastDate = (value) => {
+  const date = new Date(value || "");
+  if (Number.isNaN(date.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  date.setHours(0, 0, 0, 0);
+  return date < today;
+};
+
+const getNormalizedStatus = (record = {}) =>
+  normalizeText(readFirst(record, ["status", "Status", "orderStatus", "sampleStatus", "resultStatus", "reportStatus"], ""));
+
+const isDoneRecord = (record = {}) => {
+  const status = getNormalizedStatus(record);
+  return /complete|completed|done|reported|delivered|cancel|cancelled|canceled/.test(status);
+};
+
+const isBillingBackedRecord = (record = {}) => {
+  const source = normalizeText(record.__sourcePath);
+  return source.includes("billing") || source.includes("diagnosticbilling");
+};
+
+const updateRecentBillingRow = (row = {}, patch = {}) => {
+  try {
+    const id = recordIdentifier(row);
+    const invoiceNo = readFirst(row, ["invoiceNo", "invoiceNumber", "billNumber"], "");
+    const nextRows = readLocalBillingRows(RECEPTION_RECENT_SERVICE_BILLS_KEY).map((item) => {
+      const sameId = id && recordIdentifier(item) === id;
+      const sameInvoice = invoiceNo && readFirst(item, ["invoiceNo", "invoiceNumber", "billNumber"], "") === invoiceNo;
+      return sameId || sameInvoice ? { ...item, ...patch } : item;
+    });
+    localStorage.setItem(RECEPTION_RECENT_SERVICE_BILLS_KEY, JSON.stringify(nextRows));
+  } catch {
+    // Backend update is the source of truth; local cache update is best effort.
+  }
+};
+
+const recordIdentifier = (row = {}) =>
+  String(readFirst(row, ["id", "Id", "orderId", "OrderId", "labOrderId", "LabOrderId", "billingId", "BillingId", "billId", "BillId", "invoiceId", "InvoiceId", "testId", "TestId"], "") || "");
+
+const filterRowsByView = (rows = [], view = "") => {
+  if (view === "today") return rows.filter((row) => isToday(getRecordDateValue(row)));
+  if (view === "pending") return rows.filter((row) => isPastDate(getRecordDateValue(row)) && !isDoneRecord(row));
+  if (view === "samples") return rows.filter((row) => !/complete|completed|reported|delivered|cancel|cancelled|canceled/.test(getNormalizedStatus(row)));
+  if (view === "in-progress") return rows.filter((row) => /progress|processing|started/.test(getNormalizedStatus(row)));
+  if (view === "completed") return rows.filter((row) => isToday(getRecordDateValue(row)) && /complete|completed|done|reported|delivered/.test(getNormalizedStatus(row)));
+  if (view === "cancelled") return rows.filter((row) => /cancel|cancelled|canceled/.test(getNormalizedStatus(row)));
+  if (view === "pending-reports") return rows.filter((row) => !/reported|delivered/.test(getNormalizedStatus(row)) && !/cancel|cancelled|canceled/.test(getNormalizedStatus(row)));
+  return rows;
+};
+
+const isGeneratedReport = (row = {}) =>
+  /reported|delivered/.test(getNormalizedStatus(row)) ||
+  Boolean(readFirst(row, ["reportName", "ReportName", "reportTitle", "findings", "Findings", "reportFindings", "ReportFindings"], ""));
+
 function LabDataPage({ type }) {
   const config = pageConfig[type];
+  const location = useLocation();
+  const view = new URLSearchParams(location.search).get("view") || "";
   const labProfile = useMemo(() => getLabProfile(), []);
+  const clinicName = getClinicDisplayName(labProfile, "Clinic");
+  const clinicBranding = getClinicInvoiceBranding({ clinicId: labProfile.hospitalId, clinicName });
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -172,7 +252,9 @@ function LabDataPage({ type }) {
     setLoading(true);
     setError("");
     try {
-      const data = type === "patients" || type === "reports"
+      const backendData = type === "tests"
+        ? await fetchLabMasterTests()
+        : type === "patients" || type === "samples" || type === "reports"
         ? (await Promise.allSettled(config.paths.map((path) => requestJson(path))))
             .flatMap((result, index) =>
               result.status === "fulfilled"
@@ -180,11 +262,22 @@ function LabDataPage({ type }) {
                 : []
             )
         : await firstSuccessfulList(config.paths);
-      const nextRows = type === "patients"
-        ? data
+      const data = type === "patients" || type === "samples" || type === "reports"
+        ? [
+            ...backendData,
+            ...(type === "reports" ? readGeneratedLabReports() : []),
+            ...readLocalBillingRows(RECEPTION_RECENT_SERVICE_BILLS_KEY).map((row) => ({
+              ...row,
+              __sourcePath: "receptionRecentServiceBills",
+            })),
+          ]
+        : backendData;
+      const nextRows = type === "patients" || type === "samples" || type === "reports"
+        ? filterRowsByView(dedupeBillingRows(data)
             .filter(isDiagnosticRecord)
             .filter((row) => belongsToLabScope(row, labProfile))
-            .map(enrichLabPatientRow)
+            .map(enrichLabPatientRow), view)
+            .filter((row) => type !== "reports" || isGeneratedReport(row))
         : data;
       setRows(nextRows);
     } catch (loadError) {
@@ -193,11 +286,32 @@ function LabDataPage({ type }) {
     } finally {
       setLoading(false);
     }
-  }, [config, labProfile, type]);
+  }, [config, labProfile, type, view]);
 
   useEffect(() => {
     loadRows();
   }, [loadRows]);
+
+  useEffect(() => {
+    if (!["patients", "samples", "reports"].includes(type)) return undefined;
+
+    const refreshPatients = (event) => {
+      if (event.type === "storage" && event.key !== RECEPTION_RECENT_SERVICE_BILLS_KEY) return;
+      loadRows();
+    };
+
+    window.addEventListener("receptionDiagnosticBillingCompleted", refreshPatients);
+    window.addEventListener("labReportsUpdated", refreshPatients);
+    window.addEventListener("storage", refreshPatients);
+    window.addEventListener("focus", refreshPatients);
+
+    return () => {
+      window.removeEventListener("receptionDiagnosticBillingCompleted", refreshPatients);
+      window.removeEventListener("labReportsUpdated", refreshPatients);
+      window.removeEventListener("storage", refreshPatients);
+      window.removeEventListener("focus", refreshPatients);
+    };
+  }, [loadRows, type]);
 
   const filteredRows = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -207,31 +321,100 @@ function LabDataPage({ type }) {
 
   const hasActions = type === "samples" || type === "reports";
   const tableTemplate = useMemo(() => {
-    if (type === "patients") return "1.05fr 0.65fr 0.85fr 1.5fr 0.65fr 0.8fr";
+    if (type === "patients") return "1fr 0.8fr 0.9fr 1.8fr";
+    if (type === "samples") return "1fr 0.8fr 0.9fr 1.6fr 0.7fr 150px";
     const actionColumn = hasActions ? " 150px" : "";
     return `repeat(${config.columns.length}, minmax(0, 1fr))${actionColumn}`;
   }, [config.columns.length, hasActions, type]);
 
-  const recordId = (row, index = "") => readFirst(row, ["id", "Id", "orderId", "OrderId", "labOrderId", "LabOrderId", "testId", "TestId"], index);
+  const recordId = (row, index = "") => recordIdentifier(row) || index;
+
+  const actionConfig = {
+    collected: {
+      labPath: (id) => `Lab/orders/${id}/sample-collected`,
+      method: "PATCH",
+      status: "Sample Collected",
+      payload: { status: "Sample Collected", sampleStatus: "Collected", collectedAt: new Date().toISOString() },
+    },
+    start: {
+      labPath: (id) => `Lab/orders/${id}/start`,
+      method: "PATCH",
+      status: "In Progress",
+      payload: { status: "In Progress", orderStatus: "In Progress", sampleStatus: "Processing", startedAt: new Date().toISOString() },
+    },
+    complete: {
+      labPath: (id) => `Lab/orders/${id}/complete`,
+      method: "PATCH",
+      status: "Completed",
+      payload: { status: "Completed", orderStatus: "Completed", resultStatus: "Completed", completedAt: new Date().toISOString() },
+    },
+    report: {
+      labPath: (id) => `Lab/orders/${id}/report`,
+      method: "POST",
+      status: "Reported",
+      payload: { status: "Reported", reportStatus: "Reported", reportedAt: new Date().toISOString() },
+    },
+  };
 
   const runOrderAction = async (row, action) => {
     const id = recordId(row);
     if (!id) return;
-    const actionMap = {
-      collected: { path: `Lab/orders/${id}/sample-collected`, method: "PATCH" },
-      start: { path: `Lab/orders/${id}/start`, method: "PATCH" },
-      complete: { path: `Lab/orders/${id}/complete`, method: "PATCH" },
-      report: { path: `Lab/orders/${id}/report`, method: "POST" },
+    const target = actionConfig[action];
+    if (!target) return;
+
+    const patch = {
+      ...target.payload,
+      Status: target.status,
+      updatedAt: new Date().toISOString(),
     };
-    const target = actionMap[action];
-    await requestJson(target.path, { method: target.method, body: JSON.stringify({}) });
+
+    const tryBillingUpdate = () =>
+      requestJson(`Billing/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          ...row,
+          ...patch,
+          id,
+          Id: id,
+          billingId: row.billingId || row.BillingId || row.billId || row.BillId || id,
+          BillingId: row.BillingId || row.billingId || row.BillId || row.billId || id,
+        }),
+      });
+
+    if (isBillingBackedRecord(row)) {
+      await tryBillingUpdate();
+    } else {
+      try {
+        await requestJson(target.labPath(id), { method: target.method, body: JSON.stringify(patch) });
+      } catch (error) {
+        await tryBillingUpdate();
+      }
+    }
+
+    updateRecentBillingRow(row, patch);
     await loadRows();
   };
 
   const downloadReport = async (row) => {
+    if (isBillingBackedRecord(row)) {
+      downloadLabReportHtml({ record: { ...row, reportName: getReportName(row) }, branding: clinicBranding, clinicName, profile: labProfile });
+      return;
+    }
+
     const id = recordId(row);
-    if (!id) return;
-    await downloadBlob(`Lab/orders/${id}/report/download`, `lab-report-${id}`);
+    try {
+      if (id) {
+        await downloadBlob(`Lab/orders/${id}/report/download`, `lab-report-${id}`);
+        return;
+      }
+    } catch {
+      // Fall back to the generated HTML report when a PDF/blob endpoint is unavailable.
+    }
+    downloadLabReportHtml({ record: { ...row, reportName: getReportName(row) }, branding: clinicBranding, clinicName, profile: labProfile });
+  };
+
+  const printReport = (row) => {
+    printLabReport({ record: { ...row, reportName: getReportName(row) }, branding: clinicBranding, clinicName, profile: labProfile });
   };
 
   return (
@@ -272,15 +455,15 @@ function LabDataPage({ type }) {
                 <span className="lab-row-actions">
                   {type === "samples" ? (
                     <>
-                      <button type="button" title="Sample collected" onClick={() => runOrderAction(row, "collected")}><TestTube2 size={15} /></button>
-                      <button type="button" title="Start processing" onClick={() => runOrderAction(row, "start")}><Play size={15} /></button>
-                      <button type="button" title="Complete order" onClick={() => runOrderAction(row, "complete")}><CheckCircle size={15} /></button>
+                      <button className="lab-action-btn collect" type="button" title="Sample collected" onClick={() => runOrderAction(row, "collected")}><TestTube2 size={15} /></button>
+                      <button className="lab-action-btn start" type="button" title="Start processing" onClick={() => runOrderAction(row, "start")}><Play size={15} /></button>
+                      <button className="lab-action-btn complete" type="button" title="Complete order" onClick={() => runOrderAction(row, "complete")}><CheckCircle size={15} /></button>
                     </>
                   ) : null}
                   {type === "reports" ? (
                     <>
-                      <button type="button" title="Generate report" onClick={() => runOrderAction(row, "report")}><FileText size={15} /></button>
-                      <button type="button" title="Download report" onClick={() => downloadReport(row)}><Download size={15} /></button>
+                      <button className="lab-action-btn report" type="button" title="Print report" onClick={() => printReport(row)}><FileText size={15} /></button>
+                      <button className="lab-action-btn download" type="button" title="Download report" onClick={() => downloadReport(row)}><Download size={15} /></button>
                     </>
                   ) : null}
                 </span>

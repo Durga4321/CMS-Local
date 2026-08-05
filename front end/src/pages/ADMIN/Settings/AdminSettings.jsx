@@ -10,6 +10,12 @@ import {
 } from "../../../utils/clinicBranding";
 import "./AdminSettings.css";
 
+const BUILT_IN_TEMPLATES = [
+  { value: "professional", label: "Professional" },
+  { value: "compact", label: "Compact" },
+  { value: "letterhead", label: "Letterhead" },
+];
+
 const getProfileClinicId = (profile = {}) =>
   profile.clinicId ||
   profile.hospitalId ||
@@ -32,10 +38,20 @@ function AdminSettings() {
     headerTitle: existing.headerTitle || clinicName,
     headerSubtitle: existing.headerSubtitle || defaults.headerSubtitle,
     footerNote: existing.footerNote || defaults.footerNote,
+    clinicAddress: existing.clinicAddress || defaults.clinicAddress || "",
+    clinicPhone: existing.clinicPhone || defaults.clinicPhone || "",
+    clinicEmail: existing.clinicEmail || defaults.clinicEmail || "",
+    gstNumber: existing.gstNumber || defaults.gstNumber || "",
+    registrationNumber: existing.registrationNumber || defaults.registrationNumber || "",
     accentColor: existing.accentColor || defaults.accentColor,
     logoDataUrl: existing.logoDataUrl || "",
     customTemplateName: existing.customTemplateName || "",
     customTemplateDataUrl: existing.customTemplateDataUrl || "",
+    customTemplates: Array.isArray(existing.customTemplates) ? existing.customTemplates : defaults.customTemplates || [],
+    selectedCustomTemplateId: existing.selectedCustomTemplateId || defaults.selectedCustomTemplateId || "",
+    pendingTemplateName: "",
+    pendingTemplateDataUrl: "",
+    pendingTemplateFileName: "",
   });
   const [status, setStatus] = useState("");
 
@@ -67,17 +83,71 @@ function AdminSettings() {
       setStatus("");
       setForm((prev) => ({
         ...prev,
-        template: "custom",
-        customTemplateName: file.name,
-        customTemplateDataUrl: String(reader.result || ""),
+        template: "custom-new",
+        pendingTemplateName: file.name.replace(/\.[^.]+$/, "") || file.name,
+        pendingTemplateFileName: file.name,
+        pendingTemplateDataUrl: String(reader.result || ""),
       }));
     };
     reader.readAsDataURL(file);
   };
 
+  const saveUploadedTemplate = () => {
+    if (!form.pendingTemplateDataUrl) {
+      setStatus("Upload a template file first.");
+      return;
+    }
+
+    const templateId = `custom-${Date.now()}`;
+    const templateName =
+      String(form.pendingTemplateName || form.pendingTemplateFileName || "Custom Template").trim() ||
+      "Custom Template";
+    const nextTemplate = {
+      id: templateId,
+      name: templateName,
+      fileName: form.pendingTemplateFileName || templateName,
+      dataUrl: form.pendingTemplateDataUrl,
+      savedAt: new Date().toISOString(),
+    };
+
+    setForm((prev) => ({
+      ...prev,
+      template: templateId,
+      selectedCustomTemplateId: templateId,
+      customTemplateName: nextTemplate.name,
+      customTemplateDataUrl: nextTemplate.dataUrl,
+      customTemplates: [...(Array.isArray(prev.customTemplates) ? prev.customTemplates : []), nextTemplate],
+      pendingTemplateName: "",
+      pendingTemplateFileName: "",
+      pendingTemplateDataUrl: "",
+    }));
+    setStatus("Template saved. Save settings to apply it.");
+  };
+
+  const selectTemplate = (value) => {
+    const selectedCustom = (form.customTemplates || []).find((template) => template.id === value);
+    setStatus("");
+    setForm((prev) => ({
+      ...prev,
+      template: value,
+      selectedCustomTemplateId: selectedCustom ? selectedCustom.id : "",
+      customTemplateName: selectedCustom ? selectedCustom.name : prev.customTemplateName,
+      customTemplateDataUrl: selectedCustom ? selectedCustom.dataUrl : prev.customTemplateDataUrl,
+    }));
+  };
+
   const saveSettings = (event) => {
     event.preventDefault();
-    saveClinicBranding(form, scope);
+    const selectedCustom = (form.customTemplates || []).find((template) => template.id === form.template);
+    saveClinicBranding(
+      {
+        ...form,
+        selectedCustomTemplateId: selectedCustom ? selectedCustom.id : "",
+        customTemplateName: selectedCustom ? selectedCustom.name : form.customTemplateName,
+        customTemplateDataUrl: selectedCustom ? selectedCustom.dataUrl : form.customTemplateDataUrl,
+      },
+      scope
+    );
     setStatus("Clinic invoice settings saved.");
   };
 
@@ -97,22 +167,43 @@ function AdminSettings() {
           <h2>Template</h2>
           <label>
             Invoice Template
-            <select value={form.template} onChange={(event) => updateField("template", event.target.value)}>
-              <option value="professional">Professional</option>
-              <option value="compact">Compact</option>
-              <option value="letterhead">Letterhead</option>
-              <option value="custom">Custom upload</option>
+            <select value={form.template} onChange={(event) => selectTemplate(event.target.value)}>
+              {BUILT_IN_TEMPLATES.map((template) => (
+                <option key={template.value} value={template.value}>
+                  {template.label}
+                </option>
+              ))}
+              {(form.customTemplates || []).map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.name}
+                </option>
+              ))}
+              <option value="custom-new">Upload new template</option>
             </select>
           </label>
-          {form.template === "custom" ? (
-            <label>
-              Upload Template
+          {form.template === "custom-new" ? (
+            <div className="admin-settings-template-box">
+              <label>
+                Template Name
+                <input
+                  value={form.pendingTemplateName}
+                  onChange={(event) => updateField("pendingTemplateName", event.target.value)}
+                  placeholder="Enter template name"
+                />
+              </label>
+              <label>
+                Upload Template
               <span className="admin-settings-template-upload">
                 <FileUp size={16} />
-                <span>{form.customTemplateName || "Choose template file"}</span>
+                  <span>{form.pendingTemplateFileName || "Choose template file"}</span>
                 <input type="file" accept=".html,.htm,.pdf,.doc,.docx,image/*" onChange={handleTemplateUpload} />
               </span>
-            </label>
+              </label>
+              <button className="admin-settings-secondary" type="button" onClick={saveUploadedTemplate}>
+                <Save size={16} />
+                Save Template
+              </button>
+            </div>
           ) : null}
           <label>
             Header Title
@@ -121,6 +212,26 @@ function AdminSettings() {
           <label>
             Header Subtitle
             <input value={form.headerSubtitle} onChange={(event) => updateField("headerSubtitle", event.target.value)} />
+          </label>
+          <label>
+            Clinic Address
+            <textarea rows={3} value={form.clinicAddress} onChange={(event) => updateField("clinicAddress", event.target.value)} />
+          </label>
+          <label>
+            Clinic Phone
+            <input value={form.clinicPhone} onChange={(event) => updateField("clinicPhone", event.target.value)} />
+          </label>
+          <label>
+            Clinic Email
+            <input value={form.clinicEmail} onChange={(event) => updateField("clinicEmail", event.target.value)} />
+          </label>
+          <label>
+            GST Number
+            <input value={form.gstNumber} onChange={(event) => updateField("gstNumber", event.target.value)} />
+          </label>
+          <label>
+            Registration Number
+            <input value={form.registrationNumber} onChange={(event) => updateField("registrationNumber", event.target.value)} />
           </label>
           <label>
             Footer Note
@@ -162,6 +273,8 @@ function AdminSettings() {
               <div>
                 <h2>{previewBranding.headerTitle}</h2>
                 <p>{previewBranding.headerSubtitle}</p>
+                <p>{[previewBranding.clinicAddress, previewBranding.clinicPhone, previewBranding.clinicEmail].filter(Boolean).join(" | ")}</p>
+                <p>{[previewBranding.gstNumber ? `GST: ${previewBranding.gstNumber}` : "", previewBranding.registrationNumber ? `Reg: ${previewBranding.registrationNumber}` : ""].filter(Boolean).join(" | ")}</p>
               </div>
             </div>
             <strong>INV-0001</strong>

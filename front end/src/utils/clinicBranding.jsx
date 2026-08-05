@@ -80,11 +80,18 @@ export const getClinicInvoiceBranding = ({ clinicId = "", clinicName = "" } = {}
     headerTitle: displayName,
     headerSubtitle: branding.headerSubtitle || "Consultation and Patient Care Centre",
     footerNote: branding.footerNote || "Thank you for choosing our clinic. Please retain this invoice for your records.",
+    clinicAddress: branding.clinicAddress || localStorage.getItem("clinicAddress") || localStorage.getItem("hospitalAddress") || "",
+    clinicPhone: branding.clinicPhone || localStorage.getItem("clinicPhone") || localStorage.getItem("hospitalPhone") || localStorage.getItem("contactNumber") || "",
+    clinicEmail: branding.clinicEmail || localStorage.getItem("clinicEmail") || localStorage.getItem("hospitalEmail") || "",
+    gstNumber: branding.gstNumber || localStorage.getItem("clinicGst") || localStorage.getItem("gstNumber") || "",
+    registrationNumber: branding.registrationNumber || localStorage.getItem("clinicRegistration") || "",
     logoUrl: branding.logoDataUrl || getDefaultClinicLogo(displayName),
     watermarkUrl: branding.logoDataUrl || getDefaultClinicLogo(displayName),
     accentColor: branding.accentColor || "#0f9d9d",
     customTemplateName: branding.customTemplateName || "",
     customTemplateDataUrl: branding.customTemplateDataUrl || "",
+    customTemplates: Array.isArray(branding.customTemplates) ? branding.customTemplates : [],
+    selectedCustomTemplateId: branding.selectedCustomTemplateId || "",
   };
 };
 

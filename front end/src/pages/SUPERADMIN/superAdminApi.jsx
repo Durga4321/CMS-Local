@@ -1,6 +1,9 @@
 import { apiUrl } from "../../config/api";
 import {
   appointmentToOpRevenueRow as appointmentToSuperAdminOpRevenueRow,
+  fetchRevenueBillingRows as fetchSharedRevenueBillingRows,
+  getRevenueBreakdown as getSharedRevenueBreakdown,
+  getRevenueTotals as getSharedRevenueTotals,
   isPaidAppointment as isPaidSuperAdminAppointment,
 } from "../../utils/billingRevenue";
 
@@ -17,14 +20,18 @@ export const SUPER_ADMIN_API = {
   auditLogs: "AuditLogs",
   loginHistory: "AuditLogs/login-history",
   auditLogsBranchWise: "AuditLogs/dashboard/branch-wise",
-  dashboardSummary: "SuperAdmin/summary",
-  dashboardSummaryCompat: "dashboard/summary",
+  dashboardSummary: "SuperAdminReports/summary",
+  dashboardSummaryCompat: "SuperAdmin/summary",
+  dashboardSummaryLegacy: "dashboard/summary",
   revenueOverview: "dashboard/revenue-overview",
   activities: "dashboard/activities",
   dailyAppointmentsReport: "Report/daily-appointments",
   revenueReport: "Report/revenue",
   doctorWiseReport: "Report/doctor-wise",
   reportsSummary: "SuperAdminReports/summary",
+  reportsClinicRevenue: "SuperAdminReports/clinic-revenue",
+  reportsClinicRevenueByHospital: "SuperAdminReports/clinic-revenue",
+  dashboardRevenueReport: "Dashboard/reports/revenue",
   reportsRevenueTrend: "SuperAdminReports/revenue-trend",
   reportsTopClinics: "SuperAdminReports/top-clinics",
   reportsUserActivity: "SuperAdminReports/user-activity",
@@ -44,8 +51,6 @@ export const SUPER_ADMIN_API = {
 
 const LOCAL_NOTIFICATIONS_KEY = "superadmin_notifications";
 const LOCAL_AUDIT_LOGS_KEY = "superadmin_audit_logs";
-const LOCAL_SERVICE_BILLS_KEY = "receptionRecentServiceBills";
-const LOCAL_PATIENT_PORTAL_OP_BILLS_KEY = "patientPortalRecentOpBills";
 const readLocalList = (key) => {
   try {
     const value = JSON.parse(localStorage.getItem(key) || "[]");
@@ -64,11 +69,6 @@ const prependLocalItem = (key, item) => {
   writeLocalList(key, nextItems);
   return item;
 };
-
-const readLocalRevenueBillingRows = () => [
-  ...readLocalList(LOCAL_SERVICE_BILLS_KEY),
-  ...readLocalList(LOCAL_PATIENT_PORTAL_OP_BILLS_KEY),
-];
 
 const asArray = (value) => {
   if (Array.isArray(value)) return value;
@@ -150,6 +150,12 @@ const valuesEqual = (left, right) =>
   hasValue(left) && hasValue(right) && String(left) === String(right);
 
 const toNumber = (value) => {
+  if (typeof value === "string") {
+    const cleaned = value.replace(/[^0-9.-]/g, "");
+    const number = Number(cleaned);
+    return Number.isFinite(number) ? number : 0;
+  }
+
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
 };
@@ -1095,7 +1101,13 @@ export const normalizeReportRow = (row = {}, index = 0) => ({
   name: pick(row, ["name", "Name", "clinic", "Clinic", "clinicName", "ClinicName", "hospitalName", "HospitalName", "label"], `Report ${index + 1}`),
   adminName: getReportAdminName(row),
   adminEmail: getReportAdminEmail(row),
-  revenue: toNumber(pick(row, ["revenue", "Revenue", "totalRevenue", "TotalRevenue", "amount", "Amount"], 0)),
+  revenue: toNumber(pick(row, ["revenue", "Revenue", "totalRevenue", "TotalRevenue", "Total Revenue", "total revenue", "netRevenue", "NetRevenue", "Net Revenue", "net revenue", "amount", "Amount", "total", "Total"], 0)),
+  opRevenue: toNumber(pick(row, ["opRevenue", "OPRevenue", "OP Revenue", "op revenue"], 0)),
+  diagnosticRevenue: toNumber(pick(row, ["diagnosticRevenue", "DiagnosticRevenue", "Diagnostic Revenue", "diagnostic revenue"], 0)),
+  pharmacyRevenue: toNumber(pick(row, ["pharmacyRevenue", "PharmacyRevenue", "Pharmacy Revenue", "pharmacy revenue"], 0)),
+  cgstAmount: toNumber(pick(row, ["cgstAmount", "CGSTAmount", "CGST Amount", "cgst amount", "cgst", "CGST"], 0)),
+  sgstAmount: toNumber(pick(row, ["sgstAmount", "SGSTAmount", "SGST Amount", "sgst amount", "sgst", "SGST"], 0)),
+  gstAmount: toNumber(pick(row, ["gstAmount", "GSTAmount", "totalGst", "TotalGst", "Total GST", "total GST", "GST", "taxAmount", "TaxAmount"], 0)),
   users: getReportUserCount(row),
   invoiceCount: getReportInvoiceCount(row),
   status: normalizeStatus(pick(row, ["status", "Status", "isActive", "IsActive", "active", "Active"], "Active")),
@@ -1139,9 +1151,9 @@ const getBillingType = (item = {}) => {
   const rawType = String(
     pick(item, ["invoiceType", "InvoiceType", "billingType", "BillingType", "serviceType", "ServiceType", "type", "Type", "category", "Category"], "")
   ).toLowerCase();
-  const consultation = toNumber(pick(item, ["consultationCharge", "consultationCharges", "consultationFee", "opCharge", "opCharges", "opRevenue"], 0));
-  const medicine = toNumber(pick(item, ["medicineCharge", "medicineCharges", "pharmacyCharge", "pharmacyCharges", "pharmacyRevenue"], 0));
-  const lab = toNumber(pick(item, ["labCharge", "labCharges", "diagnosticCharge", "diagnosticCharges", "diagnosticRevenue"], 0));
+  const consultation = toNumber(pick(item, ["consultationCharge", "consultationCharges", "consultationFee", "opCharge", "opCharges", "opRevenue", "OPRevenue", "OP Revenue", "op revenue"], 0));
+  const medicine = toNumber(pick(item, ["medicineCharge", "medicineCharges", "pharmacyCharge", "pharmacyCharges", "pharmacyRevenue", "PharmacyRevenue", "Pharmacy Revenue", "pharmacy revenue"], 0));
+  const lab = toNumber(pick(item, ["labCharge", "labCharges", "diagnosticCharge", "diagnosticCharges", "diagnosticRevenue", "DiagnosticRevenue", "Diagnostic Revenue", "diagnostic revenue"], 0));
 
   if ((rawType.includes("consultation") || rawType.includes("op") || rawType.includes("patient portal")) && !rawType.includes("pharmacy") && !rawType.includes("diagnostic")) return "op";
   if (consultation > 0 && lab === 0 && medicine === 0) return "op";
@@ -1150,41 +1162,6 @@ const getBillingType = (item = {}) => {
   if (medicine > 0 && lab === 0) return "pharmacy";
   if (lab > 0 && medicine === 0) return "diagnostic";
   return "op";
-};
-
-const getBillingBreakdown = (item = {}) => {
-  const opAmount = toNumber(pick(item, ["opRevenue", "consultationCharge", "consultationCharges", "consultationFee", "opCharge", "opCharges"], 0));
-  const diagnosticAmount = toNumber(pick(item, ["diagnosticRevenue", "labCharge", "labCharges", "diagnosticCharge", "diagnosticCharges", "testCharge", "testCharges"], 0));
-  const pharmacyAmount = toNumber(pick(item, ["pharmacyRevenue", "medicineCharge", "medicineCharges", "pharmacyCharge", "pharmacyCharges", "medicationCharges"], 0));
-  const hasBreakdown = opAmount > 0 || diagnosticAmount > 0 || pharmacyAmount > 0;
-  if (hasBreakdown) {
-    return {
-      opRevenue: opAmount,
-      diagnosticRevenue: diagnosticAmount,
-      pharmacyRevenue: pharmacyAmount,
-      revenue: opAmount + diagnosticAmount + pharmacyAmount,
-    };
-  }
-
-  const amount = getBillingAmount(item);
-  const billingType = getBillingType(item);
-  return {
-    opRevenue: billingType === "op" ? amount : 0,
-    diagnosticRevenue: billingType === "diagnostic" ? amount : 0,
-    pharmacyRevenue: billingType === "pharmacy" ? amount : 0,
-    revenue: amount,
-  };
-};
-
-const getCgstAmount = (item = {}) =>
-  toNumber(pick(item, ["cgstAmount", "CGSTAmount", "cgst", "CGST"], 0));
-
-const getSgstAmount = (item = {}) =>
-  toNumber(pick(item, ["sgstAmount", "SGSTAmount", "sgst", "SGST"], 0));
-
-const getGstAmount = (item = {}) => {
-  const direct = toNumber(pick(item, ["gstAmount", "GSTAmount", "taxAmount", "TaxAmount"], 0));
-  return direct || getCgstAmount(item) + getSgstAmount(item);
 };
 
 const getBillingDate = (item = {}) =>
@@ -1551,6 +1528,13 @@ const enrichReportRows = ({ rows = [], clinicRows = [], adminRows = [], userRows
 
     return {
       ...normalizedRow,
+      opRevenue: toNumber(row.opRevenue ?? row.OPRevenue ?? row["OP Revenue"] ?? row["op revenue"] ?? normalizedRow.opRevenue),
+      diagnosticRevenue: toNumber(row.diagnosticRevenue ?? row.DiagnosticRevenue ?? row["Diagnostic Revenue"] ?? row["diagnostic revenue"] ?? normalizedRow.diagnosticRevenue),
+      pharmacyRevenue: toNumber(row.pharmacyRevenue ?? row.PharmacyRevenue ?? row["Pharmacy Revenue"] ?? row["pharmacy revenue"] ?? normalizedRow.pharmacyRevenue),
+      cgstAmount: toNumber(row.cgstAmount ?? row.CGSTAmount ?? row["CGST Amount"] ?? row["cgst amount"] ?? row.cgst ?? row.CGST ?? normalizedRow.cgstAmount),
+      sgstAmount: toNumber(row.sgstAmount ?? row.SGSTAmount ?? row["SGST Amount"] ?? row["sgst amount"] ?? row.sgst ?? row.SGST ?? normalizedRow.sgstAmount),
+      gstAmount: toNumber(row.gstAmount ?? row.GSTAmount ?? row.totalGst ?? row.TotalGst ?? row["Total GST"] ?? row["total GST"] ?? row.GST ?? normalizedRow.gstAmount),
+      revenue: toNumber(row.revenue ?? row.Revenue ?? row.totalRevenue ?? row.TotalRevenue ?? row["Total Revenue"] ?? row["total revenue"] ?? normalizedRow.revenue),
       adminName: normalizedRow.adminName || admin.name || "",
       adminEmail: normalizedRow.adminEmail || admin.email || "",
       users,
@@ -1559,120 +1543,222 @@ const enrichReportRows = ({ rows = [], clinicRows = [], adminRows = [], userRows
   });
 };
 
-const buildAdminRevenueRows = ({ billingRows = [], clinicRows = [], adminRows = [], userRows = [], appointmentRows = [] }) => {
-  const { admins, clinics, clinicById, clinicByName, adminByClinicId, adminByClinicName, adminById, adminByEmail } = buildAdminLookups({
-    clinicRows,
-    adminRows,
-  });
+const buildClinicRevenueRowsFromBilling = ({ billingRows = [], clinicRows = [], adminRows = [], userRows = [], appointmentRows = [] }) => {
+  const lookups = buildAdminLookups({ clinicRows, adminRows });
   const userCountLookup = buildClinicUserCountLookup(userRows);
   const invoiceCountLookup = buildClinicInvoiceCountLookup(billingRows, appointmentRows);
   const appointmentLookup = buildAppointmentClinicLookup(appointmentRows);
+  const grouped = new Map();
 
-  const rows = new Map();
-
-  billingRows.forEach((item, index) => {
-    const billingAdminId = pick(item, ["adminId", "AdminId", "createdById", "CreatedById", "userId", "UserId"], "");
-    const billingAdminEmail = getReportAdminEmail(item) || pick(item, ["adminEmail", "AdminEmail", "createdByEmail", "CreatedByEmail"], "");
-    const matchedAdmin =
-      (billingAdminId && adminById.get(String(billingAdminId))) ||
-      (billingAdminEmail && adminByEmail.get(String(billingAdminEmail).toLowerCase())) ||
-      {};
-    const clinicId = getBillingClinicId(item, appointmentLookup) || matchedAdmin.assignedClinicId || "";
-    const rawClinicName = getBillingClinicName(item, appointmentLookup) || matchedAdmin.assignedClinic || "";
-    const clinic =
-      (clinicId && clinicById.get(String(clinicId))) ||
-      (rawClinicName && clinicByName.get(String(rawClinicName).toLowerCase())) ||
-      {};
-    const clinicName = clinic.name || rawClinicName || "Unassigned Clinic";
-    const admin =
-      (matchedAdmin.id ? matchedAdmin : null) ||
-      (clinicId && adminByClinicId.get(String(clinicId))) ||
-      adminByClinicName.get(String(clinicName).toLowerCase()) ||
-      {};
-    const directAdminName = getReportAdminName(item);
-    const directAdminEmail = getReportAdminEmail(item);
-    const key =
-      (clinic.id && `clinic-${clinic.id}`) ||
-      (clinicId && `clinic-${clinicId}`) ||
-      (clinicName && `clinic-${String(clinicName).toLowerCase()}`) ||
-      getBillingAdminKey(item) ||
-      admin.id ||
-      `clinic-${index}`;
-    const current =
-      rows.get(key) || {
-        id: key,
-        name: clinicName,
-        adminName: admin.name || directAdminName || "Admin",
-        adminEmail: admin.email || directAdminEmail || "",
-        revenue: 0,
-        opRevenue: 0,
-        diagnosticRevenue: 0,
-        pharmacyRevenue: 0,
-        cgstAmount: 0,
-        sgstAmount: 0,
-        gstAmount: 0,
-        users: 0,
-        invoiceCount: 0,
-        status: clinic.status || "Active",
-      };
-
-    const breakdown = getBillingBreakdown(item);
-    current.revenue += getBillingAmount(item) || breakdown.revenue;
+  billingRows.forEach((bill, index) => {
+    const clinicId = getBillingClinicId(bill, appointmentLookup);
+    const clinicName = getBillingClinicName(bill, appointmentLookup);
+    const normalized = normalizeReportRow({
+      ...bill,
+      clinicId,
+      hospitalId: clinicId,
+      clinicName,
+      hospitalName: clinicName,
+    }, index);
+    const clinic = findReportClinic({ ...bill, clinicId, hospitalId: clinicId, clinicName, hospitalName: clinicName }, normalized, lookups);
+    const name = clinic.name || clinicName || normalized.name || "Unassigned Clinic";
+    const id = clinic.id || clinicId || normalized.id || name;
+    const key = normalizeLookupKey(id) || normalizeLookupKey(name) || `clinic-${index}`;
+    const admin = findReportAdmin({ ...bill, clinicId, hospitalId: clinicId, clinicName, hospitalName: clinicName }, { ...normalized, id, name }, lookups);
+    const current = grouped.get(key) || {
+      id,
+      clinicId: id,
+      hospitalId: id,
+      name,
+      adminName: admin.name || getReportAdminName(bill) || "Admin",
+      adminEmail: admin.email || getReportAdminEmail(bill) || "",
+      revenue: 0,
+      opRevenue: 0,
+      diagnosticRevenue: 0,
+      pharmacyRevenue: 0,
+      cgstAmount: 0,
+      sgstAmount: 0,
+      gstAmount: 0,
+      users: Math.max(toNumber(pick(clinic, ["users"], 0)), getClinicUserCount(bill, normalized, clinic, userCountLookup)),
+      invoiceCount: 0,
+      status: clinic.status || "Active",
+      raw: { _matchedClinic: clinic.raw || clinic },
+    };
+    const breakdown = getSharedRevenueBreakdown(bill);
     current.opRevenue += breakdown.opRevenue;
     current.diagnosticRevenue += breakdown.diagnosticRevenue;
     current.pharmacyRevenue += breakdown.pharmacyRevenue;
-    current.cgstAmount += getCgstAmount(item);
-    current.sgstAmount += getSgstAmount(item);
-    current.gstAmount += getGstAmount(item);
-    current.invoiceCount += 1;
-    current.users = Math.max(
-      current.users,
-      toNumber(pick(clinic, ["users"], 0)),
-      getClinicUserCount(item, current, clinic, userCountLookup)
-    );
-    rows.set(key, current);
+    current.revenue += breakdown.revenue || getBillingAmount(bill);
+    current.cgstAmount += toNumber(pick(bill, ["cgstAmount", "CGSTAmount", "cgst", "CGST"], 0));
+    current.sgstAmount += toNumber(pick(bill, ["sgstAmount", "SGSTAmount", "sgst", "SGST"], 0));
+    current.gstAmount += toNumber(pick(bill, ["gstAmount", "GSTAmount", "taxAmount", "TaxAmount"], 0));
+    current.invoiceCount = Math.max(current.invoiceCount + 1, getClinicInvoiceCount(bill, normalized, clinic, invoiceCountLookup));
+    grouped.set(key, current);
   });
 
-  const fallbackRows = clinics.length
-    ? clinics.map((clinic) => ({
-        id: clinic.id || clinic.name,
-        name: clinic.name || "Unassigned Clinic",
-        admin: adminByClinicId.get(String(clinic.id)) || adminByClinicName.get(String(clinic.name).toLowerCase()) || {},
-        clinic,
-      }))
-    : admins.map((admin) => ({
-        id: admin.id || admin.email,
-        name: admin.assignedClinic || "Unassigned Clinic",
-        admin,
-        clinic: {},
+  return Array.from(grouped.values());
+};
+
+const getClinicRecordId = (clinic = {}) =>
+  String(pick(clinic, ["id", "Id", "clinicId", "ClinicId", "hospitalId", "HospitalId", "_id"], "")).trim();
+
+const getClinicRecordName = (clinic = {}) =>
+  String(pick(clinic, ["name", "Name", "clinicName", "ClinicName", "hospitalName", "HospitalName"], "Clinic")).trim();
+
+const fetchClinicRevenueDetailRows = async (clinicRows = []) => {
+  const results = await Promise.allSettled(
+    clinicRows.map(async (clinic) => {
+      const clinicId = getClinicRecordId(clinic);
+      if (!clinicId) return [];
+      const value = await superAdminRequestOptional(`${SUPER_ADMIN_API.reportsClinicRevenueByHospital}/${encodeURIComponent(clinicId)}`);
+      return asArray(value).map((row) => ({
+        ...row,
+        clinicId,
+        ClinicId: clinicId,
+        hospitalId: clinicId,
+        HospitalId: clinicId,
+        clinicName: getClinicRecordName(clinic),
+        ClinicName: getClinicRecordName(clinic),
+        hospitalName: getClinicRecordName(clinic),
+        HospitalName: getClinicRecordName(clinic),
       }));
+    })
+  );
+  return results.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
+};
 
-  fallbackRows.forEach(({ id, name, admin, clinic }) => {
-    const key = (clinic.id && `clinic-${clinic.id}`) || (name && `clinic-${String(name).toLowerCase()}`) || id || name;
-    if (!rows.has(key)) {
-      rows.set(key, {
-        id: clinic.id || id || name,
-        name,
-        adminName: admin.name || "Admin",
-        adminEmail: admin.email || "",
-        revenue: 0,
-        opRevenue: 0,
-        diagnosticRevenue: 0,
-        pharmacyRevenue: 0,
-        cgstAmount: 0,
-        sgstAmount: 0,
-        gstAmount: 0,
-        users: Math.max(
-          toNumber(pick(clinic, ["users"], 0)),
-          getClinicUserCount({ clinicName: name, clinicId: clinic.id }, { id, name }, clinic, userCountLookup)
-        ),
-        invoiceCount: getClinicInvoiceCount({ clinicName: name, clinicId: clinic.id }, { id, name }, clinic, invoiceCountLookup),
-        status: clinic.status || admin.status || "Active",
-      });
-    }
-    });
+const asRevenueRows = (value) => {
+  const directRows = asArray(value);
+  if (directRows.length) return directRows;
+  if (!value || typeof value !== "object") return [];
 
-  return Array.from(rows.values());
+  for (const key of ["data", "result", "results", "records", "items", "reports", "revenue", "rows"]) {
+    const nestedRows = asArray(value[key]);
+    if (nestedRows.length) return nestedRows;
+  }
+
+  return [];
+};
+
+const fetchClinicDashboardRevenueRows = async (clinicRows = []) => {
+  const results = await Promise.allSettled(
+    clinicRows.map(async (clinic) => {
+      const clinicId = getClinicRecordId(clinic);
+      if (!clinicId) return [];
+      const params = new URLSearchParams();
+      params.set("hospitalId", clinicId);
+      params.set("clinicId", clinicId);
+      const value = await superAdminRequestOptional(`${SUPER_ADMIN_API.dashboardRevenueReport}?${params.toString()}`);
+      return asRevenueRows(value).map((row) => ({
+        ...row,
+        clinicId,
+        ClinicId: clinicId,
+        hospitalId: clinicId,
+        HospitalId: clinicId,
+        clinicName: getClinicRecordName(clinic),
+        ClinicName: getClinicRecordName(clinic),
+        hospitalName: getClinicRecordName(clinic),
+        HospitalName: getClinicRecordName(clinic),
+      }));
+    })
+  );
+  return results.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
+};
+
+const getReportRowRevenue = (row = {}) => {
+  const direct = toNumber(pick(row, ["revenue", "Revenue", "totalRevenue", "TotalRevenue", "Total Revenue", "total revenue", "netRevenue", "NetRevenue", "Net Revenue", "net revenue", "amount", "Amount", "total", "Total"], 0));
+  if (direct) return direct;
+  const breakdown = getSharedRevenueBreakdown(row);
+  return breakdown.revenue;
+};
+
+const buildClinicRevenueRowsFromReportRows = ({ reportRows = [], clinicRows = [], adminRows = [], userRows = [] }) => {
+  const lookups = buildAdminLookups({ clinicRows, adminRows });
+  const userCountLookup = buildClinicUserCountLookup(userRows);
+  const grouped = new Map();
+
+  reportRows.forEach((row, index) => {
+    const normalized = normalizeReportRow(row, index);
+    const clinic = findReportClinic(row, normalized, lookups);
+    const clinicId = clinic.id || getReportClinicId(row) || normalized.id;
+    const clinicName = clinic.name || getReportClinicName(row) || normalized.name;
+    const key = normalizeLookupKey(clinicId) || normalizeLookupKey(clinicName) || `clinic-${index}`;
+    const admin = findReportAdmin(row, { ...normalized, id: clinicId, name: clinicName }, lookups);
+    const current = grouped.get(key) || {
+      id: clinicId || key,
+      clinicId: clinicId || key,
+      hospitalId: clinicId || key,
+      name: clinicName || "Clinic",
+      adminName: admin.name || normalized.adminName || "Admin",
+      adminEmail: admin.email || normalized.adminEmail || "",
+      revenue: 0,
+      opRevenue: 0,
+      diagnosticRevenue: 0,
+      pharmacyRevenue: 0,
+      cgstAmount: 0,
+      sgstAmount: 0,
+      gstAmount: 0,
+      users: Math.max(normalized.users, getClinicUserCount(row, normalized, clinic, userCountLookup)),
+      invoiceCount: normalized.invoiceCount,
+      status: clinic.status || normalized.status || "Active",
+      raw: { ...row, _matchedClinic: clinic.raw || clinic },
+    };
+    const breakdown = getSharedRevenueBreakdown(row);
+    current.opRevenue += breakdown.opRevenue;
+    current.diagnosticRevenue += breakdown.diagnosticRevenue;
+    current.pharmacyRevenue += breakdown.pharmacyRevenue;
+    current.revenue += getReportRowRevenue(row);
+    current.cgstAmount += toNumber(pick(row, ["cgstAmount", "CGSTAmount", "CGST Amount", "cgst amount", "cgst", "CGST"], 0));
+    current.sgstAmount += toNumber(pick(row, ["sgstAmount", "SGSTAmount", "SGST Amount", "sgst amount", "sgst", "SGST"], 0));
+    current.gstAmount += toNumber(pick(row, ["gstAmount", "GSTAmount", "totalGst", "TotalGst", "Total GST", "total GST", "GST", "taxAmount", "TaxAmount"], 0));
+    grouped.set(key, current);
+  });
+
+  return Array.from(grouped.values());
+};
+
+const getClinicRevenueRowKey = (row = {}) =>
+  normalizeLookupKey(row.id || row.clinicId || row.hospitalId || getReportClinicId(row)) ||
+  normalizeLookupKey(row.name || row.clinicName || row.hospitalName);
+
+const mergeRevenueRow = (current = {}, next = {}) => {
+  const opRevenue = Math.max(toNumber(current.opRevenue), toNumber(next.opRevenue));
+  const diagnosticRevenue = Math.max(toNumber(current.diagnosticRevenue), toNumber(next.diagnosticRevenue));
+  const pharmacyRevenue = Math.max(toNumber(current.pharmacyRevenue), toNumber(next.pharmacyRevenue));
+  const cgstAmount = Math.max(toNumber(current.cgstAmount), toNumber(next.cgstAmount));
+  const sgstAmount = Math.max(toNumber(current.sgstAmount), toNumber(next.sgstAmount));
+  const gstAmount = Math.max(toNumber(current.gstAmount), toNumber(next.gstAmount), cgstAmount + sgstAmount);
+  const splitTotal = opRevenue + diagnosticRevenue + pharmacyRevenue;
+  const revenue = Math.max(toNumber(current.revenue), toNumber(next.revenue), splitTotal);
+
+  return {
+    ...current,
+    ...next,
+    adminName: current.adminName || next.adminName,
+    adminEmail: current.adminEmail || next.adminEmail,
+    opRevenue,
+    diagnosticRevenue,
+    pharmacyRevenue,
+    cgstAmount,
+    sgstAmount,
+    gstAmount,
+    revenue,
+    users: Math.max(toNumber(current.users), toNumber(next.users)),
+    invoiceCount: Math.max(toNumber(current.invoiceCount), toNumber(next.invoiceCount)),
+  };
+};
+
+const mergeClinicRevenueSources = (...rowGroups) => {
+  const merged = new Map();
+
+  rowGroups.flat().forEach((row, index) => {
+    if (!row) return;
+    const key = getClinicRevenueRowKey(row) || `clinic-revenue-${index}`;
+    const existing = merged.get(key);
+    merged.set(key, existing ? mergeRevenueRow(existing, row) : row);
+  });
+
+  return Array.from(merged.values());
 };
 
 export const normalizeRole = (role = {}, index = 0) => {
@@ -3052,7 +3138,9 @@ export const fetchDashboardData = async () => {
     dashboard,
     summary,
     reportsSummary,
+    clinicRevenue,
     revenueTrend,
+    topClinics,
     userActivity,
     auditLogs,
     loginHistory,
@@ -3062,9 +3150,15 @@ export const fetchDashboardData = async () => {
     appointmentsResult,
   ] = await Promise.allSettled([
     superAdminRequestFirst([SUPER_ADMIN_API.dashboard, SUPER_ADMIN_API.dashboardCompat]),
-    superAdminRequestFirst([SUPER_ADMIN_API.dashboardSummary, SUPER_ADMIN_API.dashboardSummaryCompat]),
+    superAdminRequestFirst([
+      SUPER_ADMIN_API.dashboardSummary,
+      SUPER_ADMIN_API.dashboardSummaryCompat,
+      SUPER_ADMIN_API.dashboardSummaryLegacy,
+    ]),
     superAdminRequest(SUPER_ADMIN_API.reportsSummary),
+    superAdminRequest(SUPER_ADMIN_API.reportsClinicRevenue),
     superAdminRequest(SUPER_ADMIN_API.reportsRevenueTrend),
+    superAdminRequest(SUPER_ADMIN_API.reportsTopClinics),
     superAdminRequest(SUPER_ADMIN_API.reportsUserActivity),
     superAdminRequest(SUPER_ADMIN_API.auditLogs),
     superAdminRequest(SUPER_ADMIN_API.loginHistory),
@@ -3076,9 +3170,11 @@ export const fetchDashboardData = async () => {
 
   const dashboardData = dashboard.status === "fulfilled" ? asObject(dashboard.value) : {};
   const summaryData = {
-    ...(reportsSummary.status === "fulfilled" ? asObject(reportsSummary.value) : {}),
     ...(summary.status === "fulfilled" ? asObject(summary.value) : {}),
+    ...(reportsSummary.status === "fulfilled" ? asObject(reportsSummary.value) : {}),
   };
+  const clinicRevenueRows = clinicRevenue.status === "fulfilled" ? asArray(clinicRevenue.value) : [];
+  const topClinicRows = topClinics.status === "fulfilled" ? asArray(topClinics.value) : [];
   const revenueData = revenueTrend.status === "fulfilled" ? revenueTrend.value : [];
   const reportActivityRows = userActivity.status === "fulfilled" ? asArray(userActivity.value).map(normalizeActivity) : [];
   const auditActivityRows =
@@ -3094,14 +3190,59 @@ export const fetchDashboardData = async () => {
     .filter(isPaidSuperAdminAppointment)
     .map(appointmentToSuperAdminOpRevenueRow);
   const billingRows = dedupeBillingRows([
+    ...(await fetchSharedRevenueBillingRows({ apiUrl })),
     ...(billingResult.status === "fulfilled" ? asArray(billingResult.value) : []),
-    ...readLocalRevenueBillingRows(),
     ...paidAppointmentRows,
   ]);
-  const billingRevenue = billingRows.reduce((sum, row) => sum + getBillingAmount(row), 0);
-  const actualClinicCount = clinicRows.length;
-  
+  const billingTotals = getSharedRevenueTotals(billingRows);
   const userRows = usersResult.status === "fulfilled" ? asArray(usersResult.value).filter((u) => !u.isDeleted) : [];
+  const clinicDashboardRevenueRows = await fetchClinicDashboardRevenueRows(clinicRows);
+  const clinicDashboardRows = buildClinicRevenueRowsFromReportRows({
+    reportRows: clinicDashboardRevenueRows,
+    clinicRows,
+    adminRows: [],
+    userRows,
+  });
+  const clinicDetailRevenueRows = await fetchClinicRevenueDetailRows(clinicRows);
+  const clinicDetailRows = buildClinicRevenueRowsFromReportRows({
+    reportRows: clinicDetailRevenueRows,
+    clinicRows,
+    adminRows: [],
+    userRows,
+  });
+  const billingClinicRows = buildClinicRevenueRowsFromBilling({
+    billingRows,
+    clinicRows,
+    adminRows: [],
+    userRows,
+    appointmentRows,
+  });
+  const dashboardClinicRevenueRows = mergeClinicRevenueSources(
+    clinicDashboardRows,
+    billingClinicRows,
+    clinicDetailRows,
+    clinicRevenueRows,
+    topClinicRows
+  );
+  const dashboardClinicTotals = dashboardClinicRevenueRows.reduce(
+    (totals, row) => {
+      totals.opRevenue += toNumber(row.opRevenue);
+      totals.diagnosticRevenue += toNumber(row.diagnosticRevenue);
+      totals.pharmacyRevenue += toNumber(row.pharmacyRevenue);
+      totals.gstAmount += toNumber(row.gstAmount);
+      totals.revenue += toNumber(row.revenue);
+      return totals;
+    },
+    {
+      opRevenue: 0,
+      diagnosticRevenue: 0,
+      pharmacyRevenue: 0,
+      gstAmount: 0,
+      revenue: 0,
+    }
+  );
+  const dashboardTotalRevenue = dashboardClinicTotals.revenue || billingTotals.revenue;
+  const actualClinicCount = clinicRows.length;
   const actualUserCount = userRows.length;
   const activeUserCount = userRows.filter((u) => u.active === true || u.isActive === true || u.status === "Active").length;
   
@@ -3112,7 +3253,13 @@ export const fetchDashboardData = async () => {
     totalClinics: actualClinicCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalClinics", "clinics", "clinicCount"]),
     clinics: actualClinicCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalClinics", "clinics", "clinicCount"]),
     clinicCount: actualClinicCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalClinics", "clinics", "clinicCount"]),
-    totalRevenue: billingRevenue || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalRevenue", "revenue", "revenueSummary"]),
+    totalRevenue: dashboardTotalRevenue || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalRevenue", "revenue", "revenueSummary"]),
+    revenue: dashboardTotalRevenue || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalRevenue", "revenue", "revenueSummary"]),
+    revenueSummary: dashboardTotalRevenue || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalRevenue", "revenue", "revenueSummary"]),
+    opRevenue: dashboardClinicTotals.opRevenue || billingTotals.opRevenue,
+    diagnosticRevenue: dashboardClinicTotals.diagnosticRevenue || billingTotals.diagnosticRevenue,
+    pharmacyRevenue: dashboardClinicTotals.pharmacyRevenue || billingTotals.pharmacyRevenue,
+    gstAmount: dashboardClinicTotals.gstAmount || billingTotals.gstAmount,
     totalAdmins: adminCount,
     admins: adminCount,
     adminCount,
@@ -3125,7 +3272,14 @@ export const fetchDashboardData = async () => {
   
   const dashboardRevenueData = billingRows.length
     ? buildRevenueChart(billingRows)
-    : buildMonthlyRevenueRows(asArray(revenueData));
+    : dashboardClinicRevenueRows.length
+      ? dashboardClinicRevenueRows.map((row) => ({
+          name: row.name || row.clinicName || "Clinic",
+          revenue: toNumber(row.revenue),
+          users: toNumber(row.users),
+          invoices: toNumber(row.invoiceCount),
+        }))
+      : buildMonthlyRevenueRows(asArray(revenueData));
   const totalUsers = nextSummary.totalUsers;
 
   return {
@@ -3145,7 +3299,9 @@ export const fetchDashboardData = async () => {
       dashboard.status === "rejected" &&
       summary.status === "rejected" &&
       reportsSummary.status === "rejected" &&
+      clinicRevenue.status === "rejected" &&
       revenueTrend.status === "rejected" &&
+      topClinics.status === "rejected" &&
       userActivity.status === "rejected" &&
       auditLogs.status === "rejected" &&
       loginHistory.status === "rejected"
@@ -3155,36 +3311,23 @@ export const fetchDashboardData = async () => {
 };
 
 export const fetchReports = async () => {
-  const billingHistoryQuery = "pageSize=10000&limit=10000&includeAll=true&all=true";
-  const [summary, revenueTrend, topClinics, userActivity, revenue, activity, clinics, admins, users, billing, billingAll, billingHistory, appointments] = await Promise.allSettled([
+  const [summary, clinicRevenue, revenueTrend, topClinics, userActivity, clinics, admins, users, appointments] = await Promise.allSettled([
     superAdminRequest(SUPER_ADMIN_API.reportsSummary),
+    superAdminRequest(SUPER_ADMIN_API.reportsClinicRevenue),
     superAdminRequest(SUPER_ADMIN_API.reportsRevenueTrend),
     superAdminRequest(SUPER_ADMIN_API.reportsTopClinics),
     superAdminRequest(SUPER_ADMIN_API.reportsUserActivity),
-    superAdminRequest(SUPER_ADMIN_API.reportsRevenue),
-    superAdminRequest(SUPER_ADMIN_API.reportsActivity),
     superAdminRequest(SUPER_ADMIN_API.clinics),
     superAdminRequest(SUPER_ADMIN_API.admins),
     superAdminRequest(SUPER_ADMIN_API.users),
-    superAdminRequest(`${SUPER_ADMIN_API.billing}?${billingHistoryQuery}`),
-    superAdminRequestOptional(`Billing/all?${billingHistoryQuery}`),
-    superAdminRequestOptional(`Billing/history?${billingHistoryQuery}`),
     superAdminRequestOptional("Appointment"),
   ]);
 
+  const summaryData = summary.status === "fulfilled" ? asObject(summary.value) : {};
+  const clinicRevenueRows = clinicRevenue.status === "fulfilled" ? asArray(clinicRevenue.value) : [];
   const topClinicRows = topClinics.status === "fulfilled" ? asArray(topClinics.value) : [];
-  const revenueRows =
-    revenue.status === "fulfilled"
-      ? asArray(revenue.value)
-      : revenueTrend.status === "fulfilled"
-        ? asArray(revenueTrend.value)
-        : [];
-  const activityRows =
-    activity.status === "fulfilled"
-      ? asArray(activity.value)
-      : userActivity.status === "fulfilled"
-        ? asArray(userActivity.value)
-        : [];
+  const revenueRows = revenueTrend.status === "fulfilled" ? asArray(revenueTrend.value) : [];
+  const activityRows = userActivity.status === "fulfilled" ? asArray(userActivity.value) : [];
   const clinicRows = clinics.status === "fulfilled" ? asArray(clinics.value) : [];
   const adminRows = admins.status === "fulfilled" ? asArray(admins.value) : [];
   const userRows = users.status === "fulfilled" ? asArray(users.value) : [];
@@ -3192,20 +3335,25 @@ export const fetchReports = async () => {
   const paidAppointmentRows = appointmentRows
     .filter(isPaidSuperAdminAppointment)
     .map(appointmentToSuperAdminOpRevenueRow);
+  const clinicDashboardRevenueRows = await fetchClinicDashboardRevenueRows(clinicRows);
+  const clinicDashboardRows = buildClinicRevenueRowsFromReportRows({ reportRows: clinicDashboardRevenueRows, clinicRows, adminRows, userRows });
+  const clinicDetailRevenueRows = await fetchClinicRevenueDetailRows(clinicRows);
+  const clinicDetailRows = buildClinicRevenueRowsFromReportRows({ reportRows: clinicDetailRevenueRows, clinicRows, adminRows, userRows });
   const billingRows = dedupeBillingRows([
-    ...(billing.status === "fulfilled" ? asArray(billing.value) : []),
-    ...(billingAll.status === "fulfilled" ? asArray(billingAll.value) : []),
-    ...(billingHistory.status === "fulfilled" ? asArray(billingHistory.value) : []),
-    ...readLocalRevenueBillingRows(),
+    ...(await fetchSharedRevenueBillingRows({ apiUrl })),
     ...paidAppointmentRows,
   ]);
-  const rows = billingRows.length
-    ? buildAdminRevenueRows({ billingRows, clinicRows, adminRows, userRows, appointmentRows })
-    : topClinicRows.length
-      ? enrichReportRows({ rows: topClinicRows, clinicRows, adminRows, userRows, billingRows, appointmentRows })
-      : revenueRows.length
-        ? enrichReportRows({ rows: revenueRows, clinicRows, adminRows, userRows, billingRows, appointmentRows })
-        : buildAdminRevenueRows({ billingRows, clinicRows, adminRows, userRows, appointmentRows });
+  const billingClinicRows = buildClinicRevenueRowsFromBilling({ billingRows, clinicRows, adminRows, userRows, appointmentRows });
+
+  const mergedRevenueRows = mergeClinicRevenueSources(
+    clinicDashboardRows,
+    billingClinicRows,
+    clinicDetailRows,
+    clinicRevenueRows,
+    topClinicRows
+  );
+  const sourceRows = mergedRevenueRows.length ? mergedRevenueRows : topClinicRows;
+  const rows = enrichReportRows({ rows: sourceRows, clinicRows, adminRows, userRows });
 
   // Filter out any rows whose clinic is not present in the clinics list.
   const clinicLookupIds = new Set(clinicRows.map((c) => String(pick(c, ["id", "clinicId", "HospitalId", "_id"], "")).trim()).filter(Boolean));
@@ -3296,41 +3444,50 @@ export const fetchReports = async () => {
   const actualUserCount = userRows.filter((u) => !u.isDeleted).length;
   const activeUserCount = userRows.filter((u) => u.active === true || u.isActive === true || u.status === "Active").length;
   const adminCount = await countDashboardAdmins();
+  const billingTotals = getSharedRevenueTotals(billingRows);
+  const backendRevenue = billingTotals.revenue || getDashboardMetric(summaryData, ["totalRevenue", "revenue", "revenueSummary", "amount"]);
 
   const nextSummary = {
-    totalClinics: actualClinicCount,
-    clinics: actualClinicCount,
-    clinicCount: actualClinicCount,
-    totalUsers: actualUserCount,
-    users: actualUserCount,
-    userCount: actualUserCount,
-    activeUsers: activeUserCount,
-    activeUserCount: activeUserCount,
-    totalAdmins: adminCount,
-    admins: adminCount,
+    ...summaryData,
+    totalClinics: actualClinicCount || getDashboardMetric(summaryData, ["totalClinics", "clinics", "clinicCount"]),
+    clinics: actualClinicCount || getDashboardMetric(summaryData, ["totalClinics", "clinics", "clinicCount"]),
+    clinicCount: actualClinicCount || getDashboardMetric(summaryData, ["totalClinics", "clinics", "clinicCount"]),
+    totalUsers: actualUserCount || getDashboardMetric(summaryData, ["totalUsers", "users", "userCount"]),
+    users: actualUserCount || getDashboardMetric(summaryData, ["totalUsers", "users", "userCount"]),
+    userCount: actualUserCount || getDashboardMetric(summaryData, ["totalUsers", "users", "userCount"]),
+    activeUsers: activeUserCount || getDashboardMetric(summaryData, ["activeUsers", "activeUserCount"]),
+    activeUserCount: activeUserCount || getDashboardMetric(summaryData, ["activeUsers", "activeUserCount"]),
+    totalAdmins: adminCount || getDashboardMetric(summaryData, ["totalAdmins", "admins", "adminCount"]),
+    admins: adminCount || getDashboardMetric(summaryData, ["totalAdmins", "admins", "adminCount"]),
     adminCount,
-    totalRevenue: finalRows.reduce((sum, row) => sum + toNumber(row.revenue), 0),
+    totalRevenue: backendRevenue || finalRows.reduce((sum, row) => sum + toNumber(row.revenue), 0),
+    opRevenue: billingTotals.opRevenue || finalRows.reduce((sum, row) => sum + toNumber(row.opRevenue), 0),
+    diagnosticRevenue: billingTotals.diagnosticRevenue || finalRows.reduce((sum, row) => sum + toNumber(row.diagnosticRevenue), 0),
+    pharmacyRevenue: billingTotals.pharmacyRevenue || finalRows.reduce((sum, row) => sum + toNumber(row.pharmacyRevenue), 0),
   };
 
   return {
     rows: finalRows,
-    chartData: billingRows.length
-      ? buildRevenueChart(billingRows)
-      : mergeReportChartData({ revenueRows, activityRows, billingRows, rows: finalRows }),
+    chartData: mergeReportChartData({ revenueRows, activityRows, rows: finalRows }),
     activityRows: activityRows.map(normalizeActivity),
     summary: nextSummary,
     error:
       summary.status === "rejected" &&
+      clinicRevenue.status === "rejected" &&
       revenueTrend.status === "rejected" &&
       topClinics.status === "rejected" &&
       userActivity.status === "rejected" &&
-      revenue.status === "rejected" &&
-      activity.status === "rejected" &&
       clinics.status === "rejected" &&
       admins.status === "rejected"
-        ? revenueTrend.reason?.message || revenue.reason.message
+        ? summary.reason?.message || clinicRevenue.reason?.message || revenueTrend.reason?.message
         : "",
   };
+};
+
+export const fetchSuperAdminClinicRevenue = async (hospitalId) => {
+  const id = encodeURIComponent(String(hospitalId || "").trim());
+  if (!id) throw new Error("Hospital id is required.");
+  return superAdminRequest(`${SUPER_ADMIN_API.reportsClinicRevenueByHospital}/${id}`);
 };
 
 export const getDashboardMetric = (source, keys, fallback = 0) =>
