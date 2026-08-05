@@ -260,6 +260,7 @@ import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 import {
   appointmentToOpRevenueRow,
   dedupeBillingRows as dedupeRevenueRows,
+  fetchRevenueBillingRows,
   getBranchId as getRevenueBranchId,
   getBranchName as getRevenueBranchName,
   groupRevenueByMonth,
@@ -267,16 +268,13 @@ import {
   isPaidAppointment,
   parseList as parseRevenueList,
   passesRevenueFilters,
-  readLocalRevenueBillingRows,
 } from "../../utils/billingRevenue";
 
 // ================= API =================
 
 const REPORT_API =
-  apiUrl("Report/revenue");
+  apiUrl("Dashboard/reports/revenue");
 
-const BILLING_API =
-  apiUrl("Billing");
 const APPOINTMENT_API =
   apiUrl("Appointment");
 const parseList = (value) => {
@@ -415,35 +413,6 @@ const enrichBillingBranch = (row = {}, { appointmentLookup, branches }) => {
   };
 };
 
-const fetchJsonOrEmpty = async (url, headers) => {
-  try {
-    const response = await fetch(url, { headers });
-    if (!response.ok) return [];
-    return await response.json().catch(() => []);
-  } catch {
-    return [];
-  }
-};
-
-const fetchBillingHistoryRows = async ({ params, headers }) => {
-  const query = params.toString();
-  const historyParams = new URLSearchParams(params);
-  historyParams.set("pageSize", "10000");
-  historyParams.set("limit", "10000");
-  historyParams.set("includeAll", "true");
-  historyParams.set("all", "true");
-
-  const urls = [
-    `${BILLING_API}?${historyParams.toString()}`,
-    query ? `${BILLING_API}?${query}` : BILLING_API,
-    apiUrl(`Billing/all${query ? `?${query}` : ""}`),
-    apiUrl(`Billing/history${query ? `?${query}` : ""}`),
-  ];
-
-  const responses = await Promise.all(urls.map((url) => fetchJsonOrEmpty(url, headers)));
-  return dedupeRevenueRows(responses.flatMap(parseRevenueList));
-};
-
 const escapeHtml = (value) =>
   String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -506,7 +475,7 @@ function RevenueReport() {
       const reportRows = normalizeRevenueRows(result);
 
       const [backendBillingRows, appointmentResponse] = await Promise.all([
-        fetchBillingHistoryRows({ params, headers }),
+        fetchRevenueBillingRows({ apiUrl, headers, params }),
         fetch(APPOINTMENT_API, {
           headers,
         }).catch(() => null),
@@ -523,7 +492,6 @@ function RevenueReport() {
         .map(appointmentToOpRevenueRow);
       const billingRows = dedupeRevenueRows([
         ...backendBillingRows,
-        ...readLocalRevenueBillingRows(),
         ...paidAppointmentRows,
       ])
         .map((row) => enrichBillingBranch(row, { appointmentLookup: appointmentBranchLookup, branches }))

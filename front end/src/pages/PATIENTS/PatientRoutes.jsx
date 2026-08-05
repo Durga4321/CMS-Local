@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import {
-  Bell, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, ClipboardList,
+  Activity, Bell, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, ClipboardList,
   CreditCard, Download, Eye, EyeOff, FileText, Heart, KeyRound, LogOut, Mail, MapPin, Pill,
-  Menu, Phone, Printer, Search, Share2, Trash2, UserRound, X,
+  Menu, Phone, Printer, Search, Share2, Star, Stethoscope, Trash2, UserRound, X,
 } from "lucide-react";
 import PatientDashboard from "./PatientDashboard";
 import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
@@ -11,11 +11,13 @@ import { validateStrongPassword } from "../../utils/validation";
 import { formatIndianCurrency, formatTitleCase } from "../../utils/format";
 import { PATIENT_PORTAL_OP_BILLS_KEY } from "../../utils/billingRevenue";
 import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
+import { readGeneratedLabReports } from "../../Lab/labReportStore";
 import {
   DUPLICATE_APPOINTMENT_MESSAGE,
   hasDuplicateAppointmentForPatientDoctorDate,
 } from "../../utils/appointmentDuplicateValidation";
 import { isDoctorBranchLeaveDate } from "../../utils/doctorBranchLeave";
+import { buildDoctorScheduleDraftSlots } from "../../utils/doctorScheduleDrafts";
 
 const getNestedValue = (record, path) => {
   if (record == null) return undefined;
@@ -25,6 +27,16 @@ const getNestedValue = (record, path) => {
 
 const readFirst = (record, keys) =>
   keys.reduce((value, key) => value || getNestedValue(record, key), "") || "";
+
+const getInitials = (name = "") =>
+  String(name || "DR")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "DR";
 
 const getTokenSequence = (appointment = {}) => {
   const token = readFirst(appointment, ["tokenNumber", "TokenNumber", "token", "tokenNo", "token_number"]);
@@ -655,6 +667,105 @@ const normalizeDepartmentOption = (department, clinicId = "") => {
     name,
     clinicId: normalizedClinicId,
   };
+};
+
+const getDepartmentVisual = (departmentName = "") => {
+  const key = String(departmentName || "").toLowerCase();
+  if (key.includes("cardio") || key.includes("heart")) {
+    return {
+      tone: "cardiology",
+      Icon: Activity,
+      label: "Heart care",
+    };
+  }
+  if (key.includes("general") || key.includes("physician") || key.includes("specialist")) {
+    return {
+      tone: "general",
+      Icon: Stethoscope,
+      label: "General care",
+    };
+  }
+  return {
+    tone: "default",
+    Icon: Heart,
+    label: "Specialty care",
+  };
+};
+
+const DOCTOR_REVIEWS_STORAGE_KEY = "patientDoctorReviews";
+
+const readDoctorReviewKey = (doctor = {}) =>
+  readFirst(doctor, ["id", "doctorId", "DoctorId", "_id", "email", "Email"]) ||
+  `${doctor.name || doctor.doctorName || "doctor"}-${doctor.specialty || doctor.specialization || ""}`;
+
+const normalizeDoctorReview = (review = {}) => ({
+  id: readFirst(review, ["id", "reviewId", "ReviewId"], "") || `review-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  patientName: readFirst(review, ["patientName", "PatientName", "name", "Name"], "") || "Patient",
+  rating: String(readFirst(review, ["rating", "Rating", "stars", "Stars"], "") || review.rating || "4.8"),
+  comment: readFirst(review, ["comment", "Comment", "review", "Review", "feedback", "Feedback"], "") || "Good consultation experience.",
+});
+
+const readDoctorExpertise = (doctor = {}) =>
+  readFirst(doctor, [
+    "areaOfExpertise",
+    "AreaOfExpertise",
+    "areaofExpertise",
+    "expertise",
+    "Expertise",
+    "area_of_expertise",
+    "specializedIn",
+    "specializedArea",
+  ]) || doctor.specialty || doctor.specialization || "General consultation";
+
+const isSameDoctorText = (left = "", right = "") =>
+  String(left || "").trim().toLowerCase() === String(right || "").trim().toLowerCase();
+
+const readDoctorExperience = (doctor = {}) => {
+  const value = readFirst(doctor, ["experience", "Experience", "yearsOfExperience", "YearsOfExperience"]) || doctor.experience;
+  if (value === undefined || value === null || value === "") return "Experience not updated";
+  const text = String(value).trim();
+  return /\byears?\b|\byrs?\b/i.test(text) ? text : `${text} years`;
+};
+
+const readDoctorSummary = (doctor = {}) =>
+  readFirst(doctor, [
+    "summary",
+    "Summary",
+    "bio",
+    "Bio",
+    "about",
+    "About",
+    "description",
+    "Description",
+    "profileSummary",
+    "ProfileSummary",
+  ]) ||
+  `Dr. ${doctor.name || doctor.doctorName || "Doctor"} provides ${doctor.specialty || doctor.specialization || "general"} care with a focus on clear consultation and patient follow-up.`;
+
+const readDoctorReviews = (doctor = {}) => {
+  const doctorKey = readDoctorReviewKey(doctor);
+  if (doctorKey) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(DOCTOR_REVIEWS_STORAGE_KEY) || "{}");
+      if (Array.isArray(saved[doctorKey])) return saved[doctorKey];
+    } catch {}
+  }
+  const rawReviews =
+    doctor.reviews ||
+    doctor.Reviews ||
+    doctor.doctorReviews ||
+    doctor.DoctorReviews ||
+    doctor.feedback ||
+    doctor.Feedback ||
+    [];
+  if (Array.isArray(rawReviews) && rawReviews.length) return rawReviews;
+  return [
+    {
+      patientName: "Patient review",
+      rating: doctor.rating || doctor.Rating || 4.8,
+      comment: "Helpful consultation and clear explanation.",
+    },
+  ];
 };
 
 const normalizeDoctorOption = (doctor, clinicId = "", departmentName = "") => {
@@ -1509,6 +1620,8 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [viewDoctor, setViewDoctor] = useState(null);
+  const [doctorReviewDrafts, setDoctorReviewDrafts] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [reasonForVisit, setReasonForVisit] = useState("");
@@ -1518,6 +1631,14 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const bookingRequestRef = useRef(false);
+
+  useEffect(() => {
+    if (!viewDoctor) {
+      setDoctorReviewDrafts([]);
+      return;
+    }
+    setDoctorReviewDrafts(readDoctorReviews(viewDoctor).map(normalizeDoctorReview));
+  }, [viewDoctor]);
 
   const parseApiList = (data) => {
     if (Array.isArray(data)) return data;
@@ -1775,13 +1896,52 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
         const slotsUrl = patientApiUrl(PATIENT_API.doctorSlots, { doctorId });
         const response = await fetch(`${slotsUrl}?${params.toString()}`, { headers }).catch(() => null);
         const data = response?.ok ? await response.json().catch(() => null) : null;
-        const slotList = parseApiList(data);
+        const selectedBranchId = String(branchId || "");
+        const slotList = parseApiList(data).filter((slot) => {
+          const slotBranchId = String(
+            slot.branchId ||
+              slot.BranchId ||
+              slot.clinicBranchId ||
+              slot.ClinicBranchId ||
+              slot.clinicId ||
+              slot.ClinicId ||
+              ""
+          ).trim();
+          return !selectedBranchId || slotBranchId === selectedBranchId;
+        });
+        const localSlots = buildDoctorScheduleDraftSlots(doctorId, branchId, selectedDate);
+        const allowedDraftStarts = new Set(
+          localSlots
+            .map((slot) =>
+              String(slot.start || slot.startTime || slot.time || slot.slotTime || slot.slot || "")
+                .split(" - ")[0]
+                .trim()
+                .toLowerCase()
+            )
+            .filter(Boolean)
+        );
+        const branchSlotList = allowedDraftStarts.size
+          ? slotList.filter((slot) => {
+              const start = slot.start || slot.startTime || slot.time || slot.slotTime || slot.slot || "";
+              const key = String(start).split(" - ")[0].trim().toLowerCase();
+              return allowedDraftStarts.has(key);
+            })
+          : slotList;
+        const uniqueSlots = [];
+        const seenSlotKeys = new Set();
+        [...branchSlotList, ...localSlots].forEach((slot) => {
+          const start = slot.start || slot.startTime || slot.time || slot.slotTime || slot.slot || "";
+          const key = String(start).split(" - ")[0].trim().toLowerCase();
+          if (!key || seenSlotKeys.has(key)) return;
+          seenSlotKeys.add(key);
+          uniqueSlots.push(slot);
+        });
         // API returns {start, end, status} objects
-        setSlots(slotList.map((slot) => ({
+        setSlots(uniqueSlots.map((slot) => ({
           ...slot,
           id: slot.id || slot.slotId || `${doctorId}-${branchId || 'branch'}-${selectedDate}-${slot.start || slot.startTime || slot.time}`,
           doctorId: String(doctorId),
-          branchId: String(branchId || slot.branchId || slot.clinicId || ''),
+          branchId: String(slot.branchId || slot.BranchId || slot.clinicBranchId || slot.ClinicBranchId || slot.clinicId || slot.ClinicId || branchId || ''),
           date: selectedDate,
           time: slot.start || slot.startTime || slot.time || slot.slotTime || '',
           end: slot.end || slot.endTime || '',
@@ -1914,6 +2074,45 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
     (step === 2 && selectedDepartment) ||
     (step === 3 && selectedDoctor) ||
     (step === 4 && selectedDate && selectedTime);
+
+  const handleDoctorReviewChange = (reviewId, field, value) => {
+    setDoctorReviewDrafts((current) =>
+      current.map((review) => (review.id === reviewId ? { ...review, [field]: value } : review))
+    );
+  };
+
+  const handleAddDoctorReview = () => {
+    setDoctorReviewDrafts((current) => [
+      ...current,
+      normalizeDoctorReview({
+        patientName: "Patient",
+        rating: "5",
+        comment: "",
+      }),
+    ]);
+  };
+
+  const handleDeleteDoctorReview = (reviewId) => {
+    setDoctorReviewDrafts((current) => current.filter((review) => review.id !== reviewId));
+  };
+
+  const handleSaveDoctorReviews = () => {
+    if (!viewDoctor) return;
+    const doctorKey = readDoctorReviewKey(viewDoctor);
+    const nextReviews = doctorReviewDrafts.map(normalizeDoctorReview);
+    try {
+      const saved = JSON.parse(localStorage.getItem(DOCTOR_REVIEWS_STORAGE_KEY) || "{}");
+      localStorage.setItem(DOCTOR_REVIEWS_STORAGE_KEY, JSON.stringify({ ...saved, [doctorKey]: nextReviews }));
+    } catch {
+      localStorage.setItem(DOCTOR_REVIEWS_STORAGE_KEY, JSON.stringify({ [doctorKey]: nextReviews }));
+    }
+    setViewDoctor((current) => (current ? { ...current, reviews: nextReviews } : current));
+    setDoctors((current) =>
+      current.map((doctor) =>
+        readDoctorReviewKey(doctor) === doctorKey ? { ...doctor, reviews: nextReviews } : doctor
+      )
+    );
+  };
 
   const handleNextStep = () => {
     if (!canContinue) return;
@@ -2320,8 +2519,11 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
         invoiceNumber: readFirst(billData, ["invoiceNumber", "invoiceNo", "billNumber"]) || `OP-${appointmentId}`,
         billNumber: readFirst(billData, ["billNumber", "invoiceNumber", "invoiceNo"]) || `OP-${appointmentId}`,
         invoiceType: "op",
+        InvoiceType: "op",
         billingType: "OP",
+        BillingType: "OP",
         serviceType: "Patient Portal OP Billing",
+        ServiceType: "Patient Portal OP Billing",
         source: "patient-portal",
         billingSource: "patient-portal",
         bookingSource: "online",
@@ -2423,21 +2625,30 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
               </div>
               <div className="booking-grid">
                 {filteredDepartments.length ? (
-                  filteredDepartments.map((department) => (
-                    <button
-                      key={department.id || department.name}
-                      type="button"
-                      className={`booking-card ${selectedDepartment?.id === department.id ? 'selected' : ''}`}
-                      onClick={() => {
-                        setSelectedDepartment(department);
-                        setSelectedDoctor(null);
-                        setSelectedDate('');
-                        setSelectedTime('');
-                      }}
-                    >
-                      <strong>{department.name}</strong>
-                    </button>
-                  ))
+                  filteredDepartments.map((department) => {
+                    const { tone, Icon, label } = getDepartmentVisual(department.name);
+                    return (
+                      <button
+                        key={department.id || department.name}
+                        type="button"
+                        className={`booking-card booking-card--department booking-card--${tone} ${selectedDepartment?.id === department.id ? 'selected' : ''}`}
+                        onClick={() => {
+                          setSelectedDepartment(department);
+                          setSelectedDoctor(null);
+                          setSelectedDate('');
+                          setSelectedTime('');
+                        }}
+                      >
+                        <span className="booking-department-icon" aria-hidden="true">
+                          <Icon size={24} strokeWidth={2.4} />
+                        </span>
+                        <span className="booking-department-copy">
+                          <strong>{department.name}</strong>
+                          <small>{label}</small>
+                        </span>
+                      </button>
+                    );
+                  })
                 ) : (
                   <p className="booking-empty">No departments available.</p>
                 )}
@@ -2453,21 +2664,57 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
               </div>
               <div className="booking-grid">
                 {filteredDoctors.length ? (
-                  filteredDoctors.map((doctor) => (
-                    <button
-                      key={doctor.id || doctor.name}
-                      type="button"
-                      className={`booking-card ${selectedDoctor?.id === doctor.id ? 'selected' : ''}`}
-                      onClick={() => {
-                        setSelectedDoctor(doctor);
-                        setSelectedDate('');
-                        setSelectedTime('');
-                      }}
-                    >
-                      <strong>{doctor.name}</strong>
-                      <span>{doctor.specialty || 'General consultation'}</span>
-                    </button>
-                  ))
+                  filteredDoctors.map((doctor) => {
+                    const specialty = doctor.specialty || doctor.specialization || "General consultation";
+                    const expertise = readDoctorExpertise(doctor);
+                    return (
+                      <div
+                        key={doctor.id || doctor.name}
+                        role="button"
+                        tabIndex={0}
+                        className={`booking-card ${selectedDoctor?.id === doctor.id ? 'selected' : ''}`}
+                        onClick={() => {
+                          setSelectedDoctor(doctor);
+                          setSelectedDate('');
+                          setSelectedTime('');
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            setSelectedDoctor(doctor);
+                            setSelectedDate('');
+                            setSelectedTime('');
+                          }
+                        }}
+                      >
+                        <span className="booking-doctor-card-head">
+                          <span>
+                            <strong>{doctor.name}</strong>
+                            <small>{specialty}</small>
+                          </span>
+                          <button
+                            type="button"
+                            className="booking-doctor-view"
+                            title={`View Dr. ${doctor.name}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setViewDoctor(doctor);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setViewDoctor(doctor);
+                              }
+                            }}
+                          >
+                            <Eye size={18} />
+                          </button>
+                        </span>
+                        {!isSameDoctorText(expertise, specialty) ? <span>{expertise}</span> : null}
+                      </div>
+                    );
+                  })
                 ) : (
                   <p className="booking-empty">No doctors available for this department.</p>
                 )}
@@ -2582,6 +2829,127 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
             </section>
           )}
         </div>
+
+        {viewDoctor ? (
+          <div className="booking-doctor-modal-backdrop" role="presentation" onClick={() => setViewDoctor(null)}>
+            <section className="booking-doctor-modal" role="dialog" aria-modal="true" aria-label={`Dr. ${viewDoctor.name} profile`} onClick={(event) => event.stopPropagation()}>
+              <div className="booking-doctor-modal-header">
+                <div className="booking-doctor-profile-title">
+                  <span className="booking-doctor-avatar">{getInitials(viewDoctor.name)}</span>
+                  <div>
+                    <h2>Dr. {viewDoctor.name}</h2>
+                    <p>{viewDoctor.specialty || "General consultation"}</p>
+                  </div>
+                </div>
+                <button type="button" className="booking-doctor-modal-close" onClick={() => setViewDoctor(null)} aria-label="Close doctor profile">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="booking-doctor-profile-grid">
+                <div>
+                  <span>Specialization</span>
+                  <strong>{viewDoctor.specialty || "General consultation"}</strong>
+                </div>
+                <div>
+                  <span>Area of Expertise</span>
+                  <strong>{readDoctorExpertise(viewDoctor)}</strong>
+                </div>
+                <div>
+                  <span>Experience</span>
+                  <strong>{readDoctorExperience(viewDoctor)}</strong>
+                </div>
+                <div>
+                  <span>Consultation Fee</span>
+                  <strong>{formatIndianCurrency(Number(viewDoctor.consultationFee || 0))}</strong>
+                </div>
+              </div>
+
+              <div className="booking-doctor-profile-section">
+                <h3>Doctor Summary</h3>
+                <p>{readDoctorSummary(viewDoctor)}</p>
+              </div>
+
+              <div className="booking-doctor-profile-section">
+                <div className="booking-doctor-review-heading">
+                  <h3>Reviews</h3>
+                  <button type="button" className="booking-doctor-review-add" onClick={handleAddDoctorReview}>
+                    Add Review
+                  </button>
+                </div>
+                <div className="booking-doctor-review-list">
+                  {doctorReviewDrafts.map((review) => {
+                    return (
+                      <article className="booking-doctor-review booking-doctor-review--editable" key={review.id}>
+                        <div>
+                          <input
+                            type="text"
+                            value={review.patientName}
+                            onChange={(event) => handleDoctorReviewChange(review.id, "patientName", event.target.value)}
+                            aria-label="Reviewer name"
+                          />
+                          <span>
+                            <Star size={14} fill="currentColor" />
+                            <input
+                              type="number"
+                              min="1"
+                              max="5"
+                              step="0.1"
+                              value={review.rating}
+                              onChange={(event) => handleDoctorReviewChange(review.id, "rating", event.target.value)}
+                              aria-label="Review rating"
+                            />
+                          </span>
+                          <button
+                            type="button"
+                            className="booking-doctor-review-delete"
+                            onClick={() => handleDeleteDoctorReview(review.id)}
+                            aria-label="Delete review"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                        <textarea
+                          rows={2}
+                          value={review.comment}
+                          onChange={(event) => handleDoctorReviewChange(review.id, "comment", event.target.value)}
+                          placeholder="Enter review"
+                          aria-label="Review comment"
+                        />
+                      </article>
+                    );
+                  })}
+                  {!doctorReviewDrafts.length ? <p className="booking-empty">No reviews added.</p> : null}
+                </div>
+                <button type="button" className="booking-doctor-review-save" onClick={handleSaveDoctorReviews}>
+                  Save Reviews
+                </button>
+              </div>
+
+              <div className="booking-doctor-profile-actions">
+                <button
+                  type="button"
+                  className="booking-button booking-button--ghost"
+                  onClick={() => setViewDoctor(null)}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  className="booking-button booking-button--primary"
+                  onClick={() => {
+                    setSelectedDoctor(viewDoctor);
+                    setSelectedDate("");
+                    setSelectedTime("");
+                    setViewDoctor(null);
+                  }}
+                >
+                  Select Doctor
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
 
         <div className="booking-footer">
           <button type="button" className="booking-button booking-button--ghost" onClick={() => navigate('/patient/dashboard')}>
@@ -2847,11 +3215,13 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
     return Array.from(byVisitId.values());
   })();
 
+  const generatedLabReports = readGeneratedLabReports().filter(belongsToCurrentPatient);
   const reportRecords = [
     ...normalizeRecords(historyRecord?.reports),
     ...normalizeRecords(historyRecord?.labReports),
     ...normalizeRecords(historyRecord?.scanReports),
     ...normalizeRecords(historyRecord?.attachments),
+    ...generatedLabReports,
     ...rawVisitRecords
       .map((visit) => readFirst(visit, ['report', 'reportName', 'reportTitle', 'reportUrl', 'documentUrl']) ? visit : null)
       .filter(Boolean),
@@ -4340,7 +4710,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     readFirst(record, ['invoiceId', 'billId', 'billingId', 'id', '_id', 'referenceId']);
 
   const getBillDetailUrl = (billId) =>
-    patientApiUrl(PATIENT_API.billDetails, { id: billId });
+    apiUrl(`Billing/${encodeURIComponent(String(billId))}`);
 
   const normalizeBillDetailResponse = (data) => {
     if (!data) return {};

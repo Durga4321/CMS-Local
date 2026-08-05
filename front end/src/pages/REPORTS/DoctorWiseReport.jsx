@@ -157,6 +157,7 @@ import { getApiHeaders } from "../../utils/branchApi";
 import {
   appointmentToOpRevenueRow,
   dedupeBillingRows,
+  fetchRevenueBillingRows,
   getBillingType,
   getMonthLabel,
   getMonthSortKey,
@@ -165,7 +166,6 @@ import {
   isPaidAppointment,
   parseList,
   pick,
-  readLocalRevenueBillingRows,
 } from "../../utils/billingRevenue";
 import { formatIndianCurrency } from "../../utils/format";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
@@ -175,8 +175,8 @@ import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 
 const DOCTOR_API =
   apiUrl("Doctor");
-const BILLING_API =
-  apiUrl("Billing");
+const REPORT_API =
+  apiUrl("Dashboard/reports/doctors");
 const APPOINTMENT_API =
   apiUrl("Appointment");
 
@@ -187,6 +187,9 @@ const getDoctorId = (doctor = {}) =>
 
 const getDoctorName = (doctor = {}) =>
   String(doctor.name ?? doctor.Name ?? doctor.doctorName ?? doctor.DoctorName ?? "").trim();
+
+const normalizeDoctorName = (value = "") =>
+  String(value || "").trim().toLowerCase().replace(/^dr\.?\s+/i, "");
 
 const getDoctorSpecialization = (doctor = {}) =>
   String(doctor.specialization ?? doctor.Specialization ?? "-").trim() || "-";
@@ -215,21 +218,26 @@ const fetchBillingRows = async ({ fromDate, toDate, doctorId, headers }) => {
   if (doctorId) params.set("doctorId", String(doctorId));
   if (fromDate) params.set("fromDate", fromDate);
   if (toDate) params.set("toDate", toDate);
-  params.set("pageSize", "10000");
-  params.set("limit", "10000");
-  params.set("includeAll", "true");
-  params.set("all", "true");
-
-  const query = params.toString();
-  const urls = [
-    `${BILLING_API}?${query}`,
-    apiUrl(`Billing/all?${query}`),
-    apiUrl(`Billing/history?${query}`),
-  ];
-
-  const responses = await Promise.all(urls.map((url) => fetchJsonOrEmpty(url, headers)));
-  return dedupeBillingRows(responses.flatMap(parseList));
+  return fetchRevenueBillingRows({ apiUrl, headers, params });
 };
+
+const normalizeDoctorReportRows = (value = []) =>
+  parseList(value).map((row, index) => {
+    const doctorName = getRowDoctorName(row) || getDoctorName(row) || `Doctor ${index + 1}`;
+    const date = getRowDate(row) || pick(row, ["month", "Month", "period", "Period", "date", "Date"], "");
+    const month = pick(row, ["month", "Month", "period", "Period", "name", "Name"], "") || getMonthLabel(date, index);
+    return {
+      ...row,
+      doctorId: getRowDoctorId(row) || getDoctorId(row),
+      doctorName,
+      specialization: getRowSpecialization(row),
+      month,
+      monthSort: getMonthSortKey(date),
+      chartLabel: pick(row, ["chartLabel", "label", "Label"], `${doctorName} ${month}`),
+      appointments: Number(pick(row, ["appointments", "appointmentCount", "totalAppointments", "count"], 0)) || 0,
+      revenue: getRevenueAmount(row),
+    };
+  });
 
 const withinDateRange = (row = {}, fromDate = "", toDate = "") => {
   const value = getRowDate(row);
@@ -256,15 +264,32 @@ const groupDoctorRevenue = (rows = [], doctors = [], selectedDoctorId = "") => {
     }
     return lookup;
   }, {});
+  const doctorNameLookup = doctors.reduce((lookup, doctor) => {
+    const name = normalizeDoctorName(getDoctorName(doctor));
+    if (name) {
+      lookup[name] = {
+        doctorId: getDoctorId(doctor),
+        doctorName: getDoctorName(doctor),
+        specialization: getDoctorSpecialization(doctor),
+      };
+    }
+    return lookup;
+  }, {});
+  const selectedDoctor = selectedDoctorId ? doctorLookup[String(selectedDoctorId)] : null;
 
   const grouped = new Map();
   rows.forEach((row, index) => {
     if (getBillingType(row) !== "op") return;
     const rowDoctorId = getRowDoctorId(row);
-    if (selectedDoctorId && rowDoctorId && rowDoctorId !== String(selectedDoctorId)) return;
-    const doctor = doctorLookup[rowDoctorId] || {};
-    const doctorName = doctor.doctorName || getRowDoctorName(row) || "Unknown Doctor";
-    if (selectedDoctorId && !rowDoctorId && doctorName === "Unknown Doctor") return;
+    const rawDoctorName = getRowDoctorName(row);
+    const namedDoctor = doctorNameLookup[normalizeDoctorName(rawDoctorName)] || {};
+    const doctor = doctorLookup[rowDoctorId] || namedDoctor || {};
+    const doctorName = doctor.doctorName || rawDoctorName || "Unknown Doctor";
+    if (selectedDoctorId) {
+      const matchesId = rowDoctorId && rowDoctorId === String(selectedDoctorId);
+      const matchesName = selectedDoctor?.doctorName && normalizeDoctorName(doctorName) === normalizeDoctorName(selectedDoctor.doctorName);
+      if (!matchesId && !matchesName) return;
+    }
     const date = getRowDate(row);
     const month = getMonthLabel(date, index);
     const monthSort = getMonthSortKey(date);
@@ -354,6 +379,18 @@ function DoctorWiseReport() {
         setLoading(true);
 
         const headers = getApiHeaders();
+        const params = new URLSearchParams();
+        if (doctorId) params.set("doctorId", String(doctorId));
+        if (fromDate) params.set("fromDate", fromDate);
+        if (toDate) params.set("toDate", toDate);
+        const reportUrl = params.toString() ? `${REPORT_API}?${params.toString()}` : REPORT_API;
+        const backendReportRows = normalizeDoctorReportRows(await fetchJsonOrEmpty(reportUrl, headers));
+        const backendHasRevenue = backendReportRows.some((row) => Number(row.revenue || 0) > 0);
+        if (backendReportRows.length && backendHasRevenue) {
+          setData(backendReportRows);
+          return;
+        }
+
         const [billingRows, appointmentResult] = await Promise.all([
           fetchBillingRows({ fromDate, toDate, doctorId, headers }),
           fetchJsonOrEmpty(APPOINTMENT_API, headers),
@@ -364,7 +401,6 @@ function DoctorWiseReport() {
           .map(appointmentToOpRevenueRow);
         const opRows = dedupeBillingRows([
           ...billingRows,
-          ...readLocalRevenueBillingRows(),
           ...paidAppointmentRows,
         ]).filter((row) => withinDateRange(row, fromDate, toDate));
 

@@ -41,8 +41,13 @@ export const getLabProfile = () => {
     role: localStorage.getItem("labRole") || "Lab Technician",
     hospitalId: String(hospitalId),
     hospitalName,
+    hospitalAddress: localStorage.getItem("hospitalAddress") || localStorage.getItem("clinicAddress") || "",
+    hospitalPhone: localStorage.getItem("hospitalPhone") || localStorage.getItem("clinicPhone") || localStorage.getItem("contactNumber") || "",
+    hospitalEmail: localStorage.getItem("hospitalEmail") || localStorage.getItem("clinicEmail") || "",
     branchName,
     branchId: String(branchId),
+    branchAddress: localStorage.getItem("branchAddress") || "",
+    branchPhone: localStorage.getItem("branchPhone") || "",
   };
 };
 

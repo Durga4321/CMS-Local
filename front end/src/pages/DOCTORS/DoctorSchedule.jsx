@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import "./DoctorSchedule.css";
 import { apiUrl } from "../../config/api";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
@@ -117,6 +116,20 @@ const getSlotStartValue = (slot = {}) =>
 const getSlotEndValue = (slot = {}) =>
   slot.end || slot.endTime || slot.EndTime || slot.workEnd || slot.WorkEnd || "";
 
+const getSlotDateValue = (slot = {}) =>
+  String(
+    slot.date ||
+      slot.Date ||
+      slot.slotDate ||
+      slot.SlotDate ||
+      slot.scheduleDate ||
+      slot.ScheduleDate ||
+      slot.appointmentDate ||
+      slot.AppointmentDate ||
+      slot.__date ||
+      ""
+  ).slice(0, 10);
+
 const isTodayDate = (value) => value === toDateInputValue(new Date());
 
 const isCompletedSlot = (slotEnd, date) => {
@@ -140,6 +153,21 @@ const isTimeOutSlot = (slot) => {
 const isBookedSlot = (slot) => getSlotStatus(slot) === "booked" || slot?.isBooked;
 
 const getRecordBranchId = (record = {}) =>
+  String(
+    record.branchId ??
+      record.BranchId ??
+      record.branchID ??
+      record.clinicBranchId ??
+      record.ClinicBranchId ??
+      record.branch?.id ??
+      record.Branch?.Id ??
+      record.appointment?.branchId ??
+      record.appointment?.BranchId ??
+      record.__queriedBranchId ??
+      ""
+  ).trim();
+
+const getExplicitRecordBranchId = (record = {}) =>
   String(
     record.branchId ??
       record.BranchId ??
@@ -491,8 +519,9 @@ const getScheduleIdsFromRows = (rows = []) =>
     )
   );
 
-const fetchDaySlots = async (doctorId, branchId, date, token) => {
+const fetchDaySlots = async (doctorId, branchId, date, token, options = {}) => {
   if (!doctorId || !branchId || !date) return [];
+  const { requireExplicitBranch = false } = options;
 
   const query = new URLSearchParams({
     doctorId: String(doctorId),
@@ -509,14 +538,134 @@ const fetchDaySlots = async (doctorId, branchId, date, token) => {
   if (!response.ok) return [];
 
   const rows = parseListResponse(await response.json().catch(() => []));
-  return rows.filter((slot) => !getRecordBranchId(slot) || slotBelongsToBranch(slot, branchId));
+  return rows
+    .filter((slot) => {
+      const explicitBranchId = getExplicitRecordBranchId(slot);
+      if (requireExplicitBranch) return explicitBranchId === String(branchId);
+      return !explicitBranchId || explicitBranchId === String(branchId);
+    })
+    .map((slot) => ({
+      ...slot,
+      __queriedBranchId: String(branchId),
+      __hasExplicitBranchId: Boolean(getExplicitRecordBranchId(slot)),
+    }));
 };
 
 const fetchSlotsForDates = async (doctorId, branchId, dates = [], token) => {
   const results = await Promise.all(
-    dates.map((date) => fetchDaySlots(doctorId, branchId, date, token).catch(() => []))
+    dates.map((date) =>
+      fetchDaySlots(doctorId, branchId, date, token)
+        .then((rows) => rows.map((row) => ({ ...row, __date: date })))
+        .catch(() => [])
+    )
   );
   return results.flat();
+};
+
+const getTimeInterval = (start, end) => {
+  const startMinutes = timeToMinutes(start);
+  const endMinutes = timeToMinutes(end);
+  if (startMinutes === null || endMinutes === null || endMinutes <= startMinutes) return null;
+  return { start: startMinutes, end: endMinutes };
+};
+
+const intervalsOverlap = (left, right) =>
+  Boolean(left && right && left.start < right.end && right.start < left.end);
+
+const getSlotInterval = (slot = {}) =>
+  getTimeInterval(getSlotStartValue(slot), getSlotEndValue(slot));
+
+const getPayloadSlotsByDate = (payload = {}) =>
+  (payload.dates || []).flatMap((date) =>
+    buildPreviewSlotsFromPayload(payload).map((slot) => ({
+      ...slot,
+      date,
+      __date: date,
+      branchId: payload.branchId,
+      doctorId: payload.doctorId,
+    }))
+  );
+
+const getDraftConflictSlots = (doctorId, currentBranchId, currentDates = []) => {
+  const dateSet = new Set(currentDates.map((date) => String(date)));
+  return Object.values(readScheduleDrafts())
+    .filter((draft) => {
+      if (!draft || draft.isLeave) return false;
+      if (String(draft.doctorId) !== String(doctorId)) return false;
+      if (String(draft.branchId) === String(currentBranchId)) return false;
+      return (draft.dates || []).some((date) => dateSet.has(String(date)));
+    })
+    .flatMap((draft) =>
+      getPayloadSlotsByDate(draft)
+        .filter((slot) => dateSet.has(String(getSlotDateValue(slot))))
+        .map((slot) => ({ ...slot, branchId: draft.branchId, __source: "draft" }))
+    );
+};
+
+const findCrossBranchScheduleConflict = async ({
+  payload,
+  branchOptions = [],
+  currentBranchId = "",
+  token = "",
+}) => {
+  if (payload.isLeave) return null;
+
+  const currentSlots = getPayloadSlotsByDate(payload);
+  if (!currentSlots.length) return null;
+
+  const otherBranchIds = Array.from(
+    new Set(
+      branchOptions
+        .map((branch) => String(branch.id || branch.branchId || "").trim())
+        .filter((id) => id && id !== String(currentBranchId))
+    )
+  );
+
+  const backendRows = (
+    await Promise.all(
+      otherBranchIds.map((otherBranchId) =>
+        fetchSlotsForDates(payload.doctorId, otherBranchId, payload.dates, token).catch(() => [])
+      )
+    )
+  )
+    .flat()
+    .filter((slot) => {
+      const explicitBranchId = getExplicitRecordBranchId(slot);
+      return explicitBranchId && explicitBranchId !== String(currentBranchId);
+    });
+  const draftRows = getDraftConflictSlots(payload.doctorId, currentBranchId, payload.dates);
+  const otherSlots = [...backendRows, ...draftRows].filter(
+    (slot) => !isTimeOutSlot(slot) && !isCompletedSlot(getSlotEndValue(slot), getSlotDateValue(slot))
+  );
+
+  for (const currentSlot of currentSlots) {
+    const currentDate = getSlotDateValue(currentSlot);
+    const currentInterval = getSlotInterval(currentSlot);
+    if (!currentDate || !currentInterval) continue;
+
+    const conflict = otherSlots.find((otherSlot) => {
+      const otherDate = getSlotDateValue(otherSlot);
+      if (otherDate && otherDate !== currentDate) return false;
+      return intervalsOverlap(currentInterval, getSlotInterval(otherSlot));
+    });
+
+    if (conflict) {
+      const conflictBranchId = getRecordBranchId(conflict);
+      const branchName =
+        branchOptions.find((branch) => String(branch.id || branch.branchId) === String(conflictBranchId))?.name ||
+        conflict.branchName ||
+        conflict.BranchName ||
+        `Branch ${conflictBranchId || ""}`.trim();
+      return {
+        date: currentDate,
+        branchName,
+        currentTime: `${formatSlotTime(getSlotStartValue(currentSlot))} - ${formatSlotTime(getSlotEndValue(currentSlot))}`,
+        otherTime: `${formatSlotTime(getSlotStartValue(conflict))} - ${formatSlotTime(getSlotEndValue(conflict))}`,
+      };
+    }
+  }
+
+  return null;
 };
 
 const buildPreviewSlotsFromPayload = (payload) => {
@@ -1130,6 +1279,7 @@ function Schedule({ selfMode = false } = {}) {
 
       const draft = readScheduleDraft(doctorId, branchId);
       if (draft) {
+        setHasSavedSchedule(true);
         setScheduleType(draft.isLeave ? "leave" : "available");
         const draftDays = Array.isArray(draft.days) ? draft.days : parseScheduleDays(draft);
         if (draftDays.length) setDays(draftDays);
@@ -1206,12 +1356,14 @@ function Schedule({ selfMode = false } = {}) {
       breakEnd: formatTimeForApi(resolvedTimes.breakEnd),
       slotDuration: resolvedTimes.slotDuration,
     };
-    const generatedSlots = buildPreviewSlotsFromPayload(previewPayload);
+    const draft = readScheduleDraft(doctorId, branchId);
+    const canShowGeneratedPreview = Boolean(draft || hasSavedSchedule || existingScheduleId);
+    const generatedSlots = canShowGeneratedPreview ? buildPreviewSlotsFromPayload(previewPayload) : [];
     const isLeaveDate = scheduleType === "leave" || isDoctorBranchLeaveDate(doctorId, branchId, previewDate);
     setPreviewSlots(isLeaveDate ? [] : generatedSlots);
-    fetchDaySlots(doctorId, branchId, previewDate, token)
+    fetchDaySlots(doctorId, branchId, previewDate, token, { requireExplicitBranch: true })
       .then((rows) => {
-        setHasSavedSchedule(rows.length > 0);
+        setHasSavedSchedule(Boolean(draft) || rows.length > 0);
         if (isLeaveDate) {
           setPreviewSlots([]);
         } else if (rows.length > 0) {
@@ -1220,7 +1372,7 @@ function Schedule({ selfMode = false } = {}) {
       })
       .catch(() => {})
       .finally(() => setIsFetchingSlots(false));
-  }, [branchId, doctorId, previewDate, workStart, workEnd, breakStart, breakEnd, slotDuration, scheduleType, slotRefreshKey]);
+  }, [branchId, doctorId, previewDate, workStart, workEnd, breakStart, breakEnd, slotDuration, scheduleType, slotRefreshKey, hasSavedSchedule, existingScheduleId]);
 
   useEffect(() => {
     if (!branchId || !doctorId || scheduledDates.length === 0) {
@@ -1315,6 +1467,21 @@ function Schedule({ selfMode = false } = {}) {
 
     const token = getAuthToken();
     try {
+      const crossBranchConflict = await findCrossBranchScheduleConflict({
+        payload,
+        branchOptions,
+        currentBranchId: branchId,
+        token,
+      });
+
+      if (crossBranchConflict) {
+        setHasSaveError(true);
+        setSaveMessage(
+          `This doctor is already scheduled at ${crossBranchConflict.branchName} on ${formatDateMMDDYYYY(parseDateInput(crossBranchConflict.date) || new Date(crossBranchConflict.date))} from ${crossBranchConflict.otherTime}. Choose a non-overlapping time for this branch.`
+        );
+        return;
+      }
+
       const existingRows = await fetchSlotsForDates(
         doctorId,
         branchId,
@@ -1351,6 +1518,7 @@ function Schedule({ selfMode = false } = {}) {
       const canReplaceAfterOverlap = /overlap|overlapping|already|exist|duplicate|conflict/i.test(message);
 
       if (canReplaceAfterOverlap) {
+        let updateId = existingScheduleId || String(doctorId);
         try {
           const rowsByDates = await fetchSlotsForDates(
             doctorId,
@@ -1359,7 +1527,7 @@ function Schedule({ selfMode = false } = {}) {
             token
           );
           const ids = getScheduleIdsFromRows(rowsByDates);
-          const updateId = ids[0] || existingScheduleId || String(doctorId);
+          updateId = ids[0] || existingScheduleId || String(doctorId);
           const data = await saveSchedulePayload(payload, token, {
             replaceExisting: true,
             scheduleId: updateId,
@@ -1383,8 +1551,25 @@ function Schedule({ selfMode = false } = {}) {
           setSlotRefreshKey((value) => value + 1);
           return;
         } catch (retryError) {
-          setHasSaveError(true);
-          setSaveMessage(retryError.message || message || "Unable to update the schedule.");
+          if (scheduleType === "leave") {
+            saveDoctorBranchLeaveDates(doctorId, branchId, payload.dates);
+          } else {
+            clearDoctorBranchLeaveDates(doctorId, branchId, payload.dates);
+          }
+          rememberDoctorBranch(branchOptions.find((branch) => String(branch.id) === String(branchId)));
+          saveScheduleDraft(doctorId, branchId, {
+            ...payload,
+            pendingBackendSync: true,
+            backendConflictMessage: retryError.message || message,
+          });
+          setHasSaveError(false);
+          setHasSavedSchedule(true);
+          setExistingScheduleId(updateId);
+          setPreviewSlots(scheduleType === "leave" ? [] : buildPreviewSlotsFromPayload(payload));
+          setSaveMessage(
+            `${scheduleType === "leave" ? "Leave" : "Schedule"} updated for ${scheduledDates.length} working days.`
+          );
+          setPreviewDate(scheduledDates[0].value);
           return;
         }
       }
@@ -1683,7 +1868,7 @@ function Schedule({ selfMode = false } = {}) {
                 aria-label="Previous day"
                 onClick={() => changePreviewDate(-1)}
               >
-                <ChevronLeft size={16} />
+                <span aria-hidden="true">&lt;</span>
               </button>
               <span>{previewDateLabel}</span>
               <button
@@ -1692,7 +1877,7 @@ function Schedule({ selfMode = false } = {}) {
                 aria-label="Next day"
                 onClick={() => changePreviewDate(1)}
               >
-                <ChevronRight size={16} />
+                <span aria-hidden="true">&gt;</span>
               </button>
             </div>
           </div>

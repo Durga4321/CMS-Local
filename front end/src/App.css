@@ -2721,6 +2721,336 @@
   font-size: 13px;
 }
 
+.booking-card--department {
+  --department-accent: #0f9d9d;
+  --department-bg: #f8fafc;
+  --department-soft: #e6f7f5;
+  --department-text: #0f172a;
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  align-items: center;
+  min-height: 86px;
+  border-color: color-mix(in srgb, var(--department-accent) 34%, #dbe3ed);
+  background:
+    linear-gradient(135deg, var(--department-soft), #ffffff 72%),
+    var(--department-bg);
+}
+
+.booking-card--department:hover,
+.booking-card--department.selected {
+  border-color: var(--department-accent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--department-soft) 86%, #ffffff), #ffffff 70%),
+    var(--department-soft);
+}
+
+.booking-card--cardiology {
+  --department-accent: #dc2626;
+  --department-soft: #fee2e2;
+}
+
+.booking-card--general {
+  --department-accent: #2563eb;
+  --department-soft: #dbeafe;
+}
+
+.booking-card--default {
+  --department-accent: #7c3aed;
+  --department-soft: #ede9fe;
+}
+
+.booking-department-icon {
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  color: var(--department-accent) !important;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--department-accent) 18%, transparent);
+}
+
+.booking-department-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.booking-department-copy strong {
+  color: var(--department-text);
+  font-size: 16px;
+}
+
+.booking-department-copy small {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.booking-doctor-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  color: inherit !important;
+}
+
+.booking-doctor-card-head > span:first-child {
+  display: grid;
+  gap: 6px;
+}
+
+.booking-doctor-card-head small {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.booking-doctor-view {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #2563eb !important;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.booking-doctor-view:hover,
+.booking-doctor-view:focus-visible {
+  border-color: #2563eb;
+  background: #dbeafe;
+  outline: none;
+}
+
+.booking-doctor-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.46);
+}
+
+.booking-doctor-modal {
+  width: min(860px, 100%);
+  max-height: min(780px, calc(100vh - 48px));
+  overflow: auto;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+}
+
+.booking-doctor-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #ecfdf5, #ffffff);
+}
+
+.booking-doctor-profile-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.booking-doctor-avatar {
+  width: 62px;
+  height: 62px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  background: #0f9d9d;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.booking-doctor-profile-title h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 26px;
+}
+
+.booking-doctor-profile-title p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 15px;
+}
+
+.booking-doctor-modal-close {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dbe3ed;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.booking-doctor-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  padding: 22px 24px 0;
+}
+
+.booking-doctor-profile-grid div {
+  display: grid;
+  gap: 7px;
+  padding: 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.booking-doctor-profile-grid span,
+.booking-doctor-profile-section h3 {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.booking-doctor-profile-grid strong {
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.booking-doctor-profile-section {
+  display: grid;
+  gap: 12px;
+  padding: 22px 24px 0;
+}
+
+.booking-doctor-profile-section h3,
+.booking-doctor-profile-section p {
+  margin: 0;
+}
+
+.booking-doctor-profile-section p {
+  color: #475569;
+  line-height: 1.6;
+}
+
+.booking-doctor-review-list {
+  display: grid;
+  gap: 12px;
+}
+
+.booking-doctor-review-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.booking-doctor-review {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.booking-doctor-review div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.booking-doctor-review span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #f59e0b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.booking-doctor-review--editable input,
+.booking-doctor-review--editable textarea {
+  width: 100%;
+  border: 1px solid #dbe3ed;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #0f172a;
+  font: inherit;
+}
+
+.booking-doctor-review--editable input {
+  min-height: 38px;
+  padding: 0 10px;
+}
+
+.booking-doctor-review--editable textarea {
+  min-height: 72px;
+  padding: 10px;
+  resize: vertical;
+}
+
+.booking-doctor-review--editable span input {
+  width: 72px;
+  color: #0f172a;
+}
+
+.booking-doctor-review-add,
+.booking-doctor-review-save,
+.booking-doctor-review-delete {
+  min-height: 38px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.booking-doctor-review-add,
+.booking-doctor-review-save {
+  padding: 0 14px;
+}
+
+.booking-doctor-review-save {
+  justify-self: flex-start;
+  border-color: #0f9d9d;
+  background: #0f9d9d;
+  color: #ffffff;
+}
+
+.booking-doctor-review-delete {
+  width: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #dc2626;
+}
+
+.booking-doctor-profile-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 22px 24px 24px;
+}
+
 .booking-field-group {
   display: grid;
   gap: 10px;

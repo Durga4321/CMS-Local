@@ -39,20 +39,21 @@ import {
 } from "../utils/format";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import {
-  appointmentToOpRevenueRow,
-  dedupeBillingRows,
+  fetchRevenueBillingRows,
   getRevenueAmount,
-  isPaidAppointment,
+  getRevenueTotals,
+  groupRevenueByMonth,
   parseList as parseRevenueList,
-  readLocalRevenueBillingRows,
+  passesRevenueFilters,
 } from "../utils/billingRevenue";
 
 /* ================= API ================= */
 
 const API = apiUrl("Dashboard");
+const REVENUE_API = apiUrl("Dashboard/revenue");
+const REVENUE_REPORT_API = apiUrl("Dashboard/reports/revenue");
 const APPOINTMENT_API = apiUrl("Appointment");
 const RECEPTIONIST_API = apiUrl("Receptionist");
-const BILLING_API = apiUrl("Billing");
 const STAFF_API = apiUrl("Staff");
 const REQUEST_TIMEOUT_MS = 3500;
 
@@ -70,6 +71,17 @@ const formatNumber = (value) =>
   new Intl.NumberFormat("en-IN").format(
     Number(value || 0)
   );
+
+const toNumericAmount = (value) => {
+  if (typeof value === "string") {
+    const cleaned = value.replace(/[^0-9.-]/g, "");
+    const number = Number(cleaned);
+    return Number.isFinite(number) ? number : 0;
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+};
 
 const formatCurrencyShort = formatCompactIndianCurrency;
 
@@ -127,6 +139,44 @@ const parseList = (data) => {
   if (Array.isArray(data?.Staff)) return data.Staff;
   return [];
 };
+
+const parseRevenueDashboard = (data = {}) => {
+  const source = data?.data && !Array.isArray(data.data) ? data.data : data || {};
+  const rows = parseRevenueList(source).length
+    ? parseRevenueList(source)
+    : parseRevenueList(source.revenueTrend || source.monthlyRevenue || source.monthly || source.chartData || source.items);
+  const totalRevenue =
+    toNumericAmount(
+      pickValue(
+        source,
+        [
+          "totalRevenue",
+          "revenue",
+          "revenueSummary",
+          "total",
+          "amount",
+          "grandTotal",
+          "netRevenue",
+        ],
+        0
+      )
+    ) || rows.reduce((sum, row) => sum + getRevenueAmount(row), 0);
+
+  const revenueTrend = rows.map((row, index) => ({
+    ...row,
+    month: pickValue(row, ["month", "Month", "name", "label", "period"], `Item ${index + 1}`),
+    revenue: toNumericAmount(pickValue(row, ["revenue", "Revenue", "totalRevenue", "TotalRevenue", "Total Revenue", "total revenue", "amount", "Amount", "total", "Total"], 0)) || getRevenueAmount(row),
+  }));
+
+  return { totalRevenue, revenueTrend };
+};
+
+const parseRevenueReportRows = (data = {}) =>
+  parseRevenueList(data).map((row, index) => ({
+    ...row,
+    month: pickValue(row, ["month", "Month", "name", "Name", "date", "Date"], `Item ${index + 1}`),
+    revenue: toNumericAmount(pickValue(row, ["revenue", "Revenue", "totalRevenue", "TotalRevenue", "Total Revenue", "total revenue", "amount", "Amount", "total", "Total"], 0)) || getRevenueAmount(row),
+  }));
 
 const isNurseRecord = (record = {}) => {
   const role = String(
@@ -345,7 +395,7 @@ function Dashboard() {
         Promise.allSettled([
           fetchWithTimeout(`${API}/ClincData`, { headers }, 2500),
           fetchWithTimeout(APPOINTMENT_API, { headers }, 2500),
-          fetchWithTimeout(BILLING_API, { headers }, 2500),
+          fetchWithTimeout(REVENUE_API, { headers }, 2500),
           receptionistCount === null || receptionistCount === 0
             ? fetchWithTimeout(RECEPTIONIST_API, { headers }, 2500)
             : Promise.resolve(null),
@@ -358,9 +408,9 @@ function Dashboard() {
                 2500
               )
             : Promise.resolve(null),
-        ]).then(async ([clinicResult, appointmentResult, billingResult, receptionistResult, nurseResult]) => {
+        ]).then(async ([clinicResult, appointmentResult, revenueResult, receptionistResult, nurseResult]) => {
           let nextMerged = { ...data };
-          let appointmentData = [];
+          let hasDashboardRevenue = false;
 
         if (clinicResult.status === "fulfilled" && clinicResult.value?.ok) {
           const clinicData = await clinicResult.value.json().catch(() => ({}));
@@ -375,31 +425,71 @@ function Dashboard() {
         }
 
         if (appointmentResult.status === "fulfilled" && appointmentResult.value?.ok) {
-          appointmentData = await appointmentResult.value.json().catch(() => []);
+          const appointmentData = await appointmentResult.value.json().catch(() => []);
           nextMerged = {
             ...nextMerged,
             todayAppointments: countTodayAppointments(appointmentData),
           };
         }
 
-        if (billingResult.status === "fulfilled" && billingResult.value?.ok) {
-          const billingData = await billingResult.value.json().catch(() => []);
-          const paidAppointmentRows = parseRevenueList(appointmentData)
-            .filter(isPaidAppointment)
-            .map(appointmentToOpRevenueRow);
-          const revenueRows = dedupeBillingRows([
-            ...parseRevenueList(billingData),
-            ...readLocalRevenueBillingRows(),
-            ...paidAppointmentRows,
-          ]);
-          const billingRevenue = revenueRows.reduce(
-            (sum, row) => sum + getRevenueAmount(row),
-            0
-          );
-          if (billingRevenue > 0) {
+        if (revenueResult.status === "fulfilled" && revenueResult.value?.ok) {
+          const revenueData = await revenueResult.value.json().catch(() => ({}));
+          const parsedRevenue = parseRevenueDashboard(revenueData);
+          hasDashboardRevenue = parsedRevenue.totalRevenue > 0 || parsedRevenue.revenueTrend.length > 0;
+          nextMerged = {
+            ...nextMerged,
+            totalRevenue: parsedRevenue.totalRevenue || nextMerged.totalRevenue || 0,
+            revenueTrend: parsedRevenue.revenueTrend.length
+              ? parsedRevenue.revenueTrend
+              : nextMerged.revenueTrend,
+          };
+        }
+
+        const storedHospitalId = getStoredHospitalId();
+        const revenueReportParams = new URLSearchParams();
+        if (storedHospitalId) {
+          revenueReportParams.set("hospitalId", String(storedHospitalId));
+          revenueReportParams.set("clinicId", String(storedHospitalId));
+        }
+        const revenueReportUrl = revenueReportParams.toString()
+          ? `${REVENUE_REPORT_API}?${revenueReportParams.toString()}`
+          : REVENUE_REPORT_API;
+        const revenueReportResponse = await fetchWithTimeout(revenueReportUrl, { headers }, 2500).catch(() => null);
+        const revenueReportData = revenueReportResponse?.ok ? await revenueReportResponse.json().catch(() => []) : [];
+        const revenueReportRows = parseRevenueReportRows(revenueReportData);
+        const billingRows = await fetchRevenueBillingRows({ apiUrl, headers });
+        const scopedBillingRows = billingRows.filter((row) =>
+          passesRevenueFilters(row, { clinicId: storedHospitalId || "" })
+        );
+        const billingTotals = getRevenueTotals(scopedBillingRows);
+        const dashboardRevenueMissing = !hasDashboardRevenue && toNumericAmount(nextMerged.totalRevenue) <= 0;
+        if (dashboardRevenueMissing && revenueReportRows.length) {
+          const reportTotals = getRevenueTotals(revenueReportRows);
+          const reportTrend = groupRevenueByMonth(revenueReportRows);
+          const useBillingTotals = scopedBillingRows.length && billingTotals.revenue > reportTotals.revenue;
+          nextMerged = {
+            ...nextMerged,
+            totalRevenue: useBillingTotals ? billingTotals.revenue : reportTotals.revenue,
+            opRevenue: useBillingTotals ? billingTotals.opRevenue : reportTotals.opRevenue,
+            diagnosticRevenue: useBillingTotals ? billingTotals.diagnosticRevenue : reportTotals.diagnosticRevenue,
+            pharmacyRevenue: useBillingTotals ? billingTotals.pharmacyRevenue : reportTotals.pharmacyRevenue,
+            revenueTrend: (useBillingTotals ? groupRevenueByMonth(scopedBillingRows) : reportTrend).map((row) => ({
+              ...row,
+              name: row.month,
+            })),
+          };
+        } else if (dashboardRevenueMissing) {
+          if (scopedBillingRows.length) {
             nextMerged = {
               ...nextMerged,
-              totalRevenue: billingRevenue,
+              totalRevenue: billingTotals.revenue,
+              opRevenue: billingTotals.opRevenue,
+              diagnosticRevenue: billingTotals.diagnosticRevenue,
+              pharmacyRevenue: billingTotals.pharmacyRevenue,
+              revenueTrend: groupRevenueByMonth(scopedBillingRows).map((row) => ({
+                ...row,
+                name: row.month,
+              })),
             };
           }
         }

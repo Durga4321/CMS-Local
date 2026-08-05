@@ -3,7 +3,7 @@ import { Building2, Download, Eye, IndianRupee, Search, TrendingUp } from "lucid
 import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
-import { fetchReports } from "../superAdminApi";
+import { fetchReports, fetchSuperAdminClinicRevenue } from "../superAdminApi";
 import { formatIndianCurrency } from "../../../utils/format";
 import { getDefaultClinicLogo } from "../../../utils/clinicBranding";
 
@@ -23,7 +23,16 @@ const htmlEscape = (value) =>
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-const toNumber = (value) => Number(value || 0);
+const toNumber = (value) => {
+  if (typeof value === "string") {
+    const cleaned = value.replace(/[^0-9.-]/g, "");
+    const number = Number(cleaned);
+    return Number.isFinite(number) ? number : 0;
+  }
+
+  const number = Number(value || 0);
+  return Number.isFinite(number) ? number : 0;
+};
 const getAdminDisplayName = (value) => String(value || "").trim() || "Not Assigned";
 const formatDateTime = (value) => {
   const date = new Date(value);
@@ -111,6 +120,7 @@ function Reports() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
   const [loading, setLoading] = useState(true);
+  const [detailLoadingId, setDetailLoadingId] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -166,6 +176,50 @@ function Reports() {
       setError(requestError.message || "Unable to fetch report data.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewClinicRevenue = async (clinic) => {
+    const hospitalId = clinic.hospitalId || clinic.clinicId || clinic.id;
+    if (!hospitalId) {
+      setError("Hospital id not found for this clinic.");
+      return;
+    }
+
+    setDetailLoadingId(String(hospitalId));
+    setError("");
+
+    try {
+      const detail = await fetchSuperAdminClinicRevenue(hospitalId);
+      const detailRows = Array.isArray(detail) ? detail : detail?.data || detail?.items || detail?.results || [];
+      const source = detailRows[0] || detail?.data || detail || {};
+      const enrichedClinic = {
+        ...clinic,
+        ...source,
+        id: clinic.id,
+        name: source.name || source.clinicName || source.hospitalName || clinic.name,
+        adminName: source.adminName || clinic.adminName,
+        adminEmail: source.adminEmail || clinic.adminEmail,
+        opRevenue: toNumber(source.opRevenue ?? source.OPRevenue ?? source["OP Revenue"] ?? source["op revenue"] ?? clinic.opRevenue),
+        diagnosticRevenue: toNumber(source.diagnosticRevenue ?? source.DiagnosticRevenue ?? source["Diagnostic Revenue"] ?? source["diagnostic revenue"] ?? clinic.diagnosticRevenue),
+        pharmacyRevenue: toNumber(source.pharmacyRevenue ?? source.PharmacyRevenue ?? source["Pharmacy Revenue"] ?? source["pharmacy revenue"] ?? clinic.pharmacyRevenue),
+        cgstAmount: toNumber(source.cgstAmount ?? source.CGSTAmount ?? source["CGST Amount"] ?? source["cgst amount"] ?? source.cgst ?? source.CGST ?? clinic.cgstAmount),
+        sgstAmount: toNumber(source.sgstAmount ?? source.SGSTAmount ?? source["SGST Amount"] ?? source["sgst amount"] ?? source.sgst ?? source.SGST ?? clinic.sgstAmount),
+        gstAmount: toNumber(source.gstAmount ?? source.GSTAmount ?? source.totalGst ?? source.TotalGst ?? source["Total GST"] ?? source["total GST"] ?? source.GST ?? clinic.gstAmount),
+        revenue: toNumber(source.revenue ?? source.Revenue ?? source.totalRevenue ?? source.TotalRevenue ?? source["Total Revenue"] ?? source["total revenue"] ?? clinic.revenue),
+      };
+
+      setRows((currentRows) =>
+        currentRows.map((row) =>
+          String(row.id || row.clinicId || row.hospitalId) === String(hospitalId)
+            ? { ...row, ...enrichedClinic }
+            : row
+        )
+      );
+    } catch (requestError) {
+      setError(requestError.message || "Unable to load clinic revenue.");
+    } finally {
+      setDetailLoadingId("");
     }
   };
 
@@ -242,7 +296,13 @@ function Reports() {
       width: "76px",
       cellClassName: "sa-table-cell--actions",
       render: (clinic) => (
-        <button className="sa-icon-btn sa-icon-btn--view" type="button" title={`View ${clinic.name || "clinic"}`}>
+        <button
+          className="sa-icon-btn sa-icon-btn--view"
+          type="button"
+          title={`Refresh ${clinic.name || "clinic"} revenue`}
+          disabled={detailLoadingId === String(clinic.hospitalId || clinic.clinicId || clinic.id)}
+          onClick={() => handleViewClinicRevenue(clinic)}
+        >
           <Eye size={14} />
         </button>
       ),

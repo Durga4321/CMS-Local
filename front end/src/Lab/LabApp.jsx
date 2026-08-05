@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import LabDashboard from "./LabDashboard";
 import LabDataPage from "./LabDataPage";
 import LabLayout from "./LabLayout";
+import LabReportCreate from "./LabReportCreate";
 
 function LabApp() {
   return (
@@ -14,6 +15,7 @@ function LabApp() {
         <Route path="diagnosis-tests" element={<LabDataPage type="tests" />} />
         <Route path="sample-collection" element={<LabDataPage type="samples" />} />
         <Route path="reports" element={<LabDataPage type="reports" />} />
+        <Route path="report-create" element={<LabReportCreate />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Route>
     </Routes>

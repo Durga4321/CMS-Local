@@ -19,6 +19,10 @@ import {
   hasDuplicateAppointmentForPatientDoctorDate,
 } from "../../utils/appointmentDuplicateValidation";
 import { isDoctorBranchLeaveDate } from "../../utils/doctorBranchLeave";
+import {
+  buildDoctorScheduleDraftSlots,
+  readDoctorScheduleDrafts,
+} from "../../utils/doctorScheduleDrafts";
 import { getSpecializationDisplayName } from "../../pages/DOCTORS/doctorExpertiseOptions";
 
 const parseSlotLabel = (slot) => {
@@ -229,6 +233,37 @@ const getDoctorBranchId = (doctor = {}) =>
   doctor.branch?.branchId ??
   doctor.Branch?.Id ??
   "";
+
+const getDoctorBranchIds = (doctor = {}) => {
+  const ids = [
+    getDoctorBranchId(doctor),
+    doctor.clinicBranchId,
+    doctor.ClinicBranchId,
+    ...(Array.isArray(doctor.branchIds) ? doctor.branchIds : []),
+    ...(Array.isArray(doctor.BranchIds) ? doctor.BranchIds : []),
+    ...(Array.isArray(doctor.branches)
+      ? doctor.branches.map((branch) => branch?.id ?? branch?.branchId ?? branch?.BranchId)
+      : []),
+    ...(Array.isArray(doctor.Branches)
+      ? doctor.Branches.map((branch) => branch?.id ?? branch?.branchId ?? branch?.BranchId)
+      : []),
+  ]
+    .map((id) => String(id || "").trim())
+    .filter(Boolean);
+  return Array.from(new Set(ids));
+};
+
+const doctorHasBranchScheduleDraft = (doctorId, branchId) => {
+  const targetDoctorId = String(doctorId || "").trim();
+  const targetBranchId = String(branchId || "").trim();
+  if (!targetDoctorId || !targetBranchId) return false;
+  return Object.values(readDoctorScheduleDrafts()).some(
+    (draft) =>
+      draft &&
+      String(draft.doctorId || "").trim() === targetDoctorId &&
+      String(draft.branchId || "").trim() === targetBranchId
+  );
+};
 
 const getDoctorFee = (doctor = {}) =>
   Number(
@@ -569,10 +604,11 @@ function ReceptionAppointments({ hideActions = false }) {
     Promise.all([
       requestJson("Patient").catch(() => []),
       doctorRequest,
+      requestJson("Doctor").catch(() => []),
       requestJson("Appointment").catch(() => []),
       requestJson("Appointment/offline").catch(() => []),
       requestJson("Appointment/online").catch(() => []),
-    ]).then(([patientData, doctorResult, appointmentData, offlineAppointmentData, onlineAppointmentData]) => {
+    ]).then(([patientData, doctorResult, allDoctorData, appointmentData, offlineAppointmentData, onlineAppointmentData]) => {
       const scope = {
         clinicId: receptionistHospitalId,
         branchId: receptionistBranchId,
@@ -599,22 +635,33 @@ function ReceptionAppointments({ hideActions = false }) {
         patientBelongsToBookingBranch(patient, branchPatientIds, branchPatientPhones, scope)
       );
       const activeDoctors = parseList(doctorResult.data).filter(isActiveDoctor);
+      const allActiveDoctors = parseList(allDoctorData).filter(isActiveDoctor);
+      const locallyScheduledBranchDoctors = receptionistBranchId
+        ? allActiveDoctors.filter((doctor) =>
+            doctorHasBranchScheduleDraft(getDoctorId(doctor), receptionistBranchId)
+          )
+        : [];
       const branchDoctors =
         receptionistBranchId && doctorResult.source !== "branch"
           ? activeDoctors.filter(
               (doctor) =>
-                String(getDoctorBranchId(doctor)).trim() ===
-                receptionistBranchId
+                getDoctorBranchIds(doctor).includes(receptionistBranchId) ||
+                doctorHasBranchScheduleDraft(getDoctorId(doctor), receptionistBranchId)
             )
           : activeDoctors;
+      const mergedDoctorMap = new Map();
+      [...branchDoctors, ...locallyScheduledBranchDoctors].forEach((doctor) => {
+        const id = String(getDoctorId(doctor) || "").trim();
+        if (id && !mergedDoctorMap.has(id)) mergedDoctorMap.set(id, doctor);
+      });
       const nextDoctors = receptionistHospitalId
-        ? branchDoctors.filter(
+        ? Array.from(mergedDoctorMap.values()).filter(
             (doctor) =>
               String(getRecordHospitalId(doctor)).trim() ===
                 receptionistHospitalId ||
               !String(getRecordHospitalId(doctor)).trim()
           )
-        : branchDoctors;
+        : Array.from(mergedDoctorMap.values());
 
       if (doctorResult.error) {
         setDoctorLoadMessage(doctorResult.error);
@@ -798,17 +845,36 @@ function ReceptionAppointments({ hideActions = false }) {
       return;
     }
 
+    const mergeBranchSlots = (backendSlots = []) => {
+      const localSlots = buildDoctorScheduleDraftSlots(form.doctorId, receptionistBranchId, form.date);
+      const allowedDraftStarts = new Set(
+        localSlots
+          .map((slot) => normalizeSlotStart(parseSlotLabel(slot)))
+          .filter(Boolean)
+      );
+      const merged = new Map();
+      const branchBackendSlots = allowedDraftStarts.size
+        ? backendSlots.filter((slot) => allowedDraftStarts.has(normalizeSlotStart(parseSlotLabel(slot))))
+        : backendSlots;
+      [...branchBackendSlots, ...localSlots].forEach((slot) => {
+        const label = parseSlotLabel(slot);
+        const key = normalizeSlotStart(label);
+        if (key && !merged.has(key)) merged.set(key, slot);
+      });
+      return Array.from(merged.values());
+    };
+
     requestJson(`Schedule/day-slots?${query.toString()}`)
       .then((data) => {
         const slots = parseSlots(data).filter((slot) => {
           const slotBranchId = getSlotBranchId(slot);
-          return !receptionistBranchId || !slotBranchId || slotBranchId === receptionistBranchId;
+          return !receptionistBranchId || slotBranchId === receptionistBranchId;
         });
-        setAvailableSlots(slots);
+        setAvailableSlots(mergeBranchSlots(slots));
         setSelectedSlot("");
       })
       .catch(() => {
-        setAvailableSlots([]);
+        setAvailableSlots(mergeBranchSlots([]));
       })
       .finally(() => setSlotLoading(false));
   }, [form.doctorId, form.date, receptionistBranchId]);

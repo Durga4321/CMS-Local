@@ -117,6 +117,9 @@ export const normalizeLabTest = (item = {}) => {
     testName: String(testName || "").trim(),
     category: String(category || "").trim(),
     specialization: String(specialization || "").trim(),
+    unit: String(firstValue(item.unit, item.Unit, item.units, item.Units) || "").trim(),
+    referenceRange: String(firstValue(item.referenceRange, item.ReferenceRange, item.normalRange, item.NormalRange, item.range, item.Range) || "").trim(),
+    sampleType: String(firstValue(item.sampleType, item.SampleType, item.sample, item.Sample, item.specimen, item.Specimen) || "").trim(),
     price: readAmount(item.price, item.Price, item.amount, item.Amount, item.rate, item.Rate, item.fee, item.Fee),
     isActive: firstValue(item.isActive, item.IsActive, item.active, item.Active, true) !== false,
   };
@@ -201,9 +204,13 @@ export const filterLabTestsBySpecialization = (tests = [], specialization = "") 
 
 export const fetchLabMasterTests = async () => {
   const cached = getCachedLabMasterTests();
-  if (cached.length) return cached;
-
   let lastError = null;
+  const query = new URLSearchParams({
+    pageSize: "10000",
+    limit: "10000",
+    includeAll: "true",
+    all: "true",
+  }).toString();
 
   for (const token of readTokenCandidates()) {
     const headers = { "ngrok-skip-browser-warning": "true" };
@@ -212,15 +219,17 @@ export const fetchLabMasterTests = async () => {
     const timeoutId = window.setTimeout(() => controller.abort(), LAB_MASTER_TIMEOUT_MS);
 
     try {
-      const response = await fetch(apiUrl("Lab/master"), { headers, signal: controller.signal });
+      const response = await fetch(apiUrl(`Lab/master?${query}`), { headers, signal: controller.signal });
       const data = await response.json().catch(() => []);
       if (!response.ok) {
         lastError = new Error(data?.message || data?.title || `Unable to load lab test master (${response.status}).`);
         continue;
       }
-      const tests = normalizeLabTests(data);
-      if (tests.length) cacheLabMasterTests(tests);
-      return tests;
+      const tests = normalizeLabTests([...parseLabMasterList(data), ...cached]);
+      if (tests.length) {
+        cacheLabMasterTests(tests);
+        return tests;
+      }
     } catch (error) {
       lastError = error;
     } finally {
@@ -228,5 +237,6 @@ export const fetchLabMasterTests = async () => {
     }
   }
 
+  if (cached.length) return cached;
   throw lastError || new Error("Unable to load lab test master.");
 };

@@ -10,7 +10,8 @@ const formatCurrency = (value) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
-    maximumFractionDigits: 0,
+    minimumFractionDigits: Number.isInteger(Number(value || 0)) ? 0 : 2,
+    maximumFractionDigits: 2,
   }).format(value);
 
 const getActivityTone = (activity = {}) => {
