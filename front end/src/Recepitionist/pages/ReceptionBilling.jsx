@@ -620,6 +620,37 @@ const updateBillingBill = async (bill, payload = {}) => {
   });
 };
 
+const saveServiceBillingBill = async (payload = {}, type = "") => {
+  const primaryPath = "Billing";
+  const fallbackPaths =
+    type === "diagnostic"
+      ? ["Billing/diagnostic", "Billing/diagnostics", "DiagnosticBilling", "Reception/diagnostic-bills", "Lab/orders"]
+      : [];
+  let lastError = null;
+
+  for (const path of [primaryPath, ...fallbackPaths]) {
+    try {
+      return await requestJson(path, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    } catch (error) {
+      lastError = error;
+      console.warn(`Unable to save ${type || "service"} bill to ${path}:`, error.message);
+    }
+  }
+
+  if (type === "diagnostic") {
+    return {
+      ...payload,
+      backendSynced: false,
+      syncError: lastError?.message || "Unable to sync diagnostic bill.",
+    };
+  }
+
+  throw lastError || new Error("Unable to save bill.");
+};
+
 const deleteBillingBill = async (bill) => {
   const billId = getInvoiceId(bill);
   if (!billId) return false;
@@ -647,6 +678,16 @@ const getAppointmentId = (appointment) =>
     appointment?.appointment?.id,
     appointment?.appointment?.appointmentId
   ) || "";
+
+const normalizeLookupValue = (value) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase();
+
+const lookupOrEmpty = (value) => {
+  const normalized = normalizeLookupValue(value);
+  return normalized === "-" ? "" : normalized;
+};
 
 const getAppointmentStatus = (appointment = {}) => {
   const source = appointment || {};
@@ -705,6 +746,34 @@ const getAppointmentPatientId = (appointment = {}) => {
       source.patient?.patientCode,
       source.Patient?.PatientCode
     ) || "-"
+  );
+};
+
+const getAppointmentLookupValues = (appointment = {}) => ({
+  appointmentId: lookupOrEmpty(getAppointmentId(appointment)),
+  patientId: lookupOrEmpty(getAppointmentPatientId(appointment)),
+  patientName: lookupOrEmpty(getAppointmentPatientName(appointment)),
+});
+
+const findAppointmentForBilling = (appointments = [], lookup = {}) => {
+  const appointmentId = lookupOrEmpty(lookup.appointmentId);
+  const patientId = lookupOrEmpty(lookup.patientId);
+  const patientName = lookupOrEmpty(lookup.patientName);
+  const looseValue = lookupOrEmpty(lookup.value);
+
+  return (
+    appointments.find((appointment) => {
+      const values = getAppointmentLookupValues(appointment);
+      if (appointmentId && values.appointmentId === appointmentId) return true;
+      if (patientId && values.patientId === patientId) return true;
+      if (patientName && values.patientName === patientName) return true;
+      if (!looseValue) return false;
+      return (
+        values.appointmentId === looseValue ||
+        values.patientId === looseValue ||
+        values.patientName === looseValue
+      );
+    }) || null
   );
 };
 
@@ -1043,8 +1112,27 @@ const getServiceBillType = (bill = {}) => {
   return "consultation";
 };
 
+const getBackendBillingType = (type = "") => {
+  const normalizedType = String(type || "").trim().toLowerCase();
+  if (normalizedType === "pharmacy" || normalizedType.includes("pharmacy") || normalizedType.includes("medicine")) {
+    return "Pharmacy";
+  }
+  if (
+    normalizedType === "diagnostic" ||
+    normalizedType === "lab" ||
+    normalizedType.includes("diagnostic") ||
+    normalizedType.includes("diagnosis") ||
+    normalizedType.includes("lab") ||
+    normalizedType.includes("test")
+  ) {
+    return "Lab";
+  }
+  return "OP";
+};
+
 const normalizeServiceBill = (bill = {}) => {
   const type = getServiceBillType(bill);
+  const backendBillingType = getBackendBillingType(type);
   const consultationCharge = readAmount(bill, AMOUNT_KEYS.consultation, 0);
   const medicineCharge = readAmount(bill, AMOUNT_KEYS.medicine, 0);
   const labCharge = readAmount(bill, AMOUNT_KEYS.lab, 0);
@@ -1056,18 +1144,8 @@ const normalizeServiceBill = (bill = {}) => {
     ...bill,
     type,
     invoiceType: type,
-    billingType:
-      type === "pharmacy"
-        ? "Pharmacy"
-        : type === "diagnostic"
-          ? "Lab"
-          : "OP",
-    BillingType:
-      type === "pharmacy"
-        ? "Pharmacy"
-        : type === "diagnostic"
-          ? "Lab"
-          : "OP",
+    billingType: backendBillingType,
+    BillingType: backendBillingType,
     invoiceNo: bill.invoiceNo || bill.invoiceNumber || bill.billNumber || bill.billNo,
     invoiceNumber: bill.invoiceNumber || bill.invoiceNo || bill.billNumber || bill.billNo,
     billNumber: bill.billNumber || bill.invoiceNumber || bill.invoiceNo || bill.billNo,
@@ -1124,19 +1202,22 @@ const syncRecentServiceBillsToBackend = async () => {
     }
 
     try {
+      const normalizedBill = normalizeServiceBill(bill);
       await requestJson("Billing", {
         method: "POST",
         body: JSON.stringify({
-          ...bill,
-          invoiceNo: bill.invoiceNo || bill.invoiceNumber || bill.billNumber,
-          invoiceNumber: bill.invoiceNumber || bill.invoiceNo || bill.billNumber,
-          billNumber: bill.billNumber || bill.invoiceNumber || bill.invoiceNo,
-          patientId: bill.patientId || bill.PatientId,
-          PatientId: bill.PatientId || bill.patientId,
-          patientName: bill.patientName || bill.PatientName,
-          PatientName: bill.PatientName || bill.patientName,
-          appointmentId: bill.appointmentId || bill.AppointmentId || 0,
-          AppointmentId: bill.AppointmentId || bill.appointmentId || 0,
+          ...normalizedBill,
+          billingType: getBackendBillingType(normalizedBill.type),
+          BillingType: getBackendBillingType(normalizedBill.type),
+          invoiceNo: normalizedBill.invoiceNo || normalizedBill.invoiceNumber || normalizedBill.billNumber,
+          invoiceNumber: normalizedBill.invoiceNumber || normalizedBill.invoiceNo || normalizedBill.billNumber,
+          billNumber: normalizedBill.billNumber || normalizedBill.invoiceNumber || normalizedBill.invoiceNo,
+          patientId: normalizedBill.patientId || normalizedBill.PatientId,
+          PatientId: normalizedBill.PatientId || normalizedBill.patientId,
+          patientName: normalizedBill.patientName || normalizedBill.PatientName,
+          PatientName: normalizedBill.PatientName || normalizedBill.patientName,
+          appointmentId: normalizedBill.appointmentId || normalizedBill.AppointmentId || 0,
+          AppointmentId: normalizedBill.AppointmentId || normalizedBill.appointmentId || 0,
         }),
       });
       nextBills.push({ ...bill, backendSynced: true });
@@ -1186,6 +1267,8 @@ function ReceptionBilling() {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
+  const locationSearch = location?.search || "";
+  const locationState = useMemo(() => location?.state || {}, [location?.state]);
   const receptionistProfile = getReceptionistProfile();
   const receptionistScope = useMemo(() => getReceptionistScope(), []);
   const clinicName = getClinicDisplayName(receptionistProfile, "CMS Clinic");
@@ -1228,15 +1311,22 @@ function ReceptionBilling() {
   const [editingBill, setEditingBill] = useState(null);
   const [serviceSearch, setServiceSearch] = useState("");
   const [form, setForm] = useState({
-    appointmentId: "",
+    appointmentId: String(
+      firstValue(
+        locationState.appointmentId,
+        locationState.patientId,
+        locationState.patientName,
+        ""
+      ) || ""
+    ),
     paymentMode: "UPI",
     medicineCharges: "",
     labCharges: "",
   });
 
   useEffect(() => {
-    const qp = new URLSearchParams(location?.search || window.location.search || "");
-    const q = (qp.get("mode") || qp.get("type") || (location?.state && location.state.mode) || "").toString().toLowerCase();
+    const qp = new URLSearchParams(locationSearch || window.location.search || "");
+    const q = (qp.get("mode") || qp.get("type") || locationState.mode || "").toString().toLowerCase();
     if (q === "pharmacy") setBillingMode("pharmacy");
     else if (q === "diagnostic" || q === "diagnosis") setBillingMode("diagnostic");
     else if (q === "consultation" || q === "appointment" || !q) setBillingMode("consultation");
@@ -1297,9 +1387,22 @@ function ReceptionBilling() {
           : null;
 
         setAppointments(list);
+        const query = new URLSearchParams(locationSearch || window.location.search || "");
+        const requestedLookup = {
+          appointmentId: firstValue(query.get("appointmentId"), locationState.appointmentId, ""),
+          patientId: firstValue(query.get("patientId"), locationState.patientId, ""),
+          patientName: firstValue(query.get("patientName"), locationState.patientName, ""),
+          value: firstValue(query.get("q"), locationState.lookup, ""),
+        };
+        const requestedAppointment = findAppointmentForBilling(list, requestedLookup);
         setForm((prev) => ({
           ...prev,
-          appointmentId: String(getAppointmentId(list[0]) || ""),
+          appointmentId: String(
+            getAppointmentId(requestedAppointment) ||
+              prev.appointmentId ||
+              getAppointmentId(list[0]) ||
+              ""
+          ),
         }));
         setInvoice(latestInvoiceDetails);
         const syncedRecentBills = await syncRecentServiceBillsToBackend();
@@ -1326,7 +1429,7 @@ function ReceptionBilling() {
       window.removeEventListener("focus", loadBillingData);
       document.removeEventListener("visibilitychange", handleRefresh);
     };
-  }, [toast, receptionistScope]);
+  }, [toast, receptionistScope, locationSearch, locationState]);
 
   useEffect(() => {
     const timers = amountFormatTimers.current;
@@ -1405,27 +1508,46 @@ function ReceptionBilling() {
     }
   };
 
-  const selectedAppointment = useMemo(() => {
-    return appointments.find(
-      (item) => String(getAppointmentId(item)) === String(form.appointmentId)
-    );
-  }, [appointments, form.appointmentId]);
+  const selectedAppointment = useMemo(
+    () =>
+      findAppointmentForBilling(appointments, {
+        appointmentId: form.appointmentId,
+        patientId: form.appointmentId,
+        patientName: form.appointmentId,
+        value: form.appointmentId,
+      }),
+    [appointments, form.appointmentId]
+  );
 
   useEffect(() => {
-    if (billingMode !== "diagnostic" || !selectedAppointment || !labMasterPriceList.length) return;
+    if (billingMode !== "diagnostic" || !labMasterPriceList.length) return;
 
     const pendingRequest = getPendingDiagnosticRequest({
-      appointmentId: getAppointmentId(selectedAppointment),
-      patientId: getAppointmentPatientId(selectedAppointment),
-      patientName: getAppointmentPatientName(selectedAppointment),
+      appointmentId: firstValue(getAppointmentId(selectedAppointment), form.appointmentId),
+      patientId: firstValue(
+        lookupOrEmpty(getAppointmentPatientId(selectedAppointment)),
+        form.appointmentId
+      ),
+      patientName: firstValue(
+        lookupOrEmpty(getAppointmentPatientName(selectedAppointment)),
+        form.appointmentId
+      ),
     });
+    const requestAppointment =
+      selectedAppointment ||
+      findAppointmentForBilling(appointments, {
+        appointmentId: pendingRequest?.appointmentId,
+        patientId: pendingRequest?.patientId,
+        patientName: pendingRequest?.patientName,
+        value: form.appointmentId,
+      });
     const requestedTests = [
-      ...splitDiagnosticTests(readAppointmentDiagnosticTests(selectedAppointment)),
+      ...splitDiagnosticTests(readAppointmentDiagnosticTests(requestAppointment)),
       ...(Array.isArray(pendingRequest?.tests) ? pendingRequest.tests : splitDiagnosticTests(pendingRequest?.tests)),
     ];
     if (!requestedTests.length) return;
 
-    const diagnosis = readAppointmentDiagnosis(selectedAppointment) || pendingRequest?.diagnosis || "Lab";
+    const diagnosis = readAppointmentDiagnosis(requestAppointment) || pendingRequest?.diagnosis || "Lab";
     setDiagnosticRows((rows) => {
       const existing = new Set(rows.map((row) => String(row.item || "").trim().toLowerCase()));
       const nextRows = requestedTests
@@ -1441,7 +1563,7 @@ function ReceptionBilling() {
 
       return nextRows.length ? [...rows, ...nextRows] : rows;
     });
-  }, [billingMode, labMasterPriceList, selectedAppointment]);
+  }, [appointments, billingMode, form.appointmentId, labMasterPriceList, selectedAppointment]);
 
   const medicineCharges = Number(form.medicineCharges || 0);
   const labCharges = Number(form.labCharges || 0);
@@ -1487,8 +1609,8 @@ function ReceptionBilling() {
     const hasAppointment = Boolean(selectedAppointment);
     const invoiceNo = `${billingMode === "pharmacy" ? "PH" : "DT"}-${String(Date.now()).slice(-8)}`;
     const createdAt = new Date().toISOString();
-    const appointmentPatientId = hasAppointment ? getAppointmentPatientId(selectedAppointment) : "DIRECT";
-    const appointmentPatientName = hasAppointment ? getAppointmentPatientName(selectedAppointment) : "Walk-in Patient";
+    const appointmentPatientId = hasAppointment ? getAppointmentPatientId(selectedAppointment) : "";
+    const appointmentPatientName = hasAppointment ? getAppointmentPatientName(selectedAppointment) : "";
     const appointmentId = hasAppointment ? getAppointmentId(selectedAppointment) : "";
     const appointmentBranchId = firstValue(selectedAppointment?.branchId, selectedAppointment?.BranchId, receptionistScope.branchId);
     const appointmentBranchName = firstValue(
@@ -1507,7 +1629,7 @@ function ReceptionBilling() {
       patientName: appointmentPatientName,
       patientId: appointmentPatientId,
       appointmentId,
-      doctorName: hasAppointment ? getAppointmentDoctorName(selectedAppointment) : "Direct Billing",
+      doctorName: hasAppointment ? getAppointmentDoctorName(selectedAppointment) : "",
       paymentMode: form.paymentMode,
       clinicName,
       clinicId,
@@ -1521,9 +1643,10 @@ function ReceptionBilling() {
 
   const buildServiceBillingPayload = (details) => {
     const isPharmacy = details.type === "pharmacy";
-    const billingTypeLabel = isPharmacy ? "Pharmacy" : "Lab";
+    const billingTypeLabel = getBackendBillingType(details.type);
     const invoiceTypeValue = isPharmacy ? "pharmacy" : "diagnostic";
     const serviceTypeLabel = isPharmacy ? "Pharmacy Billing" : "Diagnostic Billing";
+    const numericAppointmentId = Number(details.appointmentId) || 0;
     const serviceItems = details.rows.map((row) => ({
       labTestId: row.id || row.testId || row.labTestId || "",
       LabTestId: row.id || row.testId || row.labTestId || "",
@@ -1539,8 +1662,8 @@ function ReceptionBilling() {
     }));
 
     return {
-      appointmentId: details.appointmentId ? Number(details.appointmentId) : 0,
-      AppointmentId: details.appointmentId ? Number(details.appointmentId) : 0,
+      appointmentId: numericAppointmentId,
+      AppointmentId: numericAppointmentId,
       appointmentNumber: details.appointmentId,
       patientId: details.patientId,
       PatientId: details.patientId,
@@ -1625,6 +1748,14 @@ function ReceptionBilling() {
 
   const openServiceInvoice = async ({ autoPrint = true, save = false } = {}) => {
     const details = buildServiceInvoiceDetails();
+    if (!selectedAppointment) {
+      const text = "Select a booked appointment before submitting the bill.";
+      setFieldErrors((prev) => ({ ...prev, appointmentId: text }));
+      showMessage(text, "error");
+      toast.error(text);
+      return false;
+    }
+
     if (!details.rows.length) {
       const text = "Select at least one billable item.";
       showMessage(text, "error");
@@ -1638,11 +1769,9 @@ function ReceptionBilling() {
       const canUpdate = editingBill && getInvoiceId(editingBill) && getServiceBillType(editingBill) === details.type;
       const response = canUpdate
         ? await updateBillingBill(editingBill, payload)
-        : await requestJson("Billing", {
-            method: "POST",
-            body: JSON.stringify(payload),
-          });
+        : await saveServiceBillingBill(payload, details.type);
       savedInvoice = Array.isArray(response) ? response[0] || {} : response || {};
+      const backendSynced = savedInvoice.backendSynced !== false;
 
       const invoiceShape = {
         ...payload,
@@ -1661,20 +1790,23 @@ function ReceptionBilling() {
         paymentMode: details.paymentMode,
         invoiceType: details.type === "pharmacy" ? "pharmacy" : "diagnostic",
         InvoiceType: details.type === "pharmacy" ? "pharmacy" : "diagnostic",
-        billingType: details.type === "pharmacy" ? "Pharmacy" : "Lab",
-        BillingType: details.type === "pharmacy" ? "Pharmacy" : "Lab",
+        billingType: getBackendBillingType(details.type),
+        BillingType: getBackendBillingType(details.type),
         serviceType: details.type === "pharmacy" ? "Pharmacy Billing" : "Diagnostic Billing",
         ServiceType: details.type === "pharmacy" ? "Pharmacy Billing" : "Diagnostic Billing",
         totalAmount: details.totals.total,
         paidAmount: details.totals.total,
-        backendSynced: true,
+        backendSynced,
+        syncError: savedInvoice.syncError || "",
       };
-      const paymentUpdate = await updateBillingPayment(invoiceShape, {
-        paymentMode: details.paymentMode,
-        paidAmount: details.totals.total,
-      });
-      if (paymentUpdate && typeof paymentUpdate === "object") {
-        Object.assign(invoiceShape, Array.isArray(paymentUpdate) ? paymentUpdate[0] || {} : paymentUpdate);
+      if (backendSynced) {
+        const paymentUpdate = await updateBillingPayment(invoiceShape, {
+          paymentMode: details.paymentMode,
+          paidAmount: details.totals.total,
+        });
+        if (paymentUpdate && typeof paymentUpdate === "object") {
+          Object.assign(invoiceShape, Array.isArray(paymentUpdate) ? paymentUpdate[0] || {} : paymentUpdate);
+        }
       }
       setInvoice(invoiceShape);
       storeLatestInvoice(invoiceShape);
@@ -1689,7 +1821,11 @@ function ReceptionBilling() {
         });
       }
       setEditingBill(null);
-      showMessage(`${billingMode === "pharmacy" ? "Pharmacy" : "Diagnostic test"} bill ${canUpdate ? "updated" : "generated"} successfully`, "success", { autoHide: true });
+      showMessage(
+        `${billingMode === "pharmacy" ? "Pharmacy" : "Diagnostic test"} bill ${canUpdate ? "updated" : "generated"} successfully`,
+        "success",
+        { autoHide: true }
+      );
       printServiceInvoice({ ...details, invoiceNo: invoiceShape.invoiceNo, autoPrint });
       return true;
     }
@@ -2458,7 +2594,7 @@ function ReceptionBilling() {
       <div className="rc-page-head">
         <div>
           <h2>Billing</h2>
-          <p>Create diagnostic and pharmacy invoices for direct counter billing.</p>
+          <p>Create OP, diagnostic, and pharmacy invoices for booked appointments.</p>
         </div>
         <button className="rc-btn" onClick={() => navigate("/reception/dashboard")}>
           <ArrowLeft size={16} /> Dashboard
@@ -2499,7 +2635,7 @@ function ReceptionBilling() {
                   : "Generate Diagnosis Test Bill"}
               </h3>
               <p>
-                Select items and collect payment without appointment access.
+                Select a booked appointment, add items, and collect payment.
               </p>
             </div>
           </div>
@@ -2513,31 +2649,34 @@ function ReceptionBilling() {
               {getAppointmentDoctorName(selectedAppointment)}
             </span>
           </div>
-        ) : null}
+        ) : (
+          <div className="rc-patient-summary">
+            <strong>Select booked appointment</strong>
+            <span>Patient details will appear after selection.</span>
+          </div>
+        )}
         <div className="rc-billing-fields">
           <label className="rc-field-wide">
             <span>{billingMode === "consultation" ? "Appointment" : "Booked Appointment"}</span>
             <select
               value={form.appointmentId}
               onChange={(e) => setField("appointmentId", e.target.value)}
-              className={billingMode === "consultation" && fieldErrors.appointmentId ? "is-invalid" : ""}
+              className={fieldErrors.appointmentId ? "is-invalid" : ""}
             >
-              {billingMode !== "consultation" ? (
-                <option value="">Walk-in / No appointment</option>
-              ) : null}
+              <option value="">Select booked appointment</option>
               {appointments.length === 0 ? (
                 <option value="">
                   {billingMode === "consultation" ? "No billable appointments found" : "No booked appointments found"}
                 </option>
               ) : null}
-              {appointments.map((a) => (
-                <option value={getAppointmentId(a)} key={getAppointmentId(a)}>
+              {appointments.map((a, index) => (
+                <option value={getAppointmentId(a)} key={getAppointmentId(a) || `appointment-${index}`}>
                   {getAppointmentPatientName(a)} - {getAppointmentTime(a)} -{" "}
                   {getAppointmentStatus(a) || "-"}
                 </option>
               ))}
             </select>
-            {billingMode === "consultation" && fieldErrors.appointmentId ? <small className="rc-field-error">{fieldErrors.appointmentId}</small> : null}
+            {fieldErrors.appointmentId ? <small className="rc-field-error">{fieldErrors.appointmentId}</small> : null}
           </label>
         <label>
           <span>Payment Mode</span>
@@ -2729,7 +2868,7 @@ function ReceptionBilling() {
                       <FileText size={20} />
                     </div>
                     <div className="rc-latest-bill-main">
-                      <strong>{bill.patientName || "Walk-in Patient"}</strong>
+                      <strong>{bill.patientName || "Patient"}</strong>
                       <span>
                         {invoiceNo} | {billType === "pharmacy" ? "Pharmacy" : billType === "diagnostic" ? "Diagnostic" : "OP"} |{" "}
                         {createdAt ? formatInvoiceDate(createdAt) : "Just now"}
