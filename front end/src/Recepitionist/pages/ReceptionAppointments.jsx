@@ -1110,7 +1110,7 @@ function ReceptionAppointments({ hideActions = false }) {
             <div className="rc-patient-autocomplete">
               <input
                 type="text"
-                value={patientSearch}
+                value={patientSearch || (selectedPatient ? getPatientName(selectedPatient) : "")}
                 onChange={(e) => handlePatientSearch(e.target.value)}
                 onFocus={openPatientMenu}
                 onBlur={() => setTimeout(() => setIsPatientMenuOpen(false), 150)}
