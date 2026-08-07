@@ -104,7 +104,24 @@ const normalizeSlotStart = (value) => {
 
 const getSlotStatus = (slot) => String(slot?.status || "").trim().toLowerCase();
 
-const isTimeOutSlot = () => false;
+const isTimeOutSlot = (slot, date) => {
+  const slotDate = normalizeAppointmentDate(date);
+  if (!slotDate) return false;
+
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  if (slotDate !== todayKey) return false;
+
+  const slotLabel = parseSlotLabel(slot);
+  const slotStart = normalizeSlotStart(slotLabel);
+  if (!slotStart) return false;
+
+  const [hour, minute] = slotStart.split(":").map(Number);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return false;
+
+  const nowMinutes = today.getHours() * 60 + today.getMinutes();
+  return hour * 60 + minute <= nowMinutes;
+};
 
 const isBookedSlot = (slot) => {
   const status = getSlotStatus(slot);
@@ -820,9 +837,11 @@ function ReceptionAppointments({ hideActions = false }) {
   const visibleSlots = useMemo(() => {
     return availableSlots.filter((slot) => {
       const label = parseSlotLabel(slot);
-      return Boolean(label);
+      if (!label) return false;
+      if (isTimeOutSlot(slot, form.date)) return false;
+      return true;
     });
-  }, [availableSlots]);
+  }, [availableSlots, form.date]);
 
   useEffect(() => {
     if (!form.doctorId || !form.date) {
@@ -847,16 +866,11 @@ function ReceptionAppointments({ hideActions = false }) {
 
     const mergeBranchSlots = (backendSlots = []) => {
       const localSlots = buildDoctorScheduleDraftSlots(form.doctorId, receptionistBranchId, form.date);
-      const allowedDraftStarts = new Set(
-        localSlots
-          .map((slot) => normalizeSlotStart(parseSlotLabel(slot)))
-          .filter(Boolean)
-      );
+      if (localSlots.length) {
+        return localSlots;
+      }
       const merged = new Map();
-      const branchBackendSlots = allowedDraftStarts.size
-        ? backendSlots.filter((slot) => allowedDraftStarts.has(normalizeSlotStart(parseSlotLabel(slot))))
-        : backendSlots;
-      [...branchBackendSlots, ...localSlots].forEach((slot) => {
+      [...backendSlots].forEach((slot) => {
         const label = parseSlotLabel(slot);
         const key = normalizeSlotStart(label);
         if (key && !merged.has(key)) merged.set(key, slot);

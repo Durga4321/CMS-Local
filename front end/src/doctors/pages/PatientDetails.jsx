@@ -15,6 +15,8 @@ import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 import { fetchConsultationVitals } from "../../utils/appointmentVitals";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
+import { readGeneratedLabReports } from "../../Lab/labReportStore";
+import { buildLabReportHtml, downloadLabReportHtml } from "../../Lab/labReportTemplate";
 
 const OVERVIEW_API = apiUrl("Overview/patient");
 const APPOINTMENTS_API = apiUrl("Appointment");
@@ -65,11 +67,37 @@ const getDocumentUrl = (document) => {
 };
 
 const getDocumentName = (document, index) =>
+  document?.reportName ||
+  document?.testName ||
   document?.fileName ||
   document?.name ||
   document?.documentName ||
   document?.title ||
   `Document ${index + 1}`;
+
+const normalizeKey = (value) => String(value || "").trim().toLowerCase();
+
+const getPatientMatchingKeys = (record = {}) => [
+  normalizeKey(getPatientId(record)),
+  normalizeKey(record?.patientCode || record?.PatientCode || record?.patient?.patientCode || record?.patient?.PatientCode),
+  normalizeKey(record?.phone || record?.Phone || record?.mobile || record?.Mobile || record?.patient?.phone || record?.patient?.Phone),
+  normalizeKey(record?.name || record?.Name || record?.patientName || record?.PatientName || record?.patient?.name || record?.patient?.Name),
+].filter(Boolean);
+
+const labReportMatchesPatient = (report, patient) => {
+  const patientKeys = getPatientMatchingKeys(patient);
+  const reportKeys = getPatientMatchingKeys(report);
+  return patientKeys.some((value) => reportKeys.includes(value));
+};
+
+const getLabReportsForPatient = (patient) =>
+  readGeneratedLabReports()
+    .filter((report) => labReportMatchesPatient(report, patient))
+    .map((report) => ({
+      ...report,
+      __sourcePath: report.__sourcePath || "labGeneratedReports",
+      documentName: `Lab Report — ${report.reportName || report.testName || report.title || report.documentName || "Report"}`,
+    }));
 
 const getAppointmentId = (record) =>
   record?.appointmentId || record?.id || record?.appointment?.id || "";
@@ -478,6 +506,7 @@ function PatientDetails() {
           ? prescriptionsFromAppointments
           : fallbackPrescriptions;
         const oldestVisit = getOldestVisit(scopedVisitsWithVitals);
+        const labReports = getLabReportsForPatient(overviewPatient);
 
         setPatient({
           ...overviewPatient,
@@ -489,7 +518,7 @@ function PatientDetails() {
             ? formatDate(oldestVisit.date)
             : emptyValue,
         });
-        setDocuments(documentsFromAppointments);
+        setDocuments([...documentsFromAppointments, ...labReports]);
       } catch (err) {
         console.error(err);
         setError(err.message || "Unable to load patient details.");
@@ -532,6 +561,33 @@ function PatientDetails() {
       ),
     [patient]
   );
+
+  const clinicName = getClinicDisplayName(
+    {
+      hospitalName:
+        sourceAppointment?.hospitalName ||
+        sourceAppointment?.clinicName ||
+        localStorage.getItem("hospitalName") ||
+        localStorage.getItem("clinicName"),
+      clinicName: sourceAppointment?.clinicName || localStorage.getItem("clinicName"),
+    },
+    "Clinic"
+  );
+
+  const doctorProfile = { name: getLoggedInDoctor()?.name || "Doctor" };
+
+  const openLabReport = (document) => {
+    const reportWindow = window.open("", "_blank", "width=860,height=980");
+    if (!reportWindow) return;
+    reportWindow.document.write(
+      buildLabReportHtml({ record: document, clinicName, profile: doctorProfile, autoPrint: false })
+    );
+    reportWindow.document.close();
+  };
+
+  const downloadLabReport = (document) => {
+    downloadLabReportHtml({ record: document, clinicName, profile: doctorProfile });
+  };
 
   const startConsultation = () => {
     navigate("/doctor/consultation", {
@@ -768,13 +824,17 @@ function PatientDetails() {
       )}
 
       {activeTab === "Documents" && (
-        <DocumentsPanel documents={documents} />
+        <DocumentsPanel
+          documents={documents}
+          onViewReport={(document) => openLabReport(document)}
+          onDownloadReport={(document) => downloadLabReport(document)}
+        />
       )}
     </div>
   );
 }
 
-function DocumentsPanel({ documents }) {
+function DocumentsPanel({ documents, onViewReport, onDownloadReport }) {
   if (!documents.length) {
     return (
       <div className="pd-tab-placeholder">
@@ -787,22 +847,38 @@ function DocumentsPanel({ documents }) {
     <div className="pd-doc-list">
       {documents.map((document, index) => {
         const url = getDocumentUrl(document);
+        const isLabReport = String(document.__sourcePath || "").includes("labGeneratedReports") || Boolean(document.reportName || document.testName);
+        const title = isLabReport
+          ? `${document.reportName || document.testName || getDocumentName(document, index)}`
+          : getDocumentName(document, index);
+
         return (
           <div className="pd-doc-card" key={document.id || `${document.appointmentId}-${index}`}>
             <div>
-              <strong>{getDocumentName(document, index)}</strong>
+              <strong>{title}</strong>
               <span>
                 Appointment #{document.appointmentId || emptyValue}
                 {document.visitDate ? ` | ${formatDate(document.visitDate)}` : ""}
               </span>
             </div>
-            {url ? (
-              <a href={url} target="_blank" rel="noreferrer">
-                View Document
-              </a>
-            ) : (
-              <span className="pd-doc-muted">No file link</span>
-            )}
+            <div className="pd-doc-actions">
+              {isLabReport ? (
+                <>
+                  <button className="pd-doc-action" type="button" onClick={() => onViewReport(document)}>
+                    View Report
+                  </button>
+                  <button className="pd-doc-action" type="button" onClick={() => onDownloadReport(document)}>
+                    Download Report
+                  </button>
+                </>
+              ) : url ? (
+                <a href={url} target="_blank" rel="noreferrer">
+                  View Document
+                </a>
+              ) : (
+                <span className="pd-doc-muted">No file link</span>
+              )}
+            </div>
           </div>
         );
       })}
