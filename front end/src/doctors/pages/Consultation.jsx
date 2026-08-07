@@ -71,7 +71,7 @@ const splitDiagnosisTests = (value) =>
     .filter(Boolean);
 
 const joinDiagnosisTests = (items = []) =>
-  items
+  (Array.isArray(items) ? items : String(items || "").split(","))
     .map((item) => String(item || "").trim())
     .filter(Boolean)
     .join(", ");
@@ -399,11 +399,12 @@ function Consultation() {
         setForm({
           complaintsChoice: appointmentComplaint,
           diagnosis: savedConsultation?.diagnosis || "",
-          diagnosisTests:
+          diagnosisTests: joinDiagnosisTests(
             savedConsultation?.diagnosisTests ||
-            savedConsultation?.diagnosticTests ||
-            savedConsultation?.tests ||
-            "",
+              savedConsultation?.diagnosticTests ||
+              savedConsultation?.tests ||
+              []
+          ),
           bp: hydratedAppointment.bloodPressure || "",
           sugar: hydratedAppointment.sugarLevel || "",
           temp: hydratedAppointment.temperature || "",
@@ -584,18 +585,18 @@ function Consultation() {
 
       const appointmentId = Number(appointment.appointmentId);
       const patientId = Number(appointment.patientId);
-      const chiefComplaints = form.complaintsChoice.trim();
-      const diagnosis = form.diagnosis.trim();
-      const diagnosisTests = form.diagnosisTests.trim();
+      const chiefComplaints = String(form.complaintsChoice || "").trim();
+      const diagnosis = String(form.diagnosis || "").trim();
+      const diagnosisTests = joinDiagnosisTests(form.diagnosisTests);
       const diagnosisTestList = splitDiagnosisTests(diagnosisTests);
       const clinicalNotes = [
         chiefComplaints ? `Chief Complaints: ${chiefComplaints}` : "",
-        form.bp.trim() ? `BP: ${form.bp.trim()}` : "",
-        form.sugar.trim() ? `Sugar Level: ${form.sugar.trim()}` : "",
-        form.temp.trim() ? `Temperature: ${form.temp.trim()}` : "",
-        form.weight.trim() ? `Weight: ${form.weight.trim()}` : "",
-        form.pulse.trim() ? `PBRM: ${form.pulse.trim()}` : "",
-        form.resp.trim() ? `SpO2: ${form.resp.trim()}` : "",
+        String(form.bp || "").trim() ? `BP: ${String(form.bp || "").trim()}` : "",
+        String(form.sugar || "").trim() ? `Sugar Level: ${String(form.sugar || "").trim()}` : "",
+        String(form.temp || "").trim() ? `Temperature: ${String(form.temp || "").trim()}` : "",
+        String(form.weight || "").trim() ? `Weight: ${String(form.weight || "").trim()}` : "",
+        String(form.pulse || "").trim() ? `PBRM: ${String(form.pulse || "").trim()}` : "",
+        String(form.resp || "").trim() ? `SpO2: ${String(form.resp || "").trim()}` : "",
         diagnosisTests ? `Diagnosis Tests: ${diagnosisTests}` : "",
       ].filter(Boolean).join("\n");
 
