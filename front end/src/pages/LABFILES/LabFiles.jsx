@@ -112,6 +112,14 @@ function LabFiles() {
   const handleImport = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    const fileExtension = String(file.name).split(".").pop()?.toLowerCase() || "";
+    const allowedExtensions = ["xls", "xlsx", "csv"];
+    if (!allowedExtensions.includes(fileExtension)) {
+      toast.error("Only Excel or CSV files are allowed for lab import.");
+      event.target.value = "";
+      return;
+    }
+
     setUploading(true);
     try {
       const body = new FormData();
@@ -182,14 +190,40 @@ function LabFiles() {
         branchId: Number(form.branchId) || 0,
         isActive: form.isActive === "true",
       };
-      const response = await fetch(apiUrl(`Lab/master/${encodeURIComponent(id)}`), {
-        method: "PUT",
-        headers: getApiHeaders(),
-        body: JSON.stringify(payload),
-      });
+      const url = apiUrl(`Lab/master/${encodeURIComponent(id)}`);
+
+      const sendJson = () =>
+        fetch(url, {
+          method: "PUT",
+          headers: {
+            ...getApiHeaders(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+      const sendFormData = () => {
+        const formData = new FormData();
+        Object.entries(payload).forEach(([key, value]) => {
+          formData.append(key, value === null || value === undefined ? "" : String(value));
+        });
+        return fetch(url, {
+          method: "PUT",
+          headers: getApiHeaders(),
+          body: formData,
+        });
+      };
+
+      let response = await sendJson();
+      if (response.status === 415) {
+        response = await sendFormData();
+      }
       if (!response.ok) throw new Error(await getErrorMessage(response, "Unable to update lab file record."));
+
       toast.success("Lab file record updated successfully.");
-      const updatedRows = rows.map((row) => String(getLabFileId(row)) === String(id) ? { ...row, ...payload } : row);
+      const updatedRows = rows.map((row) =>
+        String(getLabFileId(row)) === String(id) ? { ...row, ...payload } : row
+      );
       saveImportedLabFileRows(updatedRows);
       setRows(updatedRows);
       closeEdit();

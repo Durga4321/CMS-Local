@@ -510,8 +510,26 @@ const normalizeComparable = (value) => String(value || "").trim().toLowerCase();
 const formatSlotTime = (value) => {
   const time = String(value || "").trim();
   if (!time) return "";
-  if (/^\d{1,2}:\d{2}$/.test(time)) return `${time}:00`;
-  return time;
+  const match = time.match(/^\s*(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?\s*$/i);
+  if (!match) return time;
+
+  let hour = Number(match[1]);
+  const minute = match[2];
+  const meridiem = match[3]?.toUpperCase();
+
+  if (meridiem) {
+    if (hour < 1 || hour > 12) return time;
+    if (meridiem === "AM") {
+      hour = hour === 12 ? 0 : hour;
+    } else {
+      hour = hour === 12 ? 12 : hour + 12;
+    }
+  }
+
+  if (hour < 0 || hour > 23) return time;
+  const formattedHour = hour % 12 || 12;
+  const displayMeridiem = hour >= 12 ? "PM" : "AM";
+  return `${String(formattedHour).padStart(2, "0")}:${minute} ${displayMeridiem}`;
 };
 
 const formatAppointmentDateTime = (value) => {
@@ -2989,6 +3007,7 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
   const [history, setHistory] = useState(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState("");
+  const [reportsExpanded, setReportsExpanded] = useState(false);
 
   const patientId = String(
     patient?.id ||
@@ -3559,6 +3578,108 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
   const medicalConditionCount = medicalConditions.length;
   const reportCount = sortedReports.length;
   const prescriptionCount = sortedPrescriptions.length;
+  const visibleReports = reportsExpanded ? sortedReports : sortedReports.slice(0, 8);
+
+  const normalizePrescriptionUrl = (value) => {
+    if (!value && value !== 0) return '';
+    const rawUrl = String(value).trim();
+    if (!rawUrl) return '';
+    if (/^data:/i.test(rawUrl) || /^blob:/i.test(rawUrl)) return rawUrl;
+    if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
+    if (/^\/?api\//i.test(rawUrl)) return apiUrl(rawUrl.replace(/^\/?api\/?/i, ''));
+    if (/^\//.test(rawUrl)) return `${window.location.origin}${rawUrl}`;
+    if (/\.pdf(\?|$)/i.test(rawUrl) || /\/[^"]+\.[a-z0-9]{2,5}(\?|$)/i.test(rawUrl)) {
+      return `${window.location.origin}/${rawUrl.replace(/^\/?/, '')}`;
+    }
+    return '';
+  };
+
+  const resolvePrescriptionUrl = (value, seen = new Set()) => {
+    if (value == null) return '';
+    if (typeof value === 'string') return normalizePrescriptionUrl(value);
+    if (typeof value !== 'object') return '';
+    if (seen.has(value)) return '';
+    seen.add(value);
+
+    const direct = readFirst(value, [
+      'prescriptionUrl',
+      'pdfUrl',
+      'documentUrl',
+      'downloadUrl',
+      'fileUrl',
+      'url',
+      'link',
+      'path',
+      'attachmentDataUrl',
+      'AttachmentDataUrl',
+      'attachmentUrl',
+      'AttachmentUrl',
+    ]);
+    if (direct) {
+      const normalized = normalizePrescriptionUrl(direct);
+      if (normalized) return normalized;
+    }
+
+    const nestedPaths = [
+      'prescription',
+      'document',
+      'file',
+      'pdf',
+      'download',
+      'attachment',
+      'attachments',
+    ];
+
+    for (const path of nestedPaths) {
+      const nestedValue = getNestedValue(value, path);
+      const result = resolvePrescriptionUrl(nestedValue, seen);
+      if (result) return result;
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const result = resolvePrescriptionUrl(item, seen);
+        if (result) return result;
+      }
+    }
+
+    for (const key of Object.keys(value)) {
+      const result = resolvePrescriptionUrl(value[key], seen);
+      if (result) return result;
+    }
+
+    return '';
+  };
+
+  const getDownloadUrl = (record) => resolvePrescriptionUrl(record) || '';
+
+  const viewReport = (report) => {
+    const url = getDownloadUrl(report);
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const downloadReport = (report) => {
+    const url = getDownloadUrl(report);
+    if (!url) return;
+
+    if (/^(data|blob):/i.test(url)) {
+      const filename = readFirst(report, ['attachmentFileName', 'AttachmentFileName', 'reportName', 'ReportName', 'testName', 'TestName']) || 'report';
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      return;
+    }
+
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+    anchor.click();
+  };
 
   const renderPrescriptionDetails = (prescription, index, keyPrefix = 'prescription') => {
     const medicines = getMedicineListForPrescription(prescription);
@@ -3706,6 +3827,49 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
       <div className="mh-panel">
         <div className="mh-panel-header">
           <div>
+            <h2>Reports</h2>
+            <p>Open or download saved lab reports and attachments.</p>
+          </div>
+          {reportCount > 8 ? (
+            <button type="button" className="mh-panel-filter-btn" onClick={() => setReportsExpanded((current) => !current)}>
+              {reportsExpanded ? 'Show less' : `View all ${reportCount}`}
+            </button>
+          ) : null}
+        </div>
+        {sortedReports.length ? (
+          <div className="mh-report-list">
+            {visibleReports.map((report, index) => {
+              const reportUrl = getDownloadUrl(report);
+              const reportName = readReportTitle(report);
+              const reportDate = readReportDate(report);
+              return (
+                <div className="mh-report-item" key={`${readFirst(report, ['reportId', 'ReportId', 'id', 'Id'], `report-${index}`)}-${index}`}>
+                  <div className="mh-report-copy">
+                    <strong>{reportName}</strong>
+                    <span>{reportDate}</span>
+                  </div>
+                  <div className="mh-report-actions">
+                    <button className="mh-btn ghost" type="button" onClick={() => viewReport(report)} disabled={!reportUrl}>
+                      <Eye size={14} /> View
+                    </button>
+                    <button className="mh-btn" type="button" onClick={() => downloadReport(report)} disabled={!reportUrl}>
+                      <Download size={14} /> Download
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="mh-card-empty">
+            <p>No reports available at the moment.</p>
+          </div>
+        )}
+      </div>
+
+      <div className="mh-panel">
+        <div className="mh-panel-header">
+          <div>
             <h2>Previous Visits</h2>
             <p>List of your previous visits and diagnosis details.</p>
           </div>
@@ -3846,6 +4010,7 @@ function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits =
     if (!value && value !== 0) return '';
     const rawUrl = String(value).trim();
     if (!rawUrl) return '';
+    if (/^data:/i.test(rawUrl) || /^blob:/i.test(rawUrl)) return rawUrl;
     if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
     if (/^\/?api\//i.test(rawUrl)) return apiUrl(rawUrl.replace(/^\/?api\/?/i, ''));
     if (/^\//.test(rawUrl)) return `${window.location.origin}${rawUrl}`;
@@ -3871,6 +4036,10 @@ function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits =
       'url',
       'link',
       'path',
+      'attachmentDataUrl',
+      'AttachmentDataUrl',
+      'attachmentUrl',
+      'AttachmentUrl',
     ]);
     if (direct) {
       const normalized = normalizePrescriptionUrl(direct);
