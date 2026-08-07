@@ -442,6 +442,28 @@
   white-space: nowrap;
 }
 
+.pd-doc-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.pd-doc-action {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pd-doc-action:hover {
+  background: #dbeafe;
+}
+
 .pd-doc-muted {
   color: #94a3b8;
   font-size: 13px;

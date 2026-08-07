@@ -554,6 +554,32 @@ const normalizeAppointmentBookingTime = (value) => {
   return `${String(hour).padStart(2, "0")}:${minute}`;
 };
 
+const getSlotStartValue = (slot) => {
+  if (!slot) return "";
+  const raw = typeof slot === "string"
+    ? slot
+    : slot.start || slot.startTime || slot.time || slot.slotTime || slot.slot || "";
+  return String(raw).split(" - ")[0].trim();
+};
+
+const isSlotHiddenByCurrentTime = (slot, selectedDate) => {
+  const date = String(selectedDate || slot?.date || "").slice(0, 10);
+  if (!date) return false;
+
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  if (date !== todayKey) return false;
+
+  const startTime = normalizeAppointmentBookingTime(getSlotStartValue(slot));
+  if (!startTime) return false;
+
+  const [hour, minute] = startTime.split(":").map(Number);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return false;
+
+  const nowMinutes = today.getHours() * 60 + today.getMinutes();
+  return hour * 60 + minute <= nowMinutes;
+};
+
 const isActiveAppointmentBooking = (appointment = {}) =>
   !["cancelled", "canceled", "rejected"].includes(
     String(readFirst(appointment, ["status", "appointmentStatus", "state"]) || "").trim().toLowerCase()
@@ -1928,34 +1954,9 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
           return !selectedBranchId || slotBranchId === selectedBranchId;
         });
         const localSlots = buildDoctorScheduleDraftSlots(doctorId, branchId, selectedDate);
-        const allowedDraftStarts = new Set(
-          localSlots
-            .map((slot) =>
-              String(slot.start || slot.startTime || slot.time || slot.slotTime || slot.slot || "")
-                .split(" - ")[0]
-                .trim()
-                .toLowerCase()
-            )
-            .filter(Boolean)
-        );
-        const branchSlotList = allowedDraftStarts.size
-          ? slotList.filter((slot) => {
-              const start = slot.start || slot.startTime || slot.time || slot.slotTime || slot.slot || "";
-              const key = String(start).split(" - ")[0].trim().toLowerCase();
-              return allowedDraftStarts.has(key);
-            })
-          : slotList;
-        const uniqueSlots = [];
-        const seenSlotKeys = new Set();
-        [...branchSlotList, ...localSlots].forEach((slot) => {
-          const start = slot.start || slot.startTime || slot.time || slot.slotTime || slot.slot || "";
-          const key = String(start).split(" - ")[0].trim().toLowerCase();
-          if (!key || seenSlotKeys.has(key)) return;
-          seenSlotKeys.add(key);
-          uniqueSlots.push(slot);
-        });
+        const resolvedSlots = localSlots.length > 0 ? localSlots : slotList;
         // API returns {start, end, status} objects
-        setSlots(uniqueSlots.map((slot) => ({
+        setSlots(resolvedSlots.map((slot) => ({
           ...slot,
           id: slot.id || slot.slotId || `${doctorId}-${branchId || 'branch'}-${selectedDate}-${slot.start || slot.startTime || slot.time}`,
           doctorId: String(doctorId),
@@ -2066,6 +2067,7 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
         if (selectedDate && slot.date && slot.date !== selectedDate) return false;
         const selectedBranchId = String(selectedBranch?.id || selectedBranch?.branchId || "");
         if (selectedBranchId && slot.branchId && String(slot.branchId) !== selectedBranchId) return false;
+        if (selectedDate && isSlotHiddenByCurrentTime(slot, selectedDate)) return false;
         return true;
       });
     },
@@ -2075,7 +2077,14 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
   const availableTimes = useMemo(
     () =>
       selectedDate
-        ? Array.from(new Set(filteredSlots.map((slot) => formatSlotTime(slot.time || slot.slot)).filter(Boolean)))
+        ? Array.from(
+            new Set(
+              filteredSlots
+                .filter((slot) => !isSlotHiddenByCurrentTime(slot, selectedDate))
+                .map((slot) => formatSlotTime(slot.time || slot.slot))
+                .filter(Boolean)
+            )
+          )
         : [],
     [filteredSlots, selectedDate]
   );
