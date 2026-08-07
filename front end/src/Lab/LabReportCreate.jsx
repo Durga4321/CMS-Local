@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Eye, FileImage, FileText, Printer, Save, Trash2, X } from "lucide-react";
+import { Download, Eye, FileImage, FileText, Printer, Save, Trash2, Upload, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { parseList, requestJson } from "./labApi";
 import { getLabProfile } from "./labSession";
@@ -366,6 +366,11 @@ function LabReportCreate() {
   const [filmFileUrl, setFilmFileUrl] = useState("");
   const [filmFileName, setFilmFileName] = useState("");
   const [sampleFilmUrl, setSampleFilmUrl] = useState("");
+  const [attachmentFile, setAttachmentFile] = useState(null);
+  const [attachmentFileUrl, setAttachmentFileUrl] = useState("");
+  const [attachmentFileName, setAttachmentFileName] = useState("");
+  const [attachmentFileType, setAttachmentFileType] = useState("");
+  const [attachmentDataUrl, setAttachmentDataUrl] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -414,6 +419,30 @@ function LabReportCreate() {
     setFilmFileUrl(nextUrl);
     return () => URL.revokeObjectURL(nextUrl);
   }, [filmFile]);
+
+  useEffect(() => {
+    if (!attachmentFile) {
+      setAttachmentFileUrl("");
+      setAttachmentDataUrl("");
+      return undefined;
+    }
+    const nextUrl = URL.createObjectURL(attachmentFile);
+    setAttachmentFileUrl(nextUrl);
+    setAttachmentFileName(attachmentFile.name || "attachment");
+    setAttachmentFileType(attachmentFile.type || "");
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setAttachmentDataUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(attachmentFile);
+
+    return () => {
+      URL.revokeObjectURL(nextUrl);
+    };
+  }, [attachmentFile]);
 
   const patientOptions = useMemo(() => {
     const byPatient = new Map();
@@ -515,6 +544,10 @@ function LabReportCreate() {
     setFilmFile(null);
     setFilmFileName(referenceFilm.fileName);
     setSampleFilmUrl(referenceFilm.url);
+    setAttachmentFile(null);
+    setAttachmentFileName("");
+    setAttachmentFileType("");
+    setAttachmentDataUrl("");
   }, [labTests, selectedReport]);
 
   const buildRecord = () => ({
@@ -547,6 +580,14 @@ function LabReportCreate() {
     ReportValues: form,
     reportFields: selectedTemplate.fields,
     ReportFields: selectedTemplate.fields,
+    attachmentFileName,
+    AttachmentFileName: attachmentFileName,
+    attachmentFileType,
+    AttachmentFileType: attachmentFileType,
+    attachmentDataUrl,
+    AttachmentDataUrl: attachmentDataUrl,
+    attachmentUrl: attachmentDataUrl || "",
+    AttachmentUrl: attachmentDataUrl || "",
     filmFileName,
     FilmFileName: filmFileName,
     filmSource: sampleFilmUrl ? "reference" : filmFile ? "uploaded" : "",
@@ -573,8 +614,20 @@ function LabReportCreate() {
       setError("Select a report/test name.");
       return;
     }
+    if (!selectedRow) {
+      setError("No patient record selected.");
+      return;
+    }
+    if (!selectedTestName) {
+      setError("No report/test selected.");
+      return;
+    }
     if (selectedTemplate.type === "scan" && !(filmFileUrl || sampleFilmUrl) && form.filmTaken === "Yes") {
       setError("Film is not available for this scan/X-Ray report.");
+      return;
+    }
+    if (attachmentFile && !attachmentDataUrl) {
+      setError("Unable to read the selected attachment file.");
       return;
     }
     const id = recordId(selectedRow);
@@ -705,6 +758,42 @@ function LabReportCreate() {
               </span>
             </label>
           ) : null}
+
+          <label className="rc-form-field-full lab-attachment-upload">
+            Report / File Upload
+            <div className="lab-upload-control lab-film-ready">
+              <FileImage size={16} />
+              <b>{attachmentFileName || filmFileName || "No file uploaded"}</b>
+            </div>
+            <input
+              type="file"
+              accept="image/*,.pdf,.xls,.xlsx,.csv,.txt,.doc,.docx"
+              style={{ display: "none" }}
+              id="lab-report-attachment"
+              onChange={(event) => {
+                const file = event.target.files?.[0] || null;
+                setAttachmentFile(file);
+              }}
+            />
+            <div className="lab-film-actions">
+              <label className="rc-btn ghost lab-attachment-btn" htmlFor="lab-report-attachment">
+                <Upload size={16} /> Upload Report / Attachment
+              </label>
+              <button
+                className="rc-btn"
+                type="button"
+                onClick={() => {
+                  const url = attachmentFileUrl || filmFileUrl || sampleFilmUrl;
+                  if (url) window.open(url, "_blank", "noopener,noreferrer");
+                }}
+                disabled={!(attachmentFileUrl || filmFileUrl || sampleFilmUrl)}
+              >
+                <Download size={16} /> View File
+              </button>
+            </div>
+            <small className="lab-field-hint">Upload scan films, report images, or report documents and save them with this report.</small>
+          </label>
+
           {selectedTemplate.fields.map((field) => (
             <label className="rc-form-field-full" key={field.key}>
               {field.label}{field.unit ? ` (${field.unit})` : ""}
