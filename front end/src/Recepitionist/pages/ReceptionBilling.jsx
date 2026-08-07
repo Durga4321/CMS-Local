@@ -578,32 +578,6 @@ const hasBackendBillingId = (invoice) =>
     )
   );
 
-const updateBillingPayment = async (bill, payment = {}) => {
-  const billId = getInvoiceId(bill);
-  if (!billId) return null;
-  try {
-    return await requestJson(`Billing/${billId}/payment`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        billId,
-        BillId: billId,
-        paymentStatus: payment.paymentStatus || bill.paymentStatus || "Paid",
-        status: payment.status || bill.status || "Paid",
-        paymentMode: payment.paymentMode || bill.paymentMode || bill.PaymentMode || "UPI",
-        PaymentMode: payment.paymentMode || bill.paymentMode || bill.PaymentMode || "UPI",
-        paidAmount: Number(payment.paidAmount ?? bill.paidAmount ?? bill.totalAmount ?? 0) || 0,
-        PaidAmount: Number(payment.paidAmount ?? bill.paidAmount ?? bill.totalAmount ?? 0) || 0,
-        paymentAmount: Number(payment.paymentAmount ?? bill.paymentAmount ?? bill.totalAmount ?? 0) || 0,
-        PaymentAmount: Number(payment.paymentAmount ?? bill.paymentAmount ?? bill.totalAmount ?? 0) || 0,
-        paidAt: new Date().toISOString(),
-      }),
-    });
-  } catch (error) {
-    console.warn("Unable to update billing payment status:", error.message);
-    return null;
-  }
-};
-
 const updateBillingBill = async (bill, payload = {}) => {
   const billId = getInvoiceId(bill);
   if (!billId) return null;
@@ -618,37 +592,6 @@ const updateBillingBill = async (bill, payload = {}) => {
       BillId: billId,
     }),
   });
-};
-
-const saveServiceBillingBill = async (payload = {}, type = "") => {
-  const primaryPath = "Billing";
-  const fallbackPaths =
-    type === "diagnostic"
-      ? ["Billing/diagnostic", "Billing/diagnostics", "DiagnosticBilling", "Reception/diagnostic-bills", "Lab/orders"]
-      : [];
-  let lastError = null;
-
-  for (const path of [primaryPath, ...fallbackPaths]) {
-    try {
-      return await requestJson(path, {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-    } catch (error) {
-      lastError = error;
-      console.warn(`Unable to save ${type || "service"} bill to ${path}:`, error.message);
-    }
-  }
-
-  if (type === "diagnostic") {
-    return {
-      ...payload,
-      backendSynced: false,
-      syncError: lastError?.message || "Unable to sync diagnostic bill.",
-    };
-  }
-
-  throw lastError || new Error("Unable to save bill.");
 };
 
 const deleteBillingBill = async (bill) => {
@@ -678,16 +621,6 @@ const getAppointmentId = (appointment) =>
     appointment?.appointment?.id,
     appointment?.appointment?.appointmentId
   ) || "";
-
-const normalizeLookupValue = (value) =>
-  String(value ?? "")
-    .trim()
-    .toLowerCase();
-
-const lookupOrEmpty = (value) => {
-  const normalized = normalizeLookupValue(value);
-  return normalized === "-" ? "" : normalized;
-};
 
 const getAppointmentStatus = (appointment = {}) => {
   const source = appointment || {};
@@ -746,34 +679,6 @@ const getAppointmentPatientId = (appointment = {}) => {
       source.patient?.patientCode,
       source.Patient?.PatientCode
     ) || "-"
-  );
-};
-
-const getAppointmentLookupValues = (appointment = {}) => ({
-  appointmentId: lookupOrEmpty(getAppointmentId(appointment)),
-  patientId: lookupOrEmpty(getAppointmentPatientId(appointment)),
-  patientName: lookupOrEmpty(getAppointmentPatientName(appointment)),
-});
-
-const findAppointmentForBilling = (appointments = [], lookup = {}) => {
-  const appointmentId = lookupOrEmpty(lookup.appointmentId);
-  const patientId = lookupOrEmpty(lookup.patientId);
-  const patientName = lookupOrEmpty(lookup.patientName);
-  const looseValue = lookupOrEmpty(lookup.value);
-
-  return (
-    appointments.find((appointment) => {
-      const values = getAppointmentLookupValues(appointment);
-      if (appointmentId && values.appointmentId === appointmentId) return true;
-      if (patientId && values.patientId === patientId) return true;
-      if (patientName && values.patientName === patientName) return true;
-      if (!looseValue) return false;
-      return (
-        values.appointmentId === looseValue ||
-        values.patientId === looseValue ||
-        values.patientName === looseValue
-      );
-    }) || null
   );
 };
 
@@ -897,19 +802,27 @@ const appointmentToOpBill = (appointment = {}) => {
 };
 
 const fetchBillingAppointments = async () => {
-  const [appointments, billingAppointments] = await Promise.all([
-    requestJson("Appointment").catch(() => null),
-    requestJson("Billing/appointments").catch(() => null),
+  // The backend Billing/appointments endpoint is already restricted to the
+  // logged-in receptionist hospital and branch. Keep that as the source of
+  // truth so a cross-branch appointment cannot later fail POST /api/Billing
+  // with 403 Forbidden.
+  const [billingAppointments, appointments] = await Promise.all([
+    requestJson("Billing/appointments"),
+    requestJson("Appointment").catch(() => []),
   ]);
-  const byAppointmentId = new Map();
 
-  [...parseList(billingAppointments), ...parseList(appointments)].forEach((appointment) => {
-    const key = String(getAppointmentId(appointment) || JSON.stringify(appointment));
-    const existing = byAppointmentId.get(key);
-    byAppointmentId.set(key, existing ? { ...existing, ...appointment } : appointment);
+  const scoped = parseList(billingAppointments);
+  const generalById = new Map(
+    parseList(appointments).map((item) => [String(getAppointmentId(item)), item])
+  );
+
+  return scoped.map((appointment) => {
+    const id = String(getAppointmentId(appointment));
+    const detail = generalById.get(id);
+    // Spread the scoped Billing payload last so HospitalId/BranchId stay
+    // authoritative even if the general Appointment response differs.
+    return detail ? { ...detail, ...appointment } : appointment;
   });
-
-  return Array.from(byAppointmentId.values());
 };
 
 const getPatientId = (patient = {}) => {
@@ -1112,27 +1025,8 @@ const getServiceBillType = (bill = {}) => {
   return "consultation";
 };
 
-const getBackendBillingType = (type = "") => {
-  const normalizedType = String(type || "").trim().toLowerCase();
-  if (normalizedType === "pharmacy" || normalizedType.includes("pharmacy") || normalizedType.includes("medicine")) {
-    return "Pharmacy";
-  }
-  if (
-    normalizedType === "diagnostic" ||
-    normalizedType === "lab" ||
-    normalizedType.includes("diagnostic") ||
-    normalizedType.includes("diagnosis") ||
-    normalizedType.includes("lab") ||
-    normalizedType.includes("test")
-  ) {
-    return "Lab";
-  }
-  return "OP";
-};
-
 const normalizeServiceBill = (bill = {}) => {
   const type = getServiceBillType(bill);
-  const backendBillingType = getBackendBillingType(type);
   const consultationCharge = readAmount(bill, AMOUNT_KEYS.consultation, 0);
   const medicineCharge = readAmount(bill, AMOUNT_KEYS.medicine, 0);
   const labCharge = readAmount(bill, AMOUNT_KEYS.lab, 0);
@@ -1144,8 +1038,18 @@ const normalizeServiceBill = (bill = {}) => {
     ...bill,
     type,
     invoiceType: type,
-    billingType: backendBillingType,
-    BillingType: backendBillingType,
+    billingType:
+      type === "pharmacy"
+        ? "Pharmacy"
+        : type === "diagnostic"
+          ? "Lab"
+          : "OP",
+    BillingType:
+      type === "pharmacy"
+        ? "Pharmacy"
+        : type === "diagnostic"
+          ? "Lab"
+          : "OP",
     invoiceNo: bill.invoiceNo || bill.invoiceNumber || bill.billNumber || bill.billNo,
     invoiceNumber: bill.invoiceNumber || bill.invoiceNo || bill.billNumber || bill.billNo,
     billNumber: bill.billNumber || bill.invoiceNumber || bill.invoiceNo || bill.billNo,
@@ -1191,51 +1095,9 @@ const mergeRecentServiceBills = (...billGroups) => {
 };
 
 const syncRecentServiceBillsToBackend = async () => {
-  const bills = readRecentServiceBills();
-  let changed = false;
-  const nextBills = [];
-
-  for (const bill of bills) {
-    if (bill.backendSynced) {
-      nextBills.push(bill);
-      continue;
-    }
-
-    try {
-      const normalizedBill = normalizeServiceBill(bill);
-      await requestJson("Billing", {
-        method: "POST",
-        body: JSON.stringify({
-          ...normalizedBill,
-          billingType: getBackendBillingType(normalizedBill.type),
-          BillingType: getBackendBillingType(normalizedBill.type),
-          invoiceNo: normalizedBill.invoiceNo || normalizedBill.invoiceNumber || normalizedBill.billNumber,
-          invoiceNumber: normalizedBill.invoiceNumber || normalizedBill.invoiceNo || normalizedBill.billNumber,
-          billNumber: normalizedBill.billNumber || normalizedBill.invoiceNumber || normalizedBill.invoiceNo,
-          patientId: normalizedBill.patientId || normalizedBill.PatientId,
-          PatientId: normalizedBill.PatientId || normalizedBill.patientId,
-          patientName: normalizedBill.patientName || normalizedBill.PatientName,
-          PatientName: normalizedBill.PatientName || normalizedBill.patientName,
-          appointmentId: normalizedBill.appointmentId || normalizedBill.AppointmentId || 0,
-          AppointmentId: normalizedBill.AppointmentId || normalizedBill.appointmentId || 0,
-        }),
-      });
-      nextBills.push({ ...bill, backendSynced: true });
-      changed = true;
-    } catch {
-      nextBills.push(bill);
-    }
-  }
-
-  if (changed) {
-    try {
-      localStorage.setItem(RECENT_SERVICE_BILLS_STORAGE_KEY, JSON.stringify(nextBills.slice(0, 12)));
-    } catch {
-      // Keep unsynced local bills available if storage update fails.
-    }
-  }
-
-  return nextBills;
+  // Do not automatically POST cached/local bills to the backend.
+  // Cached rows may not contain a valid AppointmentId and caused repeated 400 responses.
+  return readRecentServiceBills();
 };
 
 const fetchInvoiceDetails = async (invoice) => {
@@ -1267,8 +1129,6 @@ function ReceptionBilling() {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
-  const locationSearch = location?.search || "";
-  const locationState = useMemo(() => location?.state || {}, [location?.state]);
   const receptionistProfile = getReceptionistProfile();
   const receptionistScope = useMemo(() => getReceptionistScope(), []);
   const clinicName = getClinicDisplayName(receptionistProfile, "CMS Clinic");
@@ -1311,22 +1171,16 @@ function ReceptionBilling() {
   const [editingBill, setEditingBill] = useState(null);
   const [serviceSearch, setServiceSearch] = useState("");
   const [form, setForm] = useState({
-    appointmentId: String(
-      firstValue(
-        locationState.appointmentId,
-        locationState.patientId,
-        locationState.patientName,
-        ""
-      ) || ""
-    ),
+    appointmentId: "",
     paymentMode: "UPI",
     medicineCharges: "",
     labCharges: "",
+    discount: "0",
   });
 
   useEffect(() => {
-    const qp = new URLSearchParams(locationSearch || window.location.search || "");
-    const q = (qp.get("mode") || qp.get("type") || locationState.mode || "").toString().toLowerCase();
+    const qp = new URLSearchParams(location?.search || window.location.search || "");
+    const q = (qp.get("mode") || qp.get("type") || (location?.state && location.state.mode) || "").toString().toLowerCase();
     if (q === "pharmacy") setBillingMode("pharmacy");
     else if (q === "diagnostic" || q === "diagnosis") setBillingMode("diagnostic");
     else if (q === "consultation" || q === "appointment" || !q) setBillingMode("consultation");
@@ -1387,22 +1241,9 @@ function ReceptionBilling() {
           : null;
 
         setAppointments(list);
-        const query = new URLSearchParams(locationSearch || window.location.search || "");
-        const requestedLookup = {
-          appointmentId: firstValue(query.get("appointmentId"), locationState.appointmentId, ""),
-          patientId: firstValue(query.get("patientId"), locationState.patientId, ""),
-          patientName: firstValue(query.get("patientName"), locationState.patientName, ""),
-          value: firstValue(query.get("q"), locationState.lookup, ""),
-        };
-        const requestedAppointment = findAppointmentForBilling(list, requestedLookup);
         setForm((prev) => ({
           ...prev,
-          appointmentId: String(
-            getAppointmentId(requestedAppointment) ||
-              prev.appointmentId ||
-              getAppointmentId(list[0]) ||
-              ""
-          ),
+          appointmentId: String(getAppointmentId(list[0]) || ""),
         }));
         setInvoice(latestInvoiceDetails);
         const syncedRecentBills = await syncRecentServiceBillsToBackend();
@@ -1429,7 +1270,7 @@ function ReceptionBilling() {
       window.removeEventListener("focus", loadBillingData);
       document.removeEventListener("visibilitychange", handleRefresh);
     };
-  }, [toast, receptionistScope, locationSearch, locationState]);
+  }, [toast, receptionistScope]);
 
   useEffect(() => {
     const timers = amountFormatTimers.current;
@@ -1508,62 +1349,84 @@ function ReceptionBilling() {
     }
   };
 
-  const selectedAppointment = useMemo(
-    () =>
-      findAppointmentForBilling(appointments, {
-        appointmentId: form.appointmentId,
-        patientId: form.appointmentId,
-        patientName: form.appointmentId,
-        value: form.appointmentId,
-      }),
-    [appointments, form.appointmentId]
-  );
+  const selectedAppointment = useMemo(() => {
+    return appointments.find(
+      (item) => String(getAppointmentId(item)) === String(form.appointmentId)
+    );
+  }, [appointments, form.appointmentId]);
 
   useEffect(() => {
-    if (billingMode !== "diagnostic" || !labMasterPriceList.length) return;
+    if (billingMode !== "diagnostic") return;
 
-    const pendingRequest = getPendingDiagnosticRequest({
-      appointmentId: firstValue(getAppointmentId(selectedAppointment), form.appointmentId),
-      patientId: firstValue(
-        lookupOrEmpty(getAppointmentPatientId(selectedAppointment)),
-        form.appointmentId
-      ),
-      patientName: firstValue(
-        lookupOrEmpty(getAppointmentPatientName(selectedAppointment)),
-        form.appointmentId
-      ),
-    });
-    const requestAppointment =
-      selectedAppointment ||
-      findAppointmentForBilling(appointments, {
-        appointmentId: pendingRequest?.appointmentId,
-        patientId: pendingRequest?.patientId,
-        patientName: pendingRequest?.patientName,
-        value: form.appointmentId,
-      });
-    const requestedTests = [
-      ...splitDiagnosticTests(readAppointmentDiagnosticTests(requestAppointment)),
-      ...(Array.isArray(pendingRequest?.tests) ? pendingRequest.tests : splitDiagnosticTests(pendingRequest?.tests)),
-    ];
-    if (!requestedTests.length) return;
+    const appointmentId = getAppointmentId(selectedAppointment);
+    if (!appointmentId) {
+      setDiagnosticRows([]);
+      return;
+    }
 
-    const diagnosis = readAppointmentDiagnosis(requestAppointment) || pendingRequest?.diagnosis || "Lab";
-    setDiagnosticRows((rows) => {
-      const existing = new Set(rows.map((row) => String(row.item || "").trim().toLowerCase()));
-      const nextRows = requestedTests
-        .map((testName) => {
-          const matched = labMasterPriceList.find(
-            (test) => getPriceListItemName(test).toLowerCase() === String(testName).trim().toLowerCase()
+    let cancelled = false;
+
+    const loadPrescribedTests = async () => {
+      try {
+        const data = await requestJson(`Lab/orders?appointmentId=${encodeURIComponent(appointmentId)}`);
+        const orders = parseList(data).filter(
+          (order) =>
+            String(order.appointmentId ?? order.AppointmentId ?? "") === String(appointmentId) &&
+            String(order.status ?? order.Status ?? "").toLowerCase() !== "cancelled"
+        );
+
+        if (cancelled) return;
+
+        if (orders.length) {
+          setDiagnosticRows(
+            orders.map((order) => ({
+              id: order.labOrderId ?? order.LabOrderId ?? order.id ?? order.Id,
+              testId: order.labOrderId ?? order.LabOrderId ?? order.id ?? order.Id,
+              labTestId: order.labTestId ?? order.LabTestId ?? order.labOrderId ?? order.id,
+              diagnosis: order.category ?? order.Category ?? "Lab",
+              item: order.testName ?? order.TestName ?? order.name ?? order.Name ?? "Lab Test",
+              quantity: 1,
+              unitPrice: Number(order.price ?? order.Price ?? 0),
+              price: Number(order.price ?? order.Price ?? 0),
+              source: "LabOrder",
+            }))
           );
-          if (!matched || existing.has(String(matched.item || "").trim().toLowerCase())) return null;
-          existing.add(String(matched.item || "").trim().toLowerCase());
-          return createBillingRow([{ ...matched, diagnosis: matched.diagnosis || diagnosis }]);
-        })
-        .filter(Boolean);
+          return;
+        }
 
-      return nextRows.length ? [...rows, ...nextRows] : rows;
-    });
-  }, [appointments, billingMode, form.appointmentId, labMasterPriceList, selectedAppointment]);
+        setDiagnosticRows([]);
+      } catch (error) {
+        // Backward-compatible fallback for older prescription responses/local drafts.
+        const pendingRequest = getPendingDiagnosticRequest({
+          appointmentId,
+          patientId: getAppointmentPatientId(selectedAppointment),
+          patientName: getAppointmentPatientName(selectedAppointment),
+        });
+        const requestedTests = [
+          ...splitDiagnosticTests(readAppointmentDiagnosticTests(selectedAppointment)),
+          ...(Array.isArray(pendingRequest?.tests)
+            ? pendingRequest.tests
+            : splitDiagnosticTests(pendingRequest?.tests)),
+        ];
+        const diagnosis = readAppointmentDiagnosis(selectedAppointment) || pendingRequest?.diagnosis || "Lab";
+        const rows = requestedTests
+          .map((testName) => {
+            const matched = labMasterPriceList.find(
+              (test) => getPriceListItemName(test).toLowerCase() === String(testName).trim().toLowerCase()
+            );
+            return matched ? createBillingRow([{ ...matched, diagnosis: matched.diagnosis || diagnosis }]) : null;
+          })
+          .filter(Boolean);
+        if (!cancelled) setDiagnosticRows(rows);
+        console.warn("Unable to load prescribed LabOrders.", error);
+      }
+    };
+
+    loadPrescribedTests();
+    return () => {
+      cancelled = true;
+    };
+  }, [billingMode, labMasterPriceList, selectedAppointment]);
 
   const medicineCharges = Number(form.medicineCharges || 0);
   const labCharges = Number(form.labCharges || 0);
@@ -1609,8 +1472,8 @@ function ReceptionBilling() {
     const hasAppointment = Boolean(selectedAppointment);
     const invoiceNo = `${billingMode === "pharmacy" ? "PH" : "DT"}-${String(Date.now()).slice(-8)}`;
     const createdAt = new Date().toISOString();
-    const appointmentPatientId = hasAppointment ? getAppointmentPatientId(selectedAppointment) : "";
-    const appointmentPatientName = hasAppointment ? getAppointmentPatientName(selectedAppointment) : "";
+    const appointmentPatientId = hasAppointment ? getAppointmentPatientId(selectedAppointment) : "DIRECT";
+    const appointmentPatientName = hasAppointment ? getAppointmentPatientName(selectedAppointment) : "Walk-in Patient";
     const appointmentId = hasAppointment ? getAppointmentId(selectedAppointment) : "";
     const appointmentBranchId = firstValue(selectedAppointment?.branchId, selectedAppointment?.BranchId, receptionistScope.branchId);
     const appointmentBranchName = firstValue(
@@ -1629,7 +1492,7 @@ function ReceptionBilling() {
       patientName: appointmentPatientName,
       patientId: appointmentPatientId,
       appointmentId,
-      doctorName: hasAppointment ? getAppointmentDoctorName(selectedAppointment) : "",
+      doctorName: hasAppointment ? getAppointmentDoctorName(selectedAppointment) : "Direct Billing",
       paymentMode: form.paymentMode,
       clinicName,
       clinicId,
@@ -1643,121 +1506,54 @@ function ReceptionBilling() {
 
   const buildServiceBillingPayload = (details) => {
     const isPharmacy = details.type === "pharmacy";
-    const billingTypeLabel = getBackendBillingType(details.type);
-    const invoiceTypeValue = isPharmacy ? "pharmacy" : "diagnostic";
-    const serviceTypeLabel = isPharmacy ? "Pharmacy Billing" : "Diagnostic Billing";
-    const numericAppointmentId = Number(details.appointmentId) || 0;
-    const serviceItems = details.rows.map((row) => ({
-      labTestId: row.id || row.testId || row.labTestId || "",
-      LabTestId: row.id || row.testId || row.labTestId || "",
-      diagnosis: row.diagnosis,
-      item: row.item,
-      testName: row.item,
-      TestName: row.item,
-      name: row.item,
-      quantity: Number(row.quantity) || 1,
-      unitPrice: Number(row.unitPrice) || 0,
-      price: Number(row.unitPrice) || 0,
-      amount: (Number(row.unitPrice) || 0) * (Number(row.quantity) || 1),
-    }));
+    const subtotal = Number(details.totals.subtotal || 0);
+    const discount = Math.max(0, Number(form.discount || 0));
 
     return {
-      appointmentId: numericAppointmentId,
-      AppointmentId: numericAppointmentId,
-      appointmentNumber: details.appointmentId,
-      patientId: details.patientId,
-      PatientId: details.patientId,
-      patientCode: details.patientId,
-      patientName: details.patientName,
-      PatientName: details.patientName,
-      patient: {
-        id: details.patientId,
-        patientId: details.patientId,
-        name: details.patientName,
-      },
-      appointment: {
-        id: details.appointmentId,
-        appointmentId: details.appointmentId,
-        patientId: details.patientId,
-        patientName: details.patientName,
-      },
-      doctorName: details.doctorName,
-      clinicId: details.clinicId,
-      ClinicId: details.clinicId,
-      hospitalId: details.clinicId,
-      HospitalId: details.clinicId,
-      clinicName: details.clinicName,
-      hospitalName: details.clinicName,
-      branchId: details.branchId,
-      BranchId: details.branchId,
-      branchName: details.branchName,
-      BranchName: details.branchName,
-      invoiceNumber: details.invoiceNo,
-      invoiceNo: details.invoiceNo,
-      billNumber: details.invoiceNo,
-      billNo: details.invoiceNo,
-      invoiceType: invoiceTypeValue,
-      InvoiceType: invoiceTypeValue,
-      billingType: billingTypeLabel,
-      BillingType: billingTypeLabel,
-      serviceType: serviceTypeLabel,
-      ServiceType: serviceTypeLabel,
+      appointmentId: Number(details.appointmentId || 0),
+      billingType: isPharmacy ? "Pharmacy" : "Lab",
       consultationCharge: 0,
-      consultationCharges: 0,
-      opRevenue: 0,
-      medicineCharge: isPharmacy ? details.totals.total : 0,
-      medicineCharges: isPharmacy ? details.totals.total : 0,
-      pharmacyRevenue: isPharmacy ? details.totals.total : 0,
-      labCharge: isPharmacy ? 0 : details.totals.total,
-      labCharges: isPharmacy ? 0 : details.totals.total,
-      diagnosticRevenue: isPharmacy ? 0 : details.totals.total,
-      subtotal: details.totals.subtotal,
-      taxableAmount: details.totals.subtotal,
-      cgstAmount: details.totals.cgst,
-      CGSTAmount: details.totals.cgst,
-      sgstAmount: details.totals.sgst,
-      SGSTAmount: details.totals.sgst,
-      gstAmount: details.totals.gst,
-      GSTAmount: details.totals.gst,
+      // Lab amount is calculated by the backend from prescribed LabOrders.
+      labCharge: 0,
+      // Pharmacy is manual until a pharmacy/inventory module is added.
+      medicineCharge: isPharmacy ? subtotal : 0,
+      discount,
       gstPercentage: 18,
-      totalAmount: details.totals.total,
-      grandTotal: details.totals.total,
-      netAmount: details.totals.total,
-      payableAmount: details.totals.total,
-      paymentAmount: details.totals.total,
-      paidAmount: details.totals.total,
-      amount: details.totals.total,
-      revenue: details.totals.total,
-      source: "reception",
-      billingSource: "reception",
-      bookingSource: "offline",
-      paymentMode: details.paymentMode,
-      PaymentMode: details.paymentMode,
-      paymentStatus: "Paid",
-      PaymentStatus: "Paid",
+      paymentMode: String(details.paymentMode || "Cash"),
       status: "Paid",
-      Status: "Paid",
-      createdAt: details.createdAt,
-      billDate: details.createdAt,
-      invoiceDate: details.createdAt,
-      items: serviceItems,
-      billItems: serviceItems,
-      serviceItems,
     };
+  };
+
+  const createServiceBill = async (_details, payload) => {
+    // Backend exposes one billing POST endpoint for OP, Lab and Pharmacy.
+    // billingType in the DTO decides which flow is executed.
+    return requestJson("Billing", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   };
 
   const openServiceInvoice = async ({ autoPrint = true, save = false } = {}) => {
     const details = buildServiceInvoiceDetails();
-    if (!selectedAppointment) {
-      const text = "Select a booked appointment before submitting the bill.";
-      setFieldErrors((prev) => ({ ...prev, appointmentId: text }));
+    if (!details.appointmentId) {
+      const text = "Select a booked appointment before creating the bill.";
       showMessage(text, "error");
       toast.error(text);
       return false;
     }
 
     if (!details.rows.length) {
-      const text = "Select at least one billable item.";
+      const text = details.type === "diagnostic"
+        ? "No prescribed lab tests were found for the selected appointment."
+        : "Select at least one billable item.";
+      showMessage(text, "error");
+      toast.error(text);
+      return false;
+    }
+
+    const discount = Number(form.discount || 0);
+    if (discount < 0 || discount > Number(details.totals.subtotal || 0)) {
+      const text = "Discount cannot be negative or greater than subtotal.";
       showMessage(text, "error");
       toast.error(text);
       return false;
@@ -1769,9 +1565,8 @@ function ReceptionBilling() {
       const canUpdate = editingBill && getInvoiceId(editingBill) && getServiceBillType(editingBill) === details.type;
       const response = canUpdate
         ? await updateBillingBill(editingBill, payload)
-        : await saveServiceBillingBill(payload, details.type);
+        : await createServiceBill(details, payload);
       savedInvoice = Array.isArray(response) ? response[0] || {} : response || {};
-      const backendSynced = savedInvoice.backendSynced !== false;
 
       const invoiceShape = {
         ...payload,
@@ -1790,24 +1585,14 @@ function ReceptionBilling() {
         paymentMode: details.paymentMode,
         invoiceType: details.type === "pharmacy" ? "pharmacy" : "diagnostic",
         InvoiceType: details.type === "pharmacy" ? "pharmacy" : "diagnostic",
-        billingType: getBackendBillingType(details.type),
-        BillingType: getBackendBillingType(details.type),
+        billingType: details.type === "pharmacy" ? "Pharmacy" : "Lab",
+        BillingType: details.type === "pharmacy" ? "Pharmacy" : "Lab",
         serviceType: details.type === "pharmacy" ? "Pharmacy Billing" : "Diagnostic Billing",
         ServiceType: details.type === "pharmacy" ? "Pharmacy Billing" : "Diagnostic Billing",
         totalAmount: details.totals.total,
         paidAmount: details.totals.total,
-        backendSynced,
-        syncError: savedInvoice.syncError || "",
+        backendSynced: true,
       };
-      if (backendSynced) {
-        const paymentUpdate = await updateBillingPayment(invoiceShape, {
-          paymentMode: details.paymentMode,
-          paidAmount: details.totals.total,
-        });
-        if (paymentUpdate && typeof paymentUpdate === "object") {
-          Object.assign(invoiceShape, Array.isArray(paymentUpdate) ? paymentUpdate[0] || {} : paymentUpdate);
-        }
-      }
       setInvoice(invoiceShape);
       storeLatestInvoice(invoiceShape);
       setRecentServiceBills((prev) =>
@@ -1821,11 +1606,7 @@ function ReceptionBilling() {
         });
       }
       setEditingBill(null);
-      showMessage(
-        `${billingMode === "pharmacy" ? "Pharmacy" : "Diagnostic test"} bill ${canUpdate ? "updated" : "generated"} successfully`,
-        "success",
-        { autoHide: true }
-      );
+      showMessage(`${billingMode === "pharmacy" ? "Pharmacy" : "Diagnostic test"} bill ${canUpdate ? "updated" : "generated"} successfully`, "success", { autoHide: true });
       printServiceInvoice({ ...details, invoiceNo: invoiceShape.invoiceNo, autoPrint });
       return true;
     }
@@ -1903,89 +1684,23 @@ function ReceptionBilling() {
 
     const consultationCharge = Number(form.medicineCharges || 0) + Number(form.labCharges || 0);
     const subtotal = consultationCharge;
-    const cgstAmount = subtotal * HALF_GST_RATE;
-    const sgstAmount = subtotal * HALF_GST_RATE;
+    const discount = Math.max(0, Number(form.discount || 0));
+    const taxableAmount = Math.max(0, subtotal - discount);
+    const cgstAmount = taxableAmount * HALF_GST_RATE;
+    const sgstAmount = taxableAmount * HALF_GST_RATE;
     const gstAmount = cgstAmount + sgstAmount;
-    const totalAmount = subtotal + gstAmount;
+    const totalAmount = taxableAmount + gstAmount;
 
     const body = {
       appointmentId: Number(form.appointmentId),
-      AppointmentId: Number(form.appointmentId),
-      appointmentNumber: form.appointmentId,
-      patientId: getAppointmentPatientId(selectedAppointment),
-      PatientId: getAppointmentPatientId(selectedAppointment),
-      patientCode: getAppointmentPatientId(selectedAppointment),
-      patientName: getAppointmentPatientName(selectedAppointment),
-      PatientName: getAppointmentPatientName(selectedAppointment),
-      patient: {
-        id: getAppointmentPatientId(selectedAppointment),
-        patientId: getAppointmentPatientId(selectedAppointment),
-        name: getAppointmentPatientName(selectedAppointment),
-      },
-      appointment: {
-        id: form.appointmentId,
-        appointmentId: form.appointmentId,
-        patientId: getAppointmentPatientId(selectedAppointment),
-        patientName: getAppointmentPatientName(selectedAppointment),
-      },
-      doctorName: getAppointmentDoctorName(selectedAppointment),
-      clinicId,
-      ClinicId: clinicId,
-      hospitalId: clinicId,
-      HospitalId: clinicId,
-      clinicName,
-      hospitalName: clinicName,
-      branchId: firstValue(selectedAppointment?.branchId, selectedAppointment?.BranchId, receptionistScope.branchId),
-      BranchId: firstValue(selectedAppointment?.branchId, selectedAppointment?.BranchId, receptionistScope.branchId),
-      branchName: firstValue(selectedAppointment?.branchName, selectedAppointment?.BranchName, receptionistScope.branchName),
-      BranchName: firstValue(selectedAppointment?.branchName, selectedAppointment?.BranchName, receptionistScope.branchName),
-      consultationCharge,
-      consultationCharges: consultationCharge,
-      opRevenue: consultationCharge,
-      medicineCharge: 0,
-      medicineCharges: 0,
-      pharmacyRevenue: 0,
-      labCharge: 0,
-      labCharges: 0,
-      diagnosticRevenue: 0,
-      subtotal,
-      taxableAmount: subtotal,
-      cgstAmount,
-      CGSTAmount: cgstAmount,
-      sgstAmount,
-      SGSTAmount: sgstAmount,
-      gstAmount,
-      GSTAmount: gstAmount,
-      gstPercentage: 18,
-      totalAmount,
-      grandTotal: totalAmount,
-      netAmount: totalAmount,
-      payableAmount: totalAmount,
-      paymentAmount: totalAmount,
-      paidAmount: totalAmount,
-      amount: totalAmount,
-      revenue: totalAmount,
-      invoiceNo: editingBill?.invoiceNo || editingBill?.invoiceNumber || editingBill?.billNumber,
-      invoiceNumber: editingBill?.invoiceNumber || editingBill?.billNumber || editingBill?.invoiceNo,
-      billNumber: editingBill?.billNumber || editingBill?.invoiceNumber || editingBill?.invoiceNo,
       billingType: "OP",
-      BillingType: "OP",
-      invoiceType: "op",
-      InvoiceType: "op",
-      serviceType: "OP Billing",
-      ServiceType: "OP Billing",
-      source: "reception",
-      billingSource: "reception",
-      bookingSource: "offline",
-      paymentMode: String(form.paymentMode || ""),
-      PaymentMode: String(form.paymentMode || ""),
-      paymentStatus: "Paid",
-      PaymentStatus: "Paid",
+      consultationCharge,
+      labCharge: 0,
+      medicineCharge: 0,
+      discount,
+      gstPercentage: 18,
+      paymentMode: String(form.paymentMode || "Cash"),
       status: "Paid",
-      Status: "Paid",
-      createdAt: new Date().toISOString(),
-      billDate: new Date().toISOString(),
-      invoiceDate: new Date().toISOString(),
     };
 
     try {
@@ -2038,13 +1753,6 @@ function ReceptionBilling() {
           getAppointmentDoctorName(selectedAppointment),
         backendSynced: true,
       };
-      const paymentUpdate = await updateBillingPayment(nextInvoice, {
-        paymentMode: form.paymentMode,
-        paidAmount: totalAmount,
-      });
-      if (paymentUpdate && typeof paymentUpdate === "object") {
-        Object.assign(nextInvoice, Array.isArray(paymentUpdate) ? paymentUpdate[0] || {} : paymentUpdate);
-      }
       setInvoice(nextInvoice);
       storeLatestInvoice(nextInvoice);
       setRecentServiceBills((prev) =>
@@ -2163,6 +1871,7 @@ function ReceptionBilling() {
         paymentMode: bill.paymentMode || prev.paymentMode,
         medicineCharges: formatAmountInput(readAmount(bill, AMOUNT_KEYS.medicine, 0), { emptyValue: "" }),
         labCharges: formatAmountInput(readAmount(bill, AMOUNT_KEYS.lab, 0), { emptyValue: "" }),
+        discount: formatAmountInput(readAmount(bill, ["discount", "Discount"], 0), { emptyValue: "0" }),
       }));
       showMessage("OP bill loaded for editing. Submit again to generate the updated invoice.", "success", { autoHide: true });
       return;
@@ -2226,8 +1935,8 @@ function ReceptionBilling() {
   };
 
   const setField = (name, value) => {
-    const isAmountField = ["medicineCharges", "labCharges"].includes(name);
-    const nextValue = ["medicineCharges", "labCharges"].includes(name)
+    const isAmountField = ["medicineCharges", "labCharges", "discount"].includes(name);
+    const nextValue = ["medicineCharges", "labCharges", "discount"].includes(name)
       ? onlyNumberValue(value)
       : value;
 
@@ -2594,7 +2303,7 @@ function ReceptionBilling() {
       <div className="rc-page-head">
         <div>
           <h2>Billing</h2>
-          <p>Create OP, diagnostic, and pharmacy invoices for booked appointments.</p>
+          <p>Create diagnostic and pharmacy invoices for direct counter billing.</p>
         </div>
         <button className="rc-btn" onClick={() => navigate("/reception/dashboard")}>
           <ArrowLeft size={16} /> Dashboard
@@ -2635,7 +2344,7 @@ function ReceptionBilling() {
                   : "Generate Diagnosis Test Bill"}
               </h3>
               <p>
-                Select a booked appointment, add items, and collect payment.
+                Select items and collect payment without appointment access.
               </p>
             </div>
           </div>
@@ -2649,19 +2358,14 @@ function ReceptionBilling() {
               {getAppointmentDoctorName(selectedAppointment)}
             </span>
           </div>
-        ) : (
-          <div className="rc-patient-summary">
-            <strong>Select booked appointment</strong>
-            <span>Patient details will appear after selection.</span>
-          </div>
-        )}
+        ) : null}
         <div className="rc-billing-fields">
           <label className="rc-field-wide">
             <span>{billingMode === "consultation" ? "Appointment" : "Booked Appointment"}</span>
             <select
               value={form.appointmentId}
               onChange={(e) => setField("appointmentId", e.target.value)}
-              className={fieldErrors.appointmentId ? "is-invalid" : ""}
+              className={billingMode === "consultation" && fieldErrors.appointmentId ? "is-invalid" : ""}
             >
               <option value="">Select booked appointment</option>
               {appointments.length === 0 ? (
@@ -2669,14 +2373,14 @@ function ReceptionBilling() {
                   {billingMode === "consultation" ? "No billable appointments found" : "No booked appointments found"}
                 </option>
               ) : null}
-              {appointments.map((a, index) => (
-                <option value={getAppointmentId(a)} key={getAppointmentId(a) || `appointment-${index}`}>
+              {appointments.map((a) => (
+                <option value={getAppointmentId(a)} key={getAppointmentId(a)}>
                   {getAppointmentPatientName(a)} - {getAppointmentTime(a)} -{" "}
                   {getAppointmentStatus(a) || "-"}
                 </option>
               ))}
             </select>
-            {fieldErrors.appointmentId ? <small className="rc-field-error">{fieldErrors.appointmentId}</small> : null}
+            {billingMode === "consultation" && fieldErrors.appointmentId ? <small className="rc-field-error">{fieldErrors.appointmentId}</small> : null}
           </label>
         <label>
           <span>Payment Mode</span>
@@ -2690,6 +2394,17 @@ function ReceptionBilling() {
             <option value="Card">Card</option>
           </select>
           {fieldErrors.paymentMode ? <small className="rc-field-error">{fieldErrors.paymentMode}</small> : null}
+        </label>
+        <label>
+          <span>Discount</span>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.discount}
+            placeholder="0.00"
+            onChange={(e) => setField("discount", e.target.value)}
+          />
         </label>
         {billingMode === "consultation" ? (
           <>
@@ -2868,7 +2583,7 @@ function ReceptionBilling() {
                       <FileText size={20} />
                     </div>
                     <div className="rc-latest-bill-main">
-                      <strong>{bill.patientName || "Patient"}</strong>
+                      <strong>{bill.patientName || "Walk-in Patient"}</strong>
                       <span>
                         {invoiceNo} | {billType === "pharmacy" ? "Pharmacy" : billType === "diagnostic" ? "Diagnostic" : "OP"} |{" "}
                         {createdAt ? formatInvoiceDate(createdAt) : "Just now"}

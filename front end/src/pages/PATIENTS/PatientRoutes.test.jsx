@@ -1,6 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { PATIENT_PORTAL_OP_BILLS_KEY } from "../../utils/billingRevenue";
 import { findPatientBookingConflict, PatientBillsPage } from "./PatientRoutes";
 
 describe("findPatientBookingConflict", () => {
@@ -48,5 +49,37 @@ describe("PatientBillsPage", () => {
     );
 
     expect(await screen.findByRole("button", { name: /download invoice/i })).toBeInTheDocument();
+  });
+
+  it("shows diagnostic bills saved from the reception billing flow", async () => {
+    localStorage.setItem(
+      PATIENT_PORTAL_OP_BILLS_KEY,
+      JSON.stringify([
+        {
+          id: "diag-1",
+          invoiceNo: "DT-1101",
+          invoiceType: "diagnostic",
+          billingType: "Lab",
+          serviceType: "Diagnostic Billing",
+          patientId: "p-1",
+          patientName: "Ada Lovelace",
+          totalAmount: 1500,
+          status: "Paid",
+          createdAt: "2026-08-01T10:00:00.000Z",
+        },
+      ])
+    );
+
+    render(
+      <MemoryRouter>
+        <PatientBillsPage
+          bills={[]}
+          patient={{ id: "p-1", patientName: "Ada Lovelace" }}
+          visits={[]}
+        />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText(/diagnostic/i)).toBeInTheDocument();
   });
 });

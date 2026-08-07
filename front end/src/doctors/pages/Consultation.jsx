@@ -587,6 +587,7 @@ function Consultation() {
       const chiefComplaints = form.complaintsChoice.trim();
       const diagnosis = form.diagnosis.trim();
       const diagnosisTests = form.diagnosisTests.trim();
+      const diagnosisTestList = splitDiagnosisTests(diagnosisTests);
       const clinicalNotes = [
         chiefComplaints ? `Chief Complaints: ${chiefComplaints}` : "",
         form.bp.trim() ? `BP: ${form.bp.trim()}` : "",
@@ -605,10 +606,9 @@ function Consultation() {
         PatientId: patientId,
         diagnosis,
         Diagnosis: diagnosis,
-        diagnosisTests,
-        DiagnosisTests: diagnosisTests,
-        diagnosticTests: diagnosisTests,
-        DiagnosticTests: diagnosisTests,
+        // Backend CreateConsultationDto expects List<string>.
+        diagnosisTests: diagnosisTestList,
+        DiagnosisTests: diagnosisTestList,
         clinicalNotes,
         ClinicalNotes: clinicalNotes,
       };
@@ -620,22 +620,6 @@ function Consultation() {
       });
 
       let data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        response = await fetch(CONSULTATION_API, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            AppointmentId: appointmentId,
-            PatientId: patientId,
-            Diagnosis: diagnosis,
-            DiagnosisTests: diagnosisTests,
-            DiagnosticTests: diagnosisTests,
-            ClinicalNotes: clinicalNotes || "-",
-          }),
-        });
-        data = await response.json().catch(() => ({}));
-      }
 
       if (!response.ok) {
         const validationMessage =

@@ -206,6 +206,61 @@ export const dedupeBillingRows = (rows = []) => {
 export const PATIENT_PORTAL_OP_BILLS_KEY = "patientPortalRecentOpBills";
 export const RECEPTION_RECENT_SERVICE_BILLS_KEY = "receptionRecentServiceBills";
 
+export const normalizePatientPortalBill = (bill = {}) => {
+  if (!bill || typeof bill !== "object") return bill;
+
+  const normalizedType = String(
+    bill.invoiceType || bill.InvoiceType || bill.billingType || bill.BillingType || bill.type || bill.serviceType || bill.ServiceType || ""
+  ).toLowerCase();
+  const isDiagnostic = normalizedType.includes("diagnostic") || normalizedType.includes("diagnosis") || normalizedType.includes("lab") || normalizedType.includes("test");
+  const billingType = bill.billingType || bill.BillingType || (isDiagnostic ? "Lab" : "OP");
+  const invoiceType = bill.invoiceType || bill.InvoiceType || (isDiagnostic ? "diagnostic" : "op");
+  const serviceType = bill.serviceType || bill.ServiceType || (isDiagnostic ? "Diagnostic Billing" : "Patient Portal OP Billing");
+  const createdAt = bill.createdAt || bill.createdOn || bill.billDate || bill.invoiceDate || new Date().toISOString();
+
+  return {
+    ...bill,
+    invoiceType,
+    InvoiceType: invoiceType,
+    billingType,
+    BillingType: billingType,
+    serviceType,
+    ServiceType: serviceType,
+    source: bill.source || bill.billingSource || "reception",
+    billingSource: bill.billingSource || bill.source || "reception",
+    bookingSource: bill.bookingSource || (bill.source === "patient-portal" ? "online" : "offline"),
+    paymentSource: bill.paymentSource || bill.billingSource || bill.source || "reception",
+    paymentStatus: bill.paymentStatus || bill.PaymentStatus || "Paid",
+    status: bill.status || bill.Status || "Paid",
+    createdAt,
+    billDate: bill.billDate || bill.invoiceDate || createdAt,
+    invoiceDate: bill.invoiceDate || bill.billDate || createdAt,
+  };
+};
+
+export const readPatientPortalBills = (storageKey = PATIENT_PORTAL_OP_BILLS_KEY) => {
+  try {
+    const value = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    return Array.isArray(value) ? value.map(normalizePatientPortalBill) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const storePatientPortalBill = (bill, storageKey = PATIENT_PORTAL_OP_BILLS_KEY) => {
+  if (!bill || typeof bill !== "object") return [];
+
+  try {
+    const rows = readPatientPortalBills(storageKey);
+    const next = dedupeBillingRows([{ ...normalizePatientPortalBill(bill) }, ...rows]).slice(0, 100);
+    localStorage.setItem(storageKey, JSON.stringify(next));
+    return next;
+  } catch {
+    localStorage.setItem(storageKey, JSON.stringify([normalizePatientPortalBill(bill)]));
+    return [normalizePatientPortalBill(bill)];
+  }
+};
+
 export const readLocalBillingRows = (key) => {
   try {
     const value = JSON.parse(localStorage.getItem(key) || "[]");
