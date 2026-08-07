@@ -9,7 +9,11 @@ import PatientDashboard from "./PatientDashboard";
 import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
 import { validateStrongPassword } from "../../utils/validation";
 import { formatIndianCurrency, formatTitleCase } from "../../utils/format";
-import { PATIENT_PORTAL_OP_BILLS_KEY } from "../../utils/billingRevenue";
+import {
+  PATIENT_PORTAL_OP_BILLS_KEY,
+  readPatientPortalBills,
+  storePatientPortalBill,
+} from "../../utils/billingRevenue";
 import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 import { readGeneratedLabReports } from "../../Lab/labReportStore";
 import {
@@ -59,28 +63,9 @@ const PATIENT_NOTIFICATION_TYPES = [
   'Follow-up Reminder',
 ];
 
-const storePatientPortalOpBill = (bill) => {
-  if (!bill) return [];
-  try {
-    const existing = JSON.parse(localStorage.getItem(PATIENT_PORTAL_OP_BILLS_KEY) || "[]");
-    const rows = Array.isArray(existing) ? existing : [];
-    const next = dedupeBillsByInvoice([bill, ...rows]).slice(0, 100);
-    localStorage.setItem(PATIENT_PORTAL_OP_BILLS_KEY, JSON.stringify(next));
-    return next;
-  } catch {
-    localStorage.setItem(PATIENT_PORTAL_OP_BILLS_KEY, JSON.stringify([bill]));
-    return [bill];
-  }
-};
+const storePatientPortalOpBill = (bill) => storePatientPortalBill(bill, PATIENT_PORTAL_OP_BILLS_KEY);
 
-const readPatientPortalOpBills = () => {
-  try {
-    const rows = JSON.parse(localStorage.getItem(PATIENT_PORTAL_OP_BILLS_KEY) || "[]");
-    return Array.isArray(rows) ? rows : [];
-  } catch {
-    return [];
-  }
-};
+const readPatientPortalOpBills = () => readPatientPortalBills(PATIENT_PORTAL_OP_BILLS_KEY);
 
 const getBillSourceText = (bill = {}) =>
   [
@@ -4577,6 +4562,7 @@ function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits =
 export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   const [apiBills, setApiBills] = useState([]);
   const [loadingBills, setLoadingBills] = useState(false);
+  const [portalRefreshTick, setPortalRefreshTick] = useState(0);
   const [downloadStatus, setDownloadStatus] = useState("");
   const [downloadError, setDownloadError] = useState("");
   const getPatientPortalOpBillsForCurrentPatient = useCallback(() => {
@@ -4611,7 +4597,19 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
       billingSource: bill.billingSource || "patient-portal",
       bookingSource: bill.bookingSource || "online",
     }));
-  }, [patient]);
+  }, [patient, portalRefreshTick]);
+
+  useEffect(() => {
+    const refreshBills = () => setPortalRefreshTick((value) => value + 1);
+    window.addEventListener("patientPortalBillsUpdated", refreshBills);
+    window.addEventListener("storage", (event) => {
+      if (event.key === PATIENT_PORTAL_OP_BILLS_KEY) refreshBills();
+    });
+    return () => {
+      window.removeEventListener("patientPortalBillsUpdated", refreshBills);
+      window.removeEventListener("storage", refreshBills);
+    };
+  }, []);
 
   const billRecords = useMemo(() => {
     const localPatientPortalBills = getPatientPortalOpBillsForCurrentPatient();
