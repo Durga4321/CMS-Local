@@ -7,8 +7,6 @@ import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { getClinicInvoiceBranding } from "../utils/clinicBranding";
 import {
   dedupeBillingRows,
-  readLocalBillingRows,
-  RECEPTION_RECENT_SERVICE_BILLS_KEY,
 } from "../utils/billingRevenue";
 import { buildLabReportHtml, printLabReport, readReportField } from "./labReportTemplate";
 import { deleteGeneratedLabReport, readGeneratedLabReports, saveGeneratedLabReport } from "./labReportStore";
@@ -383,10 +381,7 @@ function LabReportCreate() {
       fetchLabMasterTests().catch(() => []),
     ]);
     setLabTests(masterRows);
-    const nextRows = dedupeBillingRows([
-      ...backendRows,
-      ...readLocalBillingRows(RECEPTION_RECENT_SERVICE_BILLS_KEY).map((row) => ({ ...row, __sourcePath: "receptionRecentServiceBills" })),
-    ])
+    const nextRows = dedupeBillingRows(backendRows)
       .filter(isDiagnosticRecord)
       .filter((row) => belongsToLabScope(row, labProfile))
       .map((row) => ({ ...row, __labTestNames: getPatientTestNames(row) }));

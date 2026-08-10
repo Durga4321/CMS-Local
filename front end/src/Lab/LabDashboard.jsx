@@ -5,8 +5,6 @@ import { parseList, requestJson } from "./labApi";
 import { getLabProfile } from "./labSession";
 import {
   dedupeBillingRows,
-  readLocalBillingRows,
-  RECEPTION_RECENT_SERVICE_BILLS_KEY,
 } from "../utils/billingRevenue";
 
 const readFirst = (record = {}, keys = [], fallback = "") => {
@@ -163,13 +161,7 @@ function LabDashboard() {
         ]);
         if (!active) return;
         const source = data?.data && !Array.isArray(data.data) ? data.data : data || {};
-        const scopedRows = dedupeBillingRows([
-          ...billingRows,
-          ...readLocalBillingRows(RECEPTION_RECENT_SERVICE_BILLS_KEY).map((row) => ({
-            ...row,
-            __sourcePath: "receptionRecentServiceBills",
-          })),
-        ])
+        const scopedRows = dedupeBillingRows(billingRows)
           .filter(isDiagnosticRecord)
           .filter((row) => belongsToLabScope(row));
         setDashboard(source);

@@ -1,10 +1,8 @@
 import { apiUrl } from "../../config/api";
 import {
-  appointmentToOpRevenueRow as appointmentToSuperAdminOpRevenueRow,
   fetchRevenueBillingRows as fetchSharedRevenueBillingRows,
   getRevenueBreakdown as getSharedRevenueBreakdown,
   getRevenueTotals as getSharedRevenueTotals,
-  isPaidAppointment as isPaidSuperAdminAppointment,
 } from "../../utils/billingRevenue";
 
 export const SUPER_ADMIN_API = {
@@ -3186,13 +3184,9 @@ export const fetchDashboardData = async () => {
   // Get actual counts from fetched data for consistency with lists
   const clinicRows = clinicsResult.status === "fulfilled" ? asArray(clinicsResult.value) : [];
   const appointmentRows = appointmentsResult.status === "fulfilled" ? asArray(appointmentsResult.value) : [];
-  const paidAppointmentRows = appointmentRows
-    .filter(isPaidSuperAdminAppointment)
-    .map(appointmentToSuperAdminOpRevenueRow);
   const billingRows = dedupeBillingRows([
     ...(await fetchSharedRevenueBillingRows({ apiUrl })),
     ...(billingResult.status === "fulfilled" ? asArray(billingResult.value) : []),
-    ...paidAppointmentRows,
   ]);
   const billingTotals = getSharedRevenueTotals(billingRows);
   const userRows = usersResult.status === "fulfilled" ? asArray(usersResult.value).filter((u) => !u.isDeleted) : [];
@@ -3332,16 +3326,12 @@ export const fetchReports = async () => {
   const adminRows = admins.status === "fulfilled" ? asArray(admins.value) : [];
   const userRows = users.status === "fulfilled" ? asArray(users.value) : [];
   const appointmentRows = appointments.status === "fulfilled" ? asArray(appointments.value) : [];
-  const paidAppointmentRows = appointmentRows
-    .filter(isPaidSuperAdminAppointment)
-    .map(appointmentToSuperAdminOpRevenueRow);
   const clinicDashboardRevenueRows = await fetchClinicDashboardRevenueRows(clinicRows);
   const clinicDashboardRows = buildClinicRevenueRowsFromReportRows({ reportRows: clinicDashboardRevenueRows, clinicRows, adminRows, userRows });
   const clinicDetailRevenueRows = await fetchClinicRevenueDetailRows(clinicRows);
   const clinicDetailRows = buildClinicRevenueRowsFromReportRows({ reportRows: clinicDetailRevenueRows, clinicRows, adminRows, userRows });
   const billingRows = dedupeBillingRows([
     ...(await fetchSharedRevenueBillingRows({ apiUrl })),
-    ...paidAppointmentRows,
   ]);
   const billingClinicRows = buildClinicRevenueRowsFromBilling({ billingRows, clinicRows, adminRows, userRows, appointmentRows });
 

@@ -155,7 +155,6 @@ import {
 import { apiUrl } from "../../config/api";
 import { getApiHeaders } from "../../utils/branchApi";
 import {
-  appointmentToOpRevenueRow,
   dedupeBillingRows,
   fetchRevenueBillingRows,
   getBillingType,
@@ -163,7 +162,6 @@ import {
   getMonthSortKey,
   getRevenueAmount,
   getRowDate,
-  isPaidAppointment,
   parseList,
   pick,
 } from "../../utils/billingRevenue";
@@ -177,8 +175,6 @@ const DOCTOR_API =
   apiUrl("Doctor");
 const REPORT_API =
   apiUrl("Dashboard/reports/doctors");
-const APPOINTMENT_API =
-  apiUrl("Appointment");
 
 const normalizeId = (value) => String(value ?? "").trim();
 
@@ -391,17 +387,9 @@ function DoctorWiseReport() {
           return;
         }
 
-        const [billingRows, appointmentResult] = await Promise.all([
-          fetchBillingRows({ fromDate, toDate, doctorId, headers }),
-          fetchJsonOrEmpty(APPOINTMENT_API, headers),
-        ]);
-        const paidAppointmentRows = parseList(appointmentResult)
-          .filter(isPaidAppointment)
-          .filter((row) => withinDateRange(row, fromDate, toDate))
-          .map(appointmentToOpRevenueRow);
+        const billingRows = await fetchBillingRows({ fromDate, toDate, doctorId, headers });
         const opRows = dedupeBillingRows([
           ...billingRows,
-          ...paidAppointmentRows,
         ]).filter((row) => withinDateRange(row, fromDate, toDate));
 
         setData(groupDoctorRevenue(opRows, doctorsRef.current, doctorId));
