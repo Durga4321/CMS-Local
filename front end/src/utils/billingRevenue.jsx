@@ -1,3 +1,5 @@
+import { BILLING_API_PATHS } from "../config/api";
+
 export const parseList = (value) => {
   if (Array.isArray(value)) return value;
   if (!value || typeof value !== "object") return [];
@@ -282,7 +284,7 @@ export const fetchRevenueBillingRows = async ({ apiUrl, headers = {}, params } =
   queryParams.set("includeAll", "true");
   queryParams.set("all", "true");
   const query = queryParams.toString();
-  const paths = [`Billing?${query}`, `Billing/all?${query}`, `Billing/history?${query}`];
+  const paths = BILLING_API_PATHS.map((path) => `${path}?${query}`);
   const requests = paths.map(async (path) => {
     try {
       const response = await fetch(apiUrl(path), { headers });

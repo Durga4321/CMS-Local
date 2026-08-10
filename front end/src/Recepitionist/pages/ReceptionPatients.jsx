@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  CalendarDays,
   Eye,
   HeartPulse,
+  History,
   Pencil,
   Plus,
   RefreshCw,
@@ -111,6 +113,43 @@ const getAppointmentPatientPhone = (appointment = {}) =>
 const normalizePhone = (value) => String(value ?? "").replace(/\D/g, "");
 const OFFLINE_PATIENT_SCOPE_KEY = "reception_offline_patient_scope_v2";
 
+const getTodayKey = () => {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+};
+
+const normalizeDateKey = (value) => {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+
+  const isoMatch = text.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (isoMatch) return isoMatch[1];
+
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return "";
+
+  return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`;
+};
+
+const getAppointmentDateKey = (appointment = {}) =>
+  normalizeDateKey(
+    firstText(
+      appointment.date,
+      appointment.Date,
+      appointment.appointmentDate,
+      appointment.AppointmentDate,
+      appointment.scheduledDate,
+      appointment.ScheduledDate,
+      appointment.slotDate,
+      appointment.SlotDate,
+      appointment.bookingDate,
+      appointment.BookingDate,
+      appointment.appointment?.date,
+      appointment.appointment?.Date,
+      appointment.Appointment?.Date
+    )
+  );
+
 const readOfflinePatientScope = () => {
   try {
     const data = JSON.parse(localStorage.getItem(OFFLINE_PATIENT_SCOPE_KEY) || "{}");
@@ -190,6 +229,25 @@ const patientBelongsToReceptionistPatientList = (
 
   return hasRememberedOfflinePatientScope(patient, scope);
 };
+
+const patientMatchesAppointment = (patient = {}, appointment = {}) => {
+  const patientId = getPatientId(patient);
+  const appointmentPatientId = getAppointmentPatientId(appointment);
+  if (patientId && appointmentPatientId && String(patientId) === String(appointmentPatientId)) {
+    return true;
+  }
+
+  const patientPhone = normalizePhone(patient.phone || patient.Phone);
+  const appointmentPhone = getAppointmentPatientPhone(appointment);
+  return Boolean(patientPhone && appointmentPhone && patientPhone === appointmentPhone);
+};
+
+const hasPatientAppointmentByDate = (patient = {}, appointments = [], matcher) =>
+  appointments.some((appointment) => {
+    if (!patientMatchesAppointment(patient, appointment)) return false;
+    const appointmentDate = getAppointmentDateKey(appointment);
+    return appointmentDate ? matcher(appointmentDate) : false;
+  });
 
 const getPatientAddressParts = (patient = {}) => {
   const parsedAddress = parseAddress(firstText(patient.address, patient.Address));
@@ -361,6 +419,9 @@ function ReceptionPatients({
   const toast = useToast();
   const receptionistScope = useMemo(() => getScope(), [getScope]);
   const [patients, setPatients] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [patientListView, setPatientListView] = useState("today");
+  const [pastPatientDateFilter, setPastPatientDateFilter] = useState("");
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [message, setMessage] = useState("");
@@ -380,16 +441,18 @@ function ReceptionPatients({
           ...parseList(offlineAppointmentData),
           ...parseList(onlineAppointmentData),
         ];
+        const scopedAppointments = scopeRecords(branchAppointments, receptionistScope);
         const branchPatientIds = new Set(
-          scopeRecords(branchAppointments, receptionistScope)
+          scopedAppointments
             .map(getAppointmentPatientId)
             .filter(Boolean)
         );
         const branchPatientPhones = new Set(
-          scopeRecords(branchAppointments, receptionistScope)
+          scopedAppointments
             .map(getAppointmentPatientPhone)
             .filter(Boolean)
         );
+        setAppointments(scopedAppointments);
         setPatients(
           parseList(data)
             .filter((patient) => !isDeletedPatient(patient))
@@ -405,6 +468,7 @@ function ReceptionPatients({
         setMessage("");
       })
       .catch((error) => {
+        setAppointments([]);
         setMessage(error.message);
         toast.error(error.message || "Unable to load patients.");
       }),
@@ -425,7 +489,31 @@ function ReceptionPatients({
     };
   }, [modal]);
 
-  const rows = useMemo(() => [...patients].reverse(), [patients]);
+  const todayKey = useMemo(() => getTodayKey(), []);
+  const todayRows = useMemo(
+    () =>
+      patients.filter((patient) =>
+        hasPatientAppointmentByDate(patient, appointments, (appointmentDate) => appointmentDate === todayKey)
+      ),
+    [appointments, patients, todayKey]
+  );
+  const pastRows = useMemo(
+    () =>
+      patients.filter((patient) =>
+        hasPatientAppointmentByDate(
+          patient,
+          appointments,
+          (appointmentDate) =>
+            appointmentDate < todayKey &&
+            (!pastPatientDateFilter || appointmentDate === pastPatientDateFilter)
+        )
+      ),
+    [appointments, pastPatientDateFilter, patients, todayKey]
+  );
+  const rows = useMemo(
+    () => [...(patientListView === "past" ? pastRows : todayRows)].reverse(),
+    [pastRows, patientListView, todayRows]
+  );
   const selectedDistricts = Array.from(
     new Set([
       ...getDistrictsForState(form.addressParts?.state),
@@ -805,10 +893,53 @@ function ReceptionPatients({
       <div className="rc-card">
         <div className="rc-card-head">
           <div>
-            <h3>Patient List</h3>
-            <p>View, edit, or delete registered patients.</p>
+            <h3>{patientListView === "past" ? "Past Patients List" : "Today Patient List"}</h3>
+            <p>
+              {patientListView === "past"
+                ? "Past patient history from previous appointments."
+                : "Patients with appointments scheduled for today."}
+            </p>
+          </div>
+          <div className="rc-patient-list-tabs" role="tablist" aria-label="Patient list view">
+            <button
+              type="button"
+              className={patientListView === "today" ? "active" : ""}
+              onClick={() => setPatientListView("today")}
+              role="tab"
+              aria-selected={patientListView === "today"}
+            >
+              <CalendarDays size={16} /> Today Patients
+              <span>{todayRows.length}</span>
+            </button>
+            <button
+              type="button"
+              className={patientListView === "past" ? "active" : ""}
+              onClick={() => setPatientListView("past")}
+              role="tab"
+              aria-selected={patientListView === "past"}
+            >
+              <History size={16} /> Past Patients
+              <span>{pastRows.length}</span>
+            </button>
           </div>
         </div>
+        {patientListView === "past" ? (
+          <div className="rc-filter-grid rc-filter-grid-compact">
+            <label className="rc-filter-field">
+              <span>Past Appointment Date</span>
+              <input
+                type="date"
+                value={pastPatientDateFilter}
+                onChange={(event) => setPastPatientDateFilter(event.target.value)}
+              />
+            </label>
+            <div className="rc-filter-field rc-filter-clear">
+              <button type="button" className="rc-btn ghost" onClick={() => setPastPatientDateFilter("")}>
+                Clear Date
+              </button>
+            </div>
+          </div>
+        ) : null}
         <div className="rc-table">
           <div className="rc-table-head five">
             <span>S.No.</span>
@@ -866,7 +997,13 @@ function ReceptionPatients({
               </span>
             </div>
           ))}
-          {!rows.length ? <div className="rc-empty">No patients found.</div> : null}
+          {!rows.length ? (
+            <div className="rc-empty">
+              {patientListView === "past"
+                ? "No past patients found."
+                : "No patients scheduled for today."}
+            </div>
+          ) : null}
         </div>
       </div>
 

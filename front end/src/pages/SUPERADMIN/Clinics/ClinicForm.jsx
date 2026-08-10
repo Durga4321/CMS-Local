@@ -31,6 +31,7 @@ import {
   validateSelected,
 } from "../../../utils/validation";
 import { validateUniqueMobileNumber } from "../../../utils/mobileUniqueness";
+import { formatClinicName } from "../../../utils/clinicDisplay";
 
 const emptyClinic = {
   name: "",
@@ -53,7 +54,7 @@ const getClinicAddressParts = (clinic = {}) => {
 };
 
 const buildClinicPayload = (form) => {
-  const clinicName = form.name.trim();
+  const clinicName = formatClinicName(form.name, "Clinic");
   const phoneNumber = form.contactNumber.trim();
   const email = form.email.trim();
   const addressParts = getClinicAddressParts(form);

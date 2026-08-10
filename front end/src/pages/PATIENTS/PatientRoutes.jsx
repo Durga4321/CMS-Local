@@ -6,7 +6,7 @@ import {
   Menu, Phone, Printer, Search, Share2, Star, Stethoscope, Trash2, UserRound, X,
 } from "lucide-react";
 import PatientDashboard from "./PatientDashboard";
-import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
+import { BILLING_API_PATHS, apiUrl, getBillingApiPath, patientApiUrl, PATIENT_API } from "../../config/api";
 import { validateStrongPassword } from "../../utils/validation";
 import { formatIndianCurrency, formatTitleCase } from "../../utils/format";
 import {
@@ -206,6 +206,20 @@ const parseApiList = (value) => {
   if (Array.isArray(value?.records)) return value.records;
   if (value && typeof value === "object") return [value];
   return [];
+};
+
+const fetchBillingApiRows = async ({ headers = {}, cache = "no-store" } = {}) => {
+  const results = await Promise.allSettled(
+    BILLING_API_PATHS.map((path) => fetch(apiUrl(path), { headers, cache }))
+  );
+  const lists = await Promise.all(
+    results.map(async (result, index) => {
+      if (result.status !== "fulfilled" || !result.value?.ok) return [];
+      const data = await result.value.json().catch(() => []);
+      return parseApiList(data).map((bill) => ({ ...bill, __sourcePath: BILLING_API_PATHS[index] }));
+    })
+  );
+  return lists.flat();
 };
 
 const dedupeBillsByInvoice = (bills = []) => {
@@ -1110,14 +1124,14 @@ function PatientRoutes() {
         profileRes,
         appointmentsRes,
         prescriptionsRes,
-        billsRes,
+        billingRows,
         notificationsRes,
         dashboardRes,
       ] = await Promise.all([
         fetch(patientApiUrl(PATIENT_API.profile), { headers }).catch(() => null),
         fetch(patientApiUrl(PATIENT_API.appointments), { headers }).catch(() => null),
         fetch(patientApiUrl(PATIENT_API.prescriptions), { headers, cache: "no-store" }).catch(() => null),
-        fetch(patientApiUrl(PATIENT_API.bills), { headers, cache: "no-store" }).catch(() => null),
+        fetchBillingApiRows({ headers, cache: "no-store" }).catch(() => []),
         fetch(patientApiUrl(PATIENT_API.notifications), { headers, cache: "no-store" }).catch(() => null),
         fetch(patientApiUrl(PATIENT_API.dashboard), { headers }).catch(() => null),
       ]);
@@ -1153,10 +1167,9 @@ function PatientRoutes() {
       ]).filter((prescription) => appointmentBelongsToPatient(prescription, effectivePatient));
       setPrescriptions(patientPrescriptions);
 
-      const bData = billsRes?.ok ? await billsRes.json().catch(() => []) : [];
       const storedPatientPortalBills = readPatientPortalOpBills();
       const patientBills = dedupeBillsByInvoice([
-        ...parseApiList(bData),
+        ...billingRows,
         ...storedPatientPortalBills,
       ]).filter((bill) => billBelongsToPatient(bill, effectivePatient, patientAppointments));
       setBills(patientBills);
@@ -2499,9 +2512,7 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
       // Patients do not have permission to create bills through the staff-only
       // Billing endpoint. Payment confirmation creates the bill server-side;
       // retrieve it through the existing patient bills endpoint when available.
-      const patientBillsResponse = await fetch(patientApiUrl(PATIENT_API.bills), { headers }).catch(() => null);
-      const patientBillsData = patientBillsResponse?.ok ? await patientBillsResponse.json().catch(() => []) : [];
-      const patientBills = parseApiList(patientBillsData);
+      const patientBills = await fetchBillingApiRows({ headers }).catch(() => []);
       const billData = patientBills.find((bill) => String(readFirst(bill, ["appointmentId", "appointment.id", "appointmentNumber"]) || "") === String(appointmentId)) || successData?.bill || successData?.invoice || paymentData?.bill || paymentData?.invoice || {};
       const generatedBill = {
         ...(Array.isArray(billData) ? billData[0] : billData),
@@ -4636,10 +4647,9 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     const loadSubmittedBills = async () => {
       setLoadingBills(true);
       try {
-        const response = await fetch(patientApiUrl(PATIENT_API.bills), { headers, cache: "no-store" }).catch(() => null);
-        const data = response?.ok ? await response.json().catch(() => []) : [];
+        const data = await fetchBillingApiRows({ headers, cache: "no-store" }).catch(() => []);
         const nextBills = dedupeBillsByInvoice([
-          ...parseApiList(data),
+          ...data,
         ]).filter((bill) => billBelongsToPatient(bill, patient || {}, visits));
         if (isCurrent) setApiBills(nextBills);
       } finally {
@@ -4885,8 +4895,8 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   const getInvoiceId = (record) =>
     readFirst(record, ['invoiceId', 'billId', 'billingId', 'id', '_id', 'referenceId']);
 
-  const getBillDetailUrl = (billId) =>
-    apiUrl(`Billing/${encodeURIComponent(String(billId))}`);
+  const getBillDetailUrl = (billId, record = {}) =>
+    apiUrl(`${getBillingApiPath(billTypeLabel(record))}/${encodeURIComponent(String(billId))}`);
 
   const normalizeBillDetailResponse = (data) => {
     if (!data) return {};
@@ -4903,7 +4913,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     const invoiceId = getInvoiceId(record);
     if (!invoiceId) return record;
 
-    const response = await fetch(getBillDetailUrl(invoiceId), {
+    const response = await fetch(getBillDetailUrl(invoiceId, record), {
       headers: getApiHeaders(),
       cache: "no-store",
     }).catch(() => null);
@@ -4926,7 +4936,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     const invoiceId = getInvoiceId(record);
     if (!invoiceId) return '';
 
-    const billDetailUrl = getBillDetailUrl(invoiceId);
+    const billDetailUrl = getBillDetailUrl(invoiceId, record);
     const response = await fetch(billDetailUrl, { headers: getApiHeaders() }).catch(() => null);
     if (!response?.ok) return '';
 
@@ -5143,7 +5153,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     setDownloadError('');
 
     try {
-      const response = await fetch(patientApiUrl(PATIENT_API.billPay, { id: invoiceId }), {
+      const response = await fetch(apiUrl(`${getBillingApiPath(billTypeLabel(record))}/${encodeURIComponent(String(invoiceId))}/pay`), {
         method: 'POST',
         headers: getApiHeaders(),
         body: JSON.stringify({

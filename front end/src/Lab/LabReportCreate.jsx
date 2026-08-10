@@ -292,7 +292,7 @@ const recordId = (record = {}) =>
   readFirst(record, ["id", "Id", "orderId", "OrderId", "labOrderId", "LabOrderId", "billingId", "BillingId", "billId", "BillId", "invoiceId", "InvoiceId"], "");
 
 const fetchReportSourceRows = async () => {
-  const paths = ["Lab/orders", "Billing/diagnostic", "Billing/diagnostics", "Reception/diagnostic-bills", "DiagnosticBilling", "Billing"];
+  const paths = ["Lab/orders", "Billing/lab"];
   const results = await Promise.allSettled(paths.map((path) => requestJson(path)));
   return results.flatMap((result, index) =>
     result.status === "fulfilled"
@@ -643,7 +643,7 @@ function LabReportCreate() {
           if (source.includes("lab/orders")) {
             await requestJson(`Lab/orders/${id}/report`, { method: "POST", body: JSON.stringify(payload) });
           } else {
-            await requestJson(`Billing/${id}`, {
+            await requestJson(`Billing/lab/${id}`, {
               method: "PUT",
               body: JSON.stringify({ ...payload, id, Id: id, billingId: id, BillingId: id }),
             });

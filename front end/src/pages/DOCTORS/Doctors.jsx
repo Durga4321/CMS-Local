@@ -20,6 +20,8 @@ import {
   getJsonHeaders,
   fetchBranchesForHospital,
   buildBranchOptions,
+  getStoredHospitalId,
+  recordBelongsToClinicScope,
 } from "../../utils/branchApi";
 import { useToast } from "../../components/ToastProvider";
 import {
@@ -478,6 +480,12 @@ const buildDoctorUpdateBody = ({
 function Doctors() {
   const navigate = useNavigate();
   const toast = useToast();
+  const hospitalId = getStoredHospitalId();
+  const clinicName = getClinicDisplayName({
+    hospitalName: localStorage.getItem("hospitalName"),
+    clinicName: localStorage.getItem("clinicName"),
+    hospitalId,
+  }, "Clinic");
   const editImageInputRef = useRef(null);
   const [searchText, setSearchText] = useState("");
   const [specializationFilter, setSpecializationFilter] = useState("");
@@ -513,6 +521,10 @@ function Doctors() {
         lookup[String(branch.id)] = branch.name;
         return lookup;
       }, {}),
+    [branchOptions]
+  );
+  const scopedBranchIds = useMemo(
+    () => branchOptions.map((branch) => branch.id),
     [branchOptions]
   );
 
@@ -742,8 +754,7 @@ function Doctors() {
       setLoadingBranches(true);
 
       try {
-        const hospitalId = localStorage.getItem("hospitalId") || "";
-        const branches = await fetchBranchesForHospital(hospitalId);
+        const branches = await fetchBranchesForHospital(hospitalId, clinicName);
         if (!active) return;
 
         const options = buildBranchOptions(branches);
@@ -762,7 +773,7 @@ function Doctors() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [hospitalId, clinicName]);
 
   useEffect(() => {
     return () => {
@@ -774,7 +785,14 @@ function Doctors() {
 
   const filteredDoctors = useMemo(() => {
     const value = searchText.trim().toLowerCase();
-    const filtered = doctors.filter((doctor) => {
+    const scopedDoctors = doctors.filter((doctor) =>
+      recordBelongsToClinicScope(doctor, {
+        hospitalId,
+        clinicName,
+        branchIds: scopedBranchIds,
+      })
+    );
+    const filtered = scopedDoctors.filter((doctor) => {
       const matchesSearch =
         !value ||
         [
@@ -837,6 +855,9 @@ function Doctors() {
     });
   }, [
     doctors,
+    hospitalId,
+    clinicName,
+    scopedBranchIds,
     searchText,
     specializationFilter,
     statusFilter,
