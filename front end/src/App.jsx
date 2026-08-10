@@ -12,6 +12,7 @@ const NurseApp = lazy(() => import("./Nurse/NurseApp"));
 const LabApp = lazy(() => import("./Lab/LabApp"));
 const PatientRoutes = lazy(() => import("./pages/PATIENTS/PatientRoutes"));
 const UserProfilePage = lazy(() => import("./profile/UserProfilePage"));
+const LandingPage = lazy(() => import("./Landing/LandingPage"));
 const SuperAdminDashboard = lazy(() => import("./pages/SUPERADMIN/Dashboard/Dashboard"));
 const SuperAdminClinics = lazy(() => import("./pages/SUPERADMIN/Clinics/Clinics"));
 const SuperAdminClinicForm = lazy(() => import("./pages/SUPERADMIN/Clinics/ClinicForm"));
@@ -78,7 +79,7 @@ function App() {
           <Routes>
 
         {/* DEFAULT */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<LandingPage />} />
 
         {/* LOGIN */}
         <Route path="/login" element={<AdminLogin />} />

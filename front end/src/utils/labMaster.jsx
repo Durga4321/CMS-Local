@@ -71,18 +71,7 @@ const readToken = () => {
 
 const readTokenCandidates = () => {
   const pathToken = readToken();
-  return Array.from(new Set([
-    pathToken,
-    localStorage.getItem("doctorToken"),
-    localStorage.getItem("receptionistToken"),
-    localStorage.getItem("receptionToken"),
-    localStorage.getItem("labToken"),
-    localStorage.getItem("adminToken"),
-    localStorage.getItem("superAdminToken"),
-    localStorage.getItem("token"),
-    localStorage.getItem("authToken"),
-    "",
-  ].filter((value) => value !== null && value !== undefined)));
+  return pathToken ? [pathToken] : [""];
 };
 
 export const normalizeLabTest = (item = {}) => {
@@ -223,7 +212,8 @@ export const fetchLabMasterTests = async () => {
       const data = await response.json().catch(() => []);
       if (!response.ok) {
         lastError = new Error(data?.message || data?.title || `Unable to load lab test master (${response.status}).`);
-        continue;
+        if ((response.status === 401 || response.status === 403) && cached.length) return cached;
+        break;
       }
       const tests = normalizeLabTests([...parseLabMasterList(data), ...cached]);
       if (tests.length) {

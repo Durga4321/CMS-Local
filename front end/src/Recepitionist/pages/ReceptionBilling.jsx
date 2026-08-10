@@ -17,7 +17,7 @@ import {
 import { formatIndianCurrency } from "../../utils/format";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
-import { fetchLabMasterTests, normalizeLabTests } from "../../utils/labMaster";
+import { getCachedLabMasterTests, normalizeLabTests } from "../../utils/labMaster";
 import { clearPendingDiagnosticRequest, getPendingDiagnosticRequest } from "../../utils/diagnosticRequests";
 import { RECEPTION_RECENT_SERVICE_BILLS_KEY as RECENT_SERVICE_BILLS_STORAGE_KEY } from "../../utils/billingRevenue";
 import { BILLING_API_PATHS, getBillingApiPath } from "../../config/api";
@@ -369,19 +369,44 @@ const getPriceListItemName = (item = {}) =>
 const getPriceListItemKey = (item = {}, index = 0) =>
   String(firstValue(item.id, item.testId, item.labTestId, item.testCode, item.TestCode, getPriceListItemName(item), index) || index);
 
-const getBillingTotals = (rows = []) => {
+const normalizeDiscountPercent = (value) =>
+  Math.min(100, Math.max(0, Number(value) || 0));
+
+const getDiscountAmount = (amount, discountPercent) =>
+  Math.round(((Math.max(0, Number(amount) || 0) * normalizeDiscountPercent(discountPercent)) / 100) * 100) / 100;
+
+const readDiscountPercent = (bill = {}, baseAmount = 0) => {
+  for (const key of ["discountPercentage", "DiscountPercentage", "discountPercent", "DiscountPercent"]) {
+    if (bill?.[key] !== undefined && bill?.[key] !== null && bill?.[key] !== "") {
+      const explicitPercent = Number(bill[key]);
+      if (Number.isFinite(explicitPercent)) return normalizeDiscountPercent(explicitPercent);
+    }
+  }
+
+  const discountAmount = readAmount(bill, ["discount", "Discount", "discountAmount", "DiscountAmount"], 0);
+  const amount = Number(baseAmount) || 0;
+  return amount > 0 ? normalizeDiscountPercent((discountAmount / amount) * 100) : 0;
+};
+
+const getBillingTotals = (rows = [], discountPercent = 0) => {
   const subtotal = rows.reduce(
     (sum, row) => sum + (Number(row.unitPrice) || 0) * (Number(row.quantity) || 0),
     0
   );
   const cgst = subtotal * HALF_GST_RATE;
   const sgst = subtotal * HALF_GST_RATE;
+  const grossTotal = subtotal + cgst + sgst;
+  const discountPercentage = normalizeDiscountPercent(discountPercent);
+  const discountAmount = getDiscountAmount(grossTotal, discountPercentage);
   return {
     subtotal,
     cgst,
     sgst,
     gst: cgst + sgst,
-    total: subtotal + cgst + sgst,
+    grossTotal,
+    discountPercentage,
+    discountAmount,
+    total: Math.max(0, grossTotal - discountAmount),
   };
 };
 
@@ -536,10 +561,18 @@ const printServiceInvoice = ({
             </tbody>
             <tfoot>
               <tr>
-                <td colspan="${type === "pharmacy" ? 3 : 2}">Total</td>
+                <td colspan="${type === "pharmacy" ? 3 : 2}">Sub Total</td>
                 <td class="money">${amountFormat(totals.subtotal)}</td>
                 <td class="money">${amountFormat(totals.cgst)}</td>
                 <td class="money">${amountFormat(totals.sgst)}</td>
+                <td class="money">${amountFormat(totals.grossTotal ?? totals.total)}</td>
+              </tr>
+              <tr>
+                <td colspan="${type === "pharmacy" ? 6 : 5}">Discount (${Number(totals.discountPercentage || 0)}%)</td>
+                <td class="money">-${amountFormat(totals.discountAmount || 0)}</td>
+              </tr>
+              <tr>
+                <td colspan="${type === "pharmacy" ? 6 : 5}">Net Amount</td>
                 <td class="money">${amountFormat(totals.total)}</td>
               </tr>
             </tfoot>
@@ -584,18 +617,7 @@ const getInvoiceId = (invoice) =>
   ) || "";
 
 const hasBackendBillingId = (invoice) =>
-  Boolean(
-    firstValue(
-      invoice?.billingId,
-      invoice?.BillingId,
-      invoice?.billId,
-      invoice?.BillId,
-      invoice?.invoiceId,
-      invoice?.InvoiceId,
-      invoice?.backendSynced ? invoice?.id : "",
-      invoice?.backendSynced ? invoice?.Id : ""
-    )
-  );
+  Boolean(firstValue(invoice?.billingId, invoice?.BillingId, invoice?.billId, invoice?.BillId, invoice?.invoiceId, invoice?.InvoiceId));
 
 const updateBillingBill = async (bill, payload = {}) => {
   const billId = getInvoiceId(bill);
@@ -1123,13 +1145,60 @@ const normalizeServiceBill = (bill = {}) => {
 const billBelongsToMode = (bill = {}, mode = "consultation") =>
   getServiceBillType(bill) === String(mode || "consultation");
 
+const getBillAppointmentId = (bill = {}) =>
+  firstValue(
+    bill.appointmentId,
+    bill.AppointmentId,
+    bill.appointment?.appointmentId,
+    bill.appointment?.AppointmentId,
+    bill.appointment?.id,
+    bill.appointment?.Id
+  ) || "";
+
+const isBackendApiBill = (bill = {}) =>
+  Boolean(bill.__sourcePath || bill.sourcePath || bill.apiPath);
+
+const getServiceBillMergeKey = (bill = {}) => {
+  const type = getServiceBillType(bill);
+  const appointmentId = getBillAppointmentId(bill);
+  if (appointmentId) return `${type}:appointment:${appointmentId}`;
+
+  const invoiceNo = String(bill.invoiceNo || bill.invoiceNumber || bill.billNumber || bill.billNo || "").trim();
+  if (invoiceNo) return `${type}:invoice:${invoiceNo}`;
+
+  const billId = getInvoiceId(bill);
+  if (billId) return `${type}:id:${billId}`;
+
+  return `${type}:draft:${bill.createdAt || bill.patientId || Math.random()}`;
+};
+
+const mergeServiceBillPair = (existing = {}, incoming = {}) => {
+  const incomingFromBackend = isBackendApiBill(incoming);
+  const existingFromBackend = isBackendApiBill(existing);
+  const existingRows = Array.isArray(existing.rows) ? existing.rows : [];
+  const incomingRows = Array.isArray(incoming.rows) ? incoming.rows : [];
+  const merged = incomingFromBackend
+    ? { ...existing, ...incoming }
+    : { ...incoming, ...existing };
+
+  return {
+    ...merged,
+    rows: incomingRows.length ? incomingRows : existingRows,
+    totals: incomingFromBackend
+      ? incoming.totals || existing.totals
+      : existingFromBackend
+        ? existing.totals
+        : incoming.totals || existing.totals,
+  };
+};
+
 const mergeRecentServiceBills = (...billGroups) => {
   const byInvoice = new Map();
 
   billGroups.flat().filter(Boolean).map(normalizeServiceBill).forEach((bill) => {
-    const key = `${getServiceBillType(bill)}:${String(bill.invoiceNo || bill.invoiceNumber || bill.billNumber || `${bill.createdAt}-${bill.patientId}`)}`;
+    const key = getServiceBillMergeKey(bill);
     if (!key) return;
-    byInvoice.set(key, { ...(byInvoice.get(key) || {}), ...bill });
+    byInvoice.set(key, byInvoice.has(key) ? mergeServiceBillPair(byInvoice.get(key), bill) : bill);
   });
 
   return Array.from(byInvoice.values())
@@ -1137,35 +1206,45 @@ const mergeRecentServiceBills = (...billGroups) => {
     .slice(0, 30);
 };
 
+const getLabTestsFromBillingRecords = (records = []) => {
+  const itemKeys = [
+    "items",
+    "Items",
+    "lineItems",
+    "LineItems",
+    "billItems",
+    "BillItems",
+    "billingItems",
+    "BillingItems",
+    "serviceItems",
+    "ServiceItems",
+    "tests",
+    "Tests",
+    "labTests",
+    "LabTests",
+    "diagnosticTests",
+    "DiagnosticTests",
+  ];
+
+  return normalizeLabTests(
+    parseList(records).flatMap((record) => {
+      const nestedItems = itemKeys.flatMap((key) => (Array.isArray(record?.[key]) ? record[key] : []));
+      return [
+        ...nestedItems,
+        {
+          testName: record?.testName || record?.TestName || record?.serviceName || record?.ServiceName || record?.item || record?.Item,
+          category: record?.category || record?.Category || record?.department || record?.Department || "Lab",
+          price: readAmount(record, AMOUNT_KEYS.lab, readAmount(record, AMOUNT_KEYS.total, 0)),
+        },
+      ];
+    })
+  );
+};
+
 const syncRecentServiceBillsToBackend = async () => {
   // Do not automatically POST cached/local bills to the backend.
   // Cached rows may not contain a valid AppointmentId and caused repeated 400 responses.
   return readRecentServiceBills();
-};
-
-const fetchInvoiceDetails = async (invoice) => {
-  const invoiceId = getInvoiceId(invoice);
-  if (!invoiceId) return invoice;
-
-  const detailPaths = [
-    `${getBillingApiPath(getServiceBillType(invoice))}/${invoiceId}`,
-  ];
-
-  for (const path of detailPaths) {
-    try {
-      const details = await requestJson(path);
-      if (details && typeof details === "object") {
-        return {
-          ...invoice,
-          ...(Array.isArray(details) ? details[0] : details),
-        };
-      }
-    } catch {
-      // Try the next supported detail shape.
-    }
-  }
-
-  return invoice;
 };
 
 function ReceptionBilling() {
@@ -1287,16 +1366,12 @@ function ReceptionBilling() {
           getLatestInvoice(scopedInvoices) ||
           getLatestInvoice(fallbackScopedInvoices) ||
           (invoicesResult.status !== "fulfilled" ? readStoredLatestInvoice() : null);
-        const latestInvoiceDetails = latestInvoice
-          ? await fetchInvoiceDetails(latestInvoice)
-          : null;
-
         setAppointments(list);
         setForm((prev) => ({
           ...prev,
           appointmentId: prev.appointmentId || "",
         }));
-        setInvoice(latestInvoiceDetails);
+        setInvoice(latestInvoice);
         const syncedRecentBills = await syncRecentServiceBillsToBackend();
         setRecentServiceBills(mergeRecentServiceBills(invoiceList, syncedRecentBills));
       } catch (error) {
@@ -1342,23 +1417,24 @@ function ReceptionBilling() {
 
   useEffect(() => {
     let isActive = true;
+
+    if (billingMode !== "diagnostic") {
+      setLabMasterLoading(false);
+      setLabMasterPriceList([]);
+      return () => {
+        isActive = false;
+      };
+    }
+
     setLabMasterLoading(true);
 
-    const loadLabMasterTests = async () => {
-      try {
-        return await fetchLabMasterTests();
-      } catch (primaryError) {
-        console.warn("Unable to load lab master with shared helper.", primaryError);
-        const data = await requestJson("Lab/master");
-        return normalizeLabTests(data);
-      }
-    };
-
-    loadLabMasterTests()
+    requestJson(getBillingApiPath("diagnostic"))
       .then((tests) => {
         if (!isActive) return;
+        const billingTests = getLabTestsFromBillingRecords(tests);
+        const cachedTests = getCachedLabMasterTests();
         setLabMasterPriceList(
-          tests.map((test) => ({
+          normalizeLabTests([...billingTests, ...cachedTests]).map((test) => ({
             ...test,
             diagnosis: test.diagnosis || test.category || "Lab",
             item: getPriceListItemName(test),
@@ -1367,8 +1443,17 @@ function ReceptionBilling() {
         );
       })
       .catch((err) => {
-        console.warn("Unable to load lab master tests.", err);
-        if (isActive) setLabMasterPriceList([]);
+        console.warn("Unable to load diagnostic billing tests.", err);
+        if (isActive) {
+          setLabMasterPriceList(
+            getCachedLabMasterTests().map((test) => ({
+              ...test,
+              diagnosis: test.diagnosis || test.category || "Lab",
+              item: getPriceListItemName(test),
+              price: Number(test.price) || 0,
+            })).filter((test) => test.item)
+          );
+        }
       })
       .finally(() => {
         if (isActive) setLabMasterLoading(false);
@@ -1377,7 +1462,7 @@ function ReceptionBilling() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [billingMode]);
 
   const clearMessageTimer = () => {
     if (messageTimer.current) {
@@ -1539,7 +1624,7 @@ function ReceptionBilling() {
     ...row,
     quantity: billingMode === "pharmacy" ? Number(row.quantity) || 1 : 1,
   }));
-  const serviceDisplayTotals = getBillingTotals(serviceDisplayRows);
+  const serviceDisplayTotals = getBillingTotals(serviceDisplayRows, form.discount);
   const visibleRecentServiceBills = useMemo(
     () => {
       if (billingMode === "consultation") {
@@ -1570,7 +1655,7 @@ function ReceptionBilling() {
 
   const buildServiceInvoiceDetails = () => {
     const rows = getValidServiceRows();
-    const totals = getBillingTotals(rows);
+    const totals = getBillingTotals(rows, form.discount);
     const hasAppointment = Boolean(selectedAppointment);
     const invoiceNo = `${billingMode === "pharmacy" ? "PH" : "DT"}-${String(Date.now()).slice(-8)}`;
     const createdAt = new Date().toISOString();
@@ -1609,20 +1694,42 @@ function ReceptionBilling() {
   const buildServiceBillingPayload = (details) => {
     const isPharmacy = details.type === "pharmacy";
     const subtotal = Number(details.totals.subtotal || 0);
-    const discount = Math.max(0, Number(form.discount || 0));
+    const discountPercentage = normalizeDiscountPercent(form.discount);
+    const discount = getDiscountAmount(Number(details.totals.grossTotal ?? details.totals.total ?? subtotal), discountPercentage);
+    const appointmentId = Number(details.appointmentId || 0);
+    const patientId = Number(details.patientId || selectedAppointment?.patientId || selectedAppointment?.PatientId || 0);
+    const branchId = Number(details.branchId || receptionistScope.branchId || 0);
+    const totalAmount = Number(details.totals.total || 0);
+    const labCharge = isPharmacy ? 0 : subtotal;
+    const medicineCharge = isPharmacy ? subtotal : 0;
 
     return {
-      appointmentId: Number(details.appointmentId || 0),
+      appointmentId,
+      AppointmentId: appointmentId,
+      patientId,
+      PatientId: patientId,
+      branchId,
+      BranchId: branchId,
       billingType: isPharmacy ? "Pharmacy" : "Lab",
+      BillingType: isPharmacy ? "Pharmacy" : "Lab",
       consultationCharge: 0,
-      // Lab amount is calculated by the backend from prescribed LabOrders.
-      labCharge: 0,
-      // Pharmacy is manual until a pharmacy/inventory module is added.
-      medicineCharge: isPharmacy ? subtotal : 0,
+      ConsultationCharge: 0,
+      labCharge,
+      LabCharge: labCharge,
+      medicineCharge,
+      MedicineCharge: medicineCharge,
       discount,
+      Discount: discount,
+      discountPercentage,
+      DiscountPercentage: discountPercentage,
       gstPercentage: 18,
+      GstPercentage: 18,
+      totalAmount,
+      TotalAmount: totalAmount,
       paymentMode: String(details.paymentMode || "Cash"),
+      PaymentMode: String(details.paymentMode || "Cash"),
       status: "Paid",
+      Status: "Paid",
     };
   };
 
@@ -1652,8 +1759,8 @@ function ReceptionBilling() {
     }
 
     const discount = Number(form.discount || 0);
-    if (discount < 0 || discount > Number(details.totals.subtotal || 0)) {
-      const text = "Discount cannot be negative or greater than subtotal.";
+    if (discount < 0 || discount > 100) {
+      const text = "Discount percentage must be between 0 and 100.";
       showMessage(text, "error");
       toast.error(text);
       return false;
@@ -1689,6 +1796,10 @@ function ReceptionBilling() {
         BillingType: details.type === "pharmacy" ? "Pharmacy" : "Lab",
         serviceType: details.type === "pharmacy" ? "Pharmacy Billing" : "Diagnostic Billing",
         ServiceType: details.type === "pharmacy" ? "Pharmacy Billing" : "Diagnostic Billing",
+        discountPercentage: details.totals.discountPercentage,
+        discountPercent: details.totals.discountPercentage,
+        discountAmount: details.totals.discountAmount,
+        grossTotal: details.totals.grossTotal,
         totalAmount: details.totals.total,
         paidAmount: details.totals.total,
         backendSynced: true,
@@ -1721,6 +1832,11 @@ function ReceptionBilling() {
       paymentMode: validateSelected(form.paymentMode, "a payment mode"),
       medicineCharges: validateNumeric(form.medicineCharges || 0, "Medicine charges"),
       labCharges: validateNumeric(form.labCharges || 0, "Lab charges"),
+      discount:
+        validateNumeric(form.discount || 0, "Discount") ||
+        (Number(form.discount || 0) < 0 || Number(form.discount || 0) > 100
+          ? "Discount percentage must be between 0 and 100."
+          : ""),
     };
 
     Object.keys(nextErrors).forEach((key) => {
@@ -1784,20 +1900,48 @@ function ReceptionBilling() {
 
     const consultationCharge = Number(form.medicineCharges || 0) + Number(form.labCharges || 0);
     const subtotal = consultationCharge;
-    const discount = Math.max(0, Number(form.discount || 0));
+    const discountPercentage = normalizeDiscountPercent(form.discount);
+    const discount = getDiscountAmount(subtotal, discountPercentage);
     const taxableAmount = Math.max(0, subtotal - discount);
     const totalAmount = taxableAmount;
+    const appointmentId = Number(form.appointmentId);
+    const patientId = Number(getAppointmentPatientId(selectedAppointment) || selectedAppointment?.patientId || selectedAppointment?.PatientId || 0);
+    const branchId = Number(
+      firstValue(
+        selectedAppointment?.branchId,
+        selectedAppointment?.BranchId,
+        receptionistScope.branchId,
+        0
+      )
+    ) || 0;
 
     const body = {
-      appointmentId: Number(form.appointmentId),
+      appointmentId,
+      AppointmentId: appointmentId,
+      patientId,
+      PatientId: patientId,
+      branchId,
+      BranchId: branchId,
       billingType: "OP",
+      BillingType: "OP",
       consultationCharge,
+      ConsultationCharge: consultationCharge,
       labCharge: 0,
+      LabCharge: 0,
       medicineCharge: 0,
+      MedicineCharge: 0,
       discount,
+      Discount: discount,
+      discountPercentage,
+      DiscountPercentage: discountPercentage,
       gstPercentage: 0,
+      GstPercentage: 0,
+      totalAmount,
+      TotalAmount: totalAmount,
       paymentMode: String(form.paymentMode || "Cash"),
+      PaymentMode: String(form.paymentMode || "Cash"),
       status: "Paid",
+      Status: "Paid",
     };
 
     try {
@@ -1833,6 +1977,9 @@ function ReceptionBilling() {
         labCharge: 0,
         labCharges: 0,
         subtotal,
+        discountPercentage,
+        discountPercent: discountPercentage,
+        discountAmount: discount,
         taxableAmount,
         cgstAmount: 0,
         sgstAmount: 0,
@@ -1961,7 +2108,8 @@ function ReceptionBilling() {
         normalizedRows.map((row) => ({
           ...row,
           quantity: billType === "pharmacy" ? row.quantity : 1,
-        }))
+        })),
+        readDiscountPercent(bill, readAmount(bill, ["grossTotal", "GrossTotal", "subtotal", "Subtotal", "totalAmount", "TotalAmount"], 0))
       );
 
     printServiceInvoice({
@@ -1993,7 +2141,14 @@ function ReceptionBilling() {
         paymentMode: bill.paymentMode || prev.paymentMode,
         medicineCharges: formatAmountInput(readAmount(bill, AMOUNT_KEYS.medicine, 0), { emptyValue: "" }),
         labCharges: formatAmountInput(readAmount(bill, AMOUNT_KEYS.lab, 0), { emptyValue: "" }),
-        discount: formatAmountInput(readAmount(bill, ["discount", "Discount"], 0), { emptyValue: "0" }),
+        discount: formatAmountInput(
+          readDiscountPercent(
+            bill,
+            readAmount(bill, ["subtotal", "Subtotal", "grossTotal", "GrossTotal"], 0) ||
+              readAmount(bill, AMOUNT_KEYS.total, 0) + readAmount(bill, ["discount", "Discount", "discountAmount", "DiscountAmount"], 0)
+          ),
+          { emptyValue: "0" }
+        ),
       }));
       showMessage("OP bill loaded for editing. Submit again to generate the updated invoice.", "success", { autoHide: true });
       return;
@@ -2018,6 +2173,13 @@ function ReceptionBilling() {
       ...prev,
       appointmentId: bill.appointmentId ? String(bill.appointmentId) : prev.appointmentId,
       paymentMode: bill.paymentMode || prev.paymentMode,
+      discount: formatAmountInput(
+        readDiscountPercent(
+          bill,
+          readAmount(bill, ["grossTotal", "GrossTotal", "subtotal", "Subtotal", "totalAmount", "TotalAmount"], 0)
+        ),
+        { emptyValue: "0" }
+      ),
     }));
     showMessage("Bill loaded for editing. Submit again to generate the updated invoice.", "success", { autoHide: true });
   };
@@ -2119,11 +2281,17 @@ function ReceptionBilling() {
     });
     const opCharge =
       readAmount(activeInvoice, AMOUNT_KEYS.consultation, 0) ||
+      readAmount(activeInvoice, ["subtotal", "Subtotal"], 0) ||
       readAmount(activeInvoice, AMOUNT_KEYS.total, invoiceAmounts.total);
-    const discount = readAmount(activeInvoice, ["discount", "Discount", "discountAmount", "DiscountAmount"], 0);
+    const discountPercent = readDiscountPercent(activeInvoice, opCharge);
+    const discount = readAmount(
+      activeInvoice,
+      ["discountAmount", "DiscountAmount", "discount", "Discount"],
+      getDiscountAmount(opCharge, discountPercent)
+    );
     const opRows = [
-      { label: "OP Consultation Charges", amount: opCharge + discount },
-      ...(discount > 0 ? [{ label: "Discount", amount: -discount }] : []),
+      { label: "OP Consultation Charges", amount: opCharge },
+      { label: `Discount (${discountPercent}%)`, amount: -discount },
     ];
     const opTotal = Math.max(0, opRows.reduce((sum, row) => sum + Number(row.amount || 0), 0));
 
@@ -2572,15 +2740,19 @@ function ReceptionBilling() {
           {fieldErrors.paymentMode ? <small className="rc-field-error">{fieldErrors.paymentMode}</small> : null}
         </label>
         <label>
-          <span>Discount</span>
+          <span>Discount (%)</span>
           <input
             type="number"
             min="0"
+            max="100"
             step="0.01"
             value={form.discount}
-            placeholder="0.00"
+            placeholder="0"
             onChange={(e) => setField("discount", e.target.value)}
+            onBlur={() => formatAmountField("discount")}
+            className={fieldErrors.discount ? "is-invalid" : ""}
           />
+          {fieldErrors.discount ? <small className="rc-field-error">{fieldErrors.discount}</small> : null}
         </label>
         {billingMode === "consultation" ? (
           <>

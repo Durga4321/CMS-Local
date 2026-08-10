@@ -152,12 +152,17 @@ const timeKeys = ["time", "slot", "Slot", "startTime", "StartTime", "slotTime", 
 const normalizeDateKey = (value) => {
   const text = String(value || "").trim();
   if (!text) return "";
-  const match = text.match(/^(\d{4}-\d{2}-\d{2})/);
-  if (match) return match[1];
+  const isoMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/);
+  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+
+  const dmyMatch = text.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:$|[\s,])/);
+  if (dmyMatch) {
+    return `${dmyMatch[3]}-${String(dmyMatch[2]).padStart(2, "0")}-${String(dmyMatch[1]).padStart(2, "0")}`;
+  }
 
   const parsed = new Date(text);
   if (Number.isNaN(parsed.getTime())) return text.toLowerCase();
-  return parsed.toISOString().slice(0, 10);
+  return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`;
 };
 
 const parseTimeToMinutes = (value) => {

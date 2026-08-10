@@ -55,6 +55,7 @@ function ReceptionMedicalHistory({
   apiRequest = defaultRequestJson,
   getScope = getReceptionistScope,
   scopeRecords = scopeReceptionistRecords,
+  buildHistoryPayload = withReceptionistScopePayload,
 }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -127,19 +128,34 @@ function ReceptionMedicalHistory({
   const fetchHistories = useCallback(async (patientList) => {
     try {
       setLoading(true);
-      const nextPatients = patientList?.length ? patientList : await loadPatients();
+      let nextPatients = patientList?.length ? patientList : await loadPatients();
+      if (
+        requestedPatientId &&
+        !nextPatients.some((patient) => String(patient.id || patient.patientId || patient.PatientId) === requestedPatientId)
+      ) {
+        nextPatients = [
+          ...nextPatients,
+          { id: requestedPatientId, patientId: requestedPatientId, name: `Patient ${requestedPatientId}` },
+        ];
+      }
       setPatients(nextPatients);
 
       const historyResults = await Promise.all(
         nextPatients.map((patient) =>
           apiRequest(`MedicalHistory/${patient.id}`)
-            .then((data) => ({ ...data, patientId: data?.patientId || patient.id }))
+            .then((data) =>
+              parseList(data).length
+                ? parseList(data).map((record) => ({ ...record, patientId: record?.patientId || patient.id }))
+                : data
+                  ? [{ ...data, patientId: data?.patientId || patient.id }]
+                  : []
+            )
             .catch(() => null)
         )
       );
 
       setHistories(
-        historyResults.filter(
+        historyResults.flat().filter(
           (record) =>
             record &&
             hasHistoryContent(record)
@@ -151,7 +167,7 @@ function ReceptionMedicalHistory({
     } finally {
       setLoading(false);
     }
-  }, [loadPatients]);
+  }, [loadPatients, requestedPatientId]);
 
   const fetchPatients = useCallback(async () => {
     try {
@@ -265,7 +281,7 @@ function ReceptionMedicalHistory({
       return;
     }
 
-    const body = withReceptionistScopePayload({
+    const body = buildHistoryPayload({
       patientId,
       allergies: form.allergies.trim(),
       chronicDiseases: form.chronicDiseases.trim(),

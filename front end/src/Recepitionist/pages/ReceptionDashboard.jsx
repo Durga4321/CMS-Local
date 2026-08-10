@@ -60,47 +60,31 @@ const getAppointmentDate = (appointment = {}) =>
         "bookingDate",
         "appointmentDateTime",
         "dateTime",
-        "createdAt",
       ]) ??
       ""
   ).trim();
 
+const getLocalDateKey = (value = "") => {
+  const text = String(value || "").trim();
+  if (!text) return "";
+
+  const isoMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/);
+  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+
+  const dmyMatch = text.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:$|[\s,])/);
+  if (dmyMatch) {
+    return `${dmyMatch[3]}-${String(dmyMatch[2]).padStart(2, "0")}-${String(dmyMatch[1]).padStart(2, "0")}`;
+  }
+
+  const parsedDate = new Date(text);
+  if (Number.isNaN(parsedDate.getTime())) return "";
+  return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
+};
+
 const isTodayAppointment = (appointment = {}, todayDate = formatToday()) => {
   if (appointment.__dashboardToday) return true;
 
-  const value = getAppointmentDate(appointment);
-  if (!value) return false;
-
-  if (value.startsWith(todayDate)) return true;
-
-  const isoDateTimeMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
-  if (isoDateTimeMatch) {
-    const [, year, month, day, hour, minute, second = "00"] = isoDateTimeMatch;
-    if (hour === "00" && minute === "00" && second === "00") {
-      return `${year}-${month}-${day}` === todayDate;
-    }
-
-    const hasTimezone = /(?:z|[+-]\d{2}:?\d{2})$/i.test(value);
-    const date = new Date(hasTimezone ? value : `${value}Z`);
-    if (!Number.isNaN(date.getTime())) {
-      const localDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      return localDate === todayDate;
-    }
-  }
-
-  const [dateDay, dateMonth, dateYear] = value.split(/[/-]/).map((part) => part.trim());
-  if (dateYear?.length === 4 && dateMonth && dateDay) {
-    const normalizedDate = `${dateYear}-${dateMonth.padStart(2, "0")}-${dateDay.padStart(2, "0")}`;
-    if (normalizedDate === todayDate) return true;
-  }
-
-  const parsedDate = new Date(value);
-  if (Number.isNaN(parsedDate.getTime())) return false;
-
-  const year = parsedDate.getFullYear();
-  const month = String(parsedDate.getMonth() + 1).padStart(2, "0");
-  const day = String(parsedDate.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}` === todayDate;
+  return getLocalDateKey(getAppointmentDate(appointment)) === todayDate;
 };
 
 const getAppointmentPatientName = (appointment = {}) =>
