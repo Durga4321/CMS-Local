@@ -91,6 +91,28 @@ const getErrorMessage = async (response, fallback) => {
   }
 };
 
+const normalizeRole = (value = "") =>
+  String(value || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
+
+const getStaffRole = (record = {}) =>
+  normalizeRole(
+    readFirst(record, [
+      "role",
+      "Role",
+      "roleName",
+      "RoleName",
+      "type",
+      "Type",
+      "staffRole",
+      "StaffRole",
+      "userRole",
+      "UserRole",
+    ])
+  );
+
+const hasRoleMetadata = (record = {}) => Boolean(getStaffRole(record));
+const isNurseRecord = (record = {}) => getStaffRole(record) === "nurse";
+
 const buildStaffFormData = (payload = {}, imageFile = null) => {
   const body = new FormData();
   body.append("Name", payload.Name || "");
@@ -197,9 +219,13 @@ function Nurses() {
 
         const data = await response.json().catch(() => null);
         const list = parseList(data);
-        if (list.length) {
-          return list;
+        const roleFilteredList = path.toLowerCase().includes("staff")
+          ? list.filter(isNurseRecord)
+          : list.filter((item) => !hasRoleMetadata(item) || isNurseRecord(item));
+        if (roleFilteredList.length) {
+          return roleFilteredList;
         }
+        if (list.length) continue;
 
         // If response is OK and zero results, return empty list immediately.
         return list;

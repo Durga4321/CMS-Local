@@ -1,7 +1,7 @@
 import React from "react";
 import ReceptionMedicalHistory from "../Recepitionist/pages/ReceptionMedicalHistory";
 import { nursePatientsRequestJson } from "./NursePatients";
-import { getNurseScope, scopeNurseRecords, withNurseScopePayload } from "./nurseScope";
+import { getNurseScope, scopeNurseRecords } from "./nurseScope";
 
 const NURSE_MEDICAL_HISTORY_STORAGE_KEY = "nurseMedicalHistoryRecords";
 
@@ -31,27 +31,38 @@ const writeLocalHistories = (records) => {
 const getLocalPatientHistory = (patientId) =>
   strictScopeNurseRecords(readLocalHistories()).find((record) => String(record.patientId) === String(patientId)) || null;
 
-const upsertLocalHistory = (history) => {
-  const scopedHistory = withNurseScopePayload(history);
-  const patientId = String(scopedHistory.patientId || scopedHistory.PatientId || "").trim();
-  const id = scopedHistory.id || scopedHistory.medicalHistoryId || scopedHistory.historyId || `local-${patientId || Date.now()}`;
-  const nextRecord = {
-    ...scopedHistory,
-    id,
-    medicalHistoryId: id,
-    patientId,
-    updatedAt: new Date().toISOString(),
-  };
-  const nextRecords = [
-    nextRecord,
-    ...readLocalHistories().filter(
-      (record) =>
-        String(record.id || record.medicalHistoryId || record.historyId) !== String(id) &&
-        String(record.patientId) !== patientId
-    ),
-  ];
-  writeLocalHistories(nextRecords);
-  return nextRecord;
+const normalizePatientHistoryResponse = (data, patientId) => {
+  const records = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.records)
+        ? data.records
+        : Array.isArray(data?.result)
+          ? data.result
+          : data
+            ? [data]
+            : [];
+  const matchedRecords = records
+    .filter(Boolean)
+    .filter((record) => {
+      const recordPatientId =
+        record.patientId ||
+        record.PatientId ||
+        record.patient?.id ||
+        record.patient?.patientId ||
+        record.Patient?.Id ||
+        record.Patient?.PatientId ||
+        "";
+      return !recordPatientId || String(recordPatientId) === String(patientId);
+    })
+    .map((record) => ({
+      ...record,
+      patientId: record.patientId || record.PatientId || patientId,
+    }));
+
+  if (!matchedRecords.length) return null;
+  return matchedRecords.length === 1 ? matchedRecords[0] : matchedRecords;
 };
 
 const deleteLocalHistory = (historyId) => {
@@ -87,30 +98,40 @@ export const nurseMedicalHistoryRequestJson = async (path, options = {}) => {
     const patientId = patientHistoryMatch[1];
     return tryRequests(
       [
-        () => nursePatientsRequestJson(`Nurse/medical-history/${patientId}`, options),
-        () => nursePatientsRequestJson(`Nurse/patients/${patientId}/medical-history`, options),
-        () => nursePatientsRequestJson(raw, options),
+        () =>
+          nursePatientsRequestJson(`MedicalHistory/all/${patientId}`, options).then((data) =>
+            normalizePatientHistoryResponse(data, patientId)
+          ),
+        () =>
+          nursePatientsRequestJson(raw, options).then((data) =>
+            normalizePatientHistoryResponse(data, patientId)
+          ),
       ],
       () => getLocalPatientHistory(patientId)
     );
   }
 
   if (method === "POST" && /^MedicalHistory$/i.test(raw)) {
-    const body = JSON.parse(options.body || "{}");
-    return tryRequests(
-      [
-        () => nursePatientsRequestJson("Nurse/medical-history", options),
-        () => nursePatientsRequestJson(raw, options),
-      ],
-      () => upsertLocalHistory(body)
-    );
+    const response = await nursePatientsRequestJson(raw, options);
+    try {
+      const body = JSON.parse(options.body || "{}");
+      if (body.patientId) {
+        const saved = response && typeof response === "object" ? response : body;
+        const records = readLocalHistories().filter(
+          (record) => String(record.patientId) !== String(body.patientId)
+        );
+        writeLocalHistories([...records, { ...body, ...saved, patientId: saved.patientId || body.patientId }]);
+      }
+    } catch {
+      // Ignore local cache failures; the backend response already succeeded.
+    }
+    return response;
   }
 
   if (method === "DELETE" && patientHistoryMatch) {
     const historyId = patientHistoryMatch[1];
     return tryRequests(
       [
-        () => nursePatientsRequestJson(`Nurse/medical-history/${historyId}`, options),
         () => nursePatientsRequestJson(raw, options),
       ],
       () => {
@@ -141,6 +162,7 @@ function NurseMedicalHistory() {
       apiRequest={nurseMedicalHistoryRequestJson}
       getScope={getNurseScope}
       scopeRecords={strictScopeNurseRecords}
+      buildHistoryPayload={(payload) => payload}
     />
   );
 }

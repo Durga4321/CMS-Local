@@ -87,13 +87,9 @@ const isToday = (value) => {
   return date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
 };
 
-const isPastDate = (value) => {
-  const date = new Date(value || "");
-  if (Number.isNaN(date.getTime())) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  date.setHours(0, 0, 0, 0);
-  return date < today;
+const isCurrentLabWork = (record = {}) => {
+  const dateValue = getRecordDateValue(record);
+  return isToday(dateValue) || (!dateValue && !isDone(record));
 };
 
 const normalizedStatus = (record = {}) =>
@@ -124,6 +120,49 @@ const getPatientTestNames = (record = {}) => {
     .map((name) => String(name).trim())
     .filter(Boolean);
   return Array.from(new Set(names)).join(", ") || "-";
+};
+
+const getPatientGroupKey = (record = {}) => {
+  const appointmentId = normalizeId(readFirst(record, [
+    "appointmentId", "AppointmentId", "appointment.id", "appointment.appointmentId", "Appointment.Id", "Appointment.AppointmentId",
+  ], ""));
+  if (appointmentId) return `appointment:${appointmentId}`;
+
+  const patientId = normalizeId(readFirst(record, [
+    "patientId", "PatientId", "patient.id", "patient.patientId", "Patient.Id", "Patient.PatientId",
+  ], ""));
+  const patientName = normalizeText(readFirst(record, ["patientName", "PatientName", "patient.name", "Patient.Name", "name", "Name"], ""));
+  const visitDate = normalizeText(getRecordDateValue(record));
+  return `patient:${patientId || patientName}:${visitDate}`;
+};
+
+const mergeLabOrderRows = (rows = []) => {
+  const grouped = new Map();
+
+  rows.forEach((row) => {
+    const key = getPatientGroupKey(row);
+    const existing = grouped.get(key);
+    if (!existing) {
+      grouped.set(key, row);
+      return;
+    }
+
+    const testNames = [
+      ...String(existing.__labTestNames || "").split(","),
+      ...String(row.__labTestNames || "").split(","),
+    ]
+      .map((name) => name.trim())
+      .filter((name) => name && name !== "-");
+
+    grouped.set(key, {
+      ...existing,
+      ...row,
+      __labTestNames: Array.from(new Set(testNames)).join(", ") || "-",
+      __groupedRows: [...(existing.__groupedRows || [existing]), row],
+    });
+  });
+
+  return Array.from(grouped.values());
 };
 
 const enrichLabRow = (row = {}) => ({
@@ -165,7 +204,7 @@ function LabDashboard() {
           .filter(isDiagnosticRecord)
           .filter((row) => belongsToLabScope(row));
         setDashboard(source);
-        const enrichedRows = scopedRows.map(enrichLabRow);
+        const enrichedRows = mergeLabOrderRows(scopedRows.map(enrichLabRow));
         setLabRows(enrichedRows);
         setRecentOrders(enrichedRows.slice(0, 10));
       } catch (loadError) {
@@ -188,8 +227,8 @@ function LabDashboard() {
     };
   }, []);
 
-  const todayOrders = labRows.filter((row) => isToday(getRecordDateValue(row)));
-  const pendingOrders = labRows.filter((row) => isPastDate(getRecordDateValue(row)) && !isDone(row));
+  const todayOrders = labRows.filter(isCurrentLabWork);
+  const pendingOrders = labRows.filter((row) => !isDone(row));
   const sampleNeeded = labRows.filter((row) => !isDone(row));
   const inProgress = labRows.filter(isInProgress);
   const completedToday = labRows.filter((row) => isToday(getRecordDateValue(row)) && isCompleted(row));

@@ -1602,6 +1602,12 @@
   font-size: 10px;
 }
 
+.rc-patient-modal .rc-required-mark {
+  color: #ef4444;
+  margin-left: 3px;
+  font-weight: 800;
+}
+
 .rc-patient-modal .rc-modal-actions {
   margin-top: 10px;
 }

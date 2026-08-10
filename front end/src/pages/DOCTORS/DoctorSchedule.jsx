@@ -523,23 +523,19 @@ const fetchDaySlots = async (doctorId, branchId, date, token, options = {}) => {
   if (!doctorId || !branchId || !date) return [];
   const { requireExplicitBranch = false } = options;
 
-  const query = new URLSearchParams({
-    doctorId: String(doctorId),
-    branchId: String(branchId),
-    date,
-  }).toString();
-  const response = await fetch(`${SCHEDULE_API}/day-slots?${query}`, {
-    headers: {
-      "ngrok-skip-browser-warning": "true",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
+  let rows = [];
+  const schedule = await fetchDoctorSchedule(doctorId, branchId, token).catch(() => null);
+  if (schedule) {
+    rows = parseListResponse(schedule);
+    if (!rows.length) rows = buildSlotsFromScheduleForDate(schedule, doctorId, branchId, date);
+  }
 
-  if (!response.ok) return [];
+  if (!rows.length) return [];
 
-  const rows = parseListResponse(await response.json().catch(() => []));
   return rows
     .filter((slot) => {
+      const slotDate = getSlotDateValue(slot);
+      if (slotDate && slotDate !== date) return false;
       const explicitBranchId = getExplicitRecordBranchId(slot);
       if (requireExplicitBranch) return explicitBranchId === String(branchId);
       return !explicitBranchId || explicitBranchId === String(branchId);
@@ -696,11 +692,78 @@ const buildPreviewSlotsFromPayload = (payload) => {
   return slots;
 };
 
+const buildSlotsFromScheduleForDate = (schedule = {}, doctorId, branchId, date) => {
+  if (!schedule || !date) return [];
+
+  const scheduleDays = parseScheduleDays(schedule);
+  const parsedDate = parseDateInput(date);
+  const dayName = parsedDate
+    ? DAY_MAPPING.find((day) => day.dayIndex === parsedDate.getDay())?.full
+    : "";
+  const rawDates =
+    schedule.dates ||
+    schedule.Dates ||
+    schedule.scheduledDates ||
+    schedule.ScheduledDates ||
+    [];
+  const scheduledDates = Array.isArray(rawDates)
+    ? rawDates.map((value) => String(value).slice(0, 10)).filter(Boolean)
+    : [];
+  const dateAllowed =
+    scheduledDates.length > 0
+      ? scheduledDates.includes(date)
+      : !scheduleDays.length || scheduleDays.includes(dayName);
+
+  if (!dateAllowed || schedule.isLeave || schedule.IsLeave) return [];
+
+  const resolvedTimes = resolveScheduleTimes({
+    workStart: parseScheduleTimeValue(schedule, [
+      "WorkStart",
+      "workStart",
+      "StartTime",
+      "startTime",
+      "start",
+    ]),
+    workEnd: parseScheduleTimeValue(schedule, [
+      "WorkEnd",
+      "workEnd",
+      "EndTime",
+      "endTime",
+      "end",
+    ]),
+    breakStart: parseScheduleTimeValue(schedule, [
+      "BreakStart",
+      "breakStart",
+      "BreakStartTime",
+      "breakStartTime",
+    ]),
+    breakEnd: parseScheduleTimeValue(schedule, [
+      "BreakEnd",
+      "breakEnd",
+      "BreakEndTime",
+      "breakEndTime",
+    ]),
+    slotDuration:
+      Number(getScheduleValue(schedule, ["SlotDuration", "slotDuration", "slot"])) ||
+      DEFAULT_SCHEDULE_SETTINGS.slotDuration,
+  });
+
+  return buildPreviewSlotsFromPayload({
+    branchId: Number(branchId),
+    doctorId: Number(doctorId),
+    dates: [date],
+    ...resolvedTimes,
+  }).map((slot) => ({
+    ...slot,
+    date,
+    __date: date,
+    __queriedBranchId: String(branchId),
+  }));
+};
+
 const fetchDoctorSchedule = async (doctorId, branchId, token) => {
   const candidateUrls = [
     `${SCHEDULE_API}/${encodeURIComponent(doctorId)}?branchId=${encodeURIComponent(branchId)}`,
-    `${SCHEDULE_API}?doctorId=${encodeURIComponent(doctorId)}&branchId=${encodeURIComponent(branchId)}`,
-    `${SCHEDULE_API}/doctor/${encodeURIComponent(doctorId)}?branchId=${encodeURIComponent(branchId)}`,
   ].filter(Boolean);
 
   for (const url of candidateUrls) {
@@ -1293,6 +1356,8 @@ function Schedule({ selfMode = false } = {}) {
         if (draft.breakStart) setBreakStart(formatTime12Hour(draft.breakStart));
         if (draft.breakEnd) setBreakEnd(formatTime12Hour(draft.breakEnd));
         if (draft.slotDuration) setSlotDuration(String(draft.slotDuration));
+        setExistingScheduleId(getScheduleId(draft) || String(doctorId));
+        return;
       }
 
       const schedule = await fetchDoctorSchedule(doctorId, branchId, token).catch(() => null);
@@ -1339,7 +1404,6 @@ function Schedule({ selfMode = false } = {}) {
     }
 
       setIsFetchingSlots(true);
-    const token = getAuthToken();
     const resolvedTimes = resolveScheduleTimes({
       workStart,
       workEnd,
@@ -1361,22 +1425,24 @@ function Schedule({ selfMode = false } = {}) {
     const generatedSlots = canShowGeneratedPreview ? buildPreviewSlotsFromPayload(previewPayload) : [];
     const isLeaveDate = scheduleType === "leave" || isDoctorBranchLeaveDate(doctorId, branchId, previewDate);
     setPreviewSlots(isLeaveDate ? [] : generatedSlots);
-    fetchDaySlots(doctorId, branchId, previewDate, token, { requireExplicitBranch: true })
-      .then((rows) => {
-        setHasSavedSchedule(Boolean(draft) || rows.length > 0);
-        if (isLeaveDate) {
-          setPreviewSlots([]);
-        } else if (rows.length > 0) {
-          setPreviewSlots(rows);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setIsFetchingSlots(false));
+    if (draft || hasSavedSchedule || existingScheduleId) {
+      setHasSavedSchedule(true);
+      setIsFetchingSlots(false);
+      return;
+    }
+
+    setIsFetchingSlots(false);
   }, [branchId, doctorId, previewDate, workStart, workEnd, breakStart, breakEnd, slotDuration, scheduleType, slotRefreshKey, hasSavedSchedule, existingScheduleId]);
 
   useEffect(() => {
     if (!branchId || !doctorId || scheduledDates.length === 0) {
       setHasSavedSchedule(false);
+      return;
+    }
+
+    const draft = readScheduleDraft(doctorId, branchId);
+    if (draft) {
+      setHasSavedSchedule(true);
       return;
     }
 

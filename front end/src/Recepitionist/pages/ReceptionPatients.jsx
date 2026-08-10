@@ -28,7 +28,6 @@ import {
   emptyAddressParts,
   onlyPincodeValue,
   parseAddress,
-  validateAddressParts,
 } from "../../utils/address.jsx";
 import {
   fetchPincodeLocation,
@@ -43,7 +42,6 @@ import {
   onlyIndianMobileValue,
   onlyNumberValue,
   validateAlpha,
-  validateDate,
   validateGmail,
   validateMobile,
   validateNumeric,
@@ -323,6 +321,9 @@ const getPatientAddress = (patient = {}) => {
 
 const bloodGroupOptions = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const genderOptions = ["Female", "Male", "Other"];
+const requiredPatientFields = new Set(["name", "phone", "age", "gender", "bloodGroup"]);
+
+const RequiredMark = () => <span className="rc-required-mark">*</span>;
 const patientFieldLabels = {
   dateOfBirth: "Date Of Birth",
   emergencyContactName: "Emergency Contact Name",
@@ -688,27 +689,23 @@ function ReceptionPatients({
   };
 
   const validateForm = () => {
+    const hasAddressValue = Object.values(form.addressParts || {}).some((value) =>
+      String(value ?? "").trim()
+    );
     const nextErrors = {
       name: validateAlpha(form.name, "Name"),
-      email: validateGmail(form.email),
+      email: form.email ? validateGmail(form.email) : "",
       phone: validateMobile(form.phone, "Phone"),
       age: validateNumeric(form.age, "Age", { integer: true, max: 100 }),
-      dateOfBirth: validateDate(form.dateOfBirth, "Date of birth"),
       bloodGroup: validateRequired(form.bloodGroup, "Blood group"),
-      emergencyContactName: validateAlpha(
-        form.emergencyContactName,
-        "Emergency contact name"
-      ),
-      emergencyContactPhone: validateMobile(
-        form.emergencyContactPhone,
-        "Emergency contact phone"
-      ),
+      emergencyContactName: form.emergencyContactName
+        ? validateAlpha(form.emergencyContactName, "Emergency contact name")
+        : "",
+      emergencyContactPhone: form.emergencyContactPhone
+        ? validateMobile(form.emergencyContactPhone, "Emergency contact phone")
+        : "",
       gender: validateSelected(form.gender, "gender"),
-      ...Object.fromEntries(
-        Object.entries(validateAddressParts(form.addressParts, "Address")).map(
-          ([key, value]) => [key === "address" ? "address" : `address.${key}`, value]
-        )
-      ),
+      address: hasAddressValue ? "" : "Address is required.",
     };
 
     Object.keys(nextErrors).forEach((key) => {
@@ -1049,6 +1046,7 @@ function ReceptionPatients({
                       field
                         .replace(/([A-Z])/g, " $1")
                         .replace(/^./, (s) => s.toUpperCase())}
+                    {requiredPatientFields.has(field) ? <RequiredMark /> : null}
                   </span>
                   <input
                     name={field}
@@ -1074,7 +1072,6 @@ function ReceptionPatients({
                     title={["phone", "emergencyContactPhone"].includes(field) ? "Enter a 10-digit Indian mobile number starting with 6-9 and not all identical digits" : ""}
                     value={form[field] || ""}
                     disabled={modal === "view"}
-                    readOnly={field === "age"}
                     className={fieldErrors[field] ? "is-invalid" : ""}
                     onChange={(event) => updateField(field, event.target.value)}
                   />
@@ -1084,7 +1081,7 @@ function ReceptionPatients({
                 </label>
               ))}
               <label>
-                <span>Gender</span>
+                <span>Gender<RequiredMark /></span>
                 <select
                   value={form.gender || ""}
                   disabled={modal === "view"}
@@ -1103,7 +1100,7 @@ function ReceptionPatients({
                 ) : null}
               </label>
               <label>
-                <span>Blood Group</span>
+                <span>Blood Group<RequiredMark /></span>
                 <select
                   value={form.bloodGroup || ""}
                   disabled={modal === "view"}
@@ -1122,7 +1119,7 @@ function ReceptionPatients({
                 ) : null}
               </label>
               <div className="rc-address-block">
-                <span>Address</span>
+                <span>Address<RequiredMark /></span>
                 <div className="rc-address-grid">
                   <label>
                     <span>Pincode</span>

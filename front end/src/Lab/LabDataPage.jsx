@@ -163,6 +163,59 @@ const getPatientLabAmount = (record = {}) => {
   }, 0);
 };
 
+const getPatientGroupKey = (record = {}) => {
+  const appointmentId = normalizeId(readFirst(record, [
+    "appointmentId", "AppointmentId", "appointment.id", "appointment.appointmentId", "Appointment.Id", "Appointment.AppointmentId",
+  ], ""));
+  if (appointmentId) return `appointment:${appointmentId}`;
+
+  const patientId = normalizeId(readFirst(record, [
+    "patientId", "PatientId", "patient.id", "patient.patientId", "Patient.Id", "Patient.PatientId",
+  ], ""));
+  const patientName = normalizeText(readFirst(record, ["patientName", "PatientName", "patient.name", "Patient.Name", "name", "Name"], ""));
+  const visitDate = normalizeText(getRecordDateValue(record));
+  return `patient:${patientId || patientName}:${visitDate}`;
+};
+
+const mergeTextValues = (...values) =>
+  values.map((value) => String(value ?? "").trim()).find((value) => value && value !== "-") || "-";
+
+const mergeLabPatientRows = (rows = []) => {
+  const grouped = new Map();
+
+  rows.forEach((row) => {
+    const key = getPatientGroupKey(row);
+    const existing = grouped.get(key);
+    if (!existing) {
+      grouped.set(key, row);
+      return;
+    }
+
+    const testNames = [
+      ...String(existing.__labTestNames || "").split(","),
+      ...String(row.__labTestNames || "").split(","),
+    ]
+      .map((name) => name.trim())
+      .filter((name) => name && name !== "-");
+
+    grouped.set(key, {
+      ...existing,
+      ...row,
+      patientName: mergeTextValues(existing.patientName, existing.PatientName, row.patientName, row.PatientName),
+      PatientName: mergeTextValues(existing.PatientName, existing.patientName, row.PatientName, row.patientName),
+      phone: mergeTextValues(existing.phone, existing.Phone, row.phone, row.Phone),
+      Phone: mergeTextValues(existing.Phone, existing.phone, row.Phone, row.phone),
+      visitDate: mergeTextValues(existing.visitDate, existing.VisitDate, row.visitDate, row.VisitDate, getRecordDateValue(existing), getRecordDateValue(row)),
+      VisitDate: mergeTextValues(existing.VisitDate, existing.visitDate, row.VisitDate, row.visitDate, getRecordDateValue(existing), getRecordDateValue(row)),
+      __labTestNames: Array.from(new Set(testNames)).join(", ") || "-",
+      __labAmount: (Number(existing.__labAmount) || 0) + (Number(row.__labAmount) || 0),
+      __groupedRows: [...(existing.__groupedRows || [existing]), row],
+    });
+  });
+
+  return Array.from(grouped.values());
+};
+
 const enrichLabPatientRow = (record = {}) => ({
   ...record,
   __labTestNames: getPatientTestNames(record),
@@ -179,21 +232,17 @@ const isToday = (value) => {
   return date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
 };
 
-const isPastDate = (value) => {
-  const date = new Date(value || "");
-  if (Number.isNaN(date.getTime())) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  date.setHours(0, 0, 0, 0);
-  return date < today;
-};
-
 const getNormalizedStatus = (record = {}) =>
   normalizeText(readFirst(record, ["status", "Status", "orderStatus", "sampleStatus", "resultStatus", "reportStatus"], ""));
 
 const isDoneRecord = (record = {}) => {
   const status = getNormalizedStatus(record);
   return /complete|completed|done|reported|delivered|cancel|cancelled|canceled/.test(status);
+};
+
+const isCurrentLabWork = (record = {}) => {
+  const dateValue = getRecordDateValue(record);
+  return isToday(dateValue) || (!dateValue && !isDoneRecord(record));
 };
 
 const isBillingBackedRecord = (record = {}) => {
@@ -205,8 +254,8 @@ const recordIdentifier = (row = {}) =>
   String(readFirst(row, ["id", "Id", "orderId", "OrderId", "labOrderId", "LabOrderId", "billingId", "BillingId", "billId", "BillId", "invoiceId", "InvoiceId", "testId", "TestId"], "") || "");
 
 const filterRowsByView = (rows = [], view = "") => {
-  if (view === "today") return rows.filter((row) => isToday(getRecordDateValue(row)));
-  if (view === "pending") return rows.filter((row) => isPastDate(getRecordDateValue(row)) && !isDoneRecord(row));
+  if (view === "today") return rows.filter(isCurrentLabWork);
+  if (view === "pending") return rows.filter((row) => !isDoneRecord(row));
   if (view === "samples") return rows.filter((row) => !/complete|completed|reported|delivered|cancel|cancelled|canceled/.test(getNormalizedStatus(row)));
   if (view === "in-progress") return rows.filter((row) => /progress|processing|started/.test(getNormalizedStatus(row)));
   if (view === "completed") return rows.filter((row) => isToday(getRecordDateValue(row)) && /complete|completed|done|reported|delivered/.test(getNormalizedStatus(row)));
@@ -251,11 +300,16 @@ function LabDataPage({ type }) {
             ...(type === "reports" ? readGeneratedLabReports() : []),
           ]
         : backendData;
-      const nextRows = type === "patients" || type === "samples" || type === "reports"
-        ? filterRowsByView(dedupeBillingRows(data)
+      const enrichedRows = type === "patients" || type === "samples" || type === "reports"
+        ? dedupeBillingRows(data)
             .filter(isDiagnosticRecord)
             .filter((row) => belongsToLabScope(row, labProfile))
-            .map(enrichLabPatientRow), view)
+            .map(enrichLabPatientRow)
+        : data;
+      const nextRows = type === "patients"
+        ? filterRowsByView(mergeLabPatientRows(enrichedRows), view)
+        : type === "samples" || type === "reports"
+        ? filterRowsByView(enrichedRows, view)
             .filter((row) => type !== "reports" || isGeneratedReport(row))
         : data;
       setRows(nextRows);

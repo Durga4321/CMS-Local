@@ -10,6 +10,7 @@ const getCurrentRole = () =>
   localStorage.getItem("adminRole") ||
   localStorage.getItem("doctorRole") ||
   localStorage.getItem("receptionistRole") ||
+  localStorage.getItem("labRole") ||
   localStorage.getItem("userRole") ||
   "";
 
@@ -22,6 +23,7 @@ const getCurrentUserKey = () =>
     localStorage.getItem("adminEmail"),
     localStorage.getItem("doctorEmail"),
     localStorage.getItem("receptionistEmail"),
+    localStorage.getItem("labEmail"),
     localStorage.getItem("email"),
     getCurrentRole(),
   ]
@@ -106,6 +108,9 @@ const ACTIVE_USER_ROLES = [
   ...ADMIN_ROLES,
   "doctor",
   "receptionist",
+  "lab",
+  "labtechnician",
+  "laboratory",
   "user",
   "patient",
 ];
@@ -130,6 +135,10 @@ const matchesTargetUsers = (notification = {}, role = "") => {
 
   if (target.includes("receptionist") || target.includes("reception")) {
     return r === "receptionist";
+  }
+
+  if (target.includes("lab") || target.includes("laboratory")) {
+    return ["lab", "labtechnician", "laboratory"].includes(r);
   }
 
   if (target.includes("user") || target.includes("patient")) {

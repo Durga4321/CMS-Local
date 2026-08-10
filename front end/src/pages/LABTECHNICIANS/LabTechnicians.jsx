@@ -4,7 +4,13 @@ import "../RECEPTIONISTS/Receptionists.css";
 import "./LabTechnicians.css";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
-import { buildBranchOptions, fetchBranchesForHospital, getApiHeaders, getStoredHospitalId } from "../../utils/branchApi";
+import {
+  buildBranchOptions,
+  fetchBranchesForHospital,
+  getApiHeaders,
+  getStoredHospitalId,
+  recordBelongsToClinicScope,
+} from "../../utils/branchApi";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { onlyAlpha, onlyIndianMobileValue, validateAlpha, validateGmail, validateMobile, validateSelected, validateStrongPassword } from "../../utils/validation";
 
@@ -42,6 +48,28 @@ const getLabTechStatus = (tech) => {
   if (typeof active === "boolean") return active ? "Active" : "Inactive";
   return readFirst(tech, ["status", "Status"], "Active");
 };
+
+const normalizeRole = (value = "") =>
+  String(value || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
+
+const getStaffRole = (record = {}) =>
+  normalizeRole(
+    readFirst(record, [
+      "role",
+      "Role",
+      "roleName",
+      "RoleName",
+      "type",
+      "Type",
+      "staffRole",
+      "StaffRole",
+      "userRole",
+      "UserRole",
+    ])
+  );
+
+const hasRoleMetadata = (record = {}) => Boolean(getStaffRole(record));
+const isLabTechnicianRecord = (record = {}) => ["labtechnician", "labtech", "lab"].includes(getStaffRole(record));
 
 const getErrorMessage = async (response, fallback) => {
   const text = await response.text().catch(() => "");
@@ -92,6 +120,7 @@ function LabTechnicians() {
   const [fieldErrors, setFieldErrors] = useState({});
 
   const branchNameById = useMemo(() => branches.reduce((lookup, branch) => ({ ...lookup, [String(branch.id)]: branch.name }), {}), [branches]);
+  const scopedBranchIds = useMemo(() => branches.map((branch) => branch.id), [branches]);
 
   const fetchTechnicians = useCallback(async () => {
     const response = await fetch(STAFF_LAB_TECHNICIANS_URL, { headers: getApiHeaders() });
@@ -99,12 +128,7 @@ function LabTechnicians() {
       throw new Error(await getErrorMessage(response, "Unable to load lab technicians."));
     }
     const list = parseList(await response.json().catch(() => null));
-    return hospitalId
-      ? list.filter((tech) => {
-          const techHospitalId = readFirst(tech, ["hospitalId", "HospitalId", "clinicId", "ClinicId"], "");
-          return !techHospitalId || String(techHospitalId) === String(hospitalId);
-        })
-      : list;
+    return list.filter((tech) => !hasRoleMetadata(tech) || isLabTechnicianRecord(tech));
   }, [hospitalId]);
 
   const loadTechnicians = useCallback(async () => {
@@ -123,7 +147,7 @@ function LabTechnicians() {
     setLoadingBranches(true);
     const loadBranches = async () => {
       try {
-        const scopedBranches = await fetchBranchesForHospital(hospitalId);
+        const scopedBranches = await fetchBranchesForHospital(hospitalId, clinicName);
         let options = buildBranchOptions(scopedBranches);
         if (!options.length) {
           options = buildBranchOptions(await fetchBranchesForHospital(""));
@@ -140,13 +164,20 @@ function LabTechnicians() {
       }
     };
     loadBranches();
-  }, [hospitalId, loadTechnicians]);
+  }, [hospitalId, clinicName, loadTechnicians]);
 
   const filteredTechnicians = useMemo(() => {
+    const scopedTechnicians = technicians.filter((tech) =>
+      recordBelongsToClinicScope(tech, {
+        hospitalId,
+        clinicName,
+        branchIds: scopedBranchIds,
+      })
+    );
     const term = search.trim().toLowerCase();
-    if (!term) return technicians;
-    return technicians.filter((tech) => [getLabTechName(tech), getLabTechEmail(tech), getLabTechPhone(tech), getLabTechBranchName(tech, branchNameById)].join(" ").toLowerCase().includes(term));
-  }, [branchNameById, search, technicians]);
+    if (!term) return scopedTechnicians;
+    return scopedTechnicians.filter((tech) => [getLabTechName(tech), getLabTechEmail(tech), getLabTechPhone(tech), getLabTechBranchName(tech, branchNameById)].join(" ").toLowerCase().includes(term));
+  }, [branchNameById, search, technicians, hospitalId, clinicName, scopedBranchIds]);
 
   const updateField = (field, value) => {
     const nextValue = field === "name" ? onlyAlpha(value) : field === "phone" ? onlyIndianMobileValue(value) : value;

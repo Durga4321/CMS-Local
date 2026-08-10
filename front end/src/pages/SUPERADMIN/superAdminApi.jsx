@@ -650,12 +650,24 @@ const getValidationMessage = (payload) => {
   return "";
 };
 
+const getModuleAuthToken = () => {
+  const path = String(window.location?.pathname || "").toLowerCase();
+  const keys = path.startsWith("/lab")
+    ? ["labToken", "token", "adminToken", "superAdminToken"]
+    : path.startsWith("/doctor")
+      ? ["doctorToken", "token", "adminToken", "superAdminToken"]
+      : path.startsWith("/nurse")
+        ? ["nurseToken", "token", "adminToken", "superAdminToken"]
+        : path.startsWith("/reception")
+          ? ["receptionistToken", "receptionToken", "token", "adminToken", "superAdminToken"]
+          : ["token", "adminToken", "superAdminToken", "labToken", "doctorToken", "nurseToken", "receptionistToken", "receptionToken"];
+
+  return keys.map((key) => localStorage.getItem(key)).find(Boolean) || "";
+};
+
 export const superAdminRequest = async (path, options = {}) => {
   const { body, headers, ...rest } = options;
-  const token =
-    localStorage.getItem("token") ||
-    localStorage.getItem("adminToken") ||
-    localStorage.getItem("superAdminToken");
+  const token = getModuleAuthToken();
   const response = await fetch(apiUrl(path), {
     ...rest,
     headers: {
@@ -2265,18 +2277,11 @@ export const deleteAdmin = async (id) => {
 };
 
 export const fetchNotifications = async () => {
-  const localNotifications = readLocalList(LOCAL_NOTIFICATIONS_KEY).map(normalizeNotification);
+  const remoteNotifications = asArray(
+    await superAdminRequest(SUPER_ADMIN_API.notifications)
+  ).map(normalizeNotification);
 
-  try {
-    const remoteNotifications = asArray(
-      await superAdminRequest(SUPER_ADMIN_API.notifications)
-    ).map(normalizeNotification);
-
-    return mergeNotificationRecords([...remoteNotifications, ...localNotifications]);
-  } catch (error) {
-    if (localNotifications.length) return localNotifications;
-    throw error;
-  }
+  return mergeNotificationRecords(remoteNotifications);
 };
 
 export const fetchNotificationTargetOptions = async () => {

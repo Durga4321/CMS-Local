@@ -63,8 +63,10 @@ const getAppointmentDate = (appointment = {}) =>
     appointment.Date,
     appointment.slotDate,
     appointment.SlotDate,
-    appointment.createdAt,
-    appointment.CreatedAt
+    appointment.scheduledDate,
+    appointment.ScheduledDate,
+    appointment.bookingDate,
+    appointment.BookingDate
   ) || "";
 
 const formatToday = () => {
@@ -72,13 +74,25 @@ const formatToday = () => {
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 };
 
+const getLocalDateKey = (value = "") => {
+  const text = String(value || "").trim();
+  if (!text) return "";
+
+  const isoDate = text.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/);
+  if (isoDate) return `${isoDate[1]}-${isoDate[2]}-${isoDate[3]}`;
+
+  const dmyDate = text.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:$|[\s,])/);
+  if (dmyDate) {
+    return `${dmyDate[3]}-${String(dmyDate[2]).padStart(2, "0")}-${String(dmyDate[1]).padStart(2, "0")}`;
+  }
+
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`;
+};
+
 const isTodayAppointment = (appointment = {}, today = formatToday()) => {
-  const rawDate = String(getAppointmentDate(appointment) || "").trim();
-  if (!rawDate) return false;
-  if (rawDate.startsWith(today)) return true;
-  const parsed = new Date(rawDate);
-  if (Number.isNaN(parsed.getTime())) return false;
-  return parsed.toISOString().slice(0, 10) === today;
+  return getLocalDateKey(getAppointmentDate(appointment)) === today;
 };
 
 const dedupeAppointments = (rows = []) => {
