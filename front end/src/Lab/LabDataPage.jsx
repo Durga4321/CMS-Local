@@ -33,7 +33,7 @@ const pageConfig = {
   patients: {
     title: "Patients",
     subtitle: "Patients with diagnostic billing/orders from reception for your clinic and branch.",
-    paths: ["Lab/orders", "Billing/diagnostic", "Billing/diagnostics", "Reception/diagnostic-bills", "DiagnosticBilling", "Billing"],
+    paths: ["Lab/orders", "Billing/lab"],
     columns: [
       ["Patient", ["patientName", "PatientName", "name", "Name", "fullName"]],
       ["Visit Date", ["visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"]],
@@ -55,7 +55,7 @@ const pageConfig = {
   samples: {
     title: "Sample Collection",
     subtitle: "Samples waiting, collected, processed, and reported by the lab.",
-    paths: ["Lab/orders", "Billing/diagnostic", "Billing/diagnostics", "Reception/diagnostic-bills", "DiagnosticBilling", "Billing"],
+    paths: ["Lab/orders", "Billing/lab"],
     columns: [
       ["Patient", ["patientName", "PatientName", "patient.name"]],
       ["Visit Date", ["visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"]],
@@ -369,7 +369,7 @@ function LabDataPage({ type }) {
     };
 
     const tryBillingUpdate = () =>
-      requestJson(`Billing/${id}`, {
+      requestJson(`Billing/lab/${id}`, {
         method: "PUT",
         body: JSON.stringify({
           ...row,

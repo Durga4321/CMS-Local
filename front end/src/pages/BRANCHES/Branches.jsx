@@ -17,6 +17,7 @@ import { useToast } from "../../components/ToastProvider";
 import { formatTitleCase } from "../../utils/format";
 import {
   BRANCH_API_URL,
+  branchBelongsToHospital,
   clearBranchCache,
   fetchBranchesForHospital,
   getApiHeaders,
@@ -197,8 +198,8 @@ function Branches() {
     setSuccess("");
 
     try {
-      const data = await fetchBranchesForHospital(hospitalId);
-      setBranches(data);
+      const data = await fetchBranchesForHospital(hospitalId, clinicName);
+      setBranches(data.filter((branch) => branchBelongsToHospital(branch, hospitalId, clinicName)));
     } catch (fetchError) {
       const message = fetchError.message || "Unable to load branches.";
       setBranches([]);

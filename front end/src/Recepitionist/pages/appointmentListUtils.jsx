@@ -241,10 +241,8 @@ export const filterAppointments = (appointments = [], filters = {}) => {
     }
 
     if (date) {
-      const appointmentDate = normalizeText(
-        getAppointmentValue(item, ["date", "appointmentDate", "AppointmentDate", "scheduledDate", "slotDate"], "")
-      );
-      if (!appointmentDate.includes(date)) {
+      const appointmentDate = normalizeText(getAppointmentDateKey(item));
+      if (appointmentDate !== date) {
         return false;
       }
     }

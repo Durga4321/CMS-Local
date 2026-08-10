@@ -27,6 +27,26 @@ export const replacePathParams = (path, params = {}) =>
 
 export const patientApiUrl = (path, params = {}) => apiUrl(replacePathParams(path, params));
 
+export const BILLING_API = {
+  op: "Billing/op",
+  lab: "Billing/lab",
+  diagnostic: "Billing/lab",
+  pharmacy: "Billing/pharmacy",
+};
+
+export const BILLING_API_PATHS = [
+  BILLING_API.op,
+  BILLING_API.lab,
+  BILLING_API.pharmacy,
+];
+
+export const getBillingApiPath = (type = "op") => {
+  const normalized = String(type || "").trim().toLowerCase();
+  if (normalized.includes("pharmacy") || normalized.includes("medicine")) return BILLING_API.pharmacy;
+  if (normalized.includes("lab") || normalized.includes("diagnostic") || normalized.includes("diagnosis") || normalized.includes("test")) return BILLING_API.lab;
+  return BILLING_API.op;
+};
+
 export const PATIENT_API = {
   register: "Auth/register-patient",
   registerAlt: "Auth/register",
@@ -50,9 +70,9 @@ export const PATIENT_API = {
   medicalHistory: "patient-portal/medical-history",
   prescriptions: "patient-portal/prescriptions",
   prescriptionById: "patient-portal/prescriptions/{id}",
-  bills: "patient-portal/bills",
-  billDetails: "patient-portal/bills/{id}",
-  billPay: "patient-portal/bills/{id}/pay",
+  bills: BILLING_API_PATHS,
+  billDetails: "Billing/{type}/{id}",
+  billPay: "Billing/{type}/{id}/pay",
   notifications: "patient-portal/notifications",
   notificationRead: "patient-portal/notifications/{id}/read",
   notificationDelete: "patient-portal/notifications/{id}",

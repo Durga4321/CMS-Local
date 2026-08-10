@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Plus, RefreshCw, Search, SlidersHorizontal, X } from "lucide-react";
+import { ArrowLeft, CalendarDays, History, Plus, RefreshCw, Search, SlidersHorizontal, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "../../components/ToastProvider";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
@@ -87,6 +87,11 @@ const getVitalValue = (appointment = {}, name) =>
     )
   );
 
+const getTodayKey = () => {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+};
+
 function ReceptionAppointmentList({
   title,
   subtitle,
@@ -110,6 +115,7 @@ function ReceptionAppointmentList({
   const [doctorFilter, setDoctorFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [dateFilter, setDateFilter] = useState("");
+  const [appointmentListView, setAppointmentListView] = useState("today");
   const [page, setPage] = useState(1);
   const [vitalsAppointment, setVitalsAppointment] = useState(null);
   const [vitalsForm, setVitalsForm] = useState(emptyVitals);
@@ -140,11 +146,18 @@ function ReceptionAppointmentList({
   }, [loadAppointments]);
 
   const filteredAppointments = useMemo(() => {
+    const todayKey = getTodayKey();
     return filterAppointments(appointments, {
       search,
       doctor: doctorFilter === "All" ? "" : doctorFilter,
       status: statusFilter === "All" ? "" : statusFilter,
       date: dateFilter,
+    }).filter((item) => {
+      const appointmentDate = String(item.orderedTokenSortDate || "").trim();
+      if (!appointmentDate) return appointmentListView === "past";
+      return appointmentListView === "today"
+        ? appointmentDate === todayKey
+        : appointmentDate < todayKey;
     }).sort((left, right) => {
       const dateCompare = String(left.orderedTokenSortDate || "").localeCompare(String(right.orderedTokenSortDate || ""));
       if (dateCompare) return dateCompare;
@@ -154,7 +167,19 @@ function ReceptionAppointmentList({
 
       return (left.orderedTokenSequence || 0) - (right.orderedTokenSequence || 0);
     });
-  }, [appointments, doctorFilter, dateFilter, search, statusFilter]);
+  }, [appointmentListView, appointments, doctorFilter, dateFilter, search, statusFilter]);
+
+  const todayAppointmentCount = useMemo(
+    () => appointments.filter((item) => String(item.orderedTokenSortDate || "") === getTodayKey()).length,
+    [appointments]
+  );
+  const pastAppointmentCount = useMemo(
+    () => appointments.filter((item) => {
+      const appointmentDate = String(item.orderedTokenSortDate || "").trim();
+      return Boolean(appointmentDate && appointmentDate < getTodayKey());
+    }).length,
+    [appointments]
+  );
 
   const doctorOptions = useMemo(() => {
     const doctors = new Set(
@@ -299,8 +324,30 @@ function ReceptionAppointmentList({
       <div className="rc-card">
         <div className="rc-card-head">
           <div>
-            <h3>{title}</h3>
+            <h3>{appointmentListView === "past" ? `Past ${title}` : `Today ${title}`}</h3>
             <p>Search, filter, and review {bookingType.toLowerCase()} appointments.</p>
+          </div>
+          <div className="rc-patient-list-tabs" role="tablist" aria-label="Appointment list view">
+            <button
+              type="button"
+              className={appointmentListView === "today" ? "active" : ""}
+              onClick={() => setAppointmentListView("today")}
+              role="tab"
+              aria-selected={appointmentListView === "today"}
+            >
+              <CalendarDays size={16} /> Today
+              <span>{todayAppointmentCount}</span>
+            </button>
+            <button
+              type="button"
+              className={appointmentListView === "past" ? "active" : ""}
+              onClick={() => setAppointmentListView("past")}
+              role="tab"
+              aria-selected={appointmentListView === "past"}
+            >
+              <History size={16} /> Past
+              <span>{pastAppointmentCount}</span>
+            </button>
           </div>
         </div>
 

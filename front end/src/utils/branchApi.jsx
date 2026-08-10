@@ -12,7 +12,10 @@ export const clearBranchCache = (hospitalId) => {
     return;
   }
 
-  branchCache.delete(String(hospitalId).trim() || "__all__");
+  const keyPrefix = `${String(hospitalId).trim() || "__all__"}:`;
+  Array.from(branchCache.keys()).forEach((key) => {
+    if (String(key).startsWith(keyPrefix)) branchCache.delete(key);
+  });
 };
 
 export const getAuthToken = () =>
@@ -74,6 +77,79 @@ export const parseApiList = (data) => {
   return [];
 };
 
+export const normalizeScopeText = (value) =>
+  String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+
+const readBranchClinicName = (branch = {}) =>
+  branch.hospitalName ??
+  branch.HospitalName ??
+  branch.clinicName ??
+  branch.ClinicName ??
+  branch.assignedClinic ??
+  branch.AssignedClinic ??
+  branch.hospital?.name ??
+  branch.hospital?.hospitalName ??
+  branch.clinic?.name ??
+  branch.clinic?.clinicName ??
+  "";
+
+export const getRecordClinicId = (record = {}) =>
+  record.hospitalId ??
+  record.HospitalId ??
+  record.hospitalID ??
+  record.HospitalID ??
+  record.clinicId ??
+  record.ClinicId ??
+  record.clinicID ??
+  record.ClinicID ??
+  record.hospital?.id ??
+  record.hospital?.hospitalId ??
+  record.clinic?.id ??
+  record.clinic?.clinicId ??
+  "";
+
+export const getRecordClinicName = (record = {}) =>
+  record.hospitalName ??
+  record.HospitalName ??
+  record.clinicName ??
+  record.ClinicName ??
+  record.assignedClinic ??
+  record.AssignedClinic ??
+  record.hospital?.name ??
+  record.hospital?.hospitalName ??
+  record.clinic?.name ??
+  record.clinic?.clinicName ??
+  "";
+
+export const getRecordBranchIds = (record = {}) => {
+  const directIds = [
+    record.branchId,
+    record.BranchId,
+    record.branchID,
+    record.BranchID,
+    record.clinicBranchId,
+    record.ClinicBranchId,
+    record.branch?.id,
+    record.branch?.branchId,
+    record.Branch?.id,
+    record.Branch?.branchId,
+  ];
+
+  const arrayIds = [record.branchIds, record.BranchIds, record.branches, record.Branches]
+    .filter(Array.isArray)
+    .flatMap((items) =>
+      items.map((item) =>
+        typeof item === "object" && item !== null
+          ? item.id ?? item.Id ?? item.branchId ?? item.BranchId ?? item.branchID ?? item.BranchID
+          : item
+      )
+    );
+
+  return [...directIds, ...arrayIds]
+    .map((value) => String(value ?? "").trim())
+    .filter(Boolean);
+};
+
 const fetchWithTimeout = (url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) => {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
@@ -113,6 +189,44 @@ export const getBranchHospitalId = (branch) => {
   );
 };
 
+export const branchBelongsToHospital = (branch = {}, hospitalId = getStoredHospitalId(), clinicName = "") => {
+  const targetHospitalId = String(hospitalId || "").trim();
+  const targetClinicName = normalizeScopeText(clinicName);
+  const branchHospitalId = String(getBranchHospitalId(branch) || "").trim();
+  const branchClinicName = normalizeScopeText(readBranchClinicName(branch));
+
+  if (!targetHospitalId && !targetClinicName) return true;
+  if (targetHospitalId && branchHospitalId && branchHospitalId !== targetHospitalId) return false;
+  if (targetClinicName && branchClinicName && branchClinicName !== targetClinicName) return false;
+  if (targetHospitalId && branchHospitalId === targetHospitalId) return true;
+  if (targetClinicName && branchClinicName === targetClinicName) return true;
+
+  return false;
+};
+
+export const recordBelongsToClinicScope = (
+  record = {},
+  { hospitalId = getStoredHospitalId(), clinicName = "", branchIds = [] } = {}
+) => {
+  const targetHospitalId = String(hospitalId || "").trim();
+  const targetClinicName = normalizeScopeText(clinicName);
+  const branchIdSet = new Set(branchIds.map((value) => String(value ?? "").trim()).filter(Boolean));
+  const recordHospitalId = String(getRecordClinicId(record) || "").trim();
+  const recordClinicName = normalizeScopeText(getRecordClinicName(record));
+  const recordBranchIds = getRecordBranchIds(record);
+
+  if (!targetHospitalId && !targetClinicName && branchIdSet.size === 0) return true;
+  if (targetHospitalId && recordHospitalId && recordHospitalId !== targetHospitalId) return false;
+  if (targetClinicName && recordClinicName && recordClinicName !== targetClinicName) return false;
+  if (targetHospitalId && recordHospitalId === targetHospitalId) return true;
+  if (targetClinicName && recordClinicName === targetClinicName) return true;
+  if (branchIdSet.size && recordBranchIds.length) {
+    return recordBranchIds.some((branchId) => branchIdSet.has(branchId));
+  }
+
+  return false;
+};
+
 export const getBranchIsActive = (branch) => {
   const b = branch || {};
   if (typeof b.isActive === "boolean") return b.isActive;
@@ -150,9 +264,10 @@ export const parseErrorMessage = async (response, fallback) => {
   }
 };
 
-export const fetchBranchesForHospital = async (hospitalId = getStoredHospitalId()) => {
+export const fetchBranchesForHospital = async (hospitalId = getStoredHospitalId(), clinicName = "") => {
   const targetHospitalId = hospitalId ? String(hospitalId).trim() : "";
-  const cacheKey = targetHospitalId || "__all__";
+  const targetClinicName = normalizeScopeText(clinicName);
+  const cacheKey = `${targetHospitalId || "__all__"}:${targetClinicName || "__name_all__"}`;
   const cached = branchCache.get(cacheKey);
 
   if (cached && Date.now() - cached.at < BRANCH_CACHE_TTL_MS) {
@@ -185,9 +300,16 @@ export const fetchBranchesForHospital = async (hospitalId = getStoredHospitalId(
 
         if (response.ok) {
           const data = parseApiList(await response.json().catch(() => []));
-          if (data.length) {
-            branchCache.set(cacheKey, { data, at: Date.now() });
-            return data;
+          const scopedData = data.filter((branch) =>
+            branchBelongsToHospital(branch, targetHospitalId, targetClinicName)
+          );
+          const hasScopeMetadata = data.some(
+            (branch) => getBranchHospitalId(branch) || readBranchClinicName(branch)
+          );
+          if (scopedData.length || (data.length && !hasScopeMetadata)) {
+            const scopedResult = scopedData.length ? scopedData : data;
+            branchCache.set(cacheKey, { data: scopedResult, at: Date.now() });
+            return scopedResult;
           }
         }
       } catch {
@@ -219,15 +341,9 @@ export const fetchBranchesForHospital = async (hospitalId = getStoredHospitalId(
     throw lastError;
   }
 
-  if (!targetHospitalId) {
-    branchCache.set(cacheKey, { data: branches, at: Date.now() });
-    return branches;
-  }
-
-  const filtered = branches.filter((branch) => {
-    const branchHospitalId = String(getBranchHospitalId(branch) || "").trim();
-    return branchHospitalId === targetHospitalId;
-  });
+  const filtered = branches.filter((branch) =>
+    branchBelongsToHospital(branch, targetHospitalId, targetClinicName)
+  );
 
   branchCache.set(cacheKey, { data: filtered, at: Date.now() });
   return filtered;

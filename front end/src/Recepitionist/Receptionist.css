@@ -572,6 +572,12 @@
   margin: 18px 0 18px;
 }
 
+.rc-filter-grid-compact {
+  grid-template-columns: minmax(180px, 260px) auto;
+  align-items: end;
+  margin-top: 0;
+}
+
 .rc-filter-field {
   display: flex;
   flex-direction: column;
@@ -797,6 +803,59 @@
   font-size: 16px;
 }
 
+.rc-filter-clear {
+  justify-content: end;
+}
+
+.rc-patient-list-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px;
+  border: 1px solid #d9e6ea;
+  border-radius: 10px;
+  background: #f8fbfc;
+  overflow-x: auto;
+}
+
+.rc-patient-list-tabs button {
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #334155;
+  padding: 0 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rc-patient-list-tabs button.active {
+  background: #0f9d9d;
+  border-color: #0f9d9d;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 157, 157, 0.18);
+}
+
+.rc-patient-list-tabs span {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 900;
+}
+
 .rc-table {
   border: 1px solid #d9e1ec;
   border-radius: 10px;
@@ -1006,6 +1065,13 @@
 
 .rc-billing-fields .rc-field-wide {
   grid-column: 1 / -1;
+}
+
+.rc-billing-appointment-tools {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 240px) auto;
+  gap: 12px;
+  align-items: end;
 }
 
 .rc-billing-form .rc-amount-input {
@@ -2261,6 +2327,7 @@
   .rc-booking-form,
   .rc-billing-stats,
   .rc-billing-layout,
+  .rc-billing-appointment-tools,
   .rc-billing-fields,
   .rc-charge-summary,
   .rc-slots,

@@ -19,6 +19,7 @@ import { useToast } from "../../components/ToastProvider";
 import {
   buildBranchOptions,
   fetchBranchesForHospital,
+  recordBelongsToClinicScope,
 } from "../../utils/branchApi";
 import { formatTitleCase } from "../../utils/format";
 import {
@@ -305,17 +306,28 @@ function Receptionists() {
       }, {}),
     [branchOptions]
   );
+  const scopedBranchIds = useMemo(
+    () => branchOptions.map((branch) => branch.id),
+    [branchOptions]
+  );
 
   const filteredReceptionists = useMemo(() => {
+    const scopedReceptionists = receptionists.filter((item) =>
+      recordBelongsToClinicScope(item, {
+        hospitalId,
+        clinicName: clinicDisplayName,
+        branchIds: scopedBranchIds,
+      })
+    );
     const value = searchText.trim().toLowerCase();
-    if (!value) return receptionists;
+    if (!value) return scopedReceptionists;
 
-    return receptionists.filter((item) =>
+    return scopedReceptionists.filter((item) =>
       [item.name, item.email, item.phone, getReceptionistBranchName(item, branchNameById)]
         .filter(Boolean)
         .some((field) => String(field).toLowerCase().includes(value))
     );
-  }, [branchNameById, receptionists, searchText]);
+  }, [branchNameById, receptionists, searchText, hospitalId, clinicDisplayName, scopedBranchIds]);
 
   const fetchReceptionists = async () => {
     setLoading(true);
@@ -355,7 +367,7 @@ function Receptionists() {
       setLoadingBranches(true);
 
       try {
-        const branches = await fetchBranchesForHospital(hospitalId);
+        const branches = await fetchBranchesForHospital(hospitalId, clinicDisplayName);
         if (!active) return;
 
         const options = buildBranchOptions(branches);
@@ -382,7 +394,7 @@ function Receptionists() {
     return () => {
       active = false;
     };
-  }, [hospitalId]);
+  }, [hospitalId, clinicDisplayName]);
 
   const openAddModal = () => {
     if (imagePreview.startsWith("blob:")) {

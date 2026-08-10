@@ -3,7 +3,13 @@ import { Camera, CheckCircle, Pencil, Plus, RefreshCw, Search, ShieldPlus, Trash
 import "../RECEPTIONISTS/Receptionists.css";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
-import { buildBranchOptions, fetchBranchesForHospital, getApiHeaders, getStoredHospitalId } from "../../utils/branchApi";
+import {
+  buildBranchOptions,
+  fetchBranchesForHospital,
+  getApiHeaders,
+  getStoredHospitalId,
+  recordBelongsToClinicScope,
+} from "../../utils/branchApi";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import {
   onlyAlpha,
@@ -160,15 +166,18 @@ function Nurses() {
     () => branches.reduce((lookup, branch) => ({ ...lookup, [String(branch.id)]: branch.name }), {}),
     [branches]
   );
+  const scopedBranchIds = useMemo(() => branches.map((branch) => branch.id), [branches]);
 
   const fetchNurses = async () => {
     const query = hospitalId ? `?hospitalId=${encodeURIComponent(hospitalId)}` : "";
     const candidatePaths = [
-      "Nurses",
-      "Nurse",
-      `Staff${query}`,
       `Staff?role=Nurse${query ? `&hospitalId=${encodeURIComponent(hospitalId)}` : ""}`,
       `Staff?role=nurse${query ? `&hospitalId=${encodeURIComponent(hospitalId)}` : ""}`,
+      `Staff${query}`,
+      `Nurses${query}`,
+      `Nurse${query}`,
+      "Nurses",
+      "Nurse",
       "Staff/Nurse",
       "Staff/nurse",
     ];
@@ -216,22 +225,29 @@ function Nurses() {
   useEffect(() => {
     loadNurses();
     setLoadingBranches(true);
-    fetchBranchesForHospital(hospitalId)
+    fetchBranchesForHospital(hospitalId, clinicName)
       .then((data) => setBranches(buildBranchOptions(data)))
       .catch(() => setBranches([]))
       .finally(() => setLoadingBranches(false));
-  }, [hospitalId, loadNurses]);
+  }, [hospitalId, clinicName, loadNurses]);
 
   const filteredNurses = useMemo(() => {
+    const scopedNurses = nurses.filter((nurse) =>
+      recordBelongsToClinicScope(nurse, {
+        hospitalId,
+        clinicName,
+        branchIds: scopedBranchIds,
+      })
+    );
     const term = search.trim().toLowerCase();
-    if (!term) return nurses;
-    return nurses.filter((nurse) =>
+    if (!term) return scopedNurses;
+    return scopedNurses.filter((nurse) =>
       [getNurseName(nurse), getNurseEmail(nurse), getNursePhone(nurse), getNurseBranchName(nurse, branchNameById)]
         .join(" ")
         .toLowerCase()
         .includes(term)
     );
-  }, [branchNameById, nurses, search]);
+  }, [branchNameById, nurses, search, hospitalId, clinicName, scopedBranchIds]);
 
   const updateField = (field, value) => {
     const nextValue = field === "name" ? onlyAlpha(value) : field === "phone" ? onlyIndianMobileValue(value) : value;
