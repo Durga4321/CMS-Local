@@ -10,8 +10,6 @@ import { readGeneratedLabReports } from "./labReportStore";
 import { fetchLabMasterTests } from "../utils/labMaster";
 import {
   dedupeBillingRows,
-  readLocalBillingRows,
-  RECEPTION_RECENT_SERVICE_BILLS_KEY,
 } from "../utils/billingRevenue";
 
 const readFirst = (record = {}, keys = [], fallback = "-") => {
@@ -203,21 +201,6 @@ const isBillingBackedRecord = (record = {}) => {
   return source.includes("billing") || source.includes("diagnosticbilling");
 };
 
-const updateRecentBillingRow = (row = {}, patch = {}) => {
-  try {
-    const id = recordIdentifier(row);
-    const invoiceNo = readFirst(row, ["invoiceNo", "invoiceNumber", "billNumber"], "");
-    const nextRows = readLocalBillingRows(RECEPTION_RECENT_SERVICE_BILLS_KEY).map((item) => {
-      const sameId = id && recordIdentifier(item) === id;
-      const sameInvoice = invoiceNo && readFirst(item, ["invoiceNo", "invoiceNumber", "billNumber"], "") === invoiceNo;
-      return sameId || sameInvoice ? { ...item, ...patch } : item;
-    });
-    localStorage.setItem(RECEPTION_RECENT_SERVICE_BILLS_KEY, JSON.stringify(nextRows));
-  } catch {
-    // Backend update is the source of truth; local cache update is best effort.
-  }
-};
-
 const recordIdentifier = (row = {}) =>
   String(readFirst(row, ["id", "Id", "orderId", "OrderId", "labOrderId", "LabOrderId", "billingId", "BillingId", "billId", "BillId", "invoiceId", "InvoiceId", "testId", "TestId"], "") || "");
 
@@ -266,10 +249,6 @@ function LabDataPage({ type }) {
         ? [
             ...backendData,
             ...(type === "reports" ? readGeneratedLabReports() : []),
-            ...readLocalBillingRows(RECEPTION_RECENT_SERVICE_BILLS_KEY).map((row) => ({
-              ...row,
-              __sourcePath: "receptionRecentServiceBills",
-            })),
           ]
         : backendData;
       const nextRows = type === "patients" || type === "samples" || type === "reports"
@@ -296,7 +275,6 @@ function LabDataPage({ type }) {
     if (!["patients", "samples", "reports"].includes(type)) return undefined;
 
     const refreshPatients = (event) => {
-      if (event.type === "storage" && event.key !== RECEPTION_RECENT_SERVICE_BILLS_KEY) return;
       loadRows();
     };
 
@@ -391,7 +369,6 @@ function LabDataPage({ type }) {
       }
     }
 
-    updateRecentBillingRow(row, patch);
     await loadRows();
   };
 

@@ -277,6 +277,15 @@ export const readLocalRevenueBillingRows = () => [
   ...readLocalBillingRows(PATIENT_PORTAL_OP_BILLS_KEY),
 ];
 
+export const clearLocalRevenueBillingRows = () => {
+  try {
+    localStorage.removeItem(RECEPTION_RECENT_SERVICE_BILLS_KEY);
+    localStorage.removeItem(PATIENT_PORTAL_OP_BILLS_KEY);
+  } catch {
+    // Backend billing remains the source of truth if browser storage is unavailable.
+  }
+};
+
 export const fetchRevenueBillingRows = async ({ apiUrl, headers = {}, params } = {}) => {
   const queryParams = new URLSearchParams(params || "");
   queryParams.set("pageSize", "10000");
@@ -295,7 +304,9 @@ export const fetchRevenueBillingRows = async ({ apiUrl, headers = {}, params } =
     }
   });
   const results = await Promise.all(requests);
-  return dedupeBillingRows([...results.flat(), ...readLocalRevenueBillingRows()]);
+  const backendRows = dedupeBillingRows(results.flat());
+  if (!backendRows.length) clearLocalRevenueBillingRows();
+  return backendRows;
 };
 
 export const getRevenueTotals = (rows = []) =>

@@ -237,7 +237,6 @@ import {
   validateImageFile,
   validateMobile,
   validateNumeric,
-  validateSelected,
   validateText,
 } from "../../utils/validation";
 import {
@@ -425,7 +424,11 @@ function AddDoctor() {
   const navigate = useNavigate();
   const toast = useToast();
   const hospitalId = getStoredHospitalId();
-  const clinicName = getClinicDisplayName({}, "Clinic");
+  const clinicName = getClinicDisplayName({
+    hospitalName: localStorage.getItem("hospitalName"),
+    clinicName: localStorage.getItem("clinicName"),
+    hospitalId,
+  }, "Clinic");
   const imageInputRef = useRef(null);
 
   const [form, setForm] = useState({
@@ -563,7 +566,7 @@ function AddDoctor() {
       setBranchWarning("");
 
       try {
-        const branches = await fetchBranchesForHospital(hospitalId);
+        const branches = await fetchBranchesForHospital(hospitalId, clinicName);
         if (!active) return;
 
         const options = buildBranchOptions(branches).filter((branch) => branch.isActive);
@@ -590,7 +593,7 @@ function AddDoctor() {
     return () => {
       active = false;
     };
-  }, [hospitalId]);
+  }, [hospitalId, clinicName]);
 
   useEffect(() => {
     return () => {
@@ -806,8 +809,11 @@ const validateBranchSelection = (values = form) => {
       phoneNumber: formattedForm.phone.trim(),
       isActive: formattedForm.isActive === "true",
     };
+    const primaryBranchId = requestPayload.branchIds[0] || 0;
     const formData = new FormData();
 
+    formData.append("BranchId", String(primaryBranchId));
+    formData.append("branchId", String(primaryBranchId));
     formData.append("Name", requestPayload.name);
     formData.append("Specialization", requestPayload.specialization);
     formData.append("Experience", requestPayload.experience);

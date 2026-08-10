@@ -258,15 +258,12 @@ import { formatIndianCurrency } from "../../utils/format";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 import {
-  appointmentToOpRevenueRow,
   dedupeBillingRows as dedupeRevenueRows,
   fetchRevenueBillingRows,
   getBranchId as getRevenueBranchId,
   getBranchName as getRevenueBranchName,
   groupRevenueByMonth,
   groupRevenueByMonthBranch,
-  isPaidAppointment,
-  parseList as parseRevenueList,
   passesRevenueFilters,
 } from "../../utils/billingRevenue";
 
@@ -275,8 +272,6 @@ import {
 const REPORT_API =
   apiUrl("Dashboard/reports/revenue");
 
-const APPOINTMENT_API =
-  apiUrl("Appointment");
 const parseList = (value) => {
   if (Array.isArray(value)) return value;
   if (!value || typeof value !== "object") return [];
@@ -372,19 +367,6 @@ const getAppointmentLookupKey = (record = {}) =>
     "Id",
   ]) || "").trim().toLowerCase();
 
-const buildAppointmentBranchLookup = (appointments = []) => {
-  const lookup = new Map();
-  parseRevenueList(appointments).forEach((appointment) => {
-    const key = getAppointmentLookupKey(appointment);
-    if (!key) return;
-    lookup.set(key, {
-      branchId: readValue(appointment, ["branchId", "BranchId", "clinicBranchId", "ClinicBranchId", "branch.id", "Branch.Id"]),
-      branchName: readValue(appointment, ["branchName", "BranchName", "branch.name", "Branch.Name", "branch", "Branch"]),
-    });
-  });
-  return lookup;
-};
-
 const enrichBillingBranch = (row = {}, { appointmentLookup, branches }) => {
   const rowBranchId = getRevenueBranchId(row);
   const rowBranchName = getRevenueBranchName(row);
@@ -474,27 +456,16 @@ function RevenueReport() {
       const result = await response.json();
       const reportRows = normalizeRevenueRows(result);
 
-      const [backendBillingRows, appointmentResponse] = await Promise.all([
-        fetchRevenueBillingRows({ apiUrl, headers, params }),
-        fetch(APPOINTMENT_API, {
-          headers,
-        }).catch(() => null),
-      ]);
+      const backendBillingRows = await fetchRevenueBillingRows({ apiUrl, headers, params });
 
-      const appointmentResult = appointmentResponse?.ok ? await appointmentResponse.json().catch(() => []) : [];
       const selectedBranch = branches.find(
         (branch) => String(getBranchOptionId(branch)) === String(branchId)
       );
       const selectedBranchName = selectedBranch ? getBranchOptionName(selectedBranch) : "";
-      const appointmentBranchLookup = buildAppointmentBranchLookup(appointmentResult);
-      const paidAppointmentRows = parseRevenueList(appointmentResult)
-        .filter(isPaidAppointment)
-        .map(appointmentToOpRevenueRow);
       const billingRows = dedupeRevenueRows([
         ...backendBillingRows,
-        ...paidAppointmentRows,
       ])
-        .map((row) => enrichBillingBranch(row, { appointmentLookup: appointmentBranchLookup, branches }))
+        .map((row) => enrichBillingBranch(row, { appointmentLookup: new Map(), branches }))
         .map((row) => ({ ...row, __selectedBranchName: selectedBranchName }))
         .filter((row) => {
           const rowBranchId = getRevenueBranchId(row);
