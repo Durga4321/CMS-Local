@@ -6,7 +6,7 @@ import {
   Menu, Phone, Printer, Search, Share2, Star, Stethoscope, Trash2, UserRound, X,
 } from "lucide-react";
 import PatientDashboard from "./PatientDashboard";
-import { BILLING_API_PATHS, apiUrl, getBillingApiPath, patientApiUrl, PATIENT_API } from "../../config/api";
+import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
 import { validateStrongPassword } from "../../utils/validation";
 import { formatIndianCurrency, formatTitleCase } from "../../utils/format";
 import {
@@ -206,18 +206,14 @@ const parseApiList = (value) => {
   return [];
 };
 
-const fetchBillingApiRows = async ({ headers = {}, cache = "no-store" } = {}) => {
-  const results = await Promise.allSettled(
-    BILLING_API_PATHS.map((path) => fetch(apiUrl(path), { headers, cache }))
-  );
-  const lists = await Promise.all(
-    results.map(async (result, index) => {
-      if (result.status !== "fulfilled" || !result.value?.ok) return [];
-      const data = await result.value.json().catch(() => []);
-      return parseApiList(data).map((bill) => ({ ...bill, __sourcePath: BILLING_API_PATHS[index] }));
-    })
-  );
-  return lists.flat();
+const fetchPatientPortalBillingRows = async ({ headers = {}, cache = "no-store" } = {}) => {
+  const response = await fetch(patientApiUrl(PATIENT_API.bills), { headers, cache }).catch(() => null);
+  if (!response?.ok) return [];
+  const data = await response.json().catch(() => []);
+  return parseApiList(data).map((bill) => ({
+    ...bill,
+    __sourcePath: PATIENT_API.bills,
+  }));
 };
 
 const dedupeBillsByInvoice = (bills = []) => {
@@ -1129,7 +1125,7 @@ function PatientRoutes() {
         fetch(patientApiUrl(PATIENT_API.profile), { headers }).catch(() => null),
         fetch(patientApiUrl(PATIENT_API.appointments), { headers }).catch(() => null),
         fetch(patientApiUrl(PATIENT_API.prescriptions), { headers, cache: "no-store" }).catch(() => null),
-        fetchBillingApiRows({ headers, cache: "no-store" }).catch(() => []),
+        fetchPatientPortalBillingRows({ headers, cache: "no-store" }).catch(() => []),
         fetch(patientApiUrl(PATIENT_API.notifications), { headers, cache: "no-store" }).catch(() => null),
         fetch(patientApiUrl(PATIENT_API.dashboard), { headers }).catch(() => null),
       ]);
@@ -1145,24 +1141,10 @@ function PatientRoutes() {
       );
       setVisits(patientAppointments);
 
-      const prescriptionPaths = buildPatientScopedPaths(PATIENT_API.prescriptions, effectivePatient, patientAppointments)
-        .filter((path) => path !== PATIENT_API.prescriptions);
-      const [rxData, prescriptionResults] = await Promise.all([
-        prescriptionsRes?.ok ? prescriptionsRes.json().catch(() => []) : Promise.resolve([]),
-        Promise.allSettled(
-          prescriptionPaths.map((path) => fetch(patientApiUrl(path), { headers, cache: "no-store" }))
-        ),
-      ]);
-      const prescriptionLists = await Promise.all(
-        prescriptionResults.map(async (result) => {
-          if (result.status !== "fulfilled" || !result.value?.ok) return [];
-          return parseApiList(await result.value.json().catch(() => []));
-        })
+      const rxData = prescriptionsRes?.ok ? await prescriptionsRes.json().catch(() => []) : [];
+      const patientPrescriptions = parseApiList(rxData).filter((prescription) =>
+        appointmentBelongsToPatient(prescription, effectivePatient)
       );
-      const patientPrescriptions = parseApiList([
-        ...parseApiList(rxData),
-        ...prescriptionLists.flat(),
-      ]).filter((prescription) => appointmentBelongsToPatient(prescription, effectivePatient));
       setPrescriptions(patientPrescriptions);
 
       const storedPatientPortalBills = readPatientPortalOpBills();
@@ -2506,7 +2488,7 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
       // Patients do not have permission to create bills through the staff-only
       // Billing endpoint. Payment confirmation creates the bill server-side;
       // retrieve it through the existing patient bills endpoint when available.
-      const patientBills = await fetchBillingApiRows({ headers }).catch(() => []);
+      const patientBills = await fetchPatientPortalBillingRows({ headers }).catch(() => []);
       const billData = patientBills.find((bill) => String(readFirst(bill, ["appointmentId", "appointment.id", "appointmentNumber"]) || "") === String(appointmentId)) || successData?.bill || successData?.invoice || paymentData?.bill || paymentData?.invoice || {};
       const generatedBill = {
         ...(Array.isArray(billData) ? billData[0] : billData),
@@ -3040,29 +3022,15 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
       setLoadingHistory(true);
       setHistoryError("");
       try {
-        const historyUrls = [
-          ...buildPatientScopedPaths(PATIENT_API.medicalHistory, patient || {}, visits).map((path) => patientApiUrl(path)),
-          ...buildPatientScopedPaths("MedicalHistory", patient || {}, visits).map((path) => apiUrl(path)),
-        ];
-
         let historyData = null;
         let hadServerError = false;
-        for (const historyUrl of historyUrls) {
-          const response = await fetch(historyUrl, { headers, cache: "no-store" }).catch(() => null);
-          if (!response) continue;
-          if (response.ok) {
-            const data = await response.json().catch(() => null);
-            const records = normalizeHistoryRecords(data).filter(belongsToCurrentPatient);
-            if (records.length) {
-              historyData = records;
-              break;
-            }
-            historyData = null;
-            continue;
-          }
-          if (response.status >= 500 || response.status === 403) {
-            hadServerError = true;
-          }
+        const response = await fetch(patientApiUrl(PATIENT_API.medicalHistory), { headers, cache: "no-store" }).catch(() => null);
+        if (response?.ok) {
+          const data = await response.json().catch(() => null);
+          const records = normalizeHistoryRecords(data).filter(belongsToCurrentPatient);
+          historyData = records.length ? records : null;
+        } else if (response?.status >= 500 || response?.status === 403) {
+          hadServerError = true;
         }
 
         if (isCurrent) {
@@ -3966,17 +3934,9 @@ function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits =
     };
 
     const loadPrescriptions = async () => {
-      const paths = buildPatientScopedPaths(PATIENT_API.prescriptions, patient || {}, visits);
-      const responses = await Promise.allSettled(
-        paths.map((path) => fetch(patientApiUrl(path), { headers, cache: 'no-store' }))
-      );
-      const lists = await Promise.all(
-        responses.map(async (result) => {
-          if (result.status !== 'fulfilled' || !result.value?.ok) return [];
-          return parseApiList(await result.value.json().catch(() => []));
-        })
-      );
-      if (isCurrent) setApiPrescriptions(lists.flat());
+      const response = await fetch(patientApiUrl(PATIENT_API.prescriptions), { headers, cache: 'no-store' }).catch(() => null);
+      const list = response?.ok ? parseApiList(await response.json().catch(() => [])) : [];
+      if (isCurrent) setApiPrescriptions(list);
     };
 
     loadPrescriptions();
@@ -4118,14 +4078,48 @@ function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits =
     return lines.join('\n');
   };
 
+  const getPrescriptionId = (prescription = {}) =>
+    readFirst(prescription, [
+      'prescriptionId',
+      'PrescriptionId',
+      'id',
+      'Id',
+      'prescription.id',
+      'Prescription.Id',
+    ]);
+
+  const fetchPrescriptionById = async (prescription = {}) => {
+    const prescriptionId = getPrescriptionId(prescription);
+    if (!prescriptionId) return prescription;
+
+    const url = patientApiUrl(
+      PATIENT_API.prescriptionById.replace('{id}', encodeURIComponent(prescriptionId))
+    );
+    const response = await fetch(url, { headers: getApiHeaders(), cache: 'no-store' }).catch(() => null);
+    if (!response?.ok) return prescription;
+
+    const details = parseApiList(await response.json().catch(() => null))[0];
+    if (!details || typeof details !== 'object') return prescription;
+
+    const merged = { ...prescription, ...details };
+    setApiPrescriptions((current) =>
+      parseApiList(current).map((item) =>
+        String(getPrescriptionId(item)) === String(prescriptionId) ? merged : item
+      )
+    );
+    return merged;
+  };
+
   const downloadPrescription = async (url, prescription = null) => {
+    const latestPrescription = prescription ? await fetchPrescriptionById(prescription) : null;
+    const latestUrl = getDownloadUrl(latestPrescription) || url;
     // Primary: download existing URL
-    if (url) {
+    if (latestUrl) {
       try {
-        const response = await fetch(url, { headers: getApiHeaders(), mode: 'cors' });
+        const response = await fetch(latestUrl, { headers: getApiHeaders(), mode: 'cors' });
         if (!response.ok) throw new Error('Unable to download prescription.');
         const blob = await response.blob();
-        const filename = getFileNameFromUrl(url);
+        const filename = getFileNameFromUrl(latestUrl);
         const objectUrl = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = objectUrl;
@@ -4137,12 +4131,12 @@ function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits =
         return;
       } catch (error) {
         // fallback to opening in new tab
-        try { window.open(url, '_blank', 'noopener,noreferrer'); return; } catch (e) {}
+        try { window.open(latestUrl, '_blank', 'noopener,noreferrer'); return; } catch (e) {}
       }
     }
 
     // Fallback: generate printable HTML and open print dialog so user can save as PDF
-    if (prescription) {
+    if (latestPrescription) {
       try {
         const html = `
           <html>
@@ -4152,11 +4146,11 @@ function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits =
             </head>
             <body>
               <h2>Prescription</h2>
-              <p><strong>Diagnosis:</strong> ${escapeHtml(readFirst(prescription, ['diagnosis', 'condition', 'title']) || '')}</p>
-              <p><strong>Doctor:</strong> ${escapeHtml(readFirst(prescription, ['doctorName','doctor.name','prescribedBy']) || '')}</p>
+              <p><strong>Diagnosis:</strong> ${escapeHtml(readFirst(latestPrescription, ['diagnosis', 'condition', 'title']) || '')}</p>
+              <p><strong>Doctor:</strong> ${escapeHtml(readFirst(latestPrescription, ['doctorName','doctor.name','prescribedBy']) || '')}</p>
               <h3>Medicines</h3>
               <ul>
-                ${getMedicineList(prescription)
+                ${getMedicineList(latestPrescription)
                   .map(m => `<li><strong>${escapeHtml(m.name)}</strong> - ${escapeHtml(m.dosage)} - ${escapeHtml(m.instructions)}</li>`)
                   .join('')}
               </ul>
@@ -4180,11 +4174,13 @@ function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits =
 
   const sharePrescription = async (url, title = 'Prescription', prescription = null) => {
     if (!url && !prescription) return;
+    const latestPrescription = prescription ? await fetchPrescriptionById(prescription) : null;
+    const latestUrl = getDownloadUrl(latestPrescription) || url;
     try {
-      const response = await fetch(url, { headers: getApiHeaders(), mode: 'cors' });
+      const response = latestUrl ? await fetch(latestUrl, { headers: getApiHeaders(), mode: 'cors' }) : null;
       if (response.ok) {
         const blob = await response.blob();
-        const filename = getFileNameFromUrl(url);
+        const filename = getFileNameFromUrl(latestUrl);
         const file = new File([blob], filename, { type: blob.type || 'application/pdf' });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({ title, files: [file], text: title });
@@ -4197,13 +4193,13 @@ function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits =
 
     if (navigator.share) {
       try {
-        if (url) {
-          await navigator.share({ title, url });
+        if (latestUrl) {
+          await navigator.share({ title, url: latestUrl });
           return;
         }
         // share textual prescription if no URL
-        if (prescription) {
-          await navigator.share({ title, text: formatShareText(prescription) });
+        if (latestPrescription) {
+          await navigator.share({ title, text: formatShareText(latestPrescription) });
           return;
         }
         return;
@@ -4214,13 +4210,13 @@ function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits =
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
       try {
-        if (url) {
-          await navigator.clipboard.writeText(url);
+        if (latestUrl) {
+          await navigator.clipboard.writeText(latestUrl);
           window.alert('Prescription link copied to clipboard.');
           return;
         }
-        if (prescription) {
-          await navigator.clipboard.writeText(formatShareText(prescription));
+        if (latestPrescription) {
+          await navigator.clipboard.writeText(formatShareText(latestPrescription));
           window.alert('Prescription text copied to clipboard.');
           return;
         }
@@ -4229,7 +4225,7 @@ function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits =
       }
     }
 
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    if (latestUrl) window.open(latestUrl, '_blank', 'noopener,noreferrer');
   };
 
   const viewPrescription = (url) => {
@@ -4641,7 +4637,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     const loadSubmittedBills = async () => {
       setLoadingBills(true);
       try {
-        const data = await fetchBillingApiRows({ headers, cache: "no-store" }).catch(() => []);
+        const data = await fetchPatientPortalBillingRows({ headers, cache: "no-store" }).catch(() => []);
         const nextBills = dedupeBillsByInvoice([
           ...data,
         ]).filter((bill) => billBelongsToPatient(bill, patient || {}, visits));
@@ -4889,8 +4885,8 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   const getInvoiceId = (record) =>
     readFirst(record, ['invoiceId', 'billId', 'billingId', 'id', '_id', 'referenceId']);
 
-  const getBillDetailUrl = (billId, record = {}) =>
-    apiUrl(`${getBillingApiPath(billTypeLabel(record))}/${encodeURIComponent(String(billId))}`);
+  const getBillDetailUrl = (billId) =>
+    patientApiUrl(PATIENT_API.billDetails, { id: billId });
 
   const normalizeBillDetailResponse = (data) => {
     if (!data) return {};
@@ -5147,7 +5143,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     setDownloadError('');
 
     try {
-      const response = await fetch(apiUrl(`${getBillingApiPath(billTypeLabel(record))}/${encodeURIComponent(String(invoiceId))}/pay`), {
+      const response = await fetch(patientApiUrl(PATIENT_API.billPay, { id: invoiceId }), {
         method: 'POST',
         headers: getApiHeaders(),
         body: JSON.stringify({

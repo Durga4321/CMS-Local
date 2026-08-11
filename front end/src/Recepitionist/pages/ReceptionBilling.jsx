@@ -163,6 +163,33 @@ const readAmount = (source, keys, fallback = 0) => {
   return Number(fallback || 0);
 };
 
+const getSavedBillAmount = (bill = {}, fallback = 0) =>
+  readAmount(
+    bill,
+    [
+      "totalAmount",
+      "TotalAmount",
+      "netAmount",
+      "NetAmount",
+      "payableAmount",
+      "PayableAmount",
+      "grandTotal",
+      "GrandTotal",
+      "paidAmount",
+      "PaidAmount",
+      "paymentAmount",
+      "PaymentAmount",
+      "amount",
+      "Amount",
+      "revenue",
+      "Revenue",
+    ],
+    fallback
+  );
+
+const getTaxableFromGstTotal = (amount = 0) =>
+  Math.round((Math.max(0, Number(amount) || 0) / (1 + HALF_GST_RATE * 2)) * 100) / 100;
+
 const getItemLabel = (item = {}) =>
   String(
     firstValue(
@@ -1058,7 +1085,7 @@ const normalizeServiceBill = (bill = {}) => {
   const consultationCharge = readAmount(bill, AMOUNT_KEYS.consultation, 0);
   const medicineCharge = readAmount(bill, AMOUNT_KEYS.medicine, 0);
   const labCharge = readAmount(bill, AMOUNT_KEYS.lab, 0);
-  const totalAmount = readAmount(bill, AMOUNT_KEYS.total, bill.totalAmount || bill.paidAmount || 0);
+  const totalAmount = getSavedBillAmount(bill, bill.totalAmount || bill.paidAmount || 0);
   const cgstAmount = readAmount(bill, ["cgstAmount", "CGSTAmount", "cgst", "CGST"], 0);
   const sgstAmount = readAmount(bill, ["sgstAmount", "SGSTAmount", "sgst", "SGST"], 0);
   const gstAmount = readAmount(bill, ["gstAmount", "GSTAmount", "gst", "GST", "taxAmount", "TaxAmount"], cgstAmount + sgstAmount);
@@ -1458,8 +1485,18 @@ function ReceptionBilling() {
     );
   }, [appointments, form.appointmentId]);
 
-  const filteredBillingAppointments = useMemo(() => {
-    const todayKey = getTodayKey();
+  const billedAppointmentIds = useMemo(() => {
+    const ids = new Set();
+    recentServiceBills
+      .filter((bill) => billBelongsToMode(bill, billingMode))
+      .forEach((bill) => {
+        const appointmentId = getBillAppointmentId(bill);
+        if (appointmentId) ids.add(String(appointmentId));
+      });
+    return ids;
+  }, [billingMode, recentServiceBills]);
+
+  const billingAppointmentOptions = useMemo(() => {
     const appointmentHasDiagnosticRequest = (appointment = {}) => {
       const pendingRequest = getPendingDiagnosticRequest({
         appointmentId: getAppointmentId(appointment),
@@ -1472,12 +1509,18 @@ function ReceptionBilling() {
         splitDiagnosticTests(readAppointmentDiagnosticTests(appointment)).length
       );
     };
-    const activeAppointments = billingMode === "diagnostic"
+    return billingMode === "diagnostic"
       ? appointments.filter(appointmentHasDiagnosticRequest)
       : appointments;
-    const dateFiltered = activeAppointments.filter((appointment) => {
+  }, [appointments, billingMode]);
+
+  const filteredBillingAppointments = useMemo(() => {
+    const todayKey = getTodayKey();
+    const dateFiltered = billingAppointmentOptions.filter((appointment) => {
       const appointmentDate = getAppointmentDateKey(appointment);
+      const isBilled = billedAppointmentIds.has(String(getAppointmentId(appointment)));
       if (appointmentDateFilter && appointmentDate !== appointmentDateFilter) return false;
+      if (isBilled) return appointmentListView === "past";
       if (!appointmentDate) return appointmentListView === "past";
       return appointmentListView === "today"
         ? appointmentDate === todayKey
@@ -1485,7 +1528,7 @@ function ReceptionBilling() {
     });
 
     return dateFiltered;
-  }, [appointmentDateFilter, appointmentListView, appointments, billingMode]);
+  }, [appointmentDateFilter, appointmentListView, billedAppointmentIds, billingAppointmentOptions]);
 
   useEffect(() => {
     if (!form.appointmentId) return;
@@ -1498,15 +1541,19 @@ function ReceptionBilling() {
   }, [filteredBillingAppointments, form.appointmentId]);
 
   const todayBillingAppointmentCount = useMemo(
-    () => appointments.filter((appointment) => getAppointmentDateKey(appointment) === getTodayKey()).length,
-    [appointments]
+    () => billingAppointmentOptions.filter((appointment) =>
+      getAppointmentDateKey(appointment) === getTodayKey() &&
+      !billedAppointmentIds.has(String(getAppointmentId(appointment)))
+    ).length,
+    [billedAppointmentIds, billingAppointmentOptions]
   );
   const pastBillingAppointmentCount = useMemo(
-    () => appointments.filter((appointment) => {
+    () => billingAppointmentOptions.filter((appointment) => {
       const appointmentDate = getAppointmentDateKey(appointment);
-      return Boolean(appointmentDate && appointmentDate < getTodayKey());
+      return billedAppointmentIds.has(String(getAppointmentId(appointment))) ||
+        Boolean(appointmentDate && appointmentDate < getTodayKey());
     }).length,
-    [appointments]
+    [billedAppointmentIds, billingAppointmentOptions]
   );
 
   useEffect(() => {
@@ -2112,6 +2159,7 @@ function ReceptionBilling() {
 
   const viewRecentServiceBill = (bill) => {
     const billType = getServiceBillType(bill);
+    const savedBillAmount = getSavedBillAmount(bill, readAmount(bill, AMOUNT_KEYS.total, 0));
     if (billType === "consultation") {
       setInvoice(bill);
       downloadInvoicePdf(bill);
@@ -2134,28 +2182,37 @@ function ReceptionBilling() {
     }));
     if (!normalizedRows.length) {
       const fallbackAmount =
-        billType === "pharmacy"
+        savedBillAmount ||
+        (billType === "pharmacy"
           ? readAmount(bill, AMOUNT_KEYS.medicine, 0) || readAmount(bill, AMOUNT_KEYS.total, 0)
-          : readAmount(bill, AMOUNT_KEYS.lab, 0) || readAmount(bill, AMOUNT_KEYS.total, 0);
+          : readAmount(bill, AMOUNT_KEYS.lab, 0) || readAmount(bill, AMOUNT_KEYS.total, 0));
       if (fallbackAmount > 0) {
         normalizedRows = [{
           id: `${billType}-fallback-${getInvoiceId(bill) || Date.now()}`,
           diagnosis: billType === "pharmacy" ? "Pharmacy" : "Lab",
           item: billType === "pharmacy" ? "Pharmacy Charges" : "Diagnostic Charges",
-          unitPrice: fallbackAmount / (1 + HALF_GST_RATE * 2),
+          unitPrice: getTaxableFromGstTotal(fallbackAmount),
           quantity: 1,
         }];
       }
     }
-    const totals =
-      bill.totals ||
-      getBillingTotals(
-        normalizedRows.map((row) => ({
-          ...row,
-          quantity: billType === "pharmacy" ? row.quantity : 1,
-        })),
-        readDiscountPercent(bill, readAmount(bill, ["grossTotal", "GrossTotal", "subtotal", "Subtotal", "totalAmount", "TotalAmount"], 0))
-      );
+    const rowTotals = getBillingTotals(
+      normalizedRows.map((row) => ({
+        ...row,
+        quantity: billType === "pharmacy" ? row.quantity : 1,
+      })),
+      readDiscountPercent(bill, readAmount(bill, ["grossTotal", "GrossTotal", "subtotal", "Subtotal", "totalAmount", "TotalAmount"], 0))
+    );
+    const storedTotals = bill.totals && typeof bill.totals === "object" ? bill.totals : {};
+    const grossTotal = savedBillAmount > 0 && !rows.length ? savedBillAmount : Number(storedTotals.grossTotal ?? rowTotals.grossTotal);
+    const finalTotal = savedBillAmount || Number(storedTotals.total ?? rowTotals.total);
+    const totals = {
+      ...rowTotals,
+      ...storedTotals,
+      grossTotal,
+      total: finalTotal,
+      discountAmount: Math.max(0, Number(storedTotals.discountAmount ?? rowTotals.discountAmount ?? 0)),
+    };
 
     printServiceInvoice({
       type: billType === "pharmacy" ? "pharmacy" : "diagnostic",
@@ -2324,6 +2381,7 @@ function ReceptionBilling() {
       selectedAppointment,
       total,
     });
+    const savedOpTotal = getSavedBillAmount(activeInvoice, 0);
     const opCharge =
       readAmount(activeInvoice, AMOUNT_KEYS.consultation, 0) ||
       readAmount(activeInvoice, ["subtotal", "Subtotal"], 0) ||
@@ -2338,7 +2396,7 @@ function ReceptionBilling() {
       { label: "OP Consultation Charges", amount: opCharge },
       { label: `Discount (${discountPercent}%)`, amount: -discount },
     ];
-    const opTotal = Math.max(0, opRows.reduce((sum, row) => sum + Number(row.amount || 0), 0));
+    const opTotal = savedOpTotal || Math.max(0, opRows.reduce((sum, row) => sum + Number(row.amount || 0), 0));
 
     const printWindow = targetWindow || window.open("", "_blank", "width=860,height=980");
     if (!printWindow) {
@@ -2989,7 +3047,7 @@ function ReceptionBilling() {
               {visibleRecentServiceBills.map((bill, index) => {
                 const billType = getServiceBillType(bill);
                 const invoiceNo = bill.invoiceNo || bill.invoiceNumber || bill.billNumber || `BILL-${index + 1}`;
-                const amount = Number(bill.totalAmount ?? bill.netAmount ?? bill.grandTotal ?? bill.paidAmount) || 0;
+                const amount = getSavedBillAmount(bill, 0);
                 const createdAt = bill.createdAt || bill.invoiceDate || bill.billDate;
                 const canManageBill = hasBackendBillingId(bill);
                 return (
