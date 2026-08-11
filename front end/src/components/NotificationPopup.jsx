@@ -107,6 +107,7 @@ const ADMIN_ROLES = ["admin", "clinicadmin"];
 const ACTIVE_USER_ROLES = [
   ...ADMIN_ROLES,
   "doctor",
+  "nurse",
   "receptionist",
   "lab",
   "labtechnician",
@@ -131,6 +132,10 @@ const matchesTargetUsers = (notification = {}, role = "") => {
 
   if (target.includes("doctor")) {
     return r === "doctor";
+  }
+
+  if (target.includes("nurse")) {
+    return r === "nurse";
   }
 
   if (target.includes("receptionist") || target.includes("reception")) {

@@ -13,6 +13,7 @@ export const SUPER_ADMIN_API = {
   admins: "admins",
   clinics: "Clinics",
   notifications: "notifications",
+  staffNotifications: "Notification",
   notificationSend: "notifications/send",
   notificationStats: "notifications/stats",
   auditLogs: "AuditLogs",
@@ -663,6 +664,13 @@ const getModuleAuthToken = () => {
           : ["token", "adminToken", "superAdminToken", "labToken", "doctorToken", "nurseToken", "receptionistToken", "receptionToken"];
 
   return keys.map((key) => localStorage.getItem(key)).find(Boolean) || "";
+};
+
+const isStaffNotificationContext = () => {
+  const path = String(window.location?.pathname || "").toLowerCase();
+  return ["/doctor", "/nurse", "/reception", "/lab"].some((prefix) =>
+    path.startsWith(prefix)
+  );
 };
 
 export const superAdminRequest = async (path, options = {}) => {
@@ -2277,8 +2285,11 @@ export const deleteAdmin = async (id) => {
 };
 
 export const fetchNotifications = async () => {
+  const endpoint = isStaffNotificationContext()
+    ? SUPER_ADMIN_API.staffNotifications
+    : SUPER_ADMIN_API.notifications;
   const remoteNotifications = asArray(
-    await superAdminRequest(SUPER_ADMIN_API.notifications)
+    await superAdminRequest(endpoint)
   ).map(normalizeNotification);
 
   return mergeNotificationRecords(remoteNotifications);
@@ -2335,7 +2346,10 @@ export const markNotificationRead = async (id) => {
   if (!id) return null;
 
   try {
-    const result = await superAdminRequest(`${SUPER_ADMIN_API.notifications}/${id}/read`, {
+    const endpoint = isStaffNotificationContext()
+      ? SUPER_ADMIN_API.staffNotifications
+      : SUPER_ADMIN_API.notifications;
+    const result = await superAdminRequest(`${endpoint}/${id}/read`, {
       method: "PUT",
       body: { status: "Read", isRead: true },
     });

@@ -9,6 +9,37 @@ export const parseList = (data) => {
   return [];
 };
 
+const normalizeRole = (value = "") =>
+  String(value || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
+
+const readFirst = (record = {}, keys = [], fallback = "") => {
+  for (const key of keys) {
+    const value = String(key)
+      .split(".")
+      .reduce((current, part) => (current && typeof current === "object" ? current[part] : undefined), record);
+    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+  }
+  return fallback;
+};
+
+export const getStaffRole = (record = {}) =>
+  normalizeRole(
+    readFirst(record, [
+      "role",
+      "Role",
+      "roleName",
+      "RoleName",
+      "type",
+      "Type",
+      "staffRole",
+      "StaffRole",
+      "userRole",
+      "UserRole",
+    ])
+  );
+
+export const isNurseRecord = (record = {}) => getStaffRole(record) === "nurse";
+
 const nurseApiPath = (path, method = "GET") => {
   const raw = String(path || "").replace(/^\/+/, "");
   if (!isNurseSession()) return raw;
@@ -58,9 +89,11 @@ export const requestJson = async (path, options = {}) => {
 
 export const getOnlineAppointments = async () => parseList(await requestJson("Appointment/online"));
 export const getOfflineAppointments = async () => parseList(await requestJson("Appointment/offline"));
+export const getNurses = async () => parseList(await requestJson("Staff?role=Nurse")).filter(isNurseRecord);
 
 export default {
   requestJson,
   getOnlineAppointments,
   getOfflineAppointments,
+  getNurses,
 };

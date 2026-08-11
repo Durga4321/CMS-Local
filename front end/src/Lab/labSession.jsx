@@ -33,9 +33,17 @@ export const getLabProfile = () => {
     localStorage.getItem("branchId") ||
     getClaim(claims, "BranchId", "branchId", "BranchID", "branchID") ||
     "";
+  const id =
+    localStorage.getItem("labTechnicianId") ||
+    localStorage.getItem("labId") ||
+    localStorage.getItem("userId") ||
+    getClaim(claims, "LabTechnicianId", "labTechnicianId", "LabId", "labId", "UserId", "userId", "sub") ||
+    "";
 
   return {
     token,
+    id: String(id),
+    userId: String(id),
     email,
     name,
     role: localStorage.getItem("labRole") || "Lab Technician",

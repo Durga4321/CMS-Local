@@ -20,8 +20,6 @@ import {
   DUPLICATE_APPOINTMENT_MESSAGE,
   hasDuplicateAppointmentForPatientDoctorDate,
 } from "../../utils/appointmentDuplicateValidation";
-import { isDoctorBranchLeaveDate } from "../../utils/doctorBranchLeave";
-import { buildDoctorScheduleDraftSlots } from "../../utils/doctorScheduleDrafts";
 
 const getNestedValue = (record, path) => {
   if (record == null) return undefined;
@@ -1929,10 +1927,6 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
 
       try {
         const branchId = selectedBranch?.id || selectedBranch?.branchId;
-        if (isDoctorBranchLeaveDate(doctorId, branchId, selectedDate)) {
-          setSlots([]);
-          return;
-        }
         const params = new URLSearchParams({ date: selectedDate });
         if (branchId) params.set('branchId', String(branchId));
         const slotsUrl = patientApiUrl(PATIENT_API.doctorSlots, { doctorId });
@@ -1951,10 +1945,10 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
           ).trim();
           return !selectedBranchId || slotBranchId === selectedBranchId;
         });
-        const localSlots = buildDoctorScheduleDraftSlots(doctorId, branchId, selectedDate);
-        const resolvedSlots = localSlots.length > 0 ? localSlots : slotList;
-        // API returns {start, end, status} objects
-        setSlots(resolvedSlots.map((slot) => ({
+        // The patient portal slot API is the single source of truth and already
+        // applies leave, time changes, branch shifts and booked-slot conflicts.
+        // API returns {start, end, status} objects.
+        setSlots(slotList.map((slot) => ({
           ...slot,
           id: slot.id || slot.slotId || `${doctorId}-${branchId || 'branch'}-${selectedDate}-${slot.start || slot.startTime || slot.time}`,
           doctorId: String(doctorId),
