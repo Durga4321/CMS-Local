@@ -284,6 +284,90 @@ const readItemizedAmount = (source, keywords = []) => {
   return 0;
 };
 
+const SERVICE_ITEM_ARRAY_KEYS = [
+  "rows",
+  "Rows",
+  "lineItems",
+  "LineItems",
+  "serviceItems",
+  "ServiceItems",
+  "items",
+  "Items",
+  "billItems",
+  "BillItems",
+  "billingItems",
+  "BillingItems",
+  "billingDetails",
+  "BillingDetails",
+  "diagnosticTests",
+  "DiagnosticTests",
+  "labTests",
+  "LabTests",
+  "tests",
+  "Tests",
+  "medicines",
+  "Medicines",
+  "medications",
+  "Medications",
+];
+
+const collectServiceItems = (source, seen = new Set()) => {
+  if (!source || typeof source !== "object" || seen.has(source)) return [];
+  seen.add(source);
+
+  const directRows = SERVICE_ITEM_ARRAY_KEYS.flatMap((key) => {
+    const value = source[key];
+    return Array.isArray(value) ? value : [];
+  });
+
+  const nestedRows = ["billing", "bill", "invoice", "payment", "details", "data", "result"].flatMap((key) => {
+    const nested = source[key] || source[key.charAt(0).toUpperCase() + key.slice(1)];
+    return nested && typeof nested === "object" && !Array.isArray(nested) ? collectServiceItems(nested, seen) : [];
+  });
+
+  return [...directRows, ...nestedRows];
+};
+
+const getServiceLineItemName = (row = {}, billType = "diagnostic") =>
+  firstValue(
+    row.item,
+    row.Item,
+    row.label,
+    row.Label,
+    row.testName,
+    row.TestName,
+    row.test,
+    row.Test,
+    row.name,
+    row.Name,
+    row.serviceName,
+    row.ServiceName,
+    row.medicineName,
+    row.MedicineName,
+    row.productName,
+    row.ProductName,
+    row.description,
+    row.Description,
+    billType === "pharmacy" ? "Pharmacy Charges" : "Diagnostic Charges"
+  );
+
+const normalizeServiceBillRows = (bill = {}, billType = "diagnostic") =>
+  collectServiceItems(bill)
+    .map((row, index) => {
+      const quantity = Math.max(1, Number(firstValue(row.quantity, row.Quantity, row.qty, row.Qty, row.count, row.Count, 1)) || 1);
+      const unitAmount = readAmount(row, ["unitPrice", "UnitPrice", "price", "Price", "rate", "Rate", "mrp", "MRP"], 0);
+      const lineAmount = readAmount(row, ["amount", "Amount", "total", "Total", "totalAmount", "TotalAmount", "netAmount", "NetAmount", "lineTotal", "LineTotal"], 0);
+      const unitPrice = unitAmount || (lineAmount > 0 ? lineAmount / quantity : 0);
+      return {
+        id: firstValue(row.id, row.Id, row.testId, row.TestId, row.itemId, row.ItemId, `${billType}-${index}`),
+        diagnosis: firstValue(row.diagnosis, row.Diagnosis, row.category, row.Category, row.department, row.Department, ""),
+        item: getServiceLineItemName(row, billType),
+        unitPrice,
+        quantity: billType === "pharmacy" ? quantity : 1,
+      };
+    })
+    .filter((row) => String(row.item || "").trim() && Number(row.unitPrice || 0) > 0);
+
 const formatInvoiceDate = (value = new Date()) => {
   const date = value ? new Date(value) : new Date();
   if (Number.isNaN(date.getTime())) return new Date().toLocaleDateString("en-IN");
@@ -475,6 +559,8 @@ const printServiceInvoice = ({
           th { background: #eaf8f6; color: #0f172a; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
           td.num, th.num { text-align: center; }
           td.money, th.money { text-align: right; font-variant-numeric: tabular-nums; }
+          .item-detail { display: grid; gap: 3px; }
+          .item-detail small { color: #64748b; font-size: 11px; }
           tfoot td { background: #f0fdfa; border-top: 2px solid ${escapeHtml(accentColor)}; color: #0f172a; font-weight: 900; }
           tfoot td:last-child { background: #d9f7f3; color: #0f172a; }
           .foot { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-top: 28px; border-top: 1px dashed #94a3b8; padding-top: 14px; color: #475569; font-size: 12px; }
@@ -538,10 +624,11 @@ const printServiceInvoice = ({
                   const amount = (Number(row.unitPrice) || 0) * (Number(row.quantity) || 0);
                   const cgst = amount * HALF_GST_RATE;
                   const sgst = amount * HALF_GST_RATE;
+                  const detail = row.diagnosis && type !== "pharmacy" ? `<small>Diagnosis: ${escapeHtml(row.diagnosis)}</small>` : "";
                   return `
                     <tr>
                       <td class="num">${index + 1}</td>
-                      <td>${escapeHtml(row.item)}</td>
+                      <td><span class="item-detail"><strong>${escapeHtml(row.item)}</strong>${detail}</span></td>
                       ${type === "pharmacy" ? `<td class="num">${Number(row.quantity) || 1}</td>` : ""}
                       <td class="money">${amountFormat(amount)}</td>
                       <td class="money">${amountFormat(cgst)}</td>
@@ -2166,20 +2253,7 @@ function ReceptionBilling() {
       return;
     }
 
-    const rows = Array.isArray(bill.rows)
-      ? bill.rows
-      : Array.isArray(bill.serviceItems)
-        ? bill.serviceItems
-        : Array.isArray(bill.items)
-          ? bill.items
-          : [];
-    let normalizedRows = rows.map((row) => ({
-      id: row.id || Date.now() + Math.random(),
-      diagnosis: row.diagnosis || row.Diagnosis || "",
-      item: row.item || row.name || row.Name || row.medicine || row.test || "Item",
-      unitPrice: Number(row.unitPrice ?? row.price ?? row.rate ?? row.amount) || 0,
-      quantity: Number(row.quantity ?? row.qty) || 1,
-    }));
+    let normalizedRows = normalizeServiceBillRows(bill, billType === "pharmacy" ? "pharmacy" : "diagnostic");
     if (!normalizedRows.length) {
       const fallbackAmount =
         savedBillAmount ||
@@ -2204,7 +2278,7 @@ function ReceptionBilling() {
       readDiscountPercent(bill, readAmount(bill, ["grossTotal", "GrossTotal", "subtotal", "Subtotal", "totalAmount", "TotalAmount"], 0))
     );
     const storedTotals = bill.totals && typeof bill.totals === "object" ? bill.totals : {};
-    const grossTotal = savedBillAmount > 0 && !rows.length ? savedBillAmount : Number(storedTotals.grossTotal ?? rowTotals.grossTotal);
+    const grossTotal = savedBillAmount > 0 && normalizedRows.length === 1 ? savedBillAmount : Number(storedTotals.grossTotal ?? rowTotals.grossTotal);
     const finalTotal = savedBillAmount || Number(storedTotals.total ?? rowTotals.total);
     const totals = {
       ...rowTotals,
@@ -2256,14 +2330,7 @@ function ReceptionBilling() {
       return;
     }
 
-    const rows = Array.isArray(bill.rows) ? bill.rows : Array.isArray(bill.serviceItems) ? bill.serviceItems : [];
-    const normalizedRows = rows.map((row) => ({
-      id: Date.now() + Math.random(),
-      diagnosis: row.diagnosis || row.Diagnosis || "",
-      item: row.item || row.name || row.Name || "Item",
-      unitPrice: Number(row.unitPrice ?? row.price ?? row.rate) || Number(row.amount) || 0,
-      quantity: Number(row.quantity ?? row.qty) || 1,
-    }));
+    const normalizedRows = normalizeServiceBillRows(bill, nextMode === "pharmacy" ? "pharmacy" : "diagnostic");
 
     setBillingMode(nextMode === "pharmacy" ? "pharmacy" : "diagnostic");
     if (nextMode === "pharmacy") {

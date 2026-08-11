@@ -206,14 +206,47 @@ const parseApiList = (value) => {
   return [];
 };
 
-const fetchPatientPortalBillingRows = async ({ headers = {}, cache = "no-store" } = {}) => {
-  const response = await fetch(patientApiUrl(PATIENT_API.bills), { headers, cache }).catch(() => null);
+const PATIENT_PORTAL_BILLING_TYPES = ["op", "lab", "pharmacy"];
+
+const normalizePortalBillingType = (type = "") => {
+  const normalized = String(type || "").trim().toLowerCase();
+  if (normalized.includes("pharmacy") || normalized.includes("medicine")) return "pharmacy";
+  if (normalized.includes("lab") || normalized.includes("diagnostic") || normalized.includes("diagnosis") || normalized.includes("test")) return "lab";
+  return "op";
+};
+
+const withQueryParams = (path, params = {}) => {
+  const entries = Object.entries(params).filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== "");
+  if (!entries.length) return path;
+  const query = entries
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+    .join("&");
+  return `${path}${String(path).includes("?") ? "&" : "?"}${query}`;
+};
+
+const fetchPatientPortalBillingRows = async ({ headers = {}, cache = "no-store", billingType = "" } = {}) => {
+  const type = billingType ? normalizePortalBillingType(billingType) : "";
+  const path = withQueryParams(PATIENT_API.bills, type ? { billingType: type } : {});
+  const response = await fetch(patientApiUrl(path), { headers, cache }).catch(() => null);
   if (!response?.ok) return [];
   const data = await response.json().catch(() => []);
   return parseApiList(data).map((bill) => ({
     ...bill,
-    __sourcePath: PATIENT_API.bills,
+    billingType: bill.billingType || bill.BillingType || type || "",
+    BillingType: bill.BillingType || bill.billingType || type || "",
+    invoiceType: bill.invoiceType || bill.InvoiceType || type || "",
+    InvoiceType: bill.InvoiceType || bill.invoiceType || type || "",
+    __sourcePath: path,
   }));
+};
+
+const fetchAllPatientPortalBillingRows = async ({ headers = {}, cache = "no-store" } = {}) => {
+  const results = await Promise.all(
+    PATIENT_PORTAL_BILLING_TYPES.map((billingType) =>
+      fetchPatientPortalBillingRows({ headers, cache, billingType }).catch(() => [])
+    )
+  );
+  return dedupeBillsByInvoice(results.flat());
 };
 
 const dedupeBillsByInvoice = (bills = []) => {
@@ -343,6 +376,7 @@ const billBelongsToPatient = (bill, patient = {}, visits = []) => {
     readFirst(bill, ["appointmentId", "AppointmentId", "appointment.id", "appointment.Id", "appointmentNumber", "AppointmentNumber", "appointmentNo", "AppointmentNo"]),
   ].map((value) => normalizeComparable(value)).filter(Boolean);
   if (billIds.some((value) => patientIds.has(value))) return true;
+  if (patientIds.size) return false;
 
   const billFirstName = readFirst(bill, ["patient.firstName", "patient.FirstName", "firstName", "FirstName"]);
   const billLastName = readFirst(bill, ["patient.lastName", "patient.LastName", "lastName", "LastName"]);
@@ -1125,7 +1159,7 @@ function PatientRoutes() {
         fetch(patientApiUrl(PATIENT_API.profile), { headers }).catch(() => null),
         fetch(patientApiUrl(PATIENT_API.appointments), { headers }).catch(() => null),
         fetch(patientApiUrl(PATIENT_API.prescriptions), { headers, cache: "no-store" }).catch(() => null),
-        fetchPatientPortalBillingRows({ headers, cache: "no-store" }).catch(() => []),
+        fetchAllPatientPortalBillingRows({ headers, cache: "no-store" }).catch(() => []),
         fetch(patientApiUrl(PATIENT_API.notifications), { headers, cache: "no-store" }).catch(() => null),
         fetch(patientApiUrl(PATIENT_API.dashboard), { headers }).catch(() => null),
       ]);
@@ -2488,7 +2522,7 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
       // Patients do not have permission to create bills through the staff-only
       // Billing endpoint. Payment confirmation creates the bill server-side;
       // retrieve it through the existing patient bills endpoint when available.
-      const patientBills = await fetchPatientPortalBillingRows({ headers }).catch(() => []);
+      const patientBills = await fetchAllPatientPortalBillingRows({ headers }).catch(() => []);
       const billData = patientBills.find((bill) => String(readFirst(bill, ["appointmentId", "appointment.id", "appointmentNumber"]) || "") === String(appointmentId)) || successData?.bill || successData?.invoice || paymentData?.bill || paymentData?.invoice || {};
       const generatedBill = {
         ...(Array.isArray(billData) ? billData[0] : billData),
@@ -4637,7 +4671,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     const loadSubmittedBills = async () => {
       setLoadingBills(true);
       try {
-        const data = await fetchPatientPortalBillingRows({ headers, cache: "no-store" }).catch(() => []);
+        const data = await fetchAllPatientPortalBillingRows({ headers, cache: "no-store" }).catch(() => []);
         const nextBills = dedupeBillsByInvoice([
           ...data,
         ]).filter((bill) => billBelongsToPatient(bill, patient || {}, visits));
@@ -4749,19 +4783,41 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   const totalAmount = (record) => Number(readFirst(record, ['total', 'totalAmount', 'amount', 'invoiceAmount', 'grandTotal', 'payableAmount', 'paymentAmount', 'paidAmount', 'netAmount', 'dueAmount', 'totals.total']) || 0);
   const dueAmount = (record) => Number(readFirst(record, ['dueAmount', 'balance', 'outstandingAmount']) || 0);
 
+  const serviceItemArrays = (record) => [
+    record.lineItems,
+    record.LineItems,
+    record.rows,
+    record.Rows,
+    record.serviceItems,
+    record.ServiceItems,
+    record.billItems,
+    record.BillItems,
+    record.billingItems,
+    record.BillingItems,
+    record.billingDetails,
+    record.BillingDetails,
+    record.items,
+    record.Items,
+    record.diagnosticTests,
+    record.DiagnosticTests,
+    record.labTests,
+    record.LabTests,
+    record.tests,
+    record.Tests,
+    record.medicines,
+    record.Medicines,
+    record.medications,
+    record.Medications,
+  ].find((items) => Array.isArray(items) && items.length) || [];
+
   const getLineItems = (record) => {
-    if (Array.isArray(record.lineItems) && record.lineItems.length) return record.lineItems;
-    if (Array.isArray(record.rows) && record.rows.length) {
-      return record.rows.map((row) => ({
-        label: readFirst(row, ['item', 'name', 'test', 'medicine', 'diagnosis']) || 'Service item',
-        amount: (Number(readFirst(row, ['unitPrice', 'price', 'rate', 'amount']) || 0) || 0) * (Number(readFirst(row, ['quantity', 'qty']) || 1) || 1),
-      }));
-    }
-    const serviceItems = record.serviceItems || record.billItems || record.items || record.billingItems;
+    const serviceItems = serviceItemArrays(record);
     if (Array.isArray(serviceItems) && serviceItems.length) {
       return serviceItems.map((row) => ({
-        label: readFirst(row, ['item', 'name', 'test', 'medicine', 'diagnosis']) || 'Service item',
-        amount: readFirst(row, ['amount', 'total', 'netAmount']) || ((Number(readFirst(row, ['unitPrice', 'price', 'rate']) || 0) || 0) * (Number(readFirst(row, ['quantity', 'qty']) || 1) || 1)),
+        label: readFirst(row, ['item', 'Item', 'label', 'Label', 'testName', 'TestName', 'test', 'Test', 'name', 'Name', 'serviceName', 'ServiceName', 'medicineName', 'MedicineName', 'productName', 'ProductName', 'diagnosis', 'Diagnosis']) || 'Service item',
+        diagnosis: readFirst(row, ['diagnosis', 'Diagnosis', 'category', 'Category', 'department', 'Department']) || '',
+        quantity: Number(readFirst(row, ['quantity', 'Quantity', 'qty', 'Qty']) || 1) || 1,
+        amount: Number(readFirst(row, ['amount', 'Amount', 'total', 'Total', 'totalAmount', 'TotalAmount', 'netAmount', 'NetAmount', 'lineTotal', 'LineTotal']) || 0) || ((Number(readFirst(row, ['unitPrice', 'UnitPrice', 'price', 'Price', 'rate', 'Rate']) || 0) || 0) * (Number(readFirst(row, ['quantity', 'Quantity', 'qty', 'Qty']) || 1) || 1)),
       }));
     }
     if (record.charges && typeof record.charges === 'object') {
@@ -4957,7 +5013,9 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     const due = formatAmount(dueAmount(record));
     const paymentModeValue = displayPaymentMode(record);
     const statusValue = paymentStatus(record) === 'paid' ? 'Paid' : 'Pending';
-    const lineItems = getLineItems(record);
+    const billKind = billTypeLabel(record);
+    const invoiceHeading = billKind === 'Diagnostic' ? 'Diagnostic Invoice' : billKind === 'Pharmacy' ? 'Pharmacy Invoice' : 'OP Invoice';
+    const invoiceRows = getInvoiceRows(record);
     const clinicName = readFirst(record, ['clinicName', 'hospitalName', 'branchName', 'clinic.name', 'hospital.name', 'branch.name']) || 'Clinic';
     const clinicId = readFirst(record, ['clinicId', 'hospitalId', 'ClinicId', 'HospitalId', 'clinic.id', 'hospital.id']) || '';
     const branchName = readFirst(record, ['branchName', 'BranchName', 'branch.name', 'Branch.Name']) || clinicName;
@@ -4972,16 +5030,25 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     const footerNote = branding.footerNote;
     const accentColor = branding.accentColor || "#111827";
 
-    const lineRows = lineItems.length
-      ? lineItems.map((item) => `
+    const lineRows = invoiceRows.length
+      ? invoiceRows.map((item) => `
           <tr>
-            <td>${escapeHtml(item.label)}</td>
+            <td>
+              <strong>${escapeHtml(item.label)}</strong>
+              ${item.diagnosis ? `<small>${escapeHtml(item.diagnosis)}</small>` : ''}
+            </td>
             <td style="text-align:right;">${formatAmount(item.amount)}</td>
+            <td style="text-align:right;">${formatAmount(item.cgst)}</td>
+            <td style="text-align:right;">${formatAmount(item.sgst)}</td>
+            <td style="text-align:right;">${formatAmount(item.netAmount)}</td>
           </tr>
         `).join('')
       : `
           <tr>
             <td>Description</td>
+            <td style="text-align:right;">${total}</td>
+            <td style="text-align:right;">${formatAmount(0)}</td>
+            <td style="text-align:right;">${formatAmount(0)}</td>
             <td style="text-align:right;">${total}</td>
           </tr>
         `;
@@ -5018,6 +5085,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
             th, td { padding: 12px; border: 1px solid #dbe4ee; font-size: 13px; }
             th { text-align: left; background: ${escapeHtml(accentColor)}; color: white; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
             td:last-child { text-align: right; }
+            td small { display: block; margin-top: 4px; color: #64748b; font-size: 11px; }
             .summary { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding: 16px 18px; background: ${escapeHtml(accentColor)}; color: #ffffff; border-radius: 8px; }
             .summary div { font-size: 16px; }
             .footer { margin-top: 26px; padding-top: 14px; border-top: 1px solid #dbe4ee; font-size: 12px; color: #475569; }
@@ -5046,7 +5114,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
                 </div>
               </div>
               <div class="meta">
-                <h2>Invoice</h2>
+                <h2>${escapeHtml(invoiceHeading)}</h2>
                 <span><b>No</b> ${escapeHtml(invoiceNumberValue)}</span>
                 <span><b>Date</b> ${escapeHtml(billDate)}</span>
                 <span><b>Status</b> ${escapeHtml(statusValue)}</span>
@@ -5068,7 +5136,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
               <h2>Line Items</h2>
               <table>
                 <thead>
-                  <tr><th>Description</th><th>Amount</th></tr>
+                  <tr><th>Description</th><th>Amount</th><th>CGST</th><th>SGST</th><th>Net Amount</th></tr>
                 </thead>
                 <tbody>${lineRows}</tbody>
               </table>
