@@ -383,8 +383,6 @@ function AdminUserManagement() {
         doctorsResult,
         receptionistsResult,
         patientsResult,
-        nursesResult,
-        nursesPluralResult,
         staffResult,
         appointmentsResult,
         offlineAppointmentsResult,
@@ -394,8 +392,6 @@ function AdminUserManagement() {
         requestJson("Doctor"),
         requestJson("Receptionist"),
         requestJson("Patient"),
-        requestJson("Nurse"),
-        requestJson("Nurses"),
         requestJson("Staff"),
         requestJson("Appointment"),
         requestJson("Appointment/offline"),
@@ -454,12 +450,6 @@ function AdminUserManagement() {
           : []),
         ...(patientsResult.status === "fulfilled"
           ? parseList(patientsResult.value).map((item, index) => normalizeDirectoryUser(item, "Patient", index, branchLookup))
-          : []),
-        ...(nursesResult.status === "fulfilled"
-          ? parseList(nursesResult.value).map((item, index) => normalizeDirectoryUser(item, "Nurse", index, branchLookup))
-          : []),
-        ...(nursesResult.status !== "fulfilled" && nursesPluralResult.status === "fulfilled"
-          ? parseList(nursesPluralResult.value).map((item, index) => normalizeDirectoryUser(item, "Nurse", index, branchLookup))
           : []),
         ...(staffResult.status === "fulfilled"
           ? parseList(staffResult.value).map((item, index) =>

@@ -63,40 +63,6 @@ const normalizeDateKey = (value) => {
 const createInvoiceNo = (prefix) =>
   `${prefix}-${Date.now()}-${String(Math.floor(Math.random() * 900) + 100)}`;
 
-const PHARMACY_PRICE_LIST = [
-  { diagnosis: "Viral Fever", item: "Paracetamol 500 mg", price: 30 },
-  { diagnosis: "Hypertension", item: "Amlodipine 5 mg", price: 60 },
-  { diagnosis: "Diabetes Mellitus", item: "Metformin 500 mg", price: 80 },
-  { diagnosis: "Anemia", item: "Ferrous Sulfate", price: 120 },
-  { diagnosis: "Asthma", item: "Salbutamol Inhaler", price: 250 },
-  { diagnosis: "COPD", item: "Tiotropium Inhaler", price: 450 },
-  { diagnosis: "Pneumonia", item: "Amoxicillin + Clavulanate", price: 350 },
-  { diagnosis: "Tuberculosis", item: "Anti-TB Drug Kit", price: 800 },
-  { diagnosis: "Dengue", item: "Oral Rehydration Salts (ORS)", price: 25 },
-  { diagnosis: "Malaria", item: "Artemether + Lumefantrine", price: 180 },
-  { diagnosis: "Gastritis", item: "Pantoprazole 40 mg", price: 90 },
-  { diagnosis: "GERD", item: "Omeprazole 20 mg", price: 70 },
-  { diagnosis: "Peptic Ulcer", item: "Pantoprazole + Sucralfate", price: 180 },
-  { diagnosis: "Kidney Stones", item: "Tamsulosin 0.4 mg", price: 220 },
-  { diagnosis: "Urinary Tract Infection", item: "Nitrofurantoin", price: 180 },
-  { diagnosis: "Arthritis", item: "Diclofenac Tablets", price: 100 },
-  { diagnosis: "Osteoarthritis", item: "Aceclofenac + Paracetamol", price: 150 },
-  { diagnosis: "Migraine", item: "Sumatriptan", price: 200 },
-  { diagnosis: "Epilepsy", item: "Sodium Valproate", price: 250 },
-  { diagnosis: "Depression", item: "Sertraline", price: 220 },
-  { diagnosis: "Anxiety Disorder", item: "Escitalopram", price: 180 },
-  { diagnosis: "Hypothyroidism", item: "Levothyroxine", price: 90 },
-  { diagnosis: "Hyperthyroidism", item: "Carbimazole", price: 140 },
-  { diagnosis: "Skin Infection", item: "Mupirocin Ointment", price: 120 },
-  { diagnosis: "Acne", item: "Benzoyl Peroxide Gel", price: 180 },
-  { diagnosis: "Eczema", item: "Hydrocortisone Cream", price: 100 },
-  { diagnosis: "Psoriasis", item: "Clobetasol Cream", price: 180 },
-  { diagnosis: "Heart Failure", item: "Furosemide", price: 80 },
-  { diagnosis: "Coronary Artery Disease", item: "Aspirin 75 mg", price: 50 },
-  { diagnosis: "Heart Attack", item: "Aspirin + Clopidogrel", price: 180 },
-  { diagnosis: "Arrhythmia", item: "Amiodarone", price: 250 },
-  { diagnosis: "Pregnancy", item: "Folic Acid Tablets", price: 60 },
-];
 
 const AMOUNT_KEYS = {
   consultation: [
@@ -623,7 +589,7 @@ const updateBillingBill = async (bill, payload = {}) => {
   const billId = getInvoiceId(bill);
   if (!billId) return null;
 
-  return requestJson(`${getBillingApiPath(getServiceBillType(bill))}/${billId}`, {
+  return requestJson(`Billing/${billId}`, {
     method: "PUT",
     body: JSON.stringify({
       ...payload,
@@ -639,7 +605,7 @@ const deleteBillingBill = async (bill) => {
   const billId = getInvoiceId(bill);
   if (!billId) return false;
 
-  await requestJson(`${getBillingApiPath(getServiceBillType(bill))}/${billId}`, {
+  await requestJson(`Billing/${billId}`, {
     method: "DELETE",
   });
   return true;
@@ -1289,6 +1255,7 @@ function ReceptionBilling() {
   const [labMasterPriceList, setLabMasterPriceList] = useState([]);
   const [labMasterLoading, setLabMasterLoading] = useState(false);
   const [pharmacyRows, setPharmacyRows] = useState([]);
+  const [pharmacyPrescriptionLoading, setPharmacyPrescriptionLoading] = useState(false);
   const [recentServiceBills, setRecentServiceBills] = useState(() => readRecentServiceBills());
   const [editingBill, setEditingBill] = useState(null);
   const [serviceSearch, setServiceSearch] = useState("");
@@ -1615,11 +1582,73 @@ function ReceptionBilling() {
     };
   }, [billingMode, labMasterPriceList, selectedAppointment]);
 
+  // Load medicines from the doctor's saved prescription.
+  // The backend PrescriptionItem model does not currently store selling price,
+  // so the receptionist enters the unit price only for medicines that were
+  // actually prescribed by the doctor.
+  useEffect(() => {
+    if (billingMode !== "pharmacy") {
+      setPharmacyPrescriptionLoading(false);
+      setPharmacyRows([]);
+      return;
+    }
+
+    const appointmentId = getAppointmentId(selectedAppointment);
+    if (!appointmentId) {
+      setPharmacyRows([]);
+      return;
+    }
+
+    let cancelled = false;
+    setPharmacyPrescriptionLoading(true);
+
+    requestJson(`Billing/appointments/${encodeURIComponent(appointmentId)}/prescription`)
+      .then((data) => {
+        if (cancelled) return;
+        const medicines = parseList(data?.medicines ?? data?.Medicines ?? []);
+
+        setPharmacyRows(
+          medicines
+            .filter((medicine) =>
+              String(medicine?.medicineName ?? medicine?.MedicineName ?? "").trim()
+            )
+            .map((medicine, index) => ({
+              id: medicine.id ?? medicine.Id ?? `rx-${appointmentId}-${index}`,
+              prescriptionItemId: medicine.id ?? medicine.Id ?? null,
+              diagnosis: data?.diagnosis ?? data?.Diagnosis ?? "Prescription",
+              item: medicine.medicineName ?? medicine.MedicineName,
+              dosage: medicine.dosage ?? medicine.Dosage ?? "",
+              frequency: medicine.frequency ?? medicine.Frequency ?? "",
+              duration: medicine.duration ?? medicine.Duration ?? "",
+              notes: medicine.notes ?? medicine.Notes ?? "",
+              quantity: 1,
+              unitPrice: 0,
+              price: 0,
+              source: "Prescription"
+            }))
+        );
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setPharmacyRows([]);
+          console.warn("Unable to load prescribed medicines.", error);
+          showMessage(error.message || "No prescribed medicines were found for this appointment.", "error");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setPharmacyPrescriptionLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [billingMode, selectedAppointment]);
+
   const medicineCharges = Number(form.medicineCharges || 0);
   const labCharges = Number(form.labCharges || 0);
   const total = medicineCharges + labCharges;
   const activeServiceRows = billingMode === "pharmacy" ? pharmacyRows : diagnosticRows;
-  const activePriceList = billingMode === "pharmacy" ? PHARMACY_PRICE_LIST : labMasterPriceList;
+  const activePriceList = billingMode === "pharmacy" ? [] : labMasterPriceList;
   const serviceDisplayRows = activeServiceRows.map((row) => ({
     ...row,
     quantity: billingMode === "pharmacy" ? Number(row.quantity) || 1 : 1,
@@ -1628,13 +1657,13 @@ function ReceptionBilling() {
   const visibleRecentServiceBills = useMemo(
     () => {
       if (billingMode === "consultation") {
-        const backendOpBills = recentServiceBills.filter(
-          (bill) => billBelongsToMode(bill, "consultation")
-        );
-        const appointmentOpBills = appointments
-          .filter(isPaidAppointmentBooking)
-          .map(appointmentToOpBill);
-        return mergeRecentServiceBills(backendOpBills, appointmentOpBills)
+        // Show only OP bills that really exist in the backend Billings table.
+        // Paid appointments are no longer manufactured into fake OP invoices.
+        return recentServiceBills
+          .filter((bill) =>
+            billBelongsToMode(bill, "consultation") &&
+            hasBackendBillingId(bill)
+          )
           .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
           .slice(0, 30);
       }
@@ -1752,7 +1781,14 @@ function ReceptionBilling() {
     if (!details.rows.length) {
       const text = details.type === "diagnostic"
         ? "No prescribed lab tests were found for the selected appointment."
-        : "Select at least one billable item.";
+        : "No prescribed medicines were found for the selected appointment.";
+      showMessage(text, "error");
+      toast.error(text);
+      return false;
+    }
+
+    if (details.type === "pharmacy" && Number(details.totals.subtotal || 0) <= 0) {
+      const text = "Enter a valid unit price for at least one prescribed medicine.";
       showMessage(text, "error");
       toast.error(text);
       return false;
@@ -1898,7 +1934,16 @@ function ReceptionBilling() {
       invoiceWindow.document.close();
     }
 
-    const consultationCharge = Number(form.medicineCharges || 0) + Number(form.labCharges || 0);
+    const consultationCharge = Number(
+      firstValue(
+        selectedAppointment?.consultationFee,
+        selectedAppointment?.ConsultationFee,
+        selectedAppointment?.doctorFee,
+        selectedAppointment?.DoctorFee,
+        getAppointmentPaidAmount(selectedAppointment),
+        0
+      )
+    );
     const subtotal = consultationCharge;
     const discountPercentage = normalizeDiscountPercent(form.discount);
     const discount = getDiscountAmount(subtotal, discountPercentage);
@@ -2608,7 +2653,7 @@ function ReceptionBilling() {
       <div className="rc-page-head">
         <div>
           <h2>Billing</h2>
-          <p>Create diagnostic and pharmacy invoices for direct counter billing.</p>
+          <p>View OP invoices and create diagnostic/pharmacy invoices from persisted backend billing records.</p>
         </div>
         <button className="rc-btn" onClick={() => navigate("/reception/dashboard")}>
           <ArrowLeft size={16} /> Dashboard
@@ -2649,7 +2694,9 @@ function ReceptionBilling() {
                   : "Generate Diagnosis Test Bill"}
               </h3>
               <p>
-                Select items and collect payment without appointment access.
+                {billingMode === "pharmacy"
+                  ? "Load medicines from the doctor's prescription and collect pharmacy payment."
+                  : "Load prescribed diagnostic tests and collect payment."}
               </p>
             </div>
           </div>
@@ -2790,24 +2837,37 @@ function ReceptionBilling() {
             <div className="rc-service-head">
               <strong>{billingMode === "pharmacy" ? "Medicine Items" : "Diagnostic Test Items"}</strong>
             </div>
-            <label className="rc-service-picker">
-              <span>{billingMode === "pharmacy" ? "Medicine" : "Test Name"}</span>
-              <input
-                value={serviceSearch}
-                list={`${billingMode}-billing-items`}
-                placeholder={
-                  billingMode === "diagnostic"
-                    ? activePriceList.length
+            {billingMode === "diagnostic" ? (
+              <label className="rc-service-picker">
+                <span>Test Name</span>
+                <input
+                  value={serviceSearch}
+                  list={`${billingMode}-billing-items`}
+                  placeholder={
+                    activePriceList.length
                       ? "Search or select lab test"
                       : labMasterLoading
                         ? "Loading lab tests..."
                         : "No lab file tests available"
-                    : "Search or select medicine"
-                }
-                onChange={(event) => updateServiceSearch(event.target.value)}
-                disabled={billingMode === "diagnostic" && labMasterLoading && !activePriceList.length}
-              />
-            </label>
+                  }
+                  onChange={(event) => updateServiceSearch(event.target.value)}
+                  disabled={labMasterLoading && !activePriceList.length}
+                />
+              </label>
+            ) : (
+              <div className="rc-service-picker">
+                <span>Doctor Prescription</span>
+                <strong>
+                  {pharmacyPrescriptionLoading
+                    ? "Loading prescribed medicines..."
+                    : selectedAppointment
+                      ? pharmacyRows.length
+                        ? `${pharmacyRows.length} prescribed medicine(s) loaded. Enter unit price and quantity.`
+                        : "No prescribed medicines found for this appointment."
+                      : "Select a booked appointment to load prescribed medicines."}
+                </strong>
+              </div>
+            )}
             <div className="rc-service-table">
               <datalist id={`${billingMode}-billing-items`}>
                 {activePriceList.map((item, index) => (
@@ -2831,7 +2891,14 @@ function ReceptionBilling() {
                 const lineTotal = lineAmount + lineCgst + lineSgst;
                 return (
                   <div className={`rc-service-grid ${billingMode === "diagnostic" ? "is-diagnostic" : ""}`} key={row.id}>
-                    <strong className="rc-service-item-name">{row.item}</strong>
+                    <strong className="rc-service-item-name">
+                      {row.item}
+                      {billingMode === "pharmacy" && (row.dosage || row.frequency || row.duration) ? (
+                        <small>
+                          {[row.dosage, row.frequency, row.duration].filter(Boolean).join(" | ")}
+                        </small>
+                      ) : null}
+                    </strong>
                     {billingMode === "pharmacy" ? (
                       <input
                         className="rc-service-qty"

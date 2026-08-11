@@ -74,7 +74,6 @@ function ReceptionSidebar({
     clinicId: profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "",
     clinicName: hospitalName,
   });
-
   return (
     <aside className="rc-sidebar">
       <div className="rc-brand">

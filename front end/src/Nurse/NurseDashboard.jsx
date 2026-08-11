@@ -120,7 +120,6 @@ function NurseDashboard() {
       try {
         const results = await Promise.allSettled([
           requestJson("Appointment"),
-          requestJson("Nurse/print-queue"),
         ]);
         const rows = dedupeAppointments(
           results.flatMap((result) => (result.status === "fulfilled" ? parseList(result.value) : []))
