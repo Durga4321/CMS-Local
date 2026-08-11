@@ -47,6 +47,9 @@ const formatDate = (value) => formatDateMMDDYYYY(value, emptyValue);
 const parseList = (data) => {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.records)) return data.records;
   if (Array.isArray(data?.appointments)) return data.appointments;
   if (Array.isArray(data?.history)) return data.history;
   return [];
@@ -109,7 +112,49 @@ const getPrescriptionAppointmentId = (record) =>
   "";
 
 const getPatientId = (record) =>
-  record?.patientId || record?.patient?.id || record?.appointment?.patientId || "";
+  record?.patientId ||
+  record?.PatientId ||
+  record?.patient?.id ||
+  record?.patient?.patientId ||
+  record?.Patient?.Id ||
+  record?.Patient?.PatientId ||
+  record?.appointment?.patientId ||
+  record?.Appointment?.PatientId ||
+  "";
+
+const fetchMedicalHistoryForPatient = async (patientId, headers) => {
+  const id = String(patientId || "").trim();
+  if (!id) return null;
+
+  const paths = [
+    `${MEDICAL_HISTORY_API}?patientId=${encodeURIComponent(id)}`,
+    MEDICAL_HISTORY_API,
+  ];
+
+  for (const url of paths) {
+    try {
+      const response = await fetch(url, { headers });
+      if (!response.ok) continue;
+      const data = await response.json().catch(() => null);
+      if (!data) continue;
+
+      const rows = parseList(data);
+      if (rows.length) {
+        const match = rows.find((item) => String(getPatientId(item)) === id);
+        if (match) return match;
+        continue;
+      }
+
+      if (String(getPatientId(data)) === id || url.includes("?patientId=")) {
+        return data;
+      }
+    } catch {
+      // Try the next supported GET shape.
+    }
+  }
+
+  return null;
+};
 
 const getVisitDate = (record) =>
   record?.date || record?.appointmentDate || record?.lastVisit || "";
@@ -420,14 +465,7 @@ function PatientDetails() {
         }
 
         const data = await response.json();
-        let historyData = null;
-        const historyResponse = await fetch(`${MEDICAL_HISTORY_API}/${selectedPatientId}`, {
-          headers,
-        }).catch(() => null);
-
-        if (historyResponse?.ok) {
-          historyData = await historyResponse.json().catch(() => null);
-        }
+        const historyData = await fetchMedicalHistoryForPatient(selectedPatientId, headers);
 
         const overviewPatient = normalizePatient({
           ...(sourceAppointment?.patient || {}),

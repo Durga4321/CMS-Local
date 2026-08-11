@@ -202,6 +202,87 @@ const getFallbackAppointment = (appointments) =>
     )
   ) || appointments[0];
 
+const parseList = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.records)) return data.records;
+  return [];
+};
+
+const getRecordAppointmentId = (record = {}) =>
+  String(
+    record.appointmentId ||
+      record.AppointmentId ||
+      record.appointment?.id ||
+      record.appointment?.appointmentId ||
+      record.Appointment?.Id ||
+      record.Appointment?.AppointmentId ||
+      ""
+  ).trim();
+
+const getRecordPatientId = (record = {}) =>
+  String(
+    record.patientId ||
+      record.PatientId ||
+      record.patient?.id ||
+      record.patient?.patientId ||
+      record.Patient?.Id ||
+      record.Patient?.PatientId ||
+      ""
+  ).trim();
+
+const fetchConsultationForAppointment = async (appointmentId, headers) => {
+  const id = String(appointmentId || "").trim();
+  if (!id) return null;
+
+  try {
+    const response = await fetch(CONSULTATION_API, { headers });
+    if (!response.ok) return null;
+    return (
+      parseList(await response.json().catch(() => []))
+        .find((item) => getRecordAppointmentId(item) === id) || null
+    );
+  } catch {
+    return null;
+  }
+};
+
+const fetchMedicalHistoryForPatient = async (patientId, headers) => {
+  const id = String(patientId || "").trim();
+  if (!id) return null;
+
+  const paths = [
+    `${MEDICAL_HISTORY_API}?patientId=${encodeURIComponent(id)}`,
+    MEDICAL_HISTORY_API,
+  ];
+
+  for (const url of paths) {
+    try {
+      const response = await fetch(url, { headers });
+      if (!response.ok) continue;
+      const data = await response.json().catch(() => null);
+      if (!data) continue;
+
+      const rows = parseList(data);
+      if (rows.length) {
+        const match = rows.find((item) => getRecordPatientId(item) === id);
+        if (match) return normalizeOverview(match);
+        continue;
+      }
+
+      if (getRecordPatientId(data) === id || url.includes("?patientId=")) {
+        return normalizeOverview(data);
+      }
+    } catch {
+      // Try the next supported GET shape.
+    }
+  }
+
+  return null;
+};
+
 function Consultation() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -337,37 +418,12 @@ function Consultation() {
         const selectedAppointment = normalizeAppointment(selected, {
           patientId: routeState.patientId || routeAppointment?.patientId,
         });
-        let detailedAppointment = selectedAppointment;
+        const detailedAppointment = selectedAppointment;
 
-        try {
-          const detailResponse = await fetch(
-            `${APPOINTMENTS_API}/${selectedAppointment.appointmentId}`,
-            { headers }
-          );
-          if (detailResponse.ok) {
-            detailedAppointment = normalizeAppointment(
-              {
-                ...selectedAppointment,
-                ...(await detailResponse.json()),
-              },
-              selectedAppointment
-            );
-          }
-        } catch {
-          // The list payload is enough when the detail endpoint is unavailable.
-        }
-
-        let savedConsultation = null;
-        const consultationResponse = await fetch(
-          `${CONSULTATION_API}/appointment/${detailedAppointment.appointmentId}`,
-          {
-            headers,
-          }
+        const savedConsultation = await fetchConsultationForAppointment(
+          detailedAppointment.appointmentId,
+          headers
         );
-
-        if (consultationResponse.ok) {
-          savedConsultation = await consultationResponse.json();
-        }
 
         const backendVitals = await fetchConsultationVitals(detailedAppointment.appointmentId, headers);
         const hydratedAppointment = mergeStoredAppointmentVitals({
@@ -376,19 +432,10 @@ function Consultation() {
           patientId: detailedAppointment.patientId || savedConsultation?.patientId,
         });
 
-        let patientOverview = null;
-        if (hydratedAppointment.patientId) {
-          const overviewResponse = await fetch(
-            `${MEDICAL_HISTORY_API}/${hydratedAppointment.patientId}`,
-            {
-              headers,
-            }
-          );
-
-          if (overviewResponse.ok) {
-            patientOverview = normalizeOverview(await overviewResponse.json());
-          }
-        }
+        const patientOverview = await fetchMedicalHistoryForPatient(
+          hydratedAppointment.patientId,
+          headers
+        );
 
         const appointmentComplaint = hydratedAppointment.chiefComplaints || "";
 
