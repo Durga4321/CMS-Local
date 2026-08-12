@@ -678,7 +678,7 @@ function AdminRolesPermissions() {
   const formModulePermissions = normalizeModulePermissionMap(form.modulePermissions, form.role);
 
   return (
-    <div>
+    <div className="admin-roles-page">
       <div className="sa-page-header">
         <div>
           <h1>Roles & Permissions</h1>
@@ -698,7 +698,7 @@ function AdminRolesPermissions() {
       {error ? <div className="sa-state sa-state--error">{error}</div> : null}
 
       {showForm ? (
-        <form className="sa-form-card" onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
+        <form className="sa-form-card sa-role-form" onSubmit={handleSubmit}>
           <div className="sa-modal-header">
             <div>
               <h3>{assignments.some((item) => String(item.id) === String(form.userId)) ? "Edit Role" : "Create Role"}</h3>
@@ -765,7 +765,7 @@ function AdminRolesPermissions() {
             </div>
           </div>
 
-          <div className="sa-page-actions" style={{ marginTop: 18 }}>
+          <div className="sa-page-actions sa-form-actions">
             <button className="sa-btn" type="button" onClick={closeForm} disabled={saving}>
               Close
             </button>
@@ -832,7 +832,7 @@ function AdminRolesPermissions() {
         ))}
       </div>
 
-      <div className="sa-form-card" style={{ marginTop: 24 }}>
+      <div className="sa-form-card sa-permission-card">
         <h3>Assign Permissions</h3>
         <p className="sa-form-subtitle">Assign default permissions by role across every module from that role sidebar.</p>
         <div className="sa-permission-matrix sa-permission-matrix--assign">

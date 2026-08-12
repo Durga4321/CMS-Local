@@ -258,21 +258,41 @@
 .da-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
+  min-width: 126px;
+  overflow: visible;
 }
 
 .da-act-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   background: #fff;
-  color: #64748b;
+  color: #2563eb;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.da-act-btn svg {
+  display: block;
+  color: currentColor;
+  stroke: currentColor;
+  stroke-width: 2.4;
+}
+
+.da-act-btn:nth-child(2) {
+  color: #0f766e;
+}
+
+.da-act-btn--primary,
+.da-act-btn:nth-child(3) {
+  color: #7c3aed;
 }
 
 .da-act-btn:hover:not(:disabled) {

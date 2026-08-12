@@ -21,6 +21,17 @@ const formatShort = (value) => {
 
 function Charts({ data = [], type = "bar", dataKey = "revenue", secondaryKey, tertiaryKey }) {
   const hasData = Array.isArray(data) && data.length > 0;
+  const chartMargin = { top: 18, right: 24, left: 0, bottom: 28 };
+  const xAxisProps = {
+    dataKey: "name",
+    axisLine: false,
+    tickLine: false,
+    interval: 0,
+    minTickGap: 8,
+    height: 42,
+    tickMargin: 12,
+    tick: { fill: "#475569", fontSize: 12 },
+  };
 
   if (!hasData) {
     return (
@@ -40,9 +51,9 @@ function Charts({ data = [], type = "bar", dataKey = "revenue", secondaryKey, te
     <div className="sa-chart">
       <ResponsiveContainer width="100%" height="100%">
         {type === "line" ? (
-          <LineChart data={data} margin={{ top: 18, right: 24, left: 0, bottom: 4 }}>
+          <LineChart data={data} margin={chartMargin}>
             <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
+            <XAxis {...xAxisProps} />
             <YAxis axisLine={false} tickLine={false} tickFormatter={formatShort} tick={{ fill: "#64748b", fontSize: 12 }} />
             <Tooltip />
             <Line type="monotone" dataKey={dataKey} stroke="#0f766e" strokeWidth={3} dot={{ r: 4 }} />
@@ -50,9 +61,9 @@ function Charts({ data = [], type = "bar", dataKey = "revenue", secondaryKey, te
             {tertiaryKey ? <Line type="monotone" dataKey={tertiaryKey} stroke="#b45309" strokeWidth={3} dot={{ r: 4 }} /> : null}
           </LineChart>
         ) : (
-          <BarChart data={data} margin={{ top: 18, right: 24, left: 0, bottom: 4 }}>
+          <BarChart data={data} margin={chartMargin}>
             <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
+            <XAxis {...xAxisProps} />
             <YAxis axisLine={false} tickLine={false} tickFormatter={formatShort} tick={{ fill: "#64748b", fontSize: 12 }} />
             <Tooltip />
             <Bar dataKey={dataKey} fill="#0f766e" radius={[8, 8, 0, 0]} />

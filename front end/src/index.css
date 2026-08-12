@@ -197,3 +197,734 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Compact application spacing system
+   Shared across dashboards, management screens, tables, filters, forms, and modals. */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --radius-card: 12px;
+  --radius-panel: 14px;
+  --radius-control: 8px;
+  --control-height: 38px;
+  --control-height-sm: 34px;
+  --row-pad-y: 8px;
+  --row-pad-x: 12px;
+}
+
+.content {
+  padding: var(--space-4) !important;
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: var(--space-3) !important;
+  }
+}
+
+.content :where(
+  [class$="-page"],
+  [class*="-page "],
+  .dashboard,
+  .patient-dashboard,
+  .dr-layout-content,
+  .rc-content,
+  .lab-page,
+  .nurse-page
+) {
+  box-sizing: border-box;
+}
+
+.content :where(
+  [class$="-page"],
+  .dashboard,
+  .patient-dashboard,
+  .branches-page,
+  .admin-users-page,
+  .sa-dashboard-page
+) {
+  padding: var(--space-4) !important;
+}
+
+.content :where(
+  [class*="header"],
+  [class*="toolbar"],
+  [class*="filter"],
+  [class*="search"],
+  [class*="tabs"],
+  [class*="actions"]
+) {
+  gap: var(--space-3);
+}
+
+.content :where(
+  [class*="page-header"],
+  [class$="-header"],
+  .dashboard-header,
+  .report-header,
+  .doctor-settings-header,
+  .branches-header,
+  .admin-users-header,
+  .sa-page-header
+) {
+  margin-bottom: var(--space-4) !important;
+}
+
+.content :where(h1, h2, h3) {
+  letter-spacing: 0 !important;
+}
+
+.content :where(
+  [class*="header"] h1,
+  [class*="header"] h2,
+  [class*="header"] h3,
+  .sa-page-header h1
+) {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  line-height: 1.15 !important;
+}
+
+.content :where(
+  [class*="header"] p,
+  [class*="title"] p,
+  [class*="subtitle"],
+  .sa-page-header p
+) {
+  margin-top: var(--space-2) !important;
+  margin-bottom: 0 !important;
+  line-height: 1.35 !important;
+}
+
+.content :where(
+  [class*="toolbar"],
+  [class*="search-filter"],
+  [class*="filter-card"],
+  [class*="filters"],
+  .branches-toolbar,
+  .admin-users-toolbar,
+  .sa-search-filter
+) {
+  margin-top: var(--space-3) !important;
+  margin-bottom: var(--space-3) !important;
+}
+
+.content :where(
+  [class*="card"],
+  [class*="panel"],
+  [class*="table"],
+  [class*="form-card"],
+  .sa-panel,
+  .sa-form-card,
+  .branches-table,
+  .admin-users-table
+) {
+  border-radius: var(--radius-panel) !important;
+}
+
+.content :where(
+  [class*="card"]:not([class*="icon"]):not([class*="avatar"]),
+  [class*="panel"],
+  [class*="form-card"],
+  .sa-panel,
+  .sa-form-card
+) {
+  padding: var(--space-4) !important;
+}
+
+.content :where(
+  [class*="grid"],
+  [class*="layout"],
+  [class*="list"],
+  [class*="row"],
+  [class*="body"],
+  [class*="main"]
+) {
+  gap: var(--space-4);
+}
+
+.content :where(
+  button:not([class*="icon"]):not([class*="action"]),
+  .sa-btn,
+  .branches-primary-button,
+  .branches-secondary-button,
+  .branches-save-button,
+  .admin-users-btn,
+  [class*="-btn"]
+) {
+  min-height: var(--control-height-sm);
+  height: auto;
+  padding: 0 var(--space-3) !important;
+  gap: var(--space-2) !important;
+  border-radius: var(--radius-control) !important;
+}
+
+.content :where(
+  input,
+  select,
+  textarea,
+  [class*="search"],
+  [class*="search-box"]
+) {
+  border-radius: var(--radius-control) !important;
+}
+
+.content :where(
+  input,
+  select,
+  [class*="search"],
+  [class*="search-box"]
+) {
+  min-height: var(--control-height);
+}
+
+.content :where(
+  textarea
+) {
+  min-height: 84px;
+}
+
+.content :where(
+  [class*="table-head"],
+  [class*="thead"],
+  .sa-table-head,
+  .branches-thead,
+  .admin-users-table-head
+) {
+  min-height: 38px !important;
+  padding: var(--row-pad-y) var(--row-pad-x) !important;
+}
+
+.content :where(
+  [class*="table-row"],
+  [class*="-row"],
+  [class*="tbody"] td,
+  table td,
+  .sa-table-row,
+  .branches-row,
+  .admin-users-row
+) {
+  padding-top: var(--row-pad-y) !important;
+  padding-bottom: var(--row-pad-y) !important;
+}
+
+.content :where(
+  .sa-table-row,
+  .branches-row,
+  .admin-users-row,
+  [class*="table-row"]
+) {
+  min-height: 50px !important;
+}
+
+.content :where(
+  [class*="pagination"],
+  [class*="table-footer"],
+  .sa-table-footer
+) {
+  margin-top: var(--space-3) !important;
+  padding-top: 0 !important;
+  gap: var(--space-2) !important;
+}
+
+.content :where(
+  [class*="modal-header"],
+  .sa-modal-header
+) {
+  padding: var(--space-4) !important;
+  margin-bottom: var(--space-3) !important;
+}
+
+.content :where(
+  [class*="modal"],
+  .sa-modal-card
+) {
+  border-radius: var(--radius-panel) !important;
+}
+
+.content :where(
+  [class*="form-grid"],
+  .sa-form-grid,
+  .branches-form,
+  .admin-users-form-grid
+) {
+  gap: var(--space-3) !important;
+}
+
+.content :where(
+  [class*="field"],
+  .sa-form-field
+) {
+  gap: var(--space-2);
+}
+
+:where(.dr-layout-content, .rc-content) {
+  padding: var(--space-4) !important;
+}
+
+:where(.patient-dashboard, .rc-content, .dr-layout-content) :where(
+  [class*="header"],
+  [class*="page-head"],
+  [class*="card-head"],
+  [class*="section-header"]
+) {
+  margin-bottom: var(--space-4) !important;
+  gap: var(--space-3) !important;
+}
+
+:where(.patient-dashboard, .rc-content, .dr-layout-content) :where(
+  [class*="grid"],
+  [class*="layout"],
+  [class*="list"],
+  [class*="row"],
+  [class*="actions"]
+) {
+  gap: var(--space-3) !important;
+}
+
+:where(.patient-dashboard, .rc-content, .dr-layout-content) :where(
+  [class*="card"]:not([class*="icon"]):not([class*="avatar"]),
+  [class*="panel"],
+  [class*="form"]
+) {
+  padding: var(--space-4) !important;
+  border-radius: var(--radius-panel) !important;
+}
+
+:where(.patient-dashboard, .rc-content, .dr-layout-content) :where(
+  [class*="table"] th,
+  [class*="table"] td,
+  [class*="table-head"],
+  [class*="table-row"],
+  [class*="-row"]
+) {
+  padding-top: var(--row-pad-y) !important;
+  padding-bottom: var(--row-pad-y) !important;
+}
+
+:where(.patient-dashboard, .rc-content, .dr-layout-content) :where(
+  button:not([class*="icon"]),
+  [class*="btn"]
+) {
+  min-height: var(--control-height-sm);
+  padding-left: var(--space-3) !important;
+  padding-right: var(--space-3) !important;
+  gap: var(--space-2) !important;
+  border-radius: var(--radius-control) !important;
+}
+
+:where(.patient-dashboard, .rc-content, .dr-layout-content) :where(
+  input,
+  select,
+  textarea
+) {
+  border-radius: var(--radius-control) !important;
+}
+
+:where(.patient-dashboard, .rc-content, .dr-layout-content) :where(
+  input,
+  select
+) {
+  min-height: var(--control-height) !important;
+}
+
+:where(.patient-dashboard, .rc-content, .dr-layout-content) :where(
+  p,
+  span,
+  small
+) {
+  line-height: 1.35;
+}
+
+:where(.patient-dashboard, .rc-content, .dr-layout-content) :where(
+  [class*="empty"],
+  [class*="state"]
+) {
+  padding: var(--space-4) !important;
+}
+
+:where(.lab-profile-card, .lab-report-form-card, .lab-latest-reports, .lab-upload-control) {
+  padding: var(--space-4) !important;
+  margin-bottom: var(--space-4) !important;
+  border-radius: var(--radius-panel) !important;
+}
+
+:where(.lab-search, .rc-search, .pd-notification-search, .branches-search, .admin-users-search) {
+  min-height: var(--control-height) !important;
+  padding: 0 var(--space-3) !important;
+  gap: var(--space-2) !important;
+}
+
+:where(.rc-topbar) {
+  height: auto !important;
+  min-height: 64px;
+  padding: var(--space-3) var(--space-4) !important;
+}
+
+:where(.rc-page-head, .rc-card-head, .rc-filter-grid, .rc-stat-grid, .rc-action-grid) {
+  margin-bottom: var(--space-4) !important;
+}
+
+:where(.rc-table-data th, .rc-table-data td) {
+  padding: var(--space-2) var(--space-3) !important;
+}
+
+:where(.rc-pagination) {
+  margin-top: var(--space-3) !important;
+}
+
+:where(.pd-card, .mh-card, .mh-panel, .pd-stat-card, .pd-summary-card) {
+  padding: var(--space-4) !important;
+  border-radius: var(--radius-panel) !important;
+}
+
+:where(.pd-section-header, .mh-card-head, .mh-panel-header) {
+  margin-bottom: var(--space-3) !important;
+}
+
+:where(.pd-notification-item) {
+  gap: var(--space-3) !important;
+  padding: var(--space-3) !important;
+  border-radius: var(--radius-panel) !important;
+}
+
+:where(.pd-action-form) {
+  margin-top: var(--space-4) !important;
+  padding: var(--space-4) !important;
+}
+
+:where(.pd-form-group) {
+  margin-bottom: var(--space-3) !important;
+}
+
+/* Application-wide compact density pass.
+   Keep page rhythm consistent while preserving each screen's colors and behavior. */
+:root {
+  --app-page-padding: var(--space-4);
+  --app-card-padding: var(--space-4);
+  --app-section-gap: var(--space-4);
+  --app-major-gap: var(--space-5);
+  --app-inline-gap: var(--space-2);
+  --app-table-row-y: var(--space-2);
+}
+
+:where(.content, .dr-layout-content, .rc-content, .lab-main, .nurse-content, .pp-main) {
+  box-sizing: border-box;
+}
+
+:where(
+  .dashboard,
+  .branches-page,
+  .receptionists-page,
+  .doctors-page,
+  .patients-page,
+  .appointments-page,
+  .reports-page,
+  .admin-users-page,
+  .admin-settings-page,
+  .sa-dashboard-page,
+  .rc-page,
+  .lab-page,
+  .doctor-page,
+  .pd-page,
+  .mh-page,
+  .booking-page
+) {
+  padding: var(--app-page-padding) !important;
+}
+
+:where(
+  .dashboard-header,
+  .branches-header,
+  .receptionists-header,
+  .doctors-header,
+  .patients-header,
+  .appointments-header,
+  .reports-header,
+  .admin-users-header,
+  .admin-settings-header,
+  .sa-page-header,
+  .rc-page-head,
+  .lab-page-head,
+  .doctor-page-header,
+  .pd-section-header,
+  .mh-panel-header
+) {
+  margin-bottom: var(--app-section-gap) !important;
+  gap: var(--space-3) !important;
+}
+
+:where(
+  .dashboard-header h1,
+  .branches-header h1,
+  .branches-header h2,
+  .receptionists-header h1,
+  .doctors-header h1,
+  .patients-header h1,
+  .appointments-header h1,
+  .reports-header h1,
+  .admin-users-header h2,
+  .admin-settings-header h1,
+  .sa-page-header h1,
+  .rc-page-head h1,
+  .lab-page-head h1,
+  .doctor-page-header h1
+) {
+  margin: 0 !important;
+  font-size: var(--app-heading-size) !important;
+  line-height: 1.16 !important;
+}
+
+:where(
+  .dashboard-header p,
+  .branches-header p,
+  .receptionists-header p,
+  .doctors-header p,
+  .patients-header p,
+  .appointments-header p,
+  .reports-header p,
+  .admin-users-header p,
+  .admin-settings-header p,
+  .sa-page-header p,
+  .rc-page-head p,
+  .lab-page-head p,
+  .doctor-page-header p
+) {
+  margin: var(--space-1) 0 0 !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+}
+
+:where(
+  .dashboard-stats,
+  .dashboard-chart-grid,
+  .dashboard-bottom-grid,
+  .branches-grid,
+  .branches-toolbar,
+  .receptionists-toolbar,
+  .doctors-toolbar,
+  .patients-toolbar,
+  .appointments-toolbar,
+  .reports-toolbar,
+  .admin-users-toolbar,
+  .admin-settings-grid,
+  .sa-card-grid,
+  .sa-grid,
+  .sa-report-card-grid,
+  .sa-report-chart-grid,
+  .rc-stat-grid,
+  .rc-filter-grid,
+  .rc-action-grid,
+  .lab-grid,
+  .pd-stat-grid,
+  .pd-profile-section-grid,
+  .mh-grid,
+  .booking-content,
+  .booking-grid
+) {
+  gap: var(--app-section-gap) !important;
+}
+
+:where(
+  .dashboard-chart-grid,
+  .dashboard-bottom-grid,
+  .sa-grid,
+  .pd-profile-section-grid,
+  .booking-content
+) {
+  margin-top: var(--app-section-gap) !important;
+}
+
+:where(
+  .dashboard-panel,
+  .dashboard-stat-card,
+  .branches-card,
+  .branches-table,
+  .receptionists-card,
+  .doctors-card,
+  .patients-card,
+  .appointments-card,
+  .reports-card,
+  .admin-users-table,
+  .admin-users-form,
+  .admin-settings-card,
+  .sa-stat-card,
+  .sa-panel,
+  .sa-table,
+  .sa-form-card,
+  .rc-card,
+  .rc-panel,
+  .lab-profile-card,
+  .lab-report-form-card,
+  .lab-latest-reports,
+  .pd-card,
+  .mh-card,
+  .mh-panel,
+  .booking-panel,
+  .booking-card
+) {
+  border-radius: var(--radius-panel) !important;
+}
+
+:where(
+  .dashboard-panel,
+  .branches-card,
+  .receptionists-card,
+  .doctors-card,
+  .patients-card,
+  .appointments-card,
+  .reports-card,
+  .admin-settings-card,
+  .sa-panel,
+  .sa-form-card,
+  .rc-card,
+  .rc-panel,
+  .lab-profile-card,
+  .lab-report-form-card,
+  .lab-latest-reports,
+  .pd-card,
+  .mh-card,
+  .mh-panel,
+  .booking-panel
+) {
+  padding: var(--app-card-padding) !important;
+}
+
+:where(
+  .sa-search-filter,
+  .branches-toolbar,
+  .receptionists-toolbar,
+  .doctors-toolbar,
+  .patients-toolbar,
+  .appointments-toolbar,
+  .reports-toolbar,
+  .admin-users-toolbar,
+  .rc-filter-grid
+) {
+  margin: var(--space-3) 0 !important;
+  align-items: center !important;
+  gap: var(--space-3) !important;
+}
+
+:where(
+  .sa-search-box,
+  .branches-search,
+  .receptionists-search,
+  .doctors-search,
+  .patients-search,
+  .appointments-search,
+  .admin-users-search,
+  .rc-search,
+  .lab-search
+) {
+  min-height: var(--control-height) !important;
+  gap: var(--app-inline-gap) !important;
+  padding: 0 var(--space-3) !important;
+}
+
+:where(
+  .sa-search-box input,
+  .sa-search-filter select,
+  .branches-toolbar input,
+  .branches-toolbar select,
+  .receptionists-toolbar input,
+  .receptionists-toolbar select,
+  .doctors-toolbar input,
+  .doctors-toolbar select,
+  .patients-toolbar input,
+  .patients-toolbar select,
+  .appointments-toolbar input,
+  .appointments-toolbar select,
+  .admin-users-toolbar input,
+  .admin-users-toolbar select,
+  .rc-filter-grid input,
+  .rc-filter-grid select
+) {
+  min-height: var(--control-height) !important;
+}
+
+:where(
+  .sa-table-head,
+  .sa-table-row,
+  .admin-users-table-head,
+  .admin-users-row,
+  .branches-table-head,
+  .branches-row,
+  .receptionists-table-head,
+  .receptionists-row,
+  .doctors-table-head,
+  .doctors-row,
+  .patients-table-head,
+  .patients-row,
+  .appointments-table-head,
+  .appointments-row,
+  .rc-table-data th,
+  .rc-table-data td
+) {
+  padding-top: var(--app-table-row-y) !important;
+  padding-bottom: var(--app-table-row-y) !important;
+  line-height: 1.3 !important;
+}
+
+:where(.sa-table-head, .sa-table-row) {
+  display: grid;
+  align-items: center;
+  column-gap: var(--space-2) !important;
+  padding-left: var(--space-3) !important;
+  padding-right: var(--space-3) !important;
+}
+
+:where(.sa-table-row, .admin-users-row, .branches-row, .receptionists-row, .doctors-row, .patients-row, .appointments-row) {
+  min-height: 48px !important;
+}
+
+:where(.sa-actions, .branches-actions, .receptionists-actions, .doctors-actions, .patients-actions, .appointments-actions) {
+  gap: var(--space-2) !important;
+  align-items: center !important;
+}
+
+:where(.sa-table-footer, .branches-pagination, .receptionists-pagination, .doctors-pagination, .patients-pagination, .appointments-pagination, .rc-pagination) {
+  margin-top: var(--space-3) !important;
+  padding-top: 0 !important;
+}
+
+:where(.sa-state, .sa-empty, .admin-users-state, .dashboard-permission-error) {
+  padding: var(--space-4) !important;
+}
+
+:where(.sa-modal-backdrop, .booking-doctor-modal-backdrop) {
+  padding: var(--space-4) !important;
+}
+
+:where(.sa-modal-card, .booking-doctor-modal) {
+  border-radius: var(--radius-panel) !important;
+}
+
+:where(.sa-modal-header, .booking-doctor-modal-header) {
+  gap: var(--space-3) !important;
+  padding: var(--space-4) !important;
+}
+
+:where(.sa-form-grid, .admin-users-form-grid, .booking-grid, .booking-form-grid) {
+  gap: var(--space-3) !important;
+}
+
+:where(.sa-form-field, .booking-field-group) {
+  gap: var(--space-2) !important;
+}
+
+:where(.sa-form-field input, .sa-form-field select, .sa-form-field textarea, .booking-field-group input, .booking-field-group select, .booking-field-group textarea) {
+  min-height: var(--control-height) !important;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --app-page-padding: var(--space-3);
+    --app-card-padding: var(--space-3);
+    --app-section-gap: var(--space-3);
+  }
+}
