@@ -298,7 +298,22 @@ export const fetchRevenueBillingRows = async ({ apiUrl, headers = {}, params } =
     try {
       const response = await fetch(apiUrl(path), { headers });
       if (!response.ok) return [];
-      return parseList(await response.json().catch(() => []));
+      const endpointType = getBillingType({
+        billingType: path.includes("Billing/lab")
+          ? "Diagnostic"
+          : path.includes("Billing/pharmacy")
+            ? "Pharmacy"
+            : "OP",
+      });
+      return parseList(await response.json().catch(() => [])).map((row) => ({
+        ...row,
+        invoiceType: pick(row, ["invoiceType", "InvoiceType", "billingType", "BillingType", "serviceType", "ServiceType", "type", "Type"], "")
+          ? pick(row, ["invoiceType", "InvoiceType"], row.invoiceType)
+          : endpointType,
+        billingType: pick(row, ["billingType", "BillingType", "invoiceType", "InvoiceType", "serviceType", "ServiceType", "type", "Type"], "")
+          ? pick(row, ["billingType", "BillingType"], row.billingType)
+          : endpointType,
+      }));
     } catch {
       return [];
     }

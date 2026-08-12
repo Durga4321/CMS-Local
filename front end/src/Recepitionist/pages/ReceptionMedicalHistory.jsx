@@ -17,6 +17,9 @@ import {
   scopeReceptionistRecords,
   withReceptionistScopePayload,
 } from "../receptionScope";
+import { getReceptionistProfile } from "../receptionSession";
+import { getNurseProfile } from "../../Nurse/nurseSession";
+import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 
 const emptyForm = {
   id: "",
@@ -61,6 +64,14 @@ function ReceptionMedicalHistory({
   const [searchParams] = useSearchParams();
   const requestedPatientId = String(searchParams.get("patientId") || "").trim();
   const receptionistScope = useMemo(() => getScope(), [getScope]);
+  const permissionProfile = useMemo(
+    () => (basePath === "/nurse" ? getNurseProfile() : getReceptionistProfile()),
+    [basePath]
+  );
+  useRolePermissionsSync(permissionProfile);
+  const canCreateHistory = canUseModulePermission(permissionProfile, "Medical History", "Create");
+  const canEditHistory = canUseModulePermission(permissionProfile, "Medical History", "Edit");
+  const canDeleteHistory = canUseModulePermission(permissionProfile, "Medical History", "Delete");
   const handledPatientHistoryLink = useRef("");
   const [histories, setHistories] = useState([]);
   const [patients, setPatients] = useState([]);
@@ -199,6 +210,10 @@ function ReceptionMedicalHistory({
   }, [fetchAppointments, fetchHistories, fetchPatients]);
 
   const openAdd = () => {
+    if (!canCreateHistory) {
+      setMessage("You do not have permission to create medical history.");
+      return;
+    }
     setForm({
       ...emptyForm,
       patientId: requestedPatientId,
@@ -210,6 +225,7 @@ function ReceptionMedicalHistory({
 
   useEffect(() => {
     if (!requestedPatientId || modal || !patients.length) return;
+    if (!canCreateHistory) return;
     if (handledPatientHistoryLink.current === requestedPatientId) return;
     if (!patients.some((patient) => String(patient.id) === requestedPatientId)) return;
 
@@ -220,9 +236,13 @@ function ReceptionMedicalHistory({
     });
     setDocumentFile(null);
     setModal("add");
-  }, [modal, patients, requestedPatientId]);
+  }, [canCreateHistory, modal, patients, requestedPatientId]);
 
   const openEdit = (record) => {
+    if (!canEditHistory) {
+      setMessage("You do not have permission to edit medical history.");
+      return;
+    }
     setForm({
       id: getHistoryId(record),
       patientId: getPatientId(record),
@@ -274,6 +294,16 @@ function ReceptionMedicalHistory({
   const saveHistory = async (event) => {
     event.preventDefault();
 
+    if (modal === "edit" && !canEditHistory) {
+      setMessage("You do not have permission to edit medical history.");
+      return;
+    }
+
+    if (modal !== "edit" && !canCreateHistory) {
+      setMessage("You do not have permission to create medical history.");
+      return;
+    }
+
     const patientId = Number(form.patientId);
 
     if (!patientId) {
@@ -306,6 +336,11 @@ function ReceptionMedicalHistory({
   };
 
   const deleteHistory = async (record) => {
+    if (!canDeleteHistory) {
+      setMessage("You do not have permission to delete medical history.");
+      return;
+    }
+
     const historyId = getHistoryId(record) || getPatientId(record);
     if (!historyId) {
       setMessage("Patient ID is missing.");
@@ -334,13 +369,15 @@ function ReceptionMedicalHistory({
         </div>
         {!hideActions && (
           <div className="rc-head-actions">
-            <button
-              className="rc-btn primary"
-              onClick={openAdd}
-              title="Add history"
-            >
-              <FilePlus2 size={16} /> Add History
-            </button>
+            {canCreateHistory ? (
+              <button
+                className="rc-btn primary"
+                onClick={openAdd}
+                title="Add history"
+              >
+                <FilePlus2 size={16} /> Add History
+              </button>
+            ) : null}
             <button
               className="rc-btn ghost"
               onClick={() => fetchHistories(patients)}
@@ -396,21 +433,25 @@ function ReceptionMedicalHistory({
                   >
                     <Eye size={15} />
                   </button>
-                  <button
-                    aria-label="Edit medical history"
-                    onClick={() => openEdit(record)}
-                    title="Edit medical history"
-                  >
-                    <Pencil size={15} />
-                  </button>
-                  <button
-                    className="danger"
-                    onClick={() => deleteHistory(record)}
-                    title="Delete medical history"
-                    aria-label="Delete medical history"
-                  >
-                    <Trash2 size={15} />
-                  </button>
+                  {canEditHistory ? (
+                    <button
+                      aria-label="Edit medical history"
+                      onClick={() => openEdit(record)}
+                      title="Edit medical history"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                  ) : null}
+                  {canDeleteHistory ? (
+                    <button
+                      className="danger"
+                      onClick={() => deleteHistory(record)}
+                      title="Delete medical history"
+                      aria-label="Delete medical history"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  ) : null}
                 </span>
               </div>
             );

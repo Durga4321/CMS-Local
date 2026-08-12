@@ -33,9 +33,16 @@ export const getNurseProfile = () => {
     localStorage.getItem("branchId") ||
     getClaim(claims, "BranchId", "branchId", "BranchID", "branchID") ||
     "";
+  const id =
+    localStorage.getItem("nurseId") ||
+    localStorage.getItem("userId") ||
+    getClaim(claims, "NurseId", "nurseId", "UserId", "userId", "sub") ||
+    "";
 
   return {
     token,
+    id: String(id),
+    userId: String(id),
     email,
     name,
     role: localStorage.getItem("nurseRole") || "Nurse",

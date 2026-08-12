@@ -22,6 +22,8 @@ import {
   withReceptionistScopePayload,
 } from "../receptionScope";
 import { useToast } from "../../components/ToastProvider";
+import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
+import { getReceptionistProfile } from "../receptionSession";
 import {
   buildAddress,
   buildAddressPayload,
@@ -419,6 +421,11 @@ function ReceptionPatients({
   const navigate = useNavigate();
   const toast = useToast();
   const receptionistScope = useMemo(() => getScope(), [getScope]);
+  const permissionProfile = useMemo(() => getReceptionistProfile(), []);
+  useRolePermissionsSync(permissionProfile);
+  const canCreatePatient = canUseModulePermission(permissionProfile, "Patients", "Create");
+  const canEditPatient = canUseModulePermission(permissionProfile, "Patients", "Edit");
+  const canDeletePatient = canUseModulePermission(permissionProfile, "Patients", "Delete");
   const [patients, setPatients] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [patientListView, setPatientListView] = useState("today");
@@ -525,6 +532,10 @@ function ReceptionPatients({
     new Set([form.addressParts?.area, ...areaOptions].filter(Boolean))
   );
   const openAdd = () => {
+    if (!canCreatePatient) {
+      toast.error("You do not have permission to create patients.");
+      return;
+    }
     setForm(emptyForm);
     setFieldErrors({});
     setModal("add");
@@ -532,6 +543,10 @@ function ReceptionPatients({
   };
 
   const openEdit = (patient) => {
+    if (!canEditPatient) {
+      toast.error("You do not have permission to edit patients.");
+      return;
+    }
     const addressParts = getPatientAddressParts(patient);
     const dateOfBirth = getPatientDateOfBirth(patient);
     setForm({
@@ -756,6 +771,16 @@ function ReceptionPatients({
   const savePatient = async (event) => {
     event.preventDefault();
 
+    if (modal === "edit" && !canEditPatient) {
+      toast.error("You do not have permission to edit patients.");
+      return;
+    }
+
+    if (modal !== "edit" && !canCreatePatient) {
+      toast.error("You do not have permission to create patients.");
+      return;
+    }
+
     if (!validateForm()) {
       const text = "Please fix the highlighted fields.";
       setMessage(text);
@@ -832,6 +857,11 @@ function ReceptionPatients({
   };
 
   const deletePatient = async (patient) => {
+    if (!canDeletePatient) {
+      toast.error("You do not have permission to delete patients.");
+      return;
+    }
+
     const patientId = Number(patient?.id);
     if (!Number.isInteger(patientId) || patientId <= 0) {
       const text = "Patient id is missing.";
@@ -866,7 +896,7 @@ function ReceptionPatients({
         </div>
         {!hideActions && (
           <div className="rc-head-actions">
-            {showAddPatient ? (
+            {showAddPatient && canCreatePatient ? (
               <button
                 className="rc-btn"
                 onClick={openAdd}
@@ -970,13 +1000,15 @@ function ReceptionPatients({
                 >
                   <Eye size={15} />
                 </button>
-                <button
-                  aria-label="Edit patient"
-                  onClick={() => openEdit(patient)}
-                  title="Edit patient"
-                >
-                  <Pencil size={15} />
-                </button>
+                {canEditPatient ? (
+                  <button
+                    aria-label="Edit patient"
+                    onClick={() => openEdit(patient)}
+                    title="Edit patient"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                ) : null}
                 <button
                   onClick={() =>
                     navigate(`${basePath}/medical-history?patientId=${patient.id}`)
@@ -984,13 +1016,15 @@ function ReceptionPatients({
                 >
                   <HeartPulse size={15} /> Medical History
                 </button>
-                <button
-                  className="danger"
-                  onClick={() => deletePatient(patient)}
-                  title="Delete patient"
-                >
-                  <Trash2 size={15} /> Delete
-                </button>
+                {canDeletePatient ? (
+                  <button
+                    className="danger"
+                    onClick={() => deletePatient(patient)}
+                    title="Delete patient"
+                  >
+                    <Trash2 size={15} /> Delete
+                  </button>
+                ) : null}
               </span>
             </div>
           ))}

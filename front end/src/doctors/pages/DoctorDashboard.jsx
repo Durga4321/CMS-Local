@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import {
   Calendar,
@@ -168,9 +168,15 @@ const normalizeQueue = (queue) =>
     raw: item,
   }));
 
+const isAbortLikeError = (error) => {
+  const message = String(error?.message || "").toLowerCase();
+  return error?.name === "AbortError" || message.includes("aborted") || message.includes("signal");
+};
+
 function DoctorDashboard() {
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
+  const dashboardRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -223,10 +229,15 @@ function DoctorDashboard() {
         appointments = parseList(await appointmentsResponse.json());
       }
 
-      setDashboard(buildDoctorDashboard(data, appointments, doctor));
+      const nextDashboard = buildDoctorDashboard(data, appointments, doctor);
+      dashboardRef.current = nextDashboard;
+      setDashboard(nextDashboard);
     } catch (err) {
+      if (isAbortLikeError(err) && (silent || dashboardRef.current)) {
+        return;
+      }
       console.error(err);
-      setError(err.message || "Unable to load appointments.");
+      setError(isAbortLikeError(err) ? "Unable to load dashboard right now. Please try again." : err.message || "Unable to load appointments.");
     } finally {
       setLoading(false);
       setRefreshing(false);

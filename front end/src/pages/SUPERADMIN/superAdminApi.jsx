@@ -1,6 +1,5 @@
 import { apiUrl } from "../../config/api";
 import {
-  fetchRevenueBillingRows as fetchSharedRevenueBillingRows,
   getRevenueBreakdown as getSharedRevenueBreakdown,
   getRevenueTotals as getSharedRevenueTotals,
 } from "../../utils/billingRevenue";
@@ -13,6 +12,7 @@ export const SUPER_ADMIN_API = {
   admins: "admins",
   clinics: "Clinics",
   notifications: "notifications",
+  staffNotifications: "Notification",
   notificationSend: "notifications/send",
   notificationStats: "notifications/stats",
   auditLogs: "AuditLogs",
@@ -665,15 +665,28 @@ const getModuleAuthToken = () => {
   return keys.map((key) => localStorage.getItem(key)).find(Boolean) || "";
 };
 
+const isStaffNotificationContext = () => {
+  const path = String(window.location?.pathname || "").toLowerCase();
+  return ["/doctor", "/nurse", "/reception", "/lab"].some((prefix) =>
+    path.startsWith(prefix)
+  );
+};
+
+const getAuthenticatedHeaders = () => {
+  const token = getModuleAuthToken();
+  return {
+    "ngrok-skip-browser-warning": "true",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
+
 export const superAdminRequest = async (path, options = {}) => {
   const { body, headers, ...rest } = options;
-  const token = getModuleAuthToken();
   const response = await fetch(apiUrl(path), {
     ...rest,
     headers: {
-      "ngrok-skip-browser-warning": "true",
+      ...getAuthenticatedHeaders(),
       ...(body ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
     body: body ? JSON.stringify(body) : undefined,
@@ -2277,8 +2290,16 @@ export const deleteAdmin = async (id) => {
 };
 
 export const fetchNotifications = async () => {
+  const path = String(window.location?.pathname || "").toLowerCase();
+  if (path.startsWith("/doctor")) {
+    return mergeNotificationRecords([]);
+  }
+
+  const endpoint = isStaffNotificationContext()
+    ? SUPER_ADMIN_API.staffNotifications
+    : SUPER_ADMIN_API.notifications;
   const remoteNotifications = asArray(
-    await superAdminRequest(SUPER_ADMIN_API.notifications)
+    await superAdminRequest(endpoint)
   ).map(normalizeNotification);
 
   return mergeNotificationRecords(remoteNotifications);
@@ -2335,7 +2356,10 @@ export const markNotificationRead = async (id) => {
   if (!id) return null;
 
   try {
-    const result = await superAdminRequest(`${SUPER_ADMIN_API.notifications}/${id}/read`, {
+    const endpoint = isStaffNotificationContext()
+      ? SUPER_ADMIN_API.staffNotifications
+      : SUPER_ADMIN_API.notifications;
+    const result = await superAdminRequest(`${endpoint}/${id}/read`, {
       method: "PUT",
       body: { status: "Read", isRead: true },
     });
@@ -3149,7 +3173,6 @@ export const fetchDashboardData = async () => {
     loginHistory,
     clinicsResult,
     usersResult,
-    billingResult,
     appointmentsResult,
   ] = await Promise.allSettled([
     superAdminRequestFirst([SUPER_ADMIN_API.dashboard, SUPER_ADMIN_API.dashboardCompat]),
@@ -3167,7 +3190,6 @@ export const fetchDashboardData = async () => {
     superAdminRequest(SUPER_ADMIN_API.loginHistory),
     superAdminRequest(SUPER_ADMIN_API.clinics),
     superAdminRequest(SUPER_ADMIN_API.users),
-    superAdminRequest(SUPER_ADMIN_API.billing),
     superAdminRequestOptional("Appointment"),
   ]);
 
@@ -3189,19 +3211,9 @@ export const fetchDashboardData = async () => {
   // Get actual counts from fetched data for consistency with lists
   const clinicRows = clinicsResult.status === "fulfilled" ? asArray(clinicsResult.value) : [];
   const appointmentRows = appointmentsResult.status === "fulfilled" ? asArray(appointmentsResult.value) : [];
-  const billingRows = dedupeBillingRows([
-    ...(await fetchSharedRevenueBillingRows({ apiUrl })),
-    ...(billingResult.status === "fulfilled" ? asArray(billingResult.value) : []),
-  ]);
+  const billingRows = [];
   const billingTotals = getSharedRevenueTotals(billingRows);
   const userRows = usersResult.status === "fulfilled" ? asArray(usersResult.value).filter((u) => !u.isDeleted) : [];
-  const clinicDashboardRevenueRows = await fetchClinicDashboardRevenueRows(clinicRows);
-  const clinicDashboardRows = buildClinicRevenueRowsFromReportRows({
-    reportRows: clinicDashboardRevenueRows,
-    clinicRows,
-    adminRows: [],
-    userRows,
-  });
   const clinicDetailRevenueRows = await fetchClinicRevenueDetailRows(clinicRows);
   const clinicDetailRows = buildClinicRevenueRowsFromReportRows({
     reportRows: clinicDetailRevenueRows,
@@ -3217,7 +3229,6 @@ export const fetchDashboardData = async () => {
     appointmentRows,
   });
   const dashboardClinicRevenueRows = mergeClinicRevenueSources(
-    clinicDashboardRows,
     billingClinicRows,
     clinicDetailRows,
     clinicRevenueRows,
@@ -3331,17 +3342,12 @@ export const fetchReports = async () => {
   const adminRows = admins.status === "fulfilled" ? asArray(admins.value) : [];
   const userRows = users.status === "fulfilled" ? asArray(users.value) : [];
   const appointmentRows = appointments.status === "fulfilled" ? asArray(appointments.value) : [];
-  const clinicDashboardRevenueRows = await fetchClinicDashboardRevenueRows(clinicRows);
-  const clinicDashboardRows = buildClinicRevenueRowsFromReportRows({ reportRows: clinicDashboardRevenueRows, clinicRows, adminRows, userRows });
   const clinicDetailRevenueRows = await fetchClinicRevenueDetailRows(clinicRows);
   const clinicDetailRows = buildClinicRevenueRowsFromReportRows({ reportRows: clinicDetailRevenueRows, clinicRows, adminRows, userRows });
-  const billingRows = dedupeBillingRows([
-    ...(await fetchSharedRevenueBillingRows({ apiUrl })),
-  ]);
+  const billingRows = [];
   const billingClinicRows = buildClinicRevenueRowsFromBilling({ billingRows, clinicRows, adminRows, userRows, appointmentRows });
 
   const mergedRevenueRows = mergeClinicRevenueSources(
-    clinicDashboardRows,
     billingClinicRows,
     clinicDetailRows,
     clinicRevenueRows,

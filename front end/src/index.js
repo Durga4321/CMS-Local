@@ -19,8 +19,7 @@ if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
 
 const originalFetch = window.fetch.bind(window);
 const INVALID_STATIC_TOKENS = new Set(["static-superadmin-token"]);
-const API_GET_TIMEOUT_MS = 3000;
-const API_MUTATION_TIMEOUT_MS = 10000;
+const API_MUTATION_TIMEOUT_MS = 20000;
 const API_GET_CACHE_TTL_MS = 60 * 1000;
 const apiResponseCache = new Map();
 
@@ -169,16 +168,14 @@ window.fetch = (input, init = {}) => {
     clearApiResponseCache();
   }
 
+  const shouldTimeoutRequest =
+    shouldLimitApiRequest && method !== "GET" && method !== "HEAD";
   const controller =
-    shouldLimitApiRequest && typeof AbortController !== "undefined"
+    shouldTimeoutRequest && typeof AbortController !== "undefined"
       ? new AbortController()
       : null;
-  const timeoutMs =
-    method === "GET" || method === "HEAD"
-      ? API_GET_TIMEOUT_MS
-      : API_MUTATION_TIMEOUT_MS;
   const timeoutId = controller
-    ? window.setTimeout(() => controller.abort(), timeoutMs)
+    ? window.setTimeout(() => controller.abort(new Error("Request timed out. Please try again.")), API_MUTATION_TIMEOUT_MS)
     : null;
 
   const externalSignal = init.signal;

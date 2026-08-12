@@ -1,6 +1,6 @@
 export const getAuthToken = () =>
-  localStorage.getItem("token") ||
   localStorage.getItem("doctorToken") ||
+  localStorage.getItem("token") ||
   localStorage.getItem("adminToken");
 
 export const decodeJwtPayload = (token) => {

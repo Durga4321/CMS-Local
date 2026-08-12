@@ -13,6 +13,7 @@ import { getInitials } from "../profile/sessionProfile";
 import { getNurseProfile } from "./nurseSession";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { useClinicInvoiceBranding } from "../utils/clinicBranding";
+import { filterItemsByViewPermission, hasAnySavedModulePermissions, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const items = [
   { to: "/nurse/dashboard", label: "Nurse Dashboard", icon: Gauge },
@@ -20,9 +21,10 @@ const items = [
   { to: "/nurse/medical-history", label: "Medical History", icon: HeartPulse },
   {
     label: "Appointments",
+    modules: ["Appointments", "Book Appointment", "Online Bookings", "Offline Bookings"],
     icon: CalendarPlus,
     children: [
-      { to: "/nurse/appointments", label: "Book Appointment", icon: CalendarPlus },
+      { to: "/nurse/appointments", label: "Book Appointment", modules: ["Book Appointment", "Appointments"], icon: CalendarPlus },
       { to: "/nurse/appointments/online", label: "Online Bookings", icon: ListChecks },
       { to: "/nurse/appointments/offline", label: "Offline Bookings", icon: ListChecks },
     ],
@@ -54,6 +56,7 @@ const buildItems = ({ basePath = "/nurse", dashboardLabel = "Nurse Dashboard", s
 
 function NurseSidebar({ onClose = () => {}, basePath = "/nurse", dashboardLabel = "Nurse Dashboard", sectionLabel = "Nurse Desk", profile: providedProfile = null, showBilling = true, showBookAppointment = true, showConsultantRoom = false }) {
   const profile = providedProfile || getNurseProfile();
+  const { loading: permissionsLoading } = useRolePermissionsSync(profile);
   const profileName = profile.name || "Nurse";
   const hospitalName = getClinicDisplayName(profile, "Clinic Name");
   const branchName = String(profile.branchName || "").trim();
@@ -61,7 +64,11 @@ function NurseSidebar({ onClose = () => {}, basePath = "/nurse", dashboardLabel 
     clinicId: profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "",
     clinicName: hospitalName,
   });
-
+  const baseItems = buildItems({ basePath, dashboardLabel, showBilling, showBookAppointment });
+  const navItems =
+    permissionsLoading && !hasAnySavedModulePermissions(profile)
+      ? []
+      : filterItemsByViewPermission(baseItems, profile);
   return (
     <aside className="rc-sidebar">
       <div className="rc-brand">
@@ -81,7 +88,7 @@ function NurseSidebar({ onClose = () => {}, basePath = "/nurse", dashboardLabel 
       <div className="rc-section-label">{sectionLabel}</div>
 
       <nav className="rc-nav">
-        {buildItems({ basePath, dashboardLabel, showBilling, showBookAppointment }).map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           if (item.children) {
             return (

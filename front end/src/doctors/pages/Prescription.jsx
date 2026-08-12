@@ -14,6 +14,7 @@ import { useToast } from "../../components/ToastProvider";
 import { validateDate } from "../../utils/validation";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 import { fetchConsultationVitals, mergeStoredAppointmentVitals } from "../../utils/appointmentVitals";
+import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 
 const STEPS = [
   "Waiting",
@@ -222,7 +223,38 @@ const parseList = (data) => {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.data)) return data.data;
   if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.records)) return data.records;
   return [];
+};
+
+const getRecordAppointmentId = (record = {}) =>
+  String(
+    record.appointmentId ||
+      record.AppointmentId ||
+      record.appointment?.id ||
+      record.appointment?.appointmentId ||
+      record.Appointment?.Id ||
+      record.Appointment?.AppointmentId ||
+      ""
+  ).trim();
+
+const findByAppointmentId = (records = [], appointmentId) => {
+  const id = String(appointmentId || "").trim();
+  return records.find((item) => getRecordAppointmentId(item) === id) || null;
+};
+
+const fetchCollectionForAppointment = async (url, appointmentId, headers) => {
+  if (!appointmentId) return { item: null, rows: [] };
+
+  try {
+    const response = await fetch(url, { headers });
+    if (!response.ok) return { item: null, rows: [] };
+    const rows = parseList(await response.json().catch(() => []));
+    return { item: findByAppointmentId(rows, appointmentId), rows };
+  } catch {
+    return { item: null, rows: [] };
+  }
 };
 
 const getResponseMessage = (data, text, fallback) =>
@@ -282,6 +314,9 @@ function Prescription() {
   const location = useLocation();
   const toast = useToast();
   const routeState = React.useMemo(() => location.state || {}, [location.state]);
+  const permissionProfile = useMemo(() => getLoggedInDoctor(), []);
+  useRolePermissionsSync({ ...permissionProfile, role: "Doctor" });
+  const canCreatePrescription = canUseModulePermission(permissionProfile, "Prescription", "Create");
 
   const [appointment, setAppointment] = useState(null);
   const [consultation, setConsultation] = useState(routeState.consultation || null);
@@ -399,63 +434,27 @@ function Prescription() {
           patientId: routeState.patientId || routeAppointment?.patientId,
         });
 
-        try {
-          const detailResponse = await fetch(
-            `${APPOINTMENTS_API}/${normalizedAppointment.appointmentId}`,
-            { headers }
-          );
-          if (detailResponse.ok) {
-            normalizedAppointment = normalizeAppointment(
-              {
-                ...normalizedAppointment,
-                ...(await detailResponse.json()),
-              },
-              normalizedAppointment
-            );
-          }
-        } catch {
-          // The list payload is enough when the detail endpoint is unavailable.
-        }
-
         const backendVitals = await fetchConsultationVitals(normalizedAppointment.appointmentId, headers);
         normalizedAppointment = mergeStoredAppointmentVitals({
           ...normalizedAppointment,
           ...(backendVitals || {}),
         });
 
-        let savedConsultation = routeState.consultation || null;
-        const consultationResponse = await fetch(
-          `${CONSULTATION_API}/appointment/${normalizedAppointment.appointmentId}`,
-          {
-            headers,
-          }
+        const consultationResult = await fetchCollectionForAppointment(
+          CONSULTATION_API,
+          normalizedAppointment.appointmentId,
+          headers
+        );
+        const prescriptionResult = await fetchCollectionForAppointment(
+          PRESCRIPTION_API,
+          normalizedAppointment.appointmentId,
+          headers
         );
 
-        if (consultationResponse.ok) {
-          savedConsultation = await consultationResponse.json();
-        }
+        const savedConsultation = routeState.consultation || consultationResult.item;
+        const savedPrescription = prescriptionResult.item;
 
-        let savedPrescription = null;
-        const prescriptionResponse = await fetch(
-          `${PRESCRIPTION_API}/appointment/${normalizedAppointment.appointmentId}`,
-          {
-            headers,
-          }
-        );
-
-        if (prescriptionResponse.ok) {
-          savedPrescription = await prescriptionResponse.json();
-        }
-
-        const allPrescriptionsResponse = await fetch(PRESCRIPTION_API, {
-          headers,
-        }).catch(() => null);
-
-        if (allPrescriptionsResponse?.ok) {
-          setMedicineOptions(
-            extractMedicineOptions(parseList(await allPrescriptionsResponse.json()))
-          );
-        }
+        setMedicineOptions(extractMedicineOptions(prescriptionResult.rows));
 
         setAppointment(
           normalizeAppointment(normalizedAppointment, {
@@ -893,6 +892,13 @@ function Prescription() {
   };
 
   const submitPrescription = async () => {
+    if (!canCreatePrescription) {
+      const text = "You do not have permission to create prescriptions.";
+      setError(text);
+      toast.error(text);
+      return;
+    }
+
     setFieldErrors({});
     const appointmentId = toPositiveId(appointment?.appointmentId);
     const patientId = toPositiveId(appointment?.patientId);
@@ -1012,12 +1018,6 @@ function Prescription() {
       setSubmitting(false);
     }
   };
-
-  useEffect(() => {
-    if (!loading && error && !appointment) {
-      navigate("/doctor/dashboard", { replace: true });
-    }
-  }, [appointment, error, loading, navigate]);
 
   if (loading) {
     return <div className="rx-state-card">Loading prescription...</div>;
@@ -1261,7 +1261,7 @@ function Prescription() {
               className="rx-btn-submit"
               type="button"
               onClick={submitPrescription}
-                disabled={submitting}
+                disabled={submitting || !canCreatePrescription}
                 title="Submit prescription"
               >
                 {submitting ? "Submitting..." : "Submit Prescription"}

@@ -11,6 +11,7 @@ import {
 import { buildLabReportHtml, printLabReport, readReportField } from "./labReportTemplate";
 import { deleteGeneratedLabReport, readGeneratedLabReports, saveGeneratedLabReport } from "./labReportStore";
 import { fetchLabMasterTests } from "../utils/labMaster";
+import { canUseModulePermission, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const readFirst = readReportField;
 const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
@@ -353,6 +354,9 @@ const buildFilmHtml = ({ record = {}, filmUrl = "", filmName = "", clinicName = 
 function LabReportCreate() {
   const navigate = useNavigate();
   const labProfile = useMemo(() => getLabProfile(), []);
+  useRolePermissionsSync(labProfile);
+  const canCreateReport = canUseModulePermission(labProfile, "Create Report", "Create");
+  const canDeleteReport = canUseModulePermission(labProfile, "Create Report", "Delete");
   const clinicName = getClinicDisplayName(labProfile, "Clinic");
   const clinicBranding = getClinicInvoiceBranding({ clinicId: labProfile.hospitalId, clinicName });
   const [rows, setRows] = useState([]);
@@ -601,6 +605,10 @@ function LabReportCreate() {
   });
 
   const saveReport = async ({ print = false } = {}) => {
+    if (!canCreateReport) {
+      setError("You do not have permission to create reports.");
+      return;
+    }
     if (!selectedRow) {
       setError("Select a patient.");
       return;
@@ -670,6 +678,10 @@ function LabReportCreate() {
   };
 
   const deleteLatestReport = (report) => {
+    if (!canDeleteReport) {
+      setError("You do not have permission to delete reports.");
+      return;
+    }
     const reportId = String(readFirst(report, ["reportId", "ReportId", "id", "Id"], "")).trim();
     if (!reportId) return;
     deleteGeneratedLabReport(report);
@@ -811,8 +823,12 @@ function LabReportCreate() {
           ))}
         </div>
         <div className="lab-page-actions">
-          <button className="rc-btn primary" type="button" onClick={() => saveReport()} disabled={saving}><Save size={16} /> Save Report</button>
-          <button className="rc-btn" type="button" onClick={() => saveReport({ print: true })} disabled={saving}><Printer size={16} /> Save & Print</button>
+          {canCreateReport ? (
+            <>
+              <button className="rc-btn primary" type="button" onClick={() => saveReport()} disabled={saving}><Save size={16} /> Save Report</button>
+              <button className="rc-btn" type="button" onClick={() => saveReport({ print: true })} disabled={saving}><Printer size={16} /> Save & Print</button>
+            </>
+          ) : null}
           <button className="rc-btn ghost" type="button" onClick={() => navigate("/lab/reports")}><FileText size={16} /> Reports</button>
         </div>
         {latestPatientReports.length ? (
@@ -831,7 +847,9 @@ function LabReportCreate() {
                   <div className="lab-row-actions">
                     <button className="lab-action-btn report" type="button" title="Preview report" onClick={() => setPreviewReport(report)}><Eye size={16} /></button>
                     <button className="lab-action-btn download" type="button" title="Print report" onClick={() => printLabReport({ record: report, branding: clinicBranding, clinicName, profile: labProfile })}><Printer size={16} /></button>
-                    <button className="lab-action-btn delete" type="button" title="Delete report" onClick={() => deleteLatestReport(report)}><Trash2 size={16} /></button>
+                    {canDeleteReport ? (
+                      <button className="lab-action-btn delete" type="button" title="Delete report" onClick={() => deleteLatestReport(report)}><Trash2 size={16} /></button>
+                    ) : null}
                   </div>
                 </div>
               ))}

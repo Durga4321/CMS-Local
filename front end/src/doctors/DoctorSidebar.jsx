@@ -12,6 +12,7 @@ import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { useClinicInvoiceBranding } from "../utils/clinicBranding";
 import { apiUrl } from "../config/api";
 import { getAuthToken, getLoggedInDoctor } from "./utils/doctorSession";
+import { filterItemsByViewPermission, hasAnySavedModulePermissions, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const NAV_ITEMS = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/doctor/dashboard" },
@@ -86,6 +87,19 @@ function DoctorSidebar() {
     return getBranchName(selectedBranch) || String(localStorage.getItem("doctorBranchName") || profile.branchName || "").trim();
   }, [activeBranchId, branchOptions, profile.branchName]);
   const displayName = profile.name || "Dr. Doctor";
+  const permissionProfile = {
+    ...profile,
+    id: doctor.id || profile.id,
+    userId: doctor.id || profile.userId,
+    email: doctor.email || profile.email,
+    name: doctor.name || profile.name,
+    role: "Doctor",
+  };
+  const { loading: permissionsLoading } = useRolePermissionsSync(permissionProfile);
+  const navItems =
+    permissionsLoading && !hasAnySavedModulePermissions(permissionProfile)
+      ? []
+      : filterItemsByViewPermission(NAV_ITEMS, permissionProfile);
   const clinicBranding = useClinicInvoiceBranding({
     clinicId: profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "",
     clinicName: hospitalName,
@@ -152,7 +166,7 @@ function DoctorSidebar() {
       </div>
 
       <nav className="dr-nav">
-        {NAV_ITEMS.map(({ label, icon: Icon, path }) => (
+        {navItems.map(({ label, icon: Icon, path }) => (
           <NavLink
             key={path}
             to={path}

@@ -18,7 +18,7 @@
 
 // /* ================= COMPONENT ================= */
 
-// function Doctorschedulepage() {
+// function ScheduleSettingsPage() {
 
 //   /* SETTINGS */
 
@@ -529,7 +529,7 @@
 //   );
 // }
 
-// export default Doctorschedulepage;
+// export default ScheduleSettingsPage;
 
 
 
@@ -564,7 +564,7 @@ const isPastInputDate = (value) =>
 
 /* ================= COMPONENT ================= */
 
-function Doctorschedulepage() {
+function ScheduleSettingsPage() {
   const toast = useToast();
 
   /* SETTINGS */
@@ -930,8 +930,8 @@ function Doctorschedulepage() {
         </h2>
 
         <p>
-          Global clinic-wide
-          scheduling configuration
+          Global slot duration and clinic holiday settings. Doctor working hours,
+          leave and branch shifts are managed from Doctor Schedule.
         </p>
 
       </div>
@@ -1218,4 +1218,4 @@ function Doctorschedulepage() {
   );
 }
 
-export default Doctorschedulepage;
+export default ScheduleSettingsPage;

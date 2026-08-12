@@ -14,16 +14,14 @@ import { validateText } from "../../utils/validation";
 import { formatIndianCurrency } from "../../utils/format";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
+import { readDoctorScheduleDrafts } from "../../utils/doctorScheduleDrafts";
 import {
   DUPLICATE_APPOINTMENT_MESSAGE,
   hasDuplicateAppointmentForPatientDoctorDate,
 } from "../../utils/appointmentDuplicateValidation";
-import { isDoctorBranchLeaveDate } from "../../utils/doctorBranchLeave";
-import {
-  buildDoctorScheduleDraftSlots,
-  readDoctorScheduleDrafts,
-} from "../../utils/doctorScheduleDrafts";
 import { getSpecializationDisplayName } from "../../pages/DOCTORS/doctorExpertiseOptions";
+import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
+import { getNurseProfile } from "../../Nurse/nurseSession";
 
 const parseSlotLabel = (slot) => {
   if (!slot) return "";
@@ -552,7 +550,10 @@ function ReceptionAppointments({ hideActions = false }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const toast = useToast();
-  const receptionistProfile = getReceptionistProfile();
+  const isNursePath = window.location.pathname.startsWith("/nurse");
+  const receptionistProfile = isNursePath ? getNurseProfile() : getReceptionistProfile();
+  useRolePermissionsSync(receptionistProfile);
+  const canCreateBooking = canUseModulePermission(receptionistProfile, ["Book Appointment", "Appointments"], "Create");
   const requestedPatientId = String(searchParams.get("patientId") || "").trim();
   const receptionistHospitalId = String(
     receptionistProfile.hospitalId || ""
@@ -857,38 +858,26 @@ function ReceptionAppointments({ hideActions = false }) {
     });
     if (receptionistBranchId) query.set("branchId", receptionistBranchId);
 
-    if (isDoctorBranchLeaveDate(form.doctorId, receptionistBranchId, form.date)) {
-      setAvailableSlots([]);
-      setSelectedSlot("");
-      setSlotLoading(false);
-      return;
-    }
-
-    const mergeBranchSlots = (backendSlots = []) => {
-      const localSlots = buildDoctorScheduleDraftSlots(form.doctorId, receptionistBranchId, form.date);
-      if (localSlots.length) {
-        return localSlots;
-      }
-      const merged = new Map();
-      [...backendSlots].forEach((slot) => {
-        const label = parseSlotLabel(slot);
-        const key = normalizeSlotStart(label);
-        if (key && !merged.has(key)) merged.set(key, slot);
-      });
-      return Array.from(merged.values());
-    };
-
     requestJson(`Schedule/day-slots?${query.toString()}`)
       .then((data) => {
         const slots = parseSlots(data).filter((slot) => {
           const slotBranchId = getSlotBranchId(slot);
           return !receptionistBranchId || slotBranchId === receptionistBranchId;
         });
-        setAvailableSlots(mergeBranchSlots(slots));
+        // Backend day-slots is the single source of truth. It already applies
+        // recurring schedule, leave/time-change/branch-shift overrides and bookings.
+        const merged = new Map();
+        slots.forEach((slot) => {
+          const label = parseSlotLabel(slot);
+          const key = normalizeSlotStart(label);
+          if (key && !merged.has(key)) merged.set(key, slot);
+        });
+        setAvailableSlots(Array.from(merged.values()));
         setSelectedSlot("");
       })
       .catch(() => {
-        setAvailableSlots(mergeBranchSlots([]));
+        setAvailableSlots([]);
+        setSelectedSlot("");
       })
       .finally(() => setSlotLoading(false));
   }, [form.doctorId, form.date, receptionistBranchId]);
@@ -938,6 +927,11 @@ function ReceptionAppointments({ hideActions = false }) {
 
   const openPaymentStep = (event) => {
     event.preventDefault();
+    if (!canCreateBooking) {
+      setMessage("You do not have permission to create appointments.");
+      toast.error("You do not have permission to create appointments.");
+      return;
+    }
     if (!validateBookingForm()) return;
 
     setPaymentStep(true);
@@ -945,6 +939,11 @@ function ReceptionAppointments({ hideActions = false }) {
   };
 
   const submit = async () => {
+    if (!canCreateBooking) {
+      setMessage("You do not have permission to create appointments.");
+      toast.error("You do not have permission to create appointments.");
+      return;
+    }
     if (!validateBookingForm()) return;
 
     const selectedSlotObject = availableSlots.find(
@@ -1258,7 +1257,7 @@ function ReceptionAppointments({ hideActions = false }) {
               <div className="rc-slot-empty">No slots available for this doctor on the selected date.</div>
             )}
           </div>
-          <button type="submit" className="rc-confirm">
+          <button type="submit" className="rc-confirm" disabled={!canCreateBooking}>
             <CheckCircle size={16} /> Confirm Booking
           </button>
           {paymentStep ? (

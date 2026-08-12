@@ -64,9 +64,16 @@ export const getReceptionistProfile = () => {
     localStorage.getItem("branchId") ||
     getClaim(claims, "BranchId", "branchId", "BranchID", "branchID") ||
     "";
+  const id =
+    localStorage.getItem("receptionistId") ||
+    localStorage.getItem("userId") ||
+    getClaim(claims, "ReceptionistId", "receptionistId", "UserId", "userId", "sub") ||
+    "";
 
   return {
     token,
+    id: String(id),
+    userId: String(id),
     email,
     name,
     role: localStorage.getItem("receptionistRole") || "Receptionist",

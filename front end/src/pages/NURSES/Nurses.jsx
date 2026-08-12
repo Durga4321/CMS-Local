@@ -3,6 +3,7 @@ import { Camera, CheckCircle, Pencil, Plus, RefreshCw, Search, ShieldPlus, Trash
 import "../RECEPTIONISTS/Receptionists.css";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
+import { getNurses as fetchStaffNurses } from "../../Nurse/nurseApi";
 import {
   buildBranchOptions,
   fetchBranchesForHospital,
@@ -25,18 +26,6 @@ const STAFF_URL = apiUrl("Staff");
 const NURSES_URL = apiUrl("Nurses");
 const STAFF_TOGGLE_STATUS = (id) => apiUrl(`Staff/${encodeURIComponent(id)}/toggle-status`);
 const NURSE_URL = apiUrl("Nurse");
-
-const parseList = (data) => {
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.data)) return data.data;
-  if (Array.isArray(data?.items)) return data.items;
-  if (Array.isArray(data?.result)) return data.result;
-  if (Array.isArray(data?.nurses)) return data.nurses;
-  if (Array.isArray(data?.Nurses)) return data.Nurses;
-  if (Array.isArray(data?.staff)) return data.staff;
-  if (Array.isArray(data?.Staff)) return data.Staff;
-  return [];
-};
 
 const readFirst = (record = {}, keys = [], fallback = "") => {
   for (const key of keys) {
@@ -90,28 +79,6 @@ const getErrorMessage = async (response, fallback) => {
     return text;
   }
 };
-
-const normalizeRole = (value = "") =>
-  String(value || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
-
-const getStaffRole = (record = {}) =>
-  normalizeRole(
-    readFirst(record, [
-      "role",
-      "Role",
-      "roleName",
-      "RoleName",
-      "type",
-      "Type",
-      "staffRole",
-      "StaffRole",
-      "userRole",
-      "UserRole",
-    ])
-  );
-
-const hasRoleMetadata = (record = {}) => Boolean(getStaffRole(record));
-const isNurseRecord = (record = {}) => getStaffRole(record) === "nurse";
 
 const buildStaffFormData = (payload = {}, imageFile = null) => {
   const body = new FormData();
@@ -191,50 +158,7 @@ function Nurses() {
   const scopedBranchIds = useMemo(() => branches.map((branch) => branch.id), [branches]);
 
   const fetchNurses = async () => {
-    const query = hospitalId ? `?hospitalId=${encodeURIComponent(hospitalId)}` : "";
-    const candidatePaths = [
-      `Staff?role=Nurse${query ? `&hospitalId=${encodeURIComponent(hospitalId)}` : ""}`,
-      `Staff?role=nurse${query ? `&hospitalId=${encodeURIComponent(hospitalId)}` : ""}`,
-      `Staff${query}`,
-      `Nurses${query}`,
-      `Nurse${query}`,
-      "Nurses",
-      "Nurse",
-      "Staff/Nurse",
-      "Staff/nurse",
-    ];
-
-    let lastError = null;
-
-    for (const path of candidatePaths) {
-      try {
-        const response = await fetch(apiUrl(path), {
-          headers: getApiHeaders(),
-        });
-
-        if (!response.ok) {
-          lastError = new Error(await getErrorMessage(response, "Unable to load nurses."));
-          continue;
-        }
-
-        const data = await response.json().catch(() => null);
-        const list = parseList(data);
-        const roleFilteredList = path.toLowerCase().includes("staff")
-          ? list.filter(isNurseRecord)
-          : list.filter((item) => !hasRoleMetadata(item) || isNurseRecord(item));
-        if (roleFilteredList.length) {
-          return roleFilteredList;
-        }
-        if (list.length) continue;
-
-        // If response is OK and zero results, return empty list immediately.
-        return list;
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    throw lastError || new Error("Unable to load nurses.");
+    return fetchStaffNurses();
   };
 
   const loadNurses = useCallback(async () => {
