@@ -24,6 +24,7 @@ import "./Sidebar.css";
 import { getInitials, getRoleProfile } from "../profile/sessionProfile";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { useClinicInvoiceBranding } from "../utils/clinicBranding";
+import { filterItemsByViewPermission, hasAnySavedModulePermissions, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const items = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -69,7 +70,6 @@ function Sidebar({ open = false, onClose = () => {} }) {
   const isPatient =
     location.pathname === "/patient" ||
     location.pathname.startsWith("/patient/");
-  const navItems = isSuperAdmin ? superAdminItems : isPatient ? patientItems : items;
   let profile;
   if (isSuperAdmin) profile = getRoleProfile("admin");
   else if (location.pathname.startsWith("/doctor")) profile = getRoleProfile("doctor");
@@ -77,6 +77,14 @@ function Sidebar({ open = false, onClose = () => {} }) {
   else if (location.pathname.startsWith("/nurse")) profile = getRoleProfile("nurse");
   else if (isPatient) profile = getRoleProfile("patient");
   else profile = getRoleProfile("admin");
+  const { loading: permissionsLoading } = useRolePermissionsSync(profile);
+  const baseNavItems = isSuperAdmin ? superAdminItems : isPatient ? patientItems : items;
+  const navItems =
+    isPatient
+      ? baseNavItems
+      : permissionsLoading && !hasAnySavedModulePermissions(profile)
+        ? []
+        : filterItemsByViewPermission(baseNavItems, profile);
   const profileName = profile.name;
   const profileSub = isSuperAdmin ? "Super Admin" : isPatient ? "Patient" : getClinicDisplayName(profile, "Admin");
   const brandName = isSuperAdmin ? "CMS" : isPatient ? "Patient Portal" : getClinicDisplayName(profile, "CMS");

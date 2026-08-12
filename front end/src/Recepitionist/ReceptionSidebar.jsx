@@ -11,16 +11,17 @@ import { getInitials } from "../profile/sessionProfile";
 import { getReceptionistProfile } from "./receptionSession";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { useClinicInvoiceBranding } from "../utils/clinicBranding";
-import { filterItemsByViewPermission, useRolePermissionsSync } from "../utils/rolePermissions";
+import { filterItemsByViewPermission, hasAnySavedModulePermissions, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const items = [
   { to: "/reception/dashboard", label: "Reception Dashboard", icon: Gauge },
   { to: "/reception/patients", label: "Patients", icon: UserPlus },
   {
     label: "Appointments",
+    modules: ["Appointments", "Book Appointment"],
     icon: CalendarPlus,
     children: [
-      { to: "/reception/appointments", label: "Book Appointment", icon: CalendarPlus },
+      { to: "/reception/appointments", label: "Book Appointment", modules: ["Book Appointment", "Appointments"], icon: CalendarPlus },
     ],
   },
   { to: "/reception/billing", label: "Billing", icon: ClipboardList },
@@ -68,7 +69,7 @@ function ReceptionSidebar({
   showConsultantRoom = false,
 }) {
   const profile = providedProfile || getReceptionistProfile();
-  useRolePermissionsSync(profile);
+  const { loading: permissionsLoading } = useRolePermissionsSync(profile);
   const profileName = profile.name || "Receptionist";
   const hospitalName = getClinicDisplayName(profile, "Clinic Name");
   const branchName = String(profile.branchName || "").trim();
@@ -76,10 +77,11 @@ function ReceptionSidebar({
     clinicId: profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "",
     clinicName: hospitalName,
   });
-  const navItems = filterItemsByViewPermission(
-    buildItems({ basePath, dashboardLabel, showBilling, showBookAppointment, showConsultantRoom }),
-    profile
-  );
+  const baseItems = buildItems({ basePath, dashboardLabel, showBilling, showBookAppointment, showConsultantRoom });
+  const navItems =
+    permissionsLoading && !hasAnySavedModulePermissions(profile)
+      ? []
+      : filterItemsByViewPermission(baseItems, profile);
   return (
     <aside className="rc-sidebar">
       <div className="rc-brand">

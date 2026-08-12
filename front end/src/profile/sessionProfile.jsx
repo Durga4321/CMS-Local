@@ -150,9 +150,15 @@ export const getRoleProfile = (roleType = "admin") => {
     const claims = getSessionClaims(roleType);
     const email = getProfileEmail("doctorEmail", claims, "doctor account");
     const name = getProfileName("doctorName", email, claims, "Doctor");
+    const id =
+      localStorage.getItem("doctorId") ||
+      localStorage.getItem("userId") ||
+      getClaim(claims, "doctorId", "DoctorId", "userId", "UserId", "sub", "nameid", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
     return {
       roleType,
       roleLabel: "Doctor",
+      id,
+      userId: id,
       name: `Dr. ${name}`.replace(/^Dr\. Dr\./, "Dr."),
       email,
       branchName: getProfileBranchName(claims),
@@ -164,9 +170,15 @@ export const getRoleProfile = (roleType = "admin") => {
   if (roleType === "receptionist") {
     const claims = getSessionClaims(roleType);
     const email = getProfileEmail("receptionistEmail", claims, "receptionist account");
+    const id =
+      localStorage.getItem("receptionistId") ||
+      localStorage.getItem("userId") ||
+      getClaim(claims, "receptionistId", "ReceptionistId", "userId", "UserId", "sub", "nameid", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
     return {
       roleType,
       roleLabel: "Receptionist",
+      id,
+      userId: id,
       name: getProfileName("receptionistName", email, claims, "Receptionist"),
       email,
       branchName: getProfileBranchName(claims),
@@ -178,9 +190,15 @@ export const getRoleProfile = (roleType = "admin") => {
   if (roleType === "nurse") {
     const claims = getSessionClaims(roleType);
     const email = getProfileEmail("nurseEmail", claims, "nurse account");
+    const id =
+      localStorage.getItem("nurseId") ||
+      localStorage.getItem("userId") ||
+      getClaim(claims, "nurseId", "NurseId", "userId", "UserId", "sub", "nameid", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
     return {
       roleType,
       roleLabel: "Nurse",
+      id,
+      userId: id,
       name: getProfileName("nurseName", email, claims, "Nurse"),
       email,
       branchName: getProfileBranchName(claims),
@@ -192,9 +210,16 @@ export const getRoleProfile = (roleType = "admin") => {
   if (roleType === "lab") {
     const claims = getSessionClaims(roleType);
     const email = getProfileEmail("labEmail", claims, "lab account");
+    const id =
+      localStorage.getItem("labTechnicianId") ||
+      localStorage.getItem("labId") ||
+      localStorage.getItem("userId") ||
+      getClaim(claims, "labTechnicianId", "LabTechnicianId", "labId", "LabId", "userId", "UserId", "sub", "nameid", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
     return {
       roleType,
       roleLabel: "Lab Technician",
+      id,
+      userId: id,
       name: getProfileName("labName", email, claims, "Lab Technician"),
       email,
       branchName: getProfileBranchName(claims),
@@ -215,6 +240,14 @@ export const getRoleProfile = (roleType = "admin") => {
   return {
     roleType: "admin",
     roleLabel,
+    id:
+      localStorage.getItem("adminId") ||
+      localStorage.getItem("userId") ||
+      getClaim(claims, "adminId", "AdminId", "userId", "UserId", "sub", "nameid", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"),
+    userId:
+      localStorage.getItem("userId") ||
+      localStorage.getItem("adminId") ||
+      getClaim(claims, "userId", "UserId", "adminId", "AdminId", "sub", "nameid", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"),
     name: getProfileName("adminName", email, claims, roleLabel),
     email,
     branchName: getProfileBranchName(claims),

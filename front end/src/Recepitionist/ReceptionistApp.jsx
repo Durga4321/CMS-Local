@@ -19,7 +19,7 @@ function ReceptionistApp() {
         <Route path="dashboard" element={<PermissionRoute roleType="receptionist" module="Reception Dashboard"><ReceptionDashboard /></PermissionRoute>} />
         <Route path="patients" element={<PermissionRoute roleType="receptionist" module="Patients"><ReceptionPatients /></PermissionRoute>} />
         <Route path="medical-history" element={<PermissionRoute roleType="receptionist" module="Medical History"><ReceptionMedicalHistory /></PermissionRoute>} />
-        <Route path="appointments" element={<PermissionRoute roleType="receptionist" module="Book Appointment"><ReceptionAppointments /></PermissionRoute>} />
+        <Route path="appointments" element={<PermissionRoute roleType="receptionist" module={["Book Appointment", "Appointments"]}><ReceptionAppointments /></PermissionRoute>} />
         <Route path="appointments/online" element={<PermissionRoute roleType="receptionist" module="Online Bookings"><ReceptionOnlineBookings /></PermissionRoute>} />
         <Route path="appointments/offline" element={<PermissionRoute roleType="receptionist" module="Offline Bookings"><ReceptionOfflineBookings /></PermissionRoute>} />
         <Route path="billing" element={<PermissionRoute roleType="receptionist" module="Billing"><ReceptionBilling /></PermissionRoute>} />
