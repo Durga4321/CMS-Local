@@ -11,6 +11,7 @@ import { getInitials } from "../profile/sessionProfile";
 import { getReceptionistProfile } from "./receptionSession";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { useClinicInvoiceBranding } from "../utils/clinicBranding";
+import { filterItemsByViewPermission } from "../utils/rolePermissions";
 
 const items = [
   { to: "/reception/dashboard", label: "Reception Dashboard", icon: Gauge },
@@ -74,6 +75,10 @@ function ReceptionSidebar({
     clinicId: profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "",
     clinicName: hospitalName,
   });
+  const navItems = filterItemsByViewPermission(
+    buildItems({ basePath, dashboardLabel, showBilling, showBookAppointment, showConsultantRoom }),
+    profile
+  );
   return (
     <aside className="rc-sidebar">
       <div className="rc-brand">
@@ -93,7 +98,7 @@ function ReceptionSidebar({
       <div className="rc-section-label">{sectionLabel}</div>
 
       <nav className="rc-nav">
-        {buildItems({ basePath, dashboardLabel, showBilling, showBookAppointment, showConsultantRoom }).map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           if (item.children) {
             return (

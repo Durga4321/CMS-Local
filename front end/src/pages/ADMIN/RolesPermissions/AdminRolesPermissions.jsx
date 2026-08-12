@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, X } from "lucide-react";
 import { apiUrl } from "../../../config/api";
+import {
+  getRoleModulePermissions,
+  readRoleModulePermissionsStore,
+  removeRoleModulePermissions,
+  saveRoleModulePermissions,
+} from "../../../utils/rolePermissions";
 
 const PERMISSIONS = ["View", "Create", "Edit", "Delete"];
 const GENERAL_MODULE = "General";
@@ -21,6 +27,24 @@ const DEFAULT_BACKEND_MODULES = [
 const STAFF_ROLES = ["Doctor", "Receptionist", "Nurse", "LabTechnician"];
 const STAFF_ROLE_KEYS = new Set(["doctor", "receptionist", "nurse", "labtechnician"]);
 const formatRoleLabel = (role = "") => (normalizeKey(role) === "labtechnician" ? "Lab Technician" : role);
+const canonicalStaffRole = (role = "") => {
+  const key = normalizeKey(role);
+  if (key === "doctor") return "Doctor";
+  if (key === "receptionist" || key === "reception") return "Receptionist";
+  if (key === "nurse") return "Nurse";
+  if (key === "labtechnician" || key === "labtech" || key === "lab" || key === "laboratory") return "LabTechnician";
+  return String(role || "").trim();
+};
+
+const ROLE_SIDEBAR_MODULES = {
+  Doctor: ["Dashboard", "Consultation", "Prescription", "Appointments", "My Schedule"],
+  Receptionist: ["Reception Dashboard", "Patients", "Appointments", "Book Appointment", "Billing"],
+  Nurse: ["Nurse Dashboard", "Patients", "Medical History", "Appointments", "Book Appointment", "Online Bookings", "Offline Bookings", "Billing"],
+  LabTechnician: ["Lab Dashboard", "Patients", "Diagnosis Tests", "Sample Collection", "Create Report", "Reports"],
+};
+
+const getRoleModules = (role = "Doctor") =>
+  ROLE_SIDEBAR_MODULES[normalizeKey(role) === "labtechnician" ? "LabTechnician" : role] || ROLE_SIDEBAR_MODULES.Doctor;
 
 const getToken = () =>
   localStorage.getItem("token") ||
@@ -103,7 +127,6 @@ const normalizeKey = (value = "") =>
 const normalizePermissionList = (permissions = []) =>
   Array.from(
     new Set([
-      "View",
       ...(Array.isArray(permissions) ? permissions : []).flatMap((permission) => {
         if (typeof permission === "string") return permission;
         const dto = permission?.dto || permission?.Dto;
@@ -149,6 +172,93 @@ const normalizeModuleList = (modules = []) =>
     )
   );
 
+const emptyModulePermissionsForRole = (role = "Doctor") =>
+  getRoleModules(role).reduce((matrix, module) => ({ ...matrix, [module]: [] }), {});
+
+const normalizeModulePermissionMap = (source = {}, role = "Doctor") => {
+  const modules = getRoleModules(role);
+  const sourceMap = source && typeof source === "object" && !Array.isArray(source) ? source : {};
+  return modules.reduce((matrix, module) => ({
+    ...matrix,
+    [module]: normalizePermissionList(sourceMap[module] || []),
+  }), {});
+};
+
+const mergeModulePermissionMaps = (base = {}, next = {}, role = "Doctor") => {
+  const modules = getRoleModules(role);
+  return modules.reduce((map, module) => ({
+    ...map,
+    [module]: normalizePermissionList([
+      ...(Array.isArray(base[module]) ? base[module] : []),
+      ...(Array.isArray(next[module]) ? next[module] : []),
+    ]),
+  }), {});
+};
+
+const getSelectedPermissionModules = (modulePermissions = {}, role = "Doctor") => {
+  const seenModules = new Set();
+  return getRoleModules(role)
+    .map((module) => ({
+      module: String(module || "").trim(),
+      permissions: normalizePermissionList(modulePermissions[module]),
+    }))
+    .filter((item) => {
+      const moduleKey = normalizeKey(item.module);
+      if (!moduleKey || seenModules.has(moduleKey) || !item.permissions.length) return false;
+      seenModules.add(moduleKey);
+      return true;
+    });
+};
+
+const getPermissionModulesFromAssignment = (assignment = {}, role = "Doctor") => {
+  const modules = getRoleModules(role);
+  const map = emptyModulePermissionsForRole(role);
+  const directModulePermissions =
+    assignment.modulePermissions ||
+    assignment.ModulePermissions ||
+    assignment.raw?.modulePermissions ||
+    assignment.raw?.ModulePermissions;
+  if (directModulePermissions && typeof directModulePermissions === "object" && !Array.isArray(directModulePermissions)) {
+    Object.entries(directModulePermissions).forEach(([module, permissions]) => {
+      const matchedModule = modules.find((item) => normalizeKey(item) === normalizeKey(module));
+      if (matchedModule) map[matchedModule] = normalizePermissionList(permissions);
+    });
+  }
+  const permissionModules = [
+    ...(Array.isArray(assignment.permissionModules) ? assignment.permissionModules : []),
+    ...(Array.isArray(assignment.PermissionModules) ? assignment.PermissionModules : []),
+    ...(Array.isArray(assignment.raw?.permissionModules) ? assignment.raw.permissionModules : []),
+    ...(Array.isArray(assignment.raw?.PermissionModules) ? assignment.raw.PermissionModules : []),
+  ];
+  permissionModules.forEach((permissionModule) => {
+    const module = normalizeModuleName(permissionModule, 0);
+    const matchedModule = modules.find((item) => normalizeKey(item) === normalizeKey(module));
+    if (!matchedModule) return;
+    map[matchedModule] = normalizePermissionList(
+      permissionModule.permissions ||
+        permissionModule.Permissions ||
+        permissionModule.permissionNames ||
+        permissionModule.PermissionNames ||
+        []
+    );
+  });
+  const rows = Array.isArray(assignment.permissions) ? assignment.permissions : [];
+  rows.forEach((permission) => {
+    if (typeof permission === "string") return;
+    const dto = permission?.dto || permission?.Dto || {};
+    const module = normalizeModuleName(permission?.moduleName || permission?.ModuleName || permission?.module || permission?.Module || dto?.moduleName || dto?.ModuleName || dto?.module || dto?.Module, 0);
+    const matchedModule = modules.find((item) => normalizeKey(item) === normalizeKey(module));
+    if (!matchedModule) return;
+    map[matchedModule] = normalizePermissionList([permission]);
+  });
+  return map;
+};
+
+const assignmentHasSavedModules = (assignment = {}) =>
+  Object.values(getPermissionModulesFromAssignment(assignment, assignment.role || "Doctor")).some(
+    (permissions) => permissions.length
+  );
+
 function getValue(record = {}, keys = [], fallback = "") {
   for (const key of keys) {
     const value = record?.[key];
@@ -160,7 +270,7 @@ function getValue(record = {}, keys = [], fallback = "") {
 }
 
 const normalizeUser = (user = {}) => {
-  const role = String(getValue(user, ["role", "Role", "roleName", "RoleName", "type", "Type"], "")).trim();
+  const role = canonicalStaffRole(getValue(user, ["role", "Role", "roleName", "RoleName", "type", "Type"], ""));
   const id = String(
     getValue(user, [
       "id",
@@ -196,6 +306,8 @@ const normalizeUser = (user = {}) => {
             user.canDelete || user.CanDelete ? "Delete" : "",
           ].filter(Boolean)
     ),
+    permissionModules: user.permissionModules || user.PermissionModules || [],
+    modulePermissions: user.modulePermissions || user.ModulePermissions || {},
     raw: user,
   };
 };
@@ -204,36 +316,44 @@ const emptyForm = {
   userId: "",
   role: "Doctor",
   module: GENERAL_MODULE,
-  permissions: ["View"],
+  permissions: [],
+  modulePermissions: emptyModulePermissionsForRole("Doctor"),
 };
 
 const emptyRoleMatrix = {
-  Doctor: ["View"],
-  Receptionist: ["View"],
-  Nurse: ["View"],
-  LabTechnician: ["View"],
+  Doctor: emptyModulePermissionsForRole("Doctor"),
+  Receptionist: emptyModulePermissionsForRole("Receptionist"),
+  Nurse: emptyModulePermissionsForRole("Nurse"),
+  LabTechnician: emptyModulePermissionsForRole("LabTechnician"),
 };
 
 const buildPermissionPayload = (
   form,
   user,
-  { dtoMode = "object", backendModules = DEFAULT_BACKEND_MODULES, omitModule = false } = {}
+  { dtoMode = "plain", backendModules = DEFAULT_BACKEND_MODULES, omitModule = false, stringPermissionsOnly = false } = {}
 ) => {
-  const permissions = normalizePermissionList(form.permissions);
-  const hasPermission = (permission) => permissions.includes(permission);
-  const modules = normalizeModuleList(backendModules);
-  const buildPermissionItem = (module) => {
+  void backendModules;
+  const modulePermissions = normalizeModulePermissionMap(form.modulePermissions, form.role);
+  const selectedModules = getSelectedPermissionModules(modulePermissions, form.role);
+  const firstPermissions = selectedModules[0]?.permissions || [];
+  const hasPermission = (permission) => selectedModules.some((item) => item.permissions.includes(permission));
+  const buildPermissionItem = ({ module, permissions }) => {
+    const hasModulePermission = (permission) => permissions.includes(permission);
     const permissionDto = {
       moduleName: module,
       permissions,
       permissionNames: permissions,
-      canView: hasPermission("View"),
-      canCreate: hasPermission("Create"),
-      canEdit: hasPermission("Edit"),
-      canDelete: hasPermission("Delete"),
+      canView: hasModulePermission("View"),
+      canCreate: hasModulePermission("Create"),
+      canEdit: hasModulePermission("Edit"),
+      canDelete: hasModulePermission("Delete"),
     };
     if (!omitModule) {
       permissionDto.module = module;
+    }
+
+    if (dtoMode === "plain") {
+      return permissionDto;
     }
 
     return {
@@ -246,11 +366,21 @@ const buildPermissionPayload = (
     userId: Number(form.userId) || form.userId,
     role: form.role,
     roleName: form.role,
-    module: modules[0],
-    moduleName: modules[0],
-    displayModule: GENERAL_MODULE,
-    permissions: modules.map(buildPermissionItem),
-    permissionNames: permissions,
+    module: selectedModules[0]?.module || "",
+    moduleName: selectedModules[0]?.module || "",
+    displayModule: selectedModules.length === 1 ? selectedModules[0].module : `${selectedModules.length} modules`,
+    modules: selectedModules.map((item) => item.module),
+    moduleNames: selectedModules.map((item) => item.module),
+    permissions: stringPermissionsOnly
+      ? Array.from(new Set(selectedModules.flatMap((item) => item.permissions)))
+      : selectedModules.map(buildPermissionItem),
+    permissionModules: selectedModules.map((item) => ({
+      module: item.module,
+      moduleName: item.module,
+      permissions: item.permissions,
+      permissionNames: item.permissions,
+    })),
+    permissionNames: firstPermissions,
     canView: hasPermission("View"),
     canCreate: hasPermission("Create"),
     canEdit: hasPermission("Edit"),
@@ -263,7 +393,16 @@ const buildPermissionPayload = (
 const saveUserPermissions = async (userId, form, selectedUser, backendModules) => {
   const path = `user-permissions/users/${encodeURIComponent(userId)}`;
   const modules = normalizeModuleList(backendModules);
+  const roleKey = normalizeKey(form?.role || selectedUser?.role);
+  const isLabBackendLookupError = (message = "") =>
+    roleKey === "labtechnician" &&
+    message.includes("not found") &&
+    message.includes("doctor") &&
+    message.includes("receptionist") &&
+    message.includes("nurse");
   const payloadOptions = [
+    { dtoMode: "plain", backendModules: modules },
+    { dtoMode: "plain", backendModules: modules, stringPermissionsOnly: true },
     { dtoMode: "object", backendModules: modules },
     { dtoMode: "value", backendModules: modules },
     { dtoMode: "object", backendModules: modules, omitModule: true },
@@ -283,11 +422,23 @@ const saveUserPermissions = async (userId, form, selectedUser, backendModules) =
       if (
         !message.includes("dto") &&
         !message.includes("convert") &&
-        !message.includes("module")
+        !message.includes("module") &&
+        !isLabBackendLookupError(message)
       ) {
         throw error;
       }
     }
+  }
+
+  const lastMessage = String(lastError?.message || "").toLowerCase();
+  if (lastMessage.includes("permission modules") || (lastMessage.includes("module") && lastMessage.includes("unique"))) {
+    return { frontendOnly: true, reason: lastError?.message || "Backend rejected module permissions." };
+  }
+  if (isLabBackendLookupError(lastMessage)) {
+    return {
+      frontendOnly: true,
+      reason: lastError?.message || "Backend does not support lab technician permission saves yet.",
+    };
   }
 
   throw lastError || new Error("Unable to save permissions.");
@@ -354,34 +505,53 @@ function AdminRolesPermissions() {
             ...user,
           });
         });
-      const nextUsers = Array.from(userById.values());
+      const nextUsers = Array.from(userById.values()).map((user) => {
+        const cachedPermissions = getRoleModulePermissions(user);
+        const backendPermissions = getPermissionModulesFromAssignment(user, user.role || "Doctor");
+        const mergedPermissions = mergeModulePermissionMaps(cachedPermissions, backendPermissions, user.role || "Doctor");
+        const hasMergedPermissions = Object.values(mergedPermissions).some((permissions) => permissions.length);
+        return hasMergedPermissions
+          ? {
+              ...user,
+              module: `${Object.values(mergedPermissions).filter((permissions) => permissions.length).length} modules`,
+              modulePermissions: mergedPermissions,
+            }
+          : user;
+      });
       setUsers(nextUsers);
 
-      const detailedAssignments = await Promise.all(
-        nextUsers.map(async (user) => {
-          try {
-            const details = await requestJson(`user-permissions/users/${encodeURIComponent(user.id)}`);
-            return normalizeUser({ ...user.raw, ...user, ...(details || {}) });
-          } catch {
-            return user;
-          }
-        })
-      );
+      const detailedAssignments = nextUsers;
+      detailedAssignments
+        .filter(assignmentHasSavedModules)
+        .forEach((assignment) => {
+          saveRoleModulePermissions(
+            assignment,
+            assignment.role || "Doctor",
+            getPermissionModulesFromAssignment(assignment, assignment.role || "Doctor")
+          );
+        });
 
       setAssignments(detailedAssignments);
-      setRoleMatrix({
-        ...STAFF_ROLES.reduce(
-          (matrix, role) => ({
-            ...matrix,
-            [role]: normalizePermissionList(
-              detailedAssignments
-                .filter((assignment) => normalizeKey(assignment.role) === normalizeKey(role))
-                .flatMap((assignment) => assignment.permissions || [])
-            ),
-          }),
-          {}
-        ),
+      const store = readRoleModulePermissionsStore();
+      const nextRoleMatrix = STAFF_ROLES.reduce(
+        (matrix, role) => ({
+          ...matrix,
+          [role]: emptyModulePermissionsForRole(role),
+        }),
+        {}
+      );
+      nextUsers.forEach((user) => {
+        const role = STAFF_ROLES.find((item) => normalizeKey(item) === normalizeKey(user.role));
+        if (!role) return;
+        const savedPermissions = getPermissionModulesFromAssignment(user, role);
+        nextRoleMatrix[role] = mergeModulePermissionMaps(nextRoleMatrix[role], savedPermissions, role);
       });
+      Object.values(store).forEach((entry) => {
+        const role = STAFF_ROLES.find((item) => normalizeKey(item) === normalizeKey(entry?.role));
+        if (!role) return;
+        nextRoleMatrix[role] = mergeModulePermissionMaps(nextRoleMatrix[role], entry.modulePermissions, role);
+      });
+      setRoleMatrix(nextRoleMatrix);
     } catch (loadError) {
       setUsers([]);
       setAssignments([]);
@@ -396,12 +566,24 @@ function AdminRolesPermissions() {
   }, []);
 
   const updateForm = (field, value) => {
+    const nextSelectedRole =
+      field === "userId"
+        ? eligibleUsers.find((user) => String(user.id) === String(value))?.role
+        : field === "role"
+          ? value
+          : "";
     setForm((previous) => ({
       ...previous,
       [field]: value,
       ...(field === "userId"
         ? {
-            role: eligibleUsers.find((user) => String(user.id) === String(value))?.role || previous.role,
+            role: nextSelectedRole || previous.role,
+            modulePermissions: emptyModulePermissionsForRole(nextSelectedRole || previous.role),
+          }
+        : {}),
+      ...(field === "role"
+        ? {
+            modulePermissions: emptyModulePermissionsForRole(value),
           }
         : {}),
     }));
@@ -416,6 +598,8 @@ function AdminRolesPermissions() {
       userId: firstUser?.id || "",
       role: firstUser?.role || "Doctor",
       module: GENERAL_MODULE,
+      permissions: [],
+      modulePermissions: emptyModulePermissionsForRole(firstUser?.role || "Doctor"),
     });
     setError("");
     setSuccess("");
@@ -428,6 +612,7 @@ function AdminRolesPermissions() {
       role: assignment.role || "Doctor",
       module: GENERAL_MODULE,
       permissions: normalizePermissionList(assignment.permissions),
+      modulePermissions: getPermissionModulesFromAssignment(assignment, assignment.role || "Doctor"),
     });
     setError("");
     setSuccess("");
@@ -440,35 +625,43 @@ function AdminRolesPermissions() {
     setForm(emptyForm);
   };
 
-  const togglePermission = (permission) => {
+  const togglePermission = (module, permission) => {
     setForm((previous) => {
-      if (permission === "View") return previous;
-
-      const exists = previous.permissions.includes(permission);
+      const currentMap = normalizeModulePermissionMap(previous.modulePermissions, previous.role);
+      const currentPermissions = normalizePermissionList(currentMap[module] || []);
+      const exists = currentPermissions.includes(permission);
+      const nextPermissions = normalizePermissionList(
+        exists
+          ? currentPermissions.filter((item) => item !== permission)
+          : [...currentPermissions, permission]
+      );
       return {
         ...previous,
-        permissions: normalizePermissionList(
-          exists
-            ? previous.permissions.filter((item) => item !== permission)
-            : [...previous.permissions, permission]
-        ),
+        modulePermissions: {
+          ...currentMap,
+          [module]: nextPermissions,
+        },
       };
     });
   };
 
-  const toggleRolePermission = (role, permission) => {
-    if (permission === "View" || savingRole) return;
+  const toggleRolePermission = (role, module, permission) => {
+    if (savingRole) return;
 
     setRoleMatrix((previous) => {
-      const currentPermissions = normalizePermissionList(previous[role] || []);
+      const currentMap = normalizeModulePermissionMap(previous[role], role);
+      const currentPermissions = normalizePermissionList(currentMap[module] || []);
       const exists = currentPermissions.includes(permission);
       return {
         ...previous,
-        [role]: normalizePermissionList(
-          exists
-            ? currentPermissions.filter((item) => item !== permission)
-            : [...currentPermissions, permission]
-        ),
+        [role]: {
+          ...currentMap,
+          [module]: normalizePermissionList(
+            exists
+              ? currentPermissions.filter((item) => item !== permission)
+              : [...currentPermissions, permission]
+          ),
+        },
       };
     });
     setError("");
@@ -488,8 +681,13 @@ function AdminRolesPermissions() {
     setSuccess("");
 
     try {
-      const permissions = normalizePermissionList(roleMatrix[role]);
-      await Promise.all(
+      const modulePermissions = normalizeModulePermissionMap(roleMatrix[role], role);
+      const hasAnyPermission = Object.values(modulePermissions).some((permissions) => normalizePermissionList(permissions).length);
+      if (!hasAnyPermission) {
+        setError(`Select at least one permission for ${formatRoleLabel(role)}.`);
+        return;
+      }
+      const saveResults = await Promise.all(
         roleUsers.map((user) =>
           saveUserPermissions(
             user.id,
@@ -498,14 +696,21 @@ function AdminRolesPermissions() {
               userId: user.id,
               role,
               module: GENERAL_MODULE,
-              permissions,
+              permissions: [],
+              modulePermissions,
             },
             user,
             backendModules
           )
         )
       );
-      setSuccess(`${role} permissions assigned successfully.`);
+      roleUsers.forEach((user) => saveRoleModulePermissions(user, role, modulePermissions));
+      const frontendOnly = saveResults.some((result) => result?.frontendOnly);
+      setSuccess(
+        frontendOnly
+          ? `${formatRoleLabel(role)} permissions saved for frontend sidebar access.`
+          : `${formatRoleLabel(role)} permissions assigned successfully.`
+      );
       await loadData();
     } catch (saveError) {
       setError(saveError.message || `Unable to assign ${role.toLowerCase()} permissions.`);
@@ -522,13 +727,25 @@ function AdminRolesPermissions() {
       return;
     }
 
+    const selectedPermissions = normalizeModulePermissionMap(form.modulePermissions, form.role);
+    const hasAnyPermission = Object.values(selectedPermissions).some((permissions) => normalizePermissionList(permissions).length);
+    if (!hasAnyPermission) {
+      setError("Select at least one module permission.");
+      return;
+    }
+
     setSaving(true);
     setError("");
     setSuccess("");
 
     try {
-      await saveUserPermissions(form.userId, form, selectedUser, backendModules);
-      setSuccess("Permissions saved successfully.");
+      const saveResult = await saveUserPermissions(form.userId, form, selectedUser, backendModules);
+      saveRoleModulePermissions(selectedUser, form.role, selectedPermissions);
+      setSuccess(
+        saveResult?.frontendOnly
+          ? "Permissions saved for frontend sidebar access."
+          : "Permissions saved successfully."
+      );
       await loadData();
       closeForm();
     } catch (saveError) {
@@ -555,12 +772,15 @@ function AdminRolesPermissions() {
       await requestJson(`user-permissions/users/${encodeURIComponent(assignment.id)}`, {
         method: "DELETE",
       });
+      removeRoleModulePermissions(assignment);
       setSuccess("Permissions removed successfully.");
       await loadData();
     } catch (deleteError) {
       setError(deleteError.message || "Unable to remove permissions.");
     }
   };
+
+  const formModulePermissions = normalizeModulePermissionMap(form.modulePermissions, form.role);
 
   return (
     <div>
@@ -587,7 +807,7 @@ function AdminRolesPermissions() {
           <div className="sa-modal-header">
             <div>
               <h3>{assignments.some((item) => String(item.id) === String(form.userId)) ? "Edit Role" : "Create Role"}</h3>
-              <p className="sa-form-subtitle">Select a staff member and assign general permissions.</p>
+              <p className="sa-form-subtitle">Select a staff member and assign screen-level permissions from that role sidebar.</p>
             </div>
             <button className="sa-icon-btn" type="button" onClick={closeForm} disabled={saving} aria-label="Close role form">
               <X size={18} />
@@ -620,22 +840,34 @@ function AdminRolesPermissions() {
           </div>
 
           <div style={{ marginTop: 18 }}>
-            <label className="sa-form-field" style={{ gap: 10 }}>
-              <span style={{ fontWeight: 700 }}>Permissions</span>
-              <span className="sa-actions" style={{ justifyContent: "flex-end" }}>
+            <h3>Module Permissions</h3>
+            <p className="sa-form-subtitle">Only screens with View permission will appear in the staff sidebar.</p>
+            <div className="sa-permission-matrix">
+              <div className="sa-permission-head">
+                <span>Module</span>
                 {PERMISSIONS.map((permission) => (
-                  <label className="sa-checkbox" key={permission}>
-                    <input
-                      type="checkbox"
-                      checked={form.permissions.includes(permission)}
-                      disabled={permission === "View"}
-                      onChange={() => togglePermission(permission)}
-                    />
-                    {permission}
-                  </label>
+                  <span key={permission}>{permission}</span>
                 ))}
-              </span>
-            </label>
+              </div>
+              {getRoleModules(form.role).map((module) => {
+                const permissions = normalizePermissionList(formModulePermissions[module]);
+                return (
+                  <div className="sa-permission-row" key={module}>
+                    <span>{module}</span>
+                    {PERMISSIONS.map((permission) => (
+                      <label className="sa-checkbox" key={permission}>
+                        <input
+                          type="checkbox"
+                          checked={permissions.includes(permission)}
+                          onChange={() => togglePermission(module, permission)}
+                        />
+                        {permission}
+                      </label>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="sa-page-actions" style={{ marginTop: 18 }}>
@@ -676,14 +908,23 @@ function AdminRolesPermissions() {
             <span className="sa-table-cell">
               <b>{formatRoleLabel(assignment.role || "-")}</b>
             </span>
-            <span className="sa-table-cell">{assignment.module || "-"}</span>
+            <span className="sa-table-cell">
+              {Object.values(getPermissionModulesFromAssignment(assignment, assignment.role)).some((permissions) => permissions.length)
+                ? `${Object.values(getPermissionModulesFromAssignment(assignment, assignment.role)).filter((permissions) => permissions.length).length} modules`
+                : assignment.module || "-"}
+            </span>
             <span className="sa-table-cell">
               <span className="sa-role-admin-list">
                 <b>{assignment.name || assignment.email || "-"}</b>
                 <span className="sa-role-admin-names">{assignment.email || assignment.id}</span>
               </span>
             </span>
-            <span className="sa-table-cell">{normalizePermissionList(assignment.permissions).join(", ")}</span>
+            <span className="sa-table-cell">
+              {Object.entries(getPermissionModulesFromAssignment(assignment, assignment.role))
+                .filter(([, permissions]) => permissions.length)
+                .map(([module, permissions]) => `${module}: ${normalizePermissionList(permissions).join(", ")}`)
+                .join(" | ") || normalizePermissionList(assignment.permissions).join(", ") || "-"}
+            </span>
             <span className="sa-actions">
               <button className="sa-icon-btn" type="button" onClick={() => openEdit(assignment)} title="Edit permissions">
                 <Pencil size={15} />
@@ -698,44 +939,55 @@ function AdminRolesPermissions() {
 
       <div className="sa-form-card" style={{ marginTop: 24 }}>
         <h3>Assign Permissions</h3>
-        <p className="sa-form-subtitle">Permission matrix for doctor, receptionist, nurse, and lab technician users.</p>
+        <p className="sa-form-subtitle">Assign default permissions by role across every module from that role sidebar.</p>
         <div className="sa-permission-matrix sa-permission-matrix--assign">
           <div className="sa-permission-head">
-            <span>Role</span>
+            <span>Role / Module</span>
             {PERMISSIONS.map((permission) => (
               <span key={permission}>{permission}</span>
             ))}
             <span>Actions</span>
           </div>
           {STAFF_ROLES.map((role) => {
-            const permissions = normalizePermissionList(roleMatrix[role]);
+            const rolePermissions = normalizeModulePermissionMap(roleMatrix[role], role);
 
             return (
-              <div className="sa-permission-row" key={role}>
-                <span>
-                  <ShieldCheck size={15} /> {formatRoleLabel(role)}
-                </span>
-                {PERMISSIONS.map((permission) => (
-                  <label className="sa-checkbox" key={permission}>
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(permission)}
-                      disabled={permission === "View" || Boolean(savingRole)}
-                      onChange={() => toggleRolePermission(role, permission)}
-                    />
-                    {permission}
-                  </label>
-                ))}
-                <button
-                  className="sa-btn sa-btn-primary"
-                  type="button"
-                  onClick={() => handleSaveRolePermissions(role)}
-                  disabled={Boolean(savingRole) || loading}
-                >
-                  <Check size={16} />
-                  {savingRole === role ? "Saving..." : "Assign"}
-                </button>
-              </div>
+              <React.Fragment key={role}>
+                {getRoleModules(role).map((module, index) => {
+                  const permissions = normalizePermissionList(rolePermissions[module]);
+                  return (
+                    <div className="sa-permission-row" key={`${role}-${module}`}>
+                      <span>
+                        {index === 0 ? <ShieldCheck size={15} /> : null}
+                        {index === 0 ? formatRoleLabel(role) : ""}
+                        <small style={{ display: "block", color: "#64748b", marginTop: index === 0 ? 4 : 0 }}>{module}</small>
+                      </span>
+                      {PERMISSIONS.map((permission) => (
+                        <label className="sa-checkbox" key={permission}>
+                          <input
+                            type="checkbox"
+                            checked={permissions.includes(permission)}
+                            disabled={Boolean(savingRole)}
+                            onChange={() => toggleRolePermission(role, module, permission)}
+                          />
+                          {permission}
+                        </label>
+                      ))}
+                      {index === 0 ? (
+                        <button
+                          className="sa-btn sa-btn-primary"
+                          type="button"
+                          onClick={() => handleSaveRolePermissions(role)}
+                          disabled={Boolean(savingRole) || loading}
+                        >
+                          <Check size={16} />
+                          {savingRole === role ? "Saving..." : "Assign"}
+                        </button>
+                      ) : <span />}
+                    </div>
+                  );
+                })}
+              </React.Fragment>
             );
           })}
         </div>

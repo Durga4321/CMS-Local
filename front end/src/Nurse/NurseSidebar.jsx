@@ -13,6 +13,7 @@ import { getInitials } from "../profile/sessionProfile";
 import { getNurseProfile } from "./nurseSession";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { useClinicInvoiceBranding } from "../utils/clinicBranding";
+import { filterItemsByViewPermission } from "../utils/rolePermissions";
 
 const items = [
   { to: "/nurse/dashboard", label: "Nurse Dashboard", icon: Gauge },
@@ -61,6 +62,10 @@ function NurseSidebar({ onClose = () => {}, basePath = "/nurse", dashboardLabel 
     clinicId: profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "",
     clinicName: hospitalName,
   });
+  const navItems = filterItemsByViewPermission(
+    buildItems({ basePath, dashboardLabel, showBilling, showBookAppointment }),
+    profile
+  );
   return (
     <aside className="rc-sidebar">
       <div className="rc-brand">
@@ -80,7 +85,7 @@ function NurseSidebar({ onClose = () => {}, basePath = "/nurse", dashboardLabel 
       <div className="rc-section-label">{sectionLabel}</div>
 
       <nav className="rc-nav">
-        {buildItems({ basePath, dashboardLabel, showBilling, showBookAppointment }).map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           if (item.children) {
             return (

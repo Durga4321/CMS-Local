@@ -5,6 +5,7 @@ import { getInitials } from "../profile/sessionProfile";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { useClinicInvoiceBranding } from "../utils/clinicBranding";
 import { getLabProfile } from "./labSession";
+import { filterItemsByViewPermission } from "../utils/rolePermissions";
 
 const items = [
   { to: "/lab/dashboard", label: "Lab Dashboard", icon: Gauge },
@@ -19,6 +20,7 @@ function LabSidebar({ onClose = () => {} }) {
   const profile = getLabProfile();
   const hospitalName = getClinicDisplayName(profile, "Clinic Name");
   const branding = useClinicInvoiceBranding({ clinicId: profile.hospitalId, clinicName: hospitalName });
+  const navItems = filterItemsByViewPermission(items, profile);
 
   return (
     <aside className="rc-sidebar lab-sidebar">
@@ -37,7 +39,7 @@ function LabSidebar({ onClose = () => {} }) {
       </div>
       <div className="rc-section-label">Lab Desk</div>
       <nav className="rc-nav">
-        {items.map(({ to, label, icon: Icon }) => (
+        {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} className={({ isActive }) => `rc-nav-link${isActive ? " active" : ""}`}>
             <Icon size={17} />
             <span>{label}</span>
