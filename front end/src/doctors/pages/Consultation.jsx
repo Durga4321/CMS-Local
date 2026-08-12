@@ -20,6 +20,7 @@ import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 import { fetchLabMasterTests, filterLabTestsBySpecialization } from "../../utils/labMaster";
 import { savePendingDiagnosticRequest } from "../../utils/diagnosticRequests";
+import { canUseModulePermission } from "../../utils/rolePermissions";
 
 const STEPS = [
   "Waiting",
@@ -288,6 +289,7 @@ function Consultation() {
   const location = useLocation();
   const routeState = React.useMemo(() => location.state || {}, [location.state]);
   const sessionDoctor = useMemo(() => getLoggedInDoctor(), []);
+  const canCreateConsultation = canUseModulePermission(sessionDoctor, "Consultation", "Create");
 
   const [step, setStep] = useState(1);
   const [appointment, setAppointment] = useState(null);
@@ -608,6 +610,11 @@ function Consultation() {
   };
 
   const saveConsultation = async () => {
+    if (!canCreateConsultation) {
+      setError("You do not have permission to create consultations.");
+      return null;
+    }
+
     if (!appointment?.appointmentId || !appointment?.patientId) {
       setError("Appointment id or patient id is missing.");
       return null;
@@ -886,12 +893,6 @@ function Consultation() {
     printWindow.document.close();
   };
 
-  useEffect(() => {
-    if (!loading && error && !appointment) {
-      navigate("/doctor/dashboard", { replace: true });
-    }
-  }, [appointment, error, loading, navigate]);
-
   if (loading) {
     return <div className="cn-state-card">Loading consultation...</div>;
   }
@@ -1058,7 +1059,7 @@ function Consultation() {
               className="cn-btn-submit"
               type="button"
               onClick={handleSubmitConsultation}
-              disabled={saving}
+              disabled={saving || !canCreateConsultation}
             >
               {saving ? "Saving..." : "Submit"}
             </button>
@@ -1066,7 +1067,7 @@ function Consultation() {
               className="cn-btn-print"
               type="button"
               onClick={printConsultation}
-              disabled={saving}
+              disabled={saving || !canCreateConsultation}
             >
               <Printer size={16} /> Print
             </button>
@@ -1074,7 +1075,7 @@ function Consultation() {
               className="cn-btn-primary"
               type="button"
               onClick={handleAddPrescription}
-              disabled={saving}
+              disabled={saving || !canCreateConsultation}
             >
               {saving ? "Saving..." : "Add Prescription →"}
             </button>

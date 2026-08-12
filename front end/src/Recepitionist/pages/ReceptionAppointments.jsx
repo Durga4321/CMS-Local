@@ -20,6 +20,8 @@ import {
   hasDuplicateAppointmentForPatientDoctorDate,
 } from "../../utils/appointmentDuplicateValidation";
 import { getSpecializationDisplayName } from "../../pages/DOCTORS/doctorExpertiseOptions";
+import { canUseModulePermission } from "../../utils/rolePermissions";
+import { getNurseProfile } from "../../Nurse/nurseSession";
 
 const parseSlotLabel = (slot) => {
   if (!slot) return "";
@@ -548,7 +550,9 @@ function ReceptionAppointments({ hideActions = false }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const toast = useToast();
-  const receptionistProfile = getReceptionistProfile();
+  const isNursePath = window.location.pathname.startsWith("/nurse");
+  const receptionistProfile = isNursePath ? getNurseProfile() : getReceptionistProfile();
+  const canCreateBooking = canUseModulePermission(receptionistProfile, "Book Appointment", "Create");
   const requestedPatientId = String(searchParams.get("patientId") || "").trim();
   const receptionistHospitalId = String(
     receptionistProfile.hospitalId || ""
@@ -922,6 +926,11 @@ function ReceptionAppointments({ hideActions = false }) {
 
   const openPaymentStep = (event) => {
     event.preventDefault();
+    if (!canCreateBooking) {
+      setMessage("You do not have permission to create appointments.");
+      toast.error("You do not have permission to create appointments.");
+      return;
+    }
     if (!validateBookingForm()) return;
 
     setPaymentStep(true);
@@ -929,6 +938,11 @@ function ReceptionAppointments({ hideActions = false }) {
   };
 
   const submit = async () => {
+    if (!canCreateBooking) {
+      setMessage("You do not have permission to create appointments.");
+      toast.error("You do not have permission to create appointments.");
+      return;
+    }
     if (!validateBookingForm()) return;
 
     const selectedSlotObject = availableSlots.find(
@@ -1242,7 +1256,7 @@ function ReceptionAppointments({ hideActions = false }) {
               <div className="rc-slot-empty">No slots available for this doctor on the selected date.</div>
             )}
           </div>
-          <button type="submit" className="rc-confirm">
+          <button type="submit" className="rc-confirm" disabled={!canCreateBooking}>
             <CheckCircle size={16} /> Confirm Booking
           </button>
           {paymentStep ? (

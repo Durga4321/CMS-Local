@@ -10,20 +10,21 @@ import NurseOnlineBookings from "./NurseOnlineBookings";
 import NurseOfflineBookings from "./NurseOfflineBookings";
 import UserProfilePage from "../profile/UserProfilePage";
 import ConsultantRoomDisplay from "../components/ConsultantRoomDisplay";
+import PermissionRoute from "../components/PermissionRoute";
 
 function NurseApp() {
   return (
     <Routes>
       <Route element={<NurseLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<NurseDashboard />} />
-        <Route path="patients" element={<NursePatients />} />
-        <Route path="medical-history" element={<NurseMedicalHistory />} />
-        <Route path="appointments" element={<NurseAppointments />} />
-        <Route path="appointments/online" element={<NurseOnlineBookings />} />
-        <Route path="appointments/offline" element={<NurseOfflineBookings />} />
+        <Route path="dashboard" element={<PermissionRoute roleType="nurse" module="Nurse Dashboard"><NurseDashboard /></PermissionRoute>} />
+        <Route path="patients" element={<PermissionRoute roleType="nurse" module="Patients"><NursePatients /></PermissionRoute>} />
+        <Route path="medical-history" element={<PermissionRoute roleType="nurse" module="Medical History"><NurseMedicalHistory /></PermissionRoute>} />
+        <Route path="appointments" element={<PermissionRoute roleType="nurse" module="Book Appointment"><NurseAppointments /></PermissionRoute>} />
+        <Route path="appointments/online" element={<PermissionRoute roleType="nurse" module="Online Bookings"><NurseOnlineBookings /></PermissionRoute>} />
+        <Route path="appointments/offline" element={<PermissionRoute roleType="nurse" module="Offline Bookings"><NurseOfflineBookings /></PermissionRoute>} />
         <Route path="consultant-room" element={<ConsultantRoomDisplay audience="nurse" />} />
-        <Route path="billing" element={<ReceptionBilling />} />
+        <Route path="billing" element={<PermissionRoute roleType="nurse" module="Billing"><ReceptionBilling /></PermissionRoute>} />
         <Route path="profile" element={<UserProfilePage roleType="nurse" />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Route>

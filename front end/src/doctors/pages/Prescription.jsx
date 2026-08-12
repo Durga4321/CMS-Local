@@ -14,6 +14,7 @@ import { useToast } from "../../components/ToastProvider";
 import { validateDate } from "../../utils/validation";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 import { fetchConsultationVitals, mergeStoredAppointmentVitals } from "../../utils/appointmentVitals";
+import { canUseModulePermission } from "../../utils/rolePermissions";
 
 const STEPS = [
   "Waiting",
@@ -313,6 +314,8 @@ function Prescription() {
   const location = useLocation();
   const toast = useToast();
   const routeState = React.useMemo(() => location.state || {}, [location.state]);
+  const permissionProfile = useMemo(() => getLoggedInDoctor(), []);
+  const canCreatePrescription = canUseModulePermission(permissionProfile, "Prescription", "Create");
 
   const [appointment, setAppointment] = useState(null);
   const [consultation, setConsultation] = useState(routeState.consultation || null);
@@ -888,6 +891,13 @@ function Prescription() {
   };
 
   const submitPrescription = async () => {
+    if (!canCreatePrescription) {
+      const text = "You do not have permission to create prescriptions.";
+      setError(text);
+      toast.error(text);
+      return;
+    }
+
     setFieldErrors({});
     const appointmentId = toPositiveId(appointment?.appointmentId);
     const patientId = toPositiveId(appointment?.patientId);
@@ -1007,12 +1017,6 @@ function Prescription() {
       setSubmitting(false);
     }
   };
-
-  useEffect(() => {
-    if (!loading && error && !appointment) {
-      navigate("/doctor/dashboard", { replace: true });
-    }
-  }, [appointment, error, loading, navigate]);
 
   if (loading) {
     return <div className="rx-state-card">Loading prescription...</div>;
@@ -1256,7 +1260,7 @@ function Prescription() {
               className="rx-btn-submit"
               type="button"
               onClick={submitPrescription}
-                disabled={submitting}
+                disabled={submitting || !canCreatePrescription}
                 title="Submit prescription"
               >
                 {submitting ? "Submitting..." : "Submit Prescription"}

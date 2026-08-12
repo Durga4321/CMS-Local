@@ -6,6 +6,9 @@ import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 import { applyTimeOrderedTokens, filterAppointments, getAppointmentValue, getBookingType } from "./appointmentListUtils";
 import { getReceptionistScope, scopeReceptionistRecords } from "../receptionScope";
 import { requestJson as defaultRequestJson } from "../receptionApi";
+import { getReceptionistProfile } from "../receptionSession";
+import { getNurseProfile } from "../../Nurse/nurseSession";
+import { canUseModulePermission } from "../../utils/rolePermissions";
 import {
   getAppointmentRecordId,
   mergeStoredAppointmentVitals,
@@ -108,6 +111,12 @@ function ReceptionAppointmentList({
   const basePath = location.pathname.startsWith("/nurse") ? "/nurse" : "/reception";
   const toast = useToast();
   const receptionistScope = useMemo(() => getScope(), [getScope]);
+  const permissionProfile = useMemo(
+    () => (basePath === "/nurse" ? getNurseProfile() : getReceptionistProfile()),
+    [basePath]
+  );
+  const permissionModule = bookingType === "Online" ? "Online Bookings" : "Offline Bookings";
+  const canEditAppointments = canUseModulePermission(permissionProfile, permissionModule, "Edit");
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -210,6 +219,10 @@ function ReceptionAppointmentList({
   }, [search, doctorFilter, statusFilter, dateFilter]);
 
   const openVitals = (appointment) => {
+    if (!canEditAppointments) {
+      toast.error("You do not have permission to edit appointment vitals.");
+      return;
+    }
     setVitalsAppointment(appointment);
     setVitalsForm(
       vitalFields.reduce(
@@ -234,6 +247,10 @@ function ReceptionAppointmentList({
 
   const saveVitals = async (event) => {
     event.preventDefault();
+    if (!canEditAppointments) {
+      toast.error("You do not have permission to edit appointment vitals.");
+      return;
+    }
     const appointmentId = getAppointmentId(vitalsAppointment);
     if (!appointmentId) {
       toast.error("Appointment ID missing.");
@@ -433,15 +450,17 @@ function ReceptionAppointmentList({
                       <td>{getBookingType(item)}</td>
                       <td>{getAppointmentValue(item, ["status", "appointmentStatus", "AppointmentStatus", "Status"], "-")}</td>
                       <td>
-                        <button
-                          className="rc-icon-btn"
-                          type="button"
-                          aria-label="Add vitals"
-                          title="Add vitals"
-                          onClick={() => openVitals(item)}
-                        >
-                          <Plus size={16} />
-                        </button>
+                        {canEditAppointments ? (
+                          <button
+                            className="rc-icon-btn"
+                            type="button"
+                            aria-label="Add vitals"
+                            title="Add vitals"
+                            onClick={() => openVitals(item)}
+                          >
+                            <Plus size={16} />
+                          </button>
+                        ) : "-"}
                       </td>
                     </tr>
                   ))}
