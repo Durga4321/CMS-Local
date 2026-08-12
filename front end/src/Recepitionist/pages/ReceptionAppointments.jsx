@@ -553,7 +553,7 @@ function ReceptionAppointments({ hideActions = false }) {
   const isNursePath = window.location.pathname.startsWith("/nurse");
   const receptionistProfile = isNursePath ? getNurseProfile() : getReceptionistProfile();
   useRolePermissionsSync(receptionistProfile);
-  const canCreateBooking = canUseModulePermission(receptionistProfile, "Book Appointment", "Create");
+  const canCreateBooking = canUseModulePermission(receptionistProfile, ["Book Appointment", "Appointments"], "Create");
   const requestedPatientId = String(searchParams.get("patientId") || "").trim();
   const receptionistHospitalId = String(
     receptionistProfile.hospitalId || ""

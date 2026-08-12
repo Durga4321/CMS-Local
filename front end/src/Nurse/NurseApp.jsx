@@ -20,7 +20,7 @@ function NurseApp() {
         <Route path="dashboard" element={<PermissionRoute roleType="nurse" module="Nurse Dashboard"><NurseDashboard /></PermissionRoute>} />
         <Route path="patients" element={<PermissionRoute roleType="nurse" module="Patients"><NursePatients /></PermissionRoute>} />
         <Route path="medical-history" element={<PermissionRoute roleType="nurse" module="Medical History"><NurseMedicalHistory /></PermissionRoute>} />
-        <Route path="appointments" element={<PermissionRoute roleType="nurse" module="Book Appointment"><NurseAppointments /></PermissionRoute>} />
+        <Route path="appointments" element={<PermissionRoute roleType="nurse" module={["Book Appointment", "Appointments"]}><NurseAppointments /></PermissionRoute>} />
         <Route path="appointments/online" element={<PermissionRoute roleType="nurse" module="Online Bookings"><NurseOnlineBookings /></PermissionRoute>} />
         <Route path="appointments/offline" element={<PermissionRoute roleType="nurse" module="Offline Bookings"><NurseOfflineBookings /></PermissionRoute>} />
         <Route path="consultant-room" element={<ConsultantRoomDisplay audience="nurse" />} />

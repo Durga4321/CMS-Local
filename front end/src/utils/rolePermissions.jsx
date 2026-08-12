@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { apiUrl } from "../config/api";
 
-export const ROLE_PERMISSIONS_STORAGE_KEY = "cmsRoleModulePermissions";
 const syncingKeys = new Set();
+const syncedKeys = new Set();
+let permissionStore = {};
 
 const normalizeKey = (value = "") =>
   String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
@@ -17,22 +18,33 @@ export const normalizePermissions = (permissions = []) =>
   );
 
 const readStore = () => {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(ROLE_PERMISSIONS_STORAGE_KEY) || "{}");
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    return {};
-  }
+  return permissionStore;
 };
 
-const getAuthToken = () =>
-  localStorage.getItem("token") ||
-  localStorage.getItem("adminToken") ||
-  localStorage.getItem("doctorToken") ||
-  localStorage.getItem("receptionistToken") ||
-  localStorage.getItem("nurseToken") ||
-  localStorage.getItem("labToken") ||
-  "";
+const getAuthToken = (profile = {}) => {
+  const roleKey = normalizeKey(profile.roleType || profile.roleLabel || profile.role);
+  const roleToken =
+    roleKey.includes("doctor")
+      ? localStorage.getItem("doctorToken")
+      : roleKey.includes("reception")
+        ? localStorage.getItem("receptionistToken")
+        : roleKey.includes("nurse")
+          ? localStorage.getItem("nurseToken")
+          : roleKey.includes("lab")
+            ? localStorage.getItem("labToken")
+            : localStorage.getItem("adminToken");
+
+  return (
+    roleToken ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("adminToken") ||
+    localStorage.getItem("doctorToken") ||
+    localStorage.getItem("receptionistToken") ||
+    localStorage.getItem("nurseToken") ||
+    localStorage.getItem("labToken") ||
+    ""
+  );
+};
 
 const parseList = (data) => {
   if (Array.isArray(data)) return data;
@@ -40,11 +52,26 @@ const parseList = (data) => {
   if (Array.isArray(data?.items)) return data.items;
   if (Array.isArray(data?.result)) return data.result;
   if (Array.isArray(data?.users)) return data.users;
+  const source = data?.data && typeof data.data === "object" ? data.data : data;
+  const staffRows = [
+    ...(Array.isArray(source?.doctors) ? source.doctors.map((user) => ({ role: "Doctor", ...user })) : []),
+    ...(Array.isArray(source?.Doctors) ? source.Doctors.map((user) => ({ role: "Doctor", ...user })) : []),
+    ...(Array.isArray(source?.receptionists) ? source.receptionists.map((user) => ({ role: "Receptionist", ...user })) : []),
+    ...(Array.isArray(source?.Receptionists) ? source.Receptionists.map((user) => ({ role: "Receptionist", ...user })) : []),
+    ...(Array.isArray(source?.nurses) ? source.nurses.map((user) => ({ role: "Nurse", ...user })) : []),
+    ...(Array.isArray(source?.Nurses) ? source.Nurses.map((user) => ({ role: "Nurse", ...user })) : []),
+    ...(Array.isArray(source?.labTechnicians) ? source.labTechnicians.map((user) => ({ role: "LabTechnician", ...user })) : []),
+    ...(Array.isArray(source?.LabTechnicians) ? source.LabTechnicians.map((user) => ({ role: "LabTechnician", ...user })) : []),
+    ...(Array.isArray(source?.labtechnicians) ? source.labtechnicians.map((user) => ({ role: "LabTechnician", ...user })) : []),
+    ...(Array.isArray(source?.staff) ? source.staff : []),
+    ...(Array.isArray(source?.Staff) ? source.Staff : []),
+  ];
+  if (staffRows.length) return staffRows;
   return [];
 };
 
-const requestPermissionsJson = async (path) => {
-  const token = getAuthToken();
+const requestPermissionsJson = async (path, profile = {}) => {
+  const token = getAuthToken(profile);
   const response = await fetch(apiUrl(path), {
     headers: {
       "ngrok-skip-browser-warning": "true",
@@ -91,6 +118,12 @@ const normalizeModuleName = (module, index = 0) => {
   return String(value || "").trim() || `Module ${index + 1}`;
 };
 
+const roleRecordOwnerId = (record = {}) =>
+  String(record.adminId || record.AdminId || record.assignedAdminId || record.AssignedAdminId || record.userId || record.UserId || record.assignedUserId || record.AssignedUserId || "").trim();
+
+const roleRecordName = (record = {}) =>
+  String(record.roleName || record.RoleName || record.name || record.Name || "").trim();
+
 const normalizePermissionRows = (permissions = []) =>
   normalizePermissions(
     (Array.isArray(permissions) ? permissions : [permissions]).flatMap((permission) => {
@@ -111,6 +144,29 @@ const normalizePermissionRows = (permissions = []) =>
       ];
     })
   ).filter((permission) => ["View", "Create", "Edit", "Delete"].some((item) => normalizeKey(item) === normalizeKey(permission)));
+
+const roleRecordMatchesProfile = (record = {}, profile = {}) => {
+  const profileKeys = permissionIdentityKeys(profile).map(normalizeKey);
+  const ownerId = roleRecordOwnerId(record);
+  const roleName = roleRecordName(record);
+  if (ownerId && profileKeys.includes(normalizeKey(ownerId))) return true;
+  if (profileKeys.some((key) => roleName.endsWith(`-${key}`))) return true;
+  const email = String(profile.email || profile.Email || "").trim();
+  const name = String(profile.name || profile.Name || "").trim();
+  const normalizedRoleName = normalizeKey(roleName);
+  return Boolean(
+    (email && normalizedRoleName.includes(normalizeKey(email))) ||
+    (name && normalizedRoleName.includes(normalizeKey(name)))
+  );
+};
+
+const extractRoleRowsPermissions = (rows = []) =>
+  rows.reduce((map, row, index) => {
+    const module = normalizeModuleName(row.module || row.Module || row.moduleName || row.ModuleName, index);
+    const permissions = normalizePermissionRows([row]);
+    if (module && permissions.length) map[module] = permissions;
+    return map;
+  }, {});
 
 const extractModulePermissions = (assignment = {}) => {
   const map = {};
@@ -196,12 +252,8 @@ const assignmentMatchesProfile = (assignment = {}, profile = {}) => {
 };
 
 const writeStore = (store) => {
-  try {
-    localStorage.setItem(ROLE_PERMISSIONS_STORAGE_KEY, JSON.stringify(store || {}));
-    window.dispatchEvent(new CustomEvent("rolePermissionsUpdated"));
-  } catch {
-    // Permission cache is a UI convenience; backend save remains the source.
-  }
+  permissionStore = store && typeof store === "object" && !Array.isArray(store) ? store : {};
+  window.dispatchEvent(new CustomEvent("rolePermissionsUpdated"));
 };
 
 export const permissionIdentityKeys = (user = {}) =>
@@ -254,11 +306,30 @@ export const removeRoleModulePermissions = (user = {}) => {
 export const getRoleModulePermissions = (profile = {}) => {
   const store = readStore();
   const keys = permissionIdentityKeys(profile);
-  const matched = keys.map((key) => store[key]).find(Boolean);
+  const profileRole = normalizeRole(profile.role || profile.roleLabel || profile.roleType);
+  const matched = keys
+    .map((key) => store[key])
+    .find((value) => {
+      if (!value) return false;
+      const storedRole = normalizeRole(value.role || "");
+      return !storedRole || !profileRole || normalizeKey(storedRole) === normalizeKey(profileRole);
+    });
   return matched?.modulePermissions || {};
 };
 
 export const readRoleModulePermissionsStore = () => readStore();
+
+const mergeModulePermissionMaps = (...maps) =>
+  maps.reduce((merged, map) => {
+    Object.entries(map || {}).forEach(([module, permissions]) => {
+      const existingKey = Object.keys(merged).find((key) => normalizeKey(key) === normalizeKey(module)) || module;
+      merged[existingKey] = normalizePermissions([
+        ...(Array.isArray(merged[existingKey]) ? merged[existingKey] : []),
+        ...(Array.isArray(permissions) ? permissions : [permissions]),
+      ]);
+    });
+    return merged;
+  }, {});
 
 export const syncRolePermissionsFromBackend = async (profile = {}) => {
   const keys = permissionIdentityKeys(profile);
@@ -267,67 +338,98 @@ export const syncRolePermissionsFromBackend = async (profile = {}) => {
 
   syncingKeys.add(syncKey);
   const responses = [];
+  const existingModulePermissions = getRoleModulePermissions(profile);
+  const collectedPermissionMaps = [existingModulePermissions].filter((map) => Object.keys(map || {}).length);
   try {
     try {
-      responses.push(await requestPermissionsJson("user-permissions/me"));
+      const rolesData = await requestPermissionsJson("roles", profile);
+      const roleRows = parseList(rolesData);
+      const matchedRoleRows = roleRows.filter((row) => roleRecordMatchesProfile(row, profile));
+      const roleModulePermissions = extractRoleRowsPermissions(matchedRoleRows);
+      if (Object.keys(roleModulePermissions).length) collectedPermissionMaps.push(roleModulePermissions);
+    } catch {
+      // Older deployments may not expose role permissions for the current token.
+    }
+
+    try {
+      responses.push(await requestPermissionsJson("user-permissions/me", profile));
     } catch {
       // Fall back to user-specific lookup for admin screens or older tokens.
     }
 
     const candidateIds = keys.filter((key) => /^\d+$/.test(String(key)));
-    if (!responses.length) {
-      for (const id of candidateIds.slice(0, 3)) {
-        try {
-          responses.push(await requestPermissionsJson(`user-permissions/users/${encodeURIComponent(id)}`));
-          break;
-        } catch {
-          // Some profiles do not carry the backend integer user id.
-        }
+    for (const id of candidateIds.slice(0, 3)) {
+      try {
+        responses.push(await requestPermissionsJson(`user-permissions/users/${encodeURIComponent(id)}`, profile));
+        break;
+      } catch {
+        // Some profiles do not carry the backend integer user id.
       }
     }
 
-    if (!responses.length) {
-      try {
-        responses.push(await requestPermissionsJson("user-permissions/eligible-users"));
-      } catch {
-        return getRoleModulePermissions(profile);
-      }
+    try {
+      responses.push(await requestPermissionsJson("user-permissions/eligible-users", profile));
+    } catch {
+      // Staff tokens may not be allowed to read the eligible users list.
     }
 
     const assignments = responses.flatMap((data) => {
       const list = parseList(data);
       return list.length ? list : [data?.data || data].filter(Boolean);
     });
-    const matched = assignments.find((assignment) => assignmentMatchesProfile(assignment, profile)) || assignments[0];
-    const modulePermissions = extractModulePermissions(matched);
+    assignments
+      .filter((assignment) => assignmentMatchesProfile(assignment, profile))
+      .forEach((assignment) => collectedPermissionMaps.push(extractModulePermissions(assignment)));
+    if (!collectedPermissionMaps.length && assignments[0]) {
+      collectedPermissionMaps.push(extractModulePermissions(assignments[0]));
+    }
+
+    const modulePermissions = mergeModulePermissionMaps(...collectedPermissionMaps);
     if (Object.keys(modulePermissions).length) {
-      saveRoleModulePermissions(profile, normalizeRole(profile.role || matched.role || matched.Role), modulePermissions);
-      return modulePermissions;
+      const safeModulePermissions =
+        Object.keys(existingModulePermissions || {}).length > Object.keys(modulePermissions || {}).length
+          ? existingModulePermissions
+          : modulePermissions;
+      saveRoleModulePermissions(profile, normalizeRole(profile.role || profile.roleLabel), safeModulePermissions);
+      return safeModulePermissions;
     }
   } finally {
+    syncedKeys.add(syncKey);
     syncingKeys.delete(syncKey);
   }
 
   return getRoleModulePermissions(profile);
 };
 
+export const hasSyncedRolePermissions = (profile = {}) => {
+  const syncKey = permissionIdentityKeys(profile).join("|");
+  return Boolean(syncKey && syncedKeys.has(syncKey));
+};
+
 export const useRolePermissionsSync = (profile = {}) => {
   const [version, setVersion] = useState(0);
+  const [loading, setLoading] = useState(() => !hasSyncedRolePermissions(profile));
 
   useEffect(() => {
     let active = true;
     const refresh = () => {
       if (active) setVersion((value) => value + 1);
     };
+    setLoading(!hasSyncedRolePermissions(profile));
     window.addEventListener("rolePermissionsUpdated", refresh);
-    syncRolePermissionsFromBackend(profile).then(refresh).catch(() => {});
+    syncRolePermissionsFromBackend(profile)
+      .then(refresh)
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoading(false);
+      });
     return () => {
       active = false;
       window.removeEventListener("rolePermissionsUpdated", refresh);
     };
   }, [profile?.id, profile?.userId, profile?.email, profile?.name, profile?.role]);
 
-  return version;
+  return { version, loading };
 };
 
 export const hasModulePermission = (profile = {}, module = "", permission = "View") => {
@@ -339,18 +441,23 @@ export const hasModulePermission = (profile = {}, module = "", permission = "Vie
   );
 };
 
+export const hasAnyModulePermission = (profile = {}, modules = [], permission = "View") =>
+  (Array.isArray(modules) ? modules : [modules]).some((module) =>
+    hasModulePermission(profile, module, permission)
+  );
+
 export const hasAnySavedModulePermissions = (profile = {}) =>
   Object.keys(getRoleModulePermissions(profile)).length > 0;
 
 export const getModulePermissionSet = (profile = {}, module = "") => ({
-  view: hasModulePermission(profile, module, "View"),
-  create: hasModulePermission(profile, module, "Create"),
-  edit: hasModulePermission(profile, module, "Edit"),
-  delete: hasModulePermission(profile, module, "Delete"),
+  view: hasAnyModulePermission(profile, module, "View"),
+  create: hasAnyModulePermission(profile, module, "Create"),
+  edit: hasAnyModulePermission(profile, module, "Edit"),
+  delete: hasAnyModulePermission(profile, module, "Delete"),
 });
 
 export const canUseModulePermission = (profile = {}, module = "", permission = "View") =>
-  !hasAnySavedModulePermissions(profile) || hasModulePermission(profile, module, permission);
+  !hasAnySavedModulePermissions(profile) || hasAnyModulePermission(profile, module, permission);
 
 export const filterItemsByViewPermission = (items = [], profile = {}) => {
   const modulePermissions = getRoleModulePermissions(profile);
@@ -358,12 +465,15 @@ export const filterItemsByViewPermission = (items = [], profile = {}) => {
 
   return items
     .map((item) => {
+      const itemModules = item.modules || item.module || item.label;
       if (Array.isArray(item.children)) {
-        const children = item.children.filter((child) => hasModulePermission(profile, child.label, "View"));
-        const groupVisible = hasModulePermission(profile, item.label, "View") || children.length > 0;
+        const children = item.children.filter((child) =>
+          hasAnyModulePermission(profile, child.modules || child.module || child.label, "View")
+        );
+        const groupVisible = hasAnyModulePermission(profile, itemModules, "View") || children.length > 0;
         return groupVisible ? { ...item, children } : null;
       }
-      return hasModulePermission(profile, item.label, "View") ? item : null;
+      return hasAnyModulePermission(profile, itemModules, "View") ? item : null;
     })
     .filter(Boolean);
 };

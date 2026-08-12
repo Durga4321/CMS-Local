@@ -5,7 +5,7 @@ import { getInitials } from "../profile/sessionProfile";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { useClinicInvoiceBranding } from "../utils/clinicBranding";
 import { getLabProfile } from "./labSession";
-import { filterItemsByViewPermission, useRolePermissionsSync } from "../utils/rolePermissions";
+import { filterItemsByViewPermission, hasAnySavedModulePermissions, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const items = [
   { to: "/lab/dashboard", label: "Lab Dashboard", icon: Gauge },
@@ -18,10 +18,13 @@ const items = [
 
 function LabSidebar({ onClose = () => {} }) {
   const profile = getLabProfile();
-  useRolePermissionsSync(profile);
+  const { loading: permissionsLoading } = useRolePermissionsSync(profile);
   const hospitalName = getClinicDisplayName(profile, "Clinic Name");
   const branding = useClinicInvoiceBranding({ clinicId: profile.hospitalId, clinicName: hospitalName });
-  const navItems = filterItemsByViewPermission(items, profile);
+  const navItems =
+    permissionsLoading && !hasAnySavedModulePermissions(profile)
+      ? []
+      : filterItemsByViewPermission(items, profile);
 
   return (
     <aside className="rc-sidebar lab-sidebar">
