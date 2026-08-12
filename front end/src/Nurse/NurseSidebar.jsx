@@ -2,7 +2,6 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import {
   CalendarPlus,
-  ClipboardList,
   Gauge,
   HeartPulse,
   ListChecks,
@@ -29,12 +28,10 @@ const items = [
       { to: "/nurse/appointments/offline", label: "Offline Bookings", icon: ListChecks },
     ],
   },
-  { to: "/nurse/billing", label: "Billing", icon: ClipboardList },
 ];
 
-const buildItems = ({ basePath = "/nurse", dashboardLabel = "Nurse Dashboard", showBilling = true, showBookAppointment = true } = {}) =>
+const buildItems = ({ basePath = "/nurse", dashboardLabel = "Nurse Dashboard", showBookAppointment = true } = {}) =>
   items
-    .filter((item) => showBilling || item.to !== "/nurse/billing")
     .map((item) => {
       const mapToBase = (to) => to.replace(/^\/nurse/, basePath);
       if (item.children) {
@@ -54,7 +51,7 @@ const buildItems = ({ basePath = "/nurse", dashboardLabel = "Nurse Dashboard", s
       };
     });
 
-function NurseSidebar({ onClose = () => {}, basePath = "/nurse", dashboardLabel = "Nurse Dashboard", sectionLabel = "Nurse Desk", profile: providedProfile = null, showBilling = true, showBookAppointment = true, showConsultantRoom = false }) {
+function NurseSidebar({ onClose = () => {}, basePath = "/nurse", dashboardLabel = "Nurse Dashboard", sectionLabel = "Nurse Desk", profile: providedProfile = null, showBookAppointment = true, showConsultantRoom = false }) {
   const profile = providedProfile || getNurseProfile();
   const { loading: permissionsLoading } = useRolePermissionsSync(profile);
   const profileName = profile.name || "Nurse";
@@ -64,7 +61,7 @@ function NurseSidebar({ onClose = () => {}, basePath = "/nurse", dashboardLabel 
     clinicId: profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "",
     clinicName: hospitalName,
   });
-  const baseItems = buildItems({ basePath, dashboardLabel, showBilling, showBookAppointment });
+  const baseItems = buildItems({ basePath, dashboardLabel, showBookAppointment });
   const navItems =
     permissionsLoading && !hasAnySavedModulePermissions(profile)
       ? []

@@ -291,7 +291,7 @@ const recordId = (record = {}) =>
   readFirst(record, ["id", "Id", "orderId", "OrderId", "labOrderId", "LabOrderId", "billingId", "BillingId", "billId", "BillId", "invoiceId", "InvoiceId"], "");
 
 const fetchReportSourceRows = async () => {
-  const paths = ["Lab/orders", "Billing/lab"];
+  const paths = ["Lab/orders"];
   const results = await Promise.allSettled(paths.map((path) => requestJson(path)));
   return results.flatMap((result, index) =>
     result.status === "fulfilled"
@@ -642,15 +642,7 @@ function LabReportCreate() {
       let backendWarning = "";
       if (id) {
         try {
-          const source = normalizeText(selectedRow.__sourcePath);
-          if (source.includes("lab/orders")) {
-            await requestJson(`Lab/orders/${id}/report`, { method: "POST", body: JSON.stringify(payload) });
-          } else {
-            await requestJson(`Billing/lab/${id}`, {
-              method: "PUT",
-              body: JSON.stringify({ ...payload, id, Id: id, billingId: id, BillingId: id }),
-            });
-          }
+          await requestJson(`Lab/orders/${id}/report`, { method: "POST", body: JSON.stringify(payload) });
         } catch (backendError) {
           backendWarning = backendError.message || "Backend report update failed.";
         }

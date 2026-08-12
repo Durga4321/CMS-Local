@@ -171,7 +171,7 @@ const enrichLabRow = (row = {}) => ({
 });
 
 const fetchLabBillingRows = async () => {
-  const paths = ["Lab/orders", "Billing/lab"];
+  const paths = ["Lab/orders"];
   const results = await Promise.allSettled(paths.map((path) => requestJson(path)));
   return results.flatMap((result, index) =>
     result.status === "fulfilled"

@@ -19,6 +19,7 @@ import {
   getAuthToken,
   getLoggedInDoctor,
 } from "../utils/doctorSession";
+import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 
 const DASHBOARD_API = apiUrl("Doctor/dashboard");
 const APPOINTMENTS_API = apiUrl("Appointment");
@@ -175,6 +176,9 @@ const isAbortLikeError = (error) => {
 
 function DoctorDashboard() {
   const navigate = useNavigate();
+  const permissionDoctor = getLoggedInDoctor();
+  useRolePermissionsSync({ ...permissionDoctor, role: "Doctor" });
+  const canCreateConsultation = canUseModulePermission({ ...permissionDoctor, role: "Doctor" }, "Consultation", "Create");
   const [dashboard, setDashboard] = useState(null);
   const dashboardRef = useRef(null);
   const [loading, setLoading] = useState(true);
@@ -334,6 +338,7 @@ function DoctorDashboard() {
   };
 
   const startConsultation = (patient) => {
+    if (!canCreateConsultation) return;
     navigate("/doctor/consultation", {
       state: {
         appointmentId: patient.appointmentId,
@@ -485,6 +490,7 @@ function DoctorDashboard() {
                     type="button"
                     title="Start consultation"
                     onClick={() => startConsultation(patient)}
+                    disabled={!canCreateConsultation}
                   >
                     <Play size={15} />
                   </button>
@@ -577,7 +583,7 @@ function DoctorDashboard() {
               <button type="button" className="dd-refresh-btn" onClick={() => openFullPatientDetails(patientOverview)}>
                 Open Full Details
               </button>
-              <button type="button" className="dd-refresh-btn" onClick={() => startConsultation(patientOverview)}>
+              <button type="button" className="dd-refresh-btn" onClick={() => startConsultation(patientOverview)} disabled={!canCreateConsultation}>
                 Start Consultation
               </button>
             </div>

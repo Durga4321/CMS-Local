@@ -8,6 +8,7 @@ import {
   getAuthToken,
 } from "../../utils/branchApi";
 import { getLoggedInDoctor } from "../../doctors/utils/doctorSession";
+import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const todayKey = () => new Date().toISOString().slice(0, 10);
@@ -59,6 +60,11 @@ const fieldOf = (item, camel, pascal) => item?.[camel] ?? item?.[pascal];
 
 function DoctorSchedule({ selfMode = false }) {
   const loggedDoctor = getLoggedInDoctor();
+  const permissionProfile = { ...loggedDoctor, role: "Doctor" };
+  useRolePermissionsSync(permissionProfile);
+  const canCreateSchedule = canUseModulePermission(permissionProfile, "My Schedule", "Create");
+  const canEditSchedule = canUseModulePermission(permissionProfile, "My Schedule", "Edit");
+  const canDeleteSchedule = canUseModulePermission(permissionProfile, "My Schedule", "Delete");
   const [branches, setBranches] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [branchId, setBranchId] = useState("");
@@ -194,6 +200,7 @@ function DoctorSchedule({ selfMode = false }) {
   const toggleDay = (day) => setDays((prev) => prev.includes(day) ? prev.filter((x) => x !== day) : [...prev, day]);
 
   const saveBaseSchedule = async () => {
+    if (scheduleId ? !canEditSchedule : !canCreateSchedule) return setError("You do not have permission to save this schedule.");
     if (!doctorId || !branchId || !days.length) return setError("Select doctor, branch and at least one working day.");
     setSaving(true); setError(""); setMessage("");
     const payload = { doctorId: Number(doctorId), branchId: Number(branchId), days, startDate, endDate, workStart, workEnd, breakStart, breakEnd };
@@ -210,6 +217,7 @@ function DoctorSchedule({ selfMode = false }) {
   };
 
   const saveOverride = async () => {
+    if (editingOverrideId ? !canEditSchedule : !canCreateSchedule) return setError("You do not have permission to save schedule changes.");
     if (!doctorId || !overrideDate) return setError("Select doctor and override date.");
     const isShift = overrideType === "BranchShift";
     const branch = isShift ? targetBranchId : branchId;
@@ -245,6 +253,7 @@ function DoctorSchedule({ selfMode = false }) {
   };
 
   const editOverride = (item) => {
+    if (!canEditSchedule) return setError("You do not have permission to edit schedule changes.");
     setEditingOverrideId(recordIdOf(item));
     setOverrideType(overrideTypeOf(item));
     setOverrideDate(String(fieldOf(item, "date", "Date")).slice(0, 10));
@@ -259,6 +268,7 @@ function DoctorSchedule({ selfMode = false }) {
   };
 
   const deleteOverride = async (id) => {
+    if (!canDeleteSchedule) return setError("You do not have permission to delete schedule changes.");
     if (!window.confirm("Remove this schedule exception?")) return;
     try {
       const item = overrides.find((o) => recordIdOf(o) === String(id));
@@ -300,11 +310,11 @@ function DoctorSchedule({ selfMode = false }) {
           {!selfMode ? <label>Doctor<select value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
             <option value="">Select doctor</option>{doctors.map((d) => <option key={doctorIdOf(d)} value={doctorIdOf(d)}>{d.name || d.doctorName || doctorIdOf(d)}</option>)}
           </select></label> : null}
-          <div className="ds-days">{DAYS.map((d) => <button type="button" key={d} className={days.includes(d) ? "active" : ""} onClick={() => toggleDay(d)}>{d.slice(0,3)}</button>)}</div>
-          <div className="ds-two"><label>Start date<input type="date" min={todayKey()} value={startDate} onChange={(e) => setStartDate(e.target.value)} /></label><label>End date<input type="date" min={startDate} value={endDate} onChange={(e) => setEndDate(e.target.value)} /></label></div>
-          <div className="ds-two"><label>Work start<input value={workStart} onChange={(e) => setWorkStart(e.target.value)} /></label><label>Work end<input value={workEnd} onChange={(e) => setWorkEnd(e.target.value)} /></label></div>
-          <div className="ds-two"><label>Break start<input value={breakStart} onChange={(e) => setBreakStart(e.target.value)} /></label><label>Break end<input value={breakEnd} onChange={(e) => setBreakEnd(e.target.value)} /></label></div>
-          <button className="ds-primary" disabled={saving} onClick={saveBaseSchedule}>{saving ? "Saving..." : scheduleId ? "Update recurring schedule" : "Save recurring schedule"}</button>
+          <div className="ds-days">{DAYS.map((d) => <button type="button" key={d} className={days.includes(d) ? "active" : ""} onClick={() => toggleDay(d)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule}>{d.slice(0,3)}</button>)}</div>
+          <div className="ds-two"><label>Start date<input type="date" min={todayKey()} value={startDate} onChange={(e) => setStartDate(e.target.value)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule} /></label><label>End date<input type="date" min={startDate} value={endDate} onChange={(e) => setEndDate(e.target.value)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule} /></label></div>
+          <div className="ds-two"><label>Work start<input value={workStart} onChange={(e) => setWorkStart(e.target.value)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule} /></label><label>Work end<input value={workEnd} onChange={(e) => setWorkEnd(e.target.value)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule} /></label></div>
+          <div className="ds-two"><label>Break start<input value={breakStart} onChange={(e) => setBreakStart(e.target.value)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule} /></label><label>Break end<input value={breakEnd} onChange={(e) => setBreakEnd(e.target.value)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule} /></label></div>
+          <button className="ds-primary" disabled={saving || (scheduleId ? !canEditSchedule : !canCreateSchedule)} onClick={saveBaseSchedule}>{saving ? "Saving..." : scheduleId ? "Update recurring schedule" : "Save recurring schedule"}</button>
         </div>
 
         <div className="ds-card">
@@ -315,7 +325,7 @@ function DoctorSchedule({ selfMode = false }) {
           {overrideType === "BranchShift" ? <div className="ds-two"><label>From branch<select value={sourceBranchId} onChange={(e) => setSourceBranchId(e.target.value)}>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label><label>To branch<select value={targetBranchId} onChange={(e) => setTargetBranchId(e.target.value)}>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label></div> : null}
           {overrideType !== "Leave" ? <><div className="ds-two"><label>New/shift start<input value={overrideStart} onChange={(e) => setOverrideStart(e.target.value)} /></label><label>New/shift end<input value={overrideEnd} onChange={(e) => setOverrideEnd(e.target.value)} /></label></div><div className="ds-two"><label>Break start (optional)<input value={overrideBreakStart} onChange={(e) => setOverrideBreakStart(e.target.value)} /></label><label>Break end (optional)<input value={overrideBreakEnd} onChange={(e) => setOverrideBreakEnd(e.target.value)} /></label></div></> : null}
           <label>Reason<textarea rows="3" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Leave reason / branch shift reason" /></label>
-          <button className="ds-primary" disabled={saving} onClick={saveOverride}>{editingOverrideId ? "Update change" : "Save change"}</button>
+          <button className="ds-primary" disabled={saving || (editingOverrideId ? !canEditSchedule : !canCreateSchedule)} onClick={saveOverride}>{editingOverrideId ? "Update change" : "Save change"}</button>
           {editingOverrideId ? <button className="ds-secondary" onClick={() => setEditingOverrideId("")}>Cancel edit</button> : null}
         </div>
 
@@ -339,7 +349,7 @@ function DoctorSchedule({ selfMode = false }) {
             const sourceBranch = String(fieldOf(o, "sourceBranchId", "SourceBranchId") || "");
             const start = fieldOf(o, "workStart", "WorkStart");
             const end = fieldOf(o, "workEnd", "WorkEnd");
-            return <tr key={id}><td>{String(date).slice(0,10)}</td><td>{type}</td><td>{branches.find((b) => b.id === targetBranch)?.name || targetBranch || "All"}</td><td>{branches.find((b) => b.id === sourceBranch)?.name || sourceBranch || "-"}</td><td>{start ? `${start} - ${end}` : "All day"}</td><td>{fieldOf(o, "reason", "Reason") || "-"}</td><td><button onClick={() => editOverride(o)}>Edit</button><button className="danger" onClick={() => deleteOverride(id)}>Delete</button></td></tr>;
+            return <tr key={id}><td>{String(date).slice(0,10)}</td><td>{type}</td><td>{branches.find((b) => b.id === targetBranch)?.name || targetBranch || "All"}</td><td>{branches.find((b) => b.id === sourceBranch)?.name || sourceBranch || "-"}</td><td>{start ? `${start} - ${end}` : "All day"}</td><td>{fieldOf(o, "reason", "Reason") || "-"}</td><td>{canEditSchedule ? <button onClick={() => editOverride(o)}>Edit</button> : null}{canDeleteSchedule ? <button className="danger" onClick={() => deleteOverride(id)}>Delete</button> : null}</td></tr>;
           }) : <tr><td colSpan="7">No upcoming changes.</td></tr>}
         </tbody></table></div>
       </div>

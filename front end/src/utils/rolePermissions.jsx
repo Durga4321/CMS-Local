@@ -110,6 +110,11 @@ const normalizeRole = (role = "") => {
   return String(role || "").trim();
 };
 
+const isAdminPermissionProfile = (profile = {}) => {
+  const role = normalizeKey(profile.role || profile.roleLabel || profile.roleType);
+  return role.includes("admin") || role.includes("superadmin");
+};
+
 const normalizeModuleName = (module, index = 0) => {
   const value =
     typeof module === "string"
@@ -340,37 +345,54 @@ export const syncRolePermissionsFromBackend = async (profile = {}) => {
   const responses = [];
   const existingModulePermissions = getRoleModulePermissions(profile);
   const collectedPermissionMaps = [existingModulePermissions].filter((map) => Object.keys(map || {}).length);
+  const collectDirectPermissions = (data) => {
+    const list = parseList(data);
+    const permissions = mergeModulePermissionMaps(
+      ...(list.length
+        ? list.map((item) => extractModulePermissions(item))
+        : [extractModulePermissions(data?.data && typeof data.data === "object" ? data.data : data || {})])
+    );
+    if (Object.keys(permissions).length) collectedPermissionMaps.push(permissions);
+  };
   try {
-    try {
-      const rolesData = await requestPermissionsJson("roles", profile);
-      const roleRows = parseList(rolesData);
-      const matchedRoleRows = roleRows.filter((row) => roleRecordMatchesProfile(row, profile));
-      const roleModulePermissions = extractRoleRowsPermissions(matchedRoleRows);
-      if (Object.keys(roleModulePermissions).length) collectedPermissionMaps.push(roleModulePermissions);
-    } catch {
-      // Older deployments may not expose role permissions for the current token.
-    }
-
-    try {
-      responses.push(await requestPermissionsJson("user-permissions/me", profile));
-    } catch {
-      // Fall back to user-specific lookup for admin screens or older tokens.
-    }
-
-    const candidateIds = keys.filter((key) => /^\d+$/.test(String(key)));
-    for (const id of candidateIds.slice(0, 3)) {
+    if (isAdminPermissionProfile(profile)) {
       try {
-        responses.push(await requestPermissionsJson(`user-permissions/users/${encodeURIComponent(id)}`, profile));
-        break;
+        const rolesData = await requestPermissionsJson("roles", profile);
+        const roleRows = parseList(rolesData);
+        const matchedRoleRows = roleRows.filter((row) => roleRecordMatchesProfile(row, profile));
+        const roleModulePermissions = extractRoleRowsPermissions(matchedRoleRows);
+        if (Object.keys(roleModulePermissions).length) collectedPermissionMaps.push(roleModulePermissions);
       } catch {
-        // Some profiles do not carry the backend integer user id.
+        // Older deployments may not expose role permissions for the current token.
       }
     }
 
     try {
-      responses.push(await requestPermissionsJson("user-permissions/eligible-users", profile));
+      const mePermissions = await requestPermissionsJson("user-permissions/me", profile);
+      collectDirectPermissions(mePermissions);
     } catch {
-      // Staff tokens may not be allowed to read the eligible users list.
+      // Fall back to user-specific lookup for admin screens or older tokens.
+    }
+
+    if (isAdminPermissionProfile(profile)) {
+      const candidateIds = keys.filter((key) => /^\d+$/.test(String(key)));
+      for (const id of candidateIds.slice(0, 3)) {
+        try {
+          const userPermissions = await requestPermissionsJson(`user-permissions/users/${encodeURIComponent(id)}`, profile);
+          collectDirectPermissions(userPermissions);
+          break;
+        } catch {
+          // Some profiles do not carry the backend integer user id.
+        }
+      }
+    }
+
+    if (isAdminPermissionProfile(profile)) {
+      try {
+        responses.push(await requestPermissionsJson("user-permissions/eligible-users", profile));
+      } catch {
+        // Some admin deployments may not expose the eligible users list.
+      }
     }
 
     const assignments = responses.flatMap((data) => {

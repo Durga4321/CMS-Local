@@ -11,6 +11,7 @@ import { fetchLabMasterTests } from "../utils/labMaster";
 import {
   dedupeBillingRows,
 } from "../utils/billingRevenue";
+import { canUseModulePermission, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const readFirst = (record = {}, keys = [], fallback = "-") => {
   for (const key of keys) {
@@ -30,8 +31,8 @@ const formatDate = (value) => {
 const pageConfig = {
   patients: {
     title: "Patients",
-    subtitle: "Patients with diagnostic billing/orders from reception for your clinic and branch.",
-    paths: ["Lab/orders", "Billing/lab"],
+    subtitle: "Patients with diagnostic orders for your clinic and branch.",
+    paths: ["Lab/orders"],
     columns: [
       ["Patient", ["patientName", "PatientName", "name", "Name", "fullName"]],
       ["Visit Date", ["visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"]],
@@ -53,7 +54,7 @@ const pageConfig = {
   samples: {
     title: "Sample Collection",
     subtitle: "Samples waiting, collected, processed, and reported by the lab.",
-    paths: ["Lab/orders", "Billing/lab"],
+    paths: ["Lab/orders"],
     columns: [
       ["Patient", ["patientName", "PatientName", "patient.name"]],
       ["Visit Date", ["visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"]],
@@ -273,6 +274,8 @@ function LabDataPage({ type }) {
   const location = useLocation();
   const view = new URLSearchParams(location.search).get("view") || "";
   const labProfile = useMemo(() => getLabProfile(), []);
+  useRolePermissionsSync(labProfile);
+  const canEditSamples = canUseModulePermission(labProfile, "Sample Collection", "Edit");
   const clinicName = getClinicDisplayName(labProfile, "Clinic");
   const clinicBranding = getClinicInvoiceBranding({ clinicId: labProfile.hospitalId, clinicName });
   const [rows, setRows] = useState([]);
@@ -389,6 +392,10 @@ function LabDataPage({ type }) {
   };
 
   const runOrderAction = async (row, action) => {
+    if (!canEditSamples) {
+      setError("You do not have permission to update sample collection.");
+      return;
+    }
     const id = recordId(row);
     if (!id) return;
     const target = actionConfig[action];
@@ -400,28 +407,7 @@ function LabDataPage({ type }) {
       updatedAt: new Date().toISOString(),
     };
 
-    const tryBillingUpdate = () =>
-      requestJson(`Billing/lab/${id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          ...row,
-          ...patch,
-          id,
-          Id: id,
-          billingId: row.billingId || row.BillingId || row.billId || row.BillId || id,
-          BillingId: row.BillingId || row.billingId || row.BillId || row.billId || id,
-        }),
-      });
-
-    if (isBillingBackedRecord(row)) {
-      await tryBillingUpdate();
-    } else {
-      try {
-        await requestJson(target.labPath(id), { method: target.method, body: JSON.stringify(patch) });
-      } catch (error) {
-        await tryBillingUpdate();
-      }
-    }
+    await requestJson(target.labPath(id), { method: target.method, body: JSON.stringify(patch) });
 
     await loadRows();
   };
@@ -486,9 +472,9 @@ function LabDataPage({ type }) {
                 <span className="lab-row-actions">
                   {type === "samples" ? (
                     <>
-                      <button className="lab-action-btn collect" type="button" title="Sample collected" onClick={() => runOrderAction(row, "collected")}><TestTube2 size={15} /></button>
-                      <button className="lab-action-btn start" type="button" title="Start processing" onClick={() => runOrderAction(row, "start")}><Play size={15} /></button>
-                      <button className="lab-action-btn complete" type="button" title="Complete order" onClick={() => runOrderAction(row, "complete")}><CheckCircle size={15} /></button>
+                      <button className="lab-action-btn collect" type="button" title="Sample collected" onClick={() => runOrderAction(row, "collected")} disabled={!canEditSamples}><TestTube2 size={15} /></button>
+                      <button className="lab-action-btn start" type="button" title="Start processing" onClick={() => runOrderAction(row, "start")} disabled={!canEditSamples}><Play size={15} /></button>
+                      <button className="lab-action-btn complete" type="button" title="Complete order" onClick={() => runOrderAction(row, "complete")} disabled={!canEditSamples}><CheckCircle size={15} /></button>
                     </>
                   ) : null}
                   {type === "reports" ? (
