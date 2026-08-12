@@ -19,7 +19,7 @@ import {
 } from "../receptionScope";
 import { getReceptionistProfile } from "../receptionSession";
 import { getNurseProfile } from "../../Nurse/nurseSession";
-import { canUseModulePermission } from "../../utils/rolePermissions";
+import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 
 const emptyForm = {
   id: "",
@@ -68,6 +68,7 @@ function ReceptionMedicalHistory({
     () => (basePath === "/nurse" ? getNurseProfile() : getReceptionistProfile()),
     [basePath]
   );
+  useRolePermissionsSync(permissionProfile);
   const canCreateHistory = canUseModulePermission(permissionProfile, "Medical History", "Create");
   const canEditHistory = canUseModulePermission(permissionProfile, "Medical History", "Edit");
   const canDeleteHistory = canUseModulePermission(permissionProfile, "Medical History", "Delete");

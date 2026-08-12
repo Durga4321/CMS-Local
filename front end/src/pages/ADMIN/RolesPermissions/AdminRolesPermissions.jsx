@@ -365,7 +365,9 @@ const buildPermissionPayload = (
   return {
     userId: Number(form.userId) || form.userId,
     role: form.role,
-    roleName: form.role,
+    roleName: formatRoleLabel(form.role),
+    staffRole: formatRoleLabel(form.role),
+    staffType: formatRoleLabel(form.role),
     module: selectedModules[0]?.module || "",
     moduleName: selectedModules[0]?.module || "",
     displayModule: selectedModules.length === 1 ? selectedModules[0].module : `${selectedModules.length} modules`,
@@ -393,13 +395,6 @@ const buildPermissionPayload = (
 const saveUserPermissions = async (userId, form, selectedUser, backendModules) => {
   const path = `user-permissions/users/${encodeURIComponent(userId)}`;
   const modules = normalizeModuleList(backendModules);
-  const roleKey = normalizeKey(form?.role || selectedUser?.role);
-  const isLabBackendLookupError = (message = "") =>
-    roleKey === "labtechnician" &&
-    message.includes("not found") &&
-    message.includes("doctor") &&
-    message.includes("receptionist") &&
-    message.includes("nurse");
   const payloadOptions = [
     { dtoMode: "plain", backendModules: modules },
     { dtoMode: "plain", backendModules: modules, stringPermissionsOnly: true },
@@ -422,8 +417,7 @@ const saveUserPermissions = async (userId, form, selectedUser, backendModules) =
       if (
         !message.includes("dto") &&
         !message.includes("convert") &&
-        !message.includes("module") &&
-        !isLabBackendLookupError(message)
+        !message.includes("module")
       ) {
         throw error;
       }
@@ -432,13 +426,7 @@ const saveUserPermissions = async (userId, form, selectedUser, backendModules) =
 
   const lastMessage = String(lastError?.message || "").toLowerCase();
   if (lastMessage.includes("permission modules") || (lastMessage.includes("module") && lastMessage.includes("unique"))) {
-    return { frontendOnly: true, reason: lastError?.message || "Backend rejected module permissions." };
-  }
-  if (isLabBackendLookupError(lastMessage)) {
-    return {
-      frontendOnly: true,
-      reason: lastError?.message || "Backend does not support lab technician permission saves yet.",
-    };
+    throw lastError || new Error("Backend rejected module permissions.");
   }
 
   throw lastError || new Error("Unable to save permissions.");

@@ -20,7 +20,7 @@ import {
   hasDuplicateAppointmentForPatientDoctorDate,
 } from "../../utils/appointmentDuplicateValidation";
 import { getSpecializationDisplayName } from "../../pages/DOCTORS/doctorExpertiseOptions";
-import { canUseModulePermission } from "../../utils/rolePermissions";
+import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 import { getNurseProfile } from "../../Nurse/nurseSession";
 
 const parseSlotLabel = (slot) => {
@@ -552,6 +552,7 @@ function ReceptionAppointments({ hideActions = false }) {
   const toast = useToast();
   const isNursePath = window.location.pathname.startsWith("/nurse");
   const receptionistProfile = isNursePath ? getNurseProfile() : getReceptionistProfile();
+  useRolePermissionsSync(receptionistProfile);
   const canCreateBooking = canUseModulePermission(receptionistProfile, "Book Appointment", "Create");
   const requestedPatientId = String(searchParams.get("patientId") || "").trim();
   const receptionistHospitalId = String(

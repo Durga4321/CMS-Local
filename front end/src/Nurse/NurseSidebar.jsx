@@ -13,7 +13,7 @@ import { getInitials } from "../profile/sessionProfile";
 import { getNurseProfile } from "./nurseSession";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { useClinicInvoiceBranding } from "../utils/clinicBranding";
-import { filterItemsByViewPermission } from "../utils/rolePermissions";
+import { filterItemsByViewPermission, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const items = [
   { to: "/nurse/dashboard", label: "Nurse Dashboard", icon: Gauge },
@@ -55,6 +55,7 @@ const buildItems = ({ basePath = "/nurse", dashboardLabel = "Nurse Dashboard", s
 
 function NurseSidebar({ onClose = () => {}, basePath = "/nurse", dashboardLabel = "Nurse Dashboard", sectionLabel = "Nurse Desk", profile: providedProfile = null, showBilling = true, showBookAppointment = true, showConsultantRoom = false }) {
   const profile = providedProfile || getNurseProfile();
+  useRolePermissionsSync(profile);
   const profileName = profile.name || "Nurse";
   const hospitalName = getClinicDisplayName(profile, "Clinic Name");
   const branchName = String(profile.branchName || "").trim();
