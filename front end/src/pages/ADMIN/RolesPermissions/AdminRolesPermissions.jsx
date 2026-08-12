@@ -563,7 +563,7 @@ function AdminRolesPermissions() {
   };
 
   return (
-    <div>
+    <div className="admin-roles-page">
       <div className="sa-page-header">
         <div>
           <h1>Roles & Permissions</h1>
@@ -583,7 +583,7 @@ function AdminRolesPermissions() {
       {error ? <div className="sa-state sa-state--error">{error}</div> : null}
 
       {showForm ? (
-        <form className="sa-form-card" onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
+        <form className="sa-form-card sa-role-form" onSubmit={handleSubmit}>
           <div className="sa-modal-header">
             <div>
               <h3>{assignments.some((item) => String(item.id) === String(form.userId)) ? "Edit Role" : "Create Role"}</h3>
@@ -619,8 +619,8 @@ function AdminRolesPermissions() {
             </div>
           </div>
 
-          <div style={{ marginTop: 18 }}>
-            <label className="sa-form-field" style={{ gap: 10 }}>
+          <div className="sa-form-section">
+            <label className="sa-form-field sa-permissions-field">
               <span style={{ fontWeight: 700 }}>Permissions</span>
               <span className="sa-actions" style={{ justifyContent: "flex-end" }}>
                 {PERMISSIONS.map((permission) => (
@@ -638,7 +638,7 @@ function AdminRolesPermissions() {
             </label>
           </div>
 
-          <div className="sa-page-actions" style={{ marginTop: 18 }}>
+          <div className="sa-page-actions sa-form-actions">
             <button className="sa-btn" type="button" onClick={closeForm} disabled={saving}>
               Close
             </button>
@@ -696,7 +696,7 @@ function AdminRolesPermissions() {
         ))}
       </div>
 
-      <div className="sa-form-card" style={{ marginTop: 24 }}>
+      <div className="sa-form-card sa-permission-card">
         <h3>Assign Permissions</h3>
         <p className="sa-form-subtitle">Permission matrix for doctor, receptionist, nurse, and lab technician users.</p>
         <div className="sa-permission-matrix sa-permission-matrix--assign">

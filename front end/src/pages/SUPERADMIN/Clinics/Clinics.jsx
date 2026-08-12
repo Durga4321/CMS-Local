@@ -164,7 +164,7 @@ function Clinics() {
     {
       key: "actions",
       label: "Actions",
-      width: "116px",
+      width: "152px",
       cellClassName: "sa-table-cell--actions",
       render: (clinic) => {
         const isActive = String(clinic.status || "").trim().toLowerCase() === "active";

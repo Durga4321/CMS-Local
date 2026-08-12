@@ -303,11 +303,11 @@
 .rx-thead,
 .rx-row {
   display: grid;
-  grid-template-columns: minmax(110px, 0.5fr) minmax(85px, 0.5fr) minmax(85px, 0.5fr) minmax(85px, 0.5fr) minmax(85px, 0.5fr) minmax(85px, 0.5fr) 56px;
+  grid-template-columns: minmax(110px, 0.5fr) minmax(85px, 0.5fr) minmax(85px, 0.5fr) minmax(85px, 0.5fr) minmax(85px, 0.5fr) minmax(85px, 0.5fr) 76px;
   align-items: center;
   padding: 11px 16px;
   gap: 12px;
-  min-width: 150px;
+  min-width: 760px;
 }
 
 .rx-thead {
@@ -330,6 +330,13 @@
 
 .rx-row:hover {
   background: #fafcff;
+}
+
+.rx-thead span:last-child,
+.rx-row > span:last-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .rx-med-name {
@@ -361,21 +368,32 @@
 }
 
 .rx-del-btn {
-  width: 28px;
-  height: 28px;
-  border: 1px solid #fecdd3;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border: 1px solid #fb7185;
   border-radius: 7px;
-  background: #fff1f2;
-  color: #ef4444;
+  background: #ffe4e6;
+  color: #be123c;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.15s;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.rx-del-btn svg {
+  display: block;
+  color: currentColor;
+  stroke: currentColor;
+  stroke-width: 2.4;
 }
 
 .rx-del-btn:hover {
-  background: #fee2e2;
+  border-color: #e11d48;
+  background: #fecdd3;
+  color: #9f1239;
 }
 
 /* ── Add medicine ── */

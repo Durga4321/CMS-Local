@@ -182,7 +182,7 @@
 .dd-thead,
 .dd-row {
   display: grid;
-  grid-template-columns: minmax(60px, 0.4fr) 120px 1.5fr 1fr 1fr 1.2fr 1fr;
+  grid-template-columns: minmax(60px, 0.4fr) 120px 1.5fr 1fr 1fr 1.2fr 150px;
   align-items: center;
   padding: 12px 24px;
   gap: 12px;
@@ -232,21 +232,40 @@
 .dd-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
+  min-width: 126px;
+  overflow: visible;
 }
 
 .dd-act-btn {
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   background: #fff;
-  color: #475569;
+  color: #2563eb;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
+}
+
+.dd-act-btn svg {
+  display: block;
+  color: currentColor;
+  stroke: currentColor;
+  stroke-width: 2.4;
+}
+
+.dd-act-btn:nth-child(2) {
+  color: #0f766e;
+}
+
+.dd-act-btn:nth-child(3) {
+  color: #7c3aed;
 }
 
 .dd-act-btn:hover {

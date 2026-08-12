@@ -3,6 +3,7 @@ import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./layout/AppLayout";
 import "./pages/SUPERADMIN/SuperAdmin.css";
+import "./styles/compact-spacing.css";
 import { ToastProvider } from "./components/ToastProvider";
 
 // Pages

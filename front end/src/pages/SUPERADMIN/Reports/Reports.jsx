@@ -278,7 +278,8 @@ function Reports() {
     {
       key: "performance",
       label: "Clinic Performance",
-      width: "minmax(190px, 1fr)",
+      width: "minmax(230px, 1.1fr)",
+      cellClassName: "sa-table-cell--performance",
       render: (clinic) => {
         const maxRevenue = Math.max(...rows.map((row) => toNumber(row.revenue)), 1);
         const score = getPerformanceScore(clinic, maxRevenue);

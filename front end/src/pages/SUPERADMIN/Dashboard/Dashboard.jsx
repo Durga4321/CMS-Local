@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Activity, Building2, IndianRupee, LogIn, LogOut, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../../components/superadmin/Header";
@@ -27,7 +27,26 @@ const getActivityIcon = (tone) => {
   return Activity;
 };
 
+function ActivityItem({ activity }) {
+  const tone = getActivityTone(activity);
+  const Icon = getActivityIcon(tone);
+
+  return (
+    <div className={`sa-activity-item sa-activity-item--${tone}`}>
+      <div className={`sa-activity-icon sa-activity-icon--${tone}`}>
+        <Icon size={17} />
+      </div>
+      <div className="sa-activity-copy">
+        <b>{activity.title}</b>
+        <p>{activity.detail}</p>
+      </div>
+      <span>{activity.time}</span>
+    </div>
+  );
+}
+
 function Dashboard() {
+  const pageRef = useRef(null);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -68,6 +87,15 @@ function Dashboard() {
     };
   }, []);
 
+  useEffect(() => {
+    const content = pageRef.current?.closest(".content");
+    content?.classList.add("sa-dashboard-content");
+
+    return () => {
+      content?.classList.remove("sa-dashboard-content");
+    };
+  }, []);
+
   const cards = useMemo(() => {
     const metrics = { ...dashboard, ...summary };
 
@@ -101,7 +129,7 @@ function Dashboard() {
   }
 
   return (
-    <>
+    <div className="sa-dashboard-page" ref={pageRef}>
       <Header
         title="Super Admin Dashboard"
         subtitle="Platform-wide clinics, revenue, and operational activity."
@@ -109,61 +137,51 @@ function Dashboard() {
 
       {error ? <div className="sa-state sa-state--error">{error}</div> : null}
 
-      <DashboardCards cards={cards} />
+      <div className="sa-dashboard-shell">
+        <DashboardCards cards={cards} />
 
-      <div className="sa-grid">
-        <div className="sa-panel sa-panel--highlighted">
-          <div className="sa-panel__header">
-            <div>
-              <h3>Charts & Statistics</h3>
-              <p>Revenue growth across all clinics.</p>
-            </div>
-            <button type="button" className="sa-chip">This Month</button>
-          </div>
-
-          <Charts data={revenueData} dataKey="revenue" />
-
-        </div>
-
-        <div className="sa-panel sa-panel--activity">
-          <div className="sa-panel__header sa-activity-panel-header">
-            <div>
-              <h3>Recent Activities</h3>
-              <p>Latest platform events.</p>
-            </div>
-            <button type="button" className="sa-btn sa-btn--ghost">View All</button>
-          </div>
-
-          <div className="sa-activity-list">
-            {activities.length ? activities.map((activity) => {
-              const tone = getActivityTone(activity);
-              const Icon = getActivityIcon(tone);
-
-              return (
-                <div className={`sa-activity-item sa-activity-item--${tone}`} key={activity.id || `${activity.title}-${activity.time}`}>
-                  <div className={`sa-activity-icon sa-activity-icon--${tone}`}>
-                    <Icon size={17} />
-                  </div>
-                  <div className="sa-activity-copy">
-                    <b>{activity.title}</b>
-                    <p>{activity.detail}</p>
-                  </div>
-                  <span>{activity.time}</span>
-                </div>
-              );
-            }) : (
-              <div className="sa-empty-state">
-                <span className="sa-empty-state-icon">
-                  <Activity size={28} />
-                </span>
-                <b>No Recent Activities</b>
-                <p>There are currently no Super Admin actions, logins, or system events to show.</p>
+        <div className="sa-grid">
+          <div className="sa-panel sa-panel--highlighted">
+            <div className="sa-panel__header">
+              <div>
+                <h3>Charts & Statistics</h3>
+                <p>Revenue growth across all clinics.</p>
               </div>
-            )}
+              <button type="button" className="sa-chip">This Month</button>
+            </div>
+
+            <Charts data={revenueData} dataKey="revenue" />
+          </div>
+
+          <div className="sa-panel sa-panel--activity">
+            <div className="sa-panel__header sa-activity-panel-header">
+              <div>
+                <h3>Recent Activities</h3>
+                <p>Latest platform events.</p>
+              </div>
+              <button type="button" className="sa-btn sa-btn--ghost">View All</button>
+            </div>
+
+            <div className="sa-activity-list">
+              {activities.length ? activities.map((activity) => (
+                <ActivityItem
+                  activity={activity}
+                  key={activity.id || `${activity.title}-${activity.time}`}
+                />
+              )) : (
+                <div className="sa-empty-state">
+                  <span className="sa-empty-state-icon">
+                    <Activity size={28} />
+                  </span>
+                  <b>No Recent Activities</b>
+                  <p>There are currently no Super Admin actions, logins, or system events to show.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
