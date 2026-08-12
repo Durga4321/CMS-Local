@@ -93,8 +93,8 @@ const normalizeModuleName = (module, index = 0) => {
 
 const normalizePermissionRows = (permissions = []) =>
   normalizePermissions(
-    (Array.isArray(permissions) ? permissions : []).flatMap((permission) => {
-      if (typeof permission === "string") return permission;
+    (Array.isArray(permissions) ? permissions : [permissions]).flatMap((permission) => {
+      if (typeof permission === "string") return permission.split(/[,|;/]+/);
       const dto = permission?.dto || permission?.Dto || {};
       return [
         ...(Array.isArray(permission?.permissions) ? permission.permissions : []),
@@ -114,6 +114,20 @@ const normalizePermissionRows = (permissions = []) =>
 
 const extractModulePermissions = (assignment = {}) => {
   const map = {};
+  const flatModule = normalizeModuleName(
+    assignment.module ||
+      assignment.Module ||
+      assignment.moduleName ||
+      assignment.ModuleName ||
+      assignment.name ||
+      assignment.Name,
+    0
+  );
+  const flatPermissions = normalizePermissionRows([assignment]);
+  if (flatModule && flatPermissions.length) {
+    map[flatModule] = flatPermissions;
+  }
+
   const direct =
     assignment.modulePermissions ||
     assignment.ModulePermissions ||
@@ -129,8 +143,16 @@ const extractModulePermissions = (assignment = {}) => {
   [
     ...(Array.isArray(assignment.permissionModules) ? assignment.permissionModules : []),
     ...(Array.isArray(assignment.PermissionModules) ? assignment.PermissionModules : []),
+    ...(Array.isArray(assignment.rolePermissions) ? assignment.rolePermissions : []),
+    ...(Array.isArray(assignment.RolePermissions) ? assignment.RolePermissions : []),
+    ...(Array.isArray(assignment.selectedModules) ? assignment.selectedModules : []),
+    ...(Array.isArray(assignment.SelectedModules) ? assignment.SelectedModules : []),
     ...(Array.isArray(assignment.raw?.permissionModules) ? assignment.raw.permissionModules : []),
     ...(Array.isArray(assignment.raw?.PermissionModules) ? assignment.raw.PermissionModules : []),
+    ...(Array.isArray(assignment.raw?.rolePermissions) ? assignment.raw.rolePermissions : []),
+    ...(Array.isArray(assignment.raw?.RolePermissions) ? assignment.raw.RolePermissions : []),
+    ...(Array.isArray(assignment.raw?.selectedModules) ? assignment.raw.selectedModules : []),
+    ...(Array.isArray(assignment.raw?.SelectedModules) ? assignment.raw.SelectedModules : []),
   ].forEach((permissionModule, index) => {
     const module = normalizeModuleName(permissionModule, index);
     const permissions = normalizePermissionRows(
@@ -244,15 +266,23 @@ export const syncRolePermissionsFromBackend = async (profile = {}) => {
   if (!syncKey || syncingKeys.has(syncKey)) return getRoleModulePermissions(profile);
 
   syncingKeys.add(syncKey);
+  const responses = [];
   try {
+    try {
+      responses.push(await requestPermissionsJson("user-permissions/me"));
+    } catch {
+      // Fall back to user-specific lookup for admin screens or older tokens.
+    }
+
     const candidateIds = keys.filter((key) => /^\d+$/.test(String(key)));
-    const responses = [];
-    for (const id of candidateIds.slice(0, 3)) {
-      try {
-        responses.push(await requestPermissionsJson(`user-permissions/users/${encodeURIComponent(id)}`));
-        break;
-      } catch {
-        // Some backends only expose permissions through eligible-users.
+    if (!responses.length) {
+      for (const id of candidateIds.slice(0, 3)) {
+        try {
+          responses.push(await requestPermissionsJson(`user-permissions/users/${encodeURIComponent(id)}`));
+          break;
+        } catch {
+          // Some profiles do not carry the backend integer user id.
+        }
       }
     }
 
