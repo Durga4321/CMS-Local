@@ -11,7 +11,7 @@ import { getInitials } from "../profile/sessionProfile";
 import { getReceptionistProfile } from "./receptionSession";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { useClinicInvoiceBranding } from "../utils/clinicBranding";
-import { filterItemsByViewPermission } from "../utils/rolePermissions";
+import { filterItemsByViewPermission, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const items = [
   { to: "/reception/dashboard", label: "Reception Dashboard", icon: Gauge },
@@ -68,6 +68,7 @@ function ReceptionSidebar({
   showConsultantRoom = false,
 }) {
   const profile = providedProfile || getReceptionistProfile();
+  useRolePermissionsSync(profile);
   const profileName = profile.name || "Receptionist";
   const hospitalName = getClinicDisplayName(profile, "Clinic Name");
   const branchName = String(profile.branchName || "").trim();

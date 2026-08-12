@@ -11,7 +11,7 @@ import {
 import { buildLabReportHtml, printLabReport, readReportField } from "./labReportTemplate";
 import { deleteGeneratedLabReport, readGeneratedLabReports, saveGeneratedLabReport } from "./labReportStore";
 import { fetchLabMasterTests } from "../utils/labMaster";
-import { canUseModulePermission } from "../utils/rolePermissions";
+import { canUseModulePermission, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const readFirst = readReportField;
 const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
@@ -354,6 +354,7 @@ const buildFilmHtml = ({ record = {}, filmUrl = "", filmName = "", clinicName = 
 function LabReportCreate() {
   const navigate = useNavigate();
   const labProfile = useMemo(() => getLabProfile(), []);
+  useRolePermissionsSync(labProfile);
   const canCreateReport = canUseModulePermission(labProfile, "Create Report", "Create");
   const canDeleteReport = canUseModulePermission(labProfile, "Create Report", "Delete");
   const clinicName = getClinicDisplayName(labProfile, "Clinic");

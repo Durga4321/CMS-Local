@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { parseList, requestJson } from "../receptionApi";
 import { getReceptionistProfile } from "../receptionSession";
 import { getNurseProfile } from "../../Nurse/nurseSession";
-import { canUseModulePermission } from "../../utils/rolePermissions";
+import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 import {
   belongsToReceptionistScope,
   getReceptionistScope,
@@ -1425,6 +1425,7 @@ function ReceptionBilling() {
   const toast = useToast();
   const isNursePath = window.location.pathname.startsWith("/nurse");
   const receptionistProfile = isNursePath ? getNurseProfile() : getReceptionistProfile();
+  useRolePermissionsSync(receptionistProfile);
   const canCreateBill = canUseModulePermission(receptionistProfile, "Billing", "Create");
   const canEditBill = canUseModulePermission(receptionistProfile, "Billing", "Edit");
   const canDeleteBill = canUseModulePermission(receptionistProfile, "Billing", "Delete");

@@ -14,7 +14,7 @@ import { useToast } from "../../components/ToastProvider";
 import { validateDate } from "../../utils/validation";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 import { fetchConsultationVitals, mergeStoredAppointmentVitals } from "../../utils/appointmentVitals";
-import { canUseModulePermission } from "../../utils/rolePermissions";
+import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 
 const STEPS = [
   "Waiting",
@@ -315,6 +315,7 @@ function Prescription() {
   const toast = useToast();
   const routeState = React.useMemo(() => location.state || {}, [location.state]);
   const permissionProfile = useMemo(() => getLoggedInDoctor(), []);
+  useRolePermissionsSync({ ...permissionProfile, role: "Doctor" });
   const canCreatePrescription = canUseModulePermission(permissionProfile, "Prescription", "Create");
 
   const [appointment, setAppointment] = useState(null);

@@ -20,7 +20,7 @@ import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 import { fetchLabMasterTests, filterLabTestsBySpecialization } from "../../utils/labMaster";
 import { savePendingDiagnosticRequest } from "../../utils/diagnosticRequests";
-import { canUseModulePermission } from "../../utils/rolePermissions";
+import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 
 const STEPS = [
   "Waiting",
@@ -289,6 +289,7 @@ function Consultation() {
   const location = useLocation();
   const routeState = React.useMemo(() => location.state || {}, [location.state]);
   const sessionDoctor = useMemo(() => getLoggedInDoctor(), []);
+  useRolePermissionsSync({ ...sessionDoctor, role: "Doctor" });
   const canCreateConsultation = canUseModulePermission(sessionDoctor, "Consultation", "Create");
 
   const [step, setStep] = useState(1);

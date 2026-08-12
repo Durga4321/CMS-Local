@@ -22,7 +22,7 @@ import {
   withReceptionistScopePayload,
 } from "../receptionScope";
 import { useToast } from "../../components/ToastProvider";
-import { canUseModulePermission } from "../../utils/rolePermissions";
+import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 import { getReceptionistProfile } from "../receptionSession";
 import {
   buildAddress,
@@ -422,6 +422,7 @@ function ReceptionPatients({
   const toast = useToast();
   const receptionistScope = useMemo(() => getScope(), [getScope]);
   const permissionProfile = useMemo(() => getReceptionistProfile(), []);
+  useRolePermissionsSync(permissionProfile);
   const canCreatePatient = canUseModulePermission(permissionProfile, "Patients", "Create");
   const canEditPatient = canUseModulePermission(permissionProfile, "Patients", "Edit");
   const canDeletePatient = canUseModulePermission(permissionProfile, "Patients", "Delete");

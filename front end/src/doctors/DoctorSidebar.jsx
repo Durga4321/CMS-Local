@@ -12,7 +12,7 @@ import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { useClinicInvoiceBranding } from "../utils/clinicBranding";
 import { apiUrl } from "../config/api";
 import { getAuthToken, getLoggedInDoctor } from "./utils/doctorSession";
-import { filterItemsByViewPermission } from "../utils/rolePermissions";
+import { filterItemsByViewPermission, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const NAV_ITEMS = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/doctor/dashboard" },
@@ -93,7 +93,9 @@ function DoctorSidebar() {
     userId: doctor.id || profile.userId,
     email: doctor.email || profile.email,
     name: doctor.name || profile.name,
+    role: "Doctor",
   };
+  useRolePermissionsSync(permissionProfile);
   const navItems = filterItemsByViewPermission(NAV_ITEMS, permissionProfile);
   const clinicBranding = useClinicInvoiceBranding({
     clinicId: profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "",

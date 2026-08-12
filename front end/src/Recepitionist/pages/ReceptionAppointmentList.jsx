@@ -8,7 +8,7 @@ import { getReceptionistScope, scopeReceptionistRecords } from "../receptionScop
 import { requestJson as defaultRequestJson } from "../receptionApi";
 import { getReceptionistProfile } from "../receptionSession";
 import { getNurseProfile } from "../../Nurse/nurseSession";
-import { canUseModulePermission } from "../../utils/rolePermissions";
+import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 import {
   getAppointmentRecordId,
   mergeStoredAppointmentVitals,
@@ -115,6 +115,7 @@ function ReceptionAppointmentList({
     () => (basePath === "/nurse" ? getNurseProfile() : getReceptionistProfile()),
     [basePath]
   );
+  useRolePermissionsSync(permissionProfile);
   const permissionModule = bookingType === "Online" ? "Online Bookings" : "Offline Bookings";
   const canEditAppointments = canUseModulePermission(permissionProfile, permissionModule, "Edit");
   const [appointments, setAppointments] = useState([]);
