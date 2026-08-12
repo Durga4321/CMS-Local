@@ -2,28 +2,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Check, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, X } from "lucide-react";
 import { apiUrl } from "../../../config/api";
 import {
-  getRoleModulePermissions,
-  readRoleModulePermissionsStore,
   removeRoleModulePermissions,
   saveRoleModulePermissions,
 } from "../../../utils/rolePermissions";
 
 const PERMISSIONS = ["View", "Create", "Edit", "Delete"];
 const GENERAL_MODULE = "General";
-const DEFAULT_BACKEND_MODULES = [
-  "Dashboard",
-  "Appointments",
-  "Patients",
-  "Billing",
-  "Reports",
-  "Schedule",
-  "Prescriptions",
-  "Doctor",
-  "Receptionist",
-  "Nurse",
-  "Lab Technician",
-  "LabTechnician",
-];
 const STAFF_ROLES = ["Doctor", "Receptionist", "Nurse", "LabTechnician"];
 const STAFF_ROLE_KEYS = new Set(["doctor", "receptionist", "nurse", "labtechnician"]);
 const formatRoleLabel = (role = "") => (normalizeKey(role) === "labtechnician" ? "Lab Technician" : role);
@@ -127,8 +111,8 @@ const normalizeKey = (value = "") =>
 const normalizePermissionList = (permissions = []) =>
   Array.from(
     new Set([
-      ...(Array.isArray(permissions) ? permissions : []).flatMap((permission) => {
-        if (typeof permission === "string") return permission;
+      ...(Array.isArray(permissions) ? permissions : [permissions]).flatMap((permission) => {
+        if (typeof permission === "string") return permission.split(/[,|;/]+/);
         const dto = permission?.dto || permission?.Dto;
         const dtoPermissions = Array.isArray(dto?.permissions)
           ? dto.permissions
@@ -161,16 +145,6 @@ const normalizeModuleName = (module, index) => {
   const name = String(value || "").trim();
   return name || `Module ${index + 1}`;
 };
-
-const normalizeModuleList = (modules = []) =>
-  Array.from(
-    new Set(
-      (Array.isArray(modules) && modules.length ? modules : DEFAULT_BACKEND_MODULES)
-        .map(normalizeModuleName)
-        .map((module) => String(module || "").trim())
-        .filter(Boolean)
-    )
-  );
 
 const emptyModulePermissionsForRole = (role = "Doctor") =>
   getRoleModules(role).reduce((matrix, module) => ({ ...matrix, [module]: [] }), {});
@@ -213,6 +187,21 @@ const getSelectedPermissionModules = (modulePermissions = {}, role = "Doctor") =
 const getPermissionModulesFromAssignment = (assignment = {}, role = "Doctor") => {
   const modules = getRoleModules(role);
   const map = emptyModulePermissionsForRole(role);
+  const flatModule = normalizeModuleName(
+    assignment.module ||
+      assignment.Module ||
+      assignment.moduleName ||
+      assignment.ModuleName ||
+      assignment.name ||
+      assignment.Name,
+    0
+  );
+  const matchedFlatModule = modules.find((item) => normalizeKey(item) === normalizeKey(flatModule));
+  const flatPermissions = normalizePermissionList([assignment]);
+  if (matchedFlatModule && flatPermissions.length) {
+    map[matchedFlatModule] = flatPermissions;
+  }
+
   const directModulePermissions =
     assignment.modulePermissions ||
     assignment.ModulePermissions ||
@@ -227,8 +216,16 @@ const getPermissionModulesFromAssignment = (assignment = {}, role = "Doctor") =>
   const permissionModules = [
     ...(Array.isArray(assignment.permissionModules) ? assignment.permissionModules : []),
     ...(Array.isArray(assignment.PermissionModules) ? assignment.PermissionModules : []),
+    ...(Array.isArray(assignment.rolePermissions) ? assignment.rolePermissions : []),
+    ...(Array.isArray(assignment.RolePermissions) ? assignment.RolePermissions : []),
+    ...(Array.isArray(assignment.selectedModules) ? assignment.selectedModules : []),
+    ...(Array.isArray(assignment.SelectedModules) ? assignment.SelectedModules : []),
     ...(Array.isArray(assignment.raw?.permissionModules) ? assignment.raw.permissionModules : []),
     ...(Array.isArray(assignment.raw?.PermissionModules) ? assignment.raw.PermissionModules : []),
+    ...(Array.isArray(assignment.raw?.rolePermissions) ? assignment.raw.rolePermissions : []),
+    ...(Array.isArray(assignment.raw?.RolePermissions) ? assignment.raw.RolePermissions : []),
+    ...(Array.isArray(assignment.raw?.selectedModules) ? assignment.raw.selectedModules : []),
+    ...(Array.isArray(assignment.raw?.SelectedModules) ? assignment.raw.SelectedModules : []),
   ];
   permissionModules.forEach((permissionModule) => {
     const module = normalizeModuleName(permissionModule, 0);
@@ -327,113 +324,32 @@ const emptyRoleMatrix = {
   LabTechnician: emptyModulePermissionsForRole("LabTechnician"),
 };
 
-const buildPermissionPayload = (
-  form,
-  user,
-  { dtoMode = "plain", backendModules = DEFAULT_BACKEND_MODULES, omitModule = false, stringPermissionsOnly = false } = {}
-) => {
-  void backendModules;
+const buildPermissionPayload = (form) => {
   const modulePermissions = normalizeModulePermissionMap(form.modulePermissions, form.role);
   const selectedModules = getSelectedPermissionModules(modulePermissions, form.role);
-  const firstPermissions = selectedModules[0]?.permissions || [];
-  const hasPermission = (permission) => selectedModules.some((item) => item.permissions.includes(permission));
-  const buildPermissionItem = ({ module, permissions }) => {
-    const hasModulePermission = (permission) => permissions.includes(permission);
-    const permissionDto = {
-      moduleName: module,
-      permissions,
-      permissionNames: permissions,
-      canView: hasModulePermission("View"),
-      canCreate: hasModulePermission("Create"),
-      canEdit: hasModulePermission("Edit"),
-      canDelete: hasModulePermission("Delete"),
-    };
-    if (!omitModule) {
-      permissionDto.module = module;
-    }
-
-    if (dtoMode === "plain") {
-      return permissionDto;
-    }
-
-    return {
-      dto: dtoMode === "value" ? module : permissionDto,
-      ...permissionDto,
-    };
-  };
-
   return {
-    userId: Number(form.userId) || form.userId,
-    role: form.role,
-    roleName: formatRoleLabel(form.role),
-    staffRole: formatRoleLabel(form.role),
-    staffType: formatRoleLabel(form.role),
-    module: selectedModules[0]?.module || "",
-    moduleName: selectedModules[0]?.module || "",
-    displayModule: selectedModules.length === 1 ? selectedModules[0].module : `${selectedModules.length} modules`,
-    modules: selectedModules.map((item) => item.module),
-    moduleNames: selectedModules.map((item) => item.module),
-    permissions: stringPermissionsOnly
-      ? Array.from(new Set(selectedModules.flatMap((item) => item.permissions)))
-      : selectedModules.map(buildPermissionItem),
-    permissionModules: selectedModules.map((item) => ({
-      module: item.module,
-      moduleName: item.module,
-      permissions: item.permissions,
-      permissionNames: item.permissions,
-    })),
-    permissionNames: firstPermissions,
-    canView: hasPermission("View"),
-    canCreate: hasPermission("Create"),
-    canEdit: hasPermission("Edit"),
-    canDelete: hasPermission("Delete"),
-    userName: user?.name || "",
-    email: user?.email || "",
+    permissions: selectedModules.map(({ module, permissions }) => {
+      const hasModulePermission = (permission) => permissions.includes(permission);
+      return {
+        module,
+        canView: hasModulePermission("View"),
+        canCreate: hasModulePermission("Create"),
+        canEdit: hasModulePermission("Edit"),
+        canDelete: hasModulePermission("Delete"),
+      };
+    }),
   };
 };
 
-const saveUserPermissions = async (userId, form, selectedUser, backendModules) => {
+const saveUserPermissions = async (userId, form) => {
   const path = `user-permissions/users/${encodeURIComponent(userId)}`;
-  const modules = normalizeModuleList(backendModules);
-  const payloadOptions = [
-    { dtoMode: "plain", backendModules: modules },
-    { dtoMode: "plain", backendModules: modules, stringPermissionsOnly: true },
-    { dtoMode: "object", backendModules: modules },
-    { dtoMode: "value", backendModules: modules },
-    { dtoMode: "object", backendModules: modules, omitModule: true },
-    { dtoMode: "value", backendModules: modules, omitModule: true },
-  ];
-  let lastError = null;
-
-  for (const payloadOption of payloadOptions) {
-    try {
-      return await requestJson(path, {
-        method: "PUT",
-        body: JSON.stringify(buildPermissionPayload(form, selectedUser, payloadOption)),
-      });
-    } catch (error) {
-      lastError = error;
-      const message = String(error.message || "").toLowerCase();
-      if (
-        !message.includes("dto") &&
-        !message.includes("convert") &&
-        !message.includes("module")
-      ) {
-        throw error;
-      }
-    }
-  }
-
-  const lastMessage = String(lastError?.message || "").toLowerCase();
-  if (lastMessage.includes("permission modules") || (lastMessage.includes("module") && lastMessage.includes("unique"))) {
-    throw lastError || new Error("Backend rejected module permissions.");
-  }
-
-  throw lastError || new Error("Unable to save permissions.");
+  return requestJson(path, {
+    method: "PUT",
+    body: JSON.stringify(buildPermissionPayload(form)),
+  });
 };
 
 function AdminRolesPermissions() {
-  const [backendModules, setBackendModules] = useState(DEFAULT_BACKEND_MODULES);
   const [users, setUsers] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -460,16 +376,10 @@ function AdminRolesPermissions() {
     setError("");
 
     try {
-      const [moduleResult, userResult, labTechnicianResult] = await Promise.allSettled([
-        requestJson("user-permissions/modules"),
+      const [userResult, labTechnicianResult] = await Promise.allSettled([
         requestJson("user-permissions/eligible-users"),
         requestJson("Staff/lab-technicians"),
       ]);
-
-      if (moduleResult.status === "fulfilled") {
-        const nextModules = normalizeModuleList(parseList(moduleResult.value));
-        if (nextModules.length) setBackendModules(nextModules);
-      }
 
       if (userResult.status !== "fulfilled") {
         throw userResult.reason;
@@ -493,14 +403,25 @@ function AdminRolesPermissions() {
             ...user,
           });
         });
-      const nextUsers = Array.from(userById.values()).map((user) => {
-        const cachedPermissions = getRoleModulePermissions(user);
+      const baseUsers = Array.from(userById.values());
+      const permissionResults = await Promise.allSettled(
+        baseUsers.map((user) => requestJson(`user-permissions/users/${encodeURIComponent(user.id)}`))
+      );
+      const nextUsers = baseUsers.map((user, index) => {
+        const permissionRecord =
+          permissionResults[index]?.status === "fulfilled"
+            ? permissionResults[index].value?.data || permissionResults[index].value
+            : null;
         const backendPermissions = getPermissionModulesFromAssignment(user, user.role || "Doctor");
-        const mergedPermissions = mergeModulePermissionMaps(cachedPermissions, backendPermissions, user.role || "Doctor");
+        const directPermissions = permissionRecord
+          ? getPermissionModulesFromAssignment({ ...user, ...permissionRecord, raw: permissionRecord }, user.role || permissionRecord.role || "Doctor")
+          : {};
+        const mergedPermissions = mergeModulePermissionMaps(backendPermissions, directPermissions, user.role || "Doctor");
         const hasMergedPermissions = Object.values(mergedPermissions).some((permissions) => permissions.length);
         return hasMergedPermissions
           ? {
               ...user,
+              ...(permissionRecord && typeof permissionRecord === "object" ? { raw: permissionRecord } : {}),
               module: `${Object.values(mergedPermissions).filter((permissions) => permissions.length).length} modules`,
               modulePermissions: mergedPermissions,
             }
@@ -510,17 +431,18 @@ function AdminRolesPermissions() {
 
       const detailedAssignments = nextUsers;
       detailedAssignments
-        .filter(assignmentHasSavedModules)
+        .filter((assignment) => Object.values(assignment.modulePermissions || {}).some((permissions) => permissions.length) || assignmentHasSavedModules(assignment))
         .forEach((assignment) => {
           saveRoleModulePermissions(
             assignment,
             assignment.role || "Doctor",
-            getPermissionModulesFromAssignment(assignment, assignment.role || "Doctor")
+            Object.values(assignment.modulePermissions || {}).some((permissions) => permissions.length)
+              ? assignment.modulePermissions
+              : getPermissionModulesFromAssignment(assignment, assignment.role || "Doctor")
           );
         });
 
       setAssignments(detailedAssignments);
-      const store = readRoleModulePermissionsStore();
       const nextRoleMatrix = STAFF_ROLES.reduce(
         (matrix, role) => ({
           ...matrix,
@@ -531,13 +453,10 @@ function AdminRolesPermissions() {
       nextUsers.forEach((user) => {
         const role = STAFF_ROLES.find((item) => normalizeKey(item) === normalizeKey(user.role));
         if (!role) return;
-        const savedPermissions = getPermissionModulesFromAssignment(user, role);
+        const savedPermissions = Object.values(user.modulePermissions || {}).some((permissions) => permissions.length)
+          ? user.modulePermissions
+          : getPermissionModulesFromAssignment(user, role);
         nextRoleMatrix[role] = mergeModulePermissionMaps(nextRoleMatrix[role], savedPermissions, role);
-      });
-      Object.values(store).forEach((entry) => {
-        const role = STAFF_ROLES.find((item) => normalizeKey(item) === normalizeKey(entry?.role));
-        if (!role) return;
-        nextRoleMatrix[role] = mergeModulePermissionMaps(nextRoleMatrix[role], entry.modulePermissions, role);
       });
       setRoleMatrix(nextRoleMatrix);
     } catch (loadError) {
@@ -677,28 +596,19 @@ function AdminRolesPermissions() {
       }
       const saveResults = await Promise.all(
         roleUsers.map((user) =>
-          saveUserPermissions(
-            user.id,
-            {
-              ...emptyForm,
-              userId: user.id,
-              role,
-              module: GENERAL_MODULE,
-              permissions: [],
-              modulePermissions,
-            },
-            user,
-            backendModules
-          )
+          saveUserPermissions(user.id, {
+            ...emptyForm,
+            userId: user.id,
+            role,
+            module: GENERAL_MODULE,
+            permissions: [],
+            modulePermissions,
+          })
         )
       );
+      void saveResults;
       roleUsers.forEach((user) => saveRoleModulePermissions(user, role, modulePermissions));
-      const frontendOnly = saveResults.some((result) => result?.frontendOnly);
-      setSuccess(
-        frontendOnly
-          ? `${formatRoleLabel(role)} permissions saved for frontend sidebar access.`
-          : `${formatRoleLabel(role)} permissions assigned successfully.`
-      );
+      setSuccess(`${formatRoleLabel(role)} permissions assigned successfully.`);
       await loadData();
     } catch (saveError) {
       setError(saveError.message || `Unable to assign ${role.toLowerCase()} permissions.`);
@@ -727,13 +637,10 @@ function AdminRolesPermissions() {
     setSuccess("");
 
     try {
-      const saveResult = await saveUserPermissions(form.userId, form, selectedUser, backendModules);
+      const saveResult = await saveUserPermissions(form.userId, form);
+      void saveResult;
       saveRoleModulePermissions(selectedUser, form.role, selectedPermissions);
-      setSuccess(
-        saveResult?.frontendOnly
-          ? "Permissions saved for frontend sidebar access."
-          : "Permissions saved successfully."
-      );
+      setSuccess("Permissions saved successfully.");
       await loadData();
       closeForm();
     } catch (saveError) {
