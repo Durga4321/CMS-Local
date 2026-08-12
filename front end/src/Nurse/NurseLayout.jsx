@@ -35,7 +35,6 @@ function NurseLayout() {
         dashboardLabel="Nurse Dashboard"
         sectionLabel="Nurse Desk"
         profile={getNurseProfile()}
-        showBilling={false}
         showBookAppointment={false}
         showConsultantRoom
       />

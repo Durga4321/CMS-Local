@@ -4,7 +4,6 @@ import NurseLayout from "./NurseLayout";
 import NurseDashboard from "./NurseDashboard";
 import NursePatients from "./NursePatients";
 import NurseAppointments from "./NurseAppointments";
-import ReceptionBilling from "../Recepitionist/pages/ReceptionBilling";
 import NurseMedicalHistory from "./NurseMedicalHistory";
 import NurseOnlineBookings from "./NurseOnlineBookings";
 import NurseOfflineBookings from "./NurseOfflineBookings";
@@ -24,7 +23,6 @@ function NurseApp() {
         <Route path="appointments/online" element={<PermissionRoute roleType="nurse" module="Online Bookings"><NurseOnlineBookings /></PermissionRoute>} />
         <Route path="appointments/offline" element={<PermissionRoute roleType="nurse" module="Offline Bookings"><NurseOfflineBookings /></PermissionRoute>} />
         <Route path="consultant-room" element={<ConsultantRoomDisplay audience="nurse" />} />
-        <Route path="billing" element={<PermissionRoute roleType="nurse" module="Billing"><ReceptionBilling /></PermissionRoute>} />
         <Route path="profile" element={<UserProfilePage roleType="nurse" />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Route>

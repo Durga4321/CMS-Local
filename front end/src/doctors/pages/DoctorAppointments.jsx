@@ -9,6 +9,7 @@ import {
   getLoggedInDoctor,
 } from "../utils/doctorSession";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
+import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 
 const APPOINTMENTS_API = apiUrl("Appointment");
 
@@ -64,6 +65,9 @@ const normalizeQueue = (queue) =>
 
 function DoctorAppointments() {
   const navigate = useNavigate();
+  const doctor = getLoggedInDoctor();
+  useRolePermissionsSync({ ...doctor, role: "Doctor" });
+  const canCreateConsultation = canUseModulePermission({ ...doctor, role: "Doctor" }, "Consultation", "Create");
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -152,6 +156,7 @@ function DoctorAppointments() {
   };
 
   const startConsultation = (patient) => {
+    if (!canCreateConsultation) return;
     navigate("/doctor/consultation", {
       state: {
         appointmentId: patient.appointmentId,
@@ -247,6 +252,7 @@ function DoctorAppointments() {
                     type="button"
                     title="Start consultation"
                     onClick={() => startConsultation(patient)}
+                    disabled={!canCreateConsultation}
                   >
                     <Play size={16} />
                   </button>
