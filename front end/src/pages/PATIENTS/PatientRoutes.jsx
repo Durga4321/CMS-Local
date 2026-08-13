@@ -4601,48 +4601,29 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   const [downloadStatus, setDownloadStatus] = useState("");
   const [downloadError, setDownloadError] = useState("");
   const getPatientPortalOpBillsForCurrentPatient = useCallback(() => {
-    const patientId =
-      readFirst(patient || {}, ["id", "Id", "patientId", "PatientId", "patientCode", "PatientCode"]) ||
-      localStorage.getItem("patientId") ||
-      localStorage.getItem("PatientId") ||
-      "";
-    const patientName =
-      readFirst(patient || {}, ["name", "Name", "patientName", "PatientName", "fullName", "FullName", "displayName"]) ||
-      localStorage.getItem("patientName") ||
-      "";
-
-    return readPatientPortalOpBills().map((bill) => ({
-      ...bill,
-      patientId: bill.patientId || bill.PatientId || patientId,
-      PatientId: bill.PatientId || bill.patientId || patientId,
-      patientCode: bill.patientCode || bill.PatientCode || patientId,
-      PatientCode: bill.PatientCode || bill.patientCode || patientId,
-      patientName: bill.patientName || bill.PatientName || patientName,
-      PatientName: bill.PatientName || bill.patientName || patientName,
-      patient: bill.patient || {
-        id: patientId,
-        patientId,
-        patientCode: patientId,
-        name: patientName,
-      },
-      invoiceType: bill.invoiceType || "op",
-      billingType: bill.billingType || "OP",
-      serviceType: bill.serviceType || "Patient Portal OP Billing",
-      source: bill.source || "patient-portal",
-      billingSource: bill.billingSource || "patient-portal",
-      bookingSource: bill.bookingSource || "online",
-    }));
-  }, [patient, portalRefreshTick]);
+    return readPatientPortalOpBills()
+      .filter((bill) => billBelongsToPatient(bill, patient || {}, visits))
+      .map((bill) => ({
+        ...bill,
+        invoiceType: bill.invoiceType || "op",
+        billingType: bill.billingType || "OP",
+        serviceType: bill.serviceType || "Patient Portal OP Billing",
+        source: bill.source || "patient-portal",
+        billingSource: bill.billingSource || "patient-portal",
+        bookingSource: bill.bookingSource || "online",
+      }));
+  }, [patient, portalRefreshTick, visits]);
 
   useEffect(() => {
     const refreshBills = () => setPortalRefreshTick((value) => value + 1);
-    window.addEventListener("patientPortalBillsUpdated", refreshBills);
-    window.addEventListener("storage", (event) => {
+    const refreshStoredBills = (event) => {
       if (event.key === PATIENT_PORTAL_OP_BILLS_KEY) refreshBills();
-    });
+    };
+    window.addEventListener("patientPortalBillsUpdated", refreshBills);
+    window.addEventListener("storage", refreshStoredBills);
     return () => {
       window.removeEventListener("patientPortalBillsUpdated", refreshBills);
-      window.removeEventListener("storage", refreshBills);
+      window.removeEventListener("storage", refreshStoredBills);
     };
   }, []);
 
