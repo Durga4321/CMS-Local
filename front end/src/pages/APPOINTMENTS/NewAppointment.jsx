@@ -17,10 +17,12 @@ import {
   validateRequired,
   validateSelected,
 } from "../../utils/validation";
+import { useAdminModulePermissions } from "../../utils/rolePermissions";
 
 function NewAppointment() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { canCreate } = useAdminModulePermissions("Appointments");
   const patientOptions = useMemo(
     () => loadPatients().map((patient) => patient.name),
     []
@@ -65,6 +67,10 @@ function NewAppointment() {
 
   const handleSubmit = (event) => {
     event.preventDefault();
+    if (!canCreate) {
+      toast.error("You do not have permission to create appointments.");
+      return;
+    }
 
     if (!validateForm()) {
       setError("Please fix the highlighted fields.");
@@ -196,7 +202,7 @@ function NewAppointment() {
         {error && <p className="new-appointment-error">{error}</p>}
 
         <div className="new-appointment-actions">
-          <button type="submit" className="new-appointment-save-btn">
+          <button type="submit" className="new-appointment-save-btn" disabled={!canCreate}>
             <CalendarPlus size={16} /> Save Appointment
           </button>
         </div>

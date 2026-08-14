@@ -12,6 +12,7 @@ import {
   recordBelongsToClinicScope,
 } from "../../utils/branchApi";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
+import { useAdminModulePermissions } from "../../utils/rolePermissions";
 import {
   onlyAlpha,
   onlyIndianMobileValue,
@@ -131,6 +132,7 @@ const emptyForm = {
 
 function Nurses() {
   const toast = useToast();
+  const { canCreate, canEdit, canDelete } = useAdminModulePermissions("Nurses");
   const hospitalId = getStoredHospitalId();
   const clinicName = getClinicDisplayName({
     hospitalName: localStorage.getItem("hospitalName"),
@@ -223,6 +225,10 @@ function Nurses() {
   };
 
   const openModal = () => {
+    if (!canCreate) {
+      toast.error("You do not have permission to create nurses.");
+      return;
+    }
     setEditingNurse(null);
     setForm(emptyForm);
     setImageFile(null);
@@ -232,6 +238,10 @@ function Nurses() {
   };
 
   const openEditModal = (nurse) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to edit nurses.");
+      return;
+    }
     setEditingNurse(nurse);
     setForm({
       name: getNurseName(nurse) || "",
@@ -255,6 +265,10 @@ function Nurses() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (editingNurse ? !canEdit : !canCreate) {
+      toast.error(`You do not have permission to ${editingNurse ? "edit" : "create"} nurses.`);
+      return;
+    }
     if (!validateForm()) return;
     setSaving(true);
     try {
@@ -352,6 +366,10 @@ function Nurses() {
   };
 
   const toggleNurseStatus = async (nurse) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to edit nurses.");
+      return;
+    }
     const nurseId = getNurseId(nurse);
     if (!nurseId || deletingId) return;
     setDeletingId(nurseId);
@@ -388,6 +406,10 @@ function Nurses() {
   };
 
   const handleDeleteNurse = async (nurse) => {
+    if (!canDelete) {
+      toast.error("You do not have permission to delete nurses.");
+      return;
+    }
     const nurseId = getNurseId(nurse);
     if (!nurseId || deletingId) return;
     const name = getNurseName(nurse);
@@ -426,7 +448,7 @@ function Nurses() {
           <button type="button" className="receptionists-icon-button" onClick={loadNurses} disabled={loading} title="Refresh nurses">
             <RefreshCw size={16} />
           </button>
-          <button type="button" className="receptionists-primary-button" onClick={openModal}>
+          <button type="button" className="receptionists-primary-button" onClick={openModal} disabled={!canCreate}>
             <Plus size={16} /> Add Nurse
           </button>
         </div>
@@ -482,7 +504,7 @@ function Nurses() {
                   className="receptionists-action-button"
                   onClick={() => openEditModal(nurse)}
                   title="Edit nurse"
-                  disabled={deletingId === String(getNurseId(nurse))}
+                  disabled={deletingId === String(getNurseId(nurse)) || !canEdit}
                 >
                   <Pencil size={16} />
                 </button>
@@ -491,7 +513,7 @@ function Nurses() {
                   className="receptionists-action-button"
                   onClick={() => toggleNurseStatus(nurse)}
                   title={status.toLowerCase().includes("inactive") ? "Activate nurse" : "Deactivate nurse"}
-                  disabled={deletingId === String(getNurseId(nurse))}
+                  disabled={deletingId === String(getNurseId(nurse)) || !canEdit}
                 >
                   {status.toLowerCase().includes("inactive") ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}
                 </button>
@@ -500,7 +522,7 @@ function Nurses() {
                   className="receptionists-action-button receptionists-action-danger"
                   onClick={() => handleDeleteNurse(nurse)}
                   title="Delete nurse"
-                  disabled={deletingId === String(getNurseId(nurse))}
+                  disabled={deletingId === String(getNurseId(nurse)) || !canDelete}
                 >
                   <Trash2 size={16} />
                 </button>
@@ -517,7 +539,7 @@ function Nurses() {
               <div className="receptionists-modal-title">
                 <div className="receptionists-modal-icon"><ShieldPlus size={20} /></div>
                 <div>
-                  <h3>Add Nurse</h3>
+                  <h3>{editingNurse ? "Edit Nurse" : "Add Nurse"}</h3>
                   <p>{clinicName}</p>
                 </div>
               </div>
@@ -594,9 +616,9 @@ function Nurses() {
 
               <div className="receptionists-modal-actions">
                 <button type="button" className="receptionists-secondary-button" onClick={closeModal} disabled={saving}>Cancel</button>
-                <button type="submit" className="receptionists-save-button" disabled={saving}>
+                <button type="submit" className="receptionists-save-button" disabled={saving || (editingNurse ? !canEdit : !canCreate)}>
                   <CheckCircle size={16} />
-                  {saving ? "Saving..." : "Create Nurse"}
+                  {saving ? "Saving..." : editingNurse ? "Update Nurse" : "Create Nurse"}
                 </button>
               </div>
             </form>

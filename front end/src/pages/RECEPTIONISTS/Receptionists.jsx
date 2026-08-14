@@ -35,6 +35,7 @@ import {
   getStoredClinicName,
 } from "../../utils/clinicDisplay";
 import { validateUniqueMobileNumber } from "../../utils/mobileUniqueness";
+import { useAdminModulePermissions } from "../../utils/rolePermissions";
 const RECEPTIONIST_API = apiUrl("Receptionist");
 const REQUEST_TIMEOUT_MS = 3500;
 
@@ -259,6 +260,7 @@ const submitReceptionistRequest = async ({
 
 function Receptionists() {
   const toast = useToast();
+  const { canCreate, canEdit, canDelete } = useAdminModulePermissions("Receptionists");
   const imageInputRef = useRef(null);
   const [receptionists, setReceptionists] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -397,6 +399,10 @@ function Receptionists() {
   }, [hospitalId, clinicDisplayName]);
 
   const openAddModal = () => {
+    if (!canCreate) {
+      toast.error("You do not have permission to create receptionists.");
+      return;
+    }
     if (imagePreview.startsWith("blob:")) {
       URL.revokeObjectURL(imagePreview);
     }
@@ -412,6 +418,10 @@ function Receptionists() {
   };
 
   const openEditModal = (receptionist) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to edit receptionists.");
+      return;
+    }
     if (imagePreview.startsWith("blob:")) {
       URL.revokeObjectURL(imagePreview);
     }
@@ -530,6 +540,11 @@ function Receptionists() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    const isEditing = Boolean(editingReceptionist?.id);
+    if (isEditing ? !canEdit : !canCreate) {
+      toast.error(`You do not have permission to ${isEditing ? "edit" : "create"} receptionists.`);
+      return;
+    }
 
     if (!validateForm()) {
       setError("Please fix the highlighted fields.");
@@ -550,7 +565,6 @@ function Receptionists() {
     };
 
     try {
-      const isEditing = Boolean(editingReceptionist?.id);
       const duplicateMobileMessage = await validateUniqueMobileNumber(payload.phone, {
         current: isEditing ? { id: editingReceptionist.id, source: "Receptionist" } : {},
         localRecords: receptionists,
@@ -596,6 +610,10 @@ function Receptionists() {
   };
 
   const toggleReceptionistStatus = async (receptionist) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to edit receptionists.");
+      return;
+    }
     if (!receptionist?.id || deletingId) return;
 
     const nextStatus = receptionist.isActive ? "Inactive" : "Active";
@@ -651,6 +669,10 @@ function Receptionists() {
   };
 
   const handleDelete = async (receptionist) => {
+    if (!canDelete) {
+      toast.error("You do not have permission to delete receptionists.");
+      return;
+    }
     if (!receptionist?.id || deletingId) return;
 
     const shouldDelete = window.confirm(
@@ -718,6 +740,7 @@ function Receptionists() {
             type="button"
             className="receptionists-primary-button"
             onClick={openAddModal}
+            disabled={!canCreate}
             title="Add receptionist"
           >
             <Plus size={16} />
@@ -832,7 +855,7 @@ function Receptionists() {
                   type="button"
                   className="receptionists-action-button"
                   onClick={() => openEditModal(receptionist)}
-                  disabled={isDeleting}
+                  disabled={isDeleting || !canEdit}
                   title="Edit receptionist"
                 >
                   <Pencil size={14} />
@@ -842,7 +865,7 @@ function Receptionists() {
                   type="button"
                   className="receptionists-action-button"
                   onClick={() => toggleReceptionistStatus(receptionist)}
-                  disabled={isDeleting}
+                  disabled={isDeleting || !canEdit}
                   title={isActive ? "Deactivate receptionist" : "Activate receptionist"}
                 >
                   {isActive ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
@@ -852,7 +875,7 @@ function Receptionists() {
                   type="button"
                   className="receptionists-action-button receptionists-action-danger"
                   onClick={() => handleDelete(receptionist)}
-                  disabled={isDeleting}
+                  disabled={isDeleting || !canDelete}
                   title="Delete receptionist"
                 >
                   <Trash2 size={14} />
@@ -1047,7 +1070,7 @@ function Receptionists() {
                 <button
                   type="submit"
                   className="receptionists-save-button"
-                  disabled={saving}
+                  disabled={saving || (editingReceptionist ? !canEdit : !canCreate)}
                 >
                   <CheckCircle size={16} />
                   {saving

@@ -9,6 +9,7 @@ import {
   readClinicBrandingMap,
   saveClinicBranding,
 } from "../../../utils/clinicBranding";
+import { useAdminModulePermissions } from "../../../utils/rolePermissions";
 import "./AdminSettings.css";
 
 const BUILT_IN_TEMPLATES = [
@@ -217,6 +218,7 @@ const getProfileClinicId = (profile = {}) =>
   "";
 
 function AdminSettings() {
+  const { canCreate, canEdit, canDelete } = useAdminModulePermissions("Settings");
   const profile = getRoleProfile("admin");
   const clinicName = getClinicDisplayName(profile, localStorage.getItem("clinicName") || "Clinic");
   const clinicId = getProfileClinicId(profile);
@@ -373,6 +375,11 @@ function AdminSettings() {
   };
 
   const handleTemplateUpload = (type, event) => {
+    if (!canCreate) {
+      showStatus("You do not have permission to upload templates.", "error");
+      event.target.value = "";
+      return;
+    }
     const file = event.target.files?.[0];
     if (file) readTemplateFile(file, type);
     event.target.value = "";
@@ -388,6 +395,10 @@ function AdminSettings() {
   };
 
   const saveBillingTemplate = async (type) => {
+    if (!canEdit) {
+      showStatus("You do not have permission to save templates.", "error");
+      return;
+    }
     const template = form[`${type}Template`];
     if (!template?.dataUrl) {
       showStatus(`Upload a ${type === "op" ? "OP" : "Diagnostic"} template first.`, "error");
@@ -427,6 +438,11 @@ function AdminSettings() {
   };
 
   const handleLogoChange = (event) => {
+    if (!canCreate && !canEdit) {
+      showStatus("You do not have permission to upload logo.", "error");
+      event.target.value = "";
+      return;
+    }
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -482,6 +498,10 @@ function AdminSettings() {
 
   const saveSettings = async (event) => {
     event.preventDefault();
+    if (hasRemoteSettings ? !canEdit : !canCreate) {
+      showStatus(`You do not have permission to ${hasRemoteSettings ? "update" : "create"} settings.`, "error");
+      return;
+    }
     const nextForm = {
       ...form,
       template: effectiveTemplateValue,
@@ -504,6 +524,10 @@ function AdminSettings() {
   };
 
   const deleteSettings = async () => {
+    if (!canDelete) {
+      showStatus("You do not have permission to delete settings.", "error");
+      return;
+    }
     setSaving(true);
     showStatus("Deleting invoice settings...", "info");
     try {
@@ -520,6 +544,10 @@ function AdminSettings() {
   };
 
   const deleteLogo = async () => {
+    if (!canDelete) {
+      showStatus("You do not have permission to delete logo.", "error");
+      return;
+    }
     setSaving(true);
     showStatus("Deleting logo...", "info");
     try {
@@ -549,7 +577,7 @@ function AdminSettings() {
           <RotateCw size={17} />
           Refresh
         </button>
-        <button className="admin-settings-danger-button" type="button" onClick={deleteSettings} disabled={loading || saving}>
+        <button className="admin-settings-danger-button" type="button" onClick={deleteSettings} disabled={loading || saving || !canDelete}>
           <Trash2 size={17} />
           Delete Settings
         </button>
@@ -615,13 +643,13 @@ function AdminSettings() {
                     <label className="admin-settings-template-action">
                       <FileUp size={15} />
                       Upload
-                      <input type="file" accept=".html,.htm,.pdf,.doc,.docx,image/*" onChange={(event) => handleTemplateUpload(item.type, event)} />
+                      <input type="file" accept=".html,.htm,.pdf,.doc,.docx,image/*" onChange={(event) => handleTemplateUpload(item.type, event)} disabled={!canCreate} />
                     </label>
                     <button
                       className="admin-settings-template-action admin-settings-template-action--save"
                       type="button"
                       onClick={() => saveBillingTemplate(item.type)}
-                      disabled={!item.template?.dataUrl || saving}
+                      disabled={!item.template?.dataUrl || saving || !canEdit}
                       style={{ borderColor: previewBranding.accentColor, color: previewBranding.accentColor }}
                     >
                       <Save size={15} />
@@ -684,14 +712,14 @@ function AdminSettings() {
             <label className="admin-settings-upload">
               <ImagePlus size={18} />
               Upload Logo
-              <input type="file" accept="image/*" onChange={handleLogoChange} />
+              <input type="file" accept="image/*" onChange={handleLogoChange} disabled={!(canCreate || canEdit)} />
             </label>
           </div>
-          <button className="admin-settings-save" type="submit" style={{ background: previewBranding.accentColor }}>
+          <button className="admin-settings-save" type="submit" disabled={saving || (hasRemoteSettings ? !canEdit : !canCreate)} style={{ background: previewBranding.accentColor }}>
             <Save size={18} />
             {saving ? "Saving..." : hasRemoteSettings ? "Update Settings" : "Save Settings"}
           </button>
-          <button className="admin-settings-secondary admin-settings-logo-delete" type="button" onClick={deleteLogo} disabled={loading || saving}>
+          <button className="admin-settings-secondary admin-settings-logo-delete" type="button" onClick={deleteLogo} disabled={loading || saving || !canDelete}>
             <Trash2 size={16} />
             Delete Logo
           </button>

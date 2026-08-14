@@ -89,8 +89,9 @@ function DoctorSidebar() {
   const displayName = profile.name || "Dr. Doctor";
   const permissionProfile = {
     ...profile,
-    id: doctor.id || profile.id,
-    userId: doctor.id || profile.userId,
+    id: profile.id || doctor.id,
+    userId: profile.userId || profile.id || doctor.id,
+    doctorId: doctor.id || profile.doctorId,
     email: doctor.email || profile.email,
     name: doctor.name || profile.name,
     role: "Doctor",

@@ -1,12 +1,26 @@
 import { useEffect, useState } from "react";
 import { apiUrl } from "../config/api";
+import { getRoleProfile } from "../profile/sessionProfile";
 
 const syncingKeys = new Set();
 const syncedKeys = new Set();
 let permissionStore = {};
+const PERMISSION_CACHE_KEY = "cms_role_permissions_cache";
+
+const getSessionValue = (key) =>
+  sessionStorage.getItem(key) || localStorage.getItem(key) || "";
 
 const normalizeKey = (value = "") =>
   String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+
+const MODULE_ALIASES = {
+  appointments: ["appointment", "bookappointment", "appointments"],
+};
+
+const getModuleLookupKeys = (module = "") => {
+  const key = normalizeKey(module);
+  return Array.from(new Set([key, ...(MODULE_ALIASES[key] || [])])).filter(Boolean);
+};
 
 export const normalizePermissions = (permissions = []) =>
   Array.from(
@@ -17,7 +31,36 @@ export const normalizePermissions = (permissions = []) =>
     )
   );
 
+const readCache = () => {
+  try {
+    const localCache = JSON.parse(localStorage.getItem(PERMISSION_CACHE_KEY) || "{}");
+    const sessionCache = JSON.parse(sessionStorage.getItem(PERMISSION_CACHE_KEY) || "{}");
+    return {
+      ...(localCache && typeof localCache === "object" && !Array.isArray(localCache) ? localCache : {}),
+      ...(sessionCache && typeof sessionCache === "object" && !Array.isArray(sessionCache) ? sessionCache : {}),
+    };
+  } catch {
+    try {
+      return JSON.parse(localStorage.getItem(PERMISSION_CACHE_KEY) || "{}");
+    } catch {
+      return {};
+    }
+  }
+};
+
+const writeCache = (store) => {
+  try {
+    const value = JSON.stringify(store || {});
+    localStorage.setItem(PERMISSION_CACHE_KEY, value);
+    sessionStorage.setItem(PERMISSION_CACHE_KEY, value);
+  } catch {
+    // Storage can fail in restricted browser modes; in-memory store still works.
+  }
+};
+
 const readStore = () => {
+  if (Object.keys(permissionStore).length) return permissionStore;
+  permissionStore = readCache();
   return permissionStore;
 };
 
@@ -25,23 +68,23 @@ const getAuthToken = (profile = {}) => {
   const roleKey = normalizeKey(profile.roleType || profile.roleLabel || profile.role);
   const roleToken =
     roleKey.includes("doctor")
-      ? localStorage.getItem("doctorToken")
+      ? getSessionValue("doctorToken")
       : roleKey.includes("reception")
-        ? localStorage.getItem("receptionistToken")
+        ? getSessionValue("receptionistToken")
         : roleKey.includes("nurse")
-          ? localStorage.getItem("nurseToken")
+          ? getSessionValue("nurseToken")
           : roleKey.includes("lab")
-            ? localStorage.getItem("labToken")
-            : localStorage.getItem("adminToken");
+            ? getSessionValue("labToken")
+            : getSessionValue("adminToken");
 
   return (
     roleToken ||
-    localStorage.getItem("token") ||
-    localStorage.getItem("adminToken") ||
-    localStorage.getItem("doctorToken") ||
-    localStorage.getItem("receptionistToken") ||
-    localStorage.getItem("nurseToken") ||
-    localStorage.getItem("labToken") ||
+    getSessionValue("token") ||
+    getSessionValue("adminToken") ||
+    getSessionValue("doctorToken") ||
+    getSessionValue("receptionistToken") ||
+    getSessionValue("nurseToken") ||
+    getSessionValue("labToken") ||
     ""
   );
 };
@@ -52,7 +95,19 @@ const parseList = (data) => {
   if (Array.isArray(data?.items)) return data.items;
   if (Array.isArray(data?.result)) return data.result;
   if (Array.isArray(data?.users)) return data.users;
+  if (Array.isArray(data?.roles)) return data.roles;
+  if (Array.isArray(data?.Roles)) return data.Roles;
+  if (Array.isArray(data?.permissions)) return data.permissions;
+  if (Array.isArray(data?.Permissions)) return data.Permissions;
+  if (Array.isArray(data?.modulePermissions)) return data.modulePermissions;
+  if (Array.isArray(data?.ModulePermissions)) return data.ModulePermissions;
   const source = data?.data && typeof data.data === "object" ? data.data : data;
+  if (Array.isArray(source?.roles)) return source.roles;
+  if (Array.isArray(source?.Roles)) return source.Roles;
+  if (Array.isArray(source?.permissions)) return source.permissions;
+  if (Array.isArray(source?.Permissions)) return source.Permissions;
+  if (Array.isArray(source?.modulePermissions)) return source.modulePermissions;
+  if (Array.isArray(source?.ModulePermissions)) return source.ModulePermissions;
   const staffRows = [
     ...(Array.isArray(source?.doctors) ? source.doctors.map((user) => ({ role: "Doctor", ...user })) : []),
     ...(Array.isArray(source?.Doctors) ? source.Doctors.map((user) => ({ role: "Doctor", ...user })) : []),
@@ -69,6 +124,18 @@ const parseList = (data) => {
   if (staffRows.length) return staffRows;
   return [];
 };
+
+const hasExplicitPermissionFields = (record = {}) =>
+  [
+    "canView",
+    "CanView",
+    "canCreate",
+    "CanCreate",
+    "canEdit",
+    "CanEdit",
+    "canDelete",
+    "CanDelete",
+  ].some((key) => Object.prototype.hasOwnProperty.call(record || {}, key));
 
 const requestPermissionsJson = async (path, profile = {}) => {
   const token = getAuthToken(profile);
@@ -115,6 +182,28 @@ const isAdminPermissionProfile = (profile = {}) => {
   return role.includes("admin") || role.includes("superadmin");
 };
 
+const isSuperAdminPermissionProfile = (profile = {}) => {
+  const role = normalizeKey(profile.role || profile.roleLabel || profile.roleType);
+  const path = String(window.location?.pathname || "").toLowerCase();
+  return role.includes("superadmin") || path.startsWith("/superadmin");
+};
+
+const isAdminAppPath = () => {
+  const path = String(window.location?.pathname || "").toLowerCase();
+  return Boolean(
+    path &&
+      !path.startsWith("/superadmin") &&
+      !path.startsWith("/doctor") &&
+      !path.startsWith("/reception") &&
+      !path.startsWith("/nurse") &&
+      !path.startsWith("/lab") &&
+      !path.startsWith("/patient")
+  );
+};
+
+const shouldSkipAdminPermissionSync = (profile = {}) =>
+  !isSuperAdminPermissionProfile(profile) && (isAdminPermissionProfile(profile) || isAdminAppPath());
+
 const normalizeModuleName = (module, index = 0) => {
   const value =
     typeof module === "string"
@@ -124,7 +213,23 @@ const normalizeModuleName = (module, index = 0) => {
 };
 
 const roleRecordOwnerId = (record = {}) =>
-  String(record.adminId || record.AdminId || record.assignedAdminId || record.AssignedAdminId || record.userId || record.UserId || record.assignedUserId || record.AssignedUserId || "").trim();
+  String(
+    record.adminUserId ||
+      record.AdminUserId ||
+      record.adminUserID ||
+      record.AdminUserID ||
+      record.adminId ||
+      record.AdminId ||
+      record.assignedAdminId ||
+      record.AssignedAdminId ||
+      record.userId ||
+      record.UserId ||
+      record.id ||
+      record.Id ||
+      record.assignedUserId ||
+      record.AssignedUserId ||
+      ""
+  ).trim();
 
 const roleRecordName = (record = {}) =>
   String(record.roleName || record.RoleName || record.name || record.Name || "").trim();
@@ -165,13 +270,94 @@ const roleRecordMatchesProfile = (record = {}, profile = {}) => {
   );
 };
 
-const extractRoleRowsPermissions = (rows = []) =>
-  rows.reduce((map, row, index) => {
+const resolveAdminPermissionProfile = async (profile = {}) => {
+  if (!isAdminPermissionProfile(profile) || isSuperAdminPermissionProfile(profile)) return profile;
+
+  const readResolvedAdmin = (admins = []) => {
+    const profileEmail = normalizeKey(profile.email || profile.Email || "");
+    const profileName = normalizeKey(profile.name || profile.Name || "");
+    const profileHospitalId = normalizeKey(profile.hospitalId || profile.clinicId || "");
+    const matchedAdmin = admins.find((admin) => {
+      const adminEmail = normalizeKey(admin.email || admin.Email || admin.adminEmail || admin.AdminEmail || "");
+      const adminName = normalizeKey(admin.name || admin.Name || admin.fullName || admin.FullName || admin.adminName || admin.AdminName || admin.userName || admin.UserName || "");
+      const adminHospitalId = normalizeKey(admin.hospitalId || admin.HospitalId || admin.clinicId || admin.ClinicId || admin.assignedClinicId || admin.AssignedClinicId || "");
+      return Boolean(
+        (profileEmail && adminEmail && profileEmail === adminEmail) ||
+          (profileName && adminName && profileName === adminName && (!profileHospitalId || !adminHospitalId || profileHospitalId === adminHospitalId))
+      );
+    });
+
+    const resolvedAdminUserId = roleRecordOwnerId(matchedAdmin || {});
+    if (!resolvedAdminUserId) return null;
+
+    sessionStorage.setItem("adminUserId", String(resolvedAdminUserId));
+    sessionStorage.setItem("adminId", String(resolvedAdminUserId));
+    sessionStorage.setItem("userId", String(resolvedAdminUserId));
+
+    return {
+      ...profile,
+      id: resolvedAdminUserId,
+      adminUserId: resolvedAdminUserId,
+      adminId: resolvedAdminUserId,
+      userId: resolvedAdminUserId,
+      hospitalId: matchedAdmin.hospitalId || matchedAdmin.HospitalId || matchedAdmin.clinicId || matchedAdmin.ClinicId || profile.hospitalId,
+    };
+  };
+
+  for (const path of ["roles/admins", "admins"]) {
+    try {
+      const adminsData = await requestPermissionsJson(path, profile);
+      const resolved = readResolvedAdmin(parseList(adminsData));
+      if (resolved) return resolved;
+    } catch {
+      // Try the next admin lookup endpoint.
+    }
+  }
+
+  try {
+    const rolesData = await requestPermissionsJson("roles", profile);
+    const roleRows = parseList(rolesData);
+    const ownerIds = Array.from(new Set(roleRows.map(roleRecordOwnerId).filter(Boolean)));
+    if (ownerIds.length === 1) {
+      const resolvedAdminUserId = ownerIds[0];
+      sessionStorage.setItem("adminUserId", String(resolvedAdminUserId));
+      sessionStorage.setItem("adminId", String(resolvedAdminUserId));
+      sessionStorage.setItem("userId", String(resolvedAdminUserId));
+      return {
+        ...profile,
+        id: resolvedAdminUserId,
+        adminUserId: resolvedAdminUserId,
+        adminId: resolvedAdminUserId,
+        userId: resolvedAdminUserId,
+      };
+    }
+  } catch {
+    return profile;
+  }
+
+  return profile;
+};
+
+const extractRoleRowsPermissions = (rows = []) => {
+  const normalizedRows = Array.isArray(rows) ? rows : [];
+  const moduleRows = normalizedRows.filter((row) => {
+    const module = normalizeKey(row?.module || row?.Module || row?.moduleName || row?.ModuleName || "");
+    return module && module !== normalizeKey("All Modules");
+  });
+  const rowsToRead = moduleRows.length ? moduleRows : normalizedRows;
+
+  return rowsToRead.reduce((map, row, index) => {
+    const modulePermissionMap = extractModulePermissions(row);
+    Object.entries(modulePermissionMap).forEach(([module, permissions]) => {
+      if (module) map[module] = permissions;
+    });
+
     const module = normalizeModuleName(row.module || row.Module || row.moduleName || row.ModuleName, index);
     const permissions = normalizePermissionRows([row]);
-    if (module && permissions.length) map[module] = permissions;
+    if (module && (permissions.length || hasExplicitPermissionFields(row))) map[module] = permissions;
     return map;
   }, {});
+};
 
 const extractModulePermissions = (assignment = {}) => {
   const map = {};
@@ -185,7 +371,7 @@ const extractModulePermissions = (assignment = {}) => {
     0
   );
   const flatPermissions = normalizePermissionRows([assignment]);
-  if (flatModule && flatPermissions.length) {
+  if (flatModule && (flatPermissions.length || hasExplicitPermissionFields(assignment))) {
     map[flatModule] = flatPermissions;
   }
 
@@ -197,7 +383,7 @@ const extractModulePermissions = (assignment = {}) => {
   if (direct && typeof direct === "object" && !Array.isArray(direct)) {
     Object.entries(direct).forEach(([module, permissions]) => {
       const normalized = normalizePermissionRows(permissions);
-      if (module && normalized.length) map[module] = normalized;
+      if (module) map[module] = normalized;
     });
   }
 
@@ -223,7 +409,10 @@ const extractModulePermissions = (assignment = {}) => {
         permissionModule.PermissionNames ||
         []
     );
-    if (module && permissions.length) map[module] = permissions;
+    const rowPermissions = permissions.length ? permissions : normalizePermissionRows([permissionModule]);
+    if (module && (rowPermissions.length || hasExplicitPermissionFields(permissionModule))) {
+      map[module] = rowPermissions;
+    }
   });
 
   (Array.isArray(assignment.permissions) ? assignment.permissions : []).forEach((permission, index) => {
@@ -234,7 +423,7 @@ const extractModulePermissions = (assignment = {}) => {
       index
     );
     const permissions = normalizePermissionRows([permission]);
-    if (module && permissions.length) map[module] = permissions;
+    if (module && (permissions.length || hasExplicitPermissionFields(permission))) map[module] = permissions;
   });
 
   return map;
@@ -243,6 +432,7 @@ const extractModulePermissions = (assignment = {}) => {
 const assignmentMatchesProfile = (assignment = {}, profile = {}) => {
   const assignmentKeys = permissionIdentityKeys({
     id: assignment.id || assignment.Id,
+    adminUserId: assignment.adminUserId || assignment.AdminUserId || assignment.adminUserID || assignment.AdminUserID,
     userId: assignment.userId || assignment.UserId,
     doctorId: assignment.doctorId || assignment.DoctorId,
     receptionistId: assignment.receptionistId || assignment.ReceptionistId,
@@ -258,12 +448,17 @@ const assignmentMatchesProfile = (assignment = {}, profile = {}) => {
 
 const writeStore = (store) => {
   permissionStore = store && typeof store === "object" && !Array.isArray(store) ? store : {};
+  writeCache(permissionStore);
   window.dispatchEvent(new CustomEvent("rolePermissionsUpdated"));
 };
 
 export const permissionIdentityKeys = (user = {}) =>
   [
     user.id,
+    user.adminUserId,
+    user.AdminUserId,
+    user.adminUserID,
+    user.AdminUserID,
     user.userId,
     user.UserId,
     user.doctorId,
@@ -308,6 +503,12 @@ export const removeRoleModulePermissions = (user = {}) => {
   writeStore(store);
 };
 
+export const clearRoleModulePermissions = (user = {}) => {
+  removeRoleModulePermissions(user);
+  const syncKey = permissionIdentityKeys(user).join("|");
+  if (syncKey) syncedKeys.delete(syncKey);
+};
+
 export const getRoleModulePermissions = (profile = {}) => {
   const store = readStore();
   const keys = permissionIdentityKeys(profile);
@@ -328,70 +529,136 @@ const mergeModulePermissionMaps = (...maps) =>
   maps.reduce((merged, map) => {
     Object.entries(map || {}).forEach(([module, permissions]) => {
       const existingKey = Object.keys(merged).find((key) => normalizeKey(key) === normalizeKey(module)) || module;
-      merged[existingKey] = normalizePermissions([
-        ...(Array.isArray(merged[existingKey]) ? merged[existingKey] : []),
-        ...(Array.isArray(permissions) ? permissions : [permissions]),
-      ]);
+      merged[existingKey] = normalizePermissions(Array.isArray(permissions) ? permissions : [permissions]);
     });
     return merged;
   }, {});
 
+const collectPermissionRows = (data) => {
+  const rows = [
+    ...parseList(data),
+    ...parseList(data?.data),
+    ...parseList(data?.role),
+    ...parseList(data?.Role),
+    ...parseList(data?.adminRole),
+    ...parseList(data?.AdminRole),
+    ...parseList(data?.user),
+    ...parseList(data?.User),
+    ...parseList(data?.admin),
+    ...parseList(data?.Admin),
+    ...parseList(data?.roles),
+    ...parseList(data?.Roles),
+    ...parseList(data?.permissions),
+    ...parseList(data?.Permissions),
+    ...parseList(data?.modulePermissions),
+    ...parseList(data?.ModulePermissions),
+  ];
+
+  [
+    data,
+    data?.data,
+    data?.role,
+    data?.Role,
+    data?.adminRole,
+    data?.AdminRole,
+    data?.user,
+    data?.User,
+    data?.admin,
+    data?.Admin,
+  ].forEach((item) => {
+    if (item && typeof item === "object" && !Array.isArray(item)) {
+      const hasModule = normalizeModuleName(item.module || item.Module || item.moduleName || item.ModuleName, 0);
+      const hasNestedPermissions =
+        item.modulePermissions ||
+        item.ModulePermissions ||
+        item.permissionModules ||
+        item.PermissionModules ||
+        item.rolePermissions ||
+        item.RolePermissions;
+      if (hasModule || hasNestedPermissions || hasExplicitPermissionFields(item)) rows.push(item);
+    }
+  });
+
+  return rows.filter(Boolean);
+};
+
 export const syncRolePermissionsFromBackend = async (profile = {}) => {
-  const keys = permissionIdentityKeys(profile);
+  if (shouldSkipAdminPermissionSync(profile)) return getRoleModulePermissions(profile);
+
+  const effectiveProfile = await resolveAdminPermissionProfile(profile);
+  const keys = permissionIdentityKeys(effectiveProfile);
   const syncKey = keys.join("|");
-  if (!syncKey || syncingKeys.has(syncKey)) return getRoleModulePermissions(profile);
+  if (!syncKey || syncingKeys.has(syncKey)) return getRoleModulePermissions(effectiveProfile);
+  const isSuperAdminProfile = isSuperAdminPermissionProfile(effectiveProfile);
+  const isAdminProfile = isAdminPermissionProfile(effectiveProfile);
+  const shouldUseAdminRolesOnly = isAdminProfile && !isSuperAdminProfile;
 
   syncingKeys.add(syncKey);
   const responses = [];
-  const existingModulePermissions = getRoleModulePermissions(profile);
-  const collectedPermissionMaps = [existingModulePermissions].filter((map) => Object.keys(map || {}).length);
-  const collectDirectPermissions = (data) => {
-    const list = parseList(data);
-    const permissions = mergeModulePermissionMaps(
-      ...(list.length
-        ? list.map((item) => extractModulePermissions(item))
-        : [extractModulePermissions(data?.data && typeof data.data === "object" ? data.data : data || {})])
-    );
-    if (Object.keys(permissions).length) collectedPermissionMaps.push(permissions);
-  };
+  const existingModulePermissions = getRoleModulePermissions(effectiveProfile);
+  const collectedPermissionMaps = [];
+  let loadedAdminRoleRows = false;
+  let loadedStaffPermissionRows = false;
   try {
-    if (isAdminPermissionProfile(profile)) {
-      try {
-        const rolesData = await requestPermissionsJson("roles", profile);
-        const roleRows = parseList(rolesData);
-        const matchedRoleRows = roleRows.filter((row) => roleRecordMatchesProfile(row, profile));
-        const roleModulePermissions = extractRoleRowsPermissions(matchedRoleRows);
-        if (Object.keys(roleModulePermissions).length) collectedPermissionMaps.push(roleModulePermissions);
-      } catch {
-        // Older deployments may not expose role permissions for the current token.
-      }
-    }
+    if (isAdminProfile) {
+      const adminId = effectiveProfile.adminUserId || effectiveProfile.adminId || effectiveProfile.userId || effectiveProfile.id;
+      const rolePaths = [
+        "roles",
+        adminId ? `roles?adminUserId=${encodeURIComponent(adminId)}` : "",
+        adminId ? `roles?userId=${encodeURIComponent(adminId)}` : "",
+        adminId ? `roles/${encodeURIComponent(adminId)}` : "",
+      ].filter(Boolean);
 
-    try {
-      const mePermissions = await requestPermissionsJson("user-permissions/me", profile);
-      collectDirectPermissions(mePermissions);
-    } catch {
-      // Fall back to user-specific lookup for admin screens or older tokens.
-    }
-
-    if (isAdminPermissionProfile(profile)) {
-      const candidateIds = keys.filter((key) => /^\d+$/.test(String(key)));
-      for (const id of candidateIds.slice(0, 3)) {
+      for (const path of rolePaths) {
         try {
-          const userPermissions = await requestPermissionsJson(`user-permissions/users/${encodeURIComponent(id)}`, profile);
-          collectDirectPermissions(userPermissions);
-          break;
+          const rolesData = await requestPermissionsJson(path, effectiveProfile);
+          const roleRows = collectPermissionRows(rolesData);
+          const matchedRoleRows = roleRows.filter((row) => roleRecordMatchesProfile(row, effectiveProfile));
+          const roleModulePermissions = extractRoleRowsPermissions(matchedRoleRows);
+          if (Object.keys(roleModulePermissions).length) {
+            collectedPermissionMaps.push(roleModulePermissions);
+            loadedAdminRoleRows = true;
+            break;
+          }
         } catch {
-          // Some profiles do not carry the backend integer user id.
+          // Continue through the role API variants supported by different backend builds.
         }
       }
     }
 
-    if (isAdminPermissionProfile(profile)) {
+    if (!isAdminProfile && !isSuperAdminProfile && !loadedAdminRoleRows) {
       try {
-        responses.push(await requestPermissionsJson("user-permissions/eligible-users", profile));
+        const mePermissions = await requestPermissionsJson("user-permissions/me", effectiveProfile);
+        loadedStaffPermissionRows = true;
+        const list = parseList(mePermissions);
+        const permissions = mergeModulePermissionMaps(
+          ...(list.length
+            ? list.map((item) => extractModulePermissions(item))
+            : [extractModulePermissions(mePermissions?.data && typeof mePermissions.data === "object" ? mePermissions.data : mePermissions || {})])
+        );
+        if (Object.keys(permissions).length) collectedPermissionMaps.push(permissions);
       } catch {
-        // Some admin deployments may not expose the eligible users list.
+        // Some backend builds only expose per-user permission lookup.
+      }
+    }
+
+    if (!isAdminProfile && !isSuperAdminProfile && !loadedAdminRoleRows && !collectedPermissionMaps.length) {
+      const candidateIds = keys.filter((key) => /^\d+$/.test(String(key)));
+      for (const id of candidateIds.slice(0, 3)) {
+        try {
+          const userPermissions = await requestPermissionsJson(`user-permissions/users/${encodeURIComponent(id)}`, effectiveProfile);
+          loadedStaffPermissionRows = true;
+          const list = parseList(userPermissions);
+          const permissions = mergeModulePermissionMaps(
+            ...(list.length
+              ? list.map((item) => extractModulePermissions(item))
+              : [extractModulePermissions(userPermissions?.data && typeof userPermissions.data === "object" ? userPermissions.data : userPermissions || {})])
+          );
+          if (Object.keys(permissions).length) collectedPermissionMaps.push(permissions);
+          break;
+        } catch {
+          // Staff tokens may not be allowed on some older deployments.
+        }
       }
     }
 
@@ -399,25 +666,50 @@ export const syncRolePermissionsFromBackend = async (profile = {}) => {
       const list = parseList(data);
       return list.length ? list : [data?.data || data].filter(Boolean);
     });
-    assignments
-      .filter((assignment) => assignmentMatchesProfile(assignment, profile))
+    const matchedAssignments = assignments.filter((assignment) => assignmentMatchesProfile(assignment, effectiveProfile));
+    matchedAssignments
       .forEach((assignment) => collectedPermissionMaps.push(extractModulePermissions(assignment)));
-    if (!collectedPermissionMaps.length && assignments[0]) {
+    if (!isAdminProfile && !collectedPermissionMaps.length && assignments[0]) {
       collectedPermissionMaps.push(extractModulePermissions(assignments[0]));
     }
 
     const modulePermissions = mergeModulePermissionMaps(...collectedPermissionMaps);
     if (Object.keys(modulePermissions).length) {
-      const safeModulePermissions =
-        Object.keys(existingModulePermissions || {}).length > Object.keys(modulePermissions || {}).length
-          ? existingModulePermissions
-          : modulePermissions;
-      saveRoleModulePermissions(profile, normalizeRole(profile.role || profile.roleLabel), safeModulePermissions);
-      return safeModulePermissions;
+      saveRoleModulePermissions(effectiveProfile, normalizeRole(effectiveProfile.role || effectiveProfile.roleLabel), modulePermissions);
+      if (effectiveProfile !== profile) {
+        saveRoleModulePermissions(profile, normalizeRole(profile.role || profile.roleLabel), modulePermissions);
+      }
+      return modulePermissions;
+    }
+
+    if (!isAdminProfile && !isSuperAdminProfile && loadedStaffPermissionRows) {
+      removeRoleModulePermissions(effectiveProfile);
+      if (effectiveProfile !== profile) removeRoleModulePermissions(profile);
+      return {};
     }
   } finally {
     syncedKeys.add(syncKey);
     syncingKeys.delete(syncKey);
+  }
+
+  if (shouldUseAdminRolesOnly) {
+    removeRoleModulePermissions(effectiveProfile);
+    if (effectiveProfile !== profile) removeRoleModulePermissions(profile);
+    return {};
+  }
+
+  return Object.keys(existingModulePermissions || {}).length
+    ? existingModulePermissions
+    : getRoleModulePermissions(effectiveProfile);
+};
+
+export const syncAdminRoleMatrixFromBackend = async (profile = {}, seedData = null) => {
+  const roleRows = collectPermissionRows(seedData);
+  const matchedRoleRows = roleRows.filter((row) => roleRecordMatchesProfile(row, profile));
+
+  const modulePermissions = extractRoleRowsPermissions(matchedRoleRows);
+  if (Object.keys(modulePermissions).length) {
+    saveRoleModulePermissions(profile, normalizeRole(profile.role || profile.roleLabel || "Admin"), modulePermissions);
   }
 
   return getRoleModulePermissions(profile);
@@ -428,11 +720,20 @@ export const hasSyncedRolePermissions = (profile = {}) => {
   return Boolean(syncKey && syncedKeys.has(syncKey));
 };
 
+export const hasPermissionSyncFinished = (profile = {}) => hasSyncedRolePermissions(profile);
+
+export const shouldFailClosedForPermissions = () => false;
+
 export const useRolePermissionsSync = (profile = {}) => {
   const [version, setVersion] = useState(0);
-  const [loading, setLoading] = useState(() => !hasSyncedRolePermissions(profile));
+  const [loading, setLoading] = useState(() => !shouldSkipAdminPermissionSync(profile) && !hasSyncedRolePermissions(profile));
 
   useEffect(() => {
+    if (shouldSkipAdminPermissionSync(profile)) {
+      setLoading(false);
+      return undefined;
+    }
+
     let active = true;
     const refresh = () => {
       if (active) setVersion((value) => value + 1);
@@ -449,14 +750,27 @@ export const useRolePermissionsSync = (profile = {}) => {
       active = false;
       window.removeEventListener("rolePermissionsUpdated", refresh);
     };
-  }, [profile?.id, profile?.userId, profile?.email, profile?.name, profile?.role]);
+  }, [
+    profile?.id,
+    profile?.adminUserId,
+    profile?.AdminUserId,
+    profile?.adminUserID,
+    profile?.AdminUserID,
+    profile?.userId,
+    profile?.email,
+    profile?.name,
+    profile?.role,
+  ]);
 
   return { version, loading };
 };
 
 export const hasModulePermission = (profile = {}, module = "", permission = "View") => {
   const modulePermissions = getRoleModulePermissions(profile);
-  const matchedKey = Object.keys(modulePermissions).find((key) => normalizeKey(key) === normalizeKey(module));
+  const moduleKeys = getModuleLookupKeys(module);
+  const matchedKey = Object.keys(modulePermissions).find((key) =>
+    moduleKeys.includes(normalizeKey(key))
+  );
   if (!matchedKey) return false;
   return normalizePermissions(modulePermissions[matchedKey]).some(
     (item) => normalizeKey(item) === normalizeKey(permission)
@@ -477,6 +791,28 @@ export const getModulePermissionSet = (profile = {}, module = "") => ({
   edit: hasAnyModulePermission(profile, module, "Edit"),
   delete: hasAnyModulePermission(profile, module, "Delete"),
 });
+
+export const useAdminModulePermissions = (module = "") => {
+  const profile = getRoleProfile("admin");
+  const hasSavedPermissions = hasAnySavedModulePermissions(profile);
+  const savedPermissions = getModulePermissionSet(profile, module);
+  const permissions = hasSavedPermissions
+    ? savedPermissions
+    : {
+        view: true,
+        create: true,
+        edit: true,
+        delete: true,
+      };
+
+  return {
+    profile,
+    permissions,
+    canCreate: permissions.create,
+    canEdit: permissions.edit,
+    canDelete: permissions.delete,
+  };
+};
 
 export const canUseModulePermission = (profile = {}, module = "", permission = "View") =>
   !hasAnySavedModulePermissions(profile) || hasAnyModulePermission(profile, module, permission);

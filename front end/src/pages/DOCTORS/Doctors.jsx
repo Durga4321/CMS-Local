@@ -24,6 +24,7 @@ import {
   recordBelongsToClinicScope,
 } from "../../utils/branchApi";
 import { useToast } from "../../components/ToastProvider";
+import { useAdminModulePermissions } from "../../utils/rolePermissions";
 import {
   onlyAlpha,
   onlyIndianMobileValue,
@@ -480,6 +481,7 @@ const buildDoctorUpdateBody = ({
 function Doctors() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { canCreate, canEdit, canDelete } = useAdminModulePermissions("Doctors");
   const hospitalId = getStoredHospitalId();
   const clinicName = getClinicDisplayName({
     hospitalName: localStorage.getItem("hospitalName"),
@@ -534,6 +536,10 @@ function Doctors() {
   );
 
   const openAddDoctor = () => {
+    if (!canCreate) {
+      toast.error("You do not have permission to create doctors.");
+      return;
+    }
     navigate("/doctors/add");
   };
 
@@ -908,6 +914,10 @@ function Doctors() {
   // };
 
   const openEditDoctor = (doctor) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to edit doctors.");
+      return;
+    }
     if (!doctor?.id) return;
     if (editImagePreview.startsWith("blob:")) {
       URL.revokeObjectURL(editImagePreview);
@@ -1057,6 +1067,10 @@ function Doctors() {
   const handleSaveEditDoctor = async (event) => {
     event.preventDefault();
 
+    if (!canEdit) {
+      toast.error("You do not have permission to edit doctors.");
+      return;
+    }
     if (!editingDoctor?.id) return;
     const validationErrors = {
       ...validateEditForm(editForm),
@@ -1225,6 +1239,10 @@ function Doctors() {
   };
 
   const handleToggleDoctorStatus = async (doctor) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to edit doctors.");
+      return;
+    }
     if (!doctor?.id) return;
     const nextIsActive = !getDoctorIsActive(doctor);
 
@@ -1259,6 +1277,10 @@ function Doctors() {
   };
 
   const handleDeleteDoctor = async (doctorId) => {
+    if (!canDelete) {
+      toast.error("You do not have permission to delete doctors.");
+      return;
+    }
     if (!doctorId) return;
     const shouldDelete = window.confirm("Are you sure you want to delete this doctor?");
     if (!shouldDelete) return;
@@ -1319,6 +1341,7 @@ function Doctors() {
           <button
             className="doctors-btn doctors-btn-primary"
             onClick={openAddDoctor}
+            disabled={!canCreate}
             title="Add doctor"
           >
             <Plus size={16} /> Add Doctor
@@ -1495,7 +1518,7 @@ function Doctors() {
                         type="button"
                         className="doctors-status-button"
                         onClick={() => handleToggleDoctorStatus(doc)}
-                        disabled={!doc.id || isStatusUpdating || isDeleting}
+                        disabled={!doc.id || isStatusUpdating || isDeleting || !canEdit}
                         title="Toggle status"
                       >
                         <span
@@ -1552,7 +1575,7 @@ function Doctors() {
                       type="button"
                       className="doctors-action-icon"
                       onClick={() => openEditDoctor(doc)}
-                      disabled={!doc.id || isDeleting}
+                      disabled={!doc.id || isDeleting || !canEdit}
                       title="Edit doctor"
                     >
                       <Pencil size={14} />
@@ -1562,7 +1585,7 @@ function Doctors() {
                       type="button"
                       className="doctors-action-icon doctors-action-icon-delete"
                       onClick={() => handleDeleteDoctor(doc.id)}
-                      disabled={!doc.id || isDeleting || isStatusUpdating}
+                      disabled={!doc.id || isDeleting || isStatusUpdating || !canDelete}
                       title="Delete doctor"
                     >
                       <Trash2 size={14} />
@@ -1867,7 +1890,7 @@ function Doctors() {
                 <button
                   type="submit"
                   className="doctor-edit-save"
-                  disabled={savingEdit}
+                  disabled={savingEdit || !canEdit}
                 >
                   {savingEdit ? "Saving..." : "Save Changes"}
                 </button>

@@ -6,6 +6,7 @@ import { apiUrl } from '../config/api';
 import { recordAuditLog } from '../pages/SUPERADMIN/superAdminApi';
 import { useToast } from '../components/ToastProvider';
 import { validateGmail } from '../utils/validation';
+import { syncAdminRoleMatrixFromBackend } from '../utils/rolePermissions';
 const EyeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
@@ -247,6 +248,9 @@ const clearStoredSession = () => {
     'userRole',
     'adminEmail',
     'adminName',
+    'adminId',
+    'adminUserId',
+    'userId',
     'doctorEmail',
     'receptionistEmail',
     'nurseEmail',
@@ -264,7 +268,20 @@ const clearStoredSession = () => {
     'branchName',
     'BranchName',
     'superadmin_role_overrides',
-  ].forEach((key) => localStorage.removeItem(key));
+  ].forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+};
+
+const setSessionItem = (key, value) => {
+  localStorage.setItem(key, value);
+  sessionStorage.setItem(key, value);
+};
+
+const removeSessionItem = (key) => {
+  localStorage.removeItem(key);
+  sessionStorage.removeItem(key);
 };
 
 const AdminLogin = () => {
@@ -413,6 +430,25 @@ const AdminLogin = () => {
         trimmedEmail
       );
       const displayName = getDisplayName(authData, claims, loginEmail, role);
+      const adminUserId =
+        authData.adminUserId ||
+        authData.AdminUserId ||
+        authData.adminUserID ||
+        authData.AdminUserID ||
+        authData.adminId ||
+        authData.AdminId ||
+        authData.userId ||
+        authData.UserId ||
+        getClaim(claims, 'AdminUserId', 'adminUserId', 'AdminId', 'adminId', 'UserId', 'userId') ||
+        '';
+      const accountUserId =
+        authData.userId ||
+        authData.UserId ||
+        authData.id ||
+        authData.Id ||
+        getClaim(claims, 'UserId', 'userId', 'sub', 'nameid', 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier') ||
+        adminUserId ||
+        '';
       const hospitalId =
         authData.hospitalId ||
         authData.clinicId ||
@@ -449,22 +485,30 @@ const AdminLogin = () => {
       const loginIp = await getLoginIp(authData, claims);
 
       clearStoredSession();
-      localStorage.setItem('token', token);
-      localStorage.setItem('userRole', role);
-      localStorage.setItem('hospitalId', String(hospitalId));
-      localStorage.setItem('hospitalName', clinicName);
-      localStorage.setItem('clinicName', clinicName);
+      setSessionItem('token', token);
+      setSessionItem('userRole', role);
+      if (accountUserId) {
+        setSessionItem('userId', String(accountUserId));
+      }
+      if (adminUserId) {
+        setSessionItem('adminUserId', String(adminUserId));
+        setSessionItem('adminId', String(adminUserId));
+        setSessionItem('userId', String(adminUserId));
+      }
+      setSessionItem('hospitalId', String(hospitalId));
+      setSessionItem('hospitalName', clinicName);
+      setSessionItem('clinicName', clinicName);
       if (branchId) {
-        localStorage.setItem('branchId', String(branchId));
+        setSessionItem('branchId', String(branchId));
       } else {
-        localStorage.removeItem('branchId');
+        removeSessionItem('branchId');
       }
       if (branchName) {
-        localStorage.setItem('branchName', branchName);
+        setSessionItem('branchName', branchName);
       } else {
-        localStorage.removeItem('branchName');
+        removeSessionItem('branchName');
       }
-      localStorage.setItem('loginIpAddress', loginIp || '');
+      setSessionItem('loginIpAddress', loginIp || '');
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', loginEmail);
         localStorage.setItem('rememberMe', 'true');
@@ -496,73 +540,89 @@ const AdminLogin = () => {
       }, 0);
 
       if (normalizedRole === 'superadmin') {
-        localStorage.setItem('adminToken', token);
-        localStorage.setItem('adminRole', 'superadmin');
-        localStorage.setItem('adminEmail', loginEmail);
-        localStorage.setItem('adminName', displayName);
+        setSessionItem('adminToken', token);
+        setSessionItem('adminRole', 'superadmin');
+        setSessionItem('adminEmail', loginEmail);
+        setSessionItem('adminName', displayName);
         toast.success({ title: 'Login successful', description: 'Welcome back, Super Admin!' });
         navigate('/superadmin/dashboard', { replace: true });
         return;
       }
 
       if (normalizedRole === 'doctor') {
-        localStorage.setItem('doctorToken', token);
-        localStorage.setItem('doctorRole', role);
-        localStorage.setItem('doctorEmail', loginEmail);
-        localStorage.setItem('doctorName', displayName);
-        localStorage.setItem('doctorId', String(authData.doctorId || getClaim(claims, 'DoctorId') || ''));
+        setSessionItem('doctorToken', token);
+        setSessionItem('doctorRole', role);
+        setSessionItem('doctorEmail', loginEmail);
+        setSessionItem('doctorName', displayName);
+        setSessionItem('doctorId', String(authData.doctorId || authData.DoctorId || getClaim(claims, 'DoctorId', 'doctorId') || ''));
         toast.success({ title: 'Login successful', description: 'Welcome back, Doctor!' });
         navigate('/doctor/dashboard', { replace: true });
         return;
       }
 
       if (normalizedRole === 'receptionist') {
-        localStorage.setItem('receptionistToken', token);
-        localStorage.setItem('receptionistRole', role);
-        localStorage.setItem('receptionistEmail', loginEmail);
-        localStorage.setItem('receptionistName', displayName);
+        setSessionItem('receptionistToken', token);
+        setSessionItem('receptionistRole', role);
+        setSessionItem('receptionistEmail', loginEmail);
+        setSessionItem('receptionistName', displayName);
+        setSessionItem('receptionistId', String(authData.receptionistId || authData.ReceptionistId || getClaim(claims, 'ReceptionistId', 'receptionistId') || ''));
         toast.success({ title: 'Login successful', description: 'Welcome back, Receptionist!' });
         navigate('/reception/dashboard', { replace: true });
         return;
       }
 
       if (normalizedRole === 'nurse') {
-        localStorage.setItem('nurseToken', token);
-        localStorage.setItem('nurseRole', role);
-        localStorage.setItem('nurseEmail', loginEmail);
-        localStorage.setItem('nurseName', displayName);
-        localStorage.setItem('nurseId', String(authData.nurseId || getClaim(claims, 'NurseId') || ''));
+        setSessionItem('nurseToken', token);
+        setSessionItem('nurseRole', role);
+        setSessionItem('nurseEmail', loginEmail);
+        setSessionItem('nurseName', displayName);
+        setSessionItem('nurseId', String(authData.nurseId || getClaim(claims, 'NurseId') || ''));
         toast.success({ title: 'Login successful', description: 'Welcome back, Nurse!' });
         navigate('/nurse/dashboard', { replace: true });
         return;
       }
 
       if (normalizedRole === 'labtechnician' || normalizedRole === 'lab') {
-        localStorage.setItem('labToken', token);
-        localStorage.setItem('labRole', role);
-        localStorage.setItem('labEmail', loginEmail);
-        localStorage.setItem('labName', displayName);
-        localStorage.setItem('labId', String(authData.labId || authData.labTechnicianId || getClaim(claims, 'LabId', 'LabTechnicianId') || ''));
+        setSessionItem('labToken', token);
+        setSessionItem('labRole', role);
+        setSessionItem('labEmail', loginEmail);
+        setSessionItem('labName', displayName);
+        setSessionItem('labId', String(authData.labId || authData.labTechnicianId || getClaim(claims, 'LabId', 'LabTechnicianId') || ''));
         toast.success({ title: 'Login successful', description: 'Welcome back, Lab Technician!' });
         navigate('/lab/dashboard', { replace: true });
         return;
       }
 
       if (normalizedRole === 'patient') {
-        localStorage.setItem('patientToken', token);
-        localStorage.setItem('patientRole', role);
-        localStorage.setItem('patientEmail', loginEmail);
-        localStorage.setItem('patientName', displayName);
-        localStorage.setItem('patientId', String(authData.patientId || getClaim(claims, 'PatientId') || ''));
+        setSessionItem('patientToken', token);
+        setSessionItem('patientRole', role);
+        setSessionItem('patientEmail', loginEmail);
+        setSessionItem('patientName', displayName);
+        setSessionItem('patientId', String(authData.patientId || getClaim(claims, 'PatientId') || ''));
         toast.success({ title: 'Login successful', description: 'Welcome back, Patient!' });
         navigate('/patient/dashboard', { replace: true });
         return;
       }
 
-      localStorage.setItem('adminToken', token);
-      localStorage.setItem('adminRole', role);
-      localStorage.setItem('adminEmail', loginEmail);
-      localStorage.setItem('adminName', displayName);
+      setSessionItem('adminToken', token);
+      setSessionItem('adminRole', role);
+      setSessionItem('adminEmail', loginEmail);
+      setSessionItem('adminName', displayName);
+      await syncAdminRoleMatrixFromBackend(
+        {
+          id: adminUserId,
+          adminUserId,
+          adminId: adminUserId,
+          userId: adminUserId,
+          hospitalId,
+          name: displayName,
+          email: loginEmail,
+          role: 'Admin',
+          roleLabel: 'Admin',
+          roleType: 'admin',
+        },
+        authData
+      );
       toast.success({ title: 'Login successful', description: 'Welcome back!' });
       navigate('/dashboard', { replace: true });
     } catch {

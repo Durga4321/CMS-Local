@@ -680,9 +680,27 @@ const getAuthenticatedHeaders = () => {
   };
 };
 
+const pendingSuperAdminGetRequests = new Map();
+const SUPER_ADMIN_GET_DEDUPE_MS = 1500;
+
 export const superAdminRequest = async (path, options = {}) => {
   const { body, headers, ...rest } = options;
+  const method = String(rest.method || "GET").toUpperCase();
+  const shouldDedupe =
+    method === "GET" &&
+    !body &&
+    !headers &&
+    ["roles", "admins", "notifications", "notifications/stats", "SuperAdmin/dashboard", "dashboard"].some(
+      (key) => String(path).toLowerCase().startsWith(key.toLowerCase())
+    );
+  const dedupeKey = shouldDedupe ? `${method}:${path}` : "";
+  if (dedupeKey && pendingSuperAdminGetRequests.has(dedupeKey)) {
+    return pendingSuperAdminGetRequests.get(dedupeKey);
+  }
+
+  const request = (async () => {
   const response = await fetch(apiUrl(path), {
+    cache: "no-store",
     ...rest,
     headers: {
       ...getAuthenticatedHeaders(),
@@ -702,6 +720,18 @@ export const superAdminRequest = async (path, options = {}) => {
   }
 
   return payload;
+  })();
+
+  if (dedupeKey) {
+    pendingSuperAdminGetRequests.set(dedupeKey, request);
+    window.setTimeout(() => {
+      if (pendingSuperAdminGetRequests.get(dedupeKey) === request) {
+        pendingSuperAdminGetRequests.delete(dedupeKey);
+      }
+    }, SUPER_ADMIN_GET_DEDUPE_MS);
+  }
+
+  return request;
 };
 
 const superAdminRequestFirst = async (paths, options = {}) => {
@@ -758,6 +788,8 @@ export const normalizeAdmin = (admin = {}) => ({
     if (v && typeof v === "object") return pick(v, ["id", "clinicId", "ClinicId", "hospitalId", "HospitalId"], "");
     return v;
   })(),
+  hospitalId: pick(admin, ["hospitalId", "HospitalId", "clinicId", "ClinicId", "assignedClinicId", "AssignedClinicId"], ""),
+  adminUserId: pick(admin, ["adminUserId", "AdminUserId", "userId", "UserId", "id", "Id", "adminId", "AdminId"], ""),
   role: "Admin",
   status: normalizeStatus(pick(admin, ["status", "isActive", "active"], "Active")),
   raw: admin,
@@ -1796,6 +1828,7 @@ export const normalizeRole = (role = {}, index = 0) => {
       users: 0,
       status: "Active",
       permissions: ["View"],
+      modulePermissions: {},
       raw: role,
     };
   }
@@ -1826,22 +1859,60 @@ export const normalizeRole = (role = {}, index = 0) => {
     pick(role, ["canDelete", "CanDelete"], false) ? "Delete" : "",
   ].filter(Boolean);
 
-  const id = pick(role, ["id", "roleId", "_id"], "");
-  const name = pick(role, ["name", "roleName", "title"], "Role");
-  const roleName = pick(role, ["roleName", "name", "title"], "Role");
+  const id = pick(role, ["id", "Id", "roleId", "RoleId", "_id"], "");
+  const name = pick(role, ["name", "Name", "roleName", "RoleName", "title", "Title"], "Role");
+  const roleName = pick(role, ["roleName", "RoleName", "name", "Name", "title", "Title"], "Role");
+  const directModulePermissions =
+    pick(role, ["modulePermissions", "ModulePermissions", "permissionsByModule", "PermissionsByModule"], {}) || {};
+  const modulePermissionRows = [
+    ...(Array.isArray(role.permissionModules) ? role.permissionModules : []),
+    ...(Array.isArray(role.PermissionModules) ? role.PermissionModules : []),
+    ...(Array.isArray(role.rolePermissions) ? role.rolePermissions : []),
+    ...(Array.isArray(role.RolePermissions) ? role.RolePermissions : []),
+    ...(Array.isArray(role.selectedModules) ? role.selectedModules : []),
+    ...(Array.isArray(role.SelectedModules) ? role.SelectedModules : []),
+  ];
+  const modulePermissions =
+    directModulePermissions && typeof directModulePermissions === "object" && !Array.isArray(directModulePermissions)
+      ? { ...directModulePermissions }
+      : {};
+  modulePermissionRows.forEach((permissionModule) => {
+    if (!permissionModule || typeof permissionModule !== "object") return;
+    const module = pick(permissionModule, ["module", "Module", "moduleName", "ModuleName", "name", "Name"], "");
+    if (!module) return;
+    const rowPermissions = [
+      ...(Array.isArray(permissionModule.permissions) ? permissionModule.permissions : []),
+      ...(Array.isArray(permissionModule.Permissions) ? permissionModule.Permissions : []),
+      ...(Array.isArray(permissionModule.permissionNames) ? permissionModule.permissionNames : []),
+      ...(Array.isArray(permissionModule.PermissionNames) ? permissionModule.PermissionNames : []),
+      pick(permissionModule, ["canView", "CanView"], false) ? "View" : "",
+      pick(permissionModule, ["canCreate", "CanCreate"], false) ? "Create" : "",
+      pick(permissionModule, ["canEdit", "CanEdit"], false) ? "Edit" : "",
+      pick(permissionModule, ["canDelete", "CanDelete"], false) ? "Delete" : "",
+    ].filter(Boolean);
+    modulePermissions[module] = rowPermissions;
+  });
 
   return {
     id,
     key: id || `role-${index}-${roleName || name}`,
     canPersistPermissions: hasValue(id),
+    hospitalId: pick(role, ["hospitalId", "HospitalId", "hospitalID", "HospitalID", "clinicId", "ClinicId", "clinicID", "ClinicID"], ""),
+    adminUserId: pick(role, ["adminUserId", "AdminUserId", "adminUserID", "AdminUserID", "adminId", "AdminId", "userId", "UserId"], ""),
+    adminId: pick(role, ["adminId", "AdminId", "adminUserId", "AdminUserId", "userId", "UserId"], ""),
+    userId: pick(role, ["userId", "UserId", "adminUserId", "AdminUserId", "adminId", "AdminId"], ""),
     name,
     roleName,
-    module: pick(role, ["module", "moduleName"], ""),
+    module: pick(role, ["module", "Module", "moduleName", "ModuleName"], ""),
     users: toNumber(pick(role, ["users", "userCount", "assignedUsers", "totalUsers"], 0)),
     status: normalizeStatus(pick(role, ["status", "isActive", "active"], "Active")),
     permissions: normalizedPermissions.filter(Boolean).length
       ? normalizedPermissions.filter(Boolean)
       : booleanPermissions,
+    modulePermissions:
+      modulePermissions && typeof modulePermissions === "object" && !Array.isArray(modulePermissions)
+        ? modulePermissions
+        : {},
     raw: role,
   };
 };
@@ -2242,20 +2313,14 @@ export const syncAdminStaffClinic = async ({
     return { updated: 0 };
   }
 
-  const [doctorsResult, receptionistsResult] = await Promise.allSettled([
+  const [doctorsResult] = await Promise.allSettled([
     superAdminRequest("Doctor"),
-    superAdminRequest("Receptionist"),
   ]);
   const staffGroups = [
     {
       path: "Doctor",
       rows: doctorsResult.status === "fulfilled" ? asArray(doctorsResult.value) : [],
       buildBody: buildDoctorClinicUpdateBody,
-    },
-    {
-      path: "Receptionist",
-      rows: receptionistsResult.status === "fulfilled" ? asArray(receptionistsResult.value) : [],
-      buildBody: buildReceptionistClinicUpdateBody,
     },
   ];
   const updates = [];
@@ -2854,12 +2919,11 @@ const uniqueAuditLogs = (logs = []) => {
 
 export const fetchAuditLogs = async (filters = {}) => {
   const query = buildAuditLogQuery(filters);
-  const [auditResult, usersResult, adminsResult, doctorsResult, receptionistsResult] = await Promise.allSettled([
+  const [auditResult, usersResult, adminsResult, doctorsResult] = await Promise.allSettled([
     superAdminRequest(`${SUPER_ADMIN_API.auditLogs}${query}`),
     superAdminRequest(SUPER_ADMIN_API.users),
     superAdminRequest(SUPER_ADMIN_API.admins),
     superAdminRequest("Doctor"),
-    superAdminRequest("Receptionist"),
   ]);
 
   const auditLogs =
@@ -2875,7 +2939,7 @@ export const fetchAuditLogs = async (filters = {}) => {
     users: usersResult.status === "fulfilled" ? asArray(usersResult.value) : [],
     admins: adminsResult.status === "fulfilled" ? asArray(adminsResult.value) : [],
     doctors: doctorsResult.status === "fulfilled" ? asArray(doctorsResult.value) : [],
-    receptionists: receptionistsResult.status === "fulfilled" ? asArray(receptionistsResult.value) : [],
+    receptionists: [],
     loginLogs: [],
   });
 
@@ -2888,12 +2952,11 @@ export const fetchAuditLogs = async (filters = {}) => {
 
 export const fetchLoginHistory = async (filters = {}) => {
   const query = buildAuditLogQuery(filters);
-  const [loginResult, usersResult, adminsResult, doctorsResult, receptionistsResult] = await Promise.allSettled([
+  const [loginResult, usersResult, adminsResult, doctorsResult] = await Promise.allSettled([
     superAdminRequest(`${SUPER_ADMIN_API.loginHistory}${query}`),
     superAdminRequest(SUPER_ADMIN_API.users),
     superAdminRequest(SUPER_ADMIN_API.admins),
     superAdminRequest("Doctor"),
-    superAdminRequest("Receptionist"),
   ]);
 
   if (loginResult.status === "rejected") {
@@ -2905,7 +2968,7 @@ export const fetchLoginHistory = async (filters = {}) => {
     users: usersResult.status === "fulfilled" ? asArray(usersResult.value) : [],
     admins: adminsResult.status === "fulfilled" ? asArray(adminsResult.value) : [],
     doctors: doctorsResult.status === "fulfilled" ? asArray(doctorsResult.value) : [],
-    receptionists: receptionistsResult.status === "fulfilled" ? asArray(receptionistsResult.value) : [],
+    receptionists: [],
     loginLogs,
   });
   return sortAuditLogs(
@@ -2928,6 +2991,28 @@ const buildRolePayload = (role = {}) => {
   const permissions = Array.isArray(role.permissions)
     ? role.permissions
     : [];
+  const modulePermissions =
+    role.modulePermissions && typeof role.modulePermissions === "object" && !Array.isArray(role.modulePermissions)
+      ? role.modulePermissions
+      : {};
+  const permissionModules = Object.entries(modulePermissions).map(([module, modulePermissionList]) => {
+    const modulePermissionsList = Array.isArray(modulePermissionList) ? modulePermissionList : [];
+    const hasModulePermission = (permission) =>
+      modulePermissionsList.some(
+        (item) =>
+          String(item || "").trim().toLowerCase() ===
+          String(permission || "").trim().toLowerCase()
+      );
+
+    return {
+      module,
+      permissions: modulePermissionsList,
+      canView: hasModulePermission("View"),
+      canCreate: hasModulePermission("Create"),
+      canEdit: hasModulePermission("Edit"),
+      canDelete: hasModulePermission("Delete"),
+    };
+  });
 
   const hasPermission = (permission) =>
     permissions.some(
@@ -2937,6 +3022,10 @@ const buildRolePayload = (role = {}) => {
     );
 
   return {
+    id: role.id || role.roleId || "",
+    roleId: role.roleId || role.id || "",
+    adminId: role.adminId || role.userId || role.admin?.id || role.raw?.adminId || role.raw?.userId || "",
+    userId: role.userId || role.adminId || role.admin?.id || role.raw?.userId || role.raw?.adminId || "",
     name: String(role.name || role.roleName || "").trim(),
     roleName: String(role.roleName || role.name || "").trim(),
     module: String(role.module || "").trim(),
@@ -2946,10 +3035,35 @@ const buildRolePayload = (role = {}) => {
     status: String(role.status || "Active").trim(),
     users: Number(role.users || 0) || 0,
     permissions,
+    modulePermissions,
+    permissionModules,
     canView: hasPermission("View"),
     canCreate: hasPermission("Create"),
     canEdit: hasPermission("Edit"),
     canDelete: hasPermission("Delete"),
+  };
+};
+
+const buildRolePermissionsPayload = (role = {}) => {
+  const payload = buildRolePayload(role);
+  return {
+    id: payload.id,
+    roleId: payload.roleId,
+    adminId: payload.adminId,
+    userId: payload.userId,
+    name: payload.name,
+    roleName: payload.roleName,
+    module: payload.module,
+    targetRole: payload.targetRole,
+    appliesTo: payload.appliesTo,
+    scope: payload.scope,
+    permissions: payload.permissions,
+    modulePermissions: payload.modulePermissions,
+    permissionModules: payload.permissionModules,
+    canView: payload.canView,
+    canCreate: payload.canCreate,
+    canEdit: payload.canEdit,
+    canDelete: payload.canDelete,
   };
 };
 
@@ -2964,7 +3078,40 @@ export const saveRole = async (role = {}) => {
     }
   );
 
-  return normalizeRole(result || { ...payload, id });
+  const permissionId = id || result?.id || result?.roleId || payload.adminId || payload.userId;
+  let permissionsResult = null;
+  if (permissionId) {
+    permissionsResult = await superAdminRequest(`${SUPER_ADMIN_API.roles}/${permissionId}/permissions`, {
+      method: "PUT",
+      body: buildRolePermissionsPayload({
+        ...role,
+        ...payload,
+        id: result?.id || id || payload.id,
+        roleId: result?.roleId || result?.id || id || payload.roleId,
+      }),
+    });
+  }
+
+  return normalizeRole(permissionsResult || result || { ...payload, id: permissionId });
+};
+
+export const saveRoleModulePermission = async (roleId, permission = {}) => {
+  const body = {
+    hospitalId: Number(permission.hospitalId || permission.clinicId || 0) || permission.hospitalId || permission.clinicId || "",
+    adminUserId: Number(permission.adminUserId || permission.adminId || permission.userId || 0) || permission.adminUserId || permission.adminId || permission.userId || "",
+    roleName: String(permission.roleName || "Admin").trim(),
+    module: String(permission.module || "").trim(),
+    canView: Boolean(permission.canView),
+    canCreate: Boolean(permission.canCreate),
+    canEdit: Boolean(permission.canEdit),
+    canDelete: Boolean(permission.canDelete),
+  };
+
+  const id = String(roleId || permission.id || permission.roleId || "").trim();
+  return superAdminRequest(id ? `${SUPER_ADMIN_API.roles}/${id}/permissions` : SUPER_ADMIN_API.roles, {
+    method: id ? "PUT" : "POST",
+    body,
+  });
 };
 
 export const deleteRole = async (id) =>

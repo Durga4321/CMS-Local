@@ -547,6 +547,11 @@ import {
 } from "lucide-react";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
+import { getRoleProfile } from "../../profile/sessionProfile";
+import {
+  canUseModulePermission,
+  useRolePermissionsSync,
+} from "../../utils/rolePermissions";
 
 /* ================= API ================= */
 
@@ -566,6 +571,11 @@ const isPastInputDate = (value) =>
 
 function ScheduleSettingsPage() {
   const toast = useToast();
+  const permissionProfile = getRoleProfile("admin");
+  useRolePermissionsSync(permissionProfile);
+  const canCreateScheduleSettings = canUseModulePermission(permissionProfile, "Schedule Settings", "Create");
+  const canEditScheduleSettings = canUseModulePermission(permissionProfile, "Schedule Settings", "Edit");
+  const canDeleteScheduleSettings = canUseModulePermission(permissionProfile, "Schedule Settings", "Delete");
 
   /* SETTINGS */
 
@@ -700,6 +710,11 @@ function ScheduleSettingsPage() {
   /* ================= SAVE SETTINGS ================= */
 
   const saveSettings = async () => {
+    if (!canEditScheduleSettings) {
+      toast.error("You do not have permission to edit schedule settings.");
+      return;
+    }
+
     try {
 
       await fetch(API, {
@@ -742,6 +757,11 @@ function ScheduleSettingsPage() {
   /* ================= ADD HOLIDAY ================= */
 
   const addHoliday = async () => {
+    if (!canCreateScheduleSettings) {
+      toast.error("You do not have permission to create holidays.");
+      return;
+    }
+
     if (
       !newHoliday.name ||
       !newHoliday.date
@@ -811,6 +831,11 @@ function ScheduleSettingsPage() {
   const editHoliday = (
     holiday
   ) => {
+    if (!canEditScheduleSettings) {
+      toast.error("You do not have permission to edit holidays.");
+      return;
+    }
+
     setEditingId(
       holiday.id
     );
@@ -825,6 +850,11 @@ function ScheduleSettingsPage() {
 
   const updateHoliday =
     async () => {
+      if (!canEditScheduleSettings) {
+        toast.error("You do not have permission to edit holidays.");
+        return;
+      }
+
       if (
         !newHoliday.name ||
         !newHoliday.date
@@ -895,6 +925,11 @@ function ScheduleSettingsPage() {
 
   const removeHoliday =
     async (id) => {
+      if (!canDeleteScheduleSettings) {
+        toast.error("You do not have permission to delete holidays.");
+        return;
+      }
+
       try {
 
         await fetch(
@@ -953,6 +988,7 @@ function ScheduleSettingsPage() {
           <select
             className="input"
             value={slotDuration}
+            disabled={!canEditScheduleSettings}
             onChange={(e) =>
               setSlotDuration(
                 e.target.value
@@ -996,6 +1032,7 @@ function ScheduleSettingsPage() {
                 type="time"
                 className="input"
                 value={clinicOpen}
+                disabled={!canEditScheduleSettings}
                 onChange={(e) =>
                   setClinicOpen(
                     e.target.value
@@ -1015,6 +1052,7 @@ function ScheduleSettingsPage() {
                 type="time"
                 className="input"
                 value={clinicClose}
+                disabled={!canEditScheduleSettings}
                 onChange={(e) =>
                   setClinicClose(
                     e.target.value
@@ -1030,6 +1068,7 @@ function ScheduleSettingsPage() {
 
           <button
             className="btn save"
+            disabled={!canEditScheduleSettings}
             onClick={
               saveSettings
             }
@@ -1103,45 +1142,51 @@ function ScheduleSettingsPage() {
 
                   {/* ACTIONS */}
 
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems:
-                        "center",
-                      gap: "12px",
-                    }}
-                  >
+                  {(canEditScheduleSettings || canDeleteScheduleSettings) ? (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems:
+                          "center",
+                        gap: "12px",
+                      }}
+                    >
 
                     {/* EDIT */}
 
-                    <Pencil
-                      size={18}
-                      style={{
-                        cursor:
-                          "pointer",
-                        color:
-                          "#0f9d9d",
-                      }}
-                      onClick={() =>
-                        editHoliday(
-                          holiday
-                        )
-                      }
-                    />
+                    {canEditScheduleSettings ? (
+                      <Pencil
+                        size={18}
+                        style={{
+                          cursor:
+                            "pointer",
+                          color:
+                            "#0f9d9d",
+                        }}
+                        onClick={() =>
+                          editHoliday(
+                            holiday
+                          )
+                        }
+                      />
+                    ) : null}
 
                     {/* DELETE */}
 
-                    <Trash2
-                      size={18}
-                      className="delete"
-                      onClick={() =>
-                        removeHoliday(
-                          holiday.id
-                        )
-                      }
-                    />
+                    {canDeleteScheduleSettings ? (
+                      <Trash2
+                        size={18}
+                        className="delete"
+                        onClick={() =>
+                          removeHoliday(
+                            holiday.id
+                          )
+                        }
+                      />
+                    ) : null}
 
-                  </div>
+                    </div>
+                  ) : null}
 
                 </div>
               )
@@ -1167,6 +1212,7 @@ function ScheduleSettingsPage() {
             <input
               type="date"
               min={getTodayInputValue()}
+              disabled={editingId ? !canEditScheduleSettings : !canCreateScheduleSettings}
               value={
                 newHoliday.date
               }
@@ -1182,6 +1228,7 @@ function ScheduleSettingsPage() {
 
             <input
               placeholder="Holiday name"
+              disabled={editingId ? !canEditScheduleSettings : !canCreateScheduleSettings}
               value={
                 newHoliday.name
               }
@@ -1198,6 +1245,7 @@ function ScheduleSettingsPage() {
             <button
               type="button"
               className="holiday-ok-button"
+              disabled={editingId ? !canEditScheduleSettings : !canCreateScheduleSettings}
               onClick={
                 editingId
                   ? updateHoliday
