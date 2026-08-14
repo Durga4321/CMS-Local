@@ -12,7 +12,6 @@ import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
 import {
-  fetchAuditBranchWiseDashboard,
   fetchAuditLogs,
   fetchClinics,
   fetchLoginHistory,
@@ -343,24 +342,6 @@ const isDataChangeLog = (row = {}) => {
   return !["login", "logout"].includes(action);
 };
 
-const asList = (value) => {
-  if (Array.isArray(value)) return value;
-  if (Array.isArray(value?.data)) return value.data;
-  if (Array.isArray(value?.items)) return value.items;
-  if (Array.isArray(value?.records)) return value.records;
-  if (Array.isArray(value?.result)) return value.result;
-  return [];
-};
-
-const pickNumber = (source = {}, keys = []) => {
-  for (const key of keys) {
-    const value = source?.[key];
-    const numberValue = Number(value);
-    if (Number.isFinite(numberValue)) return numberValue;
-  }
-  return null;
-};
-
 function AuditLogs() {
   const [search, setSearch] = useState("");
   const [systemAction, setSystemAction] = useState("All");
@@ -374,7 +355,6 @@ function AuditLogs() {
   const [selectedBranchId, setSelectedBranchId] = useState("");
   const [startDate, setStartDate] = useState(getDefaultStartDate);
   const [endDate, setEndDate] = useState(() => toDateInputValue(new Date()));
-  const [branchWiseDashboard, setBranchWiseDashboard] = useState(null);
   const [loadingBranches, setLoadingBranches] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -391,11 +371,11 @@ function AuditLogs() {
     () =>
       selectedClinic
         ? getBranchOptionsFromRows(
-            [...allAuditLogs, ...loginHistory, ...auditLogs, ...asList(branchWiseDashboard)],
+            [...allAuditLogs, ...loginHistory, ...auditLogs],
             selectedClinic
           )
         : [],
-    [allAuditLogs, auditLogs, branchWiseDashboard, loginHistory, selectedClinic]
+    [allAuditLogs, auditLogs, loginHistory, selectedClinic]
   );
 
   const branchOptions = useMemo(
@@ -437,22 +417,6 @@ function AuditLogs() {
     }
   }, [endDate, selectedBranch?.name, selectedBranchId, selectedClinic?.name, selectedClinicId, startDate, view]);
 
-  const loadBranchWiseDashboard = useCallback(async (active = true) => {
-    try {
-      const data = await fetchAuditBranchWiseDashboard({
-        startDate,
-        endDate,
-        clinicId: selectedClinicId,
-        clinicName: selectedClinic?.name,
-        branchId: selectedBranchId,
-        branchName: selectedBranch?.name,
-      });
-      if (active) setBranchWiseDashboard(data);
-    } catch {
-      if (active) setBranchWiseDashboard(null);
-    }
-  }, [endDate, selectedBranch?.name, selectedBranchId, selectedClinic?.name, selectedClinicId, startDate]);
-
   useEffect(() => {
     let active = true;
 
@@ -492,15 +456,6 @@ function AuditLogs() {
       active = false;
     };
   }, [loadLogs]);
-
-  useEffect(() => {
-    let active = true;
-    loadBranchWiseDashboard(active);
-
-    return () => {
-      active = false;
-    };
-  }, [loadBranchWiseDashboard]);
 
   useEffect(() => {
     let active = true;
@@ -636,39 +591,9 @@ function AuditLogs() {
     );
   }, [auditLogs, endDate, loginHistory, selectedBranch, selectedClinic, startDate]);
 
-  const branchDashboardRows = asList(branchWiseDashboard);
-  const branchDashboardTotals = branchDashboardRows.reduce(
-    (totals, row) => ({
-      total:
-        totals.total +
-        (pickNumber(row, ["totalLogs", "total", "count", "logsCount", "auditLogs"]) || 0),
-      login:
-        totals.login +
-        (pickNumber(row, ["loginActivities", "loginCount", "logins", "loginLogs"]) || 0),
-      changes:
-        totals.changes +
-        (pickNumber(row, ["dataChanges", "changeCount", "changes", "activityCount"]) || 0),
-    }),
-    { total: 0, login: 0, changes: 0 }
-  );
-  const branchDashboardSummary =
-    branchWiseDashboard && !Array.isArray(branchWiseDashboard)
-      ? branchWiseDashboard.data && !Array.isArray(branchWiseDashboard.data)
-        ? branchWiseDashboard.data
-        : branchWiseDashboard
-      : {};
-  const dashboardTotalLogs =
-    pickNumber(branchDashboardSummary, ["totalLogs", "total", "count", "logsCount", "auditLogs"]) ||
-    branchDashboardTotals.total ||
-    scopedRows.length;
-  const dashboardLoginActivities =
-    pickNumber(branchDashboardSummary, ["loginActivities", "loginCount", "logins", "loginLogs"]) ||
-    branchDashboardTotals.login ||
-    loginSummaryRows.length;
-  const dashboardDataChanges =
-    pickNumber(branchDashboardSummary, ["dataChanges", "changeCount", "changes", "activityCount"]) ||
-    branchDashboardTotals.changes ||
-    scopedRows.filter(isDataChangeLog).length;
+  const dashboardTotalLogs = scopedRows.length;
+  const dashboardLoginActivities = loginSummaryRows.length;
+  const dashboardDataChanges = scopedRows.filter(isDataChangeLog).length;
 
   const summaryCards = useMemo(
     () => [

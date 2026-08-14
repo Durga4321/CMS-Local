@@ -202,7 +202,7 @@ const isAdminAppPath = () => {
 };
 
 const shouldSkipAdminPermissionSync = (profile = {}) =>
-  !isSuperAdminPermissionProfile(profile) && (isAdminPermissionProfile(profile) || isAdminAppPath());
+  !isSuperAdminPermissionProfile(profile) && !isAdminPermissionProfile(profile) && isAdminAppPath();
 
 const normalizeModuleName = (module, index = 0) => {
   const value =
@@ -582,6 +582,15 @@ const collectPermissionRows = (data) => {
   return rows.filter(Boolean);
 };
 
+const extractPermissionMapFromResponse = (data) => {
+  const list = parseList(data);
+  return mergeModulePermissionMaps(
+    ...(list.length
+      ? list.map((item) => extractModulePermissions(item))
+      : [extractModulePermissions(data?.data && typeof data.data === "object" ? data.data : data || {})])
+  );
+};
+
 export const syncRolePermissionsFromBackend = async (profile = {}) => {
   if (shouldSkipAdminPermissionSync(profile)) return getRoleModulePermissions(profile);
 
@@ -601,6 +610,17 @@ export const syncRolePermissionsFromBackend = async (profile = {}) => {
   let loadedStaffPermissionRows = false;
   try {
     if (isAdminProfile) {
+      try {
+        const mePermissions = await requestPermissionsJson("user-permissions/me", effectiveProfile);
+        const permissions = extractPermissionMapFromResponse(mePermissions);
+        if (Object.keys(permissions).length) {
+          collectedPermissionMaps.push(permissions);
+          loadedAdminRoleRows = true;
+        }
+      } catch {
+        // Fall back to the role APIs used by older admin permission builds.
+      }
+
       const adminId = effectiveProfile.adminUserId || effectiveProfile.adminId || effectiveProfile.userId || effectiveProfile.id;
       const rolePaths = [
         "roles",
@@ -609,7 +629,7 @@ export const syncRolePermissionsFromBackend = async (profile = {}) => {
         adminId ? `roles/${encodeURIComponent(adminId)}` : "",
       ].filter(Boolean);
 
-      for (const path of rolePaths) {
+      for (const path of loadedAdminRoleRows ? [] : rolePaths) {
         try {
           const rolesData = await requestPermissionsJson(path, effectiveProfile);
           const roleRows = collectPermissionRows(rolesData);
@@ -630,12 +650,7 @@ export const syncRolePermissionsFromBackend = async (profile = {}) => {
       try {
         const mePermissions = await requestPermissionsJson("user-permissions/me", effectiveProfile);
         loadedStaffPermissionRows = true;
-        const list = parseList(mePermissions);
-        const permissions = mergeModulePermissionMaps(
-          ...(list.length
-            ? list.map((item) => extractModulePermissions(item))
-            : [extractModulePermissions(mePermissions?.data && typeof mePermissions.data === "object" ? mePermissions.data : mePermissions || {})])
-        );
+        const permissions = extractPermissionMapFromResponse(mePermissions);
         if (Object.keys(permissions).length) collectedPermissionMaps.push(permissions);
       } catch {
         // Some backend builds only expose per-user permission lookup.
@@ -648,12 +663,7 @@ export const syncRolePermissionsFromBackend = async (profile = {}) => {
         try {
           const userPermissions = await requestPermissionsJson(`user-permissions/users/${encodeURIComponent(id)}`, effectiveProfile);
           loadedStaffPermissionRows = true;
-          const list = parseList(userPermissions);
-          const permissions = mergeModulePermissionMaps(
-            ...(list.length
-              ? list.map((item) => extractModulePermissions(item))
-              : [extractModulePermissions(userPermissions?.data && typeof userPermissions.data === "object" ? userPermissions.data : userPermissions || {})])
-          );
+          const permissions = extractPermissionMapFromResponse(userPermissions);
           if (Object.keys(permissions).length) collectedPermissionMaps.push(permissions);
           break;
         } catch {

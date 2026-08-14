@@ -15,13 +15,12 @@ import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 import { fetchConsultationVitals } from "../../utils/appointmentVitals";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
-import { readGeneratedLabReports } from "../../Lab/labReportStore";
 import { buildLabReportHtml, downloadLabReportHtml } from "../../Lab/labReportTemplate";
 
 const OVERVIEW_API = apiUrl("Overview/patient");
 const APPOINTMENTS_API = apiUrl("Appointment");
 const PRESCRIPTIONS_API = apiUrl("Prescription");
-const MEDICAL_HISTORY_API = apiUrl("MedicalHistory");
+const LAB_DOCTOR_REPORTS_API = apiUrl("Lab/doctor/reports");
 
 const TABS = [
   "Overview",
@@ -93,14 +92,25 @@ const labReportMatchesPatient = (report, patient) => {
   return patientKeys.some((value) => reportKeys.includes(value));
 };
 
-const getLabReportsForPatient = (patient) =>
-  readGeneratedLabReports()
-    .filter((report) => labReportMatchesPatient(report, patient))
-    .map((report) => ({
-      ...report,
-      __sourcePath: report.__sourcePath || "labGeneratedReports",
-      documentName: `Lab Report — ${report.reportName || report.testName || report.title || report.documentName || "Report"}`,
-    }));
+const fetchLabReportsForPatient = async (patient, headers) => {
+  if (!patient) return [];
+
+  try {
+    const response = await fetch(LAB_DOCTOR_REPORTS_API, { headers });
+    if (!response.ok) return [];
+
+    return parseList(await response.json())
+      .filter((report) => labReportMatchesPatient(report, patient))
+      .map((report) => ({
+        ...report,
+        __sourcePath: "Lab/doctor/reports",
+        documentName: `Lab Report - ${report.reportName || report.testName || report.title || report.documentName || "Report"}`,
+      }));
+  } catch (error) {
+    console.warn("Unable to load doctor lab reports.", error);
+    return [];
+  }
+};
 
 const getAppointmentId = (record) =>
   record?.appointmentId || record?.id || record?.appointment?.id || "";
@@ -121,40 +131,6 @@ const getPatientId = (record) =>
   record?.appointment?.patientId ||
   record?.Appointment?.PatientId ||
   "";
-
-const fetchMedicalHistoryForPatient = async (patientId, headers) => {
-  const id = String(patientId || "").trim();
-  if (!id) return null;
-
-  const paths = [
-    `${MEDICAL_HISTORY_API}?patientId=${encodeURIComponent(id)}`,
-    MEDICAL_HISTORY_API,
-  ];
-
-  for (const url of paths) {
-    try {
-      const response = await fetch(url, { headers });
-      if (!response.ok) continue;
-      const data = await response.json().catch(() => null);
-      if (!data) continue;
-
-      const rows = parseList(data);
-      if (rows.length) {
-        const match = rows.find((item) => String(getPatientId(item)) === id);
-        if (match) return match;
-        continue;
-      }
-
-      if (String(getPatientId(data)) === id || url.includes("?patientId=")) {
-        return data;
-      }
-    } catch {
-      // Try the next supported GET shape.
-    }
-  }
-
-  return null;
-};
 
 const getVisitDate = (record) =>
   record?.date || record?.appointmentDate || record?.lastVisit || "";
@@ -414,14 +390,6 @@ const getPrescriptionDisplayDate = (prescription) =>
   prescription.date ||
   emptyValue;
 
-const getEmergencyContact = (patient) => {
-  const name = patient.emergencyContactName;
-  const phone = patient.emergencyContactPhone;
-
-  if (name && phone) return `${name} (${phone})`;
-  return name || phone || emptyValue;
-};
-
 function PatientDetails() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -432,7 +400,6 @@ function PatientDetails() {
 
   const [activeTab, setActiveTab] = useState("Overview");
   const [patient, setPatient] = useState(null);
-  const [medicalHistory, setMedicalHistory] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -465,16 +432,12 @@ function PatientDetails() {
         }
 
         const data = await response.json();
-        const historyData = await fetchMedicalHistoryForPatient(selectedPatientId, headers);
 
         const overviewPatient = normalizePatient({
           ...(sourceAppointment?.patient || {}),
           ...(sourceAppointment || {}),
           ...data,
-          ...historyData,
         });
-
-        setMedicalHistory(historyData);
 
         const appointmentsResponse = await fetch(APPOINTMENTS_API, {
           headers,
@@ -544,7 +507,7 @@ function PatientDetails() {
           ? prescriptionsFromAppointments
           : fallbackPrescriptions;
         const oldestVisit = getOldestVisit(scopedVisitsWithVitals);
-        const labReports = getLabReportsForPatient(overviewPatient);
+        const labReports = await fetchLabReportsForPatient(overviewPatient, headers);
 
         setPatient({
           ...overviewPatient,
@@ -769,18 +732,8 @@ function PatientDetails() {
               <h3 className="pd-patient-name">{patient.name}</h3>
               <span className="pd-type-badge">OPD</span>
             </div>
-            <p className="pd-meta">
-              PID: {patient.patientCode} · {patient.age} Years / {patient.gender} ·{" "}
-              {patient.dateOfBirth}
-            </p>
-            <p className="pd-meta">
-              Blood Group: {patient.bloodGroup} · Phone: {patient.phone}
-            </p>
-            <p className="pd-meta">Email: {patient.email}</p>
-            <p className="pd-meta">Address: {patient.address}</p>
-            <p className="pd-meta">
-              Emergency Contact: {getEmergencyContact(patient)}
-            </p>
+            <p className="pd-meta">Age: {patient.age} Years</p>
+            <p className="pd-meta">Blood Group: {patient.bloodGroup}</p>
           </div>
         </div>
 
@@ -839,7 +792,6 @@ function PatientDetails() {
             ["Chronic Diseases", patient.chronicDiseases],
             ["Current Medications", patient.currentMedications],
             ["Surgeries", patient.surgeries],
-            ["Last Updated", medicalHistory?.createdAt || emptyValue],
           ].map(([label, value]) => (
             <div key={label} className="pd-overview-card">
               <p className="pd-card-label">{label}</p>
@@ -885,7 +837,11 @@ function DocumentsPanel({ documents, onViewReport, onDownloadReport }) {
     <div className="pd-doc-list">
       {documents.map((document, index) => {
         const url = getDocumentUrl(document);
-        const isLabReport = String(document.__sourcePath || "").includes("labGeneratedReports") || Boolean(document.reportName || document.testName);
+        const sourcePath = String(document.__sourcePath || "").toLowerCase();
+        const isLabReport =
+          sourcePath.includes("lab/doctor/reports") ||
+          sourcePath.includes("labgeneratedreports") ||
+          Boolean(document.reportName || document.testName);
         const title = isLabReport
           ? `${document.reportName || document.testName || getDocumentName(document, index)}`
           : getDocumentName(document, index);

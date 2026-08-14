@@ -17,7 +17,6 @@ export const SUPER_ADMIN_API = {
   notificationStats: "notifications/stats",
   auditLogs: "AuditLogs",
   loginHistory: "AuditLogs/login-history",
-  auditLogsBranchWise: "AuditLogs/dashboard/branch-wise",
   dashboardSummary: "SuperAdminReports/summary",
   dashboardSummaryCompat: "SuperAdmin/summary",
   dashboardSummaryLegacy: "dashboard/summary",
@@ -3177,11 +3176,6 @@ const buildAuditLogQuery = (filters = {}) => {
 
   const query = params.toString();
   return query ? `?${query}` : "";
-};
-
-export const fetchAuditBranchWiseDashboard = async (filters = {}) => {
-  const query = buildAuditLogQuery(filters);
-  return superAdminRequest(`${SUPER_ADMIN_API.auditLogsBranchWise}${query}`);
 };
 
 export const fetchUser = async (id) =>
