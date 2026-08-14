@@ -12,6 +12,42 @@ export const parseList = (data) => {
   return [];
 };
 
+const formatErrorData = (data, fallback) => {
+  if (!data) return fallback;
+  if (typeof data === "string") return data;
+  if (Array.isArray(data)) return data.map((item) => formatErrorData(item, "")).filter(Boolean).join(", ") || fallback;
+
+  const directMessage =
+    data.message ||
+    data.Message ||
+    data.title ||
+    data.Title ||
+    data.detail ||
+    data.Detail ||
+    data.error ||
+    data.Error;
+
+  if (typeof directMessage === "string" && directMessage.trim()) return directMessage;
+
+  const errors = data.errors || data.Errors;
+  if (errors && typeof errors === "object") {
+    const messages = Object.entries(errors).flatMap(([field, value]) => {
+      const values = Array.isArray(value) ? value : [value];
+      return values
+        .map((item) => (typeof item === "string" ? item : formatErrorData(item, "")))
+        .filter(Boolean)
+        .map((message) => (field ? `${field}: ${message}` : message));
+    });
+    if (messages.length) return messages.join(", ");
+  }
+
+  try {
+    return JSON.stringify(data);
+  } catch {
+    return fallback;
+  }
+};
+
 export const requestJson = async (path, options = {}) => {
   const token = getLabToken();
   const response = await fetch(apiUrl(String(path || "").replace(/^\/+/, "")), {
@@ -32,7 +68,7 @@ export const requestJson = async (path, options = {}) => {
       data = text;
     }
   }
-  if (!response.ok) throw new Error(data?.message || data || `Request failed with status ${response.status}`);
+  if (!response.ok) throw new Error(formatErrorData(data, `Request failed with status ${response.status}`));
   return data;
 };
 
@@ -57,7 +93,16 @@ export const downloadBlob = async (path, filename = "lab-export") => {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
-  if (!response.ok) throw new Error(`Download failed with status ${response.status}`);
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    let data = text;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = text;
+    }
+    throw new Error(formatErrorData(data, `Download failed with status ${response.status}`));
+  }
   const blob = await response.blob();
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");

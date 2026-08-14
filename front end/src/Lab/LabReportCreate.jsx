@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Eye, FileImage, FileText, Printer, Save, Trash2, Upload, X } from "lucide-react";
+import { Download, Eye, FileImage, FileText, Printer, Save, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { parseList, requestJson } from "./labApi";
+import { downloadBlob, parseList, requestJson } from "./labApi";
 import { getLabProfile } from "./labSession";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { getClinicInvoiceBranding } from "../utils/clinicBranding";
@@ -9,9 +9,9 @@ import {
   dedupeBillingRows,
 } from "../utils/billingRevenue";
 import { buildLabReportHtml, printLabReport, readReportField } from "./labReportTemplate";
-import { deleteGeneratedLabReport, readGeneratedLabReports, saveGeneratedLabReport } from "./labReportStore";
 import { fetchLabMasterTests } from "../utils/labMaster";
 import { canUseModulePermission, useRolePermissionsSync } from "../utils/rolePermissions";
+import LabToast from "./LabToast";
 
 const readFirst = readReportField;
 const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
@@ -252,6 +252,87 @@ const buildFindingsFromFields = (template, values = {}) =>
     .filter(Boolean)
     .join("\n");
 
+const pdfEscape = (value) =>
+  String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)");
+
+const wrapPdfLine = (value = "", maxLength = 92) => {
+  const words = String(value || "").split(/\s+/).filter(Boolean);
+  if (!words.length) return [""];
+  const lines = [];
+  let current = "";
+  words.forEach((word) => {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length > maxLength && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  });
+  if (current) lines.push(current);
+  return lines;
+};
+
+const buildPdfBlob = ({ title = "Lab Report", lines = [] } = {}) => {
+  const pageWidth = 595;
+  const pageHeight = 842;
+  const marginX = 42;
+  const lineHeight = 15;
+  const maxLinesPerPage = 48;
+  const normalizedLines = lines.flatMap((line) => wrapPdfLine(line, 88));
+  const chunks = [];
+  for (let index = 0; index < normalizedLines.length; index += maxLinesPerPage) {
+    chunks.push(normalizedLines.slice(index, index + maxLinesPerPage));
+  }
+  if (!chunks.length) chunks.push([""]);
+
+  const objects = [
+    "",
+    "",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+  ];
+  const pageRefs = [];
+  chunks.forEach((chunk, pageIndex) => {
+    const bodyLines = [
+      "BT",
+      "/F1 16 Tf",
+      `${marginX} ${pageHeight - 46} Td`,
+      `(${pdfEscape(title)}) Tj`,
+      "/F1 10 Tf",
+      `0 -${lineHeight + 10} Td`,
+      ...chunk.flatMap((line) => [`(${pdfEscape(line)}) Tj`, `0 -${lineHeight} Td`]),
+      `0 -${lineHeight} Td`,
+      `(Page ${pageIndex + 1} of ${chunks.length}) Tj`,
+      "ET",
+    ].join("\n");
+    objects.push(`<< /Length ${bodyLines.length} >>\nstream\n${bodyLines}\nendstream`);
+    const contentRef = objects.length;
+    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentRef} 0 R >>`);
+    const pageRef = objects.length;
+    pageRefs.push(pageRef);
+  });
+
+  objects[0] = "<< /Type /Catalog /Pages 2 0 R >>";
+  objects[1] = `<< /Type /Pages /Kids [${pageRefs.map((ref) => `${ref} 0 R`).join(" ")}] /Count ${pageRefs.length} >>`;
+
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  objects.forEach((content, index) => {
+    offsets.push(pdf.length);
+    pdf += `${index + 1} 0 obj\n${content}\nendobj\n`;
+  });
+  const xrefOffset = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  });
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return new Blob([pdf], { type: "application/pdf" });
+};
+
 const buildReportKey = (record, testName) => `${recordId(record)}::${slug(testName)}`;
 
 const getRecordClinicId = (record = {}) =>
@@ -356,7 +437,6 @@ function LabReportCreate() {
   const labProfile = useMemo(() => getLabProfile(), []);
   useRolePermissionsSync(labProfile);
   const canCreateReport = canUseModulePermission(labProfile, "Create Report", "Create");
-  const canDeleteReport = canUseModulePermission(labProfile, "Create Report", "Delete");
   const clinicName = getClinicDisplayName(labProfile, "Clinic");
   const clinicBranding = getClinicInvoiceBranding({ clinicId: labProfile.hospitalId, clinicName });
   const [rows, setRows] = useState([]);
@@ -368,16 +448,9 @@ function LabReportCreate() {
   const [filmFileUrl, setFilmFileUrl] = useState("");
   const [filmFileName, setFilmFileName] = useState("");
   const [sampleFilmUrl, setSampleFilmUrl] = useState("");
-  const [attachmentFile, setAttachmentFile] = useState(null);
-  const [attachmentFileUrl, setAttachmentFileUrl] = useState("");
-  const [attachmentFileName, setAttachmentFileName] = useState("");
-  const [attachmentFileType, setAttachmentFileType] = useState("");
-  const [attachmentDataUrl, setAttachmentDataUrl] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [toast, setToast] = useState(null);
   const [saving, setSaving] = useState(false);
   const [previewReport, setPreviewReport] = useState(null);
-  const [generatedReports, setGeneratedReports] = useState(() => readGeneratedLabReports());
 
   const loadRows = useCallback(async () => {
     const [backendRows, masterRows] = await Promise.all([
@@ -394,20 +467,8 @@ function LabReportCreate() {
   }, [labProfile, selectedPatientKey]);
 
   useEffect(() => {
-    loadRows().catch((loadError) => setError(loadError.message || "Unable to load report patients."));
+    loadRows().catch((loadError) => setToast({ type: "error", message: loadError.message || "Unable to load report patients." }));
   }, [loadRows]);
-
-  useEffect(() => {
-    const refreshReports = () => setGeneratedReports(readGeneratedLabReports());
-    window.addEventListener("labReportsUpdated", refreshReports);
-    window.addEventListener("storage", refreshReports);
-    window.addEventListener("focus", refreshReports);
-    return () => {
-      window.removeEventListener("labReportsUpdated", refreshReports);
-      window.removeEventListener("storage", refreshReports);
-      window.removeEventListener("focus", refreshReports);
-    };
-  }, []);
 
   useEffect(() => {
     if (!filmFile) {
@@ -418,30 +479,6 @@ function LabReportCreate() {
     setFilmFileUrl(nextUrl);
     return () => URL.revokeObjectURL(nextUrl);
   }, [filmFile]);
-
-  useEffect(() => {
-    if (!attachmentFile) {
-      setAttachmentFileUrl("");
-      setAttachmentDataUrl("");
-      return undefined;
-    }
-    const nextUrl = URL.createObjectURL(attachmentFile);
-    setAttachmentFileUrl(nextUrl);
-    setAttachmentFileName(attachmentFile.name || "attachment");
-    setAttachmentFileType(attachmentFile.type || "");
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setAttachmentDataUrl(reader.result);
-      }
-    };
-    reader.readAsDataURL(attachmentFile);
-
-    return () => {
-      URL.revokeObjectURL(nextUrl);
-    };
-  }, [attachmentFile]);
 
   const patientOptions = useMemo(() => {
     const byPatient = new Map();
@@ -491,8 +528,9 @@ function LabReportCreate() {
     const patientName = normalizeText(getPatientName(selectedRow));
     const patientPhone = normalizeText(readFirst(selectedRow, ["phone", "Phone", "mobile", "Mobile", "patient.phone"], ""));
 
-    return generatedReports
+    return rows
       .filter((report) => {
+        if (!isGeneratedReport(report)) return false;
         const reportId = normalizeId(readFirst(report, ["patientId", "PatientId", "patient.id", "Patient.Id"], ""));
         const reportName = normalizeText(getPatientName(report));
         const reportPhone = normalizeText(readFirst(report, ["phone", "Phone", "mobile", "Mobile", "patient.phone"], ""));
@@ -504,7 +542,7 @@ function LabReportCreate() {
       })
       .sort((a, b) => new Date(readFirst(b, ["reportedAt", "reportDate", "date", "createdAt"], 0)) - new Date(readFirst(a, ["reportedAt", "reportDate", "date", "createdAt"], 0)))
       .slice(0, 6);
-  }, [generatedReports, selectedPatientKey, selectedRow]);
+  }, [rows, selectedPatientKey, selectedRow]);
   const selectedMasterTest = useMemo(
     () => labTests.find((test) => normalizeText(test.testName || test.item || test.name) === normalizeText(selectedTestName)) || {},
     [labTests, selectedTestName]
@@ -543,10 +581,6 @@ function LabReportCreate() {
     setFilmFile(null);
     setFilmFileName(referenceFilm.fileName);
     setSampleFilmUrl(referenceFilm.url);
-    setAttachmentFile(null);
-    setAttachmentFileName("");
-    setAttachmentFileType("");
-    setAttachmentDataUrl("");
   }, [labTests, selectedReport]);
 
   const buildRecord = () => ({
@@ -579,14 +613,6 @@ function LabReportCreate() {
     ReportValues: form,
     reportFields: selectedTemplate.fields,
     ReportFields: selectedTemplate.fields,
-    attachmentFileName,
-    AttachmentFileName: attachmentFileName,
-    attachmentFileType,
-    AttachmentFileType: attachmentFileType,
-    attachmentDataUrl,
-    AttachmentDataUrl: attachmentDataUrl,
-    attachmentUrl: attachmentDataUrl || "",
-    AttachmentUrl: attachmentDataUrl || "",
     filmFileName,
     FilmFileName: filmFileName,
     filmSource: sampleFilmUrl ? "reference" : filmFile ? "uploaded" : "",
@@ -604,61 +630,146 @@ function LabReportCreate() {
     reportDate: new Date().toISOString(),
   });
 
+  const buildGeneratedReportFile = (payload) => {
+    const reportRows = Array.isArray(payload.reportFields)
+      ? payload.reportFields
+          .filter((field) => !["remarks", "findings", "impression"].includes(field.key))
+          .map((field) => {
+            const value = payload.reportValues?.[field.key];
+            if (value === undefined || value === null || String(value).trim() === "") return "";
+            return `${field.label || field.key}: ${value}${field.unit ? ` ${field.unit}` : ""}${field.referenceRange ? ` (Ref: ${field.referenceRange})` : ""}`;
+          })
+          .filter(Boolean)
+      : [];
+    const patientCode = readFirst(payload, ["patientCode", "PatientCode", "patientId", "PatientId"], "-");
+    const ageGender = [
+      readFirst(payload, ["age", "Age", "patient.age", "Patient.Age"], ""),
+      readFirst(payload, ["gender", "Gender", "patient.gender", "Patient.Gender"], ""),
+    ].filter(Boolean).join(" / ") || "-";
+    const reportDate = new Date(payload.reportedAt || Date.now()).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return buildPdfBlob({
+      title: `${payload.reportName || selectedTestName} - ${getPatientName(payload)}`,
+      lines: [
+        clinicName,
+        `Department of ${payload.department || "Laboratory"}`,
+        "",
+        `Patient Name : ${getPatientName(payload)}`,
+        `Patient ID   : ${patientCode}`,
+        `Age / Gender : ${ageGender}`,
+        `Phone        : ${payload.phone || payload.Phone || "-"}`,
+        `Referred By  : ${payload.doctorName || payload.DoctorName || "-"}`,
+        `Report Date  : ${reportDate}`,
+        "",
+        String(payload.reportName || selectedTestName || "Lab Report").toUpperCase(),
+        "",
+        ...reportRows,
+        ...(reportRows.length ? [""] : []),
+        "FINDINGS:",
+        payload.findings || "-",
+        "",
+        "IMPRESSION:",
+        payload.impression || "-",
+      ],
+    });
+  };
+
+  const buildReportFormData = (payload) => {
+    const formData = new FormData();
+    formData.append("reportName", payload.reportName || selectedTestName);
+    formData.append("testName", payload.testName || selectedTestName);
+    formData.append("reportType", payload.reportType || selectedTemplate.type || "");
+    formData.append("findings", payload.findings || "");
+    formData.append("impression", payload.impression || "");
+    formData.append("status", "Reported");
+    formData.append("reportStatus", "Reported");
+    formData.append("reportedAt", payload.reportedAt || new Date().toISOString());
+    formData.append("reportValues", JSON.stringify(payload.reportValues || {}));
+    formData.append("reportFields", JSON.stringify(payload.reportFields || []));
+    formData.append("reportData", JSON.stringify(payload));
+    formData.append(
+      "file",
+      buildGeneratedReportFile(payload),
+      `${slug(getPatientName(payload)) || "patient"}-${slug(payload.reportName || selectedTestName) || "lab-report"}.pdf`
+    );
+
+    if (filmFile) {
+      formData.append("filmFile", filmFile, filmFile.name || filmFileName || "lab-film-file");
+    }
+
+    return formData;
+  };
+
   const saveReport = async ({ print = false } = {}) => {
     if (!canCreateReport) {
-      setError("You do not have permission to create reports.");
+      setToast({ type: "error", message: "You do not have permission to create reports." });
       return;
     }
     if (!selectedRow) {
-      setError("Select a patient.");
+      setToast({ type: "error", message: "Select a patient." });
       return;
     }
     if (!selectedTestName) {
-      setError("Select a report/test name.");
+      setToast({ type: "error", message: "Select a report/test name." });
       return;
     }
     if (!selectedRow) {
-      setError("No patient record selected.");
+      setToast({ type: "error", message: "No patient record selected." });
       return;
     }
     if (!selectedTestName) {
-      setError("No report/test selected.");
+      setToast({ type: "error", message: "No report/test selected." });
       return;
     }
     if (selectedTemplate.type === "scan" && !(filmFileUrl || sampleFilmUrl) && form.filmTaken === "Yes") {
-      setError("Film is not available for this scan/X-Ray report.");
-      return;
-    }
-    if (attachmentFile && !attachmentDataUrl) {
-      setError("Unable to read the selected attachment file.");
+      setToast({ type: "error", message: "Film is not available for this scan/X-Ray report." });
       return;
     }
     const id = recordId(selectedRow);
     const payload = buildRecord();
     setSaving(true);
-    setError("");
-    setMessage("");
+    setToast(null);
     try {
-      let backendWarning = "";
-      if (id) {
-        try {
-          await requestJson(`Lab/orders/${id}/report`, { method: "POST", body: JSON.stringify(payload) });
-        } catch (backendError) {
-          backendWarning = backendError.message || "Backend report update failed.";
-        }
-      } else {
-        backendWarning = "Selected record has no backend id.";
-      }
-      const savedReport = saveGeneratedLabReport(payload);
-      setGeneratedReports(readGeneratedLabReports());
-      setPreviewReport(savedReport);
+      if (!id) throw new Error("Selected record has no backend id.");
+      const savedReport = await requestJson(`Lab/orders/${id}/report`, {
+        method: "POST",
+        body: buildReportFormData(payload),
+      });
+      await requestJson(`Lab/orders/${id}`).catch(() => null);
+      await requestJson(`Lab/orders/${id}/complete`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: "Completed",
+          Status: "Completed",
+          orderStatus: "Completed",
+          resultStatus: "Completed",
+          reportStatus: "Reported",
+          completedAt: new Date().toISOString(),
+        }),
+      }).catch(() => null);
+      const previewPayload = {
+        ...payload,
+        ...(savedReport && typeof savedReport === "object" ? savedReport : {}),
+        id,
+        labOrderId: id,
+        status: "Completed",
+        Status: "Completed",
+        reportStatus: "Reported",
+      };
+      setPreviewReport(previewPayload);
+      window.dispatchEvent(new Event("labReportsUpdated"));
       if (print) {
-        printLabReport({ record: savedReport, branding: clinicBranding, clinicName, profile: labProfile });
+        printLabReport({ record: previewPayload, branding: clinicBranding, clinicName, profile: labProfile });
       }
-      setMessage(`${print ? "Report saved and print opened." : "Report saved. Preview opened."}${backendWarning ? ` ${backendWarning} Saved report is available in Reports.` : ""}`);
+      setToast({ type: "success", message: print ? "Report saved to backend and print opened." : "Report saved to backend. Preview opened." });
       await loadRows().catch(() => {});
     } catch (saveError) {
-      setError(saveError.message || "Unable to save report.");
+      setToast({ type: "error", message: saveError.message || "Unable to save report." });
     } finally {
       setSaving(false);
     }
@@ -667,21 +778,21 @@ function LabReportCreate() {
   const printPreviewReport = () => {
     if (!previewReport) return;
     printLabReport({ record: previewReport, branding: clinicBranding, clinicName, profile: labProfile });
+    setToast({ type: "success", message: "Report print opened." });
   };
 
-  const deleteLatestReport = (report) => {
-    if (!canDeleteReport) {
-      setError("You do not have permission to delete reports.");
+  const downloadReport = async (report = previewReport) => {
+    const id = recordId(report);
+    if (!id) {
+      setToast({ type: "error", message: "Report download needs a backend order id." });
       return;
     }
-    const reportId = String(readFirst(report, ["reportId", "ReportId", "id", "Id"], "")).trim();
-    if (!reportId) return;
-    deleteGeneratedLabReport(report);
-    setGeneratedReports(readGeneratedLabReports());
-    if (String(readFirst(previewReport || {}, ["reportId", "ReportId", "id", "Id"], "")).trim() === reportId) {
-      setPreviewReport(null);
+    try {
+      await downloadBlob(`Lab/orders/${id}/report/download`, `lab-report-${id}`);
+      setToast({ type: "success", message: "Report downloaded." });
+    } catch (downloadError) {
+      setToast({ type: "error", message: downloadError.message || "Unable to download report." });
     }
-    setMessage("Report deleted.");
   };
 
   const printFilm = () => {
@@ -697,6 +808,7 @@ function LabReportCreate() {
       profile: labProfile,
     }));
     filmWindow.document.close();
+    setToast({ type: "success", message: "Film print opened." });
   };
 
   const downloadFilm = () => {
@@ -709,6 +821,7 @@ function LabReportCreate() {
     document.body.appendChild(link);
     link.click();
     link.remove();
+    setToast({ type: "success", message: "Film downloaded." });
   };
 
   return (
@@ -719,8 +832,7 @@ function LabReportCreate() {
           <p>Create lab reports for diagnostic patients and save them to backend.</p>
         </div>
       </div>
-      {error ? <div className="rc-error">{error}</div> : null}
-      {message ? <div className="rc-success">{message}</div> : null}
+      <LabToast toast={toast} onClose={() => setToast(null)} />
       <div className="rc-card lab-report-form-card">
         <div className="rc-form-grid">
           <label className="rc-form-field-full">
@@ -757,41 +869,6 @@ function LabReportCreate() {
               </span>
             </label>
           ) : null}
-
-          <label className="rc-form-field-full lab-attachment-upload">
-            Report / File Upload
-            <div className="lab-upload-control lab-film-ready">
-              <FileImage size={16} />
-              <b>{attachmentFileName || filmFileName || "No file uploaded"}</b>
-            </div>
-            <input
-              type="file"
-              accept="image/*,.pdf,.xls,.xlsx,.csv,.txt,.doc,.docx"
-              style={{ display: "none" }}
-              id="lab-report-attachment"
-              onChange={(event) => {
-                const file = event.target.files?.[0] || null;
-                setAttachmentFile(file);
-              }}
-            />
-            <div className="lab-film-actions">
-              <label className="rc-btn ghost lab-attachment-btn" htmlFor="lab-report-attachment">
-                <Upload size={16} /> Upload Report / Attachment
-              </label>
-              <button
-                className="rc-btn"
-                type="button"
-                onClick={() => {
-                  const url = attachmentFileUrl || filmFileUrl || sampleFilmUrl;
-                  if (url) window.open(url, "_blank", "noopener,noreferrer");
-                }}
-                disabled={!(attachmentFileUrl || filmFileUrl || sampleFilmUrl)}
-              >
-                <Download size={16} /> View File
-              </button>
-            </div>
-            <small className="lab-field-hint">Upload scan films, report images, or report documents and save them with this report.</small>
-          </label>
 
           {selectedTemplate.fields.map((field) => (
             <label className="rc-form-field-full" key={field.key}>
@@ -838,10 +915,8 @@ function LabReportCreate() {
                   </div>
                   <div className="lab-row-actions">
                     <button className="lab-action-btn report" type="button" title="Preview report" onClick={() => setPreviewReport(report)}><Eye size={16} /></button>
-                    <button className="lab-action-btn download" type="button" title="Print report" onClick={() => printLabReport({ record: report, branding: clinicBranding, clinicName, profile: labProfile })}><Printer size={16} /></button>
-                    {canDeleteReport ? (
-                      <button className="lab-action-btn delete" type="button" title="Delete report" onClick={() => deleteLatestReport(report)}><Trash2 size={16} /></button>
-                    ) : null}
+                    <button className="lab-action-btn report" type="button" title="Print report" onClick={() => printLabReport({ record: report, branding: clinicBranding, clinicName, profile: labProfile })}><Printer size={16} /></button>
+                    <button className="lab-action-btn download" type="button" title="Download report" onClick={() => downloadReport(report)}><Download size={16} /></button>
                   </div>
                 </div>
               ))}
@@ -867,6 +942,7 @@ function LabReportCreate() {
             <div className="lab-report-preview-footer">
               <button className="rc-btn ghost" type="button" onClick={() => setPreviewReport(null)}>Close</button>
               <button className="rc-btn" type="button" onClick={() => navigate("/lab/reports")}><FileText size={16} /> Reports</button>
+              <button className="rc-btn" type="button" onClick={() => downloadReport()}><Download size={16} /> Download</button>
               <button className="rc-btn primary" type="button" onClick={printPreviewReport}><Printer size={16} /> Print</button>
             </div>
           </div>

@@ -1,17 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle, Download, FileText, Play, RefreshCw, Search, TestTube2 } from "lucide-react";
-import { useLocation } from "react-router-dom";
-import { downloadBlob, firstSuccessfulList, parseList, requestJson } from "./labApi";
+import { useLocation, useNavigate } from "react-router-dom";
+import { downloadBlob, parseList, requestJson } from "./labApi";
 import { getLabProfile } from "./labSession";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { getClinicInvoiceBranding } from "../utils/clinicBranding";
 import { downloadLabReportHtml, getReportName, printLabReport } from "./labReportTemplate";
-import { readGeneratedLabReports } from "./labReportStore";
 import { fetchLabMasterTests } from "../utils/labMaster";
-import {
-  dedupeBillingRows,
-} from "../utils/billingRevenue";
 import { canUseModulePermission, useRolePermissionsSync } from "../utils/rolePermissions";
+import LabToast from "./LabToast";
 
 const readFirst = (record = {}, keys = [], fallback = "-") => {
   for (const key of keys) {
@@ -35,8 +32,8 @@ const pageConfig = {
     paths: ["Lab/orders"],
     columns: [
       ["Patient", ["patientName", "PatientName", "name", "Name", "fullName"]],
-      ["Visit Date", ["visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"]],
-      ["Phone", ["phone", "Phone", "mobile", "Mobile", "phoneNumber", "patient.phone", "Patient.Phone"]],
+      ["Visit Date", ["orderedAt", "OrderedAt", "visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"]],
+      ["Phone", ["patientPhone", "PatientPhone", "phone", "Phone", "mobile", "Mobile", "phoneNumber", "patient.phone", "Patient.Phone"]],
       ["Tests", ["__labTestNames", "testName", "TestName", "labTestName", "items", "serviceItems", "billItems"]],
     ],
   },
@@ -57,21 +54,21 @@ const pageConfig = {
     paths: ["Lab/orders"],
     columns: [
       ["Patient", ["patientName", "PatientName", "patient.name"]],
-      ["Visit Date", ["visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"]],
-      ["Phone", ["phone", "Phone", "mobile", "Mobile", "phoneNumber", "patient.phone", "Patient.Phone"]],
+      ["Visit Date", ["orderedAt", "OrderedAt", "visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"]],
+      ["Phone", ["patientPhone", "PatientPhone", "phone", "Phone", "mobile", "Mobile", "phoneNumber", "patient.phone", "Patient.Phone"]],
       ["Tests", ["__labTestNames", "testName", "TestName", "labTestName", "items", "serviceItems", "billItems"]],
-      ["Status", ["status", "Status", "sampleStatus"]],
+      ["Status", ["__displayStatus", "resultStatus", "ResultStatus", "sampleStatus", "SampleStatus", "orderStatus", "OrderStatus", "status", "Status"]],
     ],
   },
   reports: {
     title: "Reports",
     subtitle: "Lab reports and diagnostic result records.",
-    paths: ["Lab/doctor/reports", "Lab/patient/reports"],
+    paths: ["Lab/orders"],
     columns: [
       ["Report", ["reportName", "ReportName", "reportTitle", "title", "__labTestNames", "testName", "TestName"]],
       ["Patient", ["patientName", "PatientName", "patient.name"]],
-      ["Date", ["reportDate", "createdAt", "CreatedAt", "date"]],
-      ["Status", ["status", "Status"]],
+      ["Date", ["reportedAt", "ReportedAt", "reportDate", "ReportDate", "completedAt", "CompletedAt", "updatedAt", "UpdatedAt", "createdAt", "CreatedAt", "date"]],
+      ["Status", ["reportStatus", "ReportStatus", "status", "Status"]],
     ],
   },
 };
@@ -204,10 +201,14 @@ const mergeLabPatientRows = (rows = []) => {
       ...row,
       patientName: mergeTextValues(existing.patientName, existing.PatientName, row.patientName, row.PatientName),
       PatientName: mergeTextValues(existing.PatientName, existing.patientName, row.PatientName, row.patientName),
-      phone: mergeTextValues(existing.phone, existing.Phone, row.phone, row.Phone),
-      Phone: mergeTextValues(existing.Phone, existing.phone, row.Phone, row.phone),
-      visitDate: mergeTextValues(existing.visitDate, existing.VisitDate, row.visitDate, row.VisitDate, getRecordDateValue(existing), getRecordDateValue(row)),
-      VisitDate: mergeTextValues(existing.VisitDate, existing.visitDate, row.VisitDate, row.visitDate, getRecordDateValue(existing), getRecordDateValue(row)),
+      phone: mergeTextValues(existing.patientPhone, existing.PatientPhone, existing.phone, existing.Phone, row.patientPhone, row.PatientPhone, row.phone, row.Phone),
+      Phone: mergeTextValues(existing.PatientPhone, existing.patientPhone, existing.Phone, existing.phone, row.PatientPhone, row.patientPhone, row.Phone, row.phone),
+      patientPhone: mergeTextValues(existing.patientPhone, existing.PatientPhone, existing.phone, existing.Phone, row.patientPhone, row.PatientPhone, row.phone, row.Phone),
+      PatientPhone: mergeTextValues(existing.PatientPhone, existing.patientPhone, existing.Phone, existing.phone, row.PatientPhone, row.patientPhone, row.Phone, row.phone),
+      visitDate: mergeTextValues(existing.orderedAt, existing.OrderedAt, existing.visitDate, existing.VisitDate, row.orderedAt, row.OrderedAt, row.visitDate, row.VisitDate, getRecordDateValue(existing), getRecordDateValue(row)),
+      VisitDate: mergeTextValues(existing.OrderedAt, existing.orderedAt, existing.VisitDate, existing.visitDate, row.OrderedAt, row.orderedAt, row.VisitDate, row.visitDate, getRecordDateValue(existing), getRecordDateValue(row)),
+      orderedAt: mergeTextValues(existing.orderedAt, existing.OrderedAt, row.orderedAt, row.OrderedAt, getRecordDateValue(existing), getRecordDateValue(row)),
+      OrderedAt: mergeTextValues(existing.OrderedAt, existing.orderedAt, row.OrderedAt, row.orderedAt, getRecordDateValue(existing), getRecordDateValue(row)),
       __labTestNames: Array.from(new Set(testNames)).join(", ") || "-",
       __labAmount: (Number(existing.__labAmount) || 0) + (Number(row.__labAmount) || 0),
       __groupedRows: [...(existing.__groupedRows || [existing]), row],
@@ -221,10 +222,11 @@ const enrichLabPatientRow = (record = {}) => ({
   ...record,
   __labTestNames: getPatientTestNames(record),
   __labAmount: getPatientLabAmount(record),
+  __displayStatus: getSampleDisplayStatus(record),
 });
 
 const getRecordDateValue = (record = {}) =>
-  readFirst(record, ["visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"], "");
+  readFirst(record, ["orderedAt", "OrderedAt", "visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"], "");
 
 const isToday = (value) => {
   const date = new Date(value || "");
@@ -234,7 +236,21 @@ const isToday = (value) => {
 };
 
 const getNormalizedStatus = (record = {}) =>
-  normalizeText(readFirst(record, ["status", "Status", "orderStatus", "sampleStatus", "resultStatus", "reportStatus"], ""));
+  normalizeText(readFirst(record, ["reportStatus", "ReportStatus", "resultStatus", "ResultStatus", "sampleStatus", "SampleStatus", "orderStatus", "OrderStatus", "status", "Status"], ""));
+
+const getSampleDisplayStatus = (record = {}) => {
+  const reportStatus = readFirst(record, ["reportStatus", "ReportStatus"], "");
+  if (reportStatus && reportStatus !== "-") return reportStatus;
+  if (isTruthyFlag(readFirst(record, ["hasReport", "HasReport", "reportGenerated", "ReportGenerated"], ""))) return "Completed";
+  const resultStatus = readFirst(record, ["resultStatus", "ResultStatus"], "");
+  if (resultStatus && resultStatus !== "-") return resultStatus;
+  if (readFirst(record, ["completedAt", "CompletedAt"], "")) return "Completed";
+  const sampleStatus = readFirst(record, ["sampleStatus", "SampleStatus"], "");
+  if (sampleStatus && sampleStatus !== "-") return sampleStatus;
+  const orderStatus = readFirst(record, ["orderStatus", "OrderStatus"], "");
+  if (orderStatus && orderStatus !== "-") return orderStatus;
+  return readFirst(record, ["status", "Status"], "-");
+};
 
 const isDoneRecord = (record = {}) => {
   const status = getNormalizedStatus(record);
@@ -256,6 +272,7 @@ const recordIdentifier = (row = {}) =>
 
 const filterRowsByView = (rows = [], view = "") => {
   if (view === "today") return rows.filter(isCurrentLabWork);
+  if (view === "past") return rows.filter((row) => !isToday(getRecordDateValue(row)));
   if (view === "pending") return rows.filter((row) => !isDoneRecord(row));
   if (view === "samples") return rows.filter((row) => !/complete|completed|reported|delivered|cancel|cancelled|canceled/.test(getNormalizedStatus(row)));
   if (view === "in-progress") return rows.filter((row) => /progress|processing|started/.test(getNormalizedStatus(row)));
@@ -265,13 +282,40 @@ const filterRowsByView = (rows = [], view = "") => {
   return rows;
 };
 
-const isGeneratedReport = (row = {}) =>
-  /reported|delivered/.test(getNormalizedStatus(row)) ||
-  Boolean(readFirst(row, ["reportName", "ReportName", "reportTitle", "findings", "Findings", "reportFindings", "ReportFindings"], ""));
+const isTruthyFlag = (value) =>
+  value === true || value === 1 || ["true", "yes", "y", "1"].includes(normalizeText(value));
+
+const isGeneratedReport = (row = {}) => {
+  const reportStatus = normalizeText(readFirst(row, ["reportStatus", "ReportStatus", "resultStatus", "ResultStatus"], ""));
+  return (
+    /reported|delivered|completed/.test(reportStatus) ||
+    isTruthyFlag(readFirst(row, ["hasReport", "HasReport", "reportGenerated", "ReportGenerated"], "")) ||
+    Boolean(readFirst(row, [
+      "reportName", "ReportName", "reportTitle", "reportUrl", "ReportUrl", "reportFileUrl", "ReportFileUrl",
+      "reportPath", "ReportPath", "fileUrl", "FileUrl", "findings", "Findings", "reportFindings", "ReportFindings",
+    ], ""))
+  );
+};
+
+const getReportDisplayStatus = (row = {}) => {
+  const reportStatus = readFirst(row, ["reportStatus", "ReportStatus", "resultStatus", "ResultStatus"], "");
+  if (reportStatus && reportStatus !== "-") return reportStatus;
+  if (isTruthyFlag(readFirst(row, ["hasReport", "HasReport", "reportGenerated", "ReportGenerated"], ""))) return "Completed";
+  if (readFirst(row, ["reportUrl", "ReportUrl", "reportFileUrl", "ReportFileUrl", "reportPath", "ReportPath", "fileUrl", "FileUrl"], "")) return "Completed";
+  return readFirst(row, ["status", "Status"], "-");
+};
+
+const getReportDisplayDate = (row = {}) =>
+  readFirst(row, [
+    "reportedAt", "ReportedAt", "reportDate", "ReportDate", "reportCreatedAt", "ReportCreatedAt",
+    "report.createdAt", "Report.CreatedAt", "resultCreatedAt", "ResultCreatedAt",
+    "completedAt", "CompletedAt", "updatedAt", "UpdatedAt", "createdAt", "CreatedAt", "date", "Date",
+  ], "");
 
 function LabDataPage({ type }) {
   const config = pageConfig[type];
   const location = useLocation();
+  const navigate = useNavigate();
   const view = new URLSearchParams(location.search).get("view") || "";
   const labProfile = useMemo(() => getLabProfile(), []);
   useRolePermissionsSync(labProfile);
@@ -280,45 +324,33 @@ function LabDataPage({ type }) {
   const clinicBranding = getClinicInvoiceBranding({ clinicId: labProfile.hospitalId, clinicName });
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [toast, setToast] = useState(null);
   const [search, setSearch] = useState("");
 
   const loadRows = useCallback(async () => {
     setLoading(true);
-    setError("");
     try {
       const backendData = type === "tests"
         ? await fetchLabMasterTests()
         : type === "patients" || type === "samples" || type === "reports"
-        ? (await Promise.allSettled(config.paths.map((path) => requestJson(path))))
-            .flatMap((result, index) =>
-              result.status === "fulfilled"
-                ? parseList(result.value).map((row) => ({ ...row, __sourcePath: config.paths[index] }))
-                : []
-            )
-        : await firstSuccessfulList(config.paths);
-      const data = type === "patients" || type === "samples" || type === "reports"
-        ? [
-            ...backendData,
-            ...(type === "reports" ? readGeneratedLabReports() : []),
-          ]
-        : backendData;
+        ? parseList(await requestJson(config.paths[0])).map((row) => ({ ...row, __sourcePath: config.paths[0] }))
+        : parseList(await requestJson(config.paths[0]));
       const enrichedRows = type === "patients" || type === "samples" || type === "reports"
-        ? dedupeBillingRows(data)
+        ? backendData
             .filter(isDiagnosticRecord)
             .filter((row) => belongsToLabScope(row, labProfile))
             .map(enrichLabPatientRow)
-        : data;
+        : backendData;
       const nextRows = type === "patients"
         ? filterRowsByView(mergeLabPatientRows(enrichedRows), view)
         : type === "samples" || type === "reports"
         ? filterRowsByView(enrichedRows, view)
             .filter((row) => type !== "reports" || isGeneratedReport(row))
-        : data;
+        : backendData;
       setRows(nextRows);
     } catch (loadError) {
       setRows([]);
-      setError(loadError.message || `Unable to load ${config.title.toLowerCase()}.`);
+      setToast({ type: "error", message: loadError.message || `Unable to load ${config.title.toLowerCase()}.` });
     } finally {
       setLoading(false);
     }
@@ -364,6 +396,13 @@ function LabDataPage({ type }) {
 
   const recordId = (row, index = "") => recordIdentifier(row) || index;
 
+  const setPatientView = (nextView) => {
+    const params = new URLSearchParams(location.search);
+    if (nextView) params.set("view", nextView);
+    else params.delete("view");
+    navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : "" });
+  };
+
   const actionConfig = {
     collected: {
       labPath: (id) => `Lab/orders/${id}/sample-collected`,
@@ -378,8 +417,8 @@ function LabDataPage({ type }) {
       payload: { status: "In Progress", orderStatus: "In Progress", sampleStatus: "Processing", startedAt: new Date().toISOString() },
     },
     complete: {
-      labPath: (id) => `Lab/orders/${id}/complete`,
-      method: "PATCH",
+      labPath: (id) => `Lab/orders/${id}/result`,
+      method: "PUT",
       status: "Completed",
       payload: { status: "Completed", orderStatus: "Completed", resultStatus: "Completed", completedAt: new Date().toISOString() },
     },
@@ -393,7 +432,7 @@ function LabDataPage({ type }) {
 
   const runOrderAction = async (row, action) => {
     if (!canEditSamples) {
-      setError("You do not have permission to update sample collection.");
+      setToast({ type: "error", message: "You do not have permission to update sample collection." });
       return;
     }
     const id = recordId(row);
@@ -401,20 +440,28 @@ function LabDataPage({ type }) {
     const target = actionConfig[action];
     if (!target) return;
 
-    const patch = {
-      ...target.payload,
-      Status: target.status,
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      await requestJson(`Lab/orders/${id}`).catch(() => null);
 
-    await requestJson(target.labPath(id), { method: target.method, body: JSON.stringify(patch) });
+      const patch = {
+        ...target.payload,
+        Status: target.status,
+        updatedAt: new Date().toISOString(),
+      };
 
-    await loadRows();
+      await requestJson(target.labPath(id), { method: target.method, body: JSON.stringify(patch) });
+
+      await loadRows();
+      setToast({ type: "success", message: `${target.status} updated successfully.` });
+    } catch (actionError) {
+      setToast({ type: "error", message: actionError.message || "Unable to update lab order." });
+    }
   };
 
   const downloadReport = async (row) => {
     if (isBillingBackedRecord(row)) {
       downloadLabReportHtml({ record: { ...row, reportName: getReportName(row) }, branding: clinicBranding, clinicName, profile: labProfile });
+      setToast({ type: "success", message: "Report downloaded." });
       return;
     }
 
@@ -422,20 +469,25 @@ function LabDataPage({ type }) {
     try {
       if (id) {
         await downloadBlob(`Lab/orders/${id}/report/download`, `lab-report-${id}`);
+        setToast({ type: "success", message: "Report downloaded." });
         return;
       }
-    } catch {
-      // Fall back to the generated HTML report when a PDF/blob endpoint is unavailable.
+    } catch (downloadError) {
+      setToast({ type: "error", message: downloadError.message || "Unable to download report from backend." });
+      return;
     }
     downloadLabReportHtml({ record: { ...row, reportName: getReportName(row) }, branding: clinicBranding, clinicName, profile: labProfile });
+    setToast({ type: "success", message: "Report downloaded." });
   };
 
   const printReport = (row) => {
     printLabReport({ record: { ...row, reportName: getReportName(row) }, branding: clinicBranding, clinicName, profile: labProfile });
+    setToast({ type: "success", message: "Report print opened." });
   };
 
   return (
     <section className="rc-page lab-page">
+      <LabToast toast={toast} onClose={() => setToast(null)} />
       <div className="rc-page-head">
         <div>
           <h2>{config.title}</h2>
@@ -449,7 +501,26 @@ function LabDataPage({ type }) {
         <Search size={17} />
         <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Search ${config.title.toLowerCase()}...`} />
       </label>
-      {error ? <div className="rc-error">{error}</div> : null}
+      {type === "patients" ? (
+        <div className="lab-filter-tabs" role="tablist" aria-label="Patient order date filter">
+          {[
+            ["", "All"],
+            ["today", "Today"],
+            ["past", "Past"],
+          ].map(([key, label]) => (
+            <button
+              key={label}
+              className={view === key ? "active" : ""}
+              type="button"
+              role="tab"
+              aria-selected={view === key}
+              onClick={() => setPatientView(key)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {loading ? <div className="rc-card">Loading {config.title.toLowerCase()}...</div> : null}
       <div className="rc-card">
         <div className="rc-table compact lab-table">
@@ -460,7 +531,11 @@ function LabDataPage({ type }) {
           {filteredRows.length ? filteredRows.map((row, index) => (
             <div className="rc-table-row four" style={{ gridTemplateColumns: tableTemplate }} key={readFirst(row, ["id", "Id", "testId", "sampleId"], index)}>
               {config.columns.map(([label, keys]) => {
-                const value = readFirst(row, keys);
+                const value = type === "reports" && label === "Status"
+                  ? getReportDisplayStatus(row)
+                  : type === "reports" && label === "Date"
+                    ? getReportDisplayDate(row)
+                    : readFirst(row, keys);
                 const displayValue = /date|created|collected|imported|exported/i.test(label)
                   ? formatDate(value)
                   : /amount|price/i.test(label) && Number(value) > 0

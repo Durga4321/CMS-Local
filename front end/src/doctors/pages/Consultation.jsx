@@ -30,7 +30,6 @@ const STEPS = [
 ];
 
 const APPOINTMENTS_API = apiUrl("Appointment");
-const MEDICAL_HISTORY_API = apiUrl("MedicalHistory");
 const CONSULTATION_API = apiUrl("Consultation");
 
 const emptyValue = "-";
@@ -223,17 +222,6 @@ const getRecordAppointmentId = (record = {}) =>
       ""
   ).trim();
 
-const getRecordPatientId = (record = {}) =>
-  String(
-    record.patientId ||
-      record.PatientId ||
-      record.patient?.id ||
-      record.patient?.patientId ||
-      record.Patient?.Id ||
-      record.Patient?.PatientId ||
-      ""
-  ).trim();
-
 const fetchConsultationForAppointment = async (appointmentId, headers) => {
   const id = String(appointmentId || "").trim();
   if (!id) return null;
@@ -248,40 +236,6 @@ const fetchConsultationForAppointment = async (appointmentId, headers) => {
   } catch {
     return null;
   }
-};
-
-const fetchMedicalHistoryForPatient = async (patientId, headers) => {
-  const id = String(patientId || "").trim();
-  if (!id) return null;
-
-  const paths = [
-    `${MEDICAL_HISTORY_API}?patientId=${encodeURIComponent(id)}`,
-    MEDICAL_HISTORY_API,
-  ];
-
-  for (const url of paths) {
-    try {
-      const response = await fetch(url, { headers });
-      if (!response.ok) continue;
-      const data = await response.json().catch(() => null);
-      if (!data) continue;
-
-      const rows = parseList(data);
-      if (rows.length) {
-        const match = rows.find((item) => getRecordPatientId(item) === id);
-        if (match) return normalizeOverview(match);
-        continue;
-      }
-
-      if (getRecordPatientId(data) === id || url.includes("?patientId=")) {
-        return normalizeOverview(data);
-      }
-    } catch {
-      // Try the next supported GET shape.
-    }
-  }
-
-  return null;
 };
 
 function Consultation() {
@@ -435,15 +389,10 @@ function Consultation() {
           patientId: detailedAppointment.patientId || savedConsultation?.patientId,
         });
 
-        const patientOverview = await fetchMedicalHistoryForPatient(
-          hydratedAppointment.patientId,
-          headers
-        );
-
         const appointmentComplaint = hydratedAppointment.chiefComplaints || "";
 
         setAppointment(hydratedAppointment);
-        setOverview(patientOverview);
+        setOverview(normalizeOverview(hydratedAppointment));
         setStep(getStepFromStatus(hydratedAppointment.status));
 
         setForm({
