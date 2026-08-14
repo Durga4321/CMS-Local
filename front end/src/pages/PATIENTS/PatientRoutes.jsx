@@ -4600,6 +4600,12 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   const [portalRefreshTick, setPortalRefreshTick] = useState(0);
   const [downloadStatus, setDownloadStatus] = useState("");
   const [downloadError, setDownloadError] = useState("");
+  const authenticatedPatientId = normalizeComparable(
+    localStorage.getItem("patientId") || readFirst(patient || {}, ["patientId", "PatientId", "id", "Id"])
+  );
+  const isCurrentPatientOpBill = (bill) =>
+    Boolean(authenticatedPatientId) &&
+    normalizeComparable(readFirst(bill, ["patientId", "PatientId"])) === authenticatedPatientId;
   const getPatientPortalOpBillsForCurrentPatient = useCallback(() => {
     return readPatientPortalOpBills()
       .filter((bill) => billBelongsToPatient(bill, patient || {}, visits))
@@ -5312,7 +5318,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
       key: 'op',
       title: 'OP Bills',
       bills: billRecords
-        .filter((bill) => billTypeLabel(bill) === 'OP Bill')
+        .filter((bill) => billTypeLabel(bill) === 'OP Bill' && isCurrentPatientOpBill(bill))
         .sort((a, b) => billDateValue(b) - billDateValue(a)),
     },
     {

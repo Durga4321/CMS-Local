@@ -21,6 +21,7 @@ describe("findPatientBookingConflict", () => {
 
 describe("PatientBillsPage", () => {
   beforeEach(() => {
+    localStorage.clear();
     global.fetch = jest.fn(() =>
       Promise.resolve({
         ok: true,
@@ -36,6 +37,7 @@ describe("PatientBillsPage", () => {
           bills={[
             {
               id: "bill-1",
+              patientId: "p-1",
               invoiceNumber: "INV-1001",
               patientName: "Ada Lovelace",
               totalAmount: 1200,
@@ -81,5 +83,25 @@ describe("PatientBillsPage", () => {
     );
 
     expect(await screen.findByText(/diagnostic/i)).toBeInTheDocument();
+  });
+
+  it("shows OP bills only for the authenticated patient", async () => {
+    localStorage.setItem("patientId", "p-1");
+
+    render(
+      <MemoryRouter>
+        <PatientBillsPage
+          bills={[
+            { id: "op-mine", patientId: "p-1", invoiceNumber: "OP-MINE", totalAmount: 500 },
+            { id: "op-other", patientId: "p-2", invoiceNumber: "OP-OTHER", totalAmount: 700 },
+          ]}
+          patient={{ id: "p-1", patientName: "Ada Lovelace" }}
+          visits={[]}
+        />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText("OP-MINE")).toBeInTheDocument();
+    expect(screen.queryByText("OP-OTHER")).not.toBeInTheDocument();
   });
 });
