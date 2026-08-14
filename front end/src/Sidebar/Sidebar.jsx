@@ -80,7 +80,7 @@ function Sidebar({ open = false, onClose = () => {} }) {
   const { loading: permissionsLoading } = useRolePermissionsSync(profile);
   const baseNavItems = isSuperAdmin ? superAdminItems : isPatient ? patientItems : items;
   const navItems =
-    isPatient
+    isSuperAdmin || isPatient
       ? baseNavItems
       : permissionsLoading && !hasAnySavedModulePermissions(profile)
         ? []
@@ -91,6 +91,7 @@ function Sidebar({ open = false, onClose = () => {} }) {
   const clinicBranding = useClinicInvoiceBranding({
     clinicId: profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "",
     clinicName: brandName,
+    enabled: !isSuperAdmin && !isPatient,
   });
   const brandLogo = isSuperAdmin || isPatient
     ? { type: "icon", icon: Cross, text: isSuperAdmin ? "CMS" : "PAT", tone: "emerald" }

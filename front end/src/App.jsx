@@ -5,6 +5,7 @@ import AppLayout from "./layout/AppLayout";
 import "./pages/SUPERADMIN/SuperAdmin.css";
 import "./styles/compact-spacing.css";
 import { ToastProvider } from "./components/ToastProvider";
+import PermissionRoute from "./components/PermissionRoute";
 
 // Pages
 const DoctorApp = lazy(() => import("./doctors/DoctorApp"));
@@ -57,15 +58,18 @@ const DoctorWiseReport = lazy(() => import("./pages/REPORTS/DoctorWiseReport"));
 const normalizeRole = (role = "") =>
   String(role || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
 
+const getSessionValue = (key) =>
+  sessionStorage.getItem(key) || localStorage.getItem(key) || "";
+
 const isCurrentUserSuperAdmin = () =>
-  normalizeRole(localStorage.getItem("adminRole") || localStorage.getItem("userRole")) === "superadmin";
+  normalizeRole(getSessionValue("adminRole") || getSessionValue("userRole")) === "superadmin";
 
 const SuperAdminRoute = ({ children }) =>
   isCurrentUserSuperAdmin() ? children : <Navigate to="/dashboard" replace />;
 
 const PatientRoute = ({ children }) => {
-  const patientToken = localStorage.getItem("patientToken");
-  const patientRole = normalizeRole(localStorage.getItem("patientRole") || localStorage.getItem("userRole"));
+  const patientToken = getSessionValue("patientToken");
+  const patientRole = normalizeRole(getSessionValue("patientRole") || getSessionValue("userRole"));
 
   return patientToken || patientRole === "patient"
     ? children
@@ -100,36 +104,36 @@ function App() {
         <Route element={<AppLayout />}>
 
           {/* Dashboard */}
-          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="dashboard" element={<PermissionRoute roleType="admin" module="Dashboard"><Dashboard /></PermissionRoute>} />
           <Route path="profile" element={<UserProfilePage roleType="admin" />} />
 
           {/* MODULES */}
-          <Route path="branches" element={<Branches />} />
-          <Route path="doctors" element={<Doctors />} />
-          <Route path="doctors/add" element={<AddDoctor />} />
+          <Route path="branches" element={<PermissionRoute roleType="admin" module="Branches"><Branches /></PermissionRoute>} />
+          <Route path="doctors" element={<PermissionRoute roleType="admin" module="Doctors"><Doctors /></PermissionRoute>} />
+          <Route path="doctors/add" element={<PermissionRoute roleType="admin" module="Doctors"><AddDoctor /></PermissionRoute>} />
           <Route path="doctors/register" element={<Navigate to="/doctors/add" replace />} />
-          <Route path="doctors/schedule" element={<DoctorSchedule />} />
-          <Route path="DoctorSchedule/schedule" element={<Doctorschedulepage />} />
-          <Route path="receptionists" element={<Receptionists />} />
-          <Route path="nurses" element={<Nurses />} />
-          <Route path="lab-technicians" element={<LabTechnicians />} />
-          <Route path="lab-files" element={<LabFiles />} />
-          <Route path="roles" element={<AdminRolesPermissions />} />
+          <Route path="doctors/schedule" element={<PermissionRoute roleType="admin" module="Doctors"><DoctorSchedule /></PermissionRoute>} />
+          <Route path="DoctorSchedule/schedule" element={<PermissionRoute roleType="admin" module="Schedule Settings"><Doctorschedulepage /></PermissionRoute>} />
+          <Route path="receptionists" element={<PermissionRoute roleType="admin" module="Receptionists"><Receptionists /></PermissionRoute>} />
+          <Route path="nurses" element={<PermissionRoute roleType="admin" module="Nurses"><Nurses /></PermissionRoute>} />
+          <Route path="lab-technicians" element={<PermissionRoute roleType="admin" module="Lab Technicians"><LabTechnicians /></PermissionRoute>} />
+          <Route path="lab-files" element={<PermissionRoute roleType="admin" module="Lab Files"><LabFiles /></PermissionRoute>} />
+          <Route path="roles" element={<PermissionRoute roleType="admin" module="Roles & Permissions"><AdminRolesPermissions /></PermissionRoute>} />
           <Route path="roles-permissions" element={<Navigate to="/roles" replace />} />
-          <Route path="users" element={<AdminUserManagement />} />
-          <Route path="settings" element={<AdminSettings />} />
+          <Route path="users" element={<PermissionRoute roleType="admin" module="User Management"><AdminUserManagement /></PermissionRoute>} />
+          <Route path="settings" element={<PermissionRoute roleType="admin" module="Settings"><AdminSettings /></PermissionRoute>} />
 
-          <Route path="patients" element={<Patients />} />
-          <Route path="patients/dashboard" element={<PatientDashboard />} />
-          <Route path="patients/:id" element={<PatientDetails />} /> {/* ✅ IMPORTANT */}
+          <Route path="patients" element={<PermissionRoute roleType="admin" module="Patients"><Patients /></PermissionRoute>} />
+          <Route path="patients/dashboard" element={<PermissionRoute roleType="admin" module="Patients"><PatientDashboard /></PermissionRoute>} />
+            <Route path="patients/:id" element={<PermissionRoute roleType="admin" module="Patients"><PatientDetails /></PermissionRoute>} /> {/* ✅ IMPORTANT */}
 
-          <Route path="appointments" element={<Appointments />} />
-          <Route path="appointments/new" element={<NewAppointment />} />
+          <Route path="appointments" element={<PermissionRoute roleType="admin" module="Appointments"><Appointments /></PermissionRoute>} />
+          <Route path="appointments/new" element={<PermissionRoute roleType="admin" module="Appointments"><NewAppointment /></PermissionRoute>} />
 
-          <Route path="reports" element={<Reports />} />
-          <Route path="reports/daily" element={<DailyReport />} />
-          <Route path="RevenueReport/daily" element={<RevenueReport />} />
-          <Route path="DoctorWiseReport/daily" element={<DoctorWiseReport />} />
+          <Route path="reports" element={<PermissionRoute roleType="admin" module="Reports"><Reports /></PermissionRoute>} />
+          <Route path="reports/daily" element={<PermissionRoute roleType="admin" module="Reports"><DailyReport /></PermissionRoute>} />
+          <Route path="RevenueReport/daily" element={<PermissionRoute roleType="admin" module="Reports"><RevenueReport /></PermissionRoute>} />
+          <Route path="DoctorWiseReport/daily" element={<PermissionRoute roleType="admin" module="Reports"><DoctorWiseReport /></PermissionRoute>} />
 
           <Route path="superadmin" element={<Navigate to="/superadmin/dashboard" replace />} />
           <Route path="superadmin/dashboard" element={<SuperAdminRoute><SuperAdminDashboard /></SuperAdminRoute>} />

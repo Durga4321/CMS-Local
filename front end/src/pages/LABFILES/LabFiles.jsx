@@ -4,6 +4,7 @@ import { apiUrl } from "../../config/api";
 import { getApiHeaders } from "../../utils/branchApi";
 import { cacheLabMasterTests, getImportedLabFileRows, saveImportedLabFileRows } from "../../utils/labMaster";
 import { useToast } from "../../components/ToastProvider";
+import { useAdminModulePermissions } from "../../utils/rolePermissions";
 import "../RECEPTIONISTS/Receptionists.css";
 import "./LabFiles.css";
 
@@ -71,6 +72,7 @@ const LAB_MASTER_QUERY = "pageSize=10000&limit=10000&includeAll=true&all=true";
 
 function LabFiles() {
   const toast = useToast();
+  const { permissions, canCreate, canEdit, canDelete } = useAdminModulePermissions("Lab Files");
   const fileInputRef = useRef(null);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +112,11 @@ function LabFiles() {
   }, [rows, search]);
 
   const handleImport = async (event) => {
+    if (!canCreate) {
+      toast.error("You do not have permission to import lab files.");
+      event.target.value = "";
+      return;
+    }
     const file = event.target.files?.[0];
     if (!file) return;
     const fileExtension = String(file.name).split(".").pop()?.toLowerCase() || "";
@@ -145,6 +152,10 @@ function LabFiles() {
   };
 
   const handleExport = async () => {
+    if (!permissions.view) {
+      toast.error("You do not have permission to export lab files.");
+      return;
+    }
     try {
       await downloadLabExport();
       toast.success("Lab export downloaded.");
@@ -154,6 +165,10 @@ function LabFiles() {
   };
 
   const openEdit = (row) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to edit lab files.");
+      return;
+    }
     setEditingRow(row);
     setForm(getInitialForm(row));
   };
@@ -169,6 +184,10 @@ function LabFiles() {
 
   const handleUpdate = async (event) => {
     event.preventDefault();
+    if (!canEdit) {
+      toast.error("You do not have permission to edit lab files.");
+      return;
+    }
     const id = getLabFileId(editingRow || {});
     if (!id) {
       toast.error("Lab file record id is missing.");
@@ -236,6 +255,10 @@ function LabFiles() {
   };
 
   const handleDelete = async (row) => {
+    if (!canDelete) {
+      toast.error("You do not have permission to delete lab files.");
+      return;
+    }
     const id = getLabFileId(row);
     if (!id) {
       toast.error("Lab file record id is missing.");
@@ -269,7 +292,7 @@ function LabFiles() {
         <div className="receptionists-header-actions">
           <button type="button" className="receptionists-icon-button" onClick={loadRows} disabled={loading} title="Refresh lab files"><RefreshCw size={16} /></button>
           <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: "none" }} onChange={handleImport} />
-          <button type="button" className="receptionists-primary-button" onClick={() => fileInputRef.current?.click()} disabled={uploading}><Upload size={16} /> {uploading ? "Importing..." : "Import File"}</button>
+          <button type="button" className="receptionists-primary-button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !canCreate}><Upload size={16} /> {uploading ? "Importing..." : "Import File"}</button>
           <button type="button" className="receptionists-primary-button lab-files-export" onClick={handleExport}><Download size={16} /> Export File</button>
         </div>
       </div>
@@ -290,8 +313,8 @@ function LabFiles() {
             <span>{readFirst(row, ["price", "Price", "amount", "Amount"], "0")}</span>
             <span>{String(readFirst(row, ["isActive", "IsActive"], true)) === "false" ? "Inactive" : "Active"}</span>
             <span className="lab-files-actions">
-              <button type="button" title="Edit lab file record" onClick={() => openEdit(row)}><Edit3 size={16} /></button>
-              <button type="button" title="Delete lab file record" className="danger" onClick={() => handleDelete(row)}><Trash2 size={16} /></button>
+              <button type="button" title="Edit lab file record" onClick={() => openEdit(row)} disabled={!canEdit}><Edit3 size={16} /></button>
+              <button type="button" title="Delete lab file record" className="danger" onClick={() => handleDelete(row)} disabled={!canDelete}><Trash2 size={16} /></button>
             </span>
           </div>
         ))}
@@ -322,7 +345,7 @@ function LabFiles() {
             </div>
             <div className="receptionists-modal-actions">
               <button type="button" className="receptionists-secondary-button" onClick={closeEdit} disabled={saving}>Cancel</button>
-              <button type="submit" className="receptionists-save-button" disabled={saving}><CheckCircle size={16} />{saving ? "Saving..." : "Update Record"}</button>
+              <button type="submit" className="receptionists-save-button" disabled={saving || !canEdit}><CheckCircle size={16} />{saving ? "Saving..." : "Update Record"}</button>
             </div>
           </form>
         </div>

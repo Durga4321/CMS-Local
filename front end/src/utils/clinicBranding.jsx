@@ -1,4 +1,5 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+import { API_ASSET_BASE_URL, apiUrl } from "../config/api";
 import { formatClinicName } from "./clinicDisplay";
 
 export const CLINIC_BRANDING_STORAGE_KEY = "clinicInvoiceBrandingSettings";
@@ -99,12 +100,148 @@ export const saveClinicBranding = (branding = {}, scope = {}) => {
   return next[key];
 };
 
+const resolveAssetUrl = (value = "") => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^(data:|blob:|https?:\/\/)/i.test(raw)) return raw;
+  const cleanPath = raw.replace(/\\/g, "/").replace(/^\/+/, "");
+  return `${API_ASSET_BASE_URL}/${cleanPath}`;
+};
+
+const getAuthHeaders = () => {
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("adminToken") ||
+    localStorage.getItem("doctorToken") ||
+    localStorage.getItem("receptionistToken") ||
+    localStorage.getItem("nurseToken") ||
+    localStorage.getItem("labToken") ||
+    "";
+  return {
+    "ngrok-skip-browser-warning": "true",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
+
+const parseApiPayload = async (response) => {
+  const text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+};
+
+const unwrapApiData = (data) => {
+  if (typeof data === "string") return { url: data };
+  if (Array.isArray(data)) return data[0] || {};
+  if (Array.isArray(data?.data)) return data.data[0] || {};
+  if (typeof data?.data === "string") return { url: data.data };
+  if (typeof data?.logo === "string") return { logo: data.logo };
+  return data?.data && typeof data.data === "object" ? data.data : data || {};
+};
+
+const normalizeRemoteBranding = (data = {}) => {
+  const source = unwrapApiData(data);
+  const logoValue =
+    source.logoDataUrl ||
+    source.LogoDataUrl ||
+    source.logoUrl ||
+    source.LogoUrl ||
+    source.logoPath ||
+    source.LogoPath ||
+    source.logoFilePath ||
+    source.LogoFilePath ||
+    source.logoFileName ||
+    source.LogoFileName ||
+    source.logo ||
+    source.Logo ||
+    source.fileUrl ||
+    source.FileUrl ||
+    source.url ||
+    source.Url ||
+    "";
+
+  return {
+    settingsId: source.id || source.Id || source.invoiceSettingsId || source.InvoiceSettingsId || "",
+    headerTitle: source.headerTitle || source.HeaderTitle || "",
+    headerSubtitle: source.headerSubtitle || source.HeaderSubtitle || "",
+    clinicAddress: source.clinicAddress || source.ClinicAddress || "",
+    clinicPhone: source.clinicPhone || source.ClinicPhone || "",
+    clinicEmail: source.clinicEmail || source.ClinicEmail || "",
+    gstNumber: source.gstNumber || source.GstNumber || "",
+    registrationNumber: source.registrationNumber || source.RegistrationNumber || "",
+    footerNote: source.footerNote || source.FooterNote || "",
+    accentColor: source.accentColor || source.AccentColor || "",
+    logoDataUrl: resolveAssetUrl(logoValue),
+  };
+};
+
+const fetchPublicClinicLogoBranding = async (scope = {}) => {
+  const clinicId = String(scope.clinicId || "").trim();
+  if (!clinicId) return null;
+
+  const logoUrl = getPublicClinicLogoUrl(clinicId);
+  const response = await fetch(logoUrl, {
+    method: "GET",
+    headers: {
+      "ngrok-skip-browser-warning": "true",
+    },
+  }).catch(() => null);
+  if (!response?.ok) return null;
+
+  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+  if (contentType.startsWith("image/")) {
+    return {
+      logoDataUrl: logoUrl,
+    };
+  }
+
+  const data = await parseApiPayload(response);
+  const branding = normalizeRemoteBranding(data);
+  return branding.logoDataUrl ? branding : null;
+};
+
+export const getPublicClinicLogoUrl = (clinicId = "") => {
+  const id = String(clinicId || "").trim();
+  return id ? apiUrl(`public/clinics/${encodeURIComponent(id)}/logo`) : "";
+};
+
+export const syncClinicBrandingFromBackend = async (scope = {}) => {
+  if (scope.enabled === false) return null;
+
+  const publicLogoBranding = await fetchPublicClinicLogoBranding(scope);
+  if (publicLogoBranding?.logoDataUrl) {
+    saveClinicBranding(publicLogoBranding, scope);
+  }
+
+  if (!localStorage.getItem("adminToken") && !sessionStorage.getItem("adminToken")) {
+    return publicLogoBranding ? saveClinicBranding(publicLogoBranding, scope) : null;
+  }
+
+  const response = await fetch(apiUrl("InvoiceSettings"), {
+    method: "GET",
+    headers: getAuthHeaders(),
+  }).catch(() => null);
+  if (!response?.ok) return publicLogoBranding ? saveClinicBranding(publicLogoBranding, scope) : null;
+  const data = await parseApiPayload(response);
+  const branding = normalizeRemoteBranding(data);
+  if (!branding.logoDataUrl && publicLogoBranding?.logoDataUrl) {
+    branding.logoDataUrl = publicLogoBranding.logoDataUrl;
+  }
+  if (!Object.values(branding).some(Boolean)) return null;
+  return saveClinicBranding(branding, scope);
+};
+
 export const getClinicInvoiceBranding = ({ clinicId = "", clinicName = "" } = {}) => {
   const map = readClinicBrandingMap();
   const direct = map[getClinicBrandingScope({ clinicId, clinicName })];
   const byName = map[getClinicBrandingScope({ clinicName })];
   const branding = direct || byName || {};
   const displayName = formatClinicName(branding.headerTitle || branding.clinicName || clinicName || "Clinic");
+  const publicLogoUrl = getPublicClinicLogoUrl(clinicId);
+  const logoUrl = branding.logoDataUrl || publicLogoUrl || getDefaultClinicLogo(displayName, clinicId);
 
   return {
     template: branding.template || "professional",
@@ -116,8 +253,8 @@ export const getClinicInvoiceBranding = ({ clinicId = "", clinicName = "" } = {}
     clinicEmail: branding.clinicEmail || localStorage.getItem("clinicEmail") || localStorage.getItem("hospitalEmail") || "",
     gstNumber: branding.gstNumber || localStorage.getItem("clinicGst") || localStorage.getItem("gstNumber") || "",
     registrationNumber: branding.registrationNumber || localStorage.getItem("clinicRegistration") || "",
-    logoUrl: branding.logoDataUrl || getDefaultClinicLogo(displayName, clinicId),
-    watermarkUrl: branding.logoDataUrl || getDefaultClinicLogo(displayName, clinicId),
+    logoUrl,
+    watermarkUrl: logoUrl,
     accentColor: branding.accentColor || "#0f9d9d",
     customTemplateName: branding.customTemplateName || "",
     customTemplateDataUrl: branding.customTemplateDataUrl || "",
@@ -138,10 +275,17 @@ export const subscribeClinicBranding = (callback) => {
 };
 
 export const useClinicInvoiceBranding = (scope = {}) => {
+  const scopeKey = getClinicBrandingScope(scope);
+  const enabled = scope.enabled !== false;
   const version = useSyncExternalStore(
     subscribeClinicBranding,
     () => localStorage.getItem(CLINIC_BRANDING_STORAGE_KEY) || "",
     () => ""
   );
+  useEffect(() => {
+    if (!enabled) return undefined;
+    syncClinicBrandingFromBackend(scope).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scopeKey, enabled]);
   return getClinicInvoiceBranding({ ...scope, version });
 };

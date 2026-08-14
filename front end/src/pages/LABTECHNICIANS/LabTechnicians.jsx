@@ -12,6 +12,7 @@ import {
   recordBelongsToClinicScope,
 } from "../../utils/branchApi";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
+import { useAdminModulePermissions } from "../../utils/rolePermissions";
 import { onlyAlpha, onlyIndianMobileValue, validateAlpha, validateGmail, validateMobile, validateSelected, validateStrongPassword } from "../../utils/validation";
 
 const STAFF_URL = apiUrl("Staff");
@@ -106,6 +107,7 @@ const buildStaffFormData = (payload = {}) => {
 
 function LabTechnicians() {
   const toast = useToast();
+  const { canCreate, canEdit, canDelete } = useAdminModulePermissions("Lab Technicians");
   const hospitalId = getStoredHospitalId() || localStorage.getItem("clinicId") || "";
   const clinicName = getClinicDisplayName({ hospitalName: localStorage.getItem("hospitalName"), clinicName: localStorage.getItem("clinicName") }, "Clinic");
   const [technicians, setTechnicians] = useState([]);
@@ -200,6 +202,10 @@ function LabTechnicians() {
   };
 
   const openModal = (tech = null) => {
+    if (tech ? !canEdit : !canCreate) {
+      toast.error(`You do not have permission to ${tech ? "edit" : "create"} lab technicians.`);
+      return;
+    }
     setEditingTech(tech);
     setForm(tech ? {
       name: getLabTechName(tech),
@@ -219,6 +225,10 @@ function LabTechnicians() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (editingTech ? !canEdit : !canCreate) {
+      toast.error(`You do not have permission to ${editingTech ? "edit" : "create"} lab technicians.`);
+      return;
+    }
     if (!validateForm()) return;
     setSaving(true);
     try {
@@ -250,6 +260,10 @@ function LabTechnicians() {
   };
 
   const toggleTechnicianStatus = async (tech) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to edit lab technicians.");
+      return;
+    }
     const id = getLabTechId(tech);
     if (!id) return;
     try {
@@ -273,6 +287,10 @@ function LabTechnicians() {
   };
 
   const deleteTechnician = async (tech) => {
+    if (!canDelete) {
+      toast.error("You do not have permission to delete lab technicians.");
+      return;
+    }
     const id = getLabTechId(tech);
     if (!id || !window.confirm(`Delete lab technician ${getLabTechName(tech)}?`)) return;
     try {
@@ -294,7 +312,7 @@ function LabTechnicians() {
         </div>
         <div className="receptionists-header-actions">
           <button type="button" className="receptionists-icon-button" onClick={loadTechnicians} disabled={loading} title="Refresh lab technicians"><RefreshCw size={16} /></button>
-          <button type="button" className="receptionists-primary-button" onClick={() => openModal()}><Plus size={16} /> Add Lab Technician</button>
+          <button type="button" className="receptionists-primary-button" onClick={() => openModal()} disabled={!canCreate}><Plus size={16} /> Add Lab Technician</button>
         </div>
       </div>
       <div className="receptionists-toolbar">
@@ -321,9 +339,9 @@ function LabTechnicians() {
                 <div><span>Created</span><strong>{readFirst(tech, ["createdAt", "CreatedAt", "createdOn"], "-")}</strong></div>
               </div>
               <div className="lab-tech-card-actions receptionists-actions">
-                <button type="button" className="receptionists-action-button" onClick={() => openModal(tech)} title="Edit lab technician"><Pencil size={16} /></button>
-                <button type="button" className="receptionists-action-button" onClick={() => toggleTechnicianStatus(tech)} title={String(status).toLowerCase().includes("inactive") ? "Activate lab technician" : "Deactivate lab technician"}>{String(status).toLowerCase().includes("inactive") ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}</button>
-                <button type="button" className="receptionists-action-button receptionists-action-danger" onClick={() => deleteTechnician(tech)} title="Delete lab technician"><Trash2 size={16} /></button>
+                <button type="button" className="receptionists-action-button" onClick={() => openModal(tech)} disabled={!canEdit} title="Edit lab technician"><Pencil size={16} /></button>
+                <button type="button" className="receptionists-action-button" onClick={() => toggleTechnicianStatus(tech)} disabled={!canEdit} title={String(status).toLowerCase().includes("inactive") ? "Activate lab technician" : "Deactivate lab technician"}>{String(status).toLowerCase().includes("inactive") ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}</button>
+                <button type="button" className="receptionists-action-button receptionists-action-danger" onClick={() => deleteTechnician(tech)} disabled={!canDelete} title="Delete lab technician"><Trash2 size={16} /></button>
               </div>
             </article>
           );
@@ -344,7 +362,7 @@ function LabTechnicians() {
               <div className="receptionists-field"><label htmlFor="lab-branch">Branch</label><select id="lab-branch" value={form.branchId} onChange={(event) => updateField("branchId", event.target.value)} className={fieldErrors.branchId ? "is-invalid" : ""} disabled={loadingBranches || saving}><option value="">{loadingBranches ? "Loading branches..." : "Select branch"}</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select>{fieldErrors.branchId ? <span className="receptionists-field-error">{fieldErrors.branchId}</span> : null}</div>
               <div className="receptionists-field"><label htmlFor="lab-is-active">Is Active</label><select id="lab-is-active" value={form.isActive ? "Active" : "Inactive"} onChange={(event) => updateField("isActive", event.target.value === "Active")} disabled={saving}><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
               {fieldErrors.form ? <div className="receptionists-error receptionists-form-message">{fieldErrors.form}</div> : null}
-              <div className="receptionists-modal-actions"><button type="button" className="receptionists-secondary-button" onClick={closeModal} disabled={saving}>Cancel</button><button type="submit" className="receptionists-save-button" disabled={saving}><CheckCircle size={16} />{saving ? "Saving..." : editingTech ? "Update Lab Technician" : "Create Lab Technician"}</button></div>
+              <div className="receptionists-modal-actions"><button type="button" className="receptionists-secondary-button" onClick={closeModal} disabled={saving}>Cancel</button><button type="submit" className="receptionists-save-button" disabled={saving || (editingTech ? !canEdit : !canCreate)}><CheckCircle size={16} />{saving ? "Saving..." : editingTech ? "Update Lab Technician" : "Create Lab Technician"}</button></div>
             </form>
           </div>
         </div>

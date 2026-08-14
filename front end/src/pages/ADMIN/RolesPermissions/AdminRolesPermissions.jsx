@@ -5,6 +5,7 @@ import {
   removeRoleModulePermissions,
   saveRoleModulePermissions,
 } from "../../../utils/rolePermissions";
+import { useAdminModulePermissions } from "../../../utils/rolePermissions";
 
 const PERMISSIONS = ["View", "Create", "Edit", "Delete"];
 const GENERAL_MODULE = "General";
@@ -350,6 +351,7 @@ const saveUserPermissions = async (userId, form) => {
 };
 
 function AdminRolesPermissions() {
+  const { canCreate, canEdit, canDelete } = useAdminModulePermissions("Roles & Permissions");
   const [users, setUsers] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -499,6 +501,10 @@ function AdminRolesPermissions() {
   };
 
   const openAdd = () => {
+    if (!canCreate) {
+      setError("You do not have permission to create roles.");
+      return;
+    }
     const firstUser = eligibleUsers[0];
     setForm({
       ...emptyForm,
@@ -514,6 +520,10 @@ function AdminRolesPermissions() {
   };
 
   const openEdit = (assignment) => {
+    if (!canEdit) {
+      setError("You do not have permission to edit roles.");
+      return;
+    }
     setForm({
       userId: assignment.id,
       role: assignment.role || "Doctor",
@@ -533,6 +543,7 @@ function AdminRolesPermissions() {
   };
 
   const togglePermission = (module, permission) => {
+    if (!canEdit && !canCreate) return;
     setForm((previous) => {
       const currentMap = normalizeModulePermissionMap(previous.modulePermissions, previous.role);
       const currentPermissions = normalizePermissionList(currentMap[module] || []);
@@ -553,7 +564,7 @@ function AdminRolesPermissions() {
   };
 
   const toggleRolePermission = (role, module, permission) => {
-    if (savingRole) return;
+    if (savingRole || !canEdit) return;
 
     setRoleMatrix((previous) => {
       const currentMap = normalizeModulePermissionMap(previous[role], role);
@@ -576,6 +587,10 @@ function AdminRolesPermissions() {
   };
 
   const handleSaveRolePermissions = async (role) => {
+    if (!canEdit) {
+      setError("You do not have permission to edit role permissions.");
+      return;
+    }
     const roleUsers = eligibleUsers.filter((user) => normalizeKey(user.role) === normalizeKey(role));
 
     if (!roleUsers.length) {
@@ -619,6 +634,11 @@ function AdminRolesPermissions() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    const isEditing = assignments.some((item) => String(item.id) === String(form.userId));
+    if (isEditing ? !canEdit : !canCreate) {
+      setError(`You do not have permission to ${isEditing ? "edit" : "create"} roles.`);
+      return;
+    }
 
     if (!form.userId) {
       setError("Select a staff member.");
@@ -651,6 +671,10 @@ function AdminRolesPermissions() {
   };
 
   const handleDelete = async (assignment) => {
+    if (!canDelete) {
+      setError("You do not have permission to delete role permissions.");
+      return;
+    }
     if (!assignment?.id) {
       setError("User id is missing.");
       return;
@@ -685,7 +709,7 @@ function AdminRolesPermissions() {
           <p>Create roles for doctors, receptionists, nurses, and lab technicians, then assign View, Create, Edit, and Delete permissions.</p>
         </div>
         <div className="sa-page-actions">
-          <button className="sa-btn sa-btn-primary" type="button" onClick={openAdd} disabled={loading || !eligibleUsers.length}>
+          <button className="sa-btn sa-btn-primary" type="button" onClick={openAdd} disabled={loading || !eligibleUsers.length || !canCreate}>
             <Plus size={16} /> Create Role
           </button>
           <button className="sa-btn" type="button" onClick={loadData} disabled={loading}>
@@ -754,6 +778,7 @@ function AdminRolesPermissions() {
                         <input
                           type="checkbox"
                           checked={permissions.includes(permission)}
+                          disabled={!(canCreate || canEdit)}
                           onChange={() => togglePermission(module, permission)}
                         />
                         {permission}
@@ -769,7 +794,7 @@ function AdminRolesPermissions() {
             <button className="sa-btn" type="button" onClick={closeForm} disabled={saving}>
               Close
             </button>
-            <button className="sa-btn sa-btn-primary" type="submit" disabled={saving}>
+            <button className="sa-btn sa-btn-primary" type="submit" disabled={saving || (assignments.some((item) => String(item.id) === String(form.userId)) ? !canEdit : !canCreate)}>
               <Check size={16} />
               {saving ? "Saving..." : "Save Role"}
             </button>
@@ -821,10 +846,10 @@ function AdminRolesPermissions() {
                 .join(" | ") || normalizePermissionList(assignment.permissions).join(", ") || "-"}
             </span>
             <span className="sa-actions">
-              <button className="sa-icon-btn" type="button" onClick={() => openEdit(assignment)} title="Edit permissions">
+              <button className="sa-icon-btn" type="button" onClick={() => openEdit(assignment)} disabled={!canEdit} title="Edit permissions">
                 <Pencil size={15} />
               </button>
-              <button className="sa-icon-btn sa-icon-btn--danger" type="button" onClick={() => handleDelete(assignment)} title="Delete permissions">
+              <button className="sa-icon-btn sa-icon-btn--danger" type="button" onClick={() => handleDelete(assignment)} disabled={!canDelete} title="Delete permissions">
                 <Trash2 size={15} />
               </button>
             </span>
@@ -862,7 +887,7 @@ function AdminRolesPermissions() {
                           <input
                             type="checkbox"
                             checked={permissions.includes(permission)}
-                            disabled={Boolean(savingRole)}
+                            disabled={Boolean(savingRole) || !canEdit}
                             onChange={() => toggleRolePermission(role, module, permission)}
                           />
                           {permission}
@@ -873,7 +898,7 @@ function AdminRolesPermissions() {
                           className="sa-btn sa-btn-primary"
                           type="button"
                           onClick={() => handleSaveRolePermissions(role)}
-                          disabled={Boolean(savingRole) || loading}
+                          disabled={Boolean(savingRole) || loading || !canEdit}
                         >
                           <Check size={16} />
                           {savingRole === role ? "Saving..." : "Assign"}

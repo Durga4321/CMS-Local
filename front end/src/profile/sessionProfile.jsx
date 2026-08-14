@@ -1,5 +1,8 @@
 import { recordAuditLog } from "../pages/SUPERADMIN/superAdminApi";
 
+const getSessionValue = (key) =>
+  sessionStorage.getItem(key) || localStorage.getItem(key) || "";
+
 export const clearAllSessions = () => {
   [
     "token",
@@ -15,6 +18,8 @@ export const clearAllSessions = () => {
     "nurseEmail",
     "labEmail",
     "adminRole",
+    "adminId",
+    "adminUserId",
     "doctorRole",
     "receptionistRole",
     "nurseRole",
@@ -40,27 +45,30 @@ export const clearAllSessions = () => {
     "patientName",
     "patientId",
     "loginIpAddress",
-  ].forEach((key) => localStorage.removeItem(key));
+  ].forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
 };
 
 export const logoutAndClearSessions = async (roleType = "admin") => {
-  const role = String(localStorage.getItem("adminRole") || localStorage.getItem("doctorRole") || localStorage.getItem("receptionistRole") || localStorage.getItem("nurseRole") || localStorage.getItem("labRole") || localStorage.getItem("patientRole") || localStorage.getItem("userRole") || "").trim();
+  const role = String(getSessionValue("adminRole") || getSessionValue("doctorRole") || getSessionValue("receptionistRole") || getSessionValue("nurseRole") || getSessionValue("labRole") || getSessionValue("patientRole") || getSessionValue("userRole") || "").trim();
   const name = String(
-    localStorage.getItem("adminName") ||
-      localStorage.getItem("doctorName") ||
-      localStorage.getItem("receptionistName") ||
-      localStorage.getItem("nurseName") ||
-      localStorage.getItem("labName") ||
-      localStorage.getItem("patientName") ||
-      localStorage.getItem("adminEmail") ||
-      localStorage.getItem("doctorEmail") ||
-      localStorage.getItem("receptionistEmail") ||
-      localStorage.getItem("nurseEmail") ||
-      localStorage.getItem("labEmail") ||
-      localStorage.getItem("patientEmail") ||
+    getSessionValue("adminName") ||
+      getSessionValue("doctorName") ||
+      getSessionValue("receptionistName") ||
+      getSessionValue("nurseName") ||
+      getSessionValue("labName") ||
+      getSessionValue("patientName") ||
+      getSessionValue("adminEmail") ||
+      getSessionValue("doctorEmail") ||
+      getSessionValue("receptionistEmail") ||
+      getSessionValue("nurseEmail") ||
+      getSessionValue("labEmail") ||
+      getSessionValue("patientEmail") ||
       "User"
   ).trim();
-  const ipAddress = String(localStorage.getItem("loginIpAddress") || "").trim();
+  const ipAddress = String(getSessionValue("loginIpAddress") || "").trim();
   const payload = {
       userName: name,
       action: `${name} logged out`,
@@ -101,20 +109,20 @@ const getClaim = (claims, ...keys) => {
 const getSessionClaims = (roleType) => {
   const roleToken =
     roleType === "doctor"
-      ? localStorage.getItem("doctorToken")
+      ? getSessionValue("doctorToken")
       : roleType === "receptionist"
-        ? localStorage.getItem("receptionistToken")
+        ? getSessionValue("receptionistToken")
         : roleType === "nurse"
-          ? localStorage.getItem("nurseToken")
+          ? getSessionValue("nurseToken")
           : roleType === "lab"
-            ? localStorage.getItem("labToken")
-        : localStorage.getItem("adminToken");
+            ? getSessionValue("labToken")
+        : getSessionValue("adminToken");
 
-  return decodeJwtPayload(roleToken || localStorage.getItem("token"));
+  return decodeJwtPayload(roleToken || getSessionValue("token"));
 };
 
 const getProfileEmail = (storedKey, claims, fallback) =>
-  localStorage.getItem(storedKey) ||
+  getSessionValue(storedKey) ||
   getClaim(
     claims,
     "email",
@@ -123,7 +131,7 @@ const getProfileEmail = (storedKey, claims, fallback) =>
   fallback;
 
 const getProfileName = (storedKey, email, claims, fallback) => {
-  const storedName = String(localStorage.getItem(storedKey) || "").trim();
+  const storedName = String(getSessionValue(storedKey) || "").trim();
   const tokenName = getClaim(
     claims,
     "name",
@@ -138,10 +146,10 @@ const getProfileName = (storedKey, email, claims, fallback) => {
 };
 
 const getProfileBranchName = (claims) =>
-  localStorage.getItem("doctorBranchName") ||
-  localStorage.getItem("DoctorBranchName") ||
-  localStorage.getItem("branchName") ||
-  localStorage.getItem("BranchName") ||
+  getSessionValue("doctorBranchName") ||
+  getSessionValue("DoctorBranchName") ||
+  getSessionValue("branchName") ||
+  getSessionValue("BranchName") ||
   getClaim(claims, "BranchName", "branchName", "Branch", "branch") ||
   "";
 
@@ -151,14 +159,16 @@ export const getRoleProfile = (roleType = "admin") => {
     const email = getProfileEmail("doctorEmail", claims, "doctor account");
     const name = getProfileName("doctorName", email, claims, "Doctor");
     const id =
-      localStorage.getItem("doctorId") ||
-      localStorage.getItem("userId") ||
+      getSessionValue("userId") ||
+      getSessionValue("doctorId") ||
       getClaim(claims, "doctorId", "DoctorId", "userId", "UserId", "sub", "nameid", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+    const doctorId = getSessionValue("doctorId") || getClaim(claims, "doctorId", "DoctorId");
     return {
       roleType,
       roleLabel: "Doctor",
       id,
       userId: id,
+      doctorId,
       name: `Dr. ${name}`.replace(/^Dr\. Dr\./, "Dr."),
       email,
       branchName: getProfileBranchName(claims),
@@ -171,14 +181,16 @@ export const getRoleProfile = (roleType = "admin") => {
     const claims = getSessionClaims(roleType);
     const email = getProfileEmail("receptionistEmail", claims, "receptionist account");
     const id =
-      localStorage.getItem("receptionistId") ||
-      localStorage.getItem("userId") ||
+      getSessionValue("userId") ||
+      getSessionValue("receptionistId") ||
       getClaim(claims, "receptionistId", "ReceptionistId", "userId", "UserId", "sub", "nameid", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+    const receptionistId = getSessionValue("receptionistId") || getClaim(claims, "receptionistId", "ReceptionistId");
     return {
       roleType,
       roleLabel: "Receptionist",
       id,
       userId: id,
+      receptionistId,
       name: getProfileName("receptionistName", email, claims, "Receptionist"),
       email,
       branchName: getProfileBranchName(claims),
@@ -191,14 +203,16 @@ export const getRoleProfile = (roleType = "admin") => {
     const claims = getSessionClaims(roleType);
     const email = getProfileEmail("nurseEmail", claims, "nurse account");
     const id =
-      localStorage.getItem("nurseId") ||
-      localStorage.getItem("userId") ||
+      getSessionValue("userId") ||
+      getSessionValue("nurseId") ||
       getClaim(claims, "nurseId", "NurseId", "userId", "UserId", "sub", "nameid", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+    const nurseId = getSessionValue("nurseId") || getClaim(claims, "nurseId", "NurseId");
     return {
       roleType,
       roleLabel: "Nurse",
       id,
       userId: id,
+      nurseId,
       name: getProfileName("nurseName", email, claims, "Nurse"),
       email,
       branchName: getProfileBranchName(claims),
@@ -211,15 +225,18 @@ export const getRoleProfile = (roleType = "admin") => {
     const claims = getSessionClaims(roleType);
     const email = getProfileEmail("labEmail", claims, "lab account");
     const id =
-      localStorage.getItem("labTechnicianId") ||
-      localStorage.getItem("labId") ||
-      localStorage.getItem("userId") ||
+      getSessionValue("userId") ||
+      getSessionValue("labTechnicianId") ||
+      getSessionValue("labId") ||
       getClaim(claims, "labTechnicianId", "LabTechnicianId", "labId", "LabId", "userId", "UserId", "sub", "nameid", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+    const labId = getSessionValue("labTechnicianId") || getSessionValue("labId") || getClaim(claims, "labTechnicianId", "LabTechnicianId", "labId", "LabId");
     return {
       roleType,
       roleLabel: "Lab Technician",
       id,
       userId: id,
+      labId,
+      labTechnicianId: labId,
       name: getProfileName("labName", email, claims, "Lab Technician"),
       email,
       branchName: getProfileBranchName(claims),
@@ -230,24 +247,43 @@ export const getRoleProfile = (roleType = "admin") => {
 
   const claims = getSessionClaims(roleType);
   const email = getProfileEmail("adminEmail", claims, "admin account");
-  const role = localStorage.getItem("adminRole") || "Admin";
+  const role = getSessionValue("adminRole") || "Admin";
   const normalizedRole = String(role).toLowerCase();
   const roleLabel =
     normalizedRole === "superadmin" || normalizedRole === "super_admin"
       ? "Super Admin"
       : "Admin";
+  const adminUserId =
+    getSessionValue("adminUserId") ||
+    getSessionValue("adminId") ||
+    getSessionValue("userId") ||
+    getClaim(
+      claims,
+      "adminUserId",
+      "AdminUserId",
+      "adminUserID",
+      "AdminUserID",
+      "adminId",
+      "AdminId",
+      "userId",
+      "UserId",
+      "sub",
+      "nameid",
+      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+    );
 
   return {
     roleType: "admin",
     roleLabel,
-    id:
-      localStorage.getItem("adminId") ||
-      localStorage.getItem("userId") ||
-      getClaim(claims, "adminId", "AdminId", "userId", "UserId", "sub", "nameid", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"),
+    id: adminUserId,
+    adminUserId,
     userId:
-      localStorage.getItem("userId") ||
-      localStorage.getItem("adminId") ||
-      getClaim(claims, "userId", "UserId", "adminId", "AdminId", "sub", "nameid", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"),
+      getSessionValue("userId") ||
+      adminUserId,
+    hospitalId:
+      getSessionValue("hospitalId") ||
+      getSessionValue("clinicId") ||
+      getClaim(claims, "hospitalId", "HospitalId", "clinicId", "ClinicId"),
     name: getProfileName("adminName", email, claims, roleLabel),
     email,
     branchName: getProfileBranchName(claims),

@@ -53,6 +53,7 @@ import {
   INDIAN_STATES,
 } from "../../utils/indianLocations";
 import { getStoredClinicName } from "../../utils/clinicDisplay";
+import { useAdminModulePermissions } from "../../utils/rolePermissions";
 import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 
 const getEmptyForm = (hospitalId = getStoredHospitalId()) => ({
@@ -136,6 +137,7 @@ const formatBranchAddress = (branch) =>
 
 function Branches() {
   const toast = useToast();
+  const { canCreate, canEdit, canDelete } = useAdminModulePermissions("Branches");
   const hospitalId = getStoredHospitalId();
   const clinicName = getStoredClinicName() || localStorage.getItem("hospitalName") || "Clinic";
   const clinicBranding = getClinicInvoiceBranding({ clinicId: hospitalId, clinicName });
@@ -297,6 +299,10 @@ function Branches() {
   }, [branches, searchText]);
 
   const openAddModal = () => {
+    if (!canCreate) {
+      showError("You do not have permission to create branches.");
+      return;
+    }
     setEditingBranch(null);
     setForm(getEmptyForm(hospitalId));
     setFieldErrors({});
@@ -306,6 +312,10 @@ function Branches() {
   };
 
   const openEditModal = (branch) => {
+    if (!canEdit) {
+      showError("You do not have permission to edit branches.");
+      return;
+    }
     setEditingBranch(branch);
     setForm(getBranchForm(branch, hospitalId));
     setFieldErrors({});
@@ -468,6 +478,10 @@ function Branches() {
 
     const branchId = getBranchId(editingBranch);
     const isEditing = Boolean(branchId);
+    if (isEditing ? !canEdit : !canCreate) {
+      showError(`You do not have permission to ${isEditing ? "edit" : "create"} branches.`);
+      return;
+    }
 
     try {
       const duplicateMobileMessage = await validateUniqueMobileNumber(form.phone, {
@@ -518,6 +532,10 @@ function Branches() {
   };
 
   const toggleBranchStatus = async (branch) => {
+    if (!canEdit) {
+      showError("You do not have permission to edit branches.");
+      return;
+    }
     const branchId = getBranchId(branch);
     if (!branchId || updatingStatusId) return;
 
@@ -562,6 +580,10 @@ function Branches() {
   };
 
   const handleDeleteBranch = async (branch) => {
+    if (!canDelete) {
+      showError("You do not have permission to delete branches.");
+      return;
+    }
     const branchId = getBranchId(branch);
     if (!branchId || saving || deletingBranchId || updatingStatusId) return;
 
@@ -625,7 +647,7 @@ function Branches() {
             type="button"
             className="branches-primary-button"
             onClick={openAddModal}
-            disabled={saving}
+            disabled={saving || !canCreate}
             title="Add branch"
           >
             <Plus size={16} />
@@ -707,7 +729,7 @@ function Branches() {
                   type="button"
                   className="branches-action-button branches-action-edit"
                   onClick={() => openEditModal(branch)}
-                  disabled={saving || isUpdating || isDeleting}
+                  disabled={saving || isUpdating || isDeleting || !canEdit}
                   title="Edit branch"
                   aria-label={`Edit ${getBranchName(branch) || "branch"}`}
                 >
@@ -717,7 +739,7 @@ function Branches() {
                   type="button"
                   className="branches-action-button branches-action-toggle"
                   onClick={() => toggleBranchStatus(branch)}
-                  disabled={saving || isUpdating || isDeleting}
+                  disabled={saving || isUpdating || isDeleting || !canEdit}
                   title={isActive ? "Disable branch" : "Activate branch"}
                   aria-label={`${isActive ? "Disable" : "Activate"} ${getBranchName(branch) || "branch"}`}
                 >
@@ -727,7 +749,7 @@ function Branches() {
                   type="button"
                   className="branches-action-button branches-action-danger"
                   onClick={() => handleDeleteBranch(branch)}
-                  disabled={saving || isUpdating || isDeleting}
+                  disabled={saving || isUpdating || isDeleting || !canDelete}
                   title="Delete branch"
                   aria-label={`Delete ${getBranchName(branch) || "branch"}`}
                 >
@@ -953,7 +975,7 @@ function Branches() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="branches-save-button" disabled={saving}>
+                <button type="submit" className="branches-save-button" disabled={saving || (editingBranch ? !canEdit : !canCreate)}>
                   <CheckCircle size={16} />
                   {saving ? "Saving..." : editingBranch ? "Update Branch" : "Create Branch"}
                 </button>

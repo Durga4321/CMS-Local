@@ -165,6 +165,14 @@ function NotificationPopup({ isSuperAdmin = false }) {
   const role = useMemo(() => normalizeRole(getCurrentRole()), []);
 
   const loadNotifications = useCallback(async () => {
+    if (!isSuperAdmin) {
+      setNotifications([]);
+      setActiveNotification(null);
+      setLoading(false);
+      setError("");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -288,7 +296,7 @@ function NotificationPopup({ isSuperAdmin = false }) {
                       setActiveNotification(readItem);
                       saveReadNotificationKey(item);
                       try {
-                        if (item.id) await markNotificationRead(item.id);
+                        if (isSuperAdmin && item.id) await markNotificationRead(item.id);
                       } catch {}
                       setNotifications((current) =>
                         current.map((n) =>

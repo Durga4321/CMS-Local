@@ -247,6 +247,7 @@ import {
   getExpertiseOptionsForSpecialization,
   getSpecializationDisplayName,
 } from "./doctorExpertiseOptions";
+import { useAdminModulePermissions } from "../../utils/rolePermissions";
 const DOCTORS_API_URL =
   apiUrl("Doctor");
 
@@ -423,6 +424,7 @@ const getApiErrorKey = (key) => {
 function AddDoctor() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { canCreate } = useAdminModulePermissions("Doctors");
   const hospitalId = getStoredHospitalId();
   const clinicName = getClinicDisplayName({
     hospitalName: localStorage.getItem("hospitalName"),
@@ -767,6 +769,10 @@ const validateBranchSelection = (values = form) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!canCreate) {
+      toast.error("You do not have permission to create doctors.");
+      return;
+    }
     const formattedForm = {
       ...form,
       fees: formatFeeValue(form.fees),
@@ -1195,7 +1201,7 @@ const validateBranchSelection = (values = form) => {
             <button
               className="add-doctor-primary"
               type="submit"
-              disabled={saving || loadingBranches}
+              disabled={saving || loadingBranches || !canCreate}
               title="Add doctor"
             >
               {saving ? "Adding..." : "Add Doctor"}

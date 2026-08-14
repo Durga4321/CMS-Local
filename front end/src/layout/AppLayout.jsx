@@ -7,31 +7,34 @@ import "./AppLayout.css";
 const normalizeRole = (role = "") =>
   String(role || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
 
+const getSessionValue = (key) =>
+  sessionStorage.getItem(key) || localStorage.getItem(key) || "";
+
 const useAuth = () => {
   const token =
-    localStorage.getItem("token") ||
-    localStorage.getItem("adminToken") ||
-    localStorage.getItem("doctorToken") ||
-    localStorage.getItem("receptionistToken") ||
-    localStorage.getItem("nurseToken") ||
-    localStorage.getItem("labToken") ||
-    localStorage.getItem("patientToken");
+    getSessionValue("token") ||
+    getSessionValue("adminToken") ||
+    getSessionValue("doctorToken") ||
+    getSessionValue("receptionistToken") ||
+    getSessionValue("nurseToken") ||
+    getSessionValue("labToken") ||
+    getSessionValue("patientToken");
 
   const role =
-    localStorage.getItem("adminRole") ||
-    localStorage.getItem("receptionistRole") ||
-    localStorage.getItem("nurseRole") ||
-    localStorage.getItem("labRole") ||
-    localStorage.getItem("userRole") ||
+    getSessionValue("adminRole") ||
+    getSessionValue("receptionistRole") ||
+    getSessionValue("nurseRole") ||
+    getSessionValue("labRole") ||
+    getSessionValue("userRole") ||
     "";
 
   const normalizedRole = normalizeRole(role);
 
-  const isDoctor = normalizedRole === "doctor" || Boolean(localStorage.getItem("doctorToken"));
-  const isReceptionist = normalizedRole === "receptionist" || Boolean(localStorage.getItem("receptionistToken"));
-  const isNurse = normalizedRole === "nurse" || Boolean(localStorage.getItem("nurseToken"));
-  const isLab = normalizedRole === "labtechnician" || normalizedRole === "lab" || Boolean(localStorage.getItem("labToken"));
-  const isPatient = normalizedRole === "patient" || Boolean(localStorage.getItem("patientToken"));
+  const isDoctor = normalizedRole === "doctor" || Boolean(getSessionValue("doctorToken"));
+  const isReceptionist = normalizedRole === "receptionist" || Boolean(getSessionValue("receptionistToken"));
+  const isNurse = normalizedRole === "nurse" || Boolean(getSessionValue("nurseToken"));
+  const isLab = normalizedRole === "labtechnician" || normalizedRole === "lab" || Boolean(getSessionValue("labToken"));
+  const isPatient = normalizedRole === "patient" || Boolean(getSessionValue("patientToken"));
   const isSuperAdmin = normalizedRole === "superadmin";
 
   return {

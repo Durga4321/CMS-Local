@@ -8,6 +8,7 @@ import { getLoggedInDoctor } from "../doctors/utils/doctorSession";
 import {
   hasAnyModulePermission,
   hasAnySavedModulePermissions,
+  shouldFailClosedForPermissions,
   useRolePermissionsSync,
 } from "../utils/rolePermissions";
 
@@ -44,11 +45,18 @@ const ROLE_FALLBACK_ROUTES = {
   ],
   admin: [
     { module: "Dashboard", to: "/dashboard" },
+    { module: "Branches", to: "/branches" },
+    { module: "Doctors", to: "/doctors" },
     { module: "Receptionists", to: "/receptionists" },
     { module: "Nurses", to: "/nurses" },
     { module: "Lab Technicians", to: "/lab-technicians" },
+    { module: "Lab Files", to: "/lab-files" },
     { module: "Patients", to: "/patients" },
     { module: "Appointments", to: "/appointments" },
+    { module: "Schedule Settings", to: "/DoctorSchedule/schedule" },
+    { module: "Roles & Permissions", to: "/roles" },
+    { module: "User Management", to: "/users" },
+    { module: "Settings", to: "/settings" },
     { module: "Reports", to: "/reports" },
   ],
 };
@@ -62,8 +70,9 @@ const getPermissionProfile = (roleType = "admin") => {
     const doctor = getLoggedInDoctor();
     return {
       ...profile,
-      id: doctor.id || profile.id,
-      userId: doctor.id || profile.userId,
+      id: profile.id || doctor.id,
+      userId: profile.userId || profile.id || doctor.id,
+      doctorId: doctor.id || profile.doctorId,
       email: doctor.email || profile.email,
       name: doctor.name || profile.name,
     };
@@ -79,14 +88,19 @@ const getFallbackPath = (roleType = "admin", profile = {}) => {
 function PermissionRoute({ roleType, module, children }) {
   const profile = useMemo(() => getPermissionProfile(roleType), [roleType]);
   const { loading: permissionsLoading } = useRolePermissionsSync(profile);
+
   const hasSavedPermissions = hasAnySavedModulePermissions(profile);
+  if (roleType === "admin" && !hasSavedPermissions) return children;
+
   if (permissionsLoading && !hasSavedPermissions) {
     return <div className="app-route-loading">Loading...</div>;
   }
-  const allowed = !hasSavedPermissions || hasAnyModulePermission(profile, module, "View");
+  const allowed = hasSavedPermissions
+    ? hasAnyModulePermission(profile, module, "View")
+    : !shouldFailClosedForPermissions(profile);
 
   if (!allowed) {
-    return <Navigate to={getFallbackPath(roleType, profile) || "/"} replace />;
+    return <Navigate to={getFallbackPath(roleType, profile) || "/dashboard"} replace />;
   }
 
   return children;

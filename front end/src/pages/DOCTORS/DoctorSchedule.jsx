@@ -8,6 +8,7 @@ import {
   getAuthToken,
 } from "../../utils/branchApi";
 import { getLoggedInDoctor } from "../../doctors/utils/doctorSession";
+import { getRoleProfile } from "../../profile/sessionProfile";
 import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -60,11 +61,21 @@ const fieldOf = (item, camel, pascal) => item?.[camel] ?? item?.[pascal];
 
 function DoctorSchedule({ selfMode = false }) {
   const loggedDoctor = getLoggedInDoctor();
-  const permissionProfile = { ...loggedDoctor, role: "Doctor" };
+  const doctorRoleProfile = getRoleProfile("doctor");
+  const permissionProfile = selfMode
+    ? {
+        ...doctorRoleProfile,
+        doctorId: loggedDoctor.id,
+        email: loggedDoctor.email || doctorRoleProfile.email,
+        name: loggedDoctor.name || doctorRoleProfile.name,
+        role: "Doctor",
+      }
+    : getRoleProfile("admin");
+  const permissionModule = selfMode ? "My Schedule" : "Doctors";
   useRolePermissionsSync(permissionProfile);
-  const canCreateSchedule = canUseModulePermission(permissionProfile, "My Schedule", "Create");
-  const canEditSchedule = canUseModulePermission(permissionProfile, "My Schedule", "Edit");
-  const canDeleteSchedule = canUseModulePermission(permissionProfile, "My Schedule", "Delete");
+  const canCreateSchedule = canUseModulePermission(permissionProfile, permissionModule, "Create");
+  const canEditSchedule = canUseModulePermission(permissionProfile, permissionModule, "Edit");
+  const canDeleteSchedule = canUseModulePermission(permissionProfile, permissionModule, "Delete");
   const [branches, setBranches] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [branchId, setBranchId] = useState("");
