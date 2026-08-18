@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { API_ASSET_BASE_URL, apiUrl } from "../config/api";
+import { apiUrl, assetUrl } from "../config/api";
 import { formatClinicName } from "./clinicDisplay";
 
 export const CLINIC_BRANDING_STORAGE_KEY = "clinicInvoiceBrandingSettings";
@@ -48,6 +48,16 @@ const LOGO_SYMBOLS = [
   '<path d="M145 79c35-15 68-8 92 5 25 14 55 14 80 0 24-13 57-20 92-5 64 28 91 95 70 171l-45 170c-13 49-37 137-88 137-36 0-38-43-49-90-5-23-13-40-21-40s-16 17-21 40c-11 47-13 90-49 90-51 0-75-88-88-137L73 250C52 174 79 107 145 79Z" fill="none" stroke="currentColor" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>',
   '<path d="M130 288c46-80 87-120 123-120 35 0 51 38 82 38 25 0 42-25 63-62" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M90 350h300" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round"/>',
 ];
+
+const isGeneratedClinicLogoDataUrl = (value = "") => {
+  const raw = String(value || "").trim();
+  if (!raw.startsWith("data:image/svg+xml")) return false;
+  try {
+    return decodeURIComponent(raw).includes('viewBox="0 0 480 560"');
+  } catch {
+    return raw.includes("480%20560") || raw.includes("480 560");
+  }
+};
 
 export const getDefaultClinicLogo = (clinicName = "Clinic", clinicId = "") => {
   const displayName = formatClinicName(clinicName, "Clinic") || "Clinic";
@@ -103,9 +113,8 @@ export const saveClinicBranding = (branding = {}, scope = {}) => {
 const resolveAssetUrl = (value = "") => {
   const raw = String(value || "").trim();
   if (!raw) return "";
-  if (/^(data:|blob:|https?:\/\/)/i.test(raw)) return raw;
-  const cleanPath = raw.replace(/\\/g, "/").replace(/^\/+/, "");
-  return `${API_ASSET_BASE_URL}/${cleanPath}`;
+  if (isGeneratedClinicLogoDataUrl(raw)) return "";
+  return assetUrl(raw);
 };
 
 const getAuthHeaders = () => {
@@ -240,8 +249,7 @@ export const getClinicInvoiceBranding = ({ clinicId = "", clinicName = "" } = {}
   const byName = map[getClinicBrandingScope({ clinicName })];
   const branding = direct || byName || {};
   const displayName = formatClinicName(branding.headerTitle || branding.clinicName || clinicName || "Clinic");
-  const publicLogoUrl = getPublicClinicLogoUrl(clinicId);
-  const logoUrl = branding.logoDataUrl || publicLogoUrl || getDefaultClinicLogo(displayName, clinicId);
+  const logoUrl = resolveAssetUrl(branding.logoDataUrl) || getDefaultClinicLogo(displayName, clinicId);
 
   return {
     template: branding.template || "professional",

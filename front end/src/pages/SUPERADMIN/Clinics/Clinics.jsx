@@ -6,7 +6,23 @@ import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
 import { deleteClinic, fetchClinics, updateClinicStatus } from "../superAdminApi";
 import AuthImage from "../../../utils/AuthImage";
-import { getClinicInvoiceBranding, getDefaultClinicLogo } from "../../../utils/clinicBranding";
+import { getDefaultClinicLogo, useClinicInvoiceBranding } from "../../../utils/clinicBranding";
+
+const ClinicLogo = ({ clinic }) => {
+  const clinicId = clinic.id || clinic.clinicId || clinic.hospitalId;
+  const branding = useClinicInvoiceBranding({
+    clinicId,
+    clinicName: clinic.name,
+  });
+
+  return (
+    <AuthImage
+      src={branding.logoUrl}
+      alt=""
+      fallback={<img src={getDefaultClinicLogo(clinic.name, clinicId)} alt="" />}
+    />
+  );
+};
 
 function Clinics() {
   const navigate = useNavigate();
@@ -104,18 +120,10 @@ function Clinics() {
       label: "Clinic Name",
       width: "minmax(150px, 0.9fr)",
       render: (clinic) => {
-        const branding = getClinicInvoiceBranding({
-          clinicId: clinic.id || clinic.clinicId || clinic.hospitalId,
-          clinicName: clinic.name,
-        });
         return (
           <div className="sa-clinic-name-cell">
             <span className="sa-clinic-logo sa-clinic-logo--emerald">
-              <AuthImage
-                src={branding.logoUrl}
-                alt=""
-                fallback={<img src={getDefaultClinicLogo(clinic.name, clinic.id)} alt="" />}
-              />
+              <ClinicLogo clinic={clinic} />
             </span>
             <b>{clinic.name || "-"}</b>
           </div>
