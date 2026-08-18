@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  ArrowLeft,
   CheckCircle2,
   Circle,
   Eye,
@@ -26,6 +27,14 @@ const PASSWORD_REQUIREMENTS = [
     test: (value) => /[^A-Za-z0-9]/.test(value),
   },
 ];
+
+const PROFILE_BACK_FALLBACKS = {
+  admin: "/dashboard",
+  doctor: "/doctor/dashboard",
+  receptionist: "/reception/dashboard",
+  nurse: "/nurse/dashboard",
+  lab: "/lab/dashboard",
+};
 
 function UserProfilePage({ roleType = "admin" }) {
   const navigate = useNavigate();
@@ -63,6 +72,19 @@ function UserProfilePage({ roleType = "admin" }) {
   const logout = async () => {
     await logoutAndClearSessions(roleType);
     navigate("/login", { replace: true });
+  };
+
+  const goBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    const fallback =
+      profile.roleLabel === "Super Admin"
+        ? "/superadmin/dashboard"
+        : PROFILE_BACK_FALLBACKS[roleType] || PROFILE_BACK_FALLBACKS.admin;
+    navigate(fallback);
   };
 
   const togglePasswordVisibility = (field) => {
@@ -153,6 +175,16 @@ function UserProfilePage({ roleType = "admin" }) {
   return (
     <section className="profile-page">
       <div className="profile-hero">
+        <button
+          type="button"
+          className="profile-back-btn"
+          onClick={goBack}
+          aria-label="Go back"
+          title="Back"
+        >
+          <ArrowLeft size={19} />
+          <span>Back</span>
+        </button>
         <div className="profile-hero-avatar">{getInitials(profile.name)}</div>
         <div>
           <h2>{profile.name}</h2>
