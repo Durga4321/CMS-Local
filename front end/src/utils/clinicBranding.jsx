@@ -241,7 +241,7 @@ export const getClinicInvoiceBranding = ({ clinicId = "", clinicName = "" } = {}
   const branding = direct || byName || {};
   const displayName = formatClinicName(branding.headerTitle || branding.clinicName || clinicName || "Clinic");
   const publicLogoUrl = getPublicClinicLogoUrl(clinicId);
-  const logoUrl = branding.logoDataUrl || publicLogoUrl || getDefaultClinicLogo(displayName, clinicId);
+  const logoUrl = publicLogoUrl || branding.logoDataUrl || getDefaultClinicLogo(displayName, clinicId);
 
   return {
     template: branding.template || "professional",

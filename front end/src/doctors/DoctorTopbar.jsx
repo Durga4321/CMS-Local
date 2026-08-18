@@ -1,11 +1,27 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Menu, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import NotificationPopup from "../components/NotificationPopup";
 import UserProfileMenu from "../profile/UserProfileMenu";
+import { doctorModuleSearchItems, searchModuleItems } from "../utils/moduleSearch";
 import "./DoctorTopbar.css";
 
 function DoctorTopbar({ title, sidebarOpen, onMenuToggle, search = "", onSearch = () => {} }) {
+  const navigate = useNavigate();
   const inputRef = useRef(null);
+  const [showResults, setShowResults] = useState(false);
+  const results = useMemo(() => searchModuleItems(doctorModuleSearchItems, search), [search]);
+
+  const goTo = (path) => {
+    onSearch("");
+    setShowResults(false);
+    navigate(path);
+  };
+
+  const submitSearch = (event) => {
+    event.preventDefault();
+    if (results[0]) goTo(results[0].path);
+  };
 
   useEffect(() => {
     const handler = (e) => {
@@ -35,7 +51,7 @@ function DoctorTopbar({ title, sidebarOpen, onMenuToggle, search = "", onSearch 
         <h1 className="dr-topbar-title">{title}</h1>
       </div>
 
-      <div className="dr-topbar-search">
+      <form className="dr-topbar-search" onSubmit={submitSearch} onBlur={() => window.setTimeout(() => setShowResults(false), 120)}>
         <Search size={15} className="dr-search-icon" />
         <input
           ref={inputRef}
@@ -43,10 +59,23 @@ function DoctorTopbar({ title, sidebarOpen, onMenuToggle, search = "", onSearch 
           placeholder="Search patient by name, ID or phone..."
           aria-label="Search patients"
           value={search}
-          onChange={(e) => onSearch(e.target.value)}
+          onChange={(e) => {
+            onSearch(e.target.value);
+            setShowResults(true);
+          }}
+          onFocus={() => setShowResults(true)}
         />
         <kbd className="dr-search-kbd">Ctrl + K</kbd>
-      </div>
+        {showResults ? (
+          <div className="dr-search-results">
+            {results.length ? results.slice(0, 7).map((item) => (
+              <button key={item.path} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => goTo(item.path)}>
+                {item.label}
+              </button>
+            )) : <span>No matching module</span>}
+          </div>
+        ) : null}
+      </form>
 
       <div className="dr-topbar-right">
         <NotificationPopup />
