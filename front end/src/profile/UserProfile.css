@@ -318,11 +318,37 @@
 }
 
 .profile-hero {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 18px;
   padding: 22px;
   margin-bottom: 18px;
+}
+
+.profile-back-btn {
+  height: 40px;
+  border: 1px solid #d7e5ef;
+  border-radius: 12px;
+  background: #f8fbff;
+  color: #082033;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 13px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.profile-back-btn:hover,
+.profile-back-btn:focus-visible {
+  background: #e9f8f8;
+  border-color: #b9e3e5;
+  color: #0f9d9d;
+  outline: 0;
 }
 
 .profile-hero-avatar {
@@ -537,5 +563,17 @@
   .profile-layout,
   .profile-info-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .profile-hero {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .profile-back-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

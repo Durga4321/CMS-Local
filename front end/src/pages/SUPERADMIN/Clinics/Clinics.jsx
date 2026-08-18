@@ -5,7 +5,8 @@ import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
 import { deleteClinic, fetchClinics, updateClinicStatus } from "../superAdminApi";
-import { getClinicInvoiceBranding } from "../../../utils/clinicBranding";
+import AuthImage from "../../../utils/AuthImage";
+import { getClinicInvoiceBranding, getDefaultClinicLogo } from "../../../utils/clinicBranding";
 
 function Clinics() {
   const navigate = useNavigate();
@@ -110,7 +111,11 @@ function Clinics() {
         return (
           <div className="sa-clinic-name-cell">
             <span className="sa-clinic-logo sa-clinic-logo--emerald">
-              <img src={branding.logoUrl} alt="" />
+              <AuthImage
+                src={branding.logoUrl}
+                alt=""
+                fallback={<img src={getDefaultClinicLogo(clinic.name, clinic.id)} alt="" />}
+              />
             </span>
             <b>{clinic.name || "-"}</b>
           </div>

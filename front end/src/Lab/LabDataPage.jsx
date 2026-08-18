@@ -307,9 +307,14 @@ const getReportDisplayStatus = (row = {}) => {
 
 const getReportDisplayDate = (row = {}) =>
   readFirst(row, [
-    "reportedAt", "ReportedAt", "reportDate", "ReportDate", "reportCreatedAt", "ReportCreatedAt",
-    "report.createdAt", "Report.CreatedAt", "resultCreatedAt", "ResultCreatedAt",
-    "completedAt", "CompletedAt", "updatedAt", "UpdatedAt", "createdAt", "CreatedAt", "date", "Date",
+    "reportedAt", "ReportedAt",
+    "reportGeneratedAt", "ReportGeneratedAt", "generatedAt", "GeneratedAt",
+    "reportCompletedAt", "ReportCompletedAt", "completedAt", "CompletedAt",
+    "reportDate", "ReportDate", "reportGeneratedDate", "ReportGeneratedDate",
+    "generatedDate", "GeneratedDate", "completedDate", "CompletedDate",
+    "reportCreatedAt", "ReportCreatedAt", "report.createdAt", "Report.CreatedAt",
+    "resultCreatedAt", "ResultCreatedAt", "resultAt", "ResultAt",
+    "finishedAt", "FinishedAt", "updatedAt", "UpdatedAt", "createdAt", "CreatedAt", "date", "Date",
   ], "");
 
 function LabDataPage({ type }) {
