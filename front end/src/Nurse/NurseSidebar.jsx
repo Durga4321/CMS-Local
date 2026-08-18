@@ -11,7 +11,7 @@ import {
 import { getInitials } from "../profile/sessionProfile";
 import { getNurseProfile } from "./nurseSession";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
-import { useClinicInvoiceBranding } from "../utils/clinicBranding";
+import { getDefaultClinicLogo, useClinicInvoiceBranding } from "../utils/clinicBranding";
 import { filterItemsByViewPermission, hasAnySavedModulePermissions, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const items = [
@@ -70,7 +70,7 @@ function NurseSidebar({ onClose = () => {}, basePath = "/nurse", dashboardLabel 
     <aside className="rc-sidebar">
       <div className="rc-brand">
         <div className="rc-brand-icon rc-clinic-logo rc-clinic-logo--emerald">
-          <img src={clinicBranding.logoUrl} alt="" />
+          <img src={clinicBranding.logoUrl} alt="" onError={(event) => { event.currentTarget.src = getDefaultClinicLogo(hospitalName, profile.clinicId || profile.hospitalId || ""); }} />
         </div>
         <div>
           <span>Clinic Name</span>

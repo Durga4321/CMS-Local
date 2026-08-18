@@ -9,7 +9,7 @@ import {
 import "./DoctorSidebar.css";
 import { getRoleProfile } from "../profile/sessionProfile";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
-import { useClinicInvoiceBranding } from "../utils/clinicBranding";
+import { getDefaultClinicLogo, useClinicInvoiceBranding } from "../utils/clinicBranding";
 import { apiUrl } from "../config/api";
 import { getAuthToken, getLoggedInDoctor } from "./utils/doctorSession";
 import { filterItemsByViewPermission, hasAnySavedModulePermissions, useRolePermissionsSync } from "../utils/rolePermissions";
@@ -157,7 +157,7 @@ function DoctorSidebar() {
     <aside className="dr-sidebar">
       <div className="dr-brand">
         <div className="dr-brand-icon dr-clinic-logo dr-clinic-logo--emerald">
-          <img src={clinicBranding.logoUrl} alt="" />
+          <img src={clinicBranding.logoUrl} alt="" onError={(event) => { event.currentTarget.src = getDefaultClinicLogo(hospitalName, profile.clinicId || profile.hospitalId || ""); }} />
         </div>
         <div>
           <p className="dr-brand-sub">Clinic Name</p>

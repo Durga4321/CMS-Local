@@ -153,6 +153,12 @@ const getProfileBranchName = (claims) =>
   getClaim(claims, "BranchName", "branchName", "Branch", "branch") ||
   "";
 
+const getProfileHospitalId = (claims) =>
+  getSessionValue("hospitalId") ||
+  getSessionValue("clinicId") ||
+  getClaim(claims, "hospitalId", "HospitalId", "clinicId", "ClinicId") ||
+  "";
+
 export const getRoleProfile = (roleType = "admin") => {
   if (roleType === "doctor") {
     const claims = getSessionClaims(roleType);
@@ -171,6 +177,8 @@ export const getRoleProfile = (roleType = "admin") => {
       doctorId,
       name: `Dr. ${name}`.replace(/^Dr\. Dr\./, "Dr."),
       email,
+      hospitalId: getProfileHospitalId(claims),
+      clinicId: getProfileHospitalId(claims),
       branchName: getProfileBranchName(claims),
       profilePath: "/doctor/profile",
       passwordPath: "/doctor/profile?tab=password",
@@ -193,6 +201,8 @@ export const getRoleProfile = (roleType = "admin") => {
       receptionistId,
       name: getProfileName("receptionistName", email, claims, "Receptionist"),
       email,
+      hospitalId: getProfileHospitalId(claims),
+      clinicId: getProfileHospitalId(claims),
       branchName: getProfileBranchName(claims),
       profilePath: "/reception/profile",
       passwordPath: "/reception/profile?tab=password",
@@ -215,6 +225,8 @@ export const getRoleProfile = (roleType = "admin") => {
       nurseId,
       name: getProfileName("nurseName", email, claims, "Nurse"),
       email,
+      hospitalId: getProfileHospitalId(claims),
+      clinicId: getProfileHospitalId(claims),
       branchName: getProfileBranchName(claims),
       profilePath: "/nurse/profile",
       passwordPath: "/nurse/profile?tab=password",
@@ -239,6 +251,8 @@ export const getRoleProfile = (roleType = "admin") => {
       labTechnicianId: labId,
       name: getProfileName("labName", email, claims, "Lab Technician"),
       email,
+      hospitalId: getProfileHospitalId(claims),
+      clinicId: getProfileHospitalId(claims),
       branchName: getProfileBranchName(claims),
       profilePath: "/lab/profile",
       passwordPath: "/lab/profile?tab=password",
@@ -281,9 +295,9 @@ export const getRoleProfile = (roleType = "admin") => {
       getSessionValue("userId") ||
       adminUserId,
     hospitalId:
-      getSessionValue("hospitalId") ||
-      getSessionValue("clinicId") ||
-      getClaim(claims, "hospitalId", "HospitalId", "clinicId", "ClinicId"),
+      getProfileHospitalId(claims),
+    clinicId:
+      getProfileHospitalId(claims),
     name: getProfileName("adminName", email, claims, roleLabel),
     email,
     branchName: getProfileBranchName(claims),
