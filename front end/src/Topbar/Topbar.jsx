@@ -78,6 +78,11 @@ import "./Topbar.css";
 import NotificationPopup from "../components/NotificationPopup";
 import UserProfileMenu from "../profile/UserProfileMenu";
 import { apiUrl } from "../config/api";
+import {
+  adminModuleSearchItems,
+  searchModuleItems,
+  superAdminModuleSearchItems,
+} from "../utils/moduleSearch";
 
 const DASHBOARD_API = apiUrl("Dashboard");
 
@@ -101,28 +106,6 @@ const getActivityCount = (data) => {
   );
 };
 
-const adminSearchItems = [
-  { label: "Dashboard", keywords: "home stats overview", path: "/dashboard" },
-  { label: "Branches", keywords: "branch hospital location clinic", path: "/branches" },
-  { label: "Doctors", keywords: "doctor physicians schedule register", path: "/doctors" },
-  { label: "Receptionists", keywords: "front desk receptionist", path: "/receptionists" },
-  { label: "Patients", keywords: "patient records medical", path: "/patients" },
-  { label: "Appointments", keywords: "booking appointment token", path: "/appointments" },
-  { label: "Schedule Settings", keywords: "doctor schedule slots timing", path: "/DoctorSchedule/schedule" },
-  { label: "User Management", keywords: "users logins online branch browser device", path: "/users" },
-  { label: "Reports", keywords: "analysis revenue export", path: "/reports" },
-];
-
-const superAdminSearchItems = [
-  { label: "Super Admin Dashboard", keywords: "overview stats analytics", path: "/superadmin/dashboard" },
-  { label: "Clinics", keywords: "clinic hospital branch", path: "/superadmin/clinics" },
-  { label: "Admins", keywords: "clinic admins management", path: "/superadmin/admins" },
-  { label: "Settings", keywords: "configuration email sms payment", path: "/superadmin/settings" },
-  { label: "Reports", keywords: "analysis revenue export pdf csv", path: "/superadmin/reports" },
-  { label: "Audit Logs", keywords: "login audit history activity", path: "/superadmin/audit-logs" },
-  { label: "Notifications", keywords: "send notification message", path: "/superadmin/notifications" },
-];
-
 function Topbar({ onMenu }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -130,7 +113,7 @@ function Topbar({ onMenu }) {
   const [showResults, setShowResults] = useState(false);
   const [activityCount, setActivityCount] = useState(0);
   const isSuperAdmin = location.pathname.startsWith("/superadmin");
-  const searchItems = isSuperAdmin ? superAdminSearchItems : adminSearchItems;
+  const searchItems = isSuperAdmin ? superAdminModuleSearchItems : adminModuleSearchItems;
   const placeholder = isSuperAdmin
     ? "Search dashboard, clinics, admins, reports..."
     : "Search patients, doctors, appointments...";
@@ -139,9 +122,7 @@ function Topbar({ onMenu }) {
     const value = query.trim().toLowerCase();
     if (!value) return searchItems;
 
-    return searchItems.filter((item) =>
-      `${item.label} ${item.keywords}`.toLowerCase().includes(value)
-    );
+    return searchModuleItems(searchItems, value);
   }, [query, searchItems]);
 
   const goTo = (path) => {

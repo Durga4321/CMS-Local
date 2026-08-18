@@ -6,10 +6,10 @@ import { getClinicDisplayName } from "../../../utils/clinicDisplay";
 import {
   getClinicBrandingScope,
   getDefaultClinicLogo,
+  getPublicClinicLogoUrl,
   readClinicBrandingMap,
   saveClinicBranding,
 } from "../../../utils/clinicBranding";
-import { useAdminModulePermissions } from "../../../utils/rolePermissions";
 import "./AdminSettings.css";
 
 const BUILT_IN_TEMPLATES = [
@@ -58,6 +58,13 @@ const stringifyInvoiceTemplate = (settings = {}) =>
 
 const INVOICE_SETTINGS_PATH = "InvoiceSettings";
 const INVOICE_LOGO_PATH = "InvoiceSettings/logo";
+
+const withCacheBust = (url = "") => {
+  const raw = String(url || "").trim();
+  if (!raw || raw.startsWith("data:") || raw.startsWith("blob:")) return raw;
+  const separator = raw.includes("?") ? "&" : "?";
+  return `${raw}${separator}v=${Date.now()}`;
+};
 
 const resolveAssetUrl = (value = "") => {
   const raw = String(value || "").trim();
@@ -218,11 +225,14 @@ const getProfileClinicId = (profile = {}) =>
   "";
 
 function AdminSettings() {
-  const { canCreate, canEdit, canDelete } = useAdminModulePermissions("Settings");
+  const canCreate = true;
+  const canEdit = true;
+  const canDelete = true;
   const profile = getRoleProfile("admin");
   const clinicName = getClinicDisplayName(profile, localStorage.getItem("clinicName") || "Clinic");
   const clinicId = getProfileClinicId(profile);
   const scope = useMemo(() => ({ clinicId, clinicName }), [clinicId, clinicName]);
+  const publicLogoUrl = getPublicClinicLogoUrl(clinicId);
   const defaultLogoUrl = getDefaultClinicLogo(clinicName, clinicId);
   const storedBranding = readStoredBranding(scope);
   const initialForm = {
@@ -471,11 +481,12 @@ function AdminSettings() {
           setHasRemoteSettings(true);
           data = await requestInvoiceLogoUpload(file);
         }
-        const remoteLogo = normalizeApiSettings(data).logoDataUrl || localLogo;
+        const uploadedLogo = normalizeApiSettings(data).logoDataUrl;
+        const remoteLogo = withCacheBust(publicLogoUrl || uploadedLogo || localLogo);
         const syncedSettings = { ...nextForm, logoDataUrl: remoteLogo };
         setForm((prev) => ({ ...prev, ...syncedSettings }));
         syncBrandingCache(syncedSettings);
-        showStatus("Logo uploaded.");
+      showStatus("Logo uploaded.");
       } catch (error) {
         setForm((prev) => ({ ...prev, logoDataUrl: "" }));
         showStatus(error.message || "Unable to upload logo.", "error");

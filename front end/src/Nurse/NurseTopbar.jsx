@@ -1,16 +1,30 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { ChevronRight, Menu, Search } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import NotificationPopup from "../components/NotificationPopup";
 import UserProfileMenu from "../profile/UserProfileMenu";
+import { nurseModuleSearchItems, searchModuleItems } from "../utils/moduleSearch";
 
 function NurseTopbar({ title, onMenu, areaLabel = "Nurse", roleType = "nurse" }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [showResults, setShowResults] = useState(false);
   const crumbs = location.pathname
     .split("/")
     .filter(Boolean)
     .slice(1)
     .map((item) => item.charAt(0).toUpperCase() + item.slice(1));
+  const results = useMemo(() => searchModuleItems(nurseModuleSearchItems, query), [query]);
+  const goTo = (path) => {
+    setQuery("");
+    setShowResults(false);
+    navigate(path);
+  };
+  const submitSearch = (event) => {
+    event.preventDefault();
+    if (results[0]) goTo(results[0].path);
+  };
   return (
     <header className="rc-topbar">
       <div className="rc-topbar-left">
@@ -34,10 +48,27 @@ function NurseTopbar({ title, onMenu, areaLabel = "Nurse", roleType = "nurse" })
       </div>
 
       <div className="rc-top-actions">
-        <label className="rc-search">
+        <form className="rc-search rc-module-search" onSubmit={submitSearch} onBlur={() => window.setTimeout(() => setShowResults(false), 120)}>
           <Search size={18} />
-          <input placeholder="Search patients, doctors, bills..." />
-        </label>
+          <input
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setShowResults(true);
+            }}
+            onFocus={() => setShowResults(true)}
+            placeholder="Search nurse modules..."
+          />
+          {showResults ? (
+            <div className="rc-search-results">
+              {results.length ? results.slice(0, 7).map((item) => (
+                <button key={item.path + item.label} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => goTo(item.path)}>
+                  {item.label}
+                </button>
+              )) : <span>No matching module</span>}
+            </div>
+          ) : null}
+        </form>
         <NotificationPopup />
         <UserProfileMenu roleType={roleType} />
       </div>

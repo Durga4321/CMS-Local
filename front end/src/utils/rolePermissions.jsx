@@ -273,69 +273,32 @@ const roleRecordMatchesProfile = (record = {}, profile = {}) => {
 const resolveAdminPermissionProfile = async (profile = {}) => {
   if (!isAdminPermissionProfile(profile) || isSuperAdminPermissionProfile(profile)) return profile;
 
-  const readResolvedAdmin = (admins = []) => {
-    const profileEmail = normalizeKey(profile.email || profile.Email || "");
-    const profileName = normalizeKey(profile.name || profile.Name || "");
-    const profileHospitalId = normalizeKey(profile.hospitalId || profile.clinicId || "");
-    const matchedAdmin = admins.find((admin) => {
-      const adminEmail = normalizeKey(admin.email || admin.Email || admin.adminEmail || admin.AdminEmail || "");
-      const adminName = normalizeKey(admin.name || admin.Name || admin.fullName || admin.FullName || admin.adminName || admin.AdminName || admin.userName || admin.UserName || "");
-      const adminHospitalId = normalizeKey(admin.hospitalId || admin.HospitalId || admin.clinicId || admin.ClinicId || admin.assignedClinicId || admin.AssignedClinicId || "");
-      return Boolean(
-        (profileEmail && adminEmail && profileEmail === adminEmail) ||
-          (profileName && adminName && profileName === adminName && (!profileHospitalId || !adminHospitalId || profileHospitalId === adminHospitalId))
-      );
-    });
+  const resolvedAdminUserId =
+    profile.adminUserId ||
+    profile.AdminUserId ||
+    profile.adminId ||
+    profile.AdminId ||
+    profile.userId ||
+    profile.UserId ||
+    profile.id ||
+    profile.Id ||
+    getSessionValue("adminUserId") ||
+    getSessionValue("adminId") ||
+    getSessionValue("userId");
 
-    const resolvedAdminUserId = roleRecordOwnerId(matchedAdmin || {});
-    if (!resolvedAdminUserId) return null;
+  if (!resolvedAdminUserId) return profile;
 
-    sessionStorage.setItem("adminUserId", String(resolvedAdminUserId));
-    sessionStorage.setItem("adminId", String(resolvedAdminUserId));
-    sessionStorage.setItem("userId", String(resolvedAdminUserId));
+  sessionStorage.setItem("adminUserId", String(resolvedAdminUserId));
+  sessionStorage.setItem("adminId", String(resolvedAdminUserId));
+  sessionStorage.setItem("userId", String(resolvedAdminUserId));
 
-    return {
-      ...profile,
-      id: resolvedAdminUserId,
-      adminUserId: resolvedAdminUserId,
-      adminId: resolvedAdminUserId,
-      userId: resolvedAdminUserId,
-      hospitalId: matchedAdmin.hospitalId || matchedAdmin.HospitalId || matchedAdmin.clinicId || matchedAdmin.ClinicId || profile.hospitalId,
-    };
+  return {
+    ...profile,
+    id: resolvedAdminUserId,
+    adminUserId: resolvedAdminUserId,
+    adminId: resolvedAdminUserId,
+    userId: resolvedAdminUserId,
   };
-
-  for (const path of ["roles/admins", "admins"]) {
-    try {
-      const adminsData = await requestPermissionsJson(path, profile);
-      const resolved = readResolvedAdmin(parseList(adminsData));
-      if (resolved) return resolved;
-    } catch {
-      // Try the next admin lookup endpoint.
-    }
-  }
-
-  try {
-    const rolesData = await requestPermissionsJson("roles", profile);
-    const roleRows = parseList(rolesData);
-    const ownerIds = Array.from(new Set(roleRows.map(roleRecordOwnerId).filter(Boolean)));
-    if (ownerIds.length === 1) {
-      const resolvedAdminUserId = ownerIds[0];
-      sessionStorage.setItem("adminUserId", String(resolvedAdminUserId));
-      sessionStorage.setItem("adminId", String(resolvedAdminUserId));
-      sessionStorage.setItem("userId", String(resolvedAdminUserId));
-      return {
-        ...profile,
-        id: resolvedAdminUserId,
-        adminUserId: resolvedAdminUserId,
-        adminId: resolvedAdminUserId,
-        userId: resolvedAdminUserId,
-      };
-    }
-  } catch {
-    return profile;
-  }
-
-  return profile;
 };
 
 const extractRoleRowsPermissions = (rows = []) => {
@@ -618,31 +581,7 @@ export const syncRolePermissionsFromBackend = async (profile = {}) => {
           loadedAdminRoleRows = true;
         }
       } catch {
-        // Fall back to the role APIs used by older admin permission builds.
-      }
-
-      const adminId = effectiveProfile.adminUserId || effectiveProfile.adminId || effectiveProfile.userId || effectiveProfile.id;
-      const rolePaths = [
-        "roles",
-        adminId ? `roles?adminUserId=${encodeURIComponent(adminId)}` : "",
-        adminId ? `roles?userId=${encodeURIComponent(adminId)}` : "",
-        adminId ? `roles/${encodeURIComponent(adminId)}` : "",
-      ].filter(Boolean);
-
-      for (const path of loadedAdminRoleRows ? [] : rolePaths) {
-        try {
-          const rolesData = await requestPermissionsJson(path, effectiveProfile);
-          const roleRows = collectPermissionRows(rolesData);
-          const matchedRoleRows = roleRows.filter((row) => roleRecordMatchesProfile(row, effectiveProfile));
-          const roleModulePermissions = extractRoleRowsPermissions(matchedRoleRows);
-          if (Object.keys(roleModulePermissions).length) {
-            collectedPermissionMaps.push(roleModulePermissions);
-            loadedAdminRoleRows = true;
-            break;
-          }
-        } catch {
-          // Continue through the role API variants supported by different backend builds.
-        }
+        // Admin module pages should not call protected roles/admins endpoints.
       }
     }
 
