@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { FileBarChart2, FlaskConical, Gauge, TestTube2, UserRound, X } from "lucide-react";
 import { getInitials } from "../profile/sessionProfile";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
-import { useClinicInvoiceBranding } from "../utils/clinicBranding";
+import { getDefaultClinicLogo, useClinicInvoiceBranding } from "../utils/clinicBranding";
 import { getLabProfile } from "./labSession";
 import { filterItemsByViewPermission, hasAnySavedModulePermissions, useRolePermissionsSync } from "../utils/rolePermissions";
 
@@ -30,7 +30,7 @@ function LabSidebar({ onClose = () => {} }) {
     <aside className="rc-sidebar lab-sidebar">
       <div className="rc-brand">
         <div className="rc-brand-icon rc-clinic-logo rc-clinic-logo--emerald">
-          <img src={branding.logoUrl} alt="" />
+          <img src={branding.logoUrl} alt="" onError={(event) => { event.currentTarget.src = getDefaultClinicLogo(hospitalName, profile.clinicId || profile.hospitalId || ""); }} />
         </div>
         <div>
           <span>Clinic Name</span>

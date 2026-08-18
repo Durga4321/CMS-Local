@@ -149,6 +149,8 @@ const normalizeApiSettings = (data = {}) => {
 };
 
 const buildInvoiceSettingsPayload = (settings = {}) => ({
+  clinicId: settings.clinicId || settings.hospitalId || "",
+  hospitalId: settings.hospitalId || settings.clinicId || "",
   invoiceTemplate: stringifyInvoiceTemplate(settings),
   headerTitle: settings.headerTitle,
   headerSubtitle: settings.headerSubtitle,
@@ -161,8 +163,15 @@ const buildInvoiceSettingsPayload = (settings = {}) => ({
   accentColor: normalizeHexColor(settings.accentColor),
 });
 
-const requestInvoiceSettings = async (method = "GET", body) => {
-  const response = await fetch(apiUrl(INVOICE_SETTINGS_PATH), {
+const withClinicQuery = (path, clinicId = "") => {
+  const id = String(clinicId || "").trim();
+  if (!id) return apiUrl(path);
+  const separator = String(path).includes("?") ? "&" : "?";
+  return apiUrl(`${path}${separator}clinicId=${encodeURIComponent(id)}&hospitalId=${encodeURIComponent(id)}`);
+};
+
+const requestInvoiceSettings = async (method = "GET", body, clinicId = "") => {
+  const response = await fetch(withClinicQuery(INVOICE_SETTINGS_PATH, clinicId || body?.clinicId || body?.hospitalId), {
     method,
     headers: getAuthHeaders(body ? "application/json" : ""),
     ...(body ? { body: JSON.stringify(body) } : {}),
@@ -174,12 +183,32 @@ const requestInvoiceSettings = async (method = "GET", body) => {
   return data;
 };
 
-const requestInvoiceLogoUpload = async (file) => {
+const isImageResponseUrl = async (url = "") => {
+  const raw = String(url || "").trim();
+  if (!raw) return false;
+  const response = await fetch(raw, {
+    method: "GET",
+    headers: {
+      "ngrok-skip-browser-warning": "true",
+    },
+  }).catch(() => null);
+  if (!response?.ok) return false;
+  return String(response.headers.get("content-type") || "").toLowerCase().startsWith("image/");
+};
+
+const requestInvoiceLogoUpload = async (file, clinicId = "") => {
+  const id = String(clinicId || "").trim();
   const formData = new FormData();
   formData.append("logo", file);
   formData.append("file", file);
   formData.append("logoFile", file);
   formData.append("LogoFile", file);
+  if (id) {
+    formData.append("clinicId", id);
+    formData.append("hospitalId", id);
+    formData.append("ClinicId", id);
+    formData.append("HospitalId", id);
+  }
   const response = await fetch(apiUrl(INVOICE_LOGO_PATH), {
     method: "POST",
     headers: getAuthHeaders(""),
@@ -302,12 +331,13 @@ function AdminSettings() {
     if (!quiet) setLoading(true);
     if (!quiet) showStatus("Loading invoice settings...", "info");
     try {
-      const data = await requestInvoiceSettings("GET");
+      const data = await requestInvoiceSettings("GET", undefined, clinicId);
       const remoteSettings = normalizeApiSettings(data);
       const hasSettings = Object.values(remoteSettings).some(Boolean);
       if (hasSettings) {
         const mergedRemote = {
           ...remoteSettings,
+          logoDataUrl: remoteSettings.logoDataUrl || form.logoDataUrl || storedBranding.logoDataUrl || "",
           opTemplate: remoteSettings.opTemplate || storedBranding.opTemplate || form.opTemplate,
           diagnosticTemplate: remoteSettings.diagnosticTemplate || storedBranding.diagnosticTemplate || form.diagnosticTemplate,
         };
@@ -427,11 +457,16 @@ function AdminSettings() {
     setSaving(true);
     showStatus(`Saving ${type === "op" ? "OP" : "Diagnostic"} template...`, "info");
     try {
-      const data = await requestInvoiceSettings(hasRemoteSettings ? "PUT" : "POST", buildInvoiceSettingsPayload(nextForm));
+      const data = await requestInvoiceSettings(
+        hasRemoteSettings ? "PUT" : "POST",
+        buildInvoiceSettingsPayload({ ...nextForm, clinicId, hospitalId: clinicId }),
+        clinicId
+      );
       const remoteSettings = normalizeApiSettings(data);
       const mergedSettings = {
         ...nextForm,
         ...remoteSettings,
+        logoDataUrl: remoteSettings.logoDataUrl || nextForm.logoDataUrl,
         opTemplate: remoteSettings.opTemplate || nextForm.opTemplate,
         diagnosticTemplate: remoteSettings.diagnosticTemplate || nextForm.diagnosticTemplate,
         settingsId: remoteSettings.id || nextForm.settingsId,
@@ -464,29 +499,58 @@ function AdminSettings() {
       try {
         let nextForm = { ...form, logoDataUrl: localLogo };
         if (!hasRemoteSettings) {
-          const settingsData = await requestInvoiceSettings("POST", buildInvoiceSettingsPayload(nextForm));
+          const settingsData = await requestInvoiceSettings(
+            "POST",
+            buildInvoiceSettingsPayload({ ...nextForm, clinicId, hospitalId: clinicId }),
+            clinicId
+          );
           const remoteSettings = normalizeApiSettings(settingsData);
-          nextForm = { ...nextForm, ...remoteSettings, settingsId: remoteSettings.id || nextForm.settingsId };
+          nextForm = {
+            ...nextForm,
+            ...remoteSettings,
+            logoDataUrl: remoteSettings.logoDataUrl || nextForm.logoDataUrl,
+            settingsId: remoteSettings.id || nextForm.settingsId,
+          };
           setHasRemoteSettings(true);
         }
         let data = null;
         try {
-          data = await requestInvoiceLogoUpload(file);
+          data = await requestInvoiceLogoUpload(file, clinicId);
         } catch (logoError) {
           if (!isInvoiceSettingsMissingError(logoError)) throw logoError;
           showStatus("Creating invoice settings before retrying logo upload...", "info");
-          const settingsData = await requestInvoiceSettings("POST", buildInvoiceSettingsPayload(nextForm));
+          const settingsData = await requestInvoiceSettings(
+            "POST",
+            buildInvoiceSettingsPayload({ ...nextForm, clinicId, hospitalId: clinicId }),
+            clinicId
+          );
           const remoteSettings = normalizeApiSettings(settingsData);
-          nextForm = { ...nextForm, ...remoteSettings, settingsId: remoteSettings.id || nextForm.settingsId };
+          nextForm = {
+            ...nextForm,
+            ...remoteSettings,
+            logoDataUrl: remoteSettings.logoDataUrl || nextForm.logoDataUrl,
+            settingsId: remoteSettings.id || nextForm.settingsId,
+          };
           setHasRemoteSettings(true);
-          data = await requestInvoiceLogoUpload(file);
+          data = await requestInvoiceLogoUpload(file, clinicId);
         }
         const uploadedLogo = normalizeApiSettings(data).logoDataUrl;
-        const remoteLogo = withCacheBust(publicLogoUrl || uploadedLogo || localLogo);
-        const syncedSettings = { ...nextForm, logoDataUrl: remoteLogo };
+        const refreshedSettings = await requestInvoiceSettings("GET", undefined, clinicId)
+          .then(normalizeApiSettings)
+          .catch(() => ({}));
+        const refreshedLogo = refreshedSettings.logoDataUrl;
+        const publicLogo = withCacheBust(publicLogoUrl);
+        const publicLogoReady = await isImageResponseUrl(publicLogo);
+        const remoteLogo = withCacheBust(refreshedLogo || uploadedLogo) || localLogo;
+        const syncedSettings = {
+          ...nextForm,
+          ...refreshedSettings,
+          logoDataUrl: remoteLogo,
+          settingsId: refreshedSettings.id || nextForm.settingsId,
+        };
         setForm((prev) => ({ ...prev, ...syncedSettings }));
         syncBrandingCache(syncedSettings);
-      showStatus("Logo uploaded.");
+        showStatus(publicLogoReady || refreshedLogo ? "Logo uploaded and saved." : "Logo uploaded locally, but GET logo API is not returning it yet.", publicLogoReady || refreshedLogo ? "success" : "info");
       } catch (error) {
         setForm((prev) => ({ ...prev, logoDataUrl: "" }));
         showStatus(error.message || "Unable to upload logo.", "error");
@@ -520,9 +584,18 @@ function AdminSettings() {
     setSaving(true);
     showStatus(hasRemoteSettings ? "Updating invoice settings..." : "Creating invoice settings...", "info");
     try {
-      const data = await requestInvoiceSettings(hasRemoteSettings ? "PUT" : "POST", buildInvoiceSettingsPayload(nextForm));
+      const data = await requestInvoiceSettings(
+        hasRemoteSettings ? "PUT" : "POST",
+        buildInvoiceSettingsPayload({ ...nextForm, clinicId, hospitalId: clinicId }),
+        clinicId
+      );
       const remoteSettings = normalizeApiSettings(data);
-      const mergedSettings = { ...nextForm, ...remoteSettings, settingsId: remoteSettings.id || nextForm.settingsId };
+      const mergedSettings = {
+        ...nextForm,
+        ...remoteSettings,
+        logoDataUrl: remoteSettings.logoDataUrl || nextForm.logoDataUrl,
+        settingsId: remoteSettings.id || nextForm.settingsId,
+      };
       setForm((prev) => ({ ...prev, ...mergedSettings }));
       setHasRemoteSettings(true);
       syncBrandingCache(mergedSettings);
@@ -542,7 +615,7 @@ function AdminSettings() {
     setSaving(true);
     showStatus("Deleting invoice settings...", "info");
     try {
-      await requestInvoiceSettings("DELETE");
+      await requestInvoiceSettings("DELETE", undefined, clinicId);
       setForm(initialForm);
       setHasRemoteSettings(false);
       clearLocalInvoiceSettings();
@@ -562,7 +635,7 @@ function AdminSettings() {
     setSaving(true);
     showStatus("Deleting logo...", "info");
     try {
-      await requestInvoiceLogoDelete();
+      await requestInvoiceLogoDelete(clinicId);
       setForm((prev) => ({ ...prev, logoDataUrl: "" }));
       syncBrandingCache({ ...form, logoDataUrl: "" });
       showStatus("Logo deleted.");
@@ -719,7 +792,13 @@ function AdminSettings() {
         <section className="admin-settings-panel">
           <h2>Clinic Logo</h2>
           <div className="admin-settings-logo-drop">
-            <img src={previewBranding.logoUrl} alt="Clinic logo preview" />
+            <img
+              src={previewBranding.logoUrl}
+              alt="Clinic logo preview"
+              onError={(event) => {
+                event.currentTarget.src = defaultLogoUrl;
+              }}
+            />
             <label className="admin-settings-upload">
               <ImagePlus size={18} />
               Upload Logo

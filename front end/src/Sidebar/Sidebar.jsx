@@ -23,7 +23,7 @@ import {
 import "./Sidebar.css";
 import { getInitials, getRoleProfile } from "../profile/sessionProfile";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
-import { useClinicInvoiceBranding } from "../utils/clinicBranding";
+import { getDefaultClinicLogo, useClinicInvoiceBranding } from "../utils/clinicBranding";
 import { filterItemsByViewPermission, hasAnySavedModulePermissions, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const items = [
@@ -106,7 +106,7 @@ function Sidebar({ open = false, onClose = () => {} }) {
       <div className="sidebar-header">
         <div className={`logo sidebar-clinic-logo sidebar-clinic-logo--${brandLogo.tone}`}>
           {brandLogo.type === "image" ? (
-            <img src={brandLogo.image} alt="" />
+            <img src={brandLogo.image} alt="" onError={(event) => { event.currentTarget.src = getDefaultClinicLogo(brandName, profile.clinicId || profile.hospitalId || ""); }} />
           ) : <BrandLogoIcon size={22} />}
           {brandLogo.text ? <small>{brandLogo.text}</small> : null}
         </div>
