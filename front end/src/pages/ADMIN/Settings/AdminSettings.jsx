@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Eye, FileUp, ImagePlus, RotateCw, Save, Settings2, Trash2 } from "lucide-react";
-import { API_ASSET_BASE_URL, apiUrl } from "../../../config/api";
+import { apiUrl, assetUrl } from "../../../config/api";
 import { getRoleProfile } from "../../../profile/sessionProfile";
 import { getClinicDisplayName } from "../../../utils/clinicDisplay";
 import {
@@ -9,6 +9,7 @@ import {
   getPublicClinicLogoUrl,
   readClinicBrandingMap,
   saveClinicBranding,
+  useClinicInvoiceBranding,
 } from "../../../utils/clinicBranding";
 import "./AdminSettings.css";
 
@@ -66,15 +67,21 @@ const withCacheBust = (url = "") => {
   return `${raw}${separator}v=${Date.now()}`;
 };
 
+const isGeneratedClinicLogoDataUrl = (value = "") => {
+  const raw = String(value || "").trim();
+  if (!raw.startsWith("data:image/svg+xml")) return false;
+  try {
+    return decodeURIComponent(raw).includes('viewBox="0 0 480 560"');
+  } catch {
+    return raw.includes("480%20560") || raw.includes("480 560");
+  }
+};
+
 const resolveAssetUrl = (value = "") => {
   const raw = String(value || "").trim();
   if (!raw) return "";
-  if (/^(data:|blob:|https?:\/\/)/i.test(raw)) return raw;
-  const cleanPath = raw.replace(/\\/g, "/").replace(/^\/+/, "");
-  if (/^api\//i.test(cleanPath)) {
-    return `${API_ASSET_BASE_URL}/${cleanPath}`;
-  }
-  return `${API_ASSET_BASE_URL}/${cleanPath}`;
+  if (isGeneratedClinicLogoDataUrl(raw)) return "";
+  return assetUrl(raw);
 };
 
 const getAuthHeaders = (contentType = "application/json") => {
@@ -261,9 +268,11 @@ function AdminSettings() {
   const clinicName = getClinicDisplayName(profile, localStorage.getItem("clinicName") || "Clinic");
   const clinicId = getProfileClinicId(profile);
   const scope = useMemo(() => ({ clinicId, clinicName }), [clinicId, clinicName]);
+  const liveBranding = useClinicInvoiceBranding(scope);
   const publicLogoUrl = getPublicClinicLogoUrl(clinicId);
   const defaultLogoUrl = getDefaultClinicLogo(clinicName, clinicId);
   const storedBranding = readStoredBranding(scope);
+  const storedLogoDataUrl = resolveAssetUrl(storedBranding.logoDataUrl);
   const initialForm = {
     settingsId: "",
     template: normalizeTemplateValue(storedBranding.template || "op"),
@@ -276,7 +285,7 @@ function AdminSettings() {
     gstNumber: storedBranding.gstNumber || localStorage.getItem("clinicGst") || localStorage.getItem("gstNumber") || "",
     registrationNumber: storedBranding.registrationNumber || localStorage.getItem("clinicRegistration") || "",
     accentColor: normalizeHexColor(storedBranding.accentColor || "#0f9d9d"),
-    logoDataUrl: storedBranding.logoDataUrl || "",
+    logoDataUrl: storedLogoDataUrl || "",
     opTemplate: storedBranding.opTemplate || null,
     diagnosticTemplate: storedBranding.diagnosticTemplate || null,
   };
@@ -361,12 +370,21 @@ function AdminSettings() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!liveBranding.logoUrl || liveBranding.logoUrl === defaultLogoUrl) return;
+    setForm((prev) => {
+      const currentLogo = resolveAssetUrl(prev.logoDataUrl);
+      if (currentLogo && currentLogo === liveBranding.logoUrl) return prev;
+      return { ...prev, logoDataUrl: liveBranding.logoUrl };
+    });
+  }, [defaultLogoUrl, liveBranding.logoUrl]);
+
   const previewBranding = {
     ...initialForm,
     ...form,
     accentColor: normalizeHexColor(form.accentColor),
-    logoUrl: form.logoDataUrl || defaultLogoUrl,
-    watermarkUrl: form.logoDataUrl || defaultLogoUrl,
+    logoUrl: resolveAssetUrl(form.logoDataUrl) || liveBranding.logoUrl || defaultLogoUrl,
+    watermarkUrl: resolveAssetUrl(form.logoDataUrl) || liveBranding.logoUrl || defaultLogoUrl,
   };
   const effectiveTemplateValue = form.template;
   const builtInTemplate = BUILT_IN_TEMPLATES.find((template) => template.value === form.template);

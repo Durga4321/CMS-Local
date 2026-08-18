@@ -17,6 +17,19 @@ export const apiUrl = (path) => {
   return `${API_BASE_URL}/api/${cleanPath}`;
 };
 
+export const assetUrl = (path) => {
+  const raw = String(path || "").trim();
+  if (!raw) return "";
+  if (/^(data:|blob:|https?:\/\/)/i.test(raw)) return raw;
+
+  const cleanPath = raw
+    .replace(/\\/g, "/")
+    .replace(/^[a-z]:\/+/i, "")
+    .replace(/^\/+/, "");
+
+  return `${API_ASSET_BASE_URL}/${cleanPath}`;
+};
+
 export const replacePathParams = (path, params = {}) =>
   String(path || "").replace(/{([^}]+)}/g, (_, key) => {
     const value = params[key];
