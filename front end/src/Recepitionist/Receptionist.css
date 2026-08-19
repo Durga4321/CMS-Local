@@ -1410,7 +1410,7 @@
 
 .rc-latest-bill-row {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) 118px 84px;
+  grid-template-columns: 42px minmax(0, 1fr) minmax(108px, max-content) max-content;
   gap: 12px;
   align-items: center;
   padding: 12px;
@@ -1454,11 +1454,14 @@
   color: #071120;
   text-align: right;
   font-size: 14px;
+  min-width: 108px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .rc-latest-bill-actions {
   display: flex;
+  flex: 0 0 auto;
   justify-content: flex-end;
   gap: 8px;
 }
@@ -1466,6 +1469,9 @@
 .rc-latest-bill-actions button {
   width: 34px;
   height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0 !important;
   border: 1px solid #b8d9dc;
   border-radius: 9px;
   background: #ffffff;
