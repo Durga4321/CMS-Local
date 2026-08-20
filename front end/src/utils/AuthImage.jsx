@@ -36,6 +36,10 @@ export const resolveApiImageUrl = (
   const cleanUrl =
     String(imageUrl).trim();
 
+  if (/^(data:|blob:)/i.test(cleanUrl)) {
+    return cleanUrl;
+  }
+
   const normalizeUrl = (value) => {
     try {
       return new URL(value).toString();
@@ -149,8 +153,7 @@ function AuthImage({
       } catch (error) {
         if (active) {
           console.log("Image fetch failed:", imageSrc, error);
-          // Fallback: try direct src
-          setResolvedSrc(imageSrc);
+          setFailed(true);
         }
       }
     };

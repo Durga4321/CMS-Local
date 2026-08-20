@@ -8,6 +8,7 @@ import {
   updatePaymentSettings,
   updateSmsSettings,
 } from "../superAdminApi";
+import { cacheGlobalSettings } from "../../../config/api";
 import {
   validateEmailCom,
   validateNumeric,
@@ -40,33 +41,33 @@ const defaultSettings = {
     notes: "Update general settings used across all clinics.",
   },
   email: {
-    name: "CMS Notifications",
+    name: "",
     fromEmail: "",
     smtpHost: "",
-    smtpPort: "587",
+    smtpPort: "",
     username: "",
     password: "",
-    status: "Enabled",
-    notes: "Update email settings used across all clinics.",
+    status: "",
+    notes: "",
   },
   sms: {
-    name: "SMS Provider",
+    name: "",
     provider: "",
     senderId: "",
     apiKey: "",
     apiSecret: "",
-    status: "Enabled",
-    notes: "Update sms settings used across all clinics.",
+    status: "",
+    notes: "",
   },
   payment: {
-    name: "Payment Gateway",
+    name: "",
     provider: "",
     merchantId: "",
     publicKey: "",
     secretKey: "",
-    mode: "Test",
-    status: "Enabled",
-    notes: "Update payment settings used across all clinics.",
+    mode: "",
+    status: "",
+    notes: "",
   },
 };
 
@@ -84,7 +85,7 @@ const fieldsBySection = {
     { name: "appName", label: "App Name", required: true },
     { name: "timezone", label: "Timezone", type: "select", options: timezones },
     { name: "currency", label: "Currency", type: "select", options: currencies },
-    { name: "status", label: "Status", type: "select", options: ["Enabled", "Disabled"] },
+    { name: "status", label: "Status", type: "select", options: ["", "Enabled", "Disabled"] },
     { name: "notes", label: "Configuration Notes", type: "textarea", full: true },
   ],
   email: [
@@ -94,7 +95,7 @@ const fieldsBySection = {
     { name: "smtpPort", label: "SMTP Port", type: "number", required: true },
     { name: "username", label: "SMTP Username" },
     { name: "password", label: "SMTP Password", type: "password" },
-    { name: "status", label: "Status", type: "select", options: ["Enabled", "Disabled"] },
+    { name: "status", label: "Status", type: "select", options: ["", "Enabled", "Disabled"] },
     { name: "notes", label: "Configuration Notes", type: "textarea", full: true },
   ],
   sms: [
@@ -103,7 +104,7 @@ const fieldsBySection = {
     { name: "senderId", label: "Sender ID" },
     { name: "apiKey", label: "API Key", required: true },
     { name: "apiSecret", label: "API Secret", type: "password" },
-    { name: "status", label: "Status", type: "select", options: ["Enabled", "Disabled"] },
+    { name: "status", label: "Status", type: "select", options: ["", "Enabled", "Disabled"] },
     { name: "notes", label: "Configuration Notes", type: "textarea", full: true },
   ],
   payment: [
@@ -112,8 +113,8 @@ const fieldsBySection = {
     { name: "merchantId", label: "Merchant ID" },
     { name: "publicKey", label: "Public Key" },
     { name: "secretKey", label: "Secret Key", type: "password" },
-    { name: "mode", label: "Mode", type: "select", options: ["Test", "Live"] },
-    { name: "status", label: "Status", type: "select", options: ["Enabled", "Disabled"] },
+    { name: "mode", label: "Mode", type: "select", options: ["", "Test", "Live"] },
+    { name: "status", label: "Status", type: "select", options: ["", "Enabled", "Disabled"] },
     { name: "notes", label: "Configuration Notes", type: "textarea", full: true },
   ],
 };
@@ -224,14 +225,17 @@ function Settings() {
 
     try {
       await updateBySection[activeSection](activeSettings);
-      // Reload settings to confirm they were saved
-      const updatedSettings = await fetchSettings();
-      setSettings({
-        general: { ...defaultSettings.general, ...updatedSettings.general },
-        email: { ...defaultSettings.email, ...updatedSettings.email },
-        sms: { ...defaultSettings.sms, ...updatedSettings.sms },
-        payment: { ...defaultSettings.payment, ...updatedSettings.payment },
-      });
+      const nextSettings = {
+        ...settings,
+        [activeSection]: {
+          ...settings[activeSection],
+          ...activeSettings,
+        },
+      };
+      setSettings(nextSettings);
+      cacheGlobalSettings(nextSettings);
+      const appName = String(nextSettings?.general?.appName || "").trim();
+      if (appName) document.title = appName;
       setSuccess(`${activeTab} saved and applied system-wide.`);
       setTimeout(() => setSuccess(""), 3000);
     } catch (requestError) {
@@ -280,9 +284,9 @@ function Settings() {
               {field.type === "textarea" ? (
                 <textarea name={field.name} value={activeSettings[field.name] || ""} onChange={handleChange} />
               ) : field.type === "select" ? (
-                <select name={field.name} value={activeSettings[field.name] || field.options[0]} onChange={handleChange}>
+                <select name={field.name} value={activeSettings[field.name] ?? field.options[0]} onChange={handleChange}>
                   {field.options.map((option) => (
-                    <option key={option} value={option}>{option}</option>
+                    <option key={option || "empty"} value={option}>{option || "Select"}</option>
                   ))}
                 </select>
               ) : field.type === "password" ? (

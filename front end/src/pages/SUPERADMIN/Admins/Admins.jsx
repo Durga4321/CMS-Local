@@ -22,7 +22,7 @@ import {
   validateMobile,
 } from "../../../utils/validation";
 import { validateUniqueMobileNumber } from "../../../utils/mobileUniqueness";
-import { getClinicInvoiceBranding } from "../../../utils/clinicBranding";
+import PublicClinicLogo from "../../../utils/PublicClinicLogo";
 
 const emptyAdmin = {
   fullName: "",
@@ -512,14 +512,12 @@ function Admins() {
               label: "Assigned Clinic",
               width: "minmax(160px, 0.8fr)",
               render: (admin) => {
-                const branding = getClinicInvoiceBranding({
-                  clinicId: getAdminClinicId(admin, clinics),
-                  clinicName: getAdminClinicName(admin, clinics),
-                });
+                const clinicId = getAdminClinicId(admin, clinics);
+                const clinicName = getAdminClinicName(admin, clinics);
                 return (
                   <span className="sa-admin-clinic-cell">
                     <span className="sa-admin-clinic-logo sa-admin-clinic-logo--emerald">
-                      <img src={branding.logoUrl} alt="" />
+                      <PublicClinicLogo clinicId={clinicId} clinicName={clinicName} />
                     </span>
                     <span>{admin.assignedClinic || "-"}</span>
                   </span>

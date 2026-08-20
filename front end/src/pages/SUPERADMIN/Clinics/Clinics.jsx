@@ -5,24 +5,7 @@ import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
 import { deleteClinic, fetchClinics, updateClinicStatus } from "../superAdminApi";
-import AuthImage from "../../../utils/AuthImage";
-import { getDefaultClinicLogo, useClinicInvoiceBranding } from "../../../utils/clinicBranding";
-
-const ClinicLogo = ({ clinic }) => {
-  const clinicId = clinic.id || clinic.clinicId || clinic.hospitalId;
-  const branding = useClinicInvoiceBranding({
-    clinicId,
-    clinicName: clinic.name,
-  });
-
-  return (
-    <AuthImage
-      src={branding.logoUrl}
-      alt=""
-      fallback={<img src={getDefaultClinicLogo(clinic.name, clinicId)} alt="" />}
-    />
-  );
-};
+import PublicClinicLogo from "../../../utils/PublicClinicLogo";
 
 function Clinics() {
   const navigate = useNavigate();
@@ -123,7 +106,10 @@ function Clinics() {
         return (
           <div className="sa-clinic-name-cell">
             <span className="sa-clinic-logo sa-clinic-logo--emerald">
-              <ClinicLogo clinic={clinic} />
+              <PublicClinicLogo
+                clinicId={clinic.id || clinic.clinicId || clinic.hospitalId}
+                clinicName={clinic.name}
+              />
             </span>
             <b>{clinic.name || "-"}</b>
           </div>

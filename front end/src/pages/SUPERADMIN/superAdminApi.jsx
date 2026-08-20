@@ -1,4 +1,4 @@
-import { apiUrl } from "../../config/api";
+import { apiUrl, cacheGlobalSettings } from "../../config/api";
 import {
   getRevenueBreakdown as getSharedRevenueBreakdown,
   getRevenueTotals as getSharedRevenueTotals,
@@ -1981,135 +1981,146 @@ const buildUserPayload = (user = {}, { includeBlankPassword = true } = {}) => {
 };
 
 const defaultSettingsPayload = {
-  applicationName: "CMS Platform",
-  generalName: "CMS Platform",
-  supportEmail: "",
-  supportPhone: "",
-  address: "",
-  configurationNotes: "Update settings used across all clinics.",
+  appName: "CMS Platform",
+  timezone: "Asia/Kolkata",
+  currency: "INR",
   status: "Enabled",
-  emailNotificationsEnabled: true,
-  smsNotificationsEnabled: true,
+  configurationNotes: "Update settings used across all clinics.",
 };
 
-const asSettingsBoolean = (value, fallback = false) => {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "number") return value !== 0;
-  if (!hasValue(value)) return fallback;
-
-  const normalized = normalizeString(value);
-  return normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "enabled";
+const settingsSectionExists = {
+  general: true,
+  email: true,
+  sms: true,
+  payment: true,
 };
 
-const buildSettingsPayload = (settings = {}) => {
+const sectionObject = (settings = {}, section) => {
   const payload = asObject(settings);
-  const general = payload.general || payload.generalSettings || {};
-  const email = payload.email || payload.emailSettings || {};
-  const sms = payload.sms || payload.smsSettings || {};
+  return payload[section] || payload[`${section}Settings`] || payload;
+};
 
+const settingText = (settings, keys, fallback = "") =>
+  String(pick(settings, keys, fallback)).trim();
+
+const normalizeSettingStatus = (value, fallback = "") => {
+  const status = settingText({ status: value }, ["status"], fallback);
+  if (!status) return fallback;
+  const normalized = status.toLowerCase();
+  if (normalized === "active") return "Enabled";
+  if (normalized === "inactive") return "Disabled";
+  return status.charAt(0).toUpperCase() + status.slice(1);
+};
+
+const buildGeneralSettingsPayload = (settings = {}) => {
+  const source = sectionObject(settings, "general");
   return {
-    applicationName: String(
-      pick(payload, ["applicationName", "appName", "platformName", "name"], pick(general, ["applicationName", "appName", "platformName", "name"], defaultSettingsPayload.applicationName))
-    ).trim(),
-    generalName: String(
-      pick(payload, ["generalName", "name"], pick(general, ["generalName", "name"], defaultSettingsPayload.generalName))
-    ).trim(),
-    supportEmail: String(
-      pick(payload, ["supportEmail", "fromEmail", "senderEmail", "email"], pick(email, ["supportEmail", "fromEmail", "senderEmail", "email"], defaultSettingsPayload.supportEmail))
-    ).trim(),
-    supportPhone: String(
-      pick(payload, ["supportPhone", "phone", "phoneNumber", "mobile", "contactNumber"], defaultSettingsPayload.supportPhone)
-    ).trim(),
-    address: String(pick(payload, ["address", "location"], defaultSettingsPayload.address)).trim(),
-    configurationNotes: String(
-      pick(payload, ["configurationNotes", "notes", "description"], pick(general, ["configurationNotes", "notes", "description"], defaultSettingsPayload.configurationNotes))
-    ).trim(),
-    status: String(
-      pick(payload, ["status"], pick(general, ["status"], defaultSettingsPayload.status))
-    ).trim() || defaultSettingsPayload.status,
-    emailNotificationsEnabled: asSettingsBoolean(
-      pick(payload, ["emailNotificationsEnabled", "emailEnabled", "enableEmailNotifications"], pick(email, ["emailNotificationsEnabled", "enabled", "isEnabled"], defaultSettingsPayload.emailNotificationsEnabled)),
-      defaultSettingsPayload.emailNotificationsEnabled
-    ),
-    smsNotificationsEnabled: asSettingsBoolean(
-      pick(payload, ["smsNotificationsEnabled", "smsEnabled", "enableSmsNotifications"], pick(sms, ["smsNotificationsEnabled", "enabled", "isEnabled"], defaultSettingsPayload.smsNotificationsEnabled)),
-      defaultSettingsPayload.smsNotificationsEnabled
-    ),
+    appName: settingText(source, ["appName", "applicationName", "platformName", "name"], defaultSettingsPayload.appName),
+    timezone: settingText(source, ["timezone", "timeZone", "defaultTimezone"], defaultSettingsPayload.timezone),
+    currency: settingText(source, ["currency", "defaultCurrency", "currencyCode"], defaultSettingsPayload.currency),
+    status: normalizeSettingStatus(pick(source, ["status"], defaultSettingsPayload.status), defaultSettingsPayload.status),
+    configurationNotes: settingText(source, ["configurationNotes", "notes", "description"], defaultSettingsPayload.configurationNotes),
+  };
+};
+
+const buildEmailSettingsPayload = (settings = {}) => {
+  const source = sectionObject(settings, "email");
+  return {
+    senderName: settingText(source, ["senderName", "name", "configurationName"], ""),
+    fromEmail: settingText(source, ["fromEmail", "supportEmail", "senderEmail", "email"], ""),
+    smtpHost: settingText(source, ["smtpHost", "host", "server"], ""),
+    smtpPort: Number(pick(source, ["smtpPort", "port"], 0)) || 0,
+    smtpUsername: settingText(source, ["smtpUsername", "username", "userName"], ""),
+    smtpPassword: settingText(source, ["smtpPassword", "password"], ""),
+    status: normalizeSettingStatus(pick(source, ["status"], "")),
+    configurationNotes: settingText(source, ["configurationNotes", "notes", "description"], ""),
+  };
+};
+
+const buildSmsSettingsPayload = (settings = {}) => {
+  const source = sectionObject(settings, "sms");
+  return {
+    configurationName: settingText(source, ["configurationName", "name"], ""),
+    provider: settingText(source, ["provider", "providerName", "gatewayName"], ""),
+    senderId: settingText(source, ["senderId", "senderID", "sender"], ""),
+    apiKey: settingText(source, ["apiKey", "key", "token"], ""),
+    apiSecret: settingText(source, ["apiSecret", "secret"], ""),
+    status: normalizeSettingStatus(pick(source, ["status"], "")),
+    configurationNotes: settingText(source, ["configurationNotes", "notes", "description"], ""),
+  };
+};
+
+const buildPaymentSettingsPayload = (settings = {}) => {
+  const source = sectionObject(settings, "payment");
+  return {
+    configurationName: settingText(source, ["configurationName", "name"], ""),
+    gatewayProvider: settingText(source, ["gatewayProvider", "provider", "providerName"], ""),
+    merchantId: settingText(source, ["merchantId", "merchantID", "accountId"], ""),
+    publicKey: settingText(source, ["publicKey", "keyId", "publishableKey"], ""),
+    secretKey: settingText(source, ["secretKey", "secret", "privateKey"], ""),
+    mode: settingText(source, ["mode", "environment"], ""),
+    status: normalizeSettingStatus(pick(source, ["status"], "")),
+    configurationNotes: settingText(source, ["configurationNotes", "notes", "description"], ""),
   };
 };
 
 export const normalizeSettings = (settings = {}) => {
-  const payload = buildSettingsPayload({ ...defaultSettingsPayload, ...asObject(settings) });
+  const payload = asObject(settings);
+  const generalSource = sectionObject(payload, "general");
+  const emailSource = sectionObject(payload, "email");
+  const smsSource = sectionObject(payload, "sms");
+  const paymentSource = sectionObject(payload, "payment");
+  const general = buildGeneralSettingsPayload(generalSource);
+  const email = buildEmailSettingsPayload(emailSource);
+  const sms = buildSmsSettingsPayload(smsSource);
+  const payment = buildPaymentSettingsPayload(paymentSource);
 
   return {
     general: {
-      appName: payload.applicationName,
-      timezone: pick(settings, ["timezone", "timeZone", "defaultTimezone"], "Asia/Kolkata"),
-      currency: pick(settings, ["currency", "defaultCurrency", "currencyCode"], "INR"),
-      name: payload.generalName,
-      status: payload.status,
-      notes: payload.configurationNotes,
-      applicationName: payload.applicationName,
-      generalName: payload.generalName,
-      supportEmail: payload.supportEmail,
-      supportPhone: payload.supportPhone,
-      address: payload.address,
-      configurationNotes: payload.configurationNotes,
-      emailNotificationsEnabled: payload.emailNotificationsEnabled,
-      smsNotificationsEnabled: payload.smsNotificationsEnabled,
+      appName: general.appName,
+      timezone: general.timezone,
+      currency: general.currency,
+      status: general.status,
+      notes: general.configurationNotes,
+      configurationNotes: general.configurationNotes,
     },
     email: {
-      name: payload.generalName,
-      fromEmail: payload.supportEmail,
-      smtpHost: pick(settings, ["smtpHost", "host", "server"], ""),
-      smtpPort: pick(settings, ["smtpPort", "port"], "587"),
-      username: pick(settings, ["username", "userName", "smtpUsername"], ""),
-      password: pick(settings, ["password", "smtpPassword"], ""),
-      status: payload.status,
-      notes: payload.configurationNotes,
-      applicationName: payload.applicationName,
-      generalName: payload.generalName,
-      supportEmail: payload.supportEmail,
-      supportPhone: payload.supportPhone,
-      address: payload.address,
-      configurationNotes: payload.configurationNotes,
-      emailNotificationsEnabled: payload.emailNotificationsEnabled,
-      smsNotificationsEnabled: payload.smsNotificationsEnabled,
+      name: email.senderName,
+      senderName: email.senderName,
+      fromEmail: email.fromEmail,
+      smtpHost: email.smtpHost,
+      smtpPort: String(email.smtpPort || ""),
+      username: email.smtpUsername,
+      smtpUsername: email.smtpUsername,
+      password: email.smtpPassword,
+      smtpPassword: email.smtpPassword,
+      status: email.status,
+      notes: email.configurationNotes,
+      configurationNotes: email.configurationNotes,
     },
     sms: {
-      name: payload.generalName,
-      provider: pick(settings, ["provider", "providerName", "gatewayName"], ""),
-      senderId: pick(settings, ["senderId", "senderID", "sender"], ""),
-      apiKey: pick(settings, ["apiKey", "key", "token"], ""),
-      apiSecret: pick(settings, ["apiSecret", "secret"], ""),
-      status: payload.status,
-      notes: payload.configurationNotes,
-      applicationName: payload.applicationName,
-      generalName: payload.generalName,
-      supportEmail: payload.supportEmail,
-      supportPhone: payload.supportPhone,
-      address: payload.address,
-      configurationNotes: payload.configurationNotes,
-      emailNotificationsEnabled: payload.emailNotificationsEnabled,
-      smsNotificationsEnabled: payload.smsNotificationsEnabled,
+      name: sms.configurationName,
+      configurationName: sms.configurationName,
+      provider: sms.provider,
+      senderId: sms.senderId,
+      apiKey: sms.apiKey,
+      apiSecret: sms.apiSecret,
+      status: sms.status,
+      notes: sms.configurationNotes,
+      configurationNotes: sms.configurationNotes,
     },
     payment: {
-      name: payload.generalName,
-      provider: pick(settings, ["provider", "providerName", "gatewayName"], ""),
-      merchantId: pick(settings, ["merchantId", "merchantID", "accountId"], ""),
-      publicKey: pick(settings, ["publicKey", "keyId", "publishableKey"], ""),
-      secretKey: pick(settings, ["secretKey", "secret", "privateKey"], ""),
-      mode: pick(settings, ["mode", "environment"], "Test"),
-      status: payload.status,
-      notes: payload.configurationNotes,
-      applicationName: payload.applicationName,
-      generalName: payload.generalName,
-      supportEmail: payload.supportEmail,
-      supportPhone: payload.supportPhone,
-      address: payload.address,
-      configurationNotes: payload.configurationNotes,
-      emailNotificationsEnabled: payload.emailNotificationsEnabled,
-      smsNotificationsEnabled: payload.smsNotificationsEnabled,
+      name: payment.configurationName,
+      configurationName: payment.configurationName,
+      provider: payment.gatewayProvider,
+      gatewayProvider: payment.gatewayProvider,
+      merchantId: payment.merchantId,
+      publicKey: payment.publicKey,
+      secretKey: payment.secretKey,
+      mode: payment.mode,
+      status: payment.status,
+      notes: payment.configurationNotes,
+      configurationNotes: payment.configurationNotes,
     },
   };
 };
@@ -3211,50 +3222,81 @@ export const updateUserStatus = async (id, status) => {
   return result;
 };
 
-export const fetchSettings = async () =>
-  normalizeSettings(await superAdminRequest(SUPER_ADMIN_API.settings));
+export const fetchSettings = async () => {
+  const settings = normalizeSettings(await superAdminRequest(SUPER_ADMIN_API.settings));
+
+  return cacheGlobalSettings(settings);
+};
+
+const isMissingSettingsError = (error) =>
+  /404|405|not found|no settings|not exist|does not exist|method not allowed/i.test(
+    String(error?.message || "")
+  );
+
+const saveSettingsSection = async (section, path, payload) => {
+  if (settingsSectionExists[section] === false) {
+    const created = await superAdminRequest(path, { method: "POST", body: payload });
+    settingsSectionExists[section] = true;
+    return created;
+  }
+
+  try {
+    const updated = await superAdminRequest(path, { method: "PUT", body: payload });
+    settingsSectionExists[section] = true;
+    return updated;
+  } catch (error) {
+    if (!isMissingSettingsError(error)) throw error;
+    const created = await superAdminRequest(path, { method: "POST", body: payload });
+    settingsSectionExists[section] = true;
+    return created;
+  }
+};
 
 export const updateSettings = async (settings) => {
   const result = await superAdminRequest(SUPER_ADMIN_API.settings, {
     method: "PUT",
-    body: buildSettingsPayload(settings),
+    body: buildGeneralSettingsPayload(settings),
   });
   recordSuperAdminActivity("Updated settings", "Settings", "System settings");
   return result;
 };
 
 export const updateGeneralSettings = async (settings) => {
-  const result = await superAdminRequest(SUPER_ADMIN_API.settingsGeneral, {
-    method: "PUT",
-    body: buildSettingsPayload(settings),
-  });
+  const result = await saveSettingsSection(
+    "general",
+    SUPER_ADMIN_API.settingsGeneral,
+    buildGeneralSettingsPayload(settings)
+  );
   recordSuperAdminActivity("Updated general settings", "Settings", "General platform settings");
   return result;
 };
 
 export const updateEmailSettings = async (settings) => {
-  const result = await superAdminRequest(SUPER_ADMIN_API.settingsEmail, {
-    method: "PUT",
-    body: buildSettingsPayload(settings),
-  });
+  const result = await saveSettingsSection(
+    "email",
+    SUPER_ADMIN_API.settingsEmail,
+    buildEmailSettingsPayload(settings)
+  );
   recordSuperAdminActivity("Updated email settings", "Settings", "Email configuration");
   return result;
 };
 
 export const updateSmsSettings = async (settings) => {
-  const result = await superAdminRequest(SUPER_ADMIN_API.settingsSms, {
-    method: "PUT",
-    body: buildSettingsPayload(settings),
-  });
+  const result = await saveSettingsSection(
+    "sms",
+    SUPER_ADMIN_API.settingsSms,
+    buildSmsSettingsPayload(settings)
+  );
   recordSuperAdminActivity("Updated SMS settings", "Settings", "SMS configuration");
   return result;
 };
 
 export const updatePaymentSettings = async (settings) => {
-  const result = await superAdminRequest(SUPER_ADMIN_API.settingsPayment, {
-    method: "PUT",
-    body: buildSettingsPayload(settings),
-  });
+  const result = await saveSettingsSection(
+    "payment",
+    SUPER_ADMIN_API.settingsPayment,
+    buildPaymentSettingsPayload(settings)
+  );
   recordSuperAdminActivity("Updated payment settings", "Settings", "Payment configuration");
   return result;
 };
