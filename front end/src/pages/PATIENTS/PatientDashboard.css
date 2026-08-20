@@ -696,6 +696,38 @@
   word-break: break-word;
 }
 
+.pd-profile-input-label {
+  display: block;
+  min-width: 0;
+}
+
+.pd-profile-input-label input,
+.pd-profile-input-label select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #dbe3ed;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.pd-profile-input-label input:disabled,
+.pd-profile-input-label select:disabled {
+  background: #f8fafc;
+  color: #475569;
+  cursor: default;
+}
+
+.pd-profile-input-label input:focus,
+.pd-profile-input-label select:focus {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
 .pd-notifications-panel {
   display: flex;
   flex-direction: column;
