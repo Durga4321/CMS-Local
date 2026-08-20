@@ -5,7 +5,23 @@ import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
 import { deleteClinic, fetchClinics, updateClinicStatus } from "../superAdminApi";
-import PublicClinicLogo from "../../../utils/PublicClinicLogo";
+import { getDefaultClinicLogo, useClinicInvoiceBranding } from "../../../utils/clinicBranding";
+
+function ClinicLogo({ clinic }) {
+  const clinicId = clinic.id || clinic.clinicId || clinic.hospitalId || "";
+  const clinicName = clinic.name || "Clinic";
+  const branding = useClinicInvoiceBranding({ clinicId, clinicName });
+
+  return (
+    <img
+      src={branding.logoUrl}
+      alt=""
+      onError={(event) => {
+        event.currentTarget.src = getDefaultClinicLogo(clinicName, clinicId);
+      }}
+    />
+  );
+}
 
 function Clinics() {
   const navigate = useNavigate();
@@ -106,10 +122,7 @@ function Clinics() {
         return (
           <div className="sa-clinic-name-cell">
             <span className="sa-clinic-logo sa-clinic-logo--emerald">
-              <PublicClinicLogo
-                clinicId={clinic.id || clinic.clinicId || clinic.hospitalId}
-                clinicName={clinic.name}
-              />
+              <ClinicLogo clinic={clinic} />
             </span>
             <b>{clinic.name || "-"}</b>
           </div>

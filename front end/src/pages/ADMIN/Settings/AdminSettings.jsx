@@ -383,8 +383,8 @@ function AdminSettings() {
     ...initialForm,
     ...form,
     accentColor: normalizeHexColor(form.accentColor),
-    logoUrl: resolveAssetUrl(form.logoDataUrl) || liveBranding.logoUrl || defaultLogoUrl,
-    watermarkUrl: resolveAssetUrl(form.logoDataUrl) || liveBranding.logoUrl || defaultLogoUrl,
+    logoUrl: liveBranding.logoUrl || resolveAssetUrl(form.logoDataUrl) || defaultLogoUrl,
+    watermarkUrl: liveBranding.logoUrl || resolveAssetUrl(form.logoDataUrl) || defaultLogoUrl,
   };
   const effectiveTemplateValue = form.template;
   const builtInTemplate = BUILT_IN_TEMPLATES.find((template) => template.value === form.template);

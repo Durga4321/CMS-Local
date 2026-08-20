@@ -22,7 +22,7 @@ import {
   validateMobile,
 } from "../../../utils/validation";
 import { validateUniqueMobileNumber } from "../../../utils/mobileUniqueness";
-import PublicClinicLogo from "../../../utils/PublicClinicLogo";
+import { getDefaultClinicLogo, useClinicInvoiceBranding } from "../../../utils/clinicBranding";
 
 const emptyAdmin = {
   fullName: "",
@@ -122,6 +122,20 @@ const getInitials = (value = "") => {
   const parts = String(value || "Admin").trim().split(/\s+/).filter(Boolean);
   return (parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : parts[0]?.slice(0, 2) || "A").toUpperCase();
 };
+
+function AssignedClinicLogo({ clinicId, clinicName }) {
+  const branding = useClinicInvoiceBranding({ clinicId, clinicName });
+
+  return (
+    <img
+      src={branding.logoUrl}
+      alt=""
+      onError={(event) => {
+        event.currentTarget.src = getDefaultClinicLogo(clinicName, clinicId);
+      }}
+    />
+  );
+}
 
 function Admins() {
   const toast = useToast();
@@ -517,7 +531,7 @@ function Admins() {
                 return (
                   <span className="sa-admin-clinic-cell">
                     <span className="sa-admin-clinic-logo sa-admin-clinic-logo--emerald">
-                      <PublicClinicLogo clinicId={clinicId} clinicName={clinicName} />
+                      <AssignedClinicLogo clinicId={clinicId} clinicName={clinicName || admin.assignedClinic || "Clinic"} />
                     </span>
                     <span>{admin.assignedClinic || "-"}</span>
                   </span>
