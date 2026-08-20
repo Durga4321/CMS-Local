@@ -136,9 +136,9 @@ const unwrapApiData = (data) => {
   return data?.data && typeof data.data === "object" ? data.data : data || {};
 };
 
-const normalizeRemoteBranding = (data = {}) => {
+const readRemoteLogoValue = (data = {}) => {
   const source = unwrapApiData(data);
-  const logoValue =
+  return (
     source.logoDataUrl ||
     source.LogoDataUrl ||
     source.logoUrl ||
@@ -155,46 +155,15 @@ const normalizeRemoteBranding = (data = {}) => {
     source.FileUrl ||
     source.url ||
     source.Url ||
-    "";
-
-  return {
-    settingsId: source.id || source.Id || source.invoiceSettingsId || source.InvoiceSettingsId || "",
-    headerTitle: source.headerTitle || source.HeaderTitle || "",
-    headerSubtitle: source.headerSubtitle || source.HeaderSubtitle || "",
-    clinicAddress: source.clinicAddress || source.ClinicAddress || "",
-    clinicPhone: source.clinicPhone || source.ClinicPhone || "",
-    clinicEmail: source.clinicEmail || source.ClinicEmail || "",
-    gstNumber: source.gstNumber || source.GstNumber || "",
-    registrationNumber: source.registrationNumber || source.RegistrationNumber || "",
-    footerNote: source.footerNote || source.FooterNote || "",
-    accentColor: source.accentColor || source.AccentColor || "",
-    logoDataUrl: resolveAssetUrl(logoValue),
-  };
+    ""
+  );
 };
 
-const fetchPublicClinicLogoBranding = async (scope = {}) => {
-  const clinicId = String(scope.clinicId || "").trim();
-  if (!clinicId) return null;
-
-  const logoUrl = getPublicClinicLogoUrl(clinicId);
-  const response = await fetch(logoUrl, {
-    method: "GET",
-    headers: {
-      "ngrok-skip-browser-warning": "true",
-    },
-  }).catch(() => null);
-  if (!response?.ok) return null;
-
-  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
-  if (contentType.startsWith("image/")) {
-    return {
-      logoDataUrl: logoUrl,
-    };
-  }
-
-  const data = await parseApiPayload(response);
-  const branding = normalizeRemoteBranding(data);
-  return branding.logoDataUrl ? branding : null;
+const withCacheBust = (url = "", version = Date.now()) => {
+  const raw = String(url || "").trim();
+  if (!raw || raw.startsWith("data:") || raw.startsWith("blob:")) return raw;
+  const separator = raw.includes("?") ? "&" : "?";
+  return `${raw}${separator}v=${encodeURIComponent(String(version || Date.now()))}`;
 };
 
 export const getPublicClinicLogoUrl = (clinicId = "") => {
@@ -204,13 +173,24 @@ export const getPublicClinicLogoUrl = (clinicId = "") => {
 
 export const syncClinicBrandingFromBackend = async (scope = {}) => {
   if (scope.enabled === false) return null;
+  const publicLogoUrl = getPublicClinicLogoUrl(scope.clinicId);
+  if (!publicLogoUrl) return null;
 
-  const publicLogoBranding = await fetchPublicClinicLogoBranding(scope);
-  if (publicLogoBranding?.logoDataUrl) {
-    saveClinicBranding(publicLogoBranding, scope);
-  }
+  const response = await fetch(publicLogoUrl, {
+    method: "GET",
+    headers: {
+      "ngrok-skip-browser-warning": "true",
+    },
+  }).catch(() => null);
+  if (!response?.ok) return null;
 
-  return publicLogoBranding ? saveClinicBranding(publicLogoBranding, scope) : null;
+  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+  const version = Date.now();
+  const logoDataUrl = contentType.startsWith("image/")
+    ? publicLogoUrl
+    : resolveAssetUrl(readRemoteLogoValue(await parseApiPayload(response)));
+
+  return logoDataUrl ? saveClinicBranding({ logoDataUrl: withCacheBust(logoDataUrl, version) }, scope) : null;
 };
 
 export const getClinicInvoiceBranding = ({ clinicId = "", clinicName = "" } = {}) => {
