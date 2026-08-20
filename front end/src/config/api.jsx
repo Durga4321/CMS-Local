@@ -1,5 +1,6 @@
-const DEFAULT_API_BASE_URL = "https://bounding-irate-manatee.ngrok-free.dev";
+const DEFAULT_API_BASE_URL = "https://theater-outreach-unable.ngrok-free.dev";
 const DEFAULT_API_ASSET_BASE_URL = DEFAULT_API_BASE_URL;
+export const CMS_GLOBAL_SETTINGS_KEY = "cms_global_settings";
 
 export const API_BASE_URL = (
   process.env.REACT_APP_API_BASE_URL || DEFAULT_API_BASE_URL
@@ -39,6 +40,24 @@ export const replacePathParams = (path, params = {}) =>
   });
 
 export const patientApiUrl = (path, params = {}) => apiUrl(replacePathParams(path, params));
+
+export const getCachedGlobalSettings = () => {
+  try {
+    const settings = JSON.parse(localStorage.getItem(CMS_GLOBAL_SETTINGS_KEY) || "{}");
+    return settings && typeof settings === "object" ? settings : {};
+  } catch {
+    return {};
+  }
+};
+
+export const cacheGlobalSettings = (settings = {}) => {
+  try {
+    localStorage.setItem(CMS_GLOBAL_SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    // Ignore storage failures; API settings are still the source of truth.
+  }
+  return settings;
+};
 
 export const BILLING_API = {
   op: "Billing/op",

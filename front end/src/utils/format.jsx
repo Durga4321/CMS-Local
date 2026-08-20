@@ -1,3 +1,10 @@
+import { getCachedGlobalSettings } from "../config/api";
+
+const getGlobalCurrency = () => {
+  const settings = getCachedGlobalSettings();
+  return String(settings?.general?.currency || settings?.currency || "INR").trim() || "INR";
+};
+
 export const formatIndianCurrency = (
   value,
   { minimumFractionDigits = 2, maximumFractionDigits = 2 } = {}
@@ -7,7 +14,7 @@ export const formatIndianCurrency = (
 
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: "INR",
+    currency: getGlobalCurrency(),
     minimumFractionDigits,
     maximumFractionDigits,
   }).format(safeAmount);

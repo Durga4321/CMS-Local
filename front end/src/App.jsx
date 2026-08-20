@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./layout/AppLayout";
@@ -6,6 +6,7 @@ import "./pages/SUPERADMIN/SuperAdmin.css";
 import "./styles/compact-spacing.css";
 import { ToastProvider } from "./components/ToastProvider";
 import PermissionRoute from "./components/PermissionRoute";
+import { fetchSettings } from "./pages/SUPERADMIN/superAdminApi";
 
 // Pages
 const DoctorApp = lazy(() => import("./doctors/DoctorApp"));
@@ -77,6 +78,27 @@ const PatientRoute = ({ children }) => {
 };
 
 function App() {
+  useEffect(() => {
+    let active = true;
+
+    if (!isCurrentUserSuperAdmin()) {
+      return () => {
+        active = false;
+      };
+    }
+
+    fetchSettings()
+      .then((settings) => {
+        const appName = String(settings?.general?.appName || "").trim();
+        if (active && appName) document.title = appName;
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <ToastProvider>
       <BrowserRouter>

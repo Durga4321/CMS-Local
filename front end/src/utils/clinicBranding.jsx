@@ -117,21 +117,6 @@ const resolveAssetUrl = (value = "") => {
   return assetUrl(raw);
 };
 
-const getAuthHeaders = () => {
-  const token =
-    localStorage.getItem("token") ||
-    localStorage.getItem("adminToken") ||
-    localStorage.getItem("doctorToken") ||
-    localStorage.getItem("receptionistToken") ||
-    localStorage.getItem("nurseToken") ||
-    localStorage.getItem("labToken") ||
-    "";
-  return {
-    "ngrok-skip-browser-warning": "true",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-};
-
 const parseApiPayload = async (response) => {
   const text = await response.text();
   if (!text) return null;
@@ -225,22 +210,7 @@ export const syncClinicBrandingFromBackend = async (scope = {}) => {
     saveClinicBranding(publicLogoBranding, scope);
   }
 
-  if (!localStorage.getItem("adminToken") && !sessionStorage.getItem("adminToken")) {
-    return publicLogoBranding ? saveClinicBranding(publicLogoBranding, scope) : null;
-  }
-
-  const response = await fetch(apiUrl("InvoiceSettings"), {
-    method: "GET",
-    headers: getAuthHeaders(),
-  }).catch(() => null);
-  if (!response?.ok) return publicLogoBranding ? saveClinicBranding(publicLogoBranding, scope) : null;
-  const data = await parseApiPayload(response);
-  const branding = normalizeRemoteBranding(data);
-  if (!branding.logoDataUrl && publicLogoBranding?.logoDataUrl) {
-    branding.logoDataUrl = publicLogoBranding.logoDataUrl;
-  }
-  if (!Object.values(branding).some(Boolean)) return null;
-  return saveClinicBranding(branding, scope);
+  return publicLogoBranding ? saveClinicBranding(publicLogoBranding, scope) : null;
 };
 
 export const getClinicInvoiceBranding = ({ clinicId = "", clinicName = "" } = {}) => {
