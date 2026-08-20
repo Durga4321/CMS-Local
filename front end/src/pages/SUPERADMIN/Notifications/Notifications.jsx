@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Megaphone, Send } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import NotificationPanel from "../../../components/superadmin/NotificationPanel";
@@ -10,6 +11,7 @@ import {
   deleteNotification,
 } from "../superAdminApi";
 import { validateSelected, validateText } from "../../../utils/validation";
+import { resolveNotificationPath } from "../../../utils/notificationNavigation";
 
 const defaultTargetOptions = [
   { value: "Active Admins", label: "Active Admins" },
@@ -86,6 +88,7 @@ const saveReadNotificationKey = (notification = {}) => {
 };
 
 function Notifications() {
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const formRef = useRef(null);
   const [notifications, setNotifications] = useState([]);
@@ -356,6 +359,7 @@ function Notifications() {
                     getNotificationKey(n) === getNotificationKey(item) ? { ...n, status: "Read" } : n
                   )
                 );
+                navigate(resolveNotificationPath(item, { isSuperAdmin: true }));
               }}
             />
         ) : null}

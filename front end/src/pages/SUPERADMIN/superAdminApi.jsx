@@ -960,6 +960,8 @@ export const normalizeNotification = (notification = {}) => ({
   targetUsers: getNotificationTarget(notification),
   status: normalizeNotificationStatus(notification),
   createdAt: pick(notification, ["createdAt", "createdOn", "date", "timestamp"], ""),
+  type: pick(notification, ["type", "notificationType", "category"], ""),
+  redirectUrl: pick(notification, ["redirectUrl", "redirectPath", "targetUrl", "targetPath", "actionUrl", "actionPath", "link", "url", "route", "path", "deepLink"], ""),
 });
 
 const getNotificationAudienceCode = (target = "") =>

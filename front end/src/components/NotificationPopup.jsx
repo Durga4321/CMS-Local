@@ -3,6 +3,7 @@ import { Bell, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { fetchNotifications, markNotificationRead } from "../pages/SUPERADMIN/superAdminApi";
 import { Trash2 } from "lucide-react";
+import { resolveNotificationPath } from "../utils/notificationNavigation";
 import "./NotificationPopup.css";
 
 const getCurrentRole = () =>
@@ -305,6 +306,8 @@ function NotificationPopup({ isSuperAdmin = false }) {
                             : n
                         )
                       );
+                      setOpen(false);
+                      navigate(resolveNotificationPath(item, { isSuperAdmin }));
                     }}
                   >
                     <div>

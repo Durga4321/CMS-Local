@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Header from "../../../components/superadmin/Header";
+import PasswordField from "../../../components/PasswordField";
 import {
   fetchSettings,
   updateEmailSettings,
@@ -284,6 +285,13 @@ function Settings() {
                     <option key={option} value={option}>{option}</option>
                   ))}
                 </select>
+              ) : field.type === "password" ? (
+                <PasswordField
+                  name={field.name}
+                  value={activeSettings[field.name] || ""}
+                  onChange={handleChange}
+                  required={field.required}
+                />
               ) : (
                 <input
                   name={field.name}

@@ -54,13 +54,6 @@ const createNextPatientToken = (appointments = []) => {
   return `TKN${String(highestToken + 1).padStart(3, "0")}`;
 };
 
-const PATIENT_NOTIFICATION_TYPES = [
-  'Appointment Reminder',
-  'Prescription Ready',
-  'Bill Generated',
-  'Follow-up Reminder',
-];
-
 const storePatientPortalOpBill = (bill) => storePatientPortalBill(bill, PATIENT_PORTAL_OP_BILLS_KEY);
 
 const readPatientPortalOpBills = () => readPatientPortalBills(PATIENT_PORTAL_OP_BILLS_KEY);
@@ -505,7 +498,7 @@ const notificationBelongsToPatient = (notification, patient = {}, visits = []) =
   ].map((value) => normalizeComparable(value)).filter(Boolean);
   if (notificationAppointmentIds.length) return notificationAppointmentIds.some((value) => appointmentIds.has(value));
 
-  return false;
+  return true;
 };
 
 const normalizeName = (value) => {
@@ -1188,24 +1181,8 @@ function PatientRoutes() {
       ]).filter((bill) => billBelongsToPatient(bill, effectivePatient, patientAppointments));
       setBills(patientBills);
 
-      const notificationPaths = buildPatientScopedPaths(PATIENT_API.notifications, effectivePatient, patientAppointments)
-        .filter((path) => path !== PATIENT_API.notifications);
-      const [nData, notificationResults] = await Promise.all([
-        notificationsRes?.ok ? notificationsRes.json().catch(() => []) : Promise.resolve([]),
-        Promise.allSettled(
-          notificationPaths.map((path) => fetch(patientApiUrl(path), { headers, cache: "no-store" }))
-        ),
-      ]);
-      const notificationLists = await Promise.all(
-        notificationResults.map(async (result) => {
-          if (result.status !== "fulfilled" || !result.value?.ok) return [];
-          return parseApiList(await result.value.json().catch(() => []));
-        })
-      );
-      const notificationList = dedupeNotificationsById([
-        ...parseApiList(nData),
-        ...notificationLists.flat(),
-      ]);
+      const nData = notificationsRes?.ok ? await notificationsRes.json().catch(() => []) : [];
+      const notificationList = dedupeNotificationsById(parseApiList(nData));
       setNotifications(notificationList.filter((notification) =>
         notificationBelongsToPatient(notification, effectivePatient, patientAppointments)
       ));
@@ -5416,7 +5393,6 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
 
 function PatientNotificationsPage({ notifications = [], prescriptions = [], bills = [], patient = null, visits = [] }) {
   const navigate = useNavigate();
-  const notificationTypes = PATIENT_NOTIFICATION_TYPES;
   const [apiNotifications, setApiNotifications] = useState([]);
   const [pendingNotificationActions, setPendingNotificationActions] = useState({});
   const [selectedType, setSelectedType] = useState("All");
@@ -5535,17 +5511,9 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
   useEffect(() => {
     let isCurrent = true;
     const loadNotifications = async () => {
-      const paths = buildPatientScopedPaths(PATIENT_API.notifications, patient || {}, visits);
-      const responses = await Promise.allSettled(
-        paths.map((path) => fetch(patientApiUrl(path), { headers: getApiHeaders(), cache: 'no-store' }))
-      );
-      const lists = await Promise.all(
-        responses.map(async (result) => {
-          if (result.status !== 'fulfilled' || !result.value?.ok) return [];
-          return parseApiList(await result.value.json().catch(() => []));
-        })
-      );
-      const scoped = lists.flat().filter((notification) =>
+      const response = await fetch(patientApiUrl(PATIENT_API.notifications), { headers: getApiHeaders(), cache: 'no-store' }).catch(() => null);
+      const list = response?.ok ? parseApiList(await response.json().catch(() => [])) : [];
+      const scoped = list.filter((notification) =>
         notificationBelongsToPatient(notification, patient || {}, visits)
       );
       if (isCurrent) setApiNotifications(scoped);
@@ -5560,18 +5528,12 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
   }, [patient, visits]);
 
   const normalizeNotification = useCallback((notification, index) => {
-    const title = readFirst(notification, ['title', 'subject', 'name']) || notificationTypes[index % notificationTypes.length];
+    const title = readFirst(notification, ['title', 'subject', 'name']) || 'Notification';
     const message = readFirst(notification, ['message', 'body', 'description', 'content']) || 'Notification details will appear here.';
     const date = readFirst(notification, ['date', 'createdAt', 'scheduledAt', 'time']) || 'No date';
     const rawType = readFirst(notification, ['type', 'category', 'notificationType']);
     const searchable = `${rawType} ${title} ${message}`.toLowerCase();
-    const type =
-      notificationTypes.find((item) => searchable.includes(item.toLowerCase().replace(/[\s-]+/g, ''))) ||
-      (searchable.includes('appointment') ? 'Appointment Reminder' : '') ||
-      (searchable.includes('prescription') ? 'Prescription Ready' : '') ||
-      (searchable.includes('bill') || searchable.includes('invoice') ? 'Bill Generated' : '') ||
-      (searchable.includes('follow') ? 'Follow-up Reminder' : '') ||
-      notificationTypes[index % notificationTypes.length];
+    const type = rawType || title || 'Notification';
 
     return {
       ...notification,
@@ -5584,7 +5546,7 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
       read: Boolean(notification.read || notification.isRead),
       url: readFirst(notification, ['url', 'link', 'actionUrl', 'documentUrl']),
     };
-  }, [notificationTypes]);
+  }, []);
 
   const deriveNotificationRows = useCallback((rows) => {
     const derived = [...rows];
@@ -5700,6 +5662,18 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
     setPage(1);
   }, [normalizeNotification, scopedNotifications, deriveNotificationRows]);
 
+  const notificationTypes = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          notificationRows
+            .map((notification) => String(notification.type || "").trim())
+            .filter(Boolean)
+        )
+      ),
+    [notificationRows]
+  );
+
   const notificationSummary = useMemo(() => {
     const counts = notificationRows.reduce((acc, notification) => {
       acc[notification.type] = (acc[notification.type] || 0) + 1;
@@ -5769,16 +5743,17 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
 
   const viewNotification = (notification) => {
     markNotificationAsRead(notification);
+    const normalizedType = String(notification.type || "").toLowerCase();
 
     // Prescription and billing notifications can also carry an appointment ID.
     // Their destination must remain the corresponding patient record, not the
     // appointment that produced it.
-    if (notification.type === 'Prescription Ready') {
+    if (normalizedType.includes('prescription')) {
       navigate('/patient/prescriptions');
       return;
     }
 
-    if (notification.type === 'Bill Generated') {
+    if (normalizedType.includes('bill') || normalizedType.includes('invoice') || normalizedType.includes('payment')) {
       navigate('/patient/bills');
       return;
     }
@@ -5789,7 +5764,7 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
       return;
     }
 
-    if (notification.type === 'Appointment Reminder') {
+    if (normalizedType.includes('appointment')) {
       navigate('/patient/appointments');
       return;
     }
@@ -5900,9 +5875,10 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
   };
 
   const getTypeIcon = (type) => {
-    if (type === 'Appointment Reminder') return <Calendar size={18} />;
-    if (type === 'Prescription Ready') return <ClipboardList size={18} />;
-    if (type === 'Bill Generated') return <CreditCard size={18} />;
+    const normalizedType = String(type || "").toLowerCase();
+    if (normalizedType.includes('appointment')) return <Calendar size={18} />;
+    if (normalizedType.includes('prescription')) return <ClipboardList size={18} />;
+    if (normalizedType.includes('bill') || normalizedType.includes('invoice') || normalizedType.includes('payment')) return <CreditCard size={18} />;
     return <CheckCircle2 size={18} />;
   };
 
@@ -6260,6 +6236,7 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
     emergencyContactRelationship: "",
     emergencyContactPhone: "",
   });
+  const bloodGroupOptions = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
   const currentPatient = patient || {};
   const normalizeBloodGroup = (value) => {
@@ -6318,6 +6295,19 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
   const profileCurrentMedications = formatMedicalList(
     currentPatient.currentMedications || currentPatient.medications || currentPatient.currentMedication
   );
+  const splitProfileName = (value = "") => {
+    const parts = String(value || "").trim().split(/\s+/).filter(Boolean);
+    return {
+      firstName: parts[0] || "",
+      lastName: parts.slice(1).join(" "),
+    };
+  };
+  const getProfileDateOfBirth = () => {
+    const value = readFirst(currentPatient, ["dateOfBirth", "dob", "birthDate"]);
+    if (!value || value === "DOB not available") return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toISOString();
+  };
   const profileInitials = String(profileName)
     .split(" ")
     .slice(0, 2)
@@ -6362,18 +6352,25 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
     setMessageType("");
     try {
       const profileUrl = patientApiUrl(PATIENT_API.profile);
+      const nameParts = splitProfileName(form.name || profileName);
       const payload = {
-        name: form.name.trim(),
+        firstName: nameParts.firstName,
+        lastName: nameParts.lastName,
         gender: form.gender,
-        mobile: form.mobile.trim(),
-        address: form.address.trim(),
+        dateOfBirth: getProfileDateOfBirth(),
         bloodGroup: form.bloodGroup,
+        mobileNumber: form.mobile.trim(),
+        email: form.email.trim(),
+        address: form.address.trim(),
         emergencyContactName: form.emergencyContactName.trim(),
         emergencyContactRelationship: form.emergencyContactRelationship.trim(),
         emergencyContactPhone: form.emergencyContactPhone.trim(),
+        allergies: profileAllergies === "Not recorded" ? "" : profileAllergies,
+        chronicDiseases: profileChronicDiseases === "Not recorded" ? "" : profileChronicDiseases,
+        currentMedications: profileCurrentMedications === "Not recorded" ? "" : profileCurrentMedications,
       };
       const response = await fetch(profileUrl, {
-        method: "PATCH",
+        method: "PUT",
         headers: getApiHeaders(),
         body: JSON.stringify(payload),
       });
@@ -6384,6 +6381,9 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
       const returnedProfile = data.patient || data.profile || data.data;
       onProfileUpdated({
         ...currentPatient,
+        name: `${payload.firstName} ${payload.lastName}`.trim(),
+        mobile: payload.mobileNumber,
+        phoneNumber: payload.mobileNumber,
         ...payload,
         ...(returnedProfile && typeof returnedProfile === "object" && !Array.isArray(returnedProfile) ? returnedProfile : {}),
       });
@@ -6478,7 +6478,16 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
                   <div><span>DOB</span><strong>{formattedProfileDob}</strong></div>
                   <label className="pd-profile-input-label">
                     <span>Blood Group</span>
-                    <input value={profileBloodGroup || "Not recorded"} readOnly />
+                    <select
+                      value={form.bloodGroup}
+                      disabled={!editMode}
+                      onChange={(e) => handleFieldChange("bloodGroup", e.target.value)}
+                    >
+                      <option value="">Not recorded</option>
+                      {bloodGroupOptions.map((group) => (
+                        <option key={group} value={group}>{group}</option>
+                      ))}
+                    </select>
                   </label>
                 </div>
               </section>

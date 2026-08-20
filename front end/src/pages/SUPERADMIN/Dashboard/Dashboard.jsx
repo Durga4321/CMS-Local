@@ -147,7 +147,6 @@ function Dashboard() {
                 <h3>Charts & Statistics</h3>
                 <p>Revenue growth across all clinics.</p>
               </div>
-              <button type="button" className="sa-chip">This Month</button>
             </div>
 
             <Charts data={revenueData} dataKey="revenue" />
@@ -159,7 +158,9 @@ function Dashboard() {
                 <h3>Recent Activities</h3>
                 <p>Latest platform events.</p>
               </div>
-              <button type="button" className="sa-btn sa-btn--ghost">View All</button>
+              <button type="button" className="sa-btn sa-btn--ghost" onClick={() => navigate("/superadmin/audit-logs")}>
+                View All
+              </button>
             </div>
 
             <div className="sa-activity-list">

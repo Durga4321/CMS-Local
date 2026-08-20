@@ -174,7 +174,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .content.sa-dashboard-content .sa-dashboard-page {
@@ -247,7 +247,8 @@
   background: #ffffff;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  align-self: start;
+  max-height: calc(100vh - 330px);
   min-height: 0;
   overflow: hidden;
 }
@@ -355,6 +356,8 @@
   margin-top: 4px;
   flex: 1;
   min-height: 0;
+  height: clamp(220px, calc(100vh - 500px), 390px);
+  max-height: 390px;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-right: 6px;
@@ -595,9 +598,14 @@
 
 .sa-report-chart-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.75fr);
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.75fr);
   gap: 12px;
   margin-bottom: 14px;
+}
+
+.sa-panel--activity > .sa-activity-list {
+  flex: 0 1 auto;
+  overflow-y: scroll;
 }
 
 .sa-report-panel {
@@ -673,14 +681,15 @@
 
 .sa-report-donut-wrap {
   display: grid;
-  grid-template-columns: 132px minmax(0, 1fr);
+  grid-template-columns: minmax(96px, 124px) minmax(0, 1fr);
   align-items: center;
   gap: 14px;
+  min-width: 0;
 }
 
 .sa-report-donut {
-  width: 124px;
-  height: 124px;
+  width: min(100%, 124px);
+  aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -688,8 +697,8 @@
 }
 
 .sa-report-donut span {
-  width: 58px;
-  height: 58px;
+  width: 47%;
+  aspect-ratio: 1;
   border-radius: 999px;
   background: #ffffff;
   box-shadow: inset 0 0 0 1px #edf2f7;
@@ -698,13 +707,15 @@
 .sa-report-donut-list {
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
 .sa-report-donut-list div {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(82px, auto);
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
+  min-width: 0;
   color: #334155;
   font-size: 10px;
 }
@@ -727,9 +738,11 @@
 }
 
 .sa-report-donut-list b {
+  min-width: 0;
   color: #475569;
   font-weight: 850;
-  white-space: nowrap;
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .sa-activity-list,
@@ -1155,7 +1168,8 @@
   min-width: 0;
   width: 100%;
   column-gap: 3px;
-  padding: 5px 7px;
+  padding: 5px 10px;
+  box-sizing: border-box;
 }
 
 .sa-table--audit .sa-table-head {
@@ -1178,6 +1192,9 @@
 }
 
 .sa-table--audit .sa-table-cell {
+  min-width: 0;
+  padding-left: 2px;
+  box-sizing: border-box;
   overflow: hidden;
   line-height: 1.2;
 }
@@ -1186,6 +1203,7 @@
 .sa-table--audit .sa-table-text-overflow {
   display: block;
   max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

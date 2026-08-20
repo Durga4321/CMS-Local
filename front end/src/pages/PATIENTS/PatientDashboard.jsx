@@ -563,7 +563,7 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
     () => activeVisits.filter((visit) => !isCompletedAppointment(visit) && isTodayAppointment(visit)),
     [activeVisits]
   );
-  const upcomingAppointment = getSortedUpcomingAppointment(todayActiveVisits.length ? todayActiveVisits : activeVisits);
+  const upcomingAppointment = getSortedUpcomingAppointment(todayActiveVisits);
   const upcomingAppointmentId = getAppointmentId(upcomingAppointment);
   const previousVisits = activeVisits.filter(isCompletedAppointment).length;
   const prescriptionCount = Array.isArray(prescriptions) ? prescriptions.length : 0;
