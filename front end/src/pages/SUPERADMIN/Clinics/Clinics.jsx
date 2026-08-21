@@ -5,19 +5,61 @@ import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
 import { deleteClinic, fetchClinics, updateClinicStatus } from "../superAdminApi";
-import { getDefaultClinicLogo, useClinicInvoiceBranding } from "../../../utils/clinicBranding";
+import { assetUrl } from "../../../config/api";
+import { getDefaultClinicLogo, getPublicClinicLogoUrl } from "../../../utils/clinicBranding";
+
+const readLogoValue = (data = {}) => {
+  const source = data?.data && typeof data.data === "object" ? data.data : data || {};
+  return (
+    source.logoDataUrl ||
+    source.LogoDataUrl ||
+    source.logoUrl ||
+    source.LogoUrl ||
+    source.logoPath ||
+    source.LogoPath ||
+    source.logoFilePath ||
+    source.LogoFilePath ||
+    ""
+  );
+};
 
 function ClinicLogo({ clinic }) {
   const clinicId = clinic.id || clinic.clinicId || clinic.hospitalId || "";
   const clinicName = clinic.name || "Clinic";
-  const branding = useClinicInvoiceBranding({ clinicId, clinicName });
+  const fallbackLogo = getDefaultClinicLogo(clinicName, clinicId);
+  const [logoUrl, setLogoUrl] = useState(fallbackLogo);
+
+  useEffect(() => {
+    let isCurrent = true;
+    const loadLogo = async () => {
+      const publicLogoUrl = getPublicClinicLogoUrl(clinicId);
+      if (!publicLogoUrl) {
+        setLogoUrl(fallbackLogo);
+        return;
+      }
+      const response = await fetch(publicLogoUrl, {
+        headers: { "ngrok-skip-browser-warning": "true" },
+      }).catch(() => null);
+      if (!isCurrent || !response?.ok) return;
+      const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+      const nextLogo = contentType.startsWith("image/")
+        ? publicLogoUrl
+        : assetUrl(readLogoValue(await response.json().catch(() => ({}))));
+      if (nextLogo) setLogoUrl(`${nextLogo}${nextLogo.includes("?") ? "&" : "?"}v=${Date.now()}`);
+    };
+
+    loadLogo();
+    return () => {
+      isCurrent = false;
+    };
+  }, [clinicId, fallbackLogo]);
 
   return (
     <img
-      src={branding.logoUrl}
+      src={logoUrl}
       alt=""
       onError={(event) => {
-        event.currentTarget.src = getDefaultClinicLogo(clinicName, clinicId);
+        event.currentTarget.src = fallbackLogo;
       }}
     />
   );

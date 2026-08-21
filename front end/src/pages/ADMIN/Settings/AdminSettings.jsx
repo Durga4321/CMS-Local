@@ -233,8 +233,8 @@ const isInvoiceSettingsMissingError = (error) => {
   return message.includes("invoice settings") && (message.includes("not found") || message.includes("create"));
 };
 
-const requestInvoiceLogoDelete = async () => {
-  const response = await fetch(apiUrl(INVOICE_LOGO_PATH), {
+const requestInvoiceLogoDelete = async (clinicId = "") => {
+  const response = await fetch(withClinicQuery(INVOICE_LOGO_PATH, clinicId), {
     method: "DELETE",
     headers: getAuthHeaders(""),
   });
@@ -383,8 +383,8 @@ function AdminSettings() {
     ...initialForm,
     ...form,
     accentColor: normalizeHexColor(form.accentColor),
-    logoUrl: liveBranding.logoUrl || resolveAssetUrl(form.logoDataUrl) || defaultLogoUrl,
-    watermarkUrl: liveBranding.logoUrl || resolveAssetUrl(form.logoDataUrl) || defaultLogoUrl,
+    logoUrl: resolveAssetUrl(form.logoDataUrl) || liveBranding.logoUrl || defaultLogoUrl,
+    watermarkUrl: resolveAssetUrl(form.logoDataUrl) || liveBranding.logoUrl || defaultLogoUrl,
   };
   const effectiveTemplateValue = form.template;
   const builtInTemplate = BUILT_IN_TEMPLATES.find((template) => template.value === form.template);

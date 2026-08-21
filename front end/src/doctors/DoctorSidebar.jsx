@@ -102,9 +102,10 @@ function DoctorSidebar() {
       ? []
       : filterItemsByViewPermission(NAV_ITEMS, permissionProfile);
   const clinicBranding = useClinicInvoiceBranding({
-    clinicId: profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "",
+    clinicId: profile.clinicId || profile.hospitalId || doctor.clinicId || doctor.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "",
     clinicName: hospitalName,
   });
+  const clinicIdForLogo = profile.clinicId || profile.hospitalId || doctor.clinicId || doctor.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "";
 
   useEffect(() => {
     let isCurrent = true;
@@ -157,7 +158,7 @@ function DoctorSidebar() {
     <aside className="dr-sidebar">
       <div className="dr-brand">
         <div className="dr-brand-icon dr-clinic-logo dr-clinic-logo--emerald">
-          <img src={clinicBranding.logoUrl} alt="" onError={(event) => { event.currentTarget.src = getDefaultClinicLogo(hospitalName, profile.clinicId || profile.hospitalId || ""); }} />
+          <img src={clinicBranding.logoUrl} alt="" onError={(event) => { event.currentTarget.src = getDefaultClinicLogo(hospitalName, clinicIdForLogo); }} />
         </div>
         <div>
           <p className="dr-brand-sub">Clinic Name</p>
