@@ -20,7 +20,8 @@ function LabSidebar({ onClose = () => {} }) {
   const profile = getLabProfile();
   const { loading: permissionsLoading } = useRolePermissionsSync(profile);
   const hospitalName = getClinicDisplayName(profile, "Clinic Name");
-  const branding = useClinicInvoiceBranding({ clinicId: profile.hospitalId, clinicName: hospitalName });
+  const clinicIdForLogo = profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "";
+  const branding = useClinicInvoiceBranding({ clinicId: clinicIdForLogo, clinicName: hospitalName });
   const navItems =
     permissionsLoading && !hasAnySavedModulePermissions(profile)
       ? []
@@ -30,7 +31,7 @@ function LabSidebar({ onClose = () => {} }) {
     <aside className="rc-sidebar lab-sidebar">
       <div className="rc-brand">
         <div className="rc-brand-icon rc-clinic-logo rc-clinic-logo--emerald">
-          <img src={branding.logoUrl} alt="" onError={(event) => { event.currentTarget.src = getDefaultClinicLogo(hospitalName, profile.clinicId || profile.hospitalId || ""); }} />
+          <img src={branding.logoUrl} alt="" onError={(event) => { event.currentTarget.src = getDefaultClinicLogo(hospitalName, clinicIdForLogo); }} />
         </div>
         <div>
           <span>Clinic Name</span>

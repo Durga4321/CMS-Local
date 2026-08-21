@@ -88,8 +88,9 @@ function Sidebar({ open = false, onClose = () => {} }) {
   const profileName = profile.name;
   const profileSub = isSuperAdmin ? "Super Admin" : isPatient ? "Patient" : getClinicDisplayName(profile, "Admin");
   const brandName = isSuperAdmin ? "CMS" : isPatient ? "Patient Portal" : getClinicDisplayName(profile, "CMS");
+  const clinicIdForLogo = profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "";
   const clinicBranding = useClinicInvoiceBranding({
-    clinicId: profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "",
+    clinicId: clinicIdForLogo,
     clinicName: brandName,
     enabled: !isSuperAdmin && !isPatient,
   });
@@ -106,7 +107,7 @@ function Sidebar({ open = false, onClose = () => {} }) {
       <div className="sidebar-header">
         <div className={`logo sidebar-clinic-logo sidebar-clinic-logo--${brandLogo.tone}`}>
           {brandLogo.type === "image" ? (
-            <img src={brandLogo.image} alt="" onError={(event) => { event.currentTarget.src = getDefaultClinicLogo(brandName, profile.clinicId || profile.hospitalId || ""); }} />
+            <img src={brandLogo.image} alt="" onError={(event) => { event.currentTarget.src = getDefaultClinicLogo(brandName, clinicIdForLogo); }} />
           ) : <BrandLogoIcon size={22} />}
           {brandLogo.text ? <small>{brandLogo.text}</small> : null}
         </div>

@@ -57,8 +57,9 @@ function NurseSidebar({ onClose = () => {}, basePath = "/nurse", dashboardLabel 
   const profileName = profile.name || "Nurse";
   const hospitalName = getClinicDisplayName(profile, "Clinic Name");
   const branchName = String(profile.branchName || "").trim();
+  const clinicIdForLogo = profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "";
   const clinicBranding = useClinicInvoiceBranding({
-    clinicId: profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "",
+    clinicId: clinicIdForLogo,
     clinicName: hospitalName,
   });
   const baseItems = buildItems({ basePath, dashboardLabel, showBookAppointment });
@@ -70,7 +71,7 @@ function NurseSidebar({ onClose = () => {}, basePath = "/nurse", dashboardLabel 
     <aside className="rc-sidebar">
       <div className="rc-brand">
         <div className="rc-brand-icon rc-clinic-logo rc-clinic-logo--emerald">
-          <img src={clinicBranding.logoUrl} alt="" onError={(event) => { event.currentTarget.src = getDefaultClinicLogo(hospitalName, profile.clinicId || profile.hospitalId || ""); }} />
+          <img src={clinicBranding.logoUrl} alt="" onError={(event) => { event.currentTarget.src = getDefaultClinicLogo(hospitalName, clinicIdForLogo); }} />
         </div>
         <div>
           <span>Clinic Name</span>
