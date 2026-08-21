@@ -17,9 +17,12 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "build:pwa": "react-scripts build && npx workbox generateSW workbox-config.js",
+    "start": "node scripts/start-dev.mjs",
+    "start:vite": "vite --host 0.0.0.0",
+    "start:cra": "react-scripts start",
+    "build": "vite build",
+    "build:cra": "react-scripts build",
+    "build:pwa": "vite build && npx workbox generateSW workbox-config.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "cap:copy": "npx cap copy",
@@ -49,7 +52,9 @@
   "devDependencies": {
     "@capacitor/cli": "^5.7.8",
     "@capacitor/core": "^5.7.8",
+    "@vitejs/plugin-react": "^6.1.0",
     "http-proxy-middleware": "^4.0.0",
+    "vite": "^8.2.2",
     "workbox-cli": "^6.5.4"
   }
 }
