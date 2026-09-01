@@ -41,6 +41,8 @@ export const getRecordBranchId = (record = {}) =>
       record.BranchID,
       record.assignedBranchId,
       record.AssignedBranchId,
+      record.clinicBranchId,
+      record.ClinicBranchId,
       record.patient?.branchId,
       record.patient?.BranchId,
       record.Patient?.BranchId,

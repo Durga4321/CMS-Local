@@ -1,5 +1,5 @@
-//const DEFAULT_API_BASE_URL = "https://theater-outreach-unable.ngrok-free.dev";
-const DEFAULT_API_BASE_URL = " https://irritant-kilobyte-until.ngrok-free.dev";
+const DEFAULT_API_BASE_URL = "https://theater-outreach-unable.ngrok-free.dev";
+//const DEFAULT_API_BASE_URL = " https://irritant-kilobyte-until.ngrok-free.dev";
 const DEFAULT_API_ASSET_BASE_URL = DEFAULT_API_BASE_URL;
 export const CMS_GLOBAL_SETTINGS_KEY = "cms_global_settings";
 
