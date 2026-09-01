@@ -1,10 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
-  CalendarDays,
   Eye,
   HeartPulse,
-  History,
   Pencil,
   Plus,
   RefreshCw,
@@ -73,7 +71,19 @@ const firstText = (...values) =>
     .find(Boolean) || "";
 
 const getPatientId = (patient = {}) =>
-  firstText(patient.id, patient.patientId, patient.PatientId, patient.PID);
+  firstText(patient.id, patient.Id, patient.patientId, patient.PatientId, patient.PID, patient.patientCode, patient.PatientCode);
+
+const getPatientCode = (patient = {}) =>
+  firstText(patient.patientCode, patient.PatientCode, patient.PID, patient.patientId, patient.PatientId, patient.id, patient.Id);
+
+const getPatientName = (patient = {}) =>
+  firstText(patient.name, patient.Name, patient.fullName, patient.FullName, patient.patientName, patient.PatientName);
+
+const getPatientPhone = (patient = {}) =>
+  firstText(patient.phone, patient.Phone, patient.mobile, patient.Mobile, patient.phoneNumber, patient.PhoneNumber);
+
+const getPatientAge = (patient = {}) =>
+  firstText(patient.age, patient.Age);
 
 const getAppointmentPatientId = (appointment = {}) =>
   firstText(
@@ -427,9 +437,6 @@ function ReceptionPatients({
   const canEditPatient = canUseModulePermission(permissionProfile, "Patients", "Edit");
   const canDeletePatient = canUseModulePermission(permissionProfile, "Patients", "Delete");
   const [patients, setPatients] = useState([]);
-  const [appointments, setAppointments] = useState([]);
-  const [patientListView, setPatientListView] = useState("today");
-  const [pastPatientDateFilter, setPastPatientDateFilter] = useState("");
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [message, setMessage] = useState("");
@@ -437,50 +444,26 @@ function ReceptionPatients({
   const [areaOptions, setAreaOptions] = useState([]);
 
   const fetchPatients = useCallback(() =>
-    Promise.all([
-      apiRequest("Patient"),
-      apiRequest("Appointment").catch(() => []),
-      apiRequest("Appointment/offline").catch(() => []),
-      apiRequest("Appointment/online").catch(() => []),
-    ])
-      .then(([data, appointmentData, offlineAppointmentData, onlineAppointmentData]) => {
-        const branchAppointments = [
-          ...parseList(appointmentData),
-          ...parseList(offlineAppointmentData),
-          ...parseList(onlineAppointmentData),
-        ];
-        const scopedAppointments = scopeRecords(branchAppointments, receptionistScope);
-        const branchPatientIds = new Set(
-          scopedAppointments
-            .map(getAppointmentPatientId)
-            .filter(Boolean)
-        );
-        const branchPatientPhones = new Set(
-          scopedAppointments
-            .map(getAppointmentPatientPhone)
-            .filter(Boolean)
-        );
-        setAppointments(scopedAppointments);
+    apiRequest("Patient")
+      .then((data) => {
         setPatients(
           parseList(data)
             .filter((patient) => !isDeletedPatient(patient))
-            .filter((patient) =>
-              patientBelongsToReceptionistPatientList(
-                patient,
-                branchPatientIds,
-                branchPatientPhones,
-                receptionistScope
-              )
-            )
+            .filter((patient) => patientBelongsToReceptionistPatientList(
+              patient,
+              new Set(),
+              new Set(),
+              receptionistScope
+            ))
         );
         setMessage("");
       })
       .catch((error) => {
-        setAppointments([]);
+        setPatients([]);
         setMessage(error.message);
         toast.error(error.message || "Unable to load patients.");
       }),
-  [receptionistScope, toast, apiRequest, scopeRecords]);
+  [receptionistScope, toast, apiRequest]);
 
   useEffect(() => {
     fetchPatients();
@@ -497,30 +480,9 @@ function ReceptionPatients({
     };
   }, [modal]);
 
-  const todayKey = useMemo(() => getTodayKey(), []);
-  const todayRows = useMemo(
-    () =>
-      patients.filter((patient) =>
-        hasPatientAppointmentByDate(patient, appointments, (appointmentDate) => appointmentDate === todayKey)
-      ),
-    [appointments, patients, todayKey]
-  );
-  const pastRows = useMemo(
-    () =>
-      patients.filter((patient) =>
-        hasPatientAppointmentByDate(
-          patient,
-          appointments,
-          (appointmentDate) =>
-            appointmentDate < todayKey &&
-            (!pastPatientDateFilter || appointmentDate === pastPatientDateFilter)
-        )
-      ),
-    [appointments, pastPatientDateFilter, patients, todayKey]
-  );
   const rows = useMemo(
-    () => [...(patientListView === "past" ? pastRows : todayRows)].reverse(),
-    [pastRows, patientListView, todayRows]
+    () => [...patients].reverse(),
+    [patients]
   );
   const selectedDistricts = Array.from(
     new Set([
@@ -920,53 +882,10 @@ function ReceptionPatients({
       <div className="rc-card">
         <div className="rc-card-head">
           <div>
-            <h3>{patientListView === "past" ? "Past Patients List" : "Today Patient List"}</h3>
-            <p>
-              {patientListView === "past"
-                ? "Past patient history from previous appointments."
-                : "Patients with appointments scheduled for today."}
-            </p>
-          </div>
-          <div className="rc-patient-list-tabs" role="tablist" aria-label="Patient list view">
-            <button
-              type="button"
-              className={patientListView === "today" ? "active" : ""}
-              onClick={() => setPatientListView("today")}
-              role="tab"
-              aria-selected={patientListView === "today"}
-            >
-              <CalendarDays size={16} /> Today Patients
-              <span>{todayRows.length}</span>
-            </button>
-            <button
-              type="button"
-              className={patientListView === "past" ? "active" : ""}
-              onClick={() => setPatientListView("past")}
-              role="tab"
-              aria-selected={patientListView === "past"}
-            >
-              <History size={16} /> Past Patients
-              <span>{pastRows.length}</span>
-            </button>
+            <h3>Patients List</h3>
+            <p>Patients registered from the patient API.</p>
           </div>
         </div>
-        {patientListView === "past" ? (
-          <div className="rc-filter-grid rc-filter-grid-compact">
-            <label className="rc-filter-field">
-              <span>Past Appointment Date</span>
-              <input
-                type="date"
-                value={pastPatientDateFilter}
-                onChange={(event) => setPastPatientDateFilter(event.target.value)}
-              />
-            </label>
-            <div className="rc-filter-field rc-filter-clear">
-              <button type="button" className="rc-btn ghost" onClick={() => setPastPatientDateFilter("")}>
-                Clear Date
-              </button>
-            </div>
-          </div>
-        ) : null}
         <div className="rc-table">
           <div className="rc-table-head five">
             <span>S.No.</span>
@@ -977,12 +896,12 @@ function ReceptionPatients({
             <span>Actions</span>
           </div>
           {rows.map((patient, index) => (
-            <div className="rc-table-row five" key={patient.id}>
+            <div className="rc-table-row five" key={getPatientId(patient) || index}>
               <span>{index + 1}</span>
-              <span>{patient.id}</span>
-              <span>{patient.name || "-"}</span>
-              <span>{patient.phone || "-"}</span>
-              <span>{patient.age ? `${patient.age} yrs` : "-"}</span>
+              <span>{getPatientCode(patient) || "-"}</span>
+              <span>{getPatientName(patient) || "-"}</span>
+              <span>{getPatientPhone(patient) || "-"}</span>
+              <span>{getPatientAge(patient) ? `${getPatientAge(patient)} yrs` : "-"}</span>
               <span className="rc-row-actions">
                 <button
                   aria-label="View patient"
@@ -1011,7 +930,7 @@ function ReceptionPatients({
                 ) : null}
                 <button
                   onClick={() =>
-                    navigate(`${basePath}/medical-history?patientId=${patient.id}`)
+                    navigate(`${basePath}/medical-history?patientId=${getPatientId(patient)}`)
                   }
                 >
                   <HeartPulse size={15} /> Medical History
@@ -1030,9 +949,7 @@ function ReceptionPatients({
           ))}
           {!rows.length ? (
             <div className="rc-empty">
-              {patientListView === "past"
-                ? "No past patients found."
-                : "No patients scheduled for today."}
+              No patients found.
             </div>
           ) : null}
         </div>
