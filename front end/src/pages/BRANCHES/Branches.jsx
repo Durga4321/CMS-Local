@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Building2,
   CheckCircle,
+  Eye,
   MapPin,
   Pencil,
   Plus,
@@ -725,6 +726,15 @@ function Branches() {
                 </span>
               </span>
               <div className="branches-actions">
+                <button
+                  type="button"
+                  className="branches-action-button"
+                  onClick={() => window.alert(`Branch: ${getBranchName(branch) || "-"}\nID: ${branchId || "-"}\nPhone: ${readBranchField(branch, "phone", "Phone") || "-"}\nEmail: ${readBranchField(branch, "email", "Email") || "-"}\nLocation: ${formatBranchAddress(branch) || "-"}\nStatus: ${isActive ? "Active" : "Inactive"}`)}
+                  title="View branch"
+                  aria-label={`View ${getBranchName(branch) || "branch"}`}
+                >
+                  <Eye size={14} />
+                </button>
                 <button
                   type="button"
                   className="branches-action-button branches-action-edit"

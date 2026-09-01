@@ -25,6 +25,7 @@ import {
   Users,
   CalendarCheck,
   IndianRupee,
+  FlaskConical,
   UserPlus,
   UserCog,
   UserRoundCheck,
@@ -190,6 +191,17 @@ const isNurseRecord = (record = {}) => {
   );
 };
 
+const isLabTechnicianRecord = (record = {}) => {
+  const role = String(
+    pickValue(record, ["role", "Role", "staffRole", "StaffRole", "userRole", "UserRole"], "")
+  ).trim().toLowerCase();
+
+  if (role) return role === "labtechnician" || role === "labtech" || role === "lab" || role.includes("lab technician");
+
+  return Boolean(
+    pickValue(record, ["labTechnicianId", "LabTechnicianId", "labId", "LabId"], "")
+  );
+};
 const formatToday = () => {
   const today = new Date();
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -391,6 +403,20 @@ function Dashboard() {
             ],
             null
           );
+        const labTechnicianCount =
+          pickValue(
+            merged,
+            [
+              "totalLabTechnicians",
+              "labTechnicianCount",
+              "labTechnicians",
+              "labtechnicians",
+              "labTechCount",
+              "labTechs",
+              "lab_count",
+            ],
+            null
+          );
 
         Promise.allSettled([
           fetchWithTimeout(`${API}/ClincData`, { headers }, 2500),
@@ -408,7 +434,16 @@ function Dashboard() {
                 2500
               )
             : Promise.resolve(null),
-        ]).then(async ([clinicResult, appointmentResult, revenueResult, receptionistResult, nurseResult]) => {
+          labTechnicianCount === null || labTechnicianCount === 0
+            ? fetchWithTimeout(
+                storedHospitalId
+                  ? `${STAFF_API}?role=LabTechnician&hospitalId=${encodeURIComponent(storedHospitalId)}`
+                  : `${STAFF_API}?role=LabTechnician`,
+                { headers },
+                2500
+              )
+            : Promise.resolve(null),
+        ]).then(async ([clinicResult, appointmentResult, revenueResult, receptionistResult, nurseResult, labTechnicianResult]) => {
           let nextMerged = { ...data };
           let hasDashboardRevenue = false;
 
@@ -513,6 +548,16 @@ function Dashboard() {
           nextMerged = {
             ...nextMerged,
             nurseCount: nurses.length || nurseRows.length,
+          };
+        }
+
+        if (labTechnicianResult.status === "fulfilled" && labTechnicianResult.value?.ok) {
+          const labTechnicianData = await labTechnicianResult.value.json().catch(() => []);
+          const labTechnicianRows = parseList(labTechnicianData);
+          const labTechnicians = labTechnicianRows.filter(isLabTechnicianRecord);
+          nextMerged = {
+            ...nextMerged,
+            labTechnicianCount: labTechnicians.length || labTechnicianRows.length,
           };
         }
 
@@ -705,7 +750,7 @@ function Dashboard() {
       color:
         "purple",
       route:
-        "/reports",
+        "/RevenueReport/daily",
     },
     {
       label:
@@ -782,6 +827,31 @@ function Dashboard() {
       route:
         "/patients",
     },
+    {
+      label:
+        "Total Lab Technicians",
+      value:
+        formatNumber(
+          getDashboardMetricValue(
+            [
+              "totalLabTechnicians",
+              "labTechnicianCount",
+              "labTechnicians",
+              "labtechnicians",
+              "labTechCount",
+              "labTechs",
+              "lab_count",
+            ],
+            0
+          )
+        ),
+      icon:
+        FlaskConical,
+      color:
+        "teal",
+      route:
+        "/lab-technicians",
+    },
   ];
 
   return (
@@ -799,10 +869,7 @@ function Dashboard() {
           </h1>
 
           <p>
-            Welcome back —
-            here's what's
-            happening at
-            the clinic today.
+            Welcome back - here's what's happening at the clinic today.
           </p>
 
         </div>
@@ -1113,52 +1180,12 @@ function Dashboard() {
           {/* LEGEND */}
 
           <div className="dashboard-status-legend">
-
-            <span>
-
-              <b
-                style={{
-                  color:
-                    "#0ea5a5",
-                }}
-              >
-                ●
-              </b>
-
-              {" "}Available
-
-            </span>
-
-            <span>
-
-              <b
-                style={{
-                  color:
-                    "#3b82f6",
-                }}
-              >
-                ●
-              </b>
-
-              {" "}Busy
-
-            </span>
-
-            <span>
-
-              <b
-                style={{
-                  color:
-                    "#f59e0b",
-                }}
-              >
-                ●
-              </b>
-
-              {" "}On Leave
-
-            </span>
-
+            {pieData.map((item) => (
+              <span key={item.name}>
+                <b style={{ backgroundColor: item.color }} />
+                {item.name}
+              </span>
+            ))}
           </div>
 
         </div>
@@ -1369,3 +1396,5 @@ function Dashboard() {
 }
 
 export default Dashboard;
+
+

@@ -47,7 +47,7 @@
 .appointments-filters {
   padding: 16px 18px;
   display: grid;
-  grid-template-columns: minmax(220px, 1.2fr) 180px minmax(190px, 0.9fr) auto;
+  grid-template-columns: minmax(220px, 1.2fr) 160px minmax(170px, 0.85fr) minmax(170px, 0.85fr) auto;
   align-items: end;
   gap: 12px;
   border-bottom: 1px solid #d8e2ee;
@@ -135,11 +135,11 @@
 .appointments-thead,
 .appointments-row {
   display: grid;
-  grid-template-columns: minmax(60px, 0.4fr) minmax(190px, 1.55fr) minmax(150px, 1.15fr) minmax(120px, 0.85fr) minmax(150px, 1fr) minmax(105px, 0.72fr) minmax(78px, 0.55fr);
+  grid-template-columns: minmax(48px, 0.32fr) minmax(170px, 1.35fr) minmax(132px, 0.95fr) minmax(108px, 0.75fr) minmax(115px, 0.78fr) minmax(130px, 0.82fr) minmax(96px, 0.65fr) minmax(72px, 0.45fr);
   align-items: center;
-  column-gap: 12px;
+  column-gap: 10px;
   min-width: 0;
-  padding: 14px 18px;
+  padding: 12px 14px;
 }
 
 .appointments-thead {
@@ -159,7 +159,7 @@
 
 .appointments-row span,
 .appointments-row b {
-  font-size: 14px;
+  font-size: 13px;
   color: #0f172a;
 }
 
@@ -205,6 +205,7 @@
   white-space: nowrap;
 }
 
+.appointments-branch-cell,
 .appointments-complaint {
   color: #334155;
   line-height: 1.45;
@@ -285,11 +286,12 @@
 
   .appointments-thead,
   .appointments-row {
-    grid-template-columns: minmax(60px, 0.4fr) minmax(180px, 1.5fr) minmax(140px, 1fr) minmax(118px, 0.9fr) minmax(110px, 0.7fr) minmax(76px, 0.55fr);
+    grid-template-columns: minmax(48px, 0.32fr) minmax(170px, 1.35fr) minmax(132px, 0.95fr) minmax(108px, 0.75fr) minmax(115px, 0.78fr) minmax(96px, 0.65fr) minmax(72px, 0.45fr);
   }
 
-  .appointments-thead span:nth-child(4),
-  .appointments-complaint {
+  .appointments-thead span:nth-child(5),
+  .appointments-branch-cell,
+.appointments-complaint {
     display: none;
   }
 
@@ -336,3 +338,4 @@
     width: 100%;
   }
 }
+

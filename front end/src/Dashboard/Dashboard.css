@@ -1,6 +1,6 @@
 .dashboard {
   min-height: 100%;
-  padding: 22px;
+  padding: 24px 22px;
   background: #f8fafc;
   color: #0f172a;
 }
@@ -69,8 +69,8 @@
 
 .dashboard-stats {
   display: grid;
-  grid-template-columns: minmax(300px, 1fr) repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(120px, auto));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(150px, auto));
   gap: 16px;
   align-items: stretch;
 }
@@ -79,7 +79,8 @@
   position: relative;
   width: 100%;
   height: auto;
-  min-height: 256px;
+  min-height: 320px;
+  grid-column: span 2;
   grid-row: span 2;
   cursor: pointer;
   perspective: 1200px;
@@ -105,7 +106,7 @@
   background: linear-gradient(135deg, #ffffff 0%, #ecfeff 100%);
   border: 1px solid #dbe3ed;
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.1);
-  padding: 22px;
+  padding: 24px 22px;
   display: flex;
   flex-direction: column;
   backface-visibility: hidden;
@@ -132,10 +133,10 @@
 
 .dashboard-clinic-flip-row {
   display: grid;
-  grid-template-columns: minmax(116px, max-content) minmax(0, 1fr);
+  grid-template-columns: minmax(118px, max-content) minmax(0, 1fr);
   align-items: flex-start;
-  gap: 12px;
-  margin-top: 14px;
+  gap: 10px;
+  margin-top: 16px;
 }
 
 .dashboard-clinic-flip-label {
@@ -151,8 +152,9 @@
   font-weight: 700;
   text-align: right;
   min-width: 0;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dashboard-clinic-flip-status {
@@ -383,6 +385,14 @@
   gap: 5px;
 }
 
+.dashboard-status-legend span b {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
 .dashboard-legend-inline {
   display: flex;
   align-items: center;
@@ -474,7 +484,7 @@
 
 @media (max-width: 1280px) {
   .dashboard-stats {
-    grid-template-columns: minmax(280px, 1fr) repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -486,7 +496,7 @@
 
   .dashboard-clinic-flip-card {
     grid-row: auto;
-    min-height: 240px;
+    min-height: 300px;
   }
 
   .dashboard-stat-card {
@@ -543,7 +553,7 @@
   .dashboard-chart,
   .dashboard-status-chart {
     height: 240px;
-    min-height: 240px;
+    min-height: 300px;
   }
 
   .dashboard-stat-card {
@@ -557,8 +567,9 @@
 
   .dashboard-clinic-flip-value {
     text-align: left;
-    white-space: normal;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   }
 }
 
@@ -609,3 +620,5 @@
 .sa-field-suggestions li:hover {
   background: #f1f5f9;
 }
+
+

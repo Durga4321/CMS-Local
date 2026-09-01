@@ -16,6 +16,12 @@ import {
 import AppointmentModal from "./AppointmentModal";
 import { apiUrl } from "../../config/api";
 import { formatDateMMDDYYYY } from "../../utils/dateFormat";
+import {
+  buildBranchOptions,
+  fetchBranchesForHospital,
+  getRecordBranchIds,
+  getStoredHospitalId,
+} from "../../utils/branchApi";
 
 // ================= API =================
 
@@ -71,6 +77,37 @@ const formatTime = (value) => {
   const minuteValue = String(minuteValueRaw).replace(/[^0-9]/g, "");
 
   return `${String(displayHour).padStart(2, "0")}:${minuteValue.padStart(2, "0")} ${suffix}`;
+};
+
+const getAppointmentBranchIds = (appointment = {}) => [
+  ...getRecordBranchIds(appointment),
+  ...getRecordBranchIds(appointment.patient || {}),
+  ...getRecordBranchIds(appointment.doctor || {}),
+]
+  .map((value) => String(value ?? "").trim())
+  .filter(Boolean);
+
+const getAppointmentBranchName = (appointment = {}, branchNameById = {}) => {
+  const directName =
+    appointment.branchName ||
+    appointment.BranchName ||
+    appointment.clinicBranchName ||
+    appointment.ClinicBranchName ||
+    appointment.branch?.name ||
+    appointment.branch?.branchName ||
+    appointment.Branch?.name ||
+    appointment.patient?.branchName ||
+    appointment.patient?.BranchName ||
+    appointment.patient?.branch?.name ||
+    appointment.doctor?.branchName ||
+    appointment.doctor?.BranchName ||
+    appointment.doctor?.branch?.name ||
+    "";
+
+  if (directName) return directName;
+
+  const branchId = getAppointmentBranchIds(appointment)[0];
+  return branchId ? branchNameById[String(branchId)] || "-" : "-";
 };
 
 const getInitials = (name) => {
@@ -219,6 +256,7 @@ function Appointments() {
   const [appointments, setAppointments] =
     useState([]);
   const [clinics, setClinics] = useState([]);
+  const [branches, setBranches] = useState([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -230,6 +268,8 @@ function Appointments() {
     useState("");
 
   const [doctorFilter, setDoctorFilter] =
+    useState("all");
+  const [branchFilter, setBranchFilter] =
     useState("all");
 
   const [search, setSearch] =
@@ -313,6 +353,24 @@ function Appointments() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadBranches = async () => {
+      try {
+        const list = await fetchBranchesForHospital(getStoredHospitalId());
+        if (!cancelled) setBranches(buildBranchOptions(list));
+      } catch (error) {
+        console.error("Unable to load branches for appointment filter.", error);
+      }
+    };
+
+    loadBranches();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments]);
 
@@ -337,10 +395,17 @@ function Appointments() {
 
     }, [appointments]);
 
+  const branchNameById = useMemo(
+    () => Object.fromEntries(branches.map((branch) => [String(branch.id), branch.name])),
+    [branches]
+  );
+
   // ================= FILTER =================
 
   const filteredAppointments =
   useMemo(() => {
+    const selectedBranch = branches.find((branch) => String(branch.id) === String(branchFilter));
+    const selectedBranchName = selectedBranch?.name?.trim().toLowerCase() || "";
 
     return appointments.filter(
       (item) => {
@@ -357,6 +422,7 @@ function Appointments() {
           item.doctor?.name,
           item.chiefComplaints,
           item.status,
+          getAppointmentBranchName(item, branchNameById),
         ]
           .filter(Boolean)
           .join(" ")
@@ -371,6 +437,14 @@ function Appointments() {
           item.doctor?.name ===
           doctorFilter;
 
+        const branchIds = getAppointmentBranchIds(item);
+        const branchName = getAppointmentBranchName(item, branchNameById).trim().toLowerCase();
+
+        const matchesBranch =
+          branchFilter === "all" ||
+          branchIds.some((id) => String(id) === String(branchFilter)) ||
+          (selectedBranchName && branchName === selectedBranchName);
+
         const matchesSearch =
           !query ||
           searchableText.includes(query);
@@ -378,6 +452,7 @@ function Appointments() {
         return (
           matchesDate &&
           matchesDoctor &&
+          matchesBranch &&
           matchesSearch
         );
       }
@@ -385,6 +460,9 @@ function Appointments() {
 
   }, [
     appointments,
+    branchNameById,
+    branches,
+    branchFilter,
     dateFilter,
     doctorFilter,
     search,
@@ -410,6 +488,7 @@ function Appointments() {
   const hasFilters =
     Boolean(dateFilter) ||
     doctorFilter !== "all" ||
+    branchFilter !== "all" ||
     Boolean(search.trim());
 
   return (
@@ -530,6 +609,41 @@ function Appointments() {
 
           </div>
 
+          {/* BRANCH */}
+
+          <div className="appointments-filter-group">
+
+            <label>Branch</label>
+
+            <select
+              value={branchFilter}
+              onChange={(e) =>
+                setBranchFilter(
+                  e.target.value
+                )
+              }
+            >
+
+              <option value="all">
+                All branches
+              </option>
+
+              {branches.map(
+                (branch) => (
+
+                  <option
+                    value={branch.id}
+                    key={branch.id}
+                  >
+                    {branch.name}
+                  </option>
+                )
+              )}
+
+            </select>
+
+          </div>
+
           {/* CLEAR */}
 
           <button
@@ -540,6 +654,7 @@ function Appointments() {
               setSearch("");
               setDateFilter("");
               setDoctorFilter("all");
+              setBranchFilter("all");
             }}
           >
 
@@ -564,6 +679,8 @@ function Appointments() {
             <span>Doctor</span>
 
             <span>Schedule</span>
+
+            <span>Branch</span>
 
             <span>Complaint</span>
 
@@ -652,6 +769,12 @@ function Appointments() {
 
                 </div>
 
+                <span className="appointments-branch-cell">
+                  {getAppointmentBranchName(item, branchNameById)}
+                </span>
+
+                
+
                 {/* COMPLAINT */}
 
                 <span className="appointments-complaint">
@@ -711,3 +834,4 @@ function Appointments() {
 }
 
 export default Appointments;
+
