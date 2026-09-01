@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./Doctors.css";
 import {
+  Eye,
   Search,
   Plus,
   Pencil,
@@ -1571,6 +1572,14 @@ function Doctors() {
                   </div>
 
                   <div className="doctor-card-actions">
+                    <button
+                      type="button"
+                      className="doctors-action-icon"
+                      onClick={() => window.alert(`Doctor: ${doc.name || "-"}\nBranch: ${getDoctorBranchName(doc, branchNameById) || "-"}\nSpecialization: ${getSpecializationDisplayName(doc.specialization) || "-"}\nPhone: ${formatPhoneValue(getDoctorPhone(doc))}\nEmail: ${cleanDisplayText(doc.email)}\nStatus: ${isActive ? "Active" : "Inactive"}`)}
+                      title="View doctor"
+                    >
+                      <Eye size={14} />
+                    </button>
                     <button
                       type="button"
                       className="doctors-action-icon"

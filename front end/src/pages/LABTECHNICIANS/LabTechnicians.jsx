@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle, Pencil, Plus, RefreshCw, Search, ToggleLeft, ToggleRight, Trash2, X } from "lucide-react";
+import { CheckCircle, Eye, Pencil, Plus, RefreshCw, Search, ToggleLeft, ToggleRight, Trash2, X } from "lucide-react";
 import "../RECEPTIONISTS/Receptionists.css";
 import "./LabTechnicians.css";
 import { apiUrl } from "../../config/api";
@@ -318,32 +318,47 @@ function LabTechnicians() {
       <div className="receptionists-toolbar">
         <label className="receptionists-search"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search lab technicians..." /></label>
       </div>
-      {!loading && filteredTechnicians.length === 0 ? <div className="receptionists-empty">No lab technicians found.</div> : null}
-      <div className="lab-tech-card-grid">
+      <div className="receptionists-table">
+        <div className="receptionists-thead">
+          <span>S.No.</span>
+          <span>Name</span>
+          <span>Branch</span>
+          <span>Email</span>
+          <span>Phone</span>
+          <span>Status</span>
+          <span>Actions</span>
+        </div>
+        {!loading && filteredTechnicians.length === 0 ? (
+          <div className="receptionists-empty">No lab technicians found.</div>
+        ) : null}
         {filteredTechnicians.map((tech, index) => {
           const name = getLabTechName(tech);
           const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "LT";
           const status = getLabTechStatus(tech);
           return (
-            <article className="lab-tech-card" key={getLabTechId(tech) || `${name}-${index}`}>
-              <div className="lab-tech-card-head">
-                <div className="lab-tech-avatar">{initials}</div>
-                <h3>{name}</h3>
-                <p>{clinicName}</p>
+            <div className="receptionists-row" key={getLabTechId(tech) || `${name}-${index}`}>
+              <span>{index + 1}</span>
+              <div className="receptionists-name-cell">
+                <span className="receptionists-avatar"><span>{initials}</span></span>
+                <span>
+                  <b>{name}</b>
+                </span>
               </div>
-              <div className="lab-tech-card-details">
-                <div><span>Branch</span><strong>{getLabTechBranchName(tech, branchNameById)}</strong></div>
-                <div><span>Email</span><strong>{getLabTechEmail(tech)}</strong></div>
-                <div><span>Phone</span><strong>{getLabTechPhone(tech)}</strong></div>
-                <div><span>Status</span><strong className={`lab-tech-status-pill ${String(status).toLowerCase().includes("inactive") ? "inactive" : "active"}`}>{status}</strong></div>
-                <div><span>Created</span><strong>{readFirst(tech, ["createdAt", "CreatedAt", "createdOn"], "-")}</strong></div>
-              </div>
-              <div className="lab-tech-card-actions receptionists-actions">
+              <span className="receptionists-cell">{getLabTechBranchName(tech, branchNameById)}</span>
+              <span className="receptionists-cell receptionists-email">{getLabTechEmail(tech)}</span>
+              <span className="receptionists-cell">{getLabTechPhone(tech)}</span>
+              <span className="receptionists-cell receptionists-status-cell">
+                <span className={`receptionists-status ${String(status).toLowerCase().includes("inactive") ? "receptionists-status-inactive" : "receptionists-status-active"}`}>
+                  {status}
+                </span>
+              </span>
+              <div className="receptionists-actions">
+                <button type="button" className="receptionists-action-button" onClick={() => window.alert(`Lab Technician: ${name || "-"}\nBranch: ${getLabTechBranchName(tech, branchNameById) || "-"}\nEmail: ${getLabTechEmail(tech) || "-"}\nPhone: ${getLabTechPhone(tech) || "-"}\nStatus: ${status || "-"}`)} title="View lab technician"><Eye size={16} /></button>
                 <button type="button" className="receptionists-action-button" onClick={() => openModal(tech)} disabled={!canEdit} title="Edit lab technician"><Pencil size={16} /></button>
                 <button type="button" className="receptionists-action-button" onClick={() => toggleTechnicianStatus(tech)} disabled={!canEdit} title={String(status).toLowerCase().includes("inactive") ? "Activate lab technician" : "Deactivate lab technician"}>{String(status).toLowerCase().includes("inactive") ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}</button>
                 <button type="button" className="receptionists-action-button receptionists-action-danger" onClick={() => deleteTechnician(tech)} disabled={!canDelete} title="Delete lab technician"><Trash2 size={16} /></button>
               </div>
-            </article>
+            </div>
           );
         })}
       </div>

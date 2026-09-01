@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Camera,
   CheckCircle,
+  Eye,
   Pencil,
   Plus,
   RefreshCw,
@@ -783,7 +784,6 @@ function Receptionists() {
           <span>Email</span>
           <span>Phone</span>
           <span>Status</span>
-          <span>Created</span>
           <span>Actions</span>
         </div>
 
@@ -802,10 +802,6 @@ function Receptionists() {
               .toUpperCase() || "R";
           const isDeleting = deletingId === receptionist.id;
           const isActive = receptionist.isActive !== false;
-          const receptionistClinicName = getClinicDisplayName(
-            { ...receptionist, hospitalId: receptionist.hospitalId || hospitalId },
-            clinicDisplayName
-          );
 
           return (
             <div className="receptionists-row" key={receptionist.id}>
@@ -827,7 +823,6 @@ function Receptionists() {
                 </div>
                 <div>
                   <b>{receptionist.name || "-"}</b>
-                  <span>{receptionistClinicName}</span>
                 </div>
               </div>
 
@@ -846,11 +841,15 @@ function Receptionists() {
                 </span>
               </span>
 
-              <span className="receptionists-cell">
-                {formatDate(receptionist.createdAt)}
-              </span>
-
               <div className="receptionists-actions">
+                <button
+                  type="button"
+                  className="receptionists-action-button"
+                  onClick={() => window.alert(`Receptionist: ${receptionist.name || "-"}\nBranch: ${getReceptionistBranchName(receptionist, branchNameById) || "-"}\nEmail: ${receptionist.email || "-"}\nPhone: ${receptionist.phone || "-"}\nStatus: ${isActive ? "Active" : "Inactive"}`)}
+                  title="View receptionist"
+                >
+                  <Eye size={14} />
+                </button>
                 <button
                   type="button"
                   className="receptionists-action-button"

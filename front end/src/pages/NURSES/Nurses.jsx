@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Camera, CheckCircle, Pencil, Plus, RefreshCw, Search, ShieldPlus, Trash2, ToggleLeft, ToggleRight, X } from "lucide-react";
+import { Camera, CheckCircle, Eye, Pencil, Plus, RefreshCw, Search, ShieldPlus, Trash2, ToggleLeft, ToggleRight, X } from "lucide-react";
 import "../RECEPTIONISTS/Receptionists.css";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
@@ -465,12 +465,13 @@ function Nurses() {
 
       <div className="receptionists-table">
         <div className="receptionists-thead">
-          <span>Nurse</span>
+          <span>S.No.</span>
+          <span>Name</span>
           <span>Branch</span>
           <span>Email</span>
           <span>Phone</span>
           <span>Status</span>
-          <span>Created</span>
+          <span>Actions</span>
         </div>
         {!loading && filteredNurses.length === 0 ? (
           <div className="receptionists-empty">No nurses found.</div>
@@ -481,12 +482,11 @@ function Nurses() {
           const status = getNurseStatus(nurse);
           return (
             <div className="receptionists-row" key={getNurseId(nurse) || `${name}-${index}`}>
-              <span style={{ display: "none" }} />
+              <span>{index + 1}</span>
               <div className="receptionists-name-cell">
                 <span className="receptionists-avatar"><span>{initials}</span></span>
                 <span>
                   <b>{name}</b>
-                  <span>{clinicName}</span>
                 </span>
               </div>
               <span className="receptionists-cell">{getNurseBranchName(nurse, branchNameById)}</span>
@@ -497,8 +497,15 @@ function Nurses() {
                   {status}
                 </span>
               </span>
-              <span className="receptionists-cell">{formatDate(readFirst(nurse, ["createdAt", "CreatedAt", "createdOn", "CreatedOn", "created", "Created", "createdDate", "CreatedDate"]))}</span>
               <div className="receptionists-actions">
+                <button
+                  type="button"
+                  className="receptionists-action-button"
+                  onClick={() => window.alert(`Nurse: ${name || "-"}\nBranch: ${getNurseBranchName(nurse, branchNameById) || "-"}\nEmail: ${getNurseEmail(nurse) || "-"}\nPhone: ${getNursePhone(nurse) || "-"}\nStatus: ${status || "-"}`)}
+                  title="View nurse"
+                >
+                  <Eye size={16} />
+                </button>
                 <button
                   type="button"
                   className="receptionists-action-button"

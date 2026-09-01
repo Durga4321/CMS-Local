@@ -3000,6 +3000,7 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState("");
   const [reportsExpanded, setReportsExpanded] = useState(false);
+  const [patientLabReports, setPatientLabReports] = useState([]);
 
   const patientId = String(
     patient?.id ||
@@ -3044,12 +3045,20 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
           hadServerError = true;
         }
 
+        const labResponse = await fetch(apiUrl("Lab/patient/reports"), { headers, cache: "no-store" }).catch(() => null);
+        const labReportsData = labResponse?.ok ? await labResponse.json().catch(() => null) : null;
+        const labReports = normalizeLabPatientReports(labReportsData).filter(belongsToCurrentPatient);
+
         if (isCurrent) {
           setHistory(historyData);
-          setHistoryError(historyData || !hadServerError ? "" : "Unable to load medical history.");
+          setPatientLabReports(labReports);
+          setHistoryError(historyData || labReports.length || !hadServerError ? "" : "Unable to load medical history.");
         }
       } catch (error) {
-        if (isCurrent) setHistoryError(error.message || 'Unable to load medical history.');
+        if (isCurrent) {
+          setPatientLabReports([]);
+          setHistoryError(error.message || 'Unable to load medical history.');
+        }
       } finally {
         if (isCurrent) setLoadingHistory(false);
       }
@@ -3078,6 +3087,71 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
     if (Array.isArray(value?.data)) return value.data.filter(Boolean);
     if (Array.isArray(value?.items)) return value.items.filter(Boolean);
     return [];
+  };
+
+  const normalizeLabPatientReports = (value) => {
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (!value || typeof value !== "object") return [];
+
+    const directReports = [
+      ...normalizeRecords(value),
+      ...normalizeRecords(value.reports),
+      ...normalizeRecords(value.Reports),
+      ...normalizeRecords(value.labReports),
+      ...normalizeRecords(value.LabReports),
+      ...normalizeRecords(value.data?.reports),
+      ...normalizeRecords(value.data?.Reports),
+      ...normalizeRecords(value.data?.labReports),
+      ...normalizeRecords(value.data?.LabReports),
+      ...normalizeRecords(value.result?.reports),
+      ...normalizeRecords(value.result?.Reports),
+      ...normalizeRecords(value.result?.labReports),
+      ...normalizeRecords(value.result?.LabReports),
+    ];
+
+    if (directReports.length) return directReports;
+
+    const candidate =
+      value.data && typeof value.data === "object"
+        ? value.data
+        : value.result && typeof value.result === "object"
+          ? value.result
+          : value;
+
+    const reportKeys = [
+      "reportId",
+      "ReportId",
+      "reportName",
+      "ReportName",
+      "reportTitle",
+      "ReportTitle",
+      "testName",
+      "TestName",
+      "documentName",
+      "DocumentName",
+      "documentUrl",
+      "DocumentUrl",
+      "fileUrl",
+      "FileUrl",
+      "reportUrl",
+      "ReportUrl",
+      "downloadUrl",
+      "DownloadUrl",
+      "url",
+      "Url",
+      "createdAt",
+      "CreatedAt",
+      "reportDate",
+      "ReportDate",
+      "date",
+      "Date",
+    ];
+
+    const hasReportFields = reportKeys.some(
+      (key) => candidate?.[key] != null && String(candidate[key]).trim() !== ""
+    );
+
+    return hasReportFields ? [candidate] : [];
   };
 
   const normalizeHistoryRecords = (value) => {
@@ -3213,11 +3287,13 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
   })();
 
   const generatedLabReports = readGeneratedLabReports().filter(belongsToCurrentPatient);
+  const apiLabReports = normalizeLabPatientReports(patientLabReports).filter(belongsToCurrentPatient);
   const reportRecords = [
     ...normalizeRecords(historyRecord?.reports),
     ...normalizeRecords(historyRecord?.labReports),
     ...normalizeRecords(historyRecord?.scanReports),
     ...normalizeRecords(historyRecord?.attachments),
+    ...apiLabReports,
     ...generatedLabReports,
     ...rawVisitRecords
       .map((visit) => readFirst(visit, ['report', 'reportName', 'reportTitle', 'reportUrl', 'documentUrl']) ? visit : null)
@@ -6527,3 +6603,9 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
 }
 
 export default PatientRoutes;
+
+
+
+
+
+

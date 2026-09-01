@@ -502,13 +502,15 @@ function ReceptionAppointmentList({
               {vitalFields.map((field) => (
                 <label key={field.name}>
                   <span>{field.label}</span>
-                  <input
-                    value={vitalsForm[field.name] || ""}
-                    onChange={(event) => setVitalField(field.name, event.target.value)}
-                    placeholder={field.placeholder}
-                    inputMode={field.name === "bloodPressure" ? "numeric" : "decimal"}
-                  />
-                  <small>{field.unit}</small>
+                  <div className="rc-unit-input">
+                    <input
+                      value={vitalsForm[field.name] || ""}
+                      onChange={(event) => setVitalField(field.name, event.target.value)}
+                      placeholder={field.placeholder}
+                      inputMode={field.name === "bloodPressure" ? "numeric" : "decimal"}
+                    />
+                    <span>{field.unit}</span>
+                  </div>
                 </label>
               ))}
             </div>
@@ -528,3 +530,5 @@ function ReceptionAppointmentList({
 }
 
 export default ReceptionAppointmentList;
+
+
