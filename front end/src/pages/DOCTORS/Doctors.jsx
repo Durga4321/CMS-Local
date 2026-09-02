@@ -1563,7 +1563,7 @@ function Doctors() {
                     </div>
                     <div>
                       <span>Working Hrs</span>
-                      <b>{getDoctorWorkingHours(doc) || "9:00 AM - 5:00 PM"}</b>
+                      <b>{getDoctorWorkingHours(doc) || "9:00 AM - 9:00 PM"}</b>
                     </div>
                     <div>
                       <span>Date Availability</span>

@@ -85,6 +85,45 @@
   color: #0f172a;
 }
 
+.lab-list-controls {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.lab-list-controls .lab-search {
+  margin-bottom: 0;
+}
+
+.lab-patient-select {
+  display: grid;
+  gap: 6px;
+  min-width: min(260px, 100%);
+}
+
+.lab-patient-select span {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.lab-patient-select select {
+  min-height: 46px;
+  width: 100%;
+  border: 1px solid #d7e3df;
+  border-radius: 8px;
+  padding: 10px 36px 10px 12px;
+  color: #0f172a;
+  background: #fff;
+  outline: 0;
+}
+
+.lab-patient-select select:focus {
+  border-color: #0f9d9d;
+  box-shadow: 0 0 0 3px rgba(15, 157, 157, 0.12);
+}
 .lab-filter-tabs {
   display: inline-flex;
   gap: 6px;
@@ -503,3 +542,4 @@
     height: calc(100dvh - 20px);
   }
 }
+
