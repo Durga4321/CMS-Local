@@ -1173,6 +1173,9 @@ const readRecentServiceBills = () => {
   }
 };
 
+const readScopedRecentServiceBills = (scope = getReceptionistScope()) =>
+  scopeReceptionistRecords(readRecentServiceBills(), scope);
+
 const storeRecentServiceBill = (bill) => {
   if (!bill || typeof bill !== "object") return [];
 
@@ -1413,10 +1416,10 @@ const getLabTestsFromBillingRecords = (records = []) => {
   );
 };
 
-const syncRecentServiceBillsToBackend = async () => {
+const syncRecentServiceBillsToBackend = async (scope = getReceptionistScope()) => {
   // Do not automatically POST cached/local bills to the backend.
   // Cached rows may not contain a valid AppointmentId and caused repeated 400 responses.
-  return readRecentServiceBills();
+  return readScopedRecentServiceBills(scope);
 };
 
 function ReceptionBilling() {
@@ -1467,7 +1470,7 @@ function ReceptionBilling() {
   const [labMasterLoading, setLabMasterLoading] = useState(false);
   const [pharmacyRows, setPharmacyRows] = useState([]);
   const [pharmacyPrescriptionLoading, setPharmacyPrescriptionLoading] = useState(false);
-  const [recentServiceBills, setRecentServiceBills] = useState(() => readRecentServiceBills());
+  const [recentServiceBills, setRecentServiceBills] = useState(() => readScopedRecentServiceBills(receptionistScope));
   const [editingBill, setEditingBill] = useState(null);
   const [serviceSearch, setServiceSearch] = useState("");
   const [appointmentListView, setAppointmentListView] = useState("today");
@@ -1550,8 +1553,8 @@ function ReceptionBilling() {
           appointmentId: prev.appointmentId || "",
         }));
         setInvoice(latestInvoice);
-        const syncedRecentBills = await syncRecentServiceBillsToBackend();
-        setRecentServiceBills(mergeRecentServiceBills(invoiceList, syncedRecentBills));
+        const syncedRecentBills = await syncRecentServiceBillsToBackend(receptionistScope);
+        setRecentServiceBills(mergeRecentServiceBills(scopedInvoices, syncedRecentBills));
       } catch (error) {
         setMessage(error.message);
         setMessageType("error");
@@ -1890,7 +1893,7 @@ function ReceptionBilling() {
       if (billingMode === "consultation") {
         // Show only OP bills that really exist in the backend Billings table.
         // Paid appointments are no longer manufactured into fake OP invoices.
-        return recentServiceBills
+        return scopeReceptionistRecords(recentServiceBills, receptionistScope)
           .filter((bill) =>
             billBelongsToMode(bill, "consultation") &&
             hasBackendBillingId(bill)
@@ -1899,11 +1902,11 @@ function ReceptionBilling() {
           .slice(0, 30);
       }
 
-      return recentServiceBills.filter(
+      return scopeReceptionistRecords(recentServiceBills, receptionistScope).filter(
         (bill) => billBelongsToMode(bill, billingMode)
       );
     },
-    [appointments, billingMode, recentServiceBills]
+    [billingMode, recentServiceBills, receptionistScope]
   );
   const getValidServiceRows = () =>
     activeServiceRows
@@ -3395,3 +3398,4 @@ function ReceptionBilling() {
 }
 
 export default ReceptionBilling;
+

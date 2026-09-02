@@ -331,6 +331,8 @@ function LabDataPage({ type }) {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [search, setSearch] = useState("");
+  const [selectedPatient, setSelectedPatient] = useState("");
+  const requiresPatientSelection = type === "samples" || type === "reports";
 
   const loadRows = useCallback(async () => {
     setLoading(true);
@@ -385,11 +387,29 @@ function LabDataPage({ type }) {
     };
   }, [loadRows, type]);
 
+  const patientOptions = useMemo(() => {
+    if (!requiresPatientSelection) return [];
+    const patients = rows
+      .map((row) => readFirst(row, ["patientName", "PatientName", "patient.name", "Patient.Name", "name", "Name"], ""))
+      .map((name) => String(name).trim())
+      .filter((name) => name && name !== "-");
+    return Array.from(new Set(patients)).sort((a, b) => a.localeCompare(b));
+  }, [requiresPatientSelection, rows]);
+
+  useEffect(() => {
+    if (!selectedPatient) return;
+    if (!patientOptions.includes(selectedPatient)) setSelectedPatient("");
+  }, [patientOptions, selectedPatient]);
+
   const filteredRows = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return rows;
-    return rows.filter((row) => JSON.stringify(row).toLowerCase().includes(term));
-  }, [rows, search]);
+    return rows.filter((row) => {
+      const patientName = readFirst(row, ["patientName", "PatientName", "patient.name", "Patient.Name", "name", "Name"], "");
+      const matchesPatient = requiresPatientSelection ? patientName === selectedPatient : true;
+      const matchesSearch = !term || JSON.stringify(row).toLowerCase().includes(term);
+      return matchesPatient && matchesSearch;
+    });
+  }, [requiresPatientSelection, rows, search, selectedPatient]);
 
   const hasActions = type === "samples" || type === "reports";
   const tableTemplate = useMemo(() => {
@@ -502,10 +522,23 @@ function LabDataPage({ type }) {
           <button className="rc-btn secondary" type="button" onClick={loadRows} disabled={loading}><RefreshCw size={16} /> Refresh</button>
         </div>
       </div>
-      <label className="lab-search">
-        <Search size={17} />
-        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Search ${config.title.toLowerCase()}...`} />
-      </label>
+      <div className="lab-list-controls">
+        <label className="lab-search">
+          <Search size={17} />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Search ${config.title.toLowerCase()}...`} />
+        </label>
+        {requiresPatientSelection ? (
+          <label className="lab-patient-select">
+            <span>Select Patient</span>
+            <select value={selectedPatient} onChange={(event) => setSelectedPatient(event.target.value)}>
+              <option value="">Select patient</option>
+              {patientOptions.map((patient) => (
+                <option key={patient} value={patient}>{patient}</option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+      </div>
       {type === "patients" ? (
         <div className="lab-filter-tabs" role="tablist" aria-label="Patient order date filter">
           {[
@@ -533,7 +566,7 @@ function LabDataPage({ type }) {
             {config.columns.map(([label]) => <span key={label}>{label}</span>)}
             {hasActions ? <span>Actions</span> : null}
           </div>
-          {filteredRows.length ? filteredRows.map((row, index) => (
+          {requiresPatientSelection && !selectedPatient ? <div className="rc-empty">Select patient to view {config.title.toLowerCase()}.</div> : filteredRows.length ? filteredRows.map((row, index) => (
             <div className="rc-table-row four" style={{ gridTemplateColumns: tableTemplate }} key={readFirst(row, ["id", "Id", "testId", "sampleId"], index)}>
               {config.columns.map(([label, keys]) => {
                 const value = type === "reports" && label === "Status"
@@ -574,3 +607,7 @@ function LabDataPage({ type }) {
 }
 
 export default LabDataPage;
+
+
+
+
