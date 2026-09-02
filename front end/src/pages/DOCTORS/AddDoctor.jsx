@@ -383,6 +383,25 @@ const uniqueByValue = (options) => {
   });
 };
 
+const CUSTOM_OPTION_STORAGE_KEYS = {
+  specialization: "addDoctor.customSpecializations",
+  areaofExpertise: "addDoctor.customExpertise",
+  qualification: "addDoctor.customQualifications",
+};
+
+const readCustomOptions = (field) => {
+  try {
+    const stored = JSON.parse(localStorage.getItem(CUSTOM_OPTION_STORAGE_KEYS[field]) || "[]");
+    return Array.isArray(stored) ? stored.map((value) => String(value || "").trim()).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveCustomOptions = (field, values) => {
+  localStorage.setItem(CUSTOM_OPTION_STORAGE_KEYS[field], JSON.stringify(values));
+};
+
 const formatFeeValue = (value) => {
   const text = String(value ?? "").trim();
   if (!text) return "";
@@ -390,11 +409,6 @@ const formatFeeValue = (value) => {
   const numberValue = Number(text);
   return Number.isNaN(numberValue) ? text : numberValue.toFixed(2);
 };
-
-const isApprovedSpecializationOption = (value) =>
-  SPECIALIZATION_OPTIONS.some(
-    (option) => option.toLowerCase() === String(value || "").trim().toLowerCase()
-  );
 
 const formatValidationMessage = (message) =>
   String(message || "")
@@ -451,9 +465,14 @@ function AddDoctor() {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [specializationOptions, setSpecializationOptions] =
-    useState(SPECIALIZATION_OPTIONS);
+    useState(() => uniqueByValue([...SPECIALIZATION_OPTIONS, ...readCustomOptions("specialization")]));
+  const [areaOfExpertiseOptions, setAreaOfExpertiseOptions] =
+    useState(() => uniqueByValue(readCustomOptions("areaofExpertise")));
   const [qualificationOptions, setQualificationOptions] =
-    useState(QUALIFICATION_OPTIONS);
+    useState(() => uniqueByValue([
+      ...QUALIFICATION_OPTIONS,
+      ...readCustomOptions("qualification").map((value) => ({ value, label: value })),
+    ]));
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [optionsWarning, setOptionsWarning] = useState("");
   const [branchOptions, setBranchOptions] = useState([]);
@@ -484,8 +503,11 @@ function AddDoctor() {
   );
 
   const expertiseOptions = useMemo(
-    () => getExpertiseOptionsForSpecialization(form.specialization),
-    [form.specialization]
+    () => uniqueByValue([
+      ...getExpertiseOptionsForSpecialization(form.specialization),
+      ...areaOfExpertiseOptions,
+    ]),
+    [form.specialization, areaOfExpertiseOptions]
   );
 
   useEffect(() => {
@@ -522,7 +544,8 @@ function AddDoctor() {
             setSpecializationOptions(
               uniqueByValue([
                 ...SPECIALIZATION_OPTIONS,
-                ...options.filter(isApprovedSpecializationOption),
+                ...options,
+                ...readCustomOptions("specialization"),
               ])
             );
           }
@@ -544,8 +567,11 @@ function AddDoctor() {
         }
       } catch {
         if (active) {
-          setSpecializationOptions(SPECIALIZATION_OPTIONS);
-          setQualificationOptions(QUALIFICATION_OPTIONS);
+          setSpecializationOptions(uniqueByValue([...SPECIALIZATION_OPTIONS, ...readCustomOptions("specialization")]));
+          setQualificationOptions(uniqueByValue([
+            ...QUALIFICATION_OPTIONS,
+            ...readCustomOptions("qualification").map((value) => ({ value, label: value })),
+          ]));
           setOptionsWarning("Using saved dropdown options.");
         }
       } finally {
@@ -642,16 +668,34 @@ function AddDoctor() {
         [name]: value,
       };
 
-      if (name === "specialization") {
-        const nextExpertiseOptions = getExpertiseOptionsForSpecialization(value);
-        nextForm.areaofExpertise = nextExpertiseOptions.includes(previous.areaofExpertise)
-          ? previous.areaofExpertise
-          : "";
-      }
-
       return nextForm;
     });
     setFieldErrors((previous) => ({ ...previous, [name]: "" }));
+  };
+
+  const addCustomOption = (field, rawValue) => {
+    const value = String(rawValue || "").trim();
+    if (!value) return;
+
+    const normalizedValue = value.toLowerCase();
+    const alreadyKnown = field === "qualification"
+      ? qualificationOptions.some((option) => String(option.value).trim().toLowerCase() === normalizedValue)
+      : field === "specialization"
+        ? specializationOptions.some((option) => String(option).trim().toLowerCase() === normalizedValue)
+        : expertiseOptions.some((option) => String(option).trim().toLowerCase() === normalizedValue);
+
+    if (field === "qualification") {
+      setQualificationOptions((previous) => uniqueByValue([...previous, { value, label: value }]));
+    } else if (field === "specialization") {
+      setSpecializationOptions((previous) => uniqueByValue([...previous, value]));
+    } else {
+      setAreaOfExpertiseOptions((previous) => uniqueByValue([...previous, value]));
+    }
+
+    if (!alreadyKnown) {
+      const stored = readCustomOptions(field);
+      saveCustomOptions(field, uniqueByValue([...stored, value]));
+    }
   };
 
   const handleBranchCheckboxChange = (event) => {
@@ -935,7 +979,7 @@ const validateBranchSelection = (values = form) => {
           onClick={() => navigate("/doctors")}
           disabled={saving}
         >
-          <X size={22} strokeWidth={2} />
+          <X size={28} strokeWidth={2.5} />
         </button>
 
         <div className="add-doctor-header">
@@ -1025,23 +1069,23 @@ const validateBranchSelection = (values = form) => {
 
             <div className="add-doctor-input-group">
               <label>Specialization</label>
-              <select
+              <input
                 name="specialization"
+                list="doctor-specialization-options"
                 value={form.specialization}
                 onChange={handleChange}
+                onBlur={(event) => addCustomOption("specialization", event.target.value)}
                 className={fieldErrors.specialization ? "is-invalid" : ""}
+                placeholder={loadingOptions ? "Loading specializations..." : "Type or select specialization"}
                 required
-                disabled={loadingOptions && !specializationOptions.length}
-              >
-                <option value="">
-                  {loadingOptions ? "Loading specializations..." : "Select specialization"}
-                </option>
+              />
+              <datalist id="doctor-specialization-options">
                 {specializationOptions.map((specialization) => (
                   <option key={specialization} value={specialization}>
                     {getSpecializationDisplayName(specialization)}
                   </option>
                 ))}
-              </select>
+              </datalist>
               {fieldErrors.specialization ? (
                 <span className="add-doctor-field-error">
                   {fieldErrors.specialization}
@@ -1071,25 +1115,23 @@ const validateBranchSelection = (values = form) => {
 
             <div className="add-doctor-input-group">
               <label>Area of Expertise</label>
-              <select
+              <input
                 name="areaofExpertise"
+                list="doctor-expertise-options"
                 value={form.areaofExpertise}
                 onChange={handleChange}
+                onBlur={(event) => addCustomOption("areaofExpertise", event.target.value)}
                 className={fieldErrors.areaofExpertise ? "is-invalid" : ""}
-                disabled={!expertiseOptions.length}
+                placeholder="Type or select area of expertise"
                 required
-              >
-                <option value="">
-                  {form.specialization
-                    ? "Select area of expertise"
-                    : "Select specialization first"}
-                </option>
+              />
+              <datalist id="doctor-expertise-options">
                 {expertiseOptions.map((expertise) => (
                   <option key={expertise} value={expertise}>
                     {expertise}
                   </option>
                 ))}
-              </select>
+              </datalist>
               {fieldErrors.areaofExpertise ? (
                 <span className="add-doctor-field-error">
                   {fieldErrors.areaofExpertise}
@@ -1104,6 +1146,7 @@ const validateBranchSelection = (values = form) => {
                 list="doctor-qualification-options"
                 value={form.qualification}
                 onChange={handleChange}
+                onBlur={(event) => addCustomOption("qualification", event.target.value)}
                 className={fieldErrors.qualification ? "is-invalid" : ""}
                 placeholder={loadingOptions ? "Loading qualifications..." : "Type or select qualification"}
                 required

@@ -28,12 +28,12 @@
   position: absolute;
   top: 20px;
   right: 20px;
-  width: 30px;
-  height: 30px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: #5b6472;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111827;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -41,8 +41,8 @@
 }
 
 .add-doctor-close-button:hover {
-  background: #e8eef6;
-  color: #1f2937;
+  background: #f1f5f9;
+  color: #000000;
 }
 
 .add-doctor-header {

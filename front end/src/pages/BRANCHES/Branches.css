@@ -293,7 +293,7 @@
     minmax(190px, 1fr)
     minmax(230px, 1.25fr)
     110px
-    124px;
+    152px;
   column-gap: 8px;
   align-items: center;
   width: 100%;
@@ -406,6 +406,15 @@
   padding: 0 11px;
   font-size: 12px;
   font-weight: 800;
+}
+
+/* Override the generic cell span rule so badge content remains flex-centered. */
+.branches-cell .branches-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1;
 }
 
 .branches-status-active {

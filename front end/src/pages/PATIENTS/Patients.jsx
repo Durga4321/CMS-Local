@@ -202,7 +202,6 @@ function Patients() {
             <span>Phone</span>
             <span>Age</span>
             <span>Gender</span>
-            <span>Branch</span>
             <span>Last Visit</span>
             <span>Actions</span>
           </div>
@@ -229,7 +228,6 @@ function Patients() {
               <span>{patient.phone || "-"}</span>
               <span>{patient.age || "-"}</span>
               <span>{patient.gender || "-"}</span>
-              <span>{getPatientBranchName(patient, branchNameById)}</span>
               <span>{formatPatientLastVisit(patient.lastVisit)}</span>
 
               <button
