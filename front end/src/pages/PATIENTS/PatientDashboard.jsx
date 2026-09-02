@@ -793,9 +793,8 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
         <section className="pd-card pd-token-panel">
           <div className="pd-token-panel-header"><h2>Your Current Token</h2><Bell size={18} aria-hidden="true" /></div>
           <div className="pd-current-token-group"><div className="pd-token-icon"><FileText size={26} /></div><div><strong className="pd-current-token">{tokenValue}</strong><span className="pd-current-token-label">Your Token Number</span></div></div>
-          <div className="pd-token-summary-grid">
+          <div className="pd-token-summary-grid pd-token-summary-grid--single">
             <div className="pd-token-stat"><span>Patients Ahead of You</span><strong>{patientsAheadLabel}</strong></div>
-            <div className="pd-token-stat"><span>Estimated Waiting Time</span><strong>{estimatedWaitingTimeLabel}</strong></div>
           </div>
           <p className="pd-token-notice"><Bell size={15} />You will be notified when your token is about to be called.</p>
         </section>

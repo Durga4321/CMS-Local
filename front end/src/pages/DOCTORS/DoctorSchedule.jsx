@@ -12,11 +12,16 @@ import { getRoleProfile } from "../../profile/sessionProfile";
 import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const todayKey = () => new Date().toISOString().slice(0, 10);
+const formatLocalDateInput = (date) => {
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - offset * 60000);
+  return localDate.toISOString().slice(0, 10);
+};
+const todayKey = () => formatLocalDateInput(new Date());
 const plusDays = (days) => {
   const d = new Date();
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  return formatLocalDateInput(d);
 };
 
 const headers = () => ({
@@ -133,10 +138,8 @@ function DoctorSchedule({ selfMode = false }) {
           const list = buildBranchOptions(raw).map((b) => ({ id: String(b.value ?? b.id ?? b.branchId), name: b.label ?? b.name ?? b.branchName })).filter((b) => b.id);
           if (!active) return;
           setBranches(list);
-          const initial = list[0]?.id || "";
-          setBranchId(initial);
-          setSourceBranchId(initial);
-          setPreviewBranchId(initial);
+          setBranchId("");
+          setDoctorId("");
         }
       } catch (e) {
         if (active) setError(e.message);
@@ -147,18 +150,18 @@ function DoctorSchedule({ selfMode = false }) {
   }, [selfMode]);
 
   useEffect(() => {
-    if (selfMode || !branchId) return;
+    if (selfMode) return;
     let active = true;
     request("Doctor")
       .then((data) => {
-        const list = parseList(data).filter((d) => {
+        const allDoctors = parseList(data);
+        const list = branchId ? allDoctors.filter((d) => {
           const direct = String(d.branchId ?? d.BranchId ?? "");
           const ids = [...(d.branchIds || d.BranchIds || []), ...(d.branches || []).map(branchIdOf)].map(String);
           return direct === String(branchId) || ids.includes(String(branchId));
-        });
+        }) : allDoctors;
         if (!active) return;
         setDoctors(list);
-        if (!list.some((d) => doctorIdOf(d) === String(doctorId))) setDoctorId(doctorIdOf(list[0] || {}));
       })
       .catch((e) => active && setError(e.message));
     return () => { active = false; };
@@ -206,6 +209,7 @@ function DoctorSchedule({ selfMode = false }) {
     setError(""); setMessage("");
     if (doctorId && branchId) loadSchedule();
     if (doctorId) loadOverrides();
+    if (!doctorId || !branchId) setScheduleId("");
   }, [doctorId, branchId]);
 
   const toggleDay = (day) => setDays((prev) => prev.includes(day) ? prev.filter((x) => x !== day) : [...prev, day]);
@@ -315,11 +319,11 @@ function DoctorSchedule({ selfMode = false }) {
       <div className="ds-grid">
         <div className="ds-card">
           <h3>1. Recurring schedule</h3>
-          <label>Branch<select value={branchId} onChange={(e) => { setBranchId(e.target.value); setSourceBranchId(e.target.value); setPreviewBranchId(e.target.value); }}>
-            <option value="">Select branch</option>{assignedBranches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+          <label>Branch<select value={branchId} onChange={(e) => { setBranchId(e.target.value); if (!selfMode) setDoctorId(""); setSourceBranchId(e.target.value); setPreviewBranchId(e.target.value); }}>
+            <option value="">Select Branch</option>{assignedBranches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select></label>
           {!selfMode ? <label>Doctor<select value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
-            <option value="">Select doctor</option>{doctors.map((d) => <option key={doctorIdOf(d)} value={doctorIdOf(d)}>{d.name || d.doctorName || doctorIdOf(d)}</option>)}
+            <option value="">Select Doctor</option>{doctors.map((d) => <option key={doctorIdOf(d)} value={doctorIdOf(d)}>{d.name || d.doctorName || doctorIdOf(d)}</option>)}
           </select></label> : null}
           <div className="ds-days">{DAYS.map((d) => <button type="button" key={d} className={days.includes(d) ? "active" : ""} onClick={() => toggleDay(d)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule}>{d.slice(0,3)}</button>)}</div>
           <div className="ds-two"><label>Start date<input type="date" min={todayKey()} value={startDate} onChange={(e) => setStartDate(e.target.value)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule} /></label><label>End date<input type="date" min={startDate} value={endDate} onChange={(e) => setEndDate(e.target.value)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule} /></label></div>

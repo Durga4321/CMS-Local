@@ -177,7 +177,8 @@
 
 .receptionists-table {
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid #dbe3ed;
   border-radius: 8px;
   background: #ffffff;
@@ -187,8 +188,9 @@
 .receptionists-thead,
 .receptionists-row {
   width: 100%;
+  box-sizing: border-box;
   display: grid;
-  grid-template-columns: 46px minmax(170px, 1.15fr) minmax(120px, 0.75fr) minmax(220px, 1.25fr) minmax(120px, 0.7fr) minmax(92px, 0.55fr) minmax(118px, 0.65fr);
+  grid-template-columns: 44px minmax(140px, 1.15fr) minmax(105px, 0.8fr) minmax(160px, 1.2fr) minmax(105px, 0.75fr) 90px 172px !important;
   align-items: center;
   gap: 0;
 }
@@ -209,6 +211,12 @@
   min-width: 0;
   padding: 8px 10px;
   box-sizing: border-box;
+}
+
+.receptionists-thead > span,
+.receptionists-row > span {
+  display: flex;
+  align-items: center;
 }
 
 .receptionists-row {
@@ -302,7 +310,7 @@
 }
 
 .receptionists-status-cell {
-  display: block;
+  justify-content: center;
 }
 
 .receptionists-status {
@@ -328,25 +336,43 @@
 }
 
 .receptionists-actions {
+  width: 172px !important;
+  min-width: 172px !important;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 6px;
+  justify-content: center !important;
+  flex-wrap: nowrap;
+  gap: 8px !important;
+  padding: 8px 10px;
+  box-sizing: border-box;
 }
 
 .receptionists-action-button {
   width: 30px;
   height: 30px;
   min-width: 30px;
+  flex: 0 0 30px !important;
   border: 1px solid #dbe3ed;
   background: #ffffff;
   color: #0f172a;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  margin: 0;
 }
 .receptionists-action-danger {
   color: #dc2626;
+}
+
+@media (max-width: 850px) {
+  .receptionists-table {
+    overflow-x: auto;
+  }
+
+  .receptionists-thead,
+  .receptionists-row {
+    min-width: 816px;
+  }
 }
 
 .receptionists-image-upload {
