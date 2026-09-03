@@ -271,10 +271,10 @@ const normalizeUser = (user = {}) => {
   const role = canonicalStaffRole(getValue(user, ["role", "Role", "roleName", "RoleName", "type", "Type"], ""));
   const id = String(
     getValue(user, [
-      "id",
-      "Id",
       "userId",
       "UserId",
+      "id",
+      "Id",
       "doctorId",
       "DoctorId",
       "receptionistId",
@@ -396,15 +396,32 @@ function AdminRolesPermissions() {
             }))
           : [];
       const userById = new Map();
-      [...eligibleRows, ...labTechnicianRows]
-        .map(normalizeUser)
-        .filter((user) => user.id)
-        .forEach((user) => {
-          userById.set(String(user.id), {
-            ...(userById.get(String(user.id)) || {}),
-            ...user,
-          });
-        });
+      const userByIdentity = new Map();
+      const getIdentityKey = (user) => {
+        const roleKey = normalizeKey(user.role);
+        const emailKey = normalizeKey(user.email);
+        return roleKey && emailKey ? `${roleKey}:${emailKey}` : "";
+      };
+      const addUser = (user, { preferExistingIdentity = false } = {}) => {
+        if (!user.id) return;
+        const identityKey = getIdentityKey(user);
+        const existingByIdentity = identityKey ? userByIdentity.get(identityKey) : null;
+        const existingById = userById.get(String(user.id));
+        const existing = existingByIdentity || existingById;
+        const merged = existing
+          ? preferExistingIdentity && existingByIdentity
+            ? { ...user, ...existing }
+            : { ...existing, ...user }
+          : user;
+        if (existing?.id && String(existing.id) !== String(merged.id)) {
+          userById.delete(String(existing.id));
+        }
+        userById.set(String(merged.id), merged);
+        if (identityKey) userByIdentity.set(identityKey, merged);
+      };
+
+      eligibleRows.map(normalizeUser).forEach((user) => addUser(user));
+      labTechnicianRows.map(normalizeUser).forEach((user) => addUser(user, { preferExistingIdentity: true }));
       const baseUsers = Array.from(userById.values());
       const permissionResults = await Promise.allSettled(
         baseUsers.map((user) => requestJson(`user-permissions/users/${encodeURIComponent(user.id)}`))
@@ -917,3 +934,4 @@ function AdminRolesPermissions() {
 }
 
 export default AdminRolesPermissions;
+
