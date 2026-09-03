@@ -5,9 +5,6 @@ import { downloadBlob, parseList, requestJson } from "./labApi";
 import { getLabProfile } from "./labSession";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { getClinicInvoiceBranding } from "../utils/clinicBranding";
-import {
-  dedupeBillingRows,
-} from "../utils/billingRevenue";
 import { buildLabReportHtml, printLabReport, readReportField } from "./labReportTemplate";
 import { fetchLabMasterTests } from "../utils/labMaster";
 import { canUseModulePermission, useRolePermissionsSync } from "../utils/rolePermissions";
@@ -458,7 +455,7 @@ function LabReportCreate() {
       fetchLabMasterTests().catch(() => []),
     ]);
     setLabTests(masterRows);
-    const nextRows = dedupeBillingRows(backendRows)
+    const nextRows = backendRows
       .filter(isDiagnosticRecord)
       .filter((row) => belongsToLabScope(row, labProfile))
       .map((row) => ({ ...row, __labTestNames: getPatientTestNames(row) }));
@@ -953,3 +950,4 @@ function LabReportCreate() {
 }
 
 export default LabReportCreate;
+
