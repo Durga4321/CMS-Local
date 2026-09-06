@@ -211,6 +211,8 @@ function Topbar({ onMenu }) {
             placeholder={placeholder}
           />
 
+          <span className="search-shortcut">⌘K</span>
+
           {showResults ? (
             <div className="topbar-search-results">
               {results.length ? (

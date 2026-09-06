@@ -1,52 +1,232 @@
+/* ==========================================================================
+   REPORTS PAGE - CLINICAL ANALYTICS & BI THEME WITH DASHBOARD AESTHETIC
+   ========================================================================== */
+
 .reports-page {
-  padding: 24px;
+  position: relative;
+  min-height: calc(100vh - 82px);
+  flex: 1;
+  width: 100%;
+  padding: 24px 32px 48px;
+  box-sizing: border-box;
+  background: linear-gradient(
+      135deg,
+      rgba(238, 245, 255, 0.90) 0%,
+      rgba(242, 248, 255, 0.84) 40%,
+      rgba(248, 251, 255, 0.88) 70%,
+      rgba(253, 244, 250, 0.92) 100%
+    ),
+    url("../../assets/reports_analytics_3d_bg.jpg") center/cover no-repeat fixed;
+  background-size: cover;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-.reports-page h1 {
-  font-size: 28px;
+/* 3D Dashboard Background Animated Overlay */
+.reports-bg-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 75%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.05) 0%, transparent 50%),
+    linear-gradient(
+      135deg,
+      rgba(238, 245, 255, 0.88) 0%,
+      rgba(242, 248, 255, 0.82) 40%,
+      rgba(248, 251, 255, 0.85) 70%,
+      rgba(253, 244, 250, 0.90) 100%
+    ),
+    url("../../assets/reports_analytics_3d_bg.jpg") center/cover no-repeat fixed;
+  background-size: cover;
+  pointer-events: none;
+  z-index: 0;
 }
 
-.subtitle {
-  color: #6b7280;
-  margin-bottom: 20px;
-}
-
-.report-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.report-card {
-  background: white;
-  padding: 20px;
+/* 3D Floating Clinical Analytics & BI Particles */
+.reports-particle {
+  position: absolute;
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.report-card .icon {
-  background: #eef7f7;
-  width: 45px;
-  height: 45px;
-  border-radius: 12px;
+  pointer-events: none;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  animation: floatReportsParticle 10s ease-in-out infinite alternate;
+}
+
+.report-part-1 {
+  top: 6%;
+  right: 6%;
+  width: 62px;
+  height: 62px;
+  animation-duration: 9s;
+  color: #0284c7;
+}
+
+.report-part-2 {
+  top: 48%;
+  left: 3%;
+  width: 60px;
+  height: 60px;
+  animation-duration: 12s;
+  color: #6366f1;
+}
+
+.report-part-3 {
+  bottom: 10%;
+  right: 12%;
+  width: 58px;
+  height: 58px;
+  animation-duration: 10s;
+  color: #0d9488;
+}
+
+.report-part-4 {
+  top: 32%;
+  left: 45%;
+  width: 54px;
+  height: 54px;
+  animation-duration: 14s;
+  color: #ec4899;
+}
+
+@keyframes floatReportsParticle {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  100% {
+    transform: translateY(-24px) rotate(12deg) scale(1.08);
+  }
+}
+
+.reports-header-wrap {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 24px;
+}
+
+.reports-page h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  color: #526f90;
+  margin: 6px 0 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.report-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.report-card {
+  position: relative;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04);
+  padding: 26px 28px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.report-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.14);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.report-card .icon {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.12) 0%, rgba(13, 148, 136, 0.12) 100%);
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0d9488;
+  border: 1px solid rgba(13, 148, 136, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.report-card:hover .icon {
+  transform: scale(1.08);
 }
 
 .report-card h3 {
-  margin-top: 12px;
+  margin: 16px 0 6px;
+  font-size: 19px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
 }
 
 .report-card p {
-  color: #6b7280;
+  color: #64748b;
   font-size: 14px;
+  margin: 0;
+  line-height: 1.5;
+  flex: 1;
 }
 
 .link {
-  margin-top: 10px;
+  margin-top: 18px;
   color: #0d9488;
   background: none;
   border: none;
   cursor: pointer;
+  padding: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s ease, transform 0.2s ease;
+  width: fit-content;
+}
+
+.link:hover {
+  color: #0f766e;
+  transform: translateX(4px);
+}
+
+@media (max-width: 1024px) {
+  .report-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .reports-page {
+    padding: 16px;
+  }
+
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reports-particle {
+    display: none;
+  }
 }

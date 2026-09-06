@@ -10,6 +10,21 @@ import {
 import { getLoggedInDoctor } from "../../doctors/utils/doctorSession";
 import { getRoleProfile } from "../../profile/sessionProfile";
 import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
+import {
+  CalendarClock,
+  Activity,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  RefreshCw,
+  ShieldCheck,
+  Zap,
+  Edit3,
+  Trash2,
+  Calendar,
+  Layers,
+  Sparkles
+} from "lucide-react";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const formatLocalDateInput = (date) => {
@@ -306,70 +321,500 @@ function DoctorSchedule({ selfMode = false }) {
 
   return (
     <section className="doctor-schedule-page">
+      {/* ── Medical & Surgical Telemetry Background ── */}
+      <div className="ds-medical-bg" aria-hidden="true">
+        <div className="ds-ecg-track">
+          <svg className="ds-ecg-svg" viewBox="0 0 1200 80" preserveAspectRatio="none">
+            <path
+              className="ds-ecg-line-base"
+              d="M 0,40 L 180,40 L 195,35 L 205,45 L 215,40 L 240,40 L 250,10 L 262,72 L 274,28 L 284,48 L 295,40 L 330,40 Q 350,24 370,40 L 540,40 L 555,35 L 565,45 L 575,40 L 600,40 L 610,10 L 622,72 L 634,28 L 644,48 L 655,40 L 690,40 Q 710,24 730,40 L 900,40 L 915,35 L 925,45 L 935,40 L 960,40 L 970,10 L 982,72 L 994,28 L 1004,48 L 1015,40 L 1050,40 Q 1070,24 1090,40 L 1200,40"
+            />
+            <path
+              className="ds-ecg-line-pulse"
+              d="M 0,40 L 180,40 L 195,35 L 205,45 L 215,40 L 240,40 L 250,10 L 262,72 L 274,28 L 284,48 L 295,40 L 330,40 Q 350,24 370,40 L 540,40 L 555,35 L 565,45 L 575,40 L 600,40 L 610,10 L 622,72 L 634,28 L 644,48 L 655,40 L 690,40 Q 710,24 730,40 L 900,40 L 915,35 L 925,45 L 935,40 L 960,40 L 970,10 L 982,72 L 994,28 L 1004,48 L 1015,40 L 1050,40 Q 1070,24 1090,40 L 1200,40"
+            />
+          </svg>
+        </div>
+
+        <div className="ds-telemetry-bar">
+          <div className="ds-telemetry-badge">
+            <span className="ds-telemetry-cross">✚</span>
+            <span>SURGICAL ROSTER STATION</span>
+          </div>
+          <div className="ds-telemetry-badge">
+            <Activity size={13} className="ds-telemetry-wave-icon" />
+            <span>OT DUTY SHIFTS &bull; ACTIVE</span>
+          </div>
+          <div className="ds-telemetry-badge">
+            <span className="ds-telemetry-bead-live" />
+            <span>TELEMETRY SYNCHRONIZED</span>
+          </div>
+        </div>
+
+        <div className="ds-watermark-cross ds-watermark-cross--tl">✚</div>
+        <div className="ds-watermark-cross ds-watermark-cross--br">ROSTER</div>
+      </div>
+
+      {/* ── Roster Console Header ── */}
       <header className="ds-head">
-        <div>
+        <div className="ds-head-content">
+          <div className="ds-head-badge">
+            <CalendarClock size={16} className="ds-head-icon" />
+            <span>SURGICAL & CLINICAL DUTY ROSTER</span>
+          </div>
           <h2>{selfMode ? "My Schedule" : "Doctor Schedule"}</h2>
           <p>Recurring hours, leave, same-day time changes and branch shifts are validated by the backend.</p>
         </div>
       </header>
 
-      {error ? <div className="ds-alert error">{error}</div> : null}
-      {message ? <div className="ds-alert success">{message}</div> : null}
+      {error ? (
+        <div className="ds-alert error">
+          <AlertCircle size={18} />
+          <span>{error}</span>
+        </div>
+      ) : null}
+      {message ? (
+        <div className="ds-alert success">
+          <CheckCircle2 size={18} />
+          <span>{message}</span>
+        </div>
+      ) : null}
 
       <div className="ds-grid">
-        <div className="ds-card">
-          <h3>1. Recurring schedule</h3>
-          <label>Branch<select value={branchId} onChange={(e) => { setBranchId(e.target.value); if (!selfMode) setDoctorId(""); setSourceBranchId(e.target.value); setPreviewBranchId(e.target.value); }}>
-            <option value="">Select Branch</option>{assignedBranches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select></label>
-          {!selfMode ? <label>Doctor<select value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
-            <option value="">Select Doctor</option>{doctors.map((d) => <option key={doctorIdOf(d)} value={doctorIdOf(d)}>{d.name || d.doctorName || doctorIdOf(d)}</option>)}
-          </select></label> : null}
-          <div className="ds-days">{DAYS.map((d) => <button type="button" key={d} className={days.includes(d) ? "active" : ""} onClick={() => toggleDay(d)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule}>{d.slice(0,3)}</button>)}</div>
-          <div className="ds-two"><label>Start date<input type="date" min={todayKey()} value={startDate} onChange={(e) => setStartDate(e.target.value)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule} /></label><label>End date<input type="date" min={startDate} value={endDate} onChange={(e) => setEndDate(e.target.value)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule} /></label></div>
-          <div className="ds-two"><label>Work start<input value={workStart} onChange={(e) => setWorkStart(e.target.value)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule} /></label><label>Work end<input value={workEnd} onChange={(e) => setWorkEnd(e.target.value)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule} /></label></div>
-          <div className="ds-two"><label>Break start<input value={breakStart} onChange={(e) => setBreakStart(e.target.value)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule} /></label><label>Break end<input value={breakEnd} onChange={(e) => setBreakEnd(e.target.value)} disabled={scheduleId ? !canEditSchedule : !canCreateSchedule} /></label></div>
-          <button className="ds-primary" disabled={saving || (scheduleId ? !canEditSchedule : !canCreateSchedule)} onClick={saveBaseSchedule}>{saving ? "Saving..." : scheduleId ? "Update recurring schedule" : "Save recurring schedule"}</button>
+        {/* ── Card 1: Recurring Schedule (Emerald Accent) ── */}
+        <div className="ds-card ds-card--recurring">
+          <div className="ds-card-header">
+            <div className="ds-card-header-icon ds-icon--emerald">
+              <Clock size={18} />
+            </div>
+            <div>
+              <h3>1. Recurring schedule</h3>
+              <span className="ds-card-badge">CLINICAL SHIFTS</span>
+            </div>
+          </div>
+
+          <label>
+            Branch
+            <select
+              value={branchId}
+              onChange={(e) => {
+                setBranchId(e.target.value);
+                if (!selfMode) setDoctorId("");
+                setSourceBranchId(e.target.value);
+                setPreviewBranchId(e.target.value);
+              }}
+            >
+              <option value="">Select Branch</option>
+              {assignedBranches.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          </label>
+
+          {!selfMode ? (
+            <label>
+              Doctor
+              <select value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
+                <option value="">Select Doctor</option>
+                {doctors.map((d) => (
+                  <option key={doctorIdOf(d)} value={doctorIdOf(d)}>
+                    {d.name || d.doctorName || doctorIdOf(d)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
+          {/* Working Days Selector Switch Panel */}
+          <div className="ds-days-wrapper">
+            <span className="ds-sub-label">Operating Days</span>
+            <div className="ds-days">
+              {DAYS.map((d) => (
+                <button
+                  type="button"
+                  key={d}
+                  className={`ds-day-btn ${days.includes(d) ? "active" : ""}`}
+                  onClick={() => toggleDay(d)}
+                  disabled={scheduleId ? !canEditSchedule : !canCreateSchedule}
+                  title={`${d}: ${days.includes(d) ? "Active Shift" : "Off Duty"}`}
+                >
+                  <span className="ds-day-text">{d.slice(0, 3)}</span>
+                  <span className="ds-day-indicator" />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="ds-two">
+            <label>
+              Start date
+              <input
+                type="date"
+                min={todayKey()}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                disabled={scheduleId ? !canEditSchedule : !canCreateSchedule}
+              />
+            </label>
+            <label>
+              End date
+              <input
+                type="date"
+                min={startDate}
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                disabled={scheduleId ? !canEditSchedule : !canCreateSchedule}
+              />
+            </label>
+          </div>
+
+          <div className="ds-two">
+            <label>
+              Work start
+              <input
+                value={workStart}
+                onChange={(e) => setWorkStart(e.target.value)}
+                disabled={scheduleId ? !canEditSchedule : !canCreateSchedule}
+              />
+            </label>
+            <label>
+              Work end
+              <input
+                value={workEnd}
+                onChange={(e) => setWorkEnd(e.target.value)}
+                disabled={scheduleId ? !canEditSchedule : !canCreateSchedule}
+              />
+            </label>
+          </div>
+
+          <div className="ds-two">
+            <label>
+              Break start
+              <input
+                value={breakStart}
+                onChange={(e) => setBreakStart(e.target.value)}
+                disabled={scheduleId ? !canEditSchedule : !canCreateSchedule}
+              />
+            </label>
+            <label>
+              Break end
+              <input
+                value={breakEnd}
+                onChange={(e) => setBreakEnd(e.target.value)}
+                disabled={scheduleId ? !canEditSchedule : !canCreateSchedule}
+              />
+            </label>
+          </div>
+
+          {/* Autoclave Shift Lock Instrument Button */}
+          <button
+            className="ds-primary ds-instrument--autoclave"
+            disabled={saving || (scheduleId ? !canEditSchedule : !canCreateSchedule)}
+            onClick={saveBaseSchedule}
+            type="button"
+            title="Surgical Autoclave Shift Seal"
+          >
+            <span className="ds-instrument-body">
+              <span className="ds-instrument-grip" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </span>
+              <ShieldCheck size={16} className="ds-instrument-icon" />
+              <span className="ds-instrument-text">
+                {saving ? "Locking Shift..." : scheduleId ? "Update Recurring Schedule" : "Save Recurring Schedule"}
+              </span>
+              <span className="ds-instrument-bead ds-bead--emerald" aria-hidden="true" />
+            </span>
+          </button>
         </div>
 
-        <div className="ds-card">
-          <h3>2. One-day change</h3>
-          <p className="ds-note">Use this instead of changing the whole monthly schedule. Existing booked appointments are protected.</p>
-          <label>Change type<select value={overrideType} onChange={(e) => setOverrideType(e.target.value)}><option value="Leave">Leave</option><option value="TimeChange">Change hours</option><option value="BranchShift">Shift to another branch</option></select></label>
-          <label>Date<input type="date" min={todayKey()} value={overrideDate} onChange={(e) => setOverrideDate(e.target.value)} /></label>
-          {overrideType === "BranchShift" ? <div className="ds-two"><label>From branch<select value={sourceBranchId} onChange={(e) => setSourceBranchId(e.target.value)}>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label><label>To branch<select value={targetBranchId} onChange={(e) => setTargetBranchId(e.target.value)}>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label></div> : null}
-          {overrideType !== "Leave" ? <><div className="ds-two"><label>New/shift start<input value={overrideStart} onChange={(e) => setOverrideStart(e.target.value)} /></label><label>New/shift end<input value={overrideEnd} onChange={(e) => setOverrideEnd(e.target.value)} /></label></div><div className="ds-two"><label>Break start (optional)<input value={overrideBreakStart} onChange={(e) => setOverrideBreakStart(e.target.value)} /></label><label>Break end (optional)<input value={overrideBreakEnd} onChange={(e) => setOverrideBreakEnd(e.target.value)} /></label></div></> : null}
-          <label>Reason<textarea rows="3" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Leave reason / branch shift reason" /></label>
-          <button className="ds-primary" disabled={saving || (editingOverrideId ? !canEditSchedule : !canCreateSchedule)} onClick={saveOverride}>{editingOverrideId ? "Update change" : "Save change"}</button>
-          {editingOverrideId ? <button className="ds-secondary" onClick={() => setEditingOverrideId("")}>Cancel edit</button> : null}
+        {/* ── Card 2: One-Day Change (Amber Accent) ── */}
+        <div className="ds-card ds-card--override">
+          <div className="ds-card-header">
+            <div className="ds-card-header-icon ds-icon--amber">
+              <Zap size={18} />
+            </div>
+            <div>
+              <h3>2. One-day change</h3>
+              <span className="ds-card-badge ds-badge--amber">DUTY EXCEPTION</span>
+            </div>
+          </div>
+
+          <p className="ds-note">
+            Use this instead of changing the whole monthly schedule. Existing booked appointments are protected.
+          </p>
+
+          <label>
+            Change type
+            <select value={overrideType} onChange={(e) => setOverrideType(e.target.value)}>
+              <option value="Leave">Leave</option>
+              <option value="TimeChange">Change hours</option>
+              <option value="BranchShift">Shift to another branch</option>
+            </select>
+          </label>
+
+          <label>
+            Date
+            <input
+              type="date"
+              min={todayKey()}
+              value={overrideDate}
+              onChange={(e) => setOverrideDate(e.target.value)}
+            />
+          </label>
+
+          {overrideType === "BranchShift" ? (
+            <div className="ds-two">
+              <label>
+                From branch
+                <select value={sourceBranchId} onChange={(e) => setSourceBranchId(e.target.value)}>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                To branch
+                <select value={targetBranchId} onChange={(e) => setTargetBranchId(e.target.value)}>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          ) : null}
+
+          {overrideType !== "Leave" ? (
+            <>
+              <div className="ds-two">
+                <label>
+                  New/shift start
+                  <input value={overrideStart} onChange={(e) => setOverrideStart(e.target.value)} />
+                </label>
+                <label>
+                  New/shift end
+                  <input value={overrideEnd} onChange={(e) => setOverrideEnd(e.target.value)} />
+                </label>
+              </div>
+              <div className="ds-two">
+                <label>
+                  Break start (optional)
+                  <input
+                    value={overrideBreakStart}
+                    onChange={(e) => setOverrideBreakStart(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Break end (optional)
+                  <input
+                    value={overrideBreakEnd}
+                    onChange={(e) => setOverrideBreakEnd(e.target.value)}
+                  />
+                </label>
+              </div>
+            </>
+          ) : null}
+
+          <label>
+            Reason
+            <textarea
+              rows="3"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Leave reason / branch shift reason"
+            />
+          </label>
+
+          {/* Precision Surgical Scalpel / Exception Applicator Button */}
+          <button
+            className="ds-primary ds-instrument--scalpel"
+            disabled={saving || (editingOverrideId ? !canEditSchedule : !canCreateSchedule)}
+            onClick={saveOverride}
+            type="button"
+            title="Surgical Scalpel Exception Applicator"
+          >
+            <span className="ds-instrument-body">
+              <span className="ds-instrument-grip" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </span>
+              <Zap size={16} className="ds-instrument-icon" />
+              <span className="ds-instrument-text">
+                {saving ? "Applying Exception..." : editingOverrideId ? "Update Schedule Exception" : "Apply Schedule Exception"}
+              </span>
+              <span className="ds-instrument-bead ds-bead--amber" aria-hidden="true" />
+            </span>
+          </button>
+
+          {editingOverrideId ? (
+            <button
+              className="ds-secondary ds-instrument--cancel"
+              onClick={() => setEditingOverrideId("")}
+              type="button"
+            >
+              Cancel Edit
+            </button>
+          ) : null}
         </div>
 
+        {/* ── Card 3: Slot Telemetry Preview (Cyan Accent) ── */}
         <div className="ds-card ds-preview-card">
-          <h3>3. Effective slot preview</h3>
-          <div className="ds-two"><label>Date<input type="date" min={todayKey()} value={previewDate} onChange={(e) => setPreviewDate(e.target.value)} /></label><label>Branch<select value={previewBranchId} onChange={(e) => setPreviewBranchId(e.target.value)}>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label></div>
-          <button className="ds-secondary" onClick={previewSlots}>Refresh slots</button>
+          <div className="ds-card-header">
+            <div className="ds-card-header-icon ds-icon--cyan">
+              <Layers size={18} />
+            </div>
+            <div>
+              <h3>3. Effective slot preview</h3>
+              <span className="ds-card-badge ds-badge--cyan">SLOT TELEMETRY</span>
+            </div>
+          </div>
+
+          <div className="ds-two">
+            <label>
+              Date
+              <input
+                type="date"
+                min={todayKey()}
+                value={previewDate}
+                onChange={(e) => setPreviewDate(e.target.value)}
+              />
+            </label>
+            <label>
+              Branch
+              <select value={previewBranchId} onChange={(e) => setPreviewBranchId(e.target.value)}>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {/* Ultrasonic Telemetry Slot Scanner Button */}
+          <button
+            className="ds-secondary ds-instrument--scanner"
+            onClick={previewSlots}
+            type="button"
+            title="Ultrasonic Telemetry Slot Scanner"
+          >
+            <span className="ds-instrument-body">
+              <RefreshCw size={14} className="ds-instrument-icon" />
+              <span className="ds-instrument-text">Refresh Duty Slots</span>
+              <span className="ds-instrument-bead ds-bead--cyan" aria-hidden="true" />
+            </span>
+          </button>
+
           {slotMessage ? <p className="ds-note">{slotMessage}</p> : null}
-          <div className="ds-slots">{slots.length ? slots.map((s, i) => <div key={`${s.start}-${i}`} className={`ds-slot ${String(s.status).toLowerCase() === "booked" ? "booked" : "available"}`}><strong>{s.start} - {s.end}</strong><span>{s.status}</span><small>{s.source || "Schedule"}</small></div>) : <div className="ds-empty">No slots for this branch/date.</div>}</div>
+
+          <div className="ds-slots">
+            {slots.length ? (
+              slots.map((s, i) => (
+                <div
+                  key={`${s.start}-${i}`}
+                  className={`ds-slot ${String(s.status).toLowerCase() === "booked" ? "booked" : "available"}`}
+                >
+                  <div className="ds-slot-info">
+                    <span className="ds-slot-time-badge" />
+                    <strong>{s.start} - {s.end}</strong>
+                  </div>
+                  <span className="ds-slot-status">{s.status}</span>
+                  <small>{s.source || "Clinical Schedule"}</small>
+                </div>
+              ))
+            ) : (
+              <div className="ds-empty">No clinical duty slots for this branch/date.</div>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* ── Upcoming Exceptions Table Console ── */}
       <div className="ds-card ds-overrides-card">
-        <h3>Upcoming leave / time / branch changes</h3>
-        <div className="ds-table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Branch</th><th>From Branch</th><th>Time</th><th>Reason</th><th>Actions</th></tr></thead><tbody>
-          {overrides.length ? overrides.map((o) => {
-            const id = recordIdOf(o);
-            const type = overrideTypeOf(o);
-            const date = fieldOf(o, "date", "Date");
-            const targetBranch = String(fieldOf(o, "branchId", "BranchId") || "");
-            const sourceBranch = String(fieldOf(o, "sourceBranchId", "SourceBranchId") || "");
-            const start = fieldOf(o, "workStart", "WorkStart");
-            const end = fieldOf(o, "workEnd", "WorkEnd");
-            return <tr key={id}><td>{String(date).slice(0,10)}</td><td>{type}</td><td>{branches.find((b) => b.id === targetBranch)?.name || targetBranch || "All"}</td><td>{branches.find((b) => b.id === sourceBranch)?.name || sourceBranch || "-"}</td><td>{start ? `${start} - ${end}` : "All day"}</td><td>{fieldOf(o, "reason", "Reason") || "-"}</td><td>{canEditSchedule ? <button onClick={() => editOverride(o)}>Edit</button> : null}{canDeleteSchedule ? <button className="danger" onClick={() => deleteOverride(id)}>Delete</button> : null}</td></tr>;
-          }) : <tr><td colSpan="7">No upcoming changes.</td></tr>}
-        </tbody></table></div>
+        <div className="ds-card-header ds-card-header--table">
+          <div className="ds-card-header-icon ds-icon--teal">
+            <Calendar size={18} />
+          </div>
+          <div>
+            <h3>Upcoming leave / time / branch changes</h3>
+            <span className="ds-card-badge">REGISTERED EXCEPTIONS</span>
+          </div>
+        </div>
+
+        <div className="ds-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Branch</th>
+                <th>From Branch</th>
+                <th>Time</th>
+                <th>Reason</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {overrides.length ? (
+                overrides.map((o) => {
+                  const id = recordIdOf(o);
+                  const type = overrideTypeOf(o);
+                  const date = fieldOf(o, "date", "Date");
+                  const targetBranch = String(fieldOf(o, "branchId", "BranchId") || "");
+                  const sourceBranch = String(fieldOf(o, "sourceBranchId", "SourceBranchId") || "");
+                  const start = fieldOf(o, "workStart", "WorkStart");
+                  const end = fieldOf(o, "workEnd", "WorkEnd");
+                  return (
+                    <tr key={id}>
+                      <td className="ds-cell-date">{String(date).slice(0, 10)}</td>
+                      <td>
+                        <span className={`ds-type-badge ds-type--${String(type).toLowerCase()}`}>
+                          {type}
+                        </span>
+                      </td>
+                      <td>{branches.find((b) => b.id === targetBranch)?.name || targetBranch || "All"}</td>
+                      <td>{branches.find((b) => b.id === sourceBranch)?.name || sourceBranch || "-"}</td>
+                      <td>{start ? `${start} - ${end}` : "All day"}</td>
+                      <td className="ds-cell-reason">{fieldOf(o, "reason", "Reason") || "-"}</td>
+                      <td className="ds-table-actions">
+                        {canEditSchedule ? (
+                          <button
+                            className="ds-action-btn ds-action-btn--edit"
+                            onClick={() => editOverride(o)}
+                            type="button"
+                            title="Micro-Surgical Forceps / Edit Exception"
+                          >
+                            <Edit3 size={13} />
+                            <span>Edit</span>
+                          </button>
+                        ) : null}
+                        {canDeleteSchedule ? (
+                          <button
+                            className="ds-action-btn ds-action-btn--delete danger"
+                            onClick={() => deleteOverride(id)}
+                            type="button"
+                            title="Biohazard Disposal Clamp / Remove Exception"
+                          >
+                            <Trash2 size={13} />
+                            <span>Delete</span>
+                          </button>
+                        ) : null}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="7" className="ds-empty-table">No upcoming schedule exceptions recorded.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   );
 }
 
 export default DoctorSchedule;
+

@@ -349,16 +349,36 @@ function LabFiles() {
       </div>
 
       <div className="lab-files-table">
-        <div className="lab-files-head"><span>Test</span><span>Code</span><span>Category</span><span>Sample</span><span>Price</span><span>Status</span><span>Actions</span></div>
+        <div className="lab-files-head">
+          <span className="lab-files-test-head">Test</span>
+          <span className="lab-files-code-head">Code</span>
+          <span className="lab-files-category-head">Category</span>
+          <span className="lab-files-sample-head">Sample</span>
+          <span className="lab-files-price-head">Price</span>
+          <span className="receptionists-status-head lab-files-status-head">Status</span>
+          <span className="lab-files-actions-head">Actions</span>
+        </div>
         {!loading && filteredRows.length === 0 ? <div className="receptionists-empty">No lab file data found.</div> : null}
         {filteredRows.map((row, index) => (
           <div className="lab-files-row" key={readFirst(row, ["id", "Id", "testId", "TestId", "testCode"], index)}>
-            <span>{readFirst(row, ["testName", "TestName", "name", "Name"])}</span>
-            <span>{readFirst(row, ["testCode", "TestCode", "code", "Code"])}</span>
-            <span>{readFirst(row, ["category", "Category"])}</span>
-            <span>{readFirst(row, ["sampleType", "SampleType"])}</span>
-            <span>{readFirst(row, ["price", "Price", "amount", "Amount"], "0")}</span>
-            <span>{String(readFirst(row, ["isActive", "IsActive"], true)) === "false" ? "Inactive" : "Active"}</span>
+            <span className="lab-files-test-cell">{readFirst(row, ["testName", "TestName", "name", "Name"])}</span>
+            <span className="lab-files-code-cell">{readFirst(row, ["testCode", "TestCode", "code", "Code"])}</span>
+            <span className="lab-files-category-cell">{readFirst(row, ["category", "Category"])}</span>
+            <span className="lab-files-sample-cell">{readFirst(row, ["sampleType", "SampleType"])}</span>
+            <span className="lab-files-price-cell">
+              {(() => {
+                const raw = readFirst(row, ["price", "Price", "amount", "Amount", "cost", "Cost"], "0");
+                const clean = String(raw).trim();
+                if (!clean || clean === "0" || clean === "-") return "₹0";
+                if (clean.startsWith("₹") || clean.toLowerCase().startsWith("rs")) return clean;
+                return `₹${clean}`;
+              })()}
+            </span>
+            <span className="receptionists-cell receptionists-status-cell lab-files-status-cell">
+              <span className={`receptionists-status ${String(readFirst(row, ["isActive", "IsActive"], true)) === "false" ? "receptionists-status-inactive" : "receptionists-status-active"}`}>
+                {String(readFirst(row, ["isActive", "IsActive"], true)) === "false" ? "Inactive" : "Active"}
+              </span>
+            </span>
             <span className="lab-files-actions">
               <ActionsGroup
                 rowId={readFirst(row, ["id", "Id", "testId", "TestId", "testCode"], index)}

@@ -125,9 +125,10 @@ function App() {
         {/* MAIN LAYOUT */}
         <Route element={<AppLayout />}>
 
-          {/* Dashboard */}
+          {/* Dashboard & User Management */}
           <Route path="dashboard" element={<PermissionRoute roleType="admin" module="Dashboard"><Dashboard /></PermissionRoute>} />
           <Route path="profile" element={<UserProfilePage roleType="admin" />} />
+          <Route path="change-password" element={<Navigate to="/profile?tab=password" replace />} />
 
           {/* MODULES */}
           <Route path="branches" element={<PermissionRoute roleType="admin" module="Branches"><Branches /></PermissionRoute>} />

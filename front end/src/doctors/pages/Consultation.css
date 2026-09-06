@@ -53,11 +53,13 @@
 .cn-stepper {
   display: flex;
   align-items: center;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(186, 201, 215, 0.75);
+  border-radius: 16px;
   padding: 18px 32px;
   gap: 0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
 }
 
 .cn-step {
@@ -132,78 +134,86 @@
 }
 
 .cn-patient-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(186, 201, 215, 0.75);
+  border-radius: 16px;
   padding: 16px;
   display: flex;
   gap: 12px;
   align-items: flex-start;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
 }
 
 .cn-pat-avatar {
   width: 44px;
   height: 44px;
-  background: #dbeafe;
-  color: #1d4ed8;
-  border-radius: 10px;
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: #ffffff;
+  border-radius: 12px;
   font-size: 16px;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
 }
 
 .cn-pat-name { margin: 0; font-size: 14px; font-weight: 700; color: #0f172a; }
 .cn-pat-sub  { margin: 2px 0 6px; font-size: 11px; color: #64748b; }
 .cn-pat-badge {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: #e0f2fe;
+  color: #0369a1;
   font-size: 10px;
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 999px;
+  border: 1px solid #bae6fd;
 }
 
 .cn-panel-section {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(186, 201, 215, 0.75);
+  border-radius: 16px;
   padding: 14px 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
 }
 
 .cn-panel-heading {
   margin: 0 0 10px;
   font-size: 12px;
-  font-weight: 700;
-  color: #64748b;
+  font-weight: 800;
+  color: #0f766e;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
 }
 
 .cn-history-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 5px 0;
-  border-bottom: 1px solid #f8fafc;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.7);
 }
 .cn-history-row:last-child { border-bottom: none; }
 
-.cn-history-key { font-size: 11px; color: #64748b; }
+.cn-history-key { font-size: 11px; color: #64748b; font-weight: 500; }
 .cn-history-val { font-size: 11px; font-weight: 700; color: #0f172a; text-align: right; }
-.cn-vitals-val  { color: #2563eb; }
+.cn-vitals-val  { color: #0891b2; font-weight: 800; }
 
 /* ── Right form panel ── */
 .cn-form-panel {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(186, 201, 215, 0.75);
+  border-radius: 16px;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
 }
 
 .cn-field {
@@ -221,18 +231,20 @@
 .cn-input {
   width: 100%;
   height: 44px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #cbd5e1;
   border-radius: 10px;
   padding: 0 14px;
   font-size: 14px;
   color: #0f172a;
+  background: #f8fafc;
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: all 0.18s ease;
   box-sizing: border-box;
 }
 .cn-input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  background: #ffffff;
+  border-color: #0891b2;
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15);
 }
 
 .cn-test-chips {
@@ -354,75 +366,200 @@
   gap: 14px;
 }
 
-/* ── Action buttons ── */
+/* ── Action buttons (Surgical Instrument Models) ── */
 .cn-form-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 12px;
-  padding-top: 4px;
+  gap: 14px;
+  padding-top: 8px;
 }
 
-.cn-btn-save,
-.cn-btn-submit,
-.cn-btn-print {
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  border-radius: 10px;
-  padding: 11px 24px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #334155;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.cn-btn-save:hover { background: #f8fafc; }
-.cn-btn-save:disabled,
-.cn-btn-submit:disabled,
-.cn-btn-print:disabled,
-.cn-btn-primary:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
-.cn-btn-submit {
-  border-color: #86efac;
-  background: #16a34a;
-  color: #fff;
-}
-
-.cn-btn-submit:hover {
-  background: #15803d;
-}
-
-.cn-btn-print {
+.cn-surgical-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  border-color: #fbcfe8;
-  background: #fdf2f8;
-  color: #2563eb;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
-}
-
-.cn-btn-print:hover {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-}
-
-.cn-btn-primary {
-  background: #2563eb;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 11px 24px;
-  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  letter-spacing: 0.2px;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
-.cn-btn-primary:hover { background: #1d4ed8; }
+
+.cn-surgical-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: grayscale(0.5);
+}
+
+.cn-surgical-grip {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5px;
+  padding: 2px 5px 2px 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.25);
+  margin-right: 2px;
+}
+
+.cn-surgical-grip span {
+  display: block;
+  width: 9px;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 1px;
+}
+
+.cn-surgical-svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  transition: transform 0.22s ease;
+}
+
+.cn-surgical-btn:hover:not(:disabled) .cn-surgical-svg {
+  transform: scale(1.15) rotate(-4deg);
+}
+
+.cn-surgical-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 1. Surgical Scalpel / Incision Clamp (Submit) */
+.cn-btn-submit.cn-surgical-scalpel {
+  background: linear-gradient(135deg, #059669 0%, #047857 45%, #064e3b 100%);
+  border: 1px solid #34d399;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+}
+
+.cn-btn-submit.cn-surgical-scalpel:hover:not(:disabled) {
+  background: linear-gradient(135deg, #10b981 0%, #059669 45%, #047857 100%);
+  box-shadow: 0 6px 20px rgba(5, 150, 105, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transform: translateY(-1.5px);
+}
+
+.cn-btn-submit.cn-surgical-scalpel:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.cn-surgical-status-bead {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #6ee7b7;
+  box-shadow: 0 0 8px #6ee7b7;
+  margin-left: 4px;
+  animation: cn-bead-pulse 1.8s infinite;
+}
+
+@keyframes cn-bead-pulse {
+  0%, 100% { opacity: 0.7; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.25); }
+}
+
+/* 2. Surgical Forceps / Diagnostic Charting Tool (Print) */
+.cn-btn-print.cn-surgical-forceps {
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 45%, #e2e8f0 100%);
+  border: 1px solid #cbd5e1;
+  color: #1e293b;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.cn-btn-print.cn-surgical-forceps .cn-surgical-grip {
+  border-right-color: #cbd5e1;
+}
+
+.cn-btn-print.cn-surgical-forceps .cn-surgical-grip span {
+  background: #94a3b8;
+}
+
+.cn-btn-print.cn-surgical-forceps .cn-surgical-sub-icon {
+  margin-right: -2px;
+  color: #2563eb;
+}
+
+.cn-btn-print.cn-surgical-forceps:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 45%, #ede9fe 100%);
+  border-color: #a855f7;
+  color: #6b21a8;
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transform: translateY(-1.5px);
+}
+
+.cn-btn-print.cn-surgical-forceps:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 3. Surgical Syringe Injector (Add Prescription) */
+.cn-btn-primary.cn-surgical-syringe {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 45%, #1e40af 100%);
+  border: 1px solid #60a5fa;
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+  padding-right: 18px;
+}
+
+.cn-surgical-plunger {
+  display: flex;
+  align-items: center;
+  margin-right: 2px;
+}
+
+.cn-syringe-ring {
+  width: 9px;
+  height: 9px;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+}
+
+.cn-syringe-shaft {
+  width: 4px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.cn-syringe-ticks {
+  font-size: 8.5px;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: monospace;
+  user-select: none;
+  margin: 0 2px;
+}
+
+.cn-syringe-needle-arrow {
+  font-size: 15px;
+  font-weight: 900;
+  margin-left: 2px;
+  transition: transform 0.22s ease;
+}
+
+.cn-btn-primary.cn-surgical-syringe:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 45%, #1d4ed8 100%);
+  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  transform: translateY(-1.5px);
+}
+
+.cn-btn-primary.cn-surgical-syringe:hover:not(:disabled) .cn-syringe-needle-arrow {
+  transform: translateX(4px);
+}
+
+.cn-btn-primary.cn-surgical-syringe:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
 
 @media (max-width: 900px) {
   .cn-body { grid-template-columns: 1fr; }
