@@ -6,10 +6,6 @@ import {
   Stethoscope,
   UserRound,
   UsersRound,
-  UserCheck,
-  ShieldCheck,
-  BadgeCheck,
-  UserCog,
 } from "lucide-react";
 import { apiUrl } from "../../../config/api";
 import {
@@ -540,22 +536,6 @@ function AdminUserManagement() {
 
   return (
     <div className="admin-users-page">
-      <div className="admin-users-bg-overlay" />
-
-      {/* 3D Floating User Directory & Staff Telemetry Particles */}
-      <div className="admin-users-particle user-part-1" title="Hospital Staff Directory">
-        <UsersRound size={28} />
-      </div>
-      <div className="admin-users-particle user-part-2" title="User Role Profile">
-        <UserCheck size={26} />
-      </div>
-      <div className="admin-users-particle user-part-3" title="Staff Role Management">
-        <UserCog size={26} />
-      </div>
-      <div className="admin-users-particle user-part-4" title="Verified Staff Credentials">
-        <BadgeCheck size={26} />
-      </div>
-
       <div className="admin-users-header">
         <div>
           <h2>User Management</h2>
@@ -566,98 +546,94 @@ function AdminUserManagement() {
         </button>
       </div>
 
+      <div className="admin-users-toolbar">
+        <label className="admin-users-search">
+          <Search size={16} />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search users by name, email, clinic, branch, or type..."
+          />
+        </label>
+        <select value={status} onChange={(event) => setStatus(event.target.value)}>
+          <option value="All">All</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+        <select value={selectedBranchId} onChange={(event) => setSelectedBranchId(event.target.value)}>
+          <option value="">Select Branch</option>
+          {branches.map((branch) => (
+            <option key={branch.id} value={branch.id}>
+              {branch.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {success ? <div className="admin-users-success">{success}</div> : null}
       {error ? <div className="admin-users-error">{error}</div> : null}
 
-      <div className="admin-users-table-card">
-        <div className="admin-users-toolbar">
-          <label className="admin-users-search">
-            <Search size={18} />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search users by name, email, clinic, branch, or type..."
-            />
-          </label>
-          <select value={status} onChange={(event) => setStatus(event.target.value)}>
-            <option value="All">All Status</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
-          <select value={selectedBranchId} onChange={(event) => setSelectedBranchId(event.target.value)}>
-            <option value="">Select Branch</option>
-            {branches.map((branch) => (
-              <option key={branch.id} value={branch.id}>
-                {branch.name}
-              </option>
-            ))}
-          </select>
+      <div className="admin-users-table">
+        <div className="admin-users-table-head">
+          <span>S.No.</span>
+          <span>Name</span>
+          <span>Email</span>
+          <span>Clinic</span>
+          <span>Branch</span>
+          <span>Role</span>
+          <span>Status</span>
+          <span>Last Active</span>
         </div>
 
-        <div className="admin-users-table">
-          <div className="admin-users-table-head">
-            <span className="admin-users-sno-head">S.No.</span>
-            <span className="admin-users-name-head">Name</span>
-            <span className="admin-users-email-head">Email</span>
-            <span className="admin-users-clinic-head">Clinic</span>
-            <span className="admin-users-branch-head">Branch</span>
-            <span className="admin-users-role-head">Role</span>
-            <span className="admin-users-status-head">Status</span>
-            <span className="admin-users-active-head">Last Active</span>
-          </div>
+        {loading ? <div className="admin-users-state">Loading user management data...</div> : null}
+        {!loading && !filteredUsers.length ? <div className="admin-users-state">No names found.</div> : null}
 
-          {loading ? <div className="admin-users-state">Loading user management data...</div> : null}
-          {!loading && !filteredUsers.length ? <div className="admin-users-state">No names found.</div> : null}
+        {filteredUsers.map((user, index) => {
+          const avatarTone = index % 4;
+          const clinicBranding = getClinicInvoiceBranding({
+            clinicId: user.clinicId || user.hospitalId || getStoredHospitalId(),
+            clinicName: user.clinicName,
+          });
+          const roleMeta = getRoleMeta(user.role);
+          const RoleIcon = roleMeta.icon;
+          const lastActive = formatLastActive(user.lastActive || user.loginTime);
 
-          {filteredUsers.map((user, index) => {
-            const avatarTone = index % 4;
-            const clinicBranding = getClinicInvoiceBranding({
-              clinicId: user.clinicId || user.hospitalId || getStoredHospitalId(),
-              clinicName: user.clinicName,
-            });
-            const roleMeta = getRoleMeta(user.role);
-            const RoleIcon = roleMeta.icon;
-            const lastActive = formatLastActive(user.lastActive || user.loginTime);
-
-            return (
-              <div className="admin-users-row" key={`${user.id}-${index}`}>
-                <span className="admin-users-sno">{index + 1}</span>
-                <div className="admin-users-name-cell">
-                  <div className={`admin-users-avatar admin-users-avatar--${avatarTone}`}>
-                    {getInitials(user.name || user.email)}
-                  </div>
-                  <span className="admin-users-name-highlight">
-                    <b>{user.name || "-"}</b>
-                  </span>
-                </div>
-                <span className="admin-users-email" title={user.email || "-"}>
-                  {user.email || "-"}
+          return (
+            <div className="admin-users-row" key={`${user.id}-${index}`}>
+              <span>{index + 1}</span>
+              <span className="admin-users-name-cell">
+                <span className={`admin-users-avatar admin-users-avatar--${avatarTone}`}>
+                  {getInitials(user.name || user.email)}
                 </span>
-                <span className="admin-users-clinic-cell">
-                  <span className="admin-users-clinic-logo admin-users-clinic-logo--emerald">
-                    <img src={clinicBranding.logoUrl} alt="" />
-                  </span>
-                  <b>{user.clinicName || "-"}</b>
+                <b>{user.name || "-"}</b>
+              </span>
+              <span className="admin-users-email" title={user.email || "-"}>
+                {user.email || "-"}
+              </span>
+              <span className="admin-users-clinic-cell">
+                <span className="admin-users-clinic-logo admin-users-clinic-logo--emerald">
+                  <img src={clinicBranding.logoUrl} alt="" />
                 </span>
-                <span className="admin-users-branch-cell">{user.branchName || "-"}</span>
-                <span>
-                  <span className={`admin-users-role admin-users-role--${roleMeta.tone}`}>
-                    <RoleIcon size={15} />
-                    {roleMeta.label}
-                  </span>
+                <b>{user.clinicName || "-"}</b>
+              </span>
+              <span>{user.branchName || "-"}</span>
+              <span>
+                <span className={`admin-users-role admin-users-role--${roleMeta.tone}`}>
+                  <RoleIcon size={15} />
+                  {roleMeta.label}
                 </span>
-                <span className="admin-users-status-cell">
-                  <span className={`admin-users-status ${getDisplayStatus(user).toLowerCase() === "active" ? "is-online" : "is-offline"}`}>
-                    {getDisplayStatus(user)}
-                  </span>
+              </span>
+              <span>
+                <span className={`admin-users-status ${getDisplayStatus(user).toLowerCase() === "active" ? "is-online" : "is-offline"}`}>
+                  {getDisplayStatus(user)}
                 </span>
-                <span className="admin-users-last-active" title={formatDateTime(user.lastActive || user.loginTime)}>
-                  {lastActive}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+              </span>
+              <span className="admin-users-last-active" title={formatDateTime(user.lastActive || user.loginTime)}>
+                {lastActive}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
     </div>

@@ -14,17 +14,8 @@
   height: 100vh;
   min-height: 100vh;
   overflow: hidden;
-  background-color: #dbe3eb;
-  background-image:
-    linear-gradient(to right, rgba(148, 163, 184, 0.18) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(148, 163, 184, 0.18) 1px, transparent 1px),
-    radial-gradient(circle at 10% 20%, rgba(169, 177, 182, 0.55) 0%, transparent 40%),
-    radial-gradient(circle at 90% 15%, rgba(6, 182, 212, 0.15) 0%, transparent 45%),
-    radial-gradient(circle at 50% 85%, rgba(37, 99, 235, 0.1) 0%, transparent 45%),
-    linear-gradient(135deg, #d2dae2 0%, #dbe3eb 38%, #e4ecf4 75%, #ebf2f8 100%);
-  background-size: 32px 32px, 32px 32px, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background: #f8fafc;
   font-family: "Inter", "Segoe UI", sans-serif;
-  position: relative;
 }
 
 /* Body (topbar + content) */
@@ -36,7 +27,6 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: transparent;
 }
 
 /* Scrollable content area */
@@ -44,8 +34,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-4, 20px);
-  background: transparent;
+  padding: var(--space-4, 16px);
+  background: #f8fafc;
 }
 
 /* Collapsed sidebar – hide it */

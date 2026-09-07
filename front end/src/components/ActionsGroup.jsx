@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Eye, Syringe, HeartPulse, Scissors } from "lucide-react";
+import React from "react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 import { StatusToggle } from "./StatusToggle";
 import "./ActionsGroup.css";
 
@@ -55,24 +55,18 @@ export const ActionsGroup = ({
   activeActionState,
   setActiveActionState,
 }) => {
-  const [activeEffect, setActiveEffect] = useState(null);
-
   const isRowActive = activeActionState?.rowId === rowId;
   const currentAction = isRowActive ? activeActionState?.action : null;
   const isEnabled = Boolean(statusChecked);
 
-  const defaultStatusTitle = isEnabled ? "Active Status (Click to Disable)" : "Disabled Status (Click to Enable)";
+  const DynamicStatusIcon = statusIcon || (isEnabled ? MobileToggleRight : MobileToggleLeft);
+  const defaultStatusTitle = isEnabled ? "Disable" : "Enable";
   const defaultStatusAria = isEnabled ? "Disable item" : "Enable item";
 
   const handleAction = (actionName, handler) => (e) => {
     if (e && e.stopPropagation) {
       e.stopPropagation();
     }
-    setActiveEffect(actionName);
-    setTimeout(() => {
-      setActiveEffect((current) => (current === actionName ? null : current));
-    }, 650);
-
     if (setActiveActionState) {
       setActiveActionState({ rowId, action: actionName });
     }
@@ -86,32 +80,24 @@ export const ActionsGroup = ({
       {canView && (
         <button
           type="button"
-          className={`action-btn medical-instrument-btn view-instrument-btn ${
-            activeEffect === "view" || currentAction === "view" ? "is-effecting effect-eye" : ""
-          }`}
-          title="View Details"
-          aria-label="View Details"
+          className={`action-btn view-btn ${currentAction === "view" ? "is-active" : ""}`}
+          title="View"
+          aria-label="View"
           onClick={handleAction("view", onView)}
         >
-          <span className="instrument-led led-blue" />
-          <span className="instrument-ripple" />
-          <Eye size={18} className="instrument-icon icon-eye" />
+          <Eye size={18} />
         </button>
       )}
 
       {canEdit && (
         <button
           type="button"
-          className={`action-btn medical-instrument-btn edit-instrument-btn ${
-            activeEffect === "edit" || currentAction === "edit" ? "is-effecting effect-syringe" : ""
-          }`}
-          title="Edit Record"
-          aria-label="Edit Record"
+          className={`action-btn edit-btn ${currentAction === "edit" ? "is-active" : ""}`}
+          title="Edit"
+          aria-label="Edit"
           onClick={handleAction("edit", onEdit)}
         >
-          <span className="instrument-led led-purple" />
-          <span className="instrument-ripple" />
-          <Syringe size={18} className="instrument-icon icon-syringe" />
+          <Pencil size={18} />
         </button>
       )}
 
@@ -121,26 +107,20 @@ export const ActionsGroup = ({
             checked={isEnabled}
             onChange={(newVal, e) => handleAction("status", onStatus)(e)}
             disabled={statusDisabled}
-            title={statusTitle || defaultStatusTitle}
+            title={statusTitle || (isEnabled ? "Enabled (Click to Disable)" : "Disabled (Click to Enable)")}
           />
         ) : (
           <button
             type="button"
-            className={`action-btn medical-instrument-btn status-instrument-btn ${
-              isEnabled ? "status-enabled" : "status-disabled"
-            } ${activeEffect === "status" || currentAction === "status" ? "is-effecting effect-heartpulse" : ""}`}
+            className={`action-btn status-btn ${isEnabled ? "status-enabled" : "status-disabled"} ${
+              currentAction === "status" ? "is-active" : ""
+            }`}
             title={statusTitle || defaultStatusTitle}
             aria-label={statusTitle || defaultStatusAria}
             onClick={handleAction("status", onStatus)}
             disabled={statusDisabled}
           >
-            <span className={`instrument-led ${isEnabled ? "led-green" : "led-red"}`} />
-            <span className="instrument-ripple" />
-            {statusIcon ? (
-              React.createElement(statusIcon, { size: 19, className: "instrument-icon" })
-            ) : (
-              <HeartPulse size={19} className="instrument-icon icon-heartpulse" />
-            )}
+            <DynamicStatusIcon size={20} />
           </button>
         )
       )}
@@ -148,16 +128,12 @@ export const ActionsGroup = ({
       {canDelete && (
         <button
           type="button"
-          className={`action-btn medical-instrument-btn delete-instrument-btn ${
-            activeEffect === "delete" || currentAction === "delete" ? "is-effecting effect-scissors" : ""
-          }`}
-          title="Delete Record"
-          aria-label="Delete Record"
+          className={`action-btn delete-btn ${currentAction === "delete" ? "is-active" : ""}`}
+          title="Delete"
+          aria-label="Delete"
           onClick={handleAction("delete", onDelete)}
         >
-          <span className="instrument-led led-red" />
-          <span className="instrument-ripple" />
-          <Scissors size={18} className="instrument-icon icon-scissors" />
+          <Trash2 size={18} />
         </button>
       )}
     </div>

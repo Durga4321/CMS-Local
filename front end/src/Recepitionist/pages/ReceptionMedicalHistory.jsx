@@ -1,24 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Activity,
-  AlertTriangle,
   ArrowLeft,
-  ClipboardList,
-  ClipboardPlus,
   Eye,
-  FileText,
+  FilePlus2,
   HeartPulse,
   Pencil,
-  Pill,
   RefreshCw,
-  Search,
-  Stethoscope,
   Trash2,
   Upload,
   X,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import "../../Nurse/Nurse.css";
 import { parseList, requestJson as defaultRequestJson } from "../receptionApi";
 import {
   getReceptionistScope,
@@ -95,36 +87,6 @@ function ReceptionMedicalHistory({
   );
 
   const rows = useMemo(() => [...histories].reverse(), [histories]);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const metrics = useMemo(() => {
-    const total = histories.length;
-    const withAllergies = histories.filter((h) => Boolean(String(h.allergies || "").trim())).length;
-    const withChronic = histories.filter((h) => Boolean(String(h.chronicDiseases || "").trim())).length;
-    const withSurgeries = histories.filter((h) => Boolean(String(h.surgeries || "").trim())).length;
-    return { total, withAllergies, withChronic, withSurgeries };
-  }, [histories]);
-
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return rows;
-    return rows.filter((record) => {
-      const patientId = String(getPatientId(record)).toLowerCase();
-      const patientName = String(getPatientName(record, patientsById)).toLowerCase();
-      const allergies = String(record.allergies || "").toLowerCase();
-      const chronic = String(record.chronicDiseases || "").toLowerCase();
-      const meds = String(record.currentMedications || "").toLowerCase();
-      const surgeries = String(record.surgeries || "").toLowerCase();
-      return (
-        patientId.includes(query) ||
-        patientName.includes(query) ||
-        allergies.includes(query) ||
-        chronic.includes(query) ||
-        meds.includes(query) ||
-        surgeries.includes(query)
-      );
-    });
-  }, [rows, searchQuery, patientsById]);
 
   const hasHistoryContent = (record = {}) =>
     Boolean(
@@ -396,56 +358,35 @@ function ReceptionMedicalHistory({
   };
 
   return (
-    <section className="rc-page med-history-page">
-      {/* Background decoration with photorealistic clinical history telemetry */}
-      <div className="med-history-bg-overlay" aria-hidden="true" />
-
-      {/* Hero Header with Medical History Theme */}
-      <div className="med-history-hero">
+    <section className="rc-page">
+      <div className="rc-page-head">
         <div>
-          <div className="med-history-badge">
-            <HeartPulse size={13} />
-            <span>Clinical Records & Diagnostics</span>
-          </div>
           <h2>Medical History</h2>
           <p>
-            Add, review, update, and track patient allergies, chronic diseases, medication regimens, and surgical history.
+            Add, review, update, and remove patient allergy, disease, medication,
+            and surgery history.
           </p>
         </div>
         {!hideActions && (
-          <div className="med-head-actions">
+          <div className="rc-head-actions">
             {canCreateHistory ? (
               <button
-                className="med-btn med-btn--add"
+                className="rc-btn primary"
                 onClick={openAdd}
-                title="Add Medical History Record"
+                title="Add history"
               >
-                <div className="med-btn-icon-wrap">
-                  <ClipboardPlus size={16} />
-                </div>
-                <span>Add History</span>
+                <FilePlus2 size={16} /> Add History
               </button>
             ) : null}
             <button
-              className="med-btn med-btn--refresh"
+              className="rc-btn ghost"
               onClick={() => fetchHistories(patients)}
               disabled={loading}
-              title="Synchronize Clinical History"
             >
-              <div className="med-btn-icon-wrap">
-                <RefreshCw size={15} className={loading ? "spin-icon" : ""} />
-              </div>
-              <span>{loading ? "Syncing..." : "Sync Vitals"}</span>
+              <RefreshCw size={16} /> Refresh
             </button>
-            <button
-              className="med-btn med-btn--dash"
-              onClick={() => navigate(`${basePath}/dashboard`)}
-              title="Return to Dashboard"
-            >
-              <div className="med-btn-icon-wrap">
-                <ArrowLeft size={15} />
-              </div>
-              <span>Dashboard</span>
+            <button className="rc-btn" onClick={() => navigate(`${basePath}/dashboard`) }>
+              <ArrowLeft size={16} /> Dashboard
             </button>
           </div>
         )}
@@ -453,83 +394,11 @@ function ReceptionMedicalHistory({
 
       {message ? <div className="rc-alert">{message}</div> : null}
 
-      {/* Medical Metrics Cards */}
-      <div className="med-metrics-grid">
-        <div className="med-metric-card total">
-          <div className="med-metric-icon">
-            <ClipboardList size={22} />
-          </div>
-          <div className="med-metric-info">
-            <strong>{metrics.total}</strong>
-            <span>Total Histories</span>
-          </div>
-        </div>
-
-        <div className="med-metric-card allergies">
-          <div className="med-metric-icon">
-            <AlertTriangle size={22} />
-          </div>
-          <div className="med-metric-info">
-            <strong>{metrics.withAllergies}</strong>
-            <span>Allergy Alerts</span>
-          </div>
-        </div>
-
-        <div className="med-metric-card chronic">
-          <div className="med-metric-icon">
-            <Activity size={22} />
-          </div>
-          <div className="med-metric-info">
-            <strong>{metrics.withChronic}</strong>
-            <span>Chronic Conditions</span>
-          </div>
-        </div>
-
-        <div className="med-metric-card surgeries">
-          <div className="med-metric-icon">
-            <Stethoscope size={22} />
-          </div>
-          <div className="med-metric-info">
-            <strong>{metrics.withSurgeries}</strong>
-            <span>Surgical History</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter and Search Bar */}
-      <div className="med-search-bar-wrap">
-        <div className="med-search-bar">
-          <Search size={16} color="#0f766e" />
-          <input
-            type="text"
-            placeholder="Search by patient name, PID, allergies, chronic condition, or medication..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "grid", placeItems: "center" }}
-              title="Clear search"
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Medical History Card & Table */}
-      <div className="med-history-card">
-        <div className="med-card-header">
-          <div className="med-card-title">
-            <div className="med-card-icon">
-              <HeartPulse size={18} />
-            </div>
-            <div>
-              <h3>Patient Clinical History</h3>
-              <p>{loading ? "Synchronizing records..." : `${filteredRows.length} history records documented`}</p>
-            </div>
+      <div className="rc-card">
+        <div className="rc-card-head">
+          <div>
+            <h3>History Records</h3>
+            <p>{loading ? "Loading records..." : `${rows.length} records found`}</p>
           </div>
         </div>
 
@@ -543,116 +412,51 @@ function ReceptionMedicalHistory({
             <span>Surgeries</span>
             <span>Actions</span>
           </div>
-          {filteredRows.map((record, index) => {
+          {rows.map((record, index) => {
             const historyId = getHistoryId(record) || `${getPatientId(record)}-${index}`;
             const patientName = getPatientName(record, patientsById);
-            const pid = getPatientId(record) || "-";
-            const initial = (patientName || "P").charAt(0).toUpperCase();
-
             return (
               <div className="rc-table-row six" key={historyId}>
                 <span>{index + 1}</span>
                 <span>
-                  <div className="med-patient-chip">
-                    <div className="med-patient-avatar">{initial}</div>
-                    <div>
-                      <span className="med-patient-title">{patientName || `Patient ${pid}`}</span>
-                      <span className="med-patient-pid">PID: {pid}</span>
-                    </div>
-                  </div>
+                  <strong>{patientName || `Patient ${getPatientId(record) || "-"}`}</strong>
+                  <small>PID: {getPatientId(record) || "-"}</small>
                 </span>
-                <span>
-                  {record.allergies ? (
-                    <span className="med-badge med-badge--allergy" title={record.allergies}>
-                      <AlertTriangle size={11} /> {record.allergies}
-                    </span>
-                  ) : (
-                    <span className="med-badge med-badge--none">None</span>
-                  )}
-                </span>
-                <span>
-                  {record.chronicDiseases ? (
-                    <span className="med-badge med-badge--chronic" title={record.chronicDiseases}>
-                      <Activity size={11} /> {record.chronicDiseases}
-                    </span>
-                  ) : (
-                    <span className="med-badge med-badge--none">None</span>
-                  )}
-                </span>
-                <span>
-                  {record.currentMedications ? (
-                    <span className="med-badge med-badge--meds" title={record.currentMedications}>
-                      <Pill size={11} /> {record.currentMedications}
-                    </span>
-                  ) : (
-                    <span className="med-badge med-badge--none">None</span>
-                  )}
-                </span>
-                <span>
-                  {record.surgeries ? (
-                    <span className="med-badge med-badge--surg" title={record.surgeries}>
-                      <Stethoscope size={11} /> {record.surgeries}
-                    </span>
-                  ) : (
-                    <span className="med-badge med-badge--none">None</span>
-                  )}
-                </span>
-                <span className="med-row-actions">
+                <span>{record.allergies || "-"}</span>
+                <span>{record.chronicDiseases || "-"}</span>
+                <span>{record.currentMedications || "-"}</span>
+                <span>{record.surgeries || "-"}</span>
+                <span className="rc-row-actions">
                   <button
-                    className="med-action-btn med-action-btn--view"
                     aria-label="View medical history"
                     onClick={() => openView(record)}
-                    title="View Full History"
                   >
-                    <Eye size={14} />
+                    <Eye size={15} />
                   </button>
                   {canEditHistory ? (
                     <button
-                      className="med-action-btn med-action-btn--edit"
                       aria-label="Edit medical history"
                       onClick={() => openEdit(record)}
-                      title="Edit Clinical Record"
+                      title="Edit medical history"
                     >
-                      <Pencil size={14} />
+                      <Pencil size={15} />
                     </button>
                   ) : null}
                   {canDeleteHistory ? (
                     <button
-                      className="med-action-btn med-action-btn--delete"
+                      className="danger"
                       onClick={() => deleteHistory(record)}
-                      title="Delete Record"
+                      title="Delete medical history"
                       aria-label="Delete medical history"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={15} />
                     </button>
                   ) : null}
                 </span>
               </div>
             );
           })}
-
-          {!filteredRows.length ? (
-            <div className="med-empty-history">
-              <div className="med-empty-icon-wrap">
-                <FileText size={28} />
-              </div>
-              <h4>{searchQuery ? "No Matching Records Found" : "No Medical History Found"}</h4>
-              <p>
-                {searchQuery
-                  ? `No patient records match "${searchQuery}". Try searching by another patient name or condition.`
-                  : "No clinical history or allergy records have been filed yet. Click 'Add History' to document a patient's medical background."}
-              </p>
-              {canCreateHistory && !searchQuery ? (
-                <button
-                  className="med-btn med-btn--add"
-                  onClick={openAdd}
-                  style={{ marginTop: 8 }}
-                >
-                  <ClipboardPlus size={16} /> Add First Medical History
-                </button>
-              ) : null}
-            </div>
-          ) : null}
+          {!rows.length ? <div className="rc-empty">No medical history found.</div> : null}
         </div>
       </div>
 

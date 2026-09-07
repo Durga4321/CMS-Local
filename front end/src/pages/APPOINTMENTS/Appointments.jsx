@@ -12,10 +12,6 @@ import {
   Eye,
   Search,
   X,
-  Calendar,
-  Clock,
-  CalendarCheck2,
-  Stethoscope,
 } from "lucide-react";
 
 import AppointmentModal from "./AppointmentModal";
@@ -499,21 +495,6 @@ function Appointments() {
 
   return (
     <div className="appointments-page">
-      <div className="appointments-bg-overlay" />
-
-      {/* 3D Floating Appointment Scheduling & Consultation Particles */}
-      <div className="appointments-particle appt-part-1" title="Calendar Scheduling">
-        <Calendar size={28} />
-      </div>
-      <div className="appointments-particle appt-part-2" title="Time Slot Queue">
-        <Clock size={26} />
-      </div>
-      <div className="appointments-particle appt-part-3" title="Doctor Consultation">
-        <Stethoscope size={26} />
-      </div>
-      <div className="appointments-particle appt-part-4" title="Appointment Status">
-        <CalendarCheck2 size={26} />
-      </div>
 
       {/* HEADER */}
 
@@ -693,21 +674,21 @@ function Appointments() {
 
           <div className="appointments-thead">
 
-            <span className="appointments-sno-head">S.No.</span>
+            <span>S.No.</span>
 
-            <span className="appointments-patient-head">Patient</span>
+            <span>Patient</span>
 
-            <span className="appointments-doctor-head">Doctor</span>
+            <span>Doctor</span>
 
-            <span className="appointments-schedule-head">Schedule</span>
+            <span>Schedule</span>
 
-            <span className="appointments-branch-head">Branch</span>
+            <span>Branch</span>
 
-            <span className="appointments-complaint-head">Complaint</span>
+            <span>Complaint</span>
 
-            <span className="appointments-status-head">Status</span>
+            <span>Status</span>
 
-            <span className="appointments-actions-head">Actions</span>
+            <span>Actions</span>
 
           </div>
 
@@ -731,7 +712,7 @@ function Appointments() {
                 className="appointments-row"
                 key={item.appointmentId}
               >
-                <span className="appointments-sno-cell">{index + 1}</span>
+                <span>{index + 1}</span>
 
                 {/* PATIENT */}
 
@@ -764,7 +745,7 @@ function Appointments() {
 
                 {/* DOCTOR */}
 
-                <div className="appointments-doctor-cell appointments-cell-stack">
+                <div className="appointments-cell-stack">
 
                   <b>
                     Dr. {item.doctor?.name}
@@ -778,7 +759,7 @@ function Appointments() {
 
                 {/* SCHEDULE */}
 
-                <div className="appointments-schedule-cell appointments-cell-stack">
+                <div className="appointments-cell-stack">
 
                   <b>
                     {item.displayDate}
@@ -794,26 +775,29 @@ function Appointments() {
                   {getAppointmentBranchName(item, branchNameById)}
                 </span>
 
+                
+
                 {/* COMPLAINT */}
 
-                <span className="appointments-complaint-cell appointments-complaint">
-                  {item.chiefComplaints || "-"}
+                <span className="appointments-complaint">
+                  {item.chiefComplaints}
                 </span>
 
                 {/* STATUS */}
 
-                <div className="appointments-status-cell">
-                  <span
-                    className={`appointments-status-badge ${getStatusClass(
-                      item.status
-                    )}`}
-                  >
-                    <span className="appointments-status-dot"></span>
-                    {item.status}
-                  </span>
-                </div>
+                <span
+                  className={`appointments-status-badge ${getStatusClass(
+                    item.status
+                  )}`}
+                >
 
-                <div className="appointments-actions-cell appointments-actions">
+                  <span className="appointments-status-dot"></span>
+
+                  {item.status}
+
+                </span>
+
+                <div className="appointments-actions">
                   <ActionsGroup
                     rowId={item.appointmentId}
                     activeActionState={activeActionState}

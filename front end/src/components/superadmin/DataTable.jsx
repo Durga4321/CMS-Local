@@ -25,27 +25,7 @@ function DataTable({
     <div className={`sa-table${className ? ` ${className}` : ""}`}>
       <div className="sa-table-head" style={{ gridTemplateColumns }}>
         {columns.map((column) => (
-          <span
-            key={column.key}
-            className={
-              column.key === "actions" ||
-              String(column.cellClassName || "").includes("actions") ||
-              String(column.label || "").toLowerCase() === "actions"
-                ? "sa-actions-header"
-                : column.key === "status" ||
-                  String(column.cellClassName || "").includes("status") ||
-                  String(column.label || "").toLowerCase() === "status"
-                ? "sa-status-head"
-                : column.key === "sno" ||
-                  column.key === "index" ||
-                  String(column.label || "").toLowerCase() === "s.no." ||
-                  String(column.label || "").toLowerCase() === "s.no"
-                ? "sa-sno-head"
-                : ""
-            }
-          >
-            {column.label}
-          </span>
+          <span key={column.key}>{column.label}</span>
         ))}
       </div>
 
@@ -64,18 +44,7 @@ function DataTable({
           >
             {columns.map((column) => (
               <div
-                className={`sa-table-cell${column.cellClassName ? ` ${column.cellClassName}` : ""}${
-                  column.key === "status" ||
-                  String(column.cellClassName || "").includes("status") ||
-                  String(column.label || "").toLowerCase() === "status"
-                    ? " sa-table-cell--status"
-                    : column.key === "sno" ||
-                      column.key === "index" ||
-                      String(column.label || "").toLowerCase() === "s.no." ||
-                      String(column.label || "").toLowerCase() === "s.no"
-                    ? " sa-table-cell--sno"
-                    : ""
-                }`}
+                className={`sa-table-cell${column.cellClassName ? ` ${column.cellClassName}` : ""}`}
                 key={column.key}
               >
                 {column.render ? column.render(row, rowIndexOffset + index) : row[column.key] || "-"}

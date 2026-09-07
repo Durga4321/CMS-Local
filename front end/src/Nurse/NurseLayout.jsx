@@ -4,7 +4,6 @@ import NurseSidebar from "./NurseSidebar";
 import NurseTopbar from "./NurseTopbar";
 import { getNurseProfile, isNurseSession } from "./nurseSession";
 import "../Recepitionist/Receptionist.css";
-import "./Nurse.css";
 
 const TITLES = {
   "/nurse/dashboard": "Nurse Dashboard",
@@ -12,6 +11,7 @@ const TITLES = {
   "/nurse/medical-history": "Medical History",
   "/nurse/appointments/online": "Online Bookings",
   "/nurse/appointments/offline": "Offline Bookings",
+  "/nurse/consultant-room": "Consultant Room",
 };
 
 function NurseLayout() {
@@ -36,6 +36,7 @@ function NurseLayout() {
         sectionLabel="Nurse Desk"
         profile={getNurseProfile()}
         showBookAppointment={false}
+        showConsultantRoom
       />
       <div className="rc-main">
         <NurseTopbar title={title} onMenu={() => setSidebarOpen(true)} areaLabel="Nurse" roleType="nurse" />

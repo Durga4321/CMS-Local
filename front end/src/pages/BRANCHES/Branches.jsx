@@ -626,25 +626,6 @@ function Branches() {
 
   return (
     <div className="branches-page">
-      {/* 3D Hospital Theme Background Animated Overlays */}
-      <div className="branches-bg-overlay" />
-      <div className="branches-floating-particle p1" />
-      <div className="branches-floating-particle p2" />
-      <div className="branches-floating-particle p3" />
-      <div className="branches-ecg-wave">
-        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="branches-ecg-svg">
-          <path
-            d="M0 60 L300 60 L310 40 L320 80 L330 20 L345 100 L355 60 L370 60 L400 60 L700 60 L710 35 L720 85 L730 15 L745 105 L755 60 L770 60 L1200 60"
-            fill="none"
-            stroke="rgba(99, 102, 241, 0.22)"
-            strokeWidth="2.5"
-            strokeDasharray="1200"
-            strokeDashoffset="1200"
-            className="ecg-path"
-          />
-        </svg>
-      </div>
-
       <div className="branches-header">
         <div>
           <h2>Branches</h2>
@@ -702,11 +683,11 @@ function Branches() {
 
       <div className="branches-table">
         <div className="branches-thead">
-          <span className="branches-sno-head">S.No.</span>
-          <span className="branches-name-head">Branch</span>
-          <span className="branches-contact-head">Contact</span>
-          <span className="branches-location-head">Location</span>
-          <span className="branches-status-head">Status</span>
+          <span>S.No.</span>
+          <span>Branch</span>
+          <span>Contact</span>
+          <span>Location</span>
+          <span>Status</span>
           <span className="branches-actions-heading">Actions</span>
         </div>
 
@@ -722,7 +703,7 @@ function Branches() {
 
           return (
             <div className="branches-row" key={branchId || `${getBranchName(branch)}-${index}`}>
-              <span className="branches-sno-cell">{index + 1}</span>
+              <span>{index + 1}</span>
               <div className="branches-name-cell">
                 <div className="branches-avatar">
                   <MapPin size={17} />
@@ -732,12 +713,12 @@ function Branches() {
                   <span>ID: {branchId || "-"}</span>
                 </div>
               </div>
-              <div className="branches-contact-cell">
+              <div className="branches-cell">
                 <b>{readBranchField(branch, "phone", "Phone") || "-"}</b>
                 <span>{readBranchField(branch, "email", "Email") || "-"}</span>
               </div>
-              <span className="branches-location-cell">{formatBranchAddress(branch)}</span>
-              <div className="branches-status-cell">
+              <span className="branches-cell">{formatBranchAddress(branch)}</span>
+              <span className="branches-cell">
                 <span
                   className={`branches-status ${
                     isActive ? "branches-status-active" : "branches-status-inactive"
@@ -745,7 +726,7 @@ function Branches() {
                 >
                   {isUpdating ? "Updating..." : isActive ? "Active" : "Inactive"}
                 </span>
-              </div>
+              </span>
               <div className="branches-actions">
                 <ActionsGroup
                   rowId={branchId}

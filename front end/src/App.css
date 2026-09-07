@@ -2450,23 +2450,6 @@
   white-space: nowrap;
 }
 
-.pp-account-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 999px;
-  transition: all 0.2s ease;
-}
-
-.pp-account-toggle:hover,
-.pp-account-toggle.open {
-  background: rgba(244, 63, 94, 0.08);
-}
-
 .pp-account-dropdown {
   position: absolute;
   right: 0;
@@ -2479,21 +2462,6 @@
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 24px 52px rgba(15, 23, 42, 0.18);
   z-index: 2000;
-}
-
-.pp-account-dropdown.rc-blood-profile-dropdown {
-  border: 1.5px solid rgba(244, 63, 94, 0.3);
-  box-shadow: 0 20px 48px rgba(225, 29, 72, 0.16);
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(12px);
-}
-
-.pp-account-menu-flow {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-left: 14px;
 }
 
 .pp-account-summary {
@@ -2559,8 +2527,9 @@
 
 .pp-account-item {
   width: 100%;
-  min-height: 52px;
-  display: flex;
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 18px;
   align-items: center;
   gap: 12px;
   border: 0;
@@ -2574,91 +2543,44 @@
   transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.pp-account-menu-copy {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
+.pp-account-menu-icon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #cdeef0;
+  border-radius: 14px;
+  background: #ecfeff;
+  color: #07354d;
 }
 
-.pp-account-menu-copy b {
-  font-size: 13.5px;
-  font-weight: 800;
+.pp-account-menu-icon svg {
+  width: 21px;
+  height: 21px;
 }
 
-.pp-account-menu-copy small {
-  font-size: 11px;
-  font-weight: 600;
+.pp-account-menu-icon.danger {
+  border-color: #ffd6d6;
+  background: #fff2f2;
+  color: #e0342f;
 }
 
-.pp-account-menu-arrow {
-  color: #94a3b8;
-  margin-left: auto;
-  flex-shrink: 0;
+.pp-account-item:hover {
+  background: #f0fdfa;
+  transform: translateX(2px);
+  box-shadow: inset 3px 0 0 #0f9d9d;
 }
 
-.pp-account-item.rc-blood-drop-item {
-  width: 100% !important;
-  min-height: 48px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  padding: 6px 14px 6px 6px !important;
-  border-radius: 999px !important;
-  background: linear-gradient(90deg, #fff0f3 0%, #ffe4e6 100%) !important;
-  border: 1.5px solid #ffccd5 !important;
-  box-shadow: 0 3px 12px rgba(225, 29, 72, 0.08) !important;
-  cursor: pointer !important;
-  text-decoration: none !important;
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  animation: bloodCardCascade 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+.pp-account-item--logout {
+  grid-template-columns: 48px minmax(0, 1fr);
+  margin-top: 10px;
+  background: #fff1f2;
+  color: #c72520;
 }
 
-.pp-account-item.rc-blood-drop-item:nth-child(1) { animation-delay: 0.05s; }
-.pp-account-item.rc-blood-drop-item:nth-child(2) { animation-delay: 0.14s; }
-.pp-account-item.rc-blood-drop-item:nth-child(3) { animation-delay: 0.23s; }
-
-.pp-account-item.rc-blood-drop-item:hover {
-  background: linear-gradient(90deg, #ea580c 0%, #f97316 60%, #fb923c 100%) !important;
-  border-color: #f97316 !important;
-  box-shadow: 0 8px 24px rgba(234, 88, 12, 0.45) !important;
-  transform: translateX(6px) scale(1.02) !important;
-}
-
-.pp-account-item.rc-blood-drop-item:hover .rc-blood-drop-text b,
-.pp-account-item.rc-blood-drop-item:hover .rc-blood-drop-text small {
-  color: #ffffff !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-}
-
-.pp-account-item.rc-blood-drop-item:hover .rc-blood-drop-badge {
-  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #ffe4e6 55%, #fecdd3 100%) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16) !important;
-}
-
-.pp-account-item.rc-blood-drop-item:hover .rc-blood-drop-inner-icon {
-  color: #e11d48 !important;
-}
-
-.pp-account-item.rc-blood-drop-item:hover .pp-account-menu-arrow {
-  color: #ffffff !important;
-}
-
-.pp-account-item.rc-blood-drop-item.danger {
-  background: linear-gradient(90deg, #fff1f2 0%, #ffe4e6 100%) !important;
-  border-color: #fca5a5 !important;
-}
-
-.pp-account-item.rc-blood-drop-item.danger:hover {
-  background: linear-gradient(90deg, #dc2626 0%, #ef4444 60%, #f87171 100%) !important;
-  border-color: #ef4444 !important;
-  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.45) !important;
-  color: #ffffff !important;
-}
-
-.pp-account-item.rc-blood-drop-item.danger:hover .rc-blood-drop-text b,
-.pp-account-item.rc-blood-drop-item.danger:hover .rc-blood-drop-text small {
-  color: #ffffff !important;
+.pp-account-item--logout:hover {
+  background: #ffe4e6;
 }
 
 .pp-account-menu-copy {

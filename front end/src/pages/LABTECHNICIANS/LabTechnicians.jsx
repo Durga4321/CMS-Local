@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle, Eye, Pencil, Plus, RefreshCw, Search, ToggleLeft, ToggleRight, Trash2, X, Microscope, FlaskConical, TestTube2, Dna } from "lucide-react";
+import { CheckCircle, Eye, Pencil, Plus, RefreshCw, Search, ToggleLeft, ToggleRight, Trash2, X } from "lucide-react";
 import { ActionsGroup } from "../../components/ActionsGroup";
 import "../RECEPTIONISTS/Receptionists.css";
 import "./LabTechnicians.css";
@@ -306,12 +306,7 @@ function LabTechnicians() {
   };
 
   return (
-    <div className="receptionists-page lab-technicians-page">
-      <div className="lab-bg-overlay" />
-      <div className="lab-equipment-particle lab-part-1" title="Digital Microscope"><Microscope size={28} /></div>
-      <div className="lab-equipment-particle lab-part-2" title="Chemical Reagent Flask"><FlaskConical size={26} /></div>
-      <div className="lab-equipment-particle lab-part-3" title="Diagnostic Test Tubes"><TestTube2 size={26} /></div>
-      <div className="lab-equipment-particle lab-part-4" title="Genetic & Pathology Testing"><Dna size={26} /></div>
+    <div className="receptionists-page">
       <div className="receptionists-header">
         <div>
           <h2>Lab Technicians</h2>
@@ -322,66 +317,63 @@ function LabTechnicians() {
           <button type="button" className="receptionists-primary-button" onClick={() => openModal()} disabled={!canCreate}><Plus size={16} /> Add Lab Technician</button>
         </div>
       </div>
-
-      <div className="lab-tech-table-card">
-        <div className="receptionists-toolbar">
-          <label className="receptionists-search"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search lab technicians..." /></label>
+      <div className="receptionists-toolbar">
+        <label className="receptionists-search"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search lab technicians..." /></label>
+      </div>
+      <div className="receptionists-table">
+        <div className="receptionists-thead">
+          <span>S.No.</span>
+          <span>Name</span>
+          <span>Branch</span>
+          <span>Email</span>
+          <span>Phone</span>
+          <span>Status</span>
+          <span>Actions</span>
         </div>
-        <div className="receptionists-table">
-          <div className="receptionists-thead">
-            <span>S.No.</span>
-            <span>Name</span>
-            <span>Branch</span>
-            <span>Email</span>
-            <span>Phone</span>
-            <span className="receptionists-status-head">Status</span>
-            <span className="receptionists-actions-head">Actions</span>
-          </div>
-          {!loading && filteredTechnicians.length === 0 ? (
-            <div className="receptionists-empty">No lab technicians found.</div>
-          ) : null}
-          {filteredTechnicians.map((tech, index) => {
-            const name = getLabTechName(tech);
-            const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "LT";
-            const status = getLabTechStatus(tech);
-            return (
-              <div className="receptionists-row" key={getLabTechId(tech) || `${name}-${index}`}>
-                <span>{index + 1}</span>
-                <div className="receptionists-name-cell">
-                  <span className="receptionists-avatar"><span>{initials}</span></span>
-                  <span className="lab-tech-name-highlight">
-                    <b>{name}</b>
-                  </span>
-                </div>
-                <span className="receptionists-cell">{getLabTechBranchName(tech, branchNameById)}</span>
-                <span className="receptionists-cell receptionists-email">{getLabTechEmail(tech)}</span>
-                <span className="receptionists-cell">{getLabTechPhone(tech)}</span>
-                <span className="receptionists-cell receptionists-status-cell">
-                  <span className={`receptionists-status ${String(status).toLowerCase().includes("inactive") ? "receptionists-status-inactive" : "receptionists-status-active"}`}>
-                    {status}
-                  </span>
+        {!loading && filteredTechnicians.length === 0 ? (
+          <div className="receptionists-empty">No lab technicians found.</div>
+        ) : null}
+        {filteredTechnicians.map((tech, index) => {
+          const name = getLabTechName(tech);
+          const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "LT";
+          const status = getLabTechStatus(tech);
+          return (
+            <div className="receptionists-row" key={getLabTechId(tech) || `${name}-${index}`}>
+              <span>{index + 1}</span>
+              <div className="receptionists-name-cell">
+                <span className="receptionists-avatar"><span>{initials}</span></span>
+                <span>
+                  <b>{name}</b>
                 </span>
-                <div className="receptionists-actions">
-                  <ActionsGroup
-                    rowId={getLabTechId(tech)}
-                    activeActionState={activeActionState}
-                    setActiveActionState={setActiveActionState}
-                    canView={true}
-                    canEdit={canEdit}
-                    canStatus={canEdit}
-                    canDelete={canDelete}
-                    statusChecked={!String(status).toLowerCase().includes("inactive")}
-                    statusTitle={String(status).toLowerCase().includes("inactive") ? "Activate lab technician" : "Deactivate lab technician"}
-                    onView={() => window.alert(`Lab Technician: ${name || "-"}\nBranch: ${getLabTechBranchName(tech, branchNameById) || "-"}\nEmail: ${getLabTechEmail(tech) || "-"}\nPhone: ${getLabTechPhone(tech) || "-"}\nStatus: ${status || "-"}`)}
-                    onEdit={() => openModal(tech)}
-                    onStatus={() => toggleTechnicianStatus(tech)}
-                    onDelete={() => deleteTechnician(tech)}
-                  />
-                </div>
               </div>
-            );
-          })}
-        </div>
+              <span className="receptionists-cell">{getLabTechBranchName(tech, branchNameById)}</span>
+              <span className="receptionists-cell receptionists-email">{getLabTechEmail(tech)}</span>
+              <span className="receptionists-cell">{getLabTechPhone(tech)}</span>
+              <span className="receptionists-cell receptionists-status-cell">
+                <span className={`receptionists-status ${String(status).toLowerCase().includes("inactive") ? "receptionists-status-inactive" : "receptionists-status-active"}`}>
+                  {status}
+                </span>
+              </span>
+              <div className="receptionists-actions">
+                <ActionsGroup
+                  rowId={getLabTechId(tech)}
+                  activeActionState={activeActionState}
+                  setActiveActionState={setActiveActionState}
+                  canView={true}
+                  canEdit={canEdit}
+                  canStatus={canEdit}
+                  canDelete={canDelete}
+                  statusChecked={!String(status).toLowerCase().includes("inactive")}
+                  statusTitle={String(status).toLowerCase().includes("inactive") ? "Activate lab technician" : "Deactivate lab technician"}
+                  onView={() => window.alert(`Lab Technician: ${name || "-"}\nBranch: ${getLabTechBranchName(tech, branchNameById) || "-"}\nEmail: ${getLabTechEmail(tech) || "-"}\nPhone: ${getLabTechPhone(tech) || "-"}\nStatus: ${status || "-"}`)}
+                  onEdit={() => openModal(tech)}
+                  onStatus={() => toggleTechnicianStatus(tech)}
+                  onDelete={() => deleteTechnician(tech)}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
       {modalOpen ? (
         <div className="receptionists-modal-overlay" onClick={closeModal}>

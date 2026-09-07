@@ -8,29 +8,23 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: 256px;
+  margin-left: 248px;
   min-width: 0;
   min-height: 100vh;
-  transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.main.collapsed,
-.layout.sidebar-collapsed .main {
-  margin-left: 84px;
 }
 
 .content {
   flex: 1;
-  padding: 0;
+  padding: var(--space-4, 16px);
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
 }
 
 @media (max-width: 768px) {
-  .main,
-  .main.collapsed,
-  .layout.sidebar-collapsed .main {
+  .main {
     margin-left: 0;
+  }
+
+  .content {
+    padding: 12px;
   }
 }

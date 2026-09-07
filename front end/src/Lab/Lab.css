@@ -150,23 +150,20 @@
   background: #0f9d9d;
 }
 
-.lab-table .rc-table-head span.lab-head-actions,
-.lab-table .rc-table-head span.text-center,
-.lab-table .rc-table-row span.text-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  width: 100%;
+.lab-table .rc-table-head,
+.lab-table .rc-table-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.lab-table .rc-table-head:has(span:nth-child(5)),
+.lab-table .rc-table-row:has(span:nth-child(5)) {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) 150px;
 }
 
 .lab-row-actions {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  box-sizing: border-box;
+  gap: 7px;
 }
 
 .lab-row-actions button {

@@ -39,15 +39,14 @@
   right: 28px;
   min-width: 380px;
   width: max-content;
-  max-width: 440px;
-  max-height: 480px;
-  border-radius: 22px;
+  max-width: 420px;
+  max-height: 440px;
+  border-radius: 16px;
   background: #ffffff;
-  box-shadow: 0 20px 48px -10px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(148, 163, 184, 0.2);
+  box-shadow: 0 18px 54px rgba(15, 23, 42, 0.16);
+  border: 1px solid #e2e8f0;
   overflow: hidden;
   z-index: 9999;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
 }
 
 .notification-dropdown-header {
@@ -55,7 +54,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 20px;
+  padding: 16px 18px;
   border-bottom: 1px solid #e5e7eb;
   background: #f8fafc;
 }

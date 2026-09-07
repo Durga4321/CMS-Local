@@ -1,24 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import {
-  Activity,
   Calendar,
   CheckCircle,
   Clock,
   Eye,
   FileText,
-  Filter,
-  HeartPulse,
   Play,
   RefreshCw,
   Search,
-  Sparkles,
-  Stethoscope,
   Timer,
   X,
 } from "lucide-react";
 import "./DoctorDashboard.css";
-import HumanHeartBleedingBackground from "../../components/HumanHeartBleedingBackground";
 import { apiUrl } from "../../config/api";
 import {
   filterByLoggedInDoctor,
@@ -270,49 +264,16 @@ function DoctorDashboard() {
     return () => window.removeEventListener("doctorBranchChanged", handleBranchChanged);
   }, [fetchDashboard]);
 
-  const [statusFilter, setStatusFilter] = useState("all");
-
   const patients = useMemo(
     () => normalizeQueue(dashboard?.todayQueue),
     [dashboard]
   );
 
-  const waitingCount = useMemo(
-    () => patients.filter((p) => getStatusKey(p.status) === "waiting").length,
-    [patients]
-  );
-  const inProgressCount = useMemo(
-    () => patients.filter((p) => {
-      const key = getStatusKey(p.status);
-      return key === "inprogress" || key === "in progress";
-    }).length,
-    [patients]
-  );
-  const completedCount = useMemo(
-    () => patients.filter((p) => {
-      const key = getStatusKey(p.status);
-      return key === "completed" || key === "prescriptionadded" || key === "prescription added";
-    }).length,
-    [patients]
-  );
-
   const filteredPatients = useMemo(() => {
-    let list = patients;
-
-    if (statusFilter !== "all") {
-      list = list.filter((patient) => {
-        const key = getStatusKey(patient.status);
-        if (statusFilter === "waiting") return key === "waiting";
-        if (statusFilter === "inprogress") return key === "inprogress" || key === "in progress";
-        if (statusFilter === "completed") return key === "completed" || key === "prescriptionadded" || key === "prescription added";
-        return true;
-      });
-    }
-
     const query = search.trim().toLowerCase();
-    if (!query) return list;
+    if (!query) return patients;
 
-    return list.filter((patient) =>
+    return patients.filter((patient) =>
       [
         patient.tokenNumber,
         patient.patientName,
@@ -325,48 +286,40 @@ function DoctorDashboard() {
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(query))
     );
-  }, [patients, search, statusFilter]);
+  }, [patients, search]);
 
   const stats = [
     {
       id: "appt",
       label: "Total Appointments",
       value: dashboard?.totalAppointments ?? 0,
-      sub: "Scheduled today",
+      sub: "Today",
       icon: Calendar,
       color: "blue",
-      badge: "REGISTRY",
-      trend: "Daily Intake",
     },
     {
       id: "waiting",
-      label: "Waiting Queue",
+      label: "Waiting",
       value: dashboard?.waiting ?? 0,
-      sub: "Awaiting examination",
+      sub: "Awaiting consultation",
       icon: Clock,
       color: "amber",
-      badge: "TRIAGE",
-      trend: "Priority Triage",
     },
     {
       id: "progress",
-      label: "In Consultation",
+      label: "In Progress",
       value: dashboard?.inProgress ?? 0,
-      sub: "Active clinical examination",
+      sub: "Active consultations",
       icon: Timer,
       color: "violet",
-      badge: "EXAM ROOM",
-      trend: "Active Exam",
     },
     {
       id: "done",
-      label: "Completed Care",
+      label: "Completed",
       value: dashboard?.completed ?? 0,
       sub: "Finished today",
       icon: CheckCircle,
       color: "green",
-      badge: "DISCHARGED",
-      trend: "Consulted",
     },
   ];
 
@@ -439,9 +392,6 @@ function DoctorDashboard() {
 
   return (
     <div className="dd-page">
-      {/* 3D Anatomical Human Heart & Bleeding Blood Animation Background */}
-      <HumanHeartBleedingBackground />
-
       {error ? (
         <div className="dd-alert">
           <span>{error}</span>
@@ -451,146 +401,54 @@ function DoctorDashboard() {
         </div>
       ) : null}
 
-      {/* Medical Telemetry Banner */}
-      <div className="dd-header-banner">
-        <div className="dd-header-copy">
-          <div className="dd-header-badge">
-            <Activity size={14} className="dd-pulse-icon" />
-            <span>CLINICAL TRIAGE CONSOLE</span>
-          </div>
-          <h2 className="dd-header-title">Doctor Workstation</h2>
-          <p className="dd-header-subtitle">Real-time patient triage, consultation queue, and diagnostic telemetry</p>
-        </div>
-        <div className="dd-header-telemetry">
-          <div className="dd-telemetry-pill">
-            <span className="dd-telemetry-led" />
-            <span>LIVE SYSTEM SYNC</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Medical Instrument Telemetry Cards */}
       <div className="dd-stats">
-        {stats.map(({ id, label, value, sub, icon: Icon, color, badge, trend }) => (
+        {stats.map(({ id, label, value, sub, icon: Icon, color }) => (
           <div key={id} className={`dd-stat-card dd-stat-card--${color}`}>
-            <div className="dd-stat-top">
-              <div className={`dd-stat-icon-bezel dd-stat-icon-bezel--${color}`}>
-                <Icon size={22} className="dd-stat-icon" />
-              </div>
-              <span className={`dd-stat-badge dd-stat-badge--${color}`}>{badge}</span>
+            <div className={`dd-stat-icon dd-stat-icon--${color}`}>
+              <Icon size={22} />
             </div>
             <div className="dd-stat-body">
               <p className="dd-stat-label">{label}</p>
-              <div className="dd-stat-value-row">
-                <h2 className="dd-stat-value">{value}</h2>
-                <span className={`dd-stat-trend dd-stat-trend--${color}`}>{trend}</span>
-              </div>
+              <h2 className="dd-stat-value">{value}</h2>
               <p className="dd-stat-sub">{sub}</p>
-            </div>
-            {/* Medical Telemetry Waveform */}
-            <div className="dd-stat-wave-wrap" aria-hidden="true">
-              <svg className={`dd-stat-wave dd-stat-wave--${color}`} viewBox="0 0 160 32" fill="none">
-                <path
-                  d="M0 20 Q 20 20, 35 20 L 45 8 L 53 28 L 61 4 L 69 22 L 77 20 Q 115 20, 160 20"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Main Queue Console Card */}
       <div className="dd-queue-card">
         <div className="dd-queue-header">
-          <div className="dd-queue-title-wrap">
-            <h3 className="dd-queue-title">Today's Patient Queue</h3>
-            <span className="dd-queue-count-pill">{filteredPatients.length} Active</span>
-          </div>
+          <h3 className="dd-queue-title">Today's Patient Queue</h3>
           <div className="dd-queue-tools">
             <div className="dd-search">
-              <Search size={14} className="dd-search-optic" />
+              <Search size={14} />
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search queue by name, token, ID..."
+                placeholder="Search queue..."
               />
-              {search ? (
-                <button
-                  type="button"
-                  className="dd-search-clear"
-                  onClick={() => setSearch("")}
-                  title="Clear search"
-                >
-                  <X size={12} />
-                </button>
-              ) : null}
             </div>
             <button
               className="dd-refresh-btn"
               type="button"
               onClick={() => fetchDashboard({ silent: true })}
               disabled={refreshing}
-              title="Recalibrate / Sync Patient Telemetry"
             >
               <RefreshCw size={14} className={refreshing ? "dd-spin" : ""} />
-              <span>{refreshing ? "Syncing..." : "Sync Queue"}</span>
+              {refreshing ? "Refreshing" : "Refresh"}
             </button>
           </div>
         </div>
 
-        {/* Quick Filter Dosage Capsules */}
-        <div className="dd-queue-filters" role="tablist" aria-label="Filter patient queue">
-          <button
-            type="button"
-            className={`dd-filter-capsule ${statusFilter === "all" ? "is-active" : ""}`}
-            onClick={() => setStatusFilter("all")}
-          >
-            <span className="dd-filter-dot dd-filter-dot--all" />
-            <span className="dd-filter-text">All Patients</span>
-            <span className="dd-filter-count">{patients.length}</span>
-          </button>
-          <button
-            type="button"
-            className={`dd-filter-capsule dd-filter-capsule--amber ${statusFilter === "waiting" ? "is-active" : ""}`}
-            onClick={() => setStatusFilter("waiting")}
-          >
-            <span className="dd-filter-dot dd-filter-dot--amber" />
-            <span className="dd-filter-text">Waiting</span>
-            <span className="dd-filter-count">{waitingCount}</span>
-          </button>
-          <button
-            type="button"
-            className={`dd-filter-capsule dd-filter-capsule--blue ${statusFilter === "inprogress" ? "is-active" : ""}`}
-            onClick={() => setStatusFilter("inprogress")}
-          >
-            <span className="dd-filter-dot dd-filter-dot--blue" />
-            <span className="dd-filter-text">In Progress</span>
-            <span className="dd-filter-count">{inProgressCount}</span>
-          </button>
-          <button
-            type="button"
-            className={`dd-filter-capsule dd-filter-capsule--green ${statusFilter === "completed" ? "is-active" : ""}`}
-            onClick={() => setStatusFilter("completed")}
-          >
-            <span className="dd-filter-dot dd-filter-dot--green" />
-            <span className="dd-filter-text">Completed</span>
-            <span className="dd-filter-count">{completedCount}</span>
-          </button>
-        </div>
-
         <div className="dd-table">
           <div className="dd-thead">
-            <span className="dd-sno-head">S.No.</span>
-            <span className="dd-token-head">Token No.</span>
+            <span>S.No.</span>
+            <span>Token No.</span>
             <span>Patient Name</span>
             <span>Age / Gender</span>
             <span>Time</span>
-            <span className="dd-status-head">Status</span>
-            <span className="dd-actions-head">Action</span>
+            <span>Status</span>
+            <span>Action</span>
           </div>
 
           {filteredPatients.length > 0 ? (
@@ -599,76 +457,48 @@ function DoctorDashboard() {
                 className="dd-row"
                 key={patient.appointmentId || patient.tokenNumber}
               >
-                <span className="dd-sno-cell">{index + 1}</span>
-                <span className="dd-token-cell">
-                  <span className="dd-token">{patient.tokenNumber}</span>
-                </span>
+                <span>{index + 1}</span>
+                <span className="dd-token">{patient.tokenNumber}</span>
                 <span className="dd-name">{patient.patientName}</span>
                 <span className="dd-age">{patient.ageGender}</span>
                 <span className="dd-time">{patient.time}</span>
-                <span className="dd-status-cell">
+                <span>
                   <span className={`dd-status ${getStatusClass(patient.status)}`}>
-                    <span className="dd-status-dot-indicator" />
                     {patient.status}
                   </span>
                 </span>
                 <span className="dd-actions">
                   <button
-                    className="dd-act-btn dd-act-btn--scope"
+                    className="dd-act-btn"
                     type="button"
-                    title="Diagnostic Scope: View Patient Record"
+                    title="View patient"
                     onClick={() => openPatient(patient)}
                     disabled={!patient.patientId}
                   >
                     <Eye size={15} />
                   </button>
                   <button
-                    className="dd-act-btn dd-act-btn--chart"
+                    className="dd-act-btn"
                     type="button"
-                    title="Clinical Chart: Consultation Notes"
+                    title="View notes"
                     onClick={() => openNotes(patient)}
                   >
                     <FileText size={15} />
                   </button>
                   <button
-                    className="dd-act-btn dd-act-btn--trigger"
+                    className="dd-act-btn"
                     type="button"
-                    title="Clinical Activator: Start Consultation"
+                    title="Start consultation"
                     onClick={() => startConsultation(patient)}
                     disabled={!canCreateConsultation}
                   >
-                    <Play size={13} fill="currentColor" />
+                    <Play size={15} />
                   </button>
                 </span>
               </div>
             ))
           ) : (
-            <div className="dd-empty-telemetry">
-              <div className="dd-empty-icon-wrap">
-                <Stethoscope size={36} className="dd-empty-stetho" />
-                <span className="dd-empty-radar-ring" />
-              </div>
-              <h4>No Patients in Selected Queue</h4>
-              <p>
-                {search
-                  ? `No patient records matched "${search}".`
-                  : statusFilter !== "all"
-                  ? `There are currently no patients in the "${statusFilter}" status category.`
-                  : "Today's queue is completely clear. Enjoy a breather or refresh for new intakes."}
-              </p>
-              {(search || statusFilter !== "all") && (
-                <button
-                  type="button"
-                  className="dd-empty-reset-btn"
-                  onClick={() => {
-                    setSearch("");
-                    setStatusFilter("all");
-                  }}
-                >
-                  Reset Filter & View All
-                </button>
-              )}
-            </div>
+            <div className="dd-empty-row">No patients match your search.</div>
           )}
         </div>
 
