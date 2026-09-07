@@ -10,7 +10,6 @@ import {
   X,
   Camera,
   RotateCw,
-  Activity,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AuthImage, {
@@ -1321,38 +1320,6 @@ function Doctors() {
 
   return (
     <div className="doctors-page">
-      {/* 3D Hospital & Blood Theme Background Animated Overlays */}
-      <div className="doctors-bg-overlay" />
-      <div className="doctors-blood-cell particle-blood-1" />
-      <div className="doctors-blood-cell particle-blood-2" />
-      <div className="doctors-blood-cell particle-blood-3" />
-      <div className="doctors-blood-cell particle-blood-4" />
-
-      {/* Screen Background Crimson Blood Heart Rate Pulse Wave */}
-      <div className="doctors-screen-ecg-bg">
-        <svg viewBox="0 0 1400 160" preserveAspectRatio="none" className="screen-ecg-svg">
-          <defs>
-            <linearGradient id="bloodEcgGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.85" />
-              <stop offset="50%" stopColor="#dc2626" stopOpacity="1" />
-              <stop offset="100%" stopColor="#e11d48" stopOpacity="0.85" />
-            </linearGradient>
-            <filter id="bloodGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-          </defs>
-          <path
-            d="M0,80 L300,80 L315,45 L330,120 L345,20 L365,140 L380,80 L400,80 L700,80 L715,45 L730,120 L745,20 L765,140 L780,80 L800,80 L1100,80 L1115,45 L1130,120 L1145,20 L1165,140 L1180,80 L1400,80"
-            fill="none"
-            stroke="url(#bloodEcgGradient)"
-            strokeWidth="3.5"
-            filter="url(#bloodGlow)"
-            className="screen-blood-ecg-path"
-          />
-        </svg>
-      </div>
-
       <div className="doctors-page-header">
         <div>
           <h2>Doctors</h2>
@@ -1485,17 +1452,6 @@ function Doctors() {
               <div className="doctor-card-inner">
                 <div className="doctor-card-face doctor-card-front">
                   <div className="doctor-card-corner" />
-                  <div className="doctor-card-ecg-bg">
-                    <svg viewBox="0 0 500 100" preserveAspectRatio="none" className="card-ecg-svg">
-                      <path
-                        d="M0,50 L100,50 L110,35 L120,70 L130,15 L145,85 L155,50 L170,50 L320,50 L330,35 L340,70 L350,15 L365,85 L375,50 L390,50 L500,50"
-                        fill="none"
-                        stroke="rgba(16, 185, 129, 0.4)"
-                        strokeWidth="2.8"
-                        className="card-ecg-path"
-                      />
-                    </svg>
-                  </div>
                   <button
                     type="button"
                     className="doctor-card-flip-btn"
@@ -1582,17 +1538,6 @@ function Doctors() {
                 </div>
 
                 <div className="doctor-card-face doctor-card-back">
-                  <div className="doctor-card-ecg-bg">
-                    <svg viewBox="0 0 500 100" preserveAspectRatio="none" className="card-ecg-svg">
-                      <path
-                        d="M0,50 L100,50 L110,35 L120,70 L130,15 L145,85 L155,50 L170,50 L320,50 L330,35 L340,70 L350,15 L365,85 L375,50 L390,50 L500,50"
-                        fill="none"
-                        stroke="rgba(16, 185, 129, 0.4)"
-                        strokeWidth="2.8"
-                        className="card-ecg-path"
-                      />
-                    </svg>
-                  </div>
                   <button
                     type="button"
                     className="doctor-card-flip-btn"

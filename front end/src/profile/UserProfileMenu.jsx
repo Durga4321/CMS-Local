@@ -1,10 +1,9 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Activity, CalendarHeart, KeyRound, ListChecks, LogOut, Syringe, UserRound } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronRight, KeyRound, LogOut, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getInitials, getRoleProfile, logoutAndClearSessions } from "./sessionProfile";
 import { apiUrl } from "../config/api";
 import { getAuthToken, getLoggedInDoctor } from "../doctors/utils/doctorSession";
-import { DropdownMenu, DropdownItem } from "../components/dropdown";
 import "./UserProfile.css";
 
 const parseList = (data) => {
@@ -53,9 +52,10 @@ const rememberDoctorBranch = (branch = {}) => {
   );
 };
 
-export function UserProfileMenu({ roleType = "admin" }) {
+function UserProfileMenu({ roleType = "admin" }) {
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
+  const wrapRef = useRef(null);
+  const [open, setOpen] = useState(false);
   const [branchOptions, setBranchOptions] = useState([]);
   const [activeBranchId, setActiveBranchId] = useState(
     String(localStorage.getItem("doctorBranchId") || localStorage.getItem("branchId") || "").trim()
@@ -63,8 +63,13 @@ export function UserProfileMenu({ roleType = "admin" }) {
   const [profileTick, setProfileTick] = useState(0);
   const profile = getRoleProfile(roleType);
 
-  const handleOpenChange = useCallback((open) => {
-    setIsOpen(open);
+  useEffect(() => {
+    const close = (event) => {
+      if (!wrapRef.current?.contains(event.target)) setOpen(false);
+    };
+
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
   }, []);
 
   useEffect(() => {
@@ -123,24 +128,14 @@ export function UserProfileMenu({ roleType = "admin" }) {
     };
   }, [roleType]);
 
-  // 1. My Profile Navigation: Closes dropdown and navigates smoothly
-  const handleProfileNavigation = () => {
-    handleOpenChange(false);
-    navigate(profile.profilePath);
-  };
-
-  // 2. Change Password Navigation: Closes dropdown and navigates smoothly
-  const handleChangePasswordNavigation = () => {
-    handleOpenChange(false);
-    navigate(profile.passwordPath);
-  };
-
-  // 3. Logout Flow: Closes dropdown, clears all session tokens, logs out from module and redirects to login
-  const handleLogoutClick = async (e) => {
-    if (e?.stopPropagation) e.stopPropagation();
-    handleOpenChange(false);
+  const logout = async () => {
     await logoutAndClearSessions(roleType);
     navigate("/login", { replace: true });
+  };
+
+  const goTo = (path) => {
+    setOpen(false);
+    navigate(path);
   };
 
   const handleBranchChange = (event) => {
@@ -156,135 +151,84 @@ export function UserProfileMenu({ roleType = "admin" }) {
   void profileTick;
 
   return (
-    <>
-      <DropdownMenu
-        isOpen={isOpen}
-        onOpenChange={handleOpenChange}
-        syringeMode={true}
-        placement="bottom-end"
-        variant="light"
-        ariaLabel="User Profile Menu"
-        trigger={({ toggle }) => (
-          <button
-            className={`user-profile-chip ${isOpen ? "is-open" : ""}`}
-            type="button"
-            onClick={toggle}
-            title={`${profile.name} • ${profile.email}`}
-            aria-expanded={isOpen}
-            aria-haspopup="true"
-          >
-            {/* Avatar Shell with Online Indicator */}
-            <span className="user-profile-avatar-shell">
-              <span className="user-profile-avatar">
-                {getInitials(profile.name || profile.email)}
-              </span>
-              <span className="user-profile-online-dot" />
-            </span>
+    <div className="user-profile-wrap" ref={wrapRef}>
+      <button
+        className={`user-profile-chip${open ? " open" : ""}`}
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        title={`${profile.name} ${profile.email}`.trim()}
+      >
+        <span className="user-profile-avatar-shell">
+          <span className="user-profile-avatar">{getInitials(profile.name || profile.email)}</span>
+          <span className="user-profile-online-dot" />
+        </span>
+        <span className="user-profile-copy">
+          <strong>{profile.name}</strong>
+          <em>{profile.email}</em>
+        </span>
+        <ChevronDown size={18} className="user-profile-chevron" />
+      </button>
 
-            {/* Clean Vertically Stacked User Name & Role/Email */}
-            <span className="user-profile-copy">
+      {open ? (
+        <div className="user-profile-dropdown">
+          <div className="user-profile-head">
+            <span className="user-profile-head-avatar">{getInitials(profile.name || profile.email)}</span>
+            <span className="user-profile-head-copy">
               <strong>{profile.name}</strong>
-              <em>{profile.email}</em>
+              <span>{profile.email}</span>
+              <em>{profile.roleLabel}</em>
             </span>
-
-            {/* Syringe button capsule in topbar - Turns downwards when clicked/open */}
-            <span
-              className={`user-profile-syringe-btn ${isOpen ? "is-open" : ""}`}
-              title={isOpen ? "Click to close profile" : "Click to view profile options"}
-            >
-              <Syringe size={18} className="syringe-icon" />
-              <span className="syringe-needle-drop" />
+          </div>
+          {roleType === "doctor" && branchOptions.length > 0 ? (
+            <label className="user-profile-branch-switch">
+              <span>Branch</span>
+              {branchOptions.length > 1 ? (
+                <select value={activeBranchId} onChange={handleBranchChange}>
+                  {branchOptions.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <strong>{activeBranchName}</strong>
+              )}
+            </label>
+          ) : null}
+          <button type="button" onClick={() => goTo(profile.profilePath)}>
+            <span className="user-profile-menu-icon">
+              <UserRound size={20} />
+            </span>
+            <span className="user-profile-menu-copy">
+              <b>My Profile</b>
+              <small>View and edit your profile</small>
+            </span>
+            <ChevronRight size={17} className="user-profile-menu-arrow" />
+          </button>
+          <button type="button" onClick={() => goTo(profile.passwordPath)}>
+            <span className="user-profile-menu-icon">
+              <KeyRound size={20} />
+            </span>
+            <span className="user-profile-menu-copy">
+              <b>Change Password</b>
+              <small>Update your password</small>
+            </span>
+            <ChevronRight size={17} className="user-profile-menu-arrow" />
+          </button>
+          <button type="button" className="danger" onClick={logout}>
+            <span className="user-profile-menu-icon danger">
+              <LogOut size={20} />
+            </span>
+            <span className="user-profile-menu-copy">
+              <b>Logout</b>
+              <small>Sign out from your account</small>
             </span>
           </button>
-        )}
-      >
-        {/* 1. Profile Header: Interactive accessible button navigating to Profile Page */}
-        <button
-          type="button"
-          className="hc-profile-header"
-          onClick={handleProfileNavigation}
-          title="View Profile"
-          aria-label={`View Profile: ${profile.name}`}
-        >
-          <div className="hc-profile-avatar-box">
-            <div className="hc-profile-avatar-circle">
-              {getInitials(profile.name || profile.email)}
-            </div>
-          </div>
-
-          <div className="hc-profile-info">
-            <h4 className="hc-profile-name">{profile.name}</h4>
-            <span className="hc-profile-email">{profile.email}</span>
-            <span className="hc-profile-badge">{profile.roleLabel}</span>
-          </div>
-        </button>
-
-        {/* Doctor Branch Switcher (if applicable for doctor role) */}
-        {roleType === "doctor" && branchOptions.length > 0 && (
-          <div className="hc-branch-selector-pill">
-            <span className="hc-branch-pill-label">Branch:</span>
-            {branchOptions.length > 1 ? (
-              <select
-                value={activeBranchId}
-                onChange={handleBranchChange}
-                className="hc-branch-select-input"
-              >
-                {branchOptions.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <strong className="hc-branch-pill-name">{activeBranchName}</strong>
-            )}
-          </div>
-        )}
-
-        {/* 2. Menu Items: Exact same structure, all icons shaded with blood, 3 different colors */}
-        <div className="hc-dropdown-list" role="menu">
-          {/* Card 1: My Profile (Click anywhere on card navigates to profile) */}
-          <DropdownItem
-            variant="pink"
-            leftBadgeType="droplet"
-            dropletVariant="crimson"
-            icon={UserRound}
-            title="My Profile"
-            subtitle="View and edit your profile"
-            tag="ONLINE"
-            tagVariant="pink"
-            onClick={handleProfileNavigation}
-          />
-
-          {/* Card 2: Change Password (Click anywhere on card navigates to password management) */}
-          <DropdownItem
-            variant="orange"
-            leftBadgeType="droplet"
-            dropletVariant="crimson"
-            icon={KeyRound}
-            title="Change Password"
-            subtitle="Update your password"
-            tag="SECURITY"
-            tagVariant="white"
-            onClick={handleChangePasswordNavigation}
-          />
-
-          {/* Card 3: Logout (Click anywhere on card opens confirmation modal) */}
-          <DropdownItem
-            variant="danger"
-            leftBadgeType="droplet"
-            dropletVariant="crimson"
-            icon={LogOut}
-            title="Logout"
-            subtitle="Sign out from your account"
-            tag="EXIT"
-            tagVariant="white"
-            onClick={handleLogoutClick}
-          />
         </div>
-      </DropdownMenu>
-    </>
+      ) : null}
+    </div>
   );
 }
 
 export default UserProfileMenu;
+

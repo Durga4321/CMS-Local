@@ -7,11 +7,6 @@ import {
   Clock,
   ClipboardList,
   UserPlus,
-  Stethoscope,
-  Calendar,
-  Activity,
-  FileText,
-  ChevronRight,
 } from "lucide-react";
 import { formatToday, parseList, requestJson as defaultRequestJson } from "../receptionApi";
 import { getReceptionistScope, scopeReceptionistRecords } from "../receptionScope";
@@ -279,331 +274,105 @@ function ReceptionDashboard({
   const latest = appointments;
 
   return (
-    <section className="rc-page rc-dashboard-page">
-      {/* 3D Hospital Theme Animated Background Overlays */}
-      <div className="db-3d-bg-overlay" />
-      <div className="db-3d-floating-particle p1" />
-      <div className="db-3d-floating-particle p2" />
-      <div className="db-3d-floating-particle p3" />
-      <div className="db-3d-ecg-wave">
-        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="db-ecg-svg">
-          <path
-            d="M0 60 L300 60 L310 40 L320 80 L330 20 L345 100 L355 60 L370 60 L400 60 L700 60 L710 35 L720 85 L730 15 L745 105 L755 60 L770 60 L1200 60"
-            fill="none"
-            stroke="rgba(99, 102, 241, 0.25)"
-            strokeWidth="2.5"
-            strokeDasharray="1200"
-            strokeDashoffset="1200"
-            className="ecg-path"
-          />
-        </svg>
-      </div>
-
-      {/* PAGE HEADER */}
-      <div className="rc-dash-header">
+    <section className="rc-page">
+      <div className="rc-page-head">
         <div>
-          <h1 className="rc-dash-title">
-            {title} <span className="rc-wave-hand">👋</span>
-          </h1>
-          <p className="rc-dash-subtitle">
-            View today's schedule, waiting queue, and front desk actions.
-          </p>
+          <h2>{title}</h2>
+          <p>View today's schedule, waiting queue, and front desk actions.</p>
         </div>
         {!hideActions && (
-          <div className="rc-dash-head-actions">
-            <button
-              type="button"
-              className="rc-head-action-btn btn-secondary"
-              onClick={() => navigate("/reception/appointments")}
-              title="Book Appointment"
-            >
-              <CalendarPlus size={16} />
-              <span>Book Appointment</span>
+          <div className="rc-head-actions">
+            <button className="rc-btn" onClick={() => navigate("/reception/appointments")}>
+              <CalendarPlus size={16} /> Book Appointment
             </button>
-            <button
-              type="button"
-              className="rc-head-action-btn btn-primary"
-              onClick={() => navigate("/reception/patients")}
-              title="Add Patient"
-            >
-              <UserPlus size={16} />
-              <span>Add Patient</span>
+            <button className="rc-btn primary" onClick={() => navigate("/reception/patients")}>
+              <UserPlus size={16} /> Add Patient
             </button>
           </div>
         )}
       </div>
 
-      {/* TOP 3 RADIANT KPI STAT CARDS */}
-      <div className="rc-dash-kpi-grid">
-        {/* 1. TODAY'S APPOINTMENTS */}
-        <div
-          className="rc-dash-kpi-card card-blue-theme"
-          onClick={() => navigate("/reception/appointments")}
-          role="button"
-          tabIndex={0}
-          title="View today's appointments"
-        >
-          <div className="db-kpi-content-wrap">
-            <div className="db-kpi-header">
-              <div className="db-kpi-icon-box box-blue">
-                <CalendarCheck size={18} />
-              </div>
-              <span className="db-kpi-title">Today's Appointments</span>
-              <span className="rc-stat-period-pill">Today</span>
-            </div>
-            <div className="db-kpi-num">{stats.today}</div>
-            <div className="db-kpi-trend trend-neutral">
-              <span>● Scheduled Today</span>
-            </div>
-            <svg className="db-sparkline" viewBox="0 0 160 30" preserveAspectRatio="none">
-              <path d="M0 26 Q 25 22, 50 24 T 100 18 T 160 8" fill="none" stroke="#0284c7" strokeWidth="2.5" strokeLinecap="round" />
-              <circle cx="0" cy="26" r="3" fill="#0284c7" />
-              <circle cx="50" cy="24" r="3" fill="#0284c7" />
-              <circle cx="100" cy="18" r="3" fill="#0284c7" />
-              <circle cx="160" cy="8" r="3" fill="#0284c7" />
-            </svg>
+      <div className="rc-stat-grid">
+        <article className="rc-stat-card">
+          <div className="rc-stat-icon blue">
+            <CalendarCheck size={22} />
           </div>
-        </div>
-
-        {/* 2. WAITING PATIENTS */}
-        <div
-          className="rc-dash-kpi-card card-orange-theme"
-          onClick={() => navigate("/reception/appointments")}
-          role="button"
-          tabIndex={0}
-          title="View waiting patients"
-        >
-          <div className="db-kpi-content-wrap">
-            <div className="db-kpi-header">
-              <div className="db-kpi-icon-box box-orange">
-                <Clock size={18} />
-              </div>
-              <span className="db-kpi-title">Waiting Patients</span>
-              <span className="rc-stat-period-pill">Today</span>
-            </div>
-            <div className="db-kpi-num">{stats.waiting}</div>
-            <div className="db-kpi-trend trend-down">
-              <span>● In Waiting Room</span>
-            </div>
-            <svg className="db-sparkline" viewBox="0 0 160 30" preserveAspectRatio="none">
-              <path d="M0 24 Q 25 20, 50 24 T 100 18 T 160 10" fill="none" stroke="#f97316" strokeWidth="2.5" strokeLinecap="round" />
-              <circle cx="0" cy="24" r="3" fill="#f97316" />
-              <circle cx="50" cy="24" r="3" fill="#f97316" />
-              <circle cx="100" cy="18" r="3" fill="#f97316" />
-              <circle cx="160" cy="10" r="3" fill="#f97316" />
-            </svg>
+          <span>Today</span>
+          <p>Today's Appointments</p>
+          <strong>{stats.today}</strong>
+        </article>
+        <article className="rc-stat-card">
+          <div className="rc-stat-icon amber">
+            <Clock size={22} />
           </div>
-        </div>
-
-        {/* 3. COMPLETED APPOINTMENTS */}
-        <div
-          className="rc-dash-kpi-card card-green-theme"
-          onClick={() => navigate("/reception/appointments")}
-          role="button"
-          tabIndex={0}
-          title="View completed appointments"
-        >
-          <div className="db-kpi-content-wrap">
-            <div className="db-kpi-header">
-              <div className="db-kpi-icon-box box-green">
-                <CheckCircle size={18} />
-              </div>
-              <span className="db-kpi-title">Completed Appointments</span>
-              <span className="rc-stat-period-pill">Today</span>
-            </div>
-            <div className="db-kpi-num">{stats.completed}</div>
-            <div className="db-kpi-trend trend-up">
-              <span>✓ Consulted Today</span>
-            </div>
-            <svg className="db-sparkline" viewBox="0 0 160 30" preserveAspectRatio="none">
-              <path d="M0 15 H 160" fill="none" stroke="#10b981" strokeWidth="2.5" strokeDasharray="4 4" />
-              <circle cx="0" cy="15" r="3" fill="#10b981" />
-              <circle cx="50" cy="15" r="3" fill="#10b981" />
-              <circle cx="100" cy="15" r="3" fill="#10b981" />
-              <circle cx="160" cy="15" r="3" fill="#10b981" />
-            </svg>
+          <span>Today</span>
+          <p>Waiting Patients</p>
+          <strong>{stats.waiting}</strong>
+        </article>
+        <article className="rc-stat-card">
+          <div className="rc-stat-icon green">
+            <CheckCircle size={22} />
           </div>
-        </div>
+          <span>Today</span>
+          <p>Completed Appointments</p>
+          <strong>{stats.completed}</strong>
+        </article>
       </div>
 
-      {/* QUICK BILLING ACTIONS */}
       {!hideCards && (
-        <div className="rc-dash-action-grid">
-          <button
-            type="button"
-            className="rc-dash-action-tile qa-op-billing"
-            onClick={() => navigate("/reception/appointments")}
-          >
-            <div className="rc-dash-action-icon-wrap icon-cyan">
-              <ClipboardList size={22} />
-            </div>
-            <div className="rc-dash-action-content">
-              <div className="rc-dash-action-top-row">
-                <span className="rc-dash-action-tag tag-cyan">Outpatient</span>
-                <span className="rc-dash-action-title">OP Billing</span>
-              </div>
-              <p className="rc-dash-action-desc">
-                Book and manage outpatient billing (open appointment)
-              </p>
-            </div>
-            <div className="rc-dash-action-chevron">
-              <ChevronRight size={18} />
-            </div>
+        <div className="rc-action-grid">
+          <button onClick={() => navigate("/reception/appointments")}> 
+            <ClipboardList size={22} />
+            <span>
+              <strong>OP Billing</strong> Book and manage outpatient billing (open appointment)
+            </span>
           </button>
-
-          <button
-            type="button"
-            className="rc-dash-action-tile qa-diagnostic-billing"
-            onClick={() => navigate("/reception/billing?mode=diagnostic")}
-          >
-            <div className="rc-dash-action-icon-wrap icon-purple">
-              <Activity size={22} />
-            </div>
-            <div className="rc-dash-action-content">
-              <div className="rc-dash-action-top-row">
-                <span className="rc-dash-action-tag tag-purple">Lab & Scans</span>
-                <span className="rc-dash-action-title">Diagnostic Billing</span>
-              </div>
-              <p className="rc-dash-action-desc">
-                Create diagnostic and laboratory invoices
-              </p>
-            </div>
-            <div className="rc-dash-action-chevron">
-              <ChevronRight size={18} />
-            </div>
+          <button onClick={() => navigate("/reception/billing?mode=diagnostic")}>
+            <ClipboardList size={22} />
+            <span>
+              <strong>Diagnostic Billing</strong> Create diagnostic invoices
+            </span>
           </button>
-
-          <button
-            type="button"
-            className="rc-dash-action-tile qa-pharmacy-billing"
-            onClick={() => navigate("/reception/billing?mode=pharmacy")}
-          >
-            <div className="rc-dash-action-icon-wrap icon-emerald">
-              <FileText size={22} />
-            </div>
-            <div className="rc-dash-action-content">
-              <div className="rc-dash-action-top-row">
-                <span className="rc-dash-action-tag tag-emerald">Medications</span>
-                <span className="rc-dash-action-title">Pharmacy Billing</span>
-              </div>
-              <p className="rc-dash-action-desc">
-                Create pharmacy invoices & prescription dispenses
-              </p>
-            </div>
-            <div className="rc-dash-action-chevron">
-              <ChevronRight size={18} />
-            </div>
+          <button onClick={() => navigate("/reception/billing?mode=pharmacy")}>
+            <ClipboardList size={22} />
+            <span>
+              <strong>Pharmacy Billing</strong> Create pharmacy invoices
+            </span>
           </button>
         </div>
       )}
 
-      {/* APPOINTMENT LIST TABLE CARD */}
-      <div className="rc-dash-table-card">
-        <div className="rc-dash-table-head">
-          <div className="rc-dash-table-head-left">
-            <div className="rc-dash-panel-icon">
-              <Calendar size={18} />
-            </div>
-            <div>
-              <h3>Appointment List</h3>
-              <div className="rc-dash-meta-badges">
-                <span className="rc-dash-date-pill">
-                  <Calendar size={12} />
-                  {todayDate}
-                </span>
-                <span className="rc-dash-count-pill">
-                  {latest.length} {latest.length === 1 ? "Patient" : "Patients"}
-                </span>
-              </div>
-            </div>
+      <div className="rc-card">
+        <div className="rc-card-head">
+          <div>
+            <h3>Appointment List</h3>
+            <p>{todayDate}</p>
           </div>
-          <button
-            type="button"
-            className="rc-dash-manage-btn"
-            onClick={() => navigate("/reception/appointments")}
-          >
-            <span>Manage</span>
-            <ChevronRight size={15} />
+          <button className="rc-btn small" onClick={() => navigate("/reception/appointments")}>
+            Manage
           </button>
         </div>
-
-        <div className="rc-dash-table-container">
-          <div className="rc-dash-table-header">
-            <span className="col-sno">S.No.</span>
-            <span className="col-patient">Patient</span>
-            <span className="col-doctor">Doctor</span>
-            <span className="col-time">Time</span>
-            <span className="col-status">Status</span>
+        <div className="rc-table compact">
+          <div className="rc-table-head four">
+            <span>S.No.</span>
+            <span>Patient</span>
+            <span>Doctor</span>
+            <span>Time</span>
+            <span>Status</span>
           </div>
-
-          <div className="rc-dash-table-body">
-            {latest.length ? (
-              latest.map((item, index) => {
-                const patientName = getAppointmentPatientName(item);
-                const doctorName = getAppointmentDoctorName(item);
-                const timeStr = getAppointmentTime(item);
-                const statusText = getAppointmentStatus(item) || "Waiting";
-                const statusClass = statusText.toLowerCase().replace(/\s+/g, "-");
-                const initials = patientName
-                  .split(" ")
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((p) => p[0].toUpperCase())
-                  .join("") || "PT";
-
-                return (
-                  <div
-                    className="rc-dash-table-row"
-                    key={item.id || item.appointmentId || index}
-                  >
-                    <span className="col-sno">
-                      <span className="rc-dash-sno-badge">{index + 1}</span>
-                    </span>
-
-                    <span className="col-patient">
-                      <div className="rc-dash-patient-cell">
-                        <div className="rc-dash-patient-avatar">{initials}</div>
-                        <span className="rc-dash-patient-name">{patientName}</span>
-                      </div>
-                    </span>
-
-                    <span className="col-doctor">
-                      <div className="rc-dash-doctor-cell">
-                        <Stethoscope size={14} className="rc-dash-doc-icon" />
-                        <span>{doctorName}</span>
-                      </div>
-                    </span>
-
-                    <span className="col-time">
-                      <div className="rc-dash-time-cell">
-                        <Clock size={13} className="rc-dash-time-icon" />
-                        <span>{timeStr}</span>
-                      </div>
-                    </span>
-
-                    <span className="col-status rc-status-cell">
-                      <span className={`rc-status ${statusClass}`}>
-                        {statusText}
-                      </span>
-                    </span>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="rc-dash-empty">
-                <Calendar size={32} />
-                <p>No appointments scheduled for today.</p>
-                <button
-                  type="button"
-                  className="rc-dash-empty-btn"
-                  onClick={() => navigate("/reception/appointments")}
-                >
-                  <CalendarPlus size={14} />
-                  <span>Book New Appointment</span>
-                </button>
+          {latest.length ? (
+            latest.map((item, index) => (
+              <div className="rc-table-row four" key={item.id || item.appointmentId}>
+                <span>{index + 1}</span>
+                <span>{getAppointmentPatientName(item)}</span>
+                <span>{getAppointmentDoctorName(item)}</span>
+                <span>{getAppointmentTime(item)}</span>
+                <span>{getAppointmentStatus(item)}</span>
               </div>
-            )}
-          </div>
+            ))
+          ) : (
+            <div className="rc-empty">No appointments found.</div>
+          )}
         </div>
       </div>
     </section>

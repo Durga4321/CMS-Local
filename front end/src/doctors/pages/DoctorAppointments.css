@@ -1,445 +1,143 @@
-/* ============================================================
-   DOCTOR APPOINTMENTS — DoctorAppointments.css
-   Authentic Clinical Workstation & Medical Telemetry Theme
-   Realistic Surgical & Diagnostic Instrument Models
-   ============================================================ */
-
 .da-page {
-  padding: 0;
-  max-width: 100%;
-  width: 100%;
+  padding: 32px;
+  max-width: 1200px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  box-sizing: border-box;
-  position: relative;
-  z-index: 1;
+  gap: 24px;
 }
 
-/* ── 1. Medical Telemetry & Monitor Ambient Background ── */
-.da-medical-bg {
-  position: absolute;
-  inset: -20px -20px -40px -20px;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-  background-image:
-    radial-gradient(circle at 90% 12%, rgba(249, 115, 22, 0.07) 0%, transparent 40%),
-    radial-gradient(circle at 10% 45%, rgba(6, 182, 212, 0.08) 0%, transparent 45%),
-    radial-gradient(circle at 50% 85%, rgba(37, 99, 235, 0.05) 0%, transparent 50%),
-    linear-gradient(to right, rgba(148, 163, 184, 0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 100% 100%, 28px 28px, 28px 28px;
-}
-
-/* ECG Rhythm Oscilloscope Wave */
-.da-ecg-track {
-  position: absolute;
-  top: 15px;
-  left: 0;
-  right: 0;
-  height: 60px;
-  opacity: 0.75;
-  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.9) 15%, rgba(0, 0, 0, 0.9) 85%, transparent 100%);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.9) 15%, rgba(0, 0, 0, 0.9) 85%, transparent 100%);
-}
-
-.da-ecg-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.da-ecg-line-base {
-  stroke: rgba(148, 163, 184, 0.25);
-  stroke-width: 1.5;
-  fill: none;
-}
-
-.da-ecg-line-pulse {
-  stroke: #06b6d4;
-  stroke-width: 2.2;
-  fill: none;
-  stroke-dasharray: 240 960;
-  stroke-dashoffset: 1200;
-  animation: daEcgSweep 4s linear infinite;
-  filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.85));
-}
-
-@keyframes daEcgSweep {
-  0% { stroke-dashoffset: 1200; }
-  100% { stroke-dashoffset: 0; }
-}
-
-/* Telemetry HUD Status Indicators */
-.da-telemetry-bar {
-  position: absolute;
-  top: 80px;
-  right: 15px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #64748b;
-  opacity: 0.8;
-}
-
-.da-telemetry-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(203, 213, 225, 0.7);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
-}
-
-.da-telemetry-plus {
-  color: #f97316;
-  font-weight: 900;
-  font-size: 13px;
-}
-
-.da-telemetry-station {
-  color: #334155;
-}
-
-.da-telemetry-wave-icon {
-  color: #06b6d4;
-  animation: daPulseSoft 1.8s infinite;
-}
-
-.da-telemetry-bead-live {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 6px #10b981;
-  animation: daBeadBlink 1.4s infinite;
-}
-
-@keyframes daBeadBlink {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-
-@keyframes daPulseSoft {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); color: #0891b2; }
-}
-
-/* Ambient Medical Cross Watermarks */
-.da-watermark-cross {
-  position: absolute;
-  font-weight: 900;
-  line-height: 1;
-  user-select: none;
-  pointer-events: none;
-}
-
-.da-watermark-cross--tl {
-  top: 10px;
-  left: 30px;
-  font-size: 160px;
-  color: rgba(6, 182, 212, 0.025);
-}
-
-.da-watermark-cross--br {
-  bottom: 20px;
-  right: 40px;
-  font-size: 220px;
-  color: rgba(249, 115, 22, 0.025);
-}
-
-/* ── 2. Error / State Notifications ── */
 .da-alert {
   background: #fef2f2;
   border: 1px solid #fecaca;
   color: #991b1b;
   padding: 16px 20px;
-  border-radius: 14px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-size: 14px;
-  position: relative;
-  z-index: 2;
-  box-shadow: 0 4px 12px rgba(153, 27, 27, 0.06);
 }
 
 .da-alert button {
-  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+  background: #991b1b;
   color: #fff;
-  border: 1px solid #7f1d1d;
-  padding: 7px 16px;
-  border-radius: 8px;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
   cursor: pointer;
-  font-weight: 600;
-  box-shadow: 0 2px 6px rgba(153, 27, 27, 0.25);
-  transition: all 0.2s;
+  font-weight: 500;
+  transition: background 0.2s;
 }
 
 .da-alert button:hover {
   background: #7f1d1d;
-  transform: translateY(-1px);
 }
 
 .da-state-card {
   margin: 40px;
-  padding: 48px;
+  padding: 40px;
   text-align: center;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(203, 213, 225, 0.8);
-  border-radius: 18px;
-  color: #475569;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  color: #64748b;
   font-size: 16px;
-  font-weight: 500;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
 }
 
-/* ── 3. Clinical Triage Header Console ── */
 .da-header-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.94) 100%);
-  padding: 22px 28px;
-  border-radius: 20px;
-  box-shadow:
-    0 10px 30px rgba(15, 23, 42, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    inset 0 -1px 0 rgba(226, 232, 240, 0.6);
-  border: 1px solid rgba(186, 201, 215, 0.8);
-  border-top: 3.5px solid #f97316;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  position: relative;
-  z-index: 2;
-}
-
-.da-header-title-group {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.da-header-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 9px;
-  width: fit-content;
-  border-radius: 6px;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  margin-bottom: 3px;
-}
-
-.da-header-pulse-icon {
-  color: #ea580c;
-  animation: daPulseSoft 2s infinite;
-}
-
-.da-header-badge-text {
-  font-size: 10.5px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #c2410c;
+  background: #fff;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
 }
 
 .da-title {
-  font-size: 21px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
   color: #0f172a;
-  margin: 0;
-  letter-spacing: -0.01em;
+  margin: 0 0 4px 0;
 }
 
 .da-subtitle {
-  font-size: 13.5px;
+  font-size: 14px;
   color: #64748b;
-  margin: 3px 0 0 0;
+  margin: 0;
 }
 
 .da-header-actions {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
 
-/* ── 4. Diagnostic Triage Scope (Filter Select) ── */
 .da-filter-group {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.da-filter-lens-ring {
+.da-filter-icon {
   position: absolute;
   left: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: #64748b;
   pointer-events: none;
-  z-index: 2;
-}
-
-.da-filter-icon {
-  color: #ea580c;
-  filter: drop-shadow(0 1px 2px rgba(234, 88, 12, 0.25));
 }
 
 .da-filter-select {
-  min-height: 42px;
-  height: 42px;
-  box-sizing: border-box;
-  padding: 0 36px 0 36px;
+  padding: 10px 16px 10px 38px;
   border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
-  color: #1e293b;
-  font-size: 13.5px;
-  font-weight: 600;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 500;
   outline: none;
   cursor: pointer;
+  transition: all 0.2s;
   appearance: none;
-  box-shadow:
-    0 2px 6px rgba(15, 23, 42, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none'%3E%3Cg transform='rotate(180 12 12)'%3E%3Cpath d='m18 2 4 4' stroke='%23ea580c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m17 7 3-3' stroke='%23ea580c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5' stroke='%23ea580c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m9 11 4 4' stroke='%23ea580c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m5 19-3 3' stroke='%23e11d48' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m14 4 6 6' stroke='%23ea580c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='2.5' cy='21.5' r='2' fill='%23f43f5e'/%3E%3C/g%3E%3C/svg%3E");
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: calc(100% - 12px) center;
-  background-size: 20px 20px;
-  padding-right: 40px;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background-position: right 12px center;
 }
 
 .da-filter-select:hover {
-  background-color: #fff7ed;
-  border-color: #fdba74;
-  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.12);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='m18 2 4 4' stroke='%23e11d48' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m17 7 3-3' stroke='%23e11d48' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5' stroke='%23e11d48' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m9 11 4 4' stroke='%23f43f5e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m5 19-3 3' stroke='%23be123c' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m14 4 6 6' stroke='%23e11d48' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='2.5' cy='21.5' r='2.5' fill='%23e11d48'/%3E%3Cpath d='M2.5 17c0 0-2 2-2 3.5a2 2 0 0 0 4 0c0-1.5-2-3.5-2-3.5z' fill='%23e11d48'/%3E%3C/svg%3E");
+  background-color: #f1f5f9;
 }
 
-.da-filter-select:focus,
-.da-filter-select:active {
-  border-color: #ea580c;
-  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.16);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='m18 2 4 4' stroke='%23e11d48' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m17 7 3-3' stroke='%23e11d48' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5' stroke='%23e11d48' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m9 11 4 4' stroke='%23f43f5e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m5 19-3 3' stroke='%23be123c' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m14 4 6 6' stroke='%23e11d48' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='2.5' cy='21.5' r='2.5' fill='%23e11d48'/%3E%3Cpath d='M2.5 17c0 0-2 2-2 3.5a2 2 0 0 0 4 0c0-1.5-2-3.5-2-3.5z' fill='%23e11d48'/%3E%3C/svg%3E");
+.da-filter-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* ── 5. Telemetry Calibrator & Patient Queue Sync Instrument (Refresh) ── */
-.da-refresh-btn.da-instrument--calibrator {
-  display: inline-flex;
+.da-refresh-btn {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  height: 42px;
-  box-sizing: border-box;
-  border: 1px solid #cbd5e1;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 40%, #e2e8f0 100%);
-  border-radius: 13px;
-  padding: 0;
-  color: #1e293b;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #3b82f6;
   cursor: pointer;
-  box-shadow:
-    0 3px 10px rgba(15, 23, 42, 0.07),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    inset 0 -1px 0 rgba(148, 163, 184, 0.3);
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.2s;
 }
 
-.da-calibrator-body {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  padding: 0 18px;
-  height: 100%;
-  box-sizing: border-box;
-  position: relative;
-}
-
-.da-instrument-grip {
-  display: flex;
-  flex-direction: column;
-  gap: 2.5px;
-  padding: 2px 6px 2px 0;
-  border-right: 1px solid #cbd5e1;
-}
-
-.da-instrument-grip span {
-  display: block;
-  width: 8px;
-  height: 1.5px;
-  background: #94a3b8;
-  border-radius: 1px;
-}
-
-.da-calibrator-dial {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-  border: 1px solid #cbd5e1;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
-}
-
-.da-instrument-icon {
-  color: #ea580c;
-  stroke-width: 2.2;
-}
-
-.da-instrument-text {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #1e293b;
-}
-
-.da-calibrator-bead {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 8px #10b981;
-  animation: da-bead-pulse 1.8s infinite;
-}
-
-@keyframes da-bead-pulse {
-  0%, 100% { opacity: 0.6; transform: scale(0.9); }
-  50% { opacity: 1; transform: scale(1.3); }
-}
-
-.da-refresh-btn.da-instrument--calibrator:hover:not(:disabled) {
-  background: linear-gradient(135deg, #ffffff 0%, #fff7ed 40%, #ffedd5 100%);
-  border-color: #fdba74;
-  color: #ea580c;
-  box-shadow:
-    0 5px 16px rgba(234, 88, 12, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
-  transform: translateY(-1.5px);
-}
-
-.da-refresh-btn.da-instrument--calibrator:hover:not(:disabled) .da-instrument-text {
-  color: #c2410c;
+.da-refresh-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 .da-refresh-btn:disabled {
-  opacity: 0.55;
+  opacity: 0.7;
   cursor: not-allowed;
-  transform: none;
 }
 
 .da-spin {
@@ -450,19 +148,12 @@
   100% { transform: rotate(360deg); }
 }
 
-/* ── 6. Clinical Workstation Telemetry Queue Table ── */
 .da-table-card {
-  background: rgba(255, 255, 255, 0.68);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(226, 232, 240, 0.85);
-  border-radius: 20px;
-  box-shadow:
-    0 12px 36px rgba(15, 23, 42, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
   overflow: hidden;
-  position: relative;
-  z-index: 2;
 }
 
 .da-table {
@@ -474,13 +165,13 @@
   grid-template-columns: minmax(60px, 0.4fr) 140px 120px 2fr 1.5fr 140px 140px;
   gap: 16px;
   padding: 16px 24px;
-  background: rgba(248, 250, 252, 0.85);
-  border-bottom: 1.5px solid rgba(203, 213, 225, 0.7);
-  font-size: 0.76rem;
-  font-weight: 800;
-  color: #334155;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
 }
 
 .da-row {
@@ -488,12 +179,9 @@
   grid-template-columns: minmax(60px, 0.4fr) 140px 120px 2fr 1.5fr 140px 140px;
   gap: 16px;
   padding: 16px 24px;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.65);
-  background: rgba(255, 255, 255, 0.35);
-  color: #0f172a;
+  border-bottom: 1px solid #f1f5f9;
   align-items: center;
-  transition: all 0.22s ease;
-  position: relative;
+  transition: background 0.2s;
 }
 
 .da-row:last-child {
@@ -501,384 +189,133 @@
 }
 
 .da-row:hover {
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow:
-    inset 4px 0 0 #f97316,
-    0 4px 16px rgba(15, 23, 42, 0.05);
+  background: #f8fafc;
 }
 
 .da-datetime {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .da-date {
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   color: #1e293b;
 }
 
 .da-time {
-  font-size: 12.5px;
-  font-weight: 500;
+  font-size: 13px;
   color: #64748b;
 }
 
 .da-token {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #2563eb;
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: #eff6ff;
-  border: 1px solid #dbeafe;
+  font-size: 14px;
+  font-weight: 600;
+  color: #3b82f6;
 }
 
 .da-name {
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: #1e293b;
 }
 
 .da-age {
-  font-size: 13.5px;
+  font-size: 14px;
   color: #64748b;
-  font-weight: 500;
 }
 
-/* Status Badges */
 .da-status {
   display: inline-flex;
-  padding: 4px 12px;
+  padding: 4px 10px;
   border-radius: 99px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: capitalize;
-  letter-spacing: 0.02em;
-  border: 1px solid transparent;
 }
 
 .da-status.status--waiting {
   background: #fef3c7;
   color: #b45309;
-  border-color: #fde68a;
 }
 
 .da-status.status--inprogress {
   background: #f3e8ff;
   color: #7e22ce;
-  border-color: #e9d5ff;
 }
 
 .da-status.status--completed {
-  background: #dcfce7;
-  color: #15803d;
-  border-color: #bbf7d0;
+  background: #dcfce3;
+  color: #166534;
 }
 
 .da-status.status--prescription {
   background: #e0f2fe;
   color: #0369a1;
-  border-color: #bae6fd;
-}
-
-/* Cell Alignments */
-.da-sno-head,
-.da-sno-cell,
-.da-thead > span:first-child,
-.da-row > span:first-child {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
-  width: 100% !important;
-  margin: 0 auto !important;
-  font-weight: 600;
-  color: #64748b;
-}
-
-.da-token-head,
-.da-token-cell,
-.da-thead > span:nth-child(3),
-.da-row > span:nth-child(3) {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
-  width: 100% !important;
-  margin: 0 auto !important;
-}
-
-.da-status-head,
-.da-status-cell,
-.da-thead > span:nth-child(6),
-.da-row > span:nth-child(6) {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
-  width: 100% !important;
-  margin: 0 auto !important;
-}
-
-.da-actions-head,
-.da-thead > span:last-child {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
-  width: 100% !important;
-  margin: 0 auto !important;
 }
 
 .da-actions {
   display: flex;
   align-items: center;
-  justify-content: center !important;
-  gap: 10px;
-  min-width: 130px;
-  width: 100% !important;
-  margin: 0 auto !important;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 126px;
   overflow: visible;
 }
 
-/* ── 7. Medical Instrumental Action Buttons (Realistic Models) ── */
 .da-act-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
-  border-radius: 12px;
-  border: 1px solid #cbd5e1;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #e2e8f0 100%);
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #2563eb;
   cursor: pointer;
-  box-shadow:
-    0 2px 6px rgba(15, 23, 42, 0.07),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    inset 0 -1px 0 rgba(148, 163, 184, 0.3);
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  overflow: hidden;
-  padding: 0;
+  transition: all 0.2s;
+}
+
+.da-act-btn svg {
+  display: block;
+  color: currentColor;
+  stroke: currentColor;
+  stroke-width: 2.4;
+}
+
+.da-act-btn:nth-child(2) {
+  color: #0f766e;
+}
+
+.da-act-btn--primary,
+.da-act-btn:nth-child(3) {
+  color: #7c3aed;
+}
+
+.da-act-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #1e293b;
+  border-color: #cbd5e1;
 }
 
 .da-act-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.5;
   cursor: not-allowed;
-  filter: grayscale(0.6);
-  box-shadow: none;
 }
 
-/* ── Instrument Model 1: Diagnostic Optical Scope (Ophthalmoscope) ── */
-.da-act-btn--scope {
-  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 45%, #dbeafe 100%);
-  border-color: #93c5fd;
-  color: #2563eb;
+.da-act-btn--primary {
+  color: #3b82f6;
+  border-color: #bfdbfe;
+  background: #eff6ff;
 }
 
-.da-scope-bezel {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%);
-  border: 1px solid #94a3b8;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
-  position: relative;
-}
-
-.da-scope-lens {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #bfdbfe 60%, #3b82f6 100%);
-  position: relative;
-}
-
-.da-scope-lens svg {
-  color: #1d4ed8;
-  stroke-width: 2.2;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
-  transition: transform 0.2s ease;
-}
-
-.da-scope-glare {
-  position: absolute;
-  top: 3px;
-  right: 4px;
-  width: 5px;
-  height: 3px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.85);
-  transform: rotate(-30deg);
-  pointer-events: none;
-}
-
-.da-act-btn--scope:hover:not(:disabled) {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%);
+.da-act-btn--primary:hover:not(:disabled) {
+  background: #3b82f6;
+  color: #fff;
   border-color: #3b82f6;
-  transform: translateY(-2px) scale(1.08);
-  box-shadow:
-    0 5px 16px rgba(37, 99, 235, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
-}
-
-.da-act-btn--scope:hover:not(:disabled) .da-scope-lens svg {
-  transform: scale(1.15);
-  color: #1e40af;
-}
-
-/* ── Instrument Model 2: Electronic Stethoscope & Acoustic Sensor ── */
-.da-act-btn--chart {
-  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 45%, #d1fae5 100%);
-  border-color: #86efac;
-  color: #059669;
-}
-
-.da-steth-chestpiece {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 50%, #94a3b8 100%);
-  border: 1px solid #64748b;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
-  position: relative;
-}
-
-.da-steth-diaphragm {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 40%, #ffffff 0%, #a7f3d0 60%, #10b981 100%);
-  position: relative;
-}
-
-.da-steth-diaphragm svg {
-  color: #047857;
-  stroke-width: 2.2;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12));
-  transition: transform 0.2s ease;
-  z-index: 1;
-}
-
-.da-steth-pulse-ring {
-  position: absolute;
-  inset: -1px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(16, 185, 129, 0.4);
-  pointer-events: none;
-}
-
-.da-steth-stem {
-  position: absolute;
-  top: -3px;
-  width: 5px;
-  height: 3px;
-  border-radius: 2px 2px 0 0;
-  background: #64748b;
-}
-
-.da-act-btn--chart:hover:not(:disabled) {
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%);
-  border-color: #10b981;
-  transform: translateY(-2px) scale(1.08);
-  box-shadow:
-    0 5px 16px rgba(5, 150, 105, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
-}
-
-.da-act-btn--chart:hover:not(:disabled) .da-steth-diaphragm svg {
-  transform: scale(1.15);
-  color: #065f46;
-}
-
-.da-act-btn--chart:hover:not(:disabled) .da-steth-pulse-ring {
-  animation: daAcousticRipple 1s infinite;
-}
-
-@keyframes daAcousticRipple {
-  0% { transform: scale(1); opacity: 0.8; }
-  100% { transform: scale(1.5); opacity: 0; }
-}
-
-/* ── Instrument Model 3: Surgical Laser Scalpel / Ultrasonic Probe ── */
-.da-act-btn--laser {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 50%, #c2410c 100%) !important;
-  border-color: #fdba74 !important;
-  color: #ffffff !important;
-  box-shadow:
-    0 4px 12px rgba(234, 88, 12, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1px 0 rgba(154, 52, 18, 0.5) !important;
-}
-
-.da-laser-casing {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-.da-laser-handle {
-  position: absolute;
-  left: 3px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.da-laser-grip-line {
-  width: 3px;
-  height: 1.5px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 1px;
-}
-
-.da-laser-emitter {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.da-laser-emitter svg {
-  color: #ffffff;
-  stroke-width: 2.4;
-  fill: rgba(255, 255, 255, 0.3);
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
-  transition: transform 0.2s ease;
-  margin-left: 1px;
-}
-
-.da-act-btn--laser:hover:not(:disabled) {
-  background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%) !important;
-  border-color: #fed7aa !important;
-  color: #ffffff !important;
-  transform: translateY(-2px) scale(1.08);
-  box-shadow:
-    0 6px 20px rgba(234, 88, 12, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
-}
-
-.da-act-btn--laser:hover:not(:disabled) .da-laser-emitter svg {
-  transform: scale(1.15) translateX(1px);
-  fill: #ffffff;
 }
 
 .da-empty-row {
@@ -886,321 +323,22 @@
   text-align: center;
   color: #64748b;
   font-size: 15px;
-  background: rgba(255, 255, 255, 0.5);
-  font-weight: 500;
+  background: #fff;
 }
 
-/* ── 8. Consultation Notes Modal & Instruments ── */
-.da-notes-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-  animation: daFadeIn 0.2s ease-out;
-}
-
-@keyframes daFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.da-notes-modal {
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow:
-    0 24px 48px -12px rgba(15, 23, 42, 0.2),
-    0 0 0 1px rgba(203, 213, 225, 0.8);
-  width: 100%;
-  max-width: 640px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  animation: daSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes daSlideUp {
-  from { transform: translateY(16px) scale(0.98); opacity: 0; }
-  to { transform: translateY(0) scale(1); opacity: 1; }
-}
-
-.da-notes-head {
-  padding: 20px 24px;
-  border-bottom: 1px solid #f1f5f9;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
-}
-
-.da-notes-head-title {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.da-notes-head-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  background: #eff6ff;
-  color: #2563eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #dbeafe;
-}
-
-.da-notes-head h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.da-notes-head p {
-  margin: 2px 0 0 0;
-  font-size: 13px;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.da-notes-close-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  color: #64748b;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.da-notes-close-btn:hover {
-  background: #f8fafc;
-  color: #0f172a;
-  border-color: #cbd5e1;
-}
-
-.da-notes-body {
-  padding: 24px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.da-notes-summary-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 12px 16px;
-  background: #f8fafc;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-}
-
-.da-notes-summary-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #475569;
-}
-
-.da-notes-summary-item svg {
-  color: #3b82f6;
-}
-
-.da-notes-loading {
-  padding: 48px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  color: #3b82f6;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.da-notes-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.da-notes-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.da-notes-wide {
-  grid-column: 1 / -1;
-}
-
-.da-notes-label {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #64748b;
-}
-
-.da-notes-text {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #1e293b;
-  font-weight: 500;
-}
-
-.da-notes-highlight {
-  color: #2563eb;
-  font-weight: 600;
-}
-
-.da-notes-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.da-notes-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #f1f5f9;
-  color: #334155;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  border: 1px solid #e2e8f0;
-}
-
-.da-notes-empty {
-  text-align: center;
-  padding: 36px 20px;
-  background: #f8fafc;
-  border-radius: 16px;
-  border: 1px dashed #cbd5e1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.da-notes-empty-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: #eff6ff;
-  color: #3b82f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 12px;
-}
-
-.da-notes-empty h4 {
-  margin: 0 0 6px 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.da-notes-empty p {
-  margin: 0;
-  font-size: 13.5px;
-  color: #64748b;
-  max-width: 380px;
-  line-height: 1.45;
-}
-
-.da-notes-footer {
-  padding: 16px 24px;
-  border-top: 1px solid #f1f5f9;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.da-notes-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 11px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid transparent;
-}
-
-.da-notes-btn--secondary {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
-  color: #334155;
-  border-color: #cbd5e1;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
-}
-
-.da-notes-btn--secondary:hover:not(:disabled) {
-  background: #f1f5f9;
-  color: #0f172a;
-  border-color: #94a3b8;
-  transform: translateY(-1px);
-}
-
-.da-notes-btn--primary {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  color: #ffffff;
-  border-color: #3b82f6;
-  box-shadow:
-    0 4px 12px rgba(37, 99, 235, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-}
-
-.da-notes-btn--primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
-  transform: translateY(-1px);
-}
-
-.da-notes-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  box-shadow: none;
-  transform: none;
-}
-
-/* ── 9. Responsive Breakpoints ── */
 @media (max-width: 768px) {
   .da-page {
+    padding: 0;
     gap: 16px;
   }
 
-  .da-telemetry-bar {
-    display: none;
+  .da-alert {
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .da-alert button {
+    flex: 0 0 auto;
   }
 
   .da-header-card {
@@ -1222,13 +360,8 @@
     width: 100%;
   }
 
-  .da-refresh-btn.da-instrument--calibrator {
+  .da-refresh-btn {
     justify-content: center;
-  }
-
-  .da-calibrator-body {
-    justify-content: center;
-    width: 100%;
   }
 
   .da-thead,
@@ -1255,20 +388,5 @@
 
   .da-empty-row {
     padding: 32px 16px;
-  }
-}
-
-@media (max-width: 640px) {
-  .da-notes-modal {
-    max-height: 95vh;
-  }
-  .da-notes-grid {
-    grid-template-columns: 1fr;
-  }
-  .da-notes-footer {
-    flex-direction: column;
-  }
-  .da-notes-btn {
-    width: 100%;
   }
 }

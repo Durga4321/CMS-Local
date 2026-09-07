@@ -550,9 +550,7 @@ function Admins() {
           <span className={`sa-admin-avatar sa-admin-avatar--${getInitials(admin.name || admin.email).charCodeAt(0) % 4}`}>
             {getInitials(admin.name || admin.email)}
           </span>
-          <span className="sa-admin-name-highlight">
-            <b>{admin.name || "-"}</b>
-          </span>
+          <b>{admin.name || "-"}</b>
         </span>
       ),
     },
@@ -562,7 +560,7 @@ function Admins() {
       width: "minmax(210px, 1fr)",
       cellClassName: "sa-table-cell--nowrap",
       render: (admin) => (
-        <span title={admin.email || ""} className="sa-table-text-overflow sa-admin-email">
+        <span title={admin.email || ""} className="sa-table-text-overflow">
           {admin.email || "-"}
         </span>
       ),

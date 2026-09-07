@@ -101,12 +101,10 @@
 }
 
 select.op-form-select {
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
+  appearance: auto;
+  -webkit-appearance: auto;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
-  padding-right: 40px !important;
 }
 
 .op-form-select:focus,

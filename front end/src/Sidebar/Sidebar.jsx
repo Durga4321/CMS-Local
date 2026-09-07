@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Bell,
@@ -13,72 +13,59 @@ import {
   FolderUp,
   Settings2,
   FileBarChart2,
+  Cross,
   ListChecks,
   UserCog,
   ShieldCheck,
   X,
-  ChevronRight,
-  ArrowLeftToLine,
-  Activity,
 } from "lucide-react";
 
 import "./Sidebar.css";
 import { getInitials, getRoleProfile } from "../profile/sessionProfile";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
+import { getDefaultClinicLogo, useClinicInvoiceBranding } from "../utils/clinicBranding";
 import { filterItemsByViewPermission, hasAnySavedModulePermissions, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const items = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, tone: "blue" },
-  { to: "/branches", label: "Branches", icon: Building2, tone: "pink" },
-  { to: "/doctors", label: "Doctors", icon: Stethoscope, tone: "green" },
-  { to: "/receptionists", label: "Receptionists", icon: UserCheck, tone: "rose" },
-  { to: "/nurses", label: "Nurses", icon: UserCog, tone: "orange" },
-  { to: "/lab-technicians", label: "Lab Technicians", icon: FlaskConical, tone: "cyan" },
-  { to: "/lab-files", label: "Lab Files", icon: FolderUp, tone: "indigo" },
-  { to: "/patients", label: "Patients", icon: UserRound, tone: "purple" },
-  { to: "/appointments", label: "Appointments", icon: CalendarDays, tone: "emerald" },
-  { to: "/DoctorSchedule/schedule", label: "Schedule Settings", icon: Settings2, tone: "red" },
-  { to: "/roles", label: "Roles & Permissions", icon: ShieldCheck, tone: "amber" },
-  { to: "/users", label: "User Management", icon: Users, tone: "teal" },
-  { to: "/settings", label: "Settings", icon: Settings2, tone: "blue" },
-  { to: "/reports", label: "Reports", icon: FileBarChart2, tone: "violet" },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/branches", label: "Branches", icon: Building2 },
+  { to: "/doctors", label: "Doctors", icon: Stethoscope },
+  { to: "/receptionists", label: "Receptionists", icon: UserCheck },
+  { to: "/nurses", label: "Nurses", icon: UserCog },
+  { to: "/lab-technicians", label: "Lab Technicians", icon: FlaskConical },
+  { to: "/lab-files", label: "Lab Files", icon: FolderUp },
+  { to: "/patients", label: "Patients", icon: UserRound },
+  { to: "/appointments", label: "Appointments", icon: CalendarDays },
+  { to: "/DoctorSchedule/schedule", label: "Schedule Settings", icon: Settings2 },
+  { to: "/roles", label: "Roles & Permissions", icon: ShieldCheck },
+  { to: "/users", label: "User Management", icon: Users },
+  { to: "/settings", label: "Settings", icon: Settings2 },
+  { to: "/reports", label: "Reports", icon: FileBarChart2 },
 ];
 
 const patientItems = [
-  { to: "/patient/dashboard", label: "Dashboard", icon: LayoutDashboard, tone: "blue" },
-  { to: "/patient/appointments/book", label: "Book Appointment", icon: Stethoscope, tone: "green" },
-  { to: "/patient/appointments", label: "Appointments", icon: CalendarDays, tone: "emerald" },
-  { to: "/patient/medical-history", label: "Medical History", icon: FileBarChart2, tone: "purple" },
-  { to: "/patient/prescriptions", label: "Prescriptions", icon: ListChecks, tone: "orange" },
-  { to: "/patient/bills", label: "Billing & Payments", icon: Building2, tone: "blue" },
-  { to: "/patient/notifications", label: "Notifications", icon: Bell, tone: "rose" },
+  { to: "/patient/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/patient/appointments/book", label: "Book Appointment", icon: Stethoscope },
+  { to: "/patient/appointments", label: "Appointments", icon: CalendarDays },
+  { to: "/patient/medical-history", label: "Medical History", icon: FileBarChart2 },
+  { to: "/patient/prescriptions", label: "Prescriptions", icon: ListChecks },
+  { to: "/patient/bills", label: "Billing & Payments", icon: Building2 },
+  { to: "/patient/notifications", label: "Notifications", icon: Bell },
 ];
 
 const superAdminItems = [
-  { to: "/superadmin/dashboard", label: "Dashboard", icon: LayoutDashboard, tone: "blue" },
-  { to: "/superadmin/clinics", label: "Clinics", icon: Building2, tone: "pink" },
-  { to: "/superadmin/admins", label: "Admins", icon: UserCog, tone: "orange" },
-  { to: "/superadmin/roles", label: "Roles & Permissions", icon: ShieldCheck, tone: "amber" },
-  { to: "/superadmin/settings", label: "Settings", icon: Settings2, tone: "blue" },
-  { to: "/superadmin/reports", label: "Reports", icon: FileBarChart2, tone: "violet" },
-  { to: "/superadmin/audit-logs", label: "Audit Logs", icon: ListChecks, tone: "emerald" },
-  { to: "/superadmin/notifications", label: "Notifications", icon: Bell, tone: "rose" },
+  { to: "/superadmin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/superadmin/clinics", label: "Clinics", icon: Building2 },
+  { to: "/superadmin/admins", label: "Admins", icon: UserCog },
+  { to: "/superadmin/roles", label: "Roles & Permissions", icon: ShieldCheck },
+  { to: "/superadmin/settings", label: "Settings", icon: Settings2 },
+  { to: "/superadmin/reports", label: "Reports", icon: FileBarChart2 },
+  { to: "/superadmin/audit-logs", label: "Audit Logs", icon: ListChecks },
+  { to: "/superadmin/notifications", label: "Notifications", icon: Bell },
 ];
 
-function Sidebar({
-  open = false,
-  onClose = () => {},
-  collapsed: controlledCollapsed,
-  onToggleCollapse,
-}) {
+function Sidebar({ open = false, onClose = () => {} }) {
   const location = useLocation();
-  const [internalCollapsed, setInternalCollapsed] = useState(false);
-  const isControlled = controlledCollapsed !== undefined;
-  const collapsed = isControlled ? controlledCollapsed : internalCollapsed;
-  const handleToggleCollapse = isControlled
-    ? onToggleCollapse
-    : () => setInternalCollapsed((prev) => !prev);
-
   const isSuperAdmin = location.pathname.startsWith("/superadmin");
   const isPatient =
     location.pathname === "/patient" ||
@@ -98,61 +85,68 @@ function Sidebar({
       : permissionsLoading && !hasAnySavedModulePermissions(profile)
         ? []
         : filterItemsByViewPermission(baseNavItems, profile);
-
-  const brandName = isSuperAdmin ? "CMS" : isPatient ? "Patient Portal" : getClinicDisplayName(profile, "Hp Clinic");
+  const profileName = profile.name;
+  const profileSub = isSuperAdmin ? "Super Admin" : isPatient ? "Patient" : getClinicDisplayName(profile, "Admin");
+  const brandName = isSuperAdmin ? "CMS" : isPatient ? "Patient Portal" : getClinicDisplayName(profile, "CMS");
+  const clinicIdForLogo = profile.clinicId || profile.hospitalId || localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "";
+  const clinicBranding = useClinicInvoiceBranding({
+    clinicId: clinicIdForLogo,
+    clinicName: brandName,
+    enabled: !isSuperAdmin && !isPatient,
+  });
+  const brandLogo = isSuperAdmin || isPatient
+    ? { type: "icon", icon: Cross, text: isSuperAdmin ? "CMS" : "PAT", tone: "emerald" }
+    : { type: "image", image: clinicBranding.logoUrl, text: "", tone: "emerald" };
+  const BrandLogoIcon = brandLogo.icon;
 
   return (
     <>
-      <div className={`sidebar ${open ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`}>
+      <div className={`sidebar ${open ? 'open' : ''}`}>
 
-      {/* BRAND LOGO HEADER (NO CROSS SYMBOL) */}
-      <div className="sidebar-header" title={brandName}>
-        <div className="sidebar-brand-icon">
-          <Activity size={20} className="brand-icon" />
+      {/* HEADER */}
+      <div className="sidebar-header">
+        <div className={`logo sidebar-clinic-logo sidebar-clinic-logo--${brandLogo.tone}`}>
+          {brandLogo.type === "image" ? (
+            <img src={brandLogo.image} alt="" onError={(event) => { event.currentTarget.src = getDefaultClinicLogo(brandName, clinicIdForLogo); }} />
+          ) : <BrandLogoIcon size={22} />}
+          {brandLogo.text ? <small>{brandLogo.text}</small> : null}
         </div>
-        <div className="sidebar-brand-text">
-          <h3 title={brandName}>{brandName}</h3>
-          <span>Admin Console</span>
+        <div>
+          <h3>{brandName}</h3>
+          <span>{isSuperAdmin ? "Super Admin Console" : "Admin Console"}</span>
         </div>
+        <button className="sidebar-close-btn" onClick={onClose} aria-label="Close sidebar">
+          <X size={18} />
+        </button>
       </div>
 
-      {/* NAV ITEMS LIST WITH COLORFUL NAMES */}
+      {/* NAV */}
       <div className="nav">
-        {navItems.map(({ to, label, icon: Icon, tone = "blue" }) => (
+        <p className="menu-title">{isSuperAdmin ? "SUPER ADMIN" : "MAIN MENU"}</p>
+
+        {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
-            title={collapsed ? label : undefined}
             className={({ isActive }) =>
-              `nav-item nav-item-${tone} ${isActive ? "active" : ""}`
+              `nav-item ${isActive ? "active" : ""}`
             }
           >
-            <div className={`nav-icon-box tone-${tone}`}>
-              <Icon size={16} />
-            </div>
-            <span className={`nav-label text-${tone}`}>{label}</span>
-            <ChevronRight size={14} className="nav-arrow" />
+            <Icon size={18} />
+            <span>{label}</span>
           </NavLink>
         ))}
       </div>
 
-      {/* BOTTOM COLLAPSE MENU TOGGLE */}
-      <div className="sidebar-bottom">
-        <button
-          type="button"
-          className="collapse-btn"
-          onClick={handleToggleCollapse}
-          title={collapsed ? "Expand Menu" : "Collapse Menu"}
-        >
-          <ArrowLeftToLine
-            size={16}
-            style={{
-              transform: collapsed ? "rotate(180deg)" : "none",
-              transition: "transform 0.25s ease",
-            }}
-          />
-          <span>Collapse Menu</span>
-        </button>
+      <div className="sidebar-profile">
+        <div className="sidebar-avatar">{getInitials(profileName)}</div>
+        <div className="sidebar-profile-info">
+          <b>{profileName}</b>
+          <span>{profileSub}</span>
+          <p>
+            <span className="sidebar-status-dot" /> Online
+          </p>
+        </div>
       </div>
       </div>
       <div className={`sidebar-overlay ${open ? 'visible' : ''}`} onClick={onClose} />

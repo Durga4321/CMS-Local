@@ -1,20 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Activity,
-  ArrowRight,
-  Calendar,
-  CalendarCheck,
-  CheckCircle,
-  Clock,
-  HeartPulse,
-  ListChecks,
-  Stethoscope,
-  Users,
-} from "lucide-react";
+import { CalendarCheck, CheckCircle, Clock, HeartPulse, ListChecks, Users } from "lucide-react";
 import { parseList, requestJson } from "./nurseApi";
 import { getNurseScope, scopeNurseRecords } from "./nurseScope";
-import "./Nurse.css";
 
 const firstValue = (...values) =>
   values.find((value) => value !== undefined && value !== null && String(value).trim() !== "");
@@ -182,254 +170,93 @@ function NurseDashboard() {
   }, [appointments]);
 
   return (
-    <div className="nurse-dashboard-page">
-      {/* Hero Care Station Banner */}
-      <div className="nd-hero-banner">
-        <div className="nd-hero-left">
-          <div className="nd-hero-pill-row">
-            <span className="nd-station-badge">
-              <Activity size={12} /> Clinical Station
-            </span>
-            <span className="nd-live-pulse-badge">
-              <span className="nd-live-dot" /> Live Patient Queue
-            </span>
-          </div>
-          <h2 className="nd-hero-title">Nurse Care Station</h2>
-          <p className="nd-hero-subtitle">
-            Real-time patient vitals triage, assigned appointments queue, and clinical care actions.
-          </p>
-        </div>
-        <div className="nd-hero-right">
-          <div className="nd-hero-date-badge">
-            <Calendar size={14} />
-            <span>{formatToday()}</span>
-          </div>
+    <section className="rc-page">
+      <div className="rc-page-head">
+        <div>
+          <h2>Nurse Dashboard</h2>
+          <p>Today&apos;s assigned appointments, queue, and patient-care actions.</p>
         </div>
       </div>
 
       {error ? <div className="rc-error">{error}</div> : null}
-      {loading ? <div className="rc-card">Loading nurse dashboard telemetry...</div> : null}
+      {loading ? <div className="rc-card">Loading nurse dashboard...</div> : null}
 
-      {/* Vector Medical Instrument Stat Cards (No 3D Images) */}
-      <div className="nd-stat-grid">
-        {/* Card 1: Today's Appointments */}
-        <article className="nd-stat-card nd-card--cyan">
-          <div className="nd-stat-card-glow" />
-          <div className="nd-stat-head">
-            <div className="nd-stat-icon-box cyan">
-              <CalendarCheck size={24} />
-            </div>
-            <span className="nd-stat-pill">Today</span>
-          </div>
-          <div className="nd-stat-body">
-            <span className="nd-stat-label">Today&apos;s Appointments</span>
-            <div className="nd-stat-count">
-              <strong>{stats.today}</strong>
-              <span className="nd-stat-hint">Scheduled</span>
-            </div>
-          </div>
+      <div className="rc-stat-grid">
+        <article className="rc-stat-card">
+          <div className="rc-stat-icon blue"><CalendarCheck size={22} /></div>
+          <span>Today</span>
+          <p>Today&apos;s Appointments</p>
+          <strong>{stats.today}</strong>
         </article>
-
-        {/* Card 2: Waiting Patients */}
-        <article className="nd-stat-card nd-card--amber">
-          <div className="nd-stat-card-glow" />
-          <div className="nd-stat-head">
-            <div className="nd-stat-icon-box amber">
-              <Clock size={24} />
-            </div>
-            <span className="nd-stat-pill">Queue</span>
-          </div>
-          <div className="nd-stat-body">
-            <span className="nd-stat-label">Waiting Patients</span>
-            <div className="nd-stat-count">
-              <strong>{stats.waiting}</strong>
-              <span className="nd-stat-hint">In Waiting Room</span>
-            </div>
-          </div>
+        <article className="rc-stat-card">
+          <div className="rc-stat-icon amber"><Clock size={22} /></div>
+          <span>Queue</span>
+          <p>Waiting Patients</p>
+          <strong>{stats.waiting}</strong>
         </article>
-
-        {/* Card 3: In Consultation */}
-        <article className="nd-stat-card nd-card--indigo">
-          <div className="nd-stat-card-glow" />
-          <div className="nd-stat-head">
-            <div className="nd-stat-icon-box indigo">
-              <Stethoscope size={24} />
-            </div>
-            <span className="nd-stat-pill">Consult</span>
-          </div>
-          <div className="nd-stat-body">
-            <span className="nd-stat-label">In Consultation</span>
-            <div className="nd-stat-count">
-              <strong>{stats.inConsultation}</strong>
-              <span className="nd-stat-hint">With Doctor</span>
-            </div>
-          </div>
+        <article className="rc-stat-card">
+          <div className="rc-stat-icon blue"><Users size={22} /></div>
+          <span>Queue</span>
+          <p>In Consultation</p>
+          <strong>{stats.inConsultation}</strong>
         </article>
-
-        {/* Card 4: Completed Care */}
-        <article className="nd-stat-card nd-card--emerald">
-          <div className="nd-stat-card-glow" />
-          <div className="nd-stat-head">
-            <div className="nd-stat-icon-box emerald">
-              <CheckCircle size={24} />
-            </div>
-            <span className="nd-stat-pill">Complete</span>
-          </div>
-          <div className="nd-stat-body">
-            <span className="nd-stat-label">Completed Care</span>
-            <div className="nd-stat-count">
-              <strong>{stats.completed}</strong>
-              <span className="nd-stat-hint">Processed</span>
-            </div>
-          </div>
+        <article className="rc-stat-card">
+          <div className="rc-stat-icon green"><CheckCircle size={22} /></div>
+          <span>Today</span>
+          <p>Completed</p>
+          <strong>{stats.completed}</strong>
         </article>
       </div>
 
-      {/* Quick Action Shortcuts (Vector Icons) */}
-      <div className="nd-action-section-title">
-        <h3><Activity size={16} /> Clinical Quick Actions</h3>
-      </div>
-
-      <div className="nd-action-grid">
-        <button
-          type="button"
-          className="nd-action-card nd-act--cyan"
-          onClick={() => navigate("/nurse/patients")}
-        >
-          <div className="nd-action-icon-box cyan">
-            <Users size={22} />
-          </div>
-          <div className="nd-action-text">
-            <strong>Branch Patients</strong>
-            <p>View assigned patients &amp; record clinical vitals</p>
-          </div>
-          <span className="nd-action-arrow">
-            <ArrowRight size={15} />
-          </span>
+      <div className="rc-action-grid">
+        <button type="button" onClick={() => navigate("/nurse/patients")}>
+          <Users size={22} />
+          <span><strong>Patients</strong> View assigned branch patients</span>
         </button>
-
-        <button
-          type="button"
-          className="nd-action-card nd-act--rose"
-          onClick={() => navigate("/nurse/medical-history")}
-        >
-          <div className="nd-action-icon-box rose">
-            <HeartPulse size={22} />
-          </div>
-          <div className="nd-action-text">
-            <strong>Medical History</strong>
-            <p>Access longitudinal patient care records</p>
-          </div>
-          <span className="nd-action-arrow">
-            <ArrowRight size={15} />
-          </span>
+        <button type="button" onClick={() => navigate("/nurse/medical-history")}>
+          <HeartPulse size={22} />
+          <span><strong>Medical History</strong> Update patient care records</span>
         </button>
-
-        <button
-          type="button"
-          className="nd-action-card nd-act--indigo"
-          onClick={() => navigate("/nurse/appointments/online")}
-        >
-          <div className="nd-action-icon-box indigo">
-            <ListChecks size={22} />
-          </div>
-          <div className="nd-action-text">
-            <strong>Online Bookings</strong>
-            <p>Review online appointment queue &amp; triage</p>
-          </div>
-          <span className="nd-action-arrow">
-            <ArrowRight size={15} />
-          </span>
+        <button type="button" onClick={() => navigate("/nurse/appointments/online")}>
+          <ListChecks size={22} />
+          <span><strong>Online Bookings</strong> Review online appointment queue</span>
         </button>
       </div>
 
-      {/* Clinical Table Card */}
-      <div className="nd-table-card">
-        <div className="nd-table-header">
-          <div className="nd-table-title-wrap">
-            <div className="nd-table-title-icon">
-              <CalendarCheck size={20} />
-            </div>
-            <div>
-              <h3>Today&apos;s Clinical Queue</h3>
-              <p>{formatToday()} &bull; {appointments.length} Total Patients Scheduled</p>
-            </div>
+      <div className="rc-card">
+        <div className="rc-card-head">
+          <div>
+            <h3>Today&apos;s Appointment List</h3>
+            <p>{formatToday()}</p>
           </div>
-          <button
-            className="nd-btn-manage"
-            type="button"
-            onClick={() => navigate("/nurse/appointments/online")}
-          >
-            <ListChecks size={16} /> Manage Queue
+          <button className="rc-btn small" type="button" onClick={() => navigate("/nurse/appointments/online")}>
+            Manage
           </button>
         </div>
-
-        {appointments.length ? (
-          <div style={{ overflowX: "auto" }}>
-            <table className="nd-clinical-table">
-              <thead>
-                <tr className="nd-table-row-head">
-                  <th style={{ width: "60px" }}>S.No.</th>
-                  <th>Patient Name</th>
-                  <th>Assigned Doctor</th>
-                  <th>Scheduled Time</th>
-                  <th style={{ textAlign: "center" }}>Queue Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {appointments.map((item, index) => {
-                  const patientName = getAppointmentPatientName(item);
-                  const doctorName = getAppointmentDoctorName(item);
-                  const time = getAppointmentTime(item);
-                  const statusText = getAppointmentStatus(item) || "Waiting";
-                  const statusKey = statusText.toLowerCase().replace(/\s+/g, "-");
-
-                  return (
-                    <tr className="nd-table-row-body" key={getAppointmentId(item) || index}>
-                      <td style={{ fontWeight: 700, color: "#64748b" }}>{index + 1}</td>
-                      <td>
-                        <div className="nd-patient-chip">
-                          <div className="nd-patient-avatar">
-                            {patientName.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="nd-patient-name">{patientName}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="nd-doctor-badge">
-                          <Stethoscope size={14} color="#0284c7" /> Dr. {doctorName.replace(/^Dr\.?\s*/i, "")}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="nd-time-capsule">
-                          <Clock size={12} /> {time}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: "center" }}>
-                        <span className={`nd-status-pill status-${statusKey}`}>
-                          {statusText === "Waiting" && <Clock size={11} />}
-                          {statusText === "In Consultation" && <Activity size={11} />}
-                          {statusText === "Completed" && <CheckCircle size={11} />}
-                          {statusText}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        <div className="rc-table compact">
+          <div className="rc-table-head four">
+            <span>S.No.</span>
+            <span>Patient</span>
+            <span>Doctor</span>
+            <span>Time</span>
+            <span>Status</span>
           </div>
-        ) : (
-          <div className="nd-empty-state">
-            <div className="nd-empty-icon">
-              <CalendarCheck size={28} />
-            </div>
-            <strong>No appointments found for your branch today</strong>
-            <p>Assigned appointments and walk-in queues will automatically display here in real-time.</p>
-          </div>
-        )}
+          {appointments.length ? (
+            appointments.map((item, index) => (
+              <div className="rc-table-row four" key={getAppointmentId(item) || index}>
+                <span>{index + 1}</span>
+                <span>{getAppointmentPatientName(item)}</span>
+                <span>{getAppointmentDoctorName(item)}</span>
+                <span>{getAppointmentTime(item)}</span>
+                <span>{getAppointmentStatus(item)}</span>
+              </div>
+            ))
+          ) : (
+            <div className="rc-empty">No appointments found for your branch today.</div>
+          )}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
