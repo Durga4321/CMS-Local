@@ -9,6 +9,10 @@ import "./Patients.css";
 import {
   Search,
   Eye,
+  UserCheck,
+  HeartPulse,
+  CalendarCheck,
+  ShieldCheck,
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
@@ -159,6 +163,22 @@ function Patients() {
 
   return (
     <div className="patients-page">
+      <div className="patients-bg-overlay" />
+
+      {/* 3D Floating Patient Care & Health Telemetry Particles */}
+      <div className="patients-patient-particle patient-part-1" title="Patient Care & Records">
+        <UserCheck size={28} />
+      </div>
+      <div className="patients-patient-particle patient-part-2" title="Cardio & Vitals Telemetry">
+        <HeartPulse size={26} />
+      </div>
+      <div className="patients-patient-particle patient-part-3" title="Appointment Scheduling">
+        <CalendarCheck size={26} />
+      </div>
+      <div className="patients-patient-particle patient-part-4" title="Health Shield & Safety">
+        <ShieldCheck size={26} />
+      </div>
+
       <div className="patients-header">
         <div>
           <h2 className="patients-title">Patients</h2>
@@ -197,13 +217,13 @@ function Patients() {
 
         <div className="patients-table-scroll" tabIndex="0">
           <div className="patients-thead">
-            <span>S.No.</span>
-            <span>Patient</span>
-            <span>Phone</span>
-            <span>Age</span>
-            <span>Gender</span>
-            <span>Last Visit</span>
-            <span>Actions</span>
+            <span className="patients-sno-head">S.No.</span>
+            <span className="patients-name-head">Patient</span>
+            <span className="patients-phone-head">Phone</span>
+            <span className="patients-age-head">Age</span>
+            <span className="patients-gender-head">Gender</span>
+            <span className="patients-visit-head">Last Visit</span>
+            <span className="patients-actions-head">Actions</span>
           </div>
 
           {!loading && filteredPatients.length === 0 ? (
@@ -212,11 +232,11 @@ function Patients() {
 
           {filteredPatients.map((patient, index) => (
             <div className="patients-row" key={patient.id || patient.patientCode || index}>
-              <span>{index + 1}</span>
+              <span className="patients-sno-cell">{index + 1}</span>
 
               <div className="patients-info">
                 <div className="patients-avatar">{getInitials(patient.name)}</div>
-                <div>
+                <div className="patients-name-stack">
                   <b>{patient.name}</b>
                   <p>
                     {patient.patientCode ||
@@ -225,23 +245,25 @@ function Patients() {
                 </div>
               </div>
 
-              <span>{patient.phone || "-"}</span>
-              <span>{patient.age || "-"}</span>
-              <span>{patient.gender || "-"}</span>
-              <span>{formatPatientLastVisit(patient.lastVisit)}</span>
+              <span className="patients-phone-cell">{patient.phone || "-"}</span>
+              <span className="patients-age-cell">{patient.age || "-"}</span>
+              <span className="patients-gender-cell">{patient.gender || "-"}</span>
+              <span className="patients-visit-cell">{formatPatientLastVisit(patient.lastVisit)}</span>
 
-              <button
-                type="button"
-                className="patients-view-btn"
-                onClick={() =>
-                  navigate(`/patients/${patient.id}`, {
-                    state: { patient },
-                  })
-                }
-              >
-                <Eye size={16} />
-                View
-              </button>
+              <div className="patients-actions-cell">
+                <button
+                  type="button"
+                  className="patients-view-btn"
+                  onClick={() =>
+                    navigate(`/patients/${patient.id}`, {
+                      state: { patient },
+                    })
+                  }
+                >
+                  <Eye size={16} />
+                  <span>View</span>
+                </button>
+              </div>
             </div>
           ))}
         </div>

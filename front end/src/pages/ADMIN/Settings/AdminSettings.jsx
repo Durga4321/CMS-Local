@@ -1,5 +1,28 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Eye, FileUp, ImagePlus, RotateCw, Save, Settings2, Trash2 } from "lucide-react";
+import {
+  Eye,
+  FileUp,
+  ImagePlus,
+  RotateCw,
+  Save,
+  Settings2,
+  Trash2,
+  Receipt,
+  Sliders,
+  Building2,
+  FileText,
+  Palette,
+  Phone,
+  Mail,
+  MapPin,
+  Hash,
+  ShieldCheck,
+  CheckCircle,
+  FileCheck,
+  Stethoscope,
+  HeartPulse,
+  Sparkles,
+} from "lucide-react";
 import { apiUrl, assetUrl } from "../../../config/api";
 import { getRoleProfile } from "../../../profile/sessionProfile";
 import { getClinicDisplayName } from "../../../utils/clinicDisplay";
@@ -666,42 +689,117 @@ function AdminSettings() {
 
   return (
     <div className="admin-settings-page">
-      <div className="admin-settings-header">
-        <div>
-          <p>Clinic Settings</p>
-          <h1>Invoice Branding</h1>
-          <span>These settings apply to every new billing invoice generated under this clinic.</span>
-        </div>
-        <Settings2 size={34} />
+      <div className="admin-settings-bg-overlay" />
+
+      {/* Animated Medical ECG Telemetry Wave */}
+      <div className="admin-settings-ecg-wave">
+        <svg viewBox="0 0 1400 90" preserveAspectRatio="none" className="admin-settings-ecg-svg">
+          <defs>
+            <linearGradient id="settingsEcgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.1" />
+              <stop offset="25%" stopColor="#0d9488" stopOpacity="0.7" />
+              <stop offset="50%" stopColor="#0284c7" stopOpacity="0.9" />
+              <stop offset="75%" stopColor="#10b981" stopOpacity="0.7" />
+              <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.1" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M0,45 L220,45 L235,20 L250,70 L265,10 L280,80 L295,45 L320,45 L540,45 L555,20 L570,70 L585,10 L600,80 L615,45 L640,45 L860,45 L875,20 L890,70 L905,10 L920,80 L935,45 L960,45 L1180,45 L1195,20 L1210,70 L1225,10 L1240,80 L1255,45 L1400,45"
+            fill="none"
+            stroke="url(#settingsEcgGrad)"
+            strokeWidth="2.5"
+            strokeDasharray="1200"
+            strokeDashoffset="1200"
+            className="settings-ecg-path"
+          />
+        </svg>
       </div>
-      <div className="admin-settings-toolbar">
-        <button type="button" onClick={() => loadInvoiceSettings()} disabled={loading || saving}>
-          <RotateCw size={17} />
-          Refresh
-        </button>
-        <button className="admin-settings-danger-button" type="button" onClick={deleteSettings} disabled={loading || saving || !canDelete}>
-          <Trash2 size={17} />
-          Delete Settings
-        </button>
+
+      {/* 3D Floating Clinic Settings & Branding Particles */}
+      <div className="admin-settings-particle settings-part-1" title="Invoice Branding Config">
+        <Receipt size={26} />
+      </div>
+      <div className="admin-settings-particle settings-part-2" title="Clinic Preferences & Controls">
+        <HeartPulse size={26} />
+      </div>
+      <div className="admin-settings-particle settings-part-3" title="Design & Template Themes">
+        <Sliders size={26} />
+      </div>
+      <div className="admin-settings-particle settings-part-4" title="Clinic Identity & Logo">
+        <Building2 size={26} />
+      </div>
+
+      <div className="admin-settings-header">
+        <div className="admin-settings-header-left">
+          <div className="admin-settings-header-badge">
+            <Receipt size={15} />
+            <span>Hospital Billing & Invoices</span>
+          </div>
+          <h2>Billing & Invoice Settings</h2>
+          <p>Configure hospital invoice formats, clinic logo branding, tax identification numbers, and receipt customization</p>
+        </div>
+        <div className="admin-settings-header-actions">
+          <button
+            type="button"
+            className="admin-settings-header-btn admin-settings-refresh-btn"
+            onClick={() => loadInvoiceSettings()}
+            disabled={loading || saving}
+            title="Refresh billing settings"
+          >
+            <RotateCw size={16} className={loading ? "admin-settings-spin" : ""} />
+            <span>Refresh</span>
+          </button>
+          <button
+            type="button"
+            className="admin-settings-header-btn admin-settings-danger-btn"
+            onClick={deleteSettings}
+            disabled={loading || saving || !canDelete}
+            title="Delete all custom billing settings"
+          >
+            <Trash2 size={16} />
+            <span>Delete Settings</span>
+          </button>
+        </div>
       </div>
 
       <form className="admin-settings-grid" onSubmit={saveSettings}>
+        {/* PANEL 1: INVOICE TEMPLATES & FORMATS */}
         <section className="admin-settings-panel">
-          <h2>Template</h2>
-          <label>
-            Invoice Template
-            <select value={effectiveTemplateValue} onChange={(event) => selectTemplate(event.target.value)}>
+          <div className="admin-settings-panel-head">
+            <div className="admin-settings-panel-icon admin-settings-panel-icon--teal">
+              <Receipt size={22} />
+            </div>
+            <div>
+              <h3>Billing Templates</h3>
+              <p>Choose your primary invoice layout and manage OP/Diagnostic templates</p>
+            </div>
+          </div>
+
+          <div className="admin-settings-field">
+            <label htmlFor="invoice-template-select">
+              <span className="admin-settings-field-label">
+                <FileText size={15} /> Primary Invoice Template
+              </span>
+            </label>
+            <select
+              id="invoice-template-select"
+              value={effectiveTemplateValue}
+              onChange={(event) => selectTemplate(event.target.value)}
+              className="admin-settings-select"
+            >
               {BUILT_IN_TEMPLATES.map((template) => (
                 <option key={template.value} value={template.value}>
                   {template.label}
                 </option>
               ))}
             </select>
-          </label>
+          </div>
+
           {builtInTemplate ? (
             <div className="admin-settings-template-preview admin-settings-template-preview--builtin">
-              <div>
-                <strong>Template Preview</strong>
+              <div className="admin-settings-builtin-badge">
+                <Sparkles size={14} />
+                <strong>Active System Format:</strong>
                 <span>{builtInTemplate.label}</span>
               </div>
               <div className="admin-settings-builtin-template">
@@ -716,11 +814,15 @@ function AdminSettings() {
               </div>
             </div>
           ) : null}
+
           <div className="admin-settings-template-list">
-            <strong>Uploaded Billing Templates</strong>
+            <div className="admin-settings-template-list-head">
+              <strong>Uploaded Custom Billing Templates</strong>
+              <span>Support for HTML, PDF, DOCX and Images</span>
+            </div>
             {[
-              { type: "op", label: "OP Billing Template", template: form.opTemplate },
-              { type: "diagnostic", label: "Diagnostic Billing Template", template: form.diagnosticTemplate },
+              { type: "op", label: "OP Billing Template", template: form.opTemplate, desc: "Outpatient consultation & medicine receipts" },
+              { type: "diagnostic", label: "Diagnostic Billing Template", template: form.diagnosticTemplate, desc: "Laboratory, pathology & diagnostic invoices" },
             ].map((item) => (
               <article className="admin-settings-template-card" key={item.type}>
                 <div className="admin-settings-template-card-preview">
@@ -731,20 +833,24 @@ function AdminSettings() {
                       <iframe title={`${item.label} preview`} src={item.template.dataUrl} />
                     )
                   ) : (
-                    <div className="admin-settings-empty-template">No template uploaded</div>
+                    <div className="admin-settings-empty-template">
+                      <FileText size={28} className="admin-settings-empty-icon" />
+                      <span>No custom template</span>
+                      <small>Using system format</small>
+                    </div>
                   )}
                 </div>
                 <div className="admin-settings-template-card-meta">
-                  <div>
+                  <div className="admin-settings-template-card-header">
                     <button className="admin-settings-template-name" type="button" onClick={() => item.template?.dataUrl && openTemplatePreview(item.template)}>
                       {item.label}
                     </button>
-                    <span>{item.template?.fileName || "Upload a template file"}</span>
+                    <span className="admin-settings-template-desc">{item.template?.fileName || item.desc}</span>
                   </div>
                   <div className="admin-settings-template-actions">
-                    <label className="admin-settings-template-action">
+                    <label className="admin-settings-template-action admin-settings-template-action--upload">
                       <FileUp size={15} />
-                      Upload
+                      <span>Upload</span>
                       <input type="file" accept=".html,.htm,.pdf,.doc,.docx,image/*" onChange={(event) => handleTemplateUpload(item.type, event)} disabled={!canCreate} />
                     </label>
                     <button
@@ -752,89 +858,276 @@ function AdminSettings() {
                       type="button"
                       onClick={() => saveBillingTemplate(item.type)}
                       disabled={!item.template?.dataUrl || saving || !canEdit}
-                      style={{ borderColor: previewBranding.accentColor, color: previewBranding.accentColor }}
                     >
                       <Save size={15} />
-                      Save
+                      <span>Save</span>
                     </button>
-                    <button className="admin-settings-template-action" type="button" onClick={() => openTemplatePreview(item.template)} disabled={!item.template?.dataUrl}>
+                    <button className="admin-settings-template-action admin-settings-template-action--preview" type="button" onClick={() => openTemplatePreview(item.template)} disabled={!item.template?.dataUrl}>
                       <Eye size={15} />
-                      Preview
+                      <span>Preview</span>
                     </button>
                   </div>
                 </div>
               </article>
             ))}
           </div>
-          <label>
-            Header Title
-            <input value={form.headerTitle} onChange={(event) => updateField("headerTitle", event.target.value)} />
-          </label>
-          <label>
-            Header Subtitle
-            <input value={form.headerSubtitle} onChange={(event) => updateField("headerSubtitle", event.target.value)} />
-          </label>
-          <label>
-            Clinic Address
-            <textarea rows={3} value={form.clinicAddress} onChange={(event) => updateField("clinicAddress", event.target.value)} />
-          </label>
-          <label>
-            Clinic Phone
-            <input value={form.clinicPhone} onChange={(event) => updateField("clinicPhone", event.target.value)} />
-          </label>
-          <label>
-            Clinic Email
-            <input value={form.clinicEmail} onChange={(event) => updateField("clinicEmail", event.target.value)} />
-          </label>
-          <label>
-            GST Number
-            <input value={form.gstNumber} onChange={(event) => updateField("gstNumber", event.target.value)} />
-          </label>
-          <label>
-            Registration Number
-            <input value={form.registrationNumber} onChange={(event) => updateField("registrationNumber", event.target.value)} />
-          </label>
-          <label>
-            Footer Note
-            <textarea rows={4} value={form.footerNote} onChange={(event) => updateField("footerNote", event.target.value)} />
-          </label>
-          <label>
-            Accent Color
-            <span className="admin-settings-color-row">
-              <input type="color" value={form.accentColor} onChange={(event) => updateField("accentColor", event.target.value)} />
-              <input value={form.accentColor} onChange={(event) => updateField("accentColor", event.target.value)} />
-            </span>
-          </label>
-        </section>
 
-        <section className="admin-settings-panel">
-          <h2>Clinic Logo</h2>
-          <div className="admin-settings-logo-drop">
-            <img
-              src={previewBranding.logoUrl}
-              alt="Clinic logo preview"
-              onError={(event) => {
-                event.currentTarget.src = defaultLogoUrl;
-              }}
-            />
-            <label className="admin-settings-upload">
-              <ImagePlus size={18} />
-              Upload Logo
-              <input type="file" accept="image/*" onChange={handleLogoChange} disabled={!(canCreate || canEdit)} />
+          <div className="admin-settings-field">
+            <label htmlFor="invoice-footer-note">
+              <span className="admin-settings-field-label">
+                <FileCheck size={15} /> Invoice Footer Terms & Medical Disclaimer
+              </span>
             </label>
+            <textarea
+              id="invoice-footer-note"
+              rows={4}
+              value={form.footerNote}
+              onChange={(event) => updateField("footerNote", event.target.value)}
+              placeholder="e.g. Please bring this invoice for follow-up visits. Prescribed medicines once sold cannot be returned."
+              className="admin-settings-textarea"
+            />
           </div>
-          <button className="admin-settings-save" type="submit" disabled={saving || (hasRemoteSettings ? !canEdit : !canCreate)} style={{ background: previewBranding.accentColor }}>
-            <Save size={18} />
-            <span>{saving ? "Saving..." : hasRemoteSettings ? "Update Settings" : "Save Settings"}</span>
-          </button>
-          <button className="admin-settings-secondary admin-settings-logo-delete" type="button" onClick={deleteLogo} disabled={loading || saving || !canDelete}>
-            <Trash2 size={16} />
-            <span>Delete Logo</span>
-          </button>
-          {status ? <p className={`admin-settings-status admin-settings-status--${statusType}`}>{status}</p> : null}
         </section>
 
+        {/* PANEL 2: CLINIC BRANDING & BILLING DETAILS */}
+        <section className="admin-settings-panel">
+          <div className="admin-settings-panel-head">
+            <div className="admin-settings-panel-icon admin-settings-panel-icon--blue">
+              <Building2 size={22} />
+            </div>
+            <div>
+              <h3>Clinic Branding & Identity</h3>
+              <p>Hospital logo, billing tax identification, and contact details</p>
+            </div>
+          </div>
+
+          {/* Logo upload dropzone */}
+          <div className="admin-settings-logo-drop">
+            <div className="admin-settings-logo-frame">
+              <img
+                src={previewBranding.logoUrl}
+                alt="Clinic logo preview"
+                onError={(event) => {
+                  event.currentTarget.src = defaultLogoUrl;
+                }}
+              />
+            </div>
+            <div className="admin-settings-logo-actions">
+              <label className="admin-settings-upload-btn">
+                <ImagePlus size={16} />
+                <span>Upload Logo</span>
+                <input type="file" accept="image/*" onChange={handleLogoChange} disabled={!(canCreate || canEdit)} />
+              </label>
+              <button
+                className="admin-settings-delete-logo-btn"
+                type="button"
+                onClick={deleteLogo}
+                disabled={loading || saving || !canDelete || !previewBranding.logoUrl || previewBranding.logoUrl === defaultLogoUrl}
+              >
+                <Trash2 size={15} />
+                <span>Delete Logo</span>
+              </button>
+            </div>
+            <small className="admin-settings-logo-hint">Recommended: Transparent PNG or SVG (approx. 300x120px)</small>
+          </div>
+
+          {/* Accent Color theme */}
+          <div className="admin-settings-field">
+            <label htmlFor="invoice-accent-color">
+              <span className="admin-settings-field-label">
+                <Palette size={15} /> Invoice Accent Color Theme
+              </span>
+            </label>
+            <div className="admin-settings-color-row">
+              <input
+                id="invoice-accent-color"
+                type="color"
+                value={form.accentColor}
+                onChange={(event) => updateField("accentColor", event.target.value)}
+                className="admin-settings-color-picker"
+              />
+              <input
+                type="text"
+                value={form.accentColor}
+                onChange={(event) => updateField("accentColor", event.target.value)}
+                placeholder="#0f9d9d"
+                className="admin-settings-input admin-settings-color-input"
+              />
+            </div>
+
+            {/* Curated Hospital & Healthcare Color Theme Presets */}
+            <div className="admin-settings-color-presets">
+              <span className="admin-settings-color-presets-label">Hospital Theme Presets:</span>
+              {[
+                { name: "Hospital Teal", hex: "#0f766e" },
+                { name: "Clinical Blue", hex: "#0284c7" },
+                { name: "Health Emerald", hex: "#059669" },
+                { name: "Medical Cyan", hex: "#0891b2" },
+                { name: "Diagnostic Teal", hex: "#0f9d9d" },
+                { name: "Care Indigo", hex: "#4f46e5" },
+                { name: "Vital Rose", hex: "#be123c" },
+              ].map((preset) => (
+                <button
+                  key={preset.hex}
+                  type="button"
+                  className={`admin-settings-preset-chip ${form.accentColor?.toLowerCase() === preset.hex ? "admin-settings-preset-chip--active" : ""}`}
+                  onClick={() => updateField("accentColor", preset.hex)}
+                  title={preset.name}
+                >
+                  <span className="admin-settings-preset-dot" style={{ background: preset.hex }} />
+                  <span>{preset.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Clinic Name & Subtitle */}
+          <div className="admin-settings-field">
+            <label htmlFor="invoice-header-title">
+              <span className="admin-settings-field-label">
+                <Building2 size={15} /> Hospital / Clinic Title on Invoice
+              </span>
+            </label>
+            <input
+              id="invoice-header-title"
+              value={form.headerTitle}
+              onChange={(event) => updateField("headerTitle", event.target.value)}
+              placeholder="e.g. City Care Multispeciality Hospital"
+              className="admin-settings-input"
+            />
+          </div>
+
+          <div className="admin-settings-field">
+            <label htmlFor="invoice-header-subtitle">
+              <span className="admin-settings-field-label">
+                <Stethoscope size={15} /> Department / Tagline
+              </span>
+            </label>
+            <input
+              id="invoice-header-subtitle"
+              value={form.headerSubtitle}
+              onChange={(event) => updateField("headerSubtitle", event.target.value)}
+              placeholder="e.g. Comprehensive 24/7 Healthcare & Diagnostic Services"
+              className="admin-settings-input"
+            />
+          </div>
+
+          {/* 2-col Contact row */}
+          <div className="admin-settings-fields-row">
+            <div className="admin-settings-field">
+              <label htmlFor="invoice-clinic-phone">
+                <span className="admin-settings-field-label">
+                  <Phone size={14} /> Clinic Phone
+                </span>
+              </label>
+              <input
+                id="invoice-clinic-phone"
+                value={form.clinicPhone}
+                onChange={(event) => updateField("clinicPhone", event.target.value)}
+                placeholder="+91 98765 43210"
+                className="admin-settings-input"
+              />
+            </div>
+            <div className="admin-settings-field">
+              <label htmlFor="invoice-clinic-email">
+                <span className="admin-settings-field-label">
+                  <Mail size={14} /> Clinic Email
+                </span>
+              </label>
+              <input
+                id="invoice-clinic-email"
+                type="email"
+                value={form.clinicEmail}
+                onChange={(event) => updateField("clinicEmail", event.target.value)}
+                placeholder="billing@hospital.com"
+                className="admin-settings-input"
+              />
+            </div>
+          </div>
+
+          {/* 2-col Tax row */}
+          <div className="admin-settings-fields-row">
+            <div className="admin-settings-field">
+              <label htmlFor="invoice-gst-number">
+                <span className="admin-settings-field-label">
+                  <Hash size={14} /> GST / Tax Number
+                </span>
+              </label>
+              <input
+                id="invoice-gst-number"
+                value={form.gstNumber}
+                onChange={(event) => updateField("gstNumber", event.target.value)}
+                placeholder="37AAAAA0000A1Z5"
+                className="admin-settings-input"
+              />
+            </div>
+            <div className="admin-settings-field">
+              <label htmlFor="invoice-registration-number">
+                <span className="admin-settings-field-label">
+                  <ShieldCheck size={14} /> Reg. / License No.
+                </span>
+              </label>
+              <input
+                id="invoice-registration-number"
+                value={form.registrationNumber}
+                onChange={(event) => updateField("registrationNumber", event.target.value)}
+                placeholder="CLINIC-REG-2026"
+                className="admin-settings-input"
+              />
+            </div>
+          </div>
+
+          {/* Clinic Address */}
+          <div className="admin-settings-field">
+            <label htmlFor="invoice-clinic-address">
+              <span className="admin-settings-field-label">
+                <MapPin size={14} /> Hospital / Clinic Address
+              </span>
+            </label>
+            <textarea
+              id="invoice-clinic-address"
+              rows={3}
+              value={form.clinicAddress}
+              onChange={(event) => updateField("clinicAddress", event.target.value)}
+              placeholder="e.g. Door No. 4-12, Main Road, Medical Center, City, State - 530001"
+              className="admin-settings-textarea"
+            />
+          </div>
+
+          {/* Primary Save Button */}
+          <button
+            className="admin-settings-primary-save-btn"
+            type="submit"
+            disabled={saving || (hasRemoteSettings ? !canEdit : !canCreate)}
+            style={{ background: previewBranding.accentColor }}
+          >
+            <Save size={18} />
+            <span>{saving ? "Saving Settings..." : hasRemoteSettings ? "Update Invoice Settings" : "Save Invoice Settings"}</span>
+          </button>
+
+          {status ? (
+            <div className={`admin-settings-status-box admin-settings-status-box--${statusType}`}>
+              <CheckCircle size={16} />
+              <span>{status}</span>
+            </div>
+          ) : null}
+        </section>
+
+        {/* SECTION 3: LIVE PATIENT INVOICE PREVIEW */}
         <section className={`admin-settings-preview admin-settings-preview--${invoiceKind}`}>
+          <div className="admin-settings-preview-header-bar">
+            <div className="admin-settings-panel-icon admin-settings-panel-icon--purple">
+              <FileCheck size={22} />
+            </div>
+            <div>
+              <h3>Real-Time Invoice & Receipt Preview</h3>
+              <p>Live visualization of the patient bill generated with your active hospital branding & template</p>
+            </div>
+            <div className="admin-settings-live-badge">
+              <span className="admin-settings-pulse-dot" />
+              <span>Live Patient Preview</span>
+            </div>
+          </div>
           <div className="admin-settings-preview-watermark">
             <img src={previewBranding.watermarkUrl} alt="" />
           </div>

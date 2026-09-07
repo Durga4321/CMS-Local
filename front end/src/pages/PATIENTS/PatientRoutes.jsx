@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity, Bell, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, ClipboardList,
-  CreditCard, Download, Eye, EyeOff, FileText, Heart, KeyRound, LogOut, Mail, MapPin, Pill,
-  Menu, Phone, Printer, Search, Share2, Star, Stethoscope, Trash2, UserRound, X,
+  CreditCard, Download, Droplet, Eye, EyeOff, FileText, Heart, KeyRound, LogOut, Mail, MapPin, Pill,
+  Menu, Phone, Printer, Search, Share2, Star, Stethoscope, Syringe, Trash2, UserRound, X,
 } from "lucide-react";
 import PatientDashboard from "./PatientDashboard";
 import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
@@ -1043,7 +1043,7 @@ function PatientShell({ notifications, children, patient }) {
             </NavLink>
             <div className="pp-account-menu" ref={menuRef}>
               <button
-                className="pp-account-toggle"
+                className={`pp-account-toggle ${menuOpen ? "open" : ""}`}
                 type="button"
                 onClick={() => setMenuOpen((open) => !open)}
                 aria-haspopup="menu"
@@ -1051,66 +1051,91 @@ function PatientShell({ notifications, children, patient }) {
               >
                 <span className="pp-avatar">{initials}</span>
                 <span className="pp-account-name">{formatTitleCase(patient?.firstName || patient?.name || '')}</span>
-                <ChevronDown size={15} />
+                <span
+                  className={`user-profile-syringe-trigger pp-syringe-trigger ${menuOpen ? "rc-syringe--active" : ""}`}
+                  title={menuOpen ? "Syringe injected: click to close" : "Click syringe to inject account menu"}
+                >
+                  <Syringe size={17} className="rc-syringe-icon" />
+                  {menuOpen ? (
+                    <>
+                      <span className="rc-syringe-drip-bead" />
+                      <span className="rc-syringe-falling-drop" />
+                    </>
+                  ) : null}
+                </span>
               </button>
               {menuOpen ? (
-                <div className="pp-account-dropdown" role="menu">
+                <div className="pp-account-dropdown rc-blood-profile-dropdown" role="menu">
+                  {/* Capillary blood stream line */}
+                  <div className="rc-blood-capillary-stream" aria-hidden="true">
+                    <span className="rc-blood-capillary-drop-1" />
+                    <span className="rc-blood-capillary-drop-2" />
+                  </div>
+
                   <div className="pp-account-summary">
                     <span className="pp-account-summary-avatar">{initials}</span>
-                    <strong>{formatTitleCase(patient?.name || patient?.firstName || '')}</strong>
-                    <span>{patient?.email || ''}</span>
-                    <span className="pp-account-badge">Patient</span>
+                    <div className="pp-account-summary-details">
+                      <strong>{formatTitleCase(patient?.name || patient?.firstName || '')}</strong>
+                      <span>{patient?.email || ''}</span>
+                      <span className="pp-account-badge">Patient</span>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    className="pp-account-item"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      navigate('/patient/profile');
-                    }}
-                    role="menuitem"
-                  >
-                    <span className="pp-account-menu-icon">
-                      <UserRound size={20} />
-                    </span>
-                    <span className="pp-account-menu-copy">
-                      <b>My Profile</b>
-                      <small>View and edit your profile</small>
-                    </span>
-                    <ChevronRight size={17} className="pp-account-menu-arrow" />
-                  </button>
-                  <button
-                    type="button"
-                    className="pp-account-item"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      navigate('/patient/change-password');
-                    }}
-                    role="menuitem"
-                  >
-                    <span className="pp-account-menu-icon">
-                      <KeyRound size={20} />
-                    </span>
-                    <span className="pp-account-menu-copy">
-                      <b>Change Password</b>
-                      <small>Update your password</small>
-                    </span>
-                    <ChevronRight size={17} className="pp-account-menu-arrow" />
-                  </button>
-                  <button
-                    type="button"
-                    className="pp-account-item pp-account-item--logout"
-                    onClick={logout}
-                    role="menuitem"
-                  >
-                    <span className="pp-account-menu-icon danger">
-                      <LogOut size={20} />
-                    </span>
-                    <span className="pp-account-menu-copy">
-                      <b>Logout</b>
-                      <small>Sign out from your account</small>
-                    </span>
-                  </button>
+
+                  <div className="pp-account-menu-flow">
+                    <button
+                      type="button"
+                      className="pp-account-item rc-blood-drop-item"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        navigate('/patient/profile');
+                      }}
+                      role="menuitem"
+                    >
+                      <span className="rc-blood-drop-badge">
+                        <Droplet size={16} className="rc-blood-drop-svg" />
+                        <UserRound size={13} className="rc-blood-drop-inner-icon" />
+                      </span>
+                      <span className="pp-account-menu-copy rc-blood-drop-text">
+                        <b>My Profile</b>
+                        <small>View and edit your profile</small>
+                      </span>
+                      <ChevronRight size={17} className="pp-account-menu-arrow" />
+                    </button>
+                    <button
+                      type="button"
+                      className="pp-account-item rc-blood-drop-item"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        navigate('/patient/change-password');
+                      }}
+                      role="menuitem"
+                    >
+                      <span className="rc-blood-drop-badge">
+                        <Droplet size={16} className="rc-blood-drop-svg" />
+                        <KeyRound size={13} className="rc-blood-drop-inner-icon" />
+                      </span>
+                      <span className="pp-account-menu-copy rc-blood-drop-text">
+                        <b>Change Password</b>
+                        <small>Update your password</small>
+                      </span>
+                      <ChevronRight size={17} className="pp-account-menu-arrow" />
+                    </button>
+                    <button
+                      type="button"
+                      className="pp-account-item pp-account-item--logout rc-blood-drop-item danger"
+                      onClick={logout}
+                      role="menuitem"
+                    >
+                      <span className="rc-blood-drop-badge rc-blood-drop-badge--logout">
+                        <Droplet size={16} className="rc-blood-drop-svg" />
+                        <LogOut size={13} className="rc-blood-drop-inner-icon" />
+                      </span>
+                      <span className="pp-account-menu-copy rc-blood-drop-text">
+                        <b>Logout</b>
+                        <small>Sign out from your account</small>
+                      </span>
+                    </button>
+                  </div>
                 </div>
               ) : null}
             </div>

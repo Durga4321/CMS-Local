@@ -5,6 +5,7 @@ import LabDataPage from "./LabDataPage";
 import LabLayout from "./LabLayout";
 import LabReportCreate from "./LabReportCreate";
 import PermissionRoute from "../components/PermissionRoute";
+import UserProfilePage from "../profile/UserProfilePage";
 
 function LabApp() {
   return (
@@ -17,6 +18,8 @@ function LabApp() {
         <Route path="sample-collection" element={<PermissionRoute roleType="lab" module="Sample Collection"><LabDataPage type="samples" /></PermissionRoute>} />
         <Route path="reports" element={<PermissionRoute roleType="lab" module="Reports"><LabDataPage type="reports" /></PermissionRoute>} />
         <Route path="report-create" element={<PermissionRoute roleType="lab" module="Create Report"><LabReportCreate /></PermissionRoute>} />
+        <Route path="profile" element={<UserProfilePage roleType="lab" />} />
+        <Route path="change-password" element={<Navigate to="/lab/profile?tab=password" replace />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Route>
     </Routes>

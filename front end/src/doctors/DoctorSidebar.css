@@ -1,49 +1,73 @@
 /* ============================================================
    DOCTOR SIDEBAR — DoctorSidebar.css
-   Light teal sidebar aligned with Admin theme
+   Transparent Frosted Glassmorphic Sidebar with Medical Instrument
+   Multi-Colored Navigation System
    ============================================================ */
 
 /* ── Sidebar container ── */
 .dr-sidebar {
-  width: 220px;
-  min-width: 220px;
+  width: 240px;
+  min-width: 240px;
   height: 100vh;
-  background: #f8fafc;
-  border-right: 1px solid #e5e7eb;
+  /* Self-contained slate frosted glass theme — strictly invariant across all screen changes */
+  background: linear-gradient(180deg, #a9b1b6 0%, #adb4ba 45%, #afb2b7 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.45);
   display: flex;
   flex-direction: column;
   position: sticky;
   top: 0;
   overflow: hidden;
-  transition: width 0.25s ease;
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 4px 0 25px rgba(15, 23, 42, 0.06);
+  z-index: 100;
+  position: relative;
+}
+
+.dr-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.22) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ────────────────────────
-   BRAND / LOGO
+   BRAND / LOGO SECTION
    ──────────────────────── */
 .dr-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin: 14px 12px 0;
-  padding: 14px 12px;
-  border-bottom: 1px solid #e5e7eb;
-  border: 1px solid #99d4d9;
-  border-radius: 12px;
-  background: #e4f7f8;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dr-brand:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(15, 157, 157, 0.1);
 }
 
 .dr-brand-icon {
-  width: 38px;
-  height: 38px;
-  background: #0f9d9d;
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #0f9d9d 0%, #0d7f7f 100%);
   color: #fff;
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(15, 157, 157, 0.25);
 }
 
 .dr-clinic-logo {
@@ -53,10 +77,10 @@
   flex-direction: column;
   gap: 1px;
   border: 1px solid #e4ecf7;
-  border-radius: 10px;
+  border-radius: 12px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   color: #10b981;
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.07);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
 }
 
 .dr-clinic-logo svg {
@@ -71,9 +95,9 @@
 }
 
 .dr-clinic-logo small {
-  max-width: 36px;
+  max-width: 38px;
   color: #1d65c1;
-  font-size: 6px;
+  font-size: 6.5px;
   font-weight: 900;
   line-height: 1;
   overflow: hidden;
@@ -94,161 +118,394 @@
   display: none;
 }
 
-.dr-clinic-logo--green {
-  color: #16a34a;
-}
-
-.dr-clinic-logo--sky {
-  color: #0ea5e9;
-}
-
-.dr-clinic-logo--amber {
-  color: #f59e0b;
-}
-
-.dr-clinic-tooth-svg {
-  color: #1d7ff2;
-}
-
 .dr-brand-name {
   margin: 0;
   font-size: 14px;
-  font-weight: 900;
-  color: #111827;
-  line-height: 1.15;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
 }
 
 .dr-brand-sub {
-  margin: 0 0 3px;
-  font-size: 10px;
-  color: #0f6f76;
+  margin: 0 0 2px;
+  font-size: 9.5px;
+  color: #0f766e;
   font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 0.6px;
 }
 
 .dr-brand-branch {
-  margin: 3px 0 0;
+  margin: 2px 0 0;
   font-size: 11px;
-  color: #4b6078;
-  font-weight: 700;
-  line-height: 1.15;
+  color: #64748b;
+  font-weight: 600;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 /* ────────────────────────
-   NAVIGATION
+   NAVIGATION ITEMS
    ──────────────────────── */
 .dr-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 16px 12px;
-  flex: 1;           /* pushes profile to the bottom */
+  gap: 6px;
+  padding: 18px 12px;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  position: relative;
+  z-index: 1;
 }
 
 .dr-nav-link {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 14px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
+  padding: 9px 12px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
   text-decoration: none;
-  transition: background 0.15s, color 0.15s;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
+  position: relative;
+  user-select: none;
 }
 
-.dr-nav-link svg {
+/* Medical Instrument Icon Bezel */
+.dr-nav-icon-bezel {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+}
+
+.dr-nav-icon {
   flex: 0 0 auto;
-  transition: color 0.15s ease, stroke-width 0.15s ease;
+  transition: transform 0.22s ease, stroke-width 0.22s ease;
 }
 
-.dr-nav-link:nth-child(5n + 1) svg {
-  color: #0ea5e9;
+.dr-nav-link:hover .dr-nav-icon {
+  transform: scale(1.12);
 }
 
-.dr-nav-link:nth-child(5n + 2) svg {
-  color: #0f9d9d;
+.dr-nav-label {
+  flex: 1;
+  letter-spacing: -0.15px;
 }
 
-.dr-nav-link:nth-child(5n + 3) svg {
-  color: #7c3aed;
+/* Clinical Capsule Tag */
+.dr-nav-tag {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
-.dr-nav-link:nth-child(5n + 4) svg {
-  color: #f59e0b;
+/* Right active indicator pill */
+.dr-nav-active-pill {
+  width: 4px;
+  height: 16px;
+  border-radius: 4px;
+  opacity: 0;
+  transform: scaleY(0.4);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-left: 2px;
 }
 
-.dr-nav-link:nth-child(5n + 5) svg {
-  color: #16a34a;
-}
+/* ==========================================================================
+   COLOR SCHEMES (DIFFERENT CURATED MEDICAL PALETTES)
+   ========================================================================== */
 
-.dr-nav-link:hover {
-  background: #eef6f6;
-  color: #0f9d9d;
+/* 1. CYAN / AQUAMARINE (Dashboard) */
+.dr-nav-link--cyan .dr-nav-icon-bezel {
+  background: #ecfeff;
+  border: 1px solid #a5f3fc;
+  color: #0891b2;
 }
-
-.dr-nav-link.active {
-  background: #dff3f3;
-  color: #0f9d9d;
+.dr-nav-link--cyan .dr-nav-tag {
+  background: #ecfeff;
+  color: #0891b2;
+  border: 1px solid #cffafe;
+}
+.dr-nav-link--cyan:hover {
+  background: rgba(236, 254, 255, 0.7);
+  border-color: #a5f3fc;
+  color: #0e7490;
+  transform: translateX(3px);
+}
+.dr-nav-link--cyan.active {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.14) 0%, rgba(8, 145, 178, 0.06) 100%);
+  border-color: #06b6d4;
+  color: #0e7490;
   font-weight: 700;
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.dr-nav-link--cyan.active .dr-nav-icon-bezel {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  border-color: #0891b2;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
+}
+.dr-nav-link--cyan.active .dr-nav-tag {
+  background: #0891b2;
+  color: #ffffff;
+  border-color: #0891b2;
+}
+.dr-nav-link--cyan.active .dr-nav-active-pill {
+  opacity: 1;
+  transform: scaleY(1);
+  background: #06b6d4;
+  box-shadow: 0 0 10px #06b6d4;
 }
 
-.dr-nav-link.active svg {
-  stroke-width: 2.6;
+/* 2. ROYAL BLUE (Consultation) */
+.dr-nav-link--blue .dr-nav-icon-bezel {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #2563eb;
+}
+.dr-nav-link--blue .dr-nav-tag {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+}
+.dr-nav-link--blue:hover {
+  background: rgba(239, 246, 255, 0.7);
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+  transform: translateX(3px);
+}
+.dr-nav-link--blue.active {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.14) 0%, rgba(29, 78, 216, 0.06) 100%);
+  border-color: #2563eb;
+  color: #1d4ed8;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.dr-nav-link--blue.active .dr-nav-icon-bezel {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-color: #1d4ed8;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+.dr-nav-link--blue.active .dr-nav-tag {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+.dr-nav-link--blue.active .dr-nav-active-pill {
+  opacity: 1;
+  transform: scaleY(1);
+  background: #2563eb;
+  box-shadow: 0 0 10px #2563eb;
+}
+
+/* 3. RX PURPLE (Prescription) */
+.dr-nav-link--purple .dr-nav-icon-bezel {
+  background: #faf5ff;
+  border: 1px solid #e9d5ff;
+  color: #9333ea;
+}
+.dr-nav-link--purple .dr-nav-tag {
+  background: #faf5ff;
+  color: #9333ea;
+  border: 1px solid #f3e8ff;
+}
+.dr-nav-link--purple:hover {
+  background: rgba(250, 245, 255, 0.7);
+  border-color: #e9d5ff;
+  color: #7e22ce;
+  transform: translateX(3px);
+}
+.dr-nav-link--purple.active {
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.14) 0%, rgba(126, 34, 206, 0.06) 100%);
+  border-color: #9333ea;
+  color: #7e22ce;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(147, 51, 234, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.dr-nav-link--purple.active .dr-nav-icon-bezel {
+  background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+  border-color: #7e22ce;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(147, 51, 234, 0.4);
+}
+.dr-nav-link--purple.active .dr-nav-tag {
+  background: #9333ea;
+  color: #ffffff;
+  border-color: #9333ea;
+}
+.dr-nav-link--purple.active .dr-nav-active-pill {
+  opacity: 1;
+  transform: scaleY(1);
+  background: #9333ea;
+  box-shadow: 0 0 10px #9333ea;
+}
+
+/* 4. TRIAGE AMBER / CORAL (Appointments) */
+.dr-nav-link--amber .dr-nav-icon-bezel {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #ea580c;
+}
+.dr-nav-link--amber .dr-nav-tag {
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #ffedd5;
+}
+.dr-nav-link--amber:hover {
+  background: rgba(255, 247, 237, 0.7);
+  border-color: #fed7aa;
+  color: #c2410c;
+  transform: translateX(3px);
+}
+.dr-nav-link--amber.active {
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.14) 0%, rgba(194, 65, 12, 0.06) 100%);
+  border-color: #ea580c;
+  color: #c2410c;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(234, 88, 12, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.dr-nav-link--amber.active .dr-nav-icon-bezel {
+  background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+  border-color: #c2410c;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);
+}
+.dr-nav-link--amber.active .dr-nav-tag {
+  background: #ea580c;
+  color: #ffffff;
+  border-color: #ea580c;
+}
+.dr-nav-link--amber.active .dr-nav-active-pill {
+  opacity: 1;
+  transform: scaleY(1);
+  background: #ea580c;
+  box-shadow: 0 0 10px #ea580c;
+}
+
+/* 5. VITAL EMERALD (My Schedule) */
+.dr-nav-link--emerald .dr-nav-icon-bezel {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #059669;
+}
+.dr-nav-link--emerald .dr-nav-tag {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #d1fae5;
+}
+.dr-nav-link--emerald:hover {
+  background: rgba(236, 253, 245, 0.7);
+  border-color: #a7f3d0;
+  color: #047857;
+  transform: translateX(3px);
+}
+.dr-nav-link--emerald.active {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.14) 0%, rgba(4, 120, 87, 0.06) 100%);
+  border-color: #059669;
+  color: #047857;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.dr-nav-link--emerald.active .dr-nav-icon-bezel {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  border-color: #047857;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+}
+.dr-nav-link--emerald.active .dr-nav-tag {
+  background: #059669;
+  color: #ffffff;
+  border-color: #059669;
+}
+.dr-nav-link--emerald.active .dr-nav-active-pill {
+  opacity: 1;
+  transform: scaleY(1);
+  background: #059669;
+  box-shadow: 0 0 10px #059669;
 }
 
 /* ────────────────────────
-   DOCTOR PROFILE (bottom)
+   DOCTOR PROFILE (BOTTOM)
    ──────────────────────── */
 .dr-sidebar-profile {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 16px 16px 20px;
-  border-top: 1px solid #e5e7eb;
+  gap: 12px;
+  margin: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dr-sidebar-profile:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
 }
 
 .dr-sidebar-avatar {
-  width: 38px;
-  height: 38px;
-  background: #dff3f3;
-  color: #0f9d9d;
-  border-radius: 50%;
-  font-size: 13px;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  color: #ffffff;
+  border-radius: 12px;
+  font-size: 14px;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
 }
 
 .dr-sidebar-profile-info {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 1.5px;
   overflow: hidden;
 }
 
 .dr-sidebar-profile-name {
   margin: 0;
   font-size: 13px;
-  font-weight: 700;
-  color: #111827;
+  font-weight: 800;
+  color: #0f172a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: -0.2px;
 }
 
 .dr-sidebar-profile-role {
   margin: 0;
-  font-size: 10px;
-  color: #6b7280;
+  font-size: 10.5px;
+  color: #64748b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -257,7 +514,7 @@
 .dr-sidebar-profile-branch {
   margin: 0;
   font-size: 10px;
-  color: #0f6f76;
+  color: #0f766e;
   font-weight: 800;
   white-space: nowrap;
   overflow: hidden;
@@ -265,19 +522,37 @@
 }
 
 .dr-sidebar-profile-status {
-  margin: 3px 0 0;
+  margin: 2px 0 0;
   font-size: 10px;
-  color: #0f9d9d;
+  font-weight: 700;
+  color: #10b981;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .dr-status-dot {
   width: 7px;
   height: 7px;
-  background: #0f9d9d;
+  background: #10b981;
   border-radius: 50%;
   display: inline-block;
   flex-shrink: 0;
+  box-shadow: 0 0 8px #10b981;
+  position: relative;
+}
+
+.dr-status-dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid #10b981;
+  opacity: 0.6;
+  animation: dr-pulse 2s infinite ease-out;
+}
+
+@keyframes dr-pulse {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
 }

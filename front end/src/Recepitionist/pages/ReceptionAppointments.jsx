@@ -1,5 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CheckCircle, CreditCard, Eye, Printer } from "lucide-react";
+import {
+  Activity,
+  ArrowLeft,
+  Calendar,
+  CalendarCheck,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  Eye,
+  Printer,
+  RefreshCw,
+  Stethoscope,
+  User,
+  Users,
+} from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "../../components/ToastProvider";
 import { formatToday, parseList, requestJson } from "../receptionApi";
@@ -119,6 +133,87 @@ const isTimeOutSlot = (slot, date) => {
 
   const nowMinutes = today.getHours() * 60 + today.getMinutes();
   return hour * 60 + minute <= nowMinutes;
+};
+
+const generateDoctorDailySlots = (fetchedSlots = [], doctor = {}, dateStr = "") => {
+  const startStr = doctor?.workStart || doctor?.startTime || doctor?.work_start || "09:00 AM";
+  const endStr = doctor?.workEnd || doctor?.endTime || doctor?.work_end || "06:00 PM";
+  const breakStartStr = doctor?.breakStart || doctor?.break_start || "01:00 PM";
+  const breakEndStr = doctor?.breakEnd || doctor?.break_end || "02:00 PM";
+
+  const parseTimeToMinutes = (str) => {
+    if (!str) return null;
+    const s = String(str).trim();
+    if (s.includes(":") && (s.toLowerCase().includes("am") || s.toLowerCase().includes("pm"))) {
+      const match = s.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (match) {
+        let h = parseInt(match[1], 10);
+        const m = parseInt(match[2], 10);
+        const ampm = match[3] ? match[3].toUpperCase() : null;
+        if (ampm === "PM" && h < 12) h += 12;
+        if (ampm === "AM" && h === 12) h = 0;
+        return h * 60 + m;
+      }
+    }
+    const parts = s.split(":");
+    if (parts.length >= 2) {
+      const h = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      if (!isNaN(h) && !isNaN(m)) return h * 60 + m;
+    }
+    return null;
+  };
+
+  const formatMinutesTo12H = (mins) => {
+    let h = Math.floor(mins / 60);
+    const m = mins % 60;
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12;
+    if (h === 0) h = 12;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ampm}`;
+  };
+
+  let startMins = parseTimeToMinutes(startStr) ?? 540;
+  let endMins = parseTimeToMinutes(endStr) ?? 1080;
+  const breakStartMins = parseTimeToMinutes(breakStartStr) ?? 780;
+  const breakEndMins = parseTimeToMinutes(breakEndStr) ?? 840;
+
+  if (endMins <= startMins) endMins = 1080;
+
+  const fetchedMap = new Map();
+  (fetchedSlots || []).forEach((slot) => {
+    const label = parseSlotLabel(slot);
+    const key = normalizeSlotStart(label);
+    if (key && !fetchedMap.has(key)) fetchedMap.set(key, slot);
+  });
+
+  const slotsList = [];
+  const slotDuration = 30;
+
+  for (let m = startMins; m + slotDuration <= endMins; m += slotDuration) {
+    if (m >= breakStartMins && m < breakEndMins) {
+      continue;
+    }
+    const slotStartFormatted = formatMinutesTo12H(m);
+    const slotEndFormatted = formatMinutesTo12H(m + slotDuration);
+    const label = `${slotStartFormatted} - ${slotEndFormatted}`;
+    const key = normalizeSlotStart(label);
+
+    if (key && fetchedMap.has(key)) {
+      slotsList.push(fetchedMap.get(key));
+    } else {
+      slotsList.push({
+        slotLabel: label,
+        start: slotStartFormatted,
+        end: slotEndFormatted,
+        startTime: slotStartFormatted,
+        endTime: slotEndFormatted,
+        status: "Available",
+      });
+    }
+  }
+
+  return slotsList;
 };
 
 const isBookedSlot = (slot) => {
@@ -839,10 +934,9 @@ function ReceptionAppointments({ hideActions = false }) {
     return availableSlots.filter((slot) => {
       const label = parseSlotLabel(slot);
       if (!label) return false;
-      if (isTimeOutSlot(slot, form.date)) return false;
       return true;
     });
-  }, [availableSlots, form.date]);
+  }, [availableSlots]);
 
   useEffect(() => {
     if (!form.doctorId || !form.date) {
@@ -864,23 +958,17 @@ function ReceptionAppointments({ hideActions = false }) {
           const slotBranchId = getSlotBranchId(slot);
           return !receptionistBranchId || slotBranchId === receptionistBranchId;
         });
-        // Backend day-slots is the single source of truth. It already applies
-        // recurring schedule, leave/time-change/branch-shift overrides and bookings.
-        const merged = new Map();
-        slots.forEach((slot) => {
-          const label = parseSlotLabel(slot);
-          const key = normalizeSlotStart(label);
-          if (key && !merged.has(key)) merged.set(key, slot);
-        });
-        setAvailableSlots(Array.from(merged.values()));
+        const fullSlots = generateDoctorDailySlots(slots, selectedDoctor, form.date);
+        setAvailableSlots(fullSlots);
         setSelectedSlot("");
       })
       .catch(() => {
-        setAvailableSlots([]);
+        const fallbackSlots = generateDoctorDailySlots([], selectedDoctor, form.date);
+        setAvailableSlots(fallbackSlots);
         setSelectedSlot("");
       })
       .finally(() => setSlotLoading(false));
-  }, [form.doctorId, form.date, receptionistBranchId]);
+  }, [form.doctorId, form.date, receptionistBranchId, selectedDoctor]);
 
   const validateBookingForm = () => {
     if (!form.patientId || !form.doctorId || !selectedSlot) {
@@ -1097,29 +1185,131 @@ function ReceptionAppointments({ hideActions = false }) {
   const receiptDate = receiptAppointment.date || receiptAppointment.appointmentDate || "";
 
   return (
-    <section className="rc-page">
-      <div className="rc-page-head">
+    <section className="rc-page rc-appointments-page">
+      {/* Medical Appointment Theme Background Overlay */}
+      <div className="appointments-bg-overlay" />
+
+      {/* Animated Medical ECG Heart Rate Wave across Appointment Background */}
+      <div className="appointments-heartrate-wave">
+        <svg viewBox="0 0 1400 100" preserveAspectRatio="none" className="appointments-ecg-svg">
+          <defs>
+            <linearGradient id="apptEcgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.2" />
+              <stop offset="30%" stopColor="#0284c7" stopOpacity="0.75" />
+              <stop offset="50%" stopColor="#10b981" stopOpacity="0.95" />
+              <stop offset="70%" stopColor="#0284c7" stopOpacity="0.75" />
+              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.2" />
+            </linearGradient>
+            <filter id="apptEcgGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <path
+            d="M0 50 L220 50 L235 32 L250 72 L265 10 L285 90 L300 50 L320 50 L560 50 L575 32 L590 72 L605 10 L625 90 L640 50 L660 50 L900 50 L915 32 L930 72 L945 10 L965 90 L980 50 L1000 50 L1400 50"
+            fill="none"
+            stroke="url(#apptEcgGrad)"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            filter="url(#apptEcgGlow)"
+            className="appointments-ecg-path"
+          />
+        </svg>
+      </div>
+
+      {/* PAGE HEADER */}
+      <div className="rc-dash-header">
         <div>
-          <h2>Appointment Booking</h2>
-          <p>Select patient, doctor, date, lock a slot, and confirm booking.</p>
-          <p>{patientCount} registered patient{patientCount === 1 ? "" : "s"} available for booking.</p>
+          <h1 className="rc-dash-title">
+            Appointment Booking <span className="rc-wave-hand">🩺</span>
+          </h1>
+          <p className="rc-dash-subtitle">
+            Select patient, doctor, date, lock a consultation slot, and confirm booking.
+          </p>
         </div>
         {!hideActions && (
-          <div className="rc-head-actions">
-            <button className="rc-btn" onClick={() => navigate("/reception/dashboard") }>
-              <ArrowLeft size={16} /> Dashboard
+          <div className="rc-dash-head-actions">
+            <button
+              type="button"
+              className="rc-head-action-btn btn-secondary"
+              onClick={refresh}
+              title="Refresh Appointment Data"
+            >
+              <RefreshCw size={14} />
+              <span>Refresh</span>
+            </button>
+            <button
+              type="button"
+              className="rc-head-action-btn btn-secondary"
+              onClick={() => navigate("/reception/dashboard")}
+              title="Back to Dashboard"
+            >
+              <ArrowLeft size={14} />
+              <span>Dashboard</span>
             </button>
           </div>
         )}
       </div>
 
+      {/* TOP 3 MINI APPOINTMENT TELEMETRY CARDS */}
+      <div className="rc-patient-kpi-grid rc-appt-kpi-grid">
+        <div className="rc-patient-kpi-card card-blue-theme">
+          <div className="rc-pkpi-icon-box box-blue">
+            <Users size={18} />
+          </div>
+          <div className="rc-pkpi-content">
+            <span className="rc-pkpi-label">Registered Patients</span>
+            <strong className="rc-pkpi-val">{patientCount}</strong>
+          </div>
+          <span className="rc-pkpi-badge badge-blue">● Ready for Care</span>
+        </div>
+
+        <div className="rc-patient-kpi-card card-green-theme">
+          <div className="rc-pkpi-icon-box box-green">
+            <Stethoscope size={18} />
+          </div>
+          <div className="rc-pkpi-content">
+            <span className="rc-pkpi-label">Specialist Doctors</span>
+            <strong className="rc-pkpi-val">{doctors.length}</strong>
+          </div>
+          <span className="rc-pkpi-badge badge-green">✓ Active OPD</span>
+        </div>
+
+        <div className="rc-patient-kpi-card card-purple-theme">
+          <div className="rc-pkpi-icon-box box-purple">
+            <CalendarCheck size={18} />
+          </div>
+          <div className="rc-pkpi-content">
+            <span className="rc-pkpi-label">Available Slots</span>
+            <strong className="rc-pkpi-val">
+              {visibleSlots.filter((s) => !isBookedSlot(s) && !isTimeOutSlot(s, form.date)).length}
+            </strong>
+          </div>
+          <span className="rc-pkpi-badge badge-purple">● Live Booking</span>
+        </div>
+      </div>
+
       {message ? <div className="rc-alert">{message}</div> : null}
 
-      <form className="rc-card rc-booking-form" onSubmit={openPaymentStep} noValidate>
+      <form className="rc-card rc-booking-form glass-panel" onSubmit={openPaymentStep} noValidate>
         <div className="rc-booking-fields">
-          <h3>Book Appointment</h3>
+          <div className="rc-booking-section-title">
+            <Stethoscope size={18} className="rc-title-med-icon" />
+            <div>
+              <h3>Consultation Details</h3>
+              <p>Assign patient, specialist doctor, date and clinical complaints</p>
+            </div>
+          </div>
+
           <label>
-            <span>Patient</span>
+            <span className="rc-field-label">
+              <User size={13} className="rc-field-icon" />
+              Patient
+            </span>
             <div className="rc-patient-autocomplete">
               <input
                 type="text"
@@ -1162,8 +1352,12 @@ function ReceptionAppointments({ hideActions = false }) {
               ) : null}
             </div>
           </label>
+
           <label>
-            <span>Doctor</span>
+            <span className="rc-field-label">
+              <Stethoscope size={13} className="rc-field-icon" />
+              Doctor
+            </span>
             <select value={form.doctorId} onChange={(e) => setField("doctorId", e.target.value)}>
               {doctors.length === 0 ? (
                 <option value="">
@@ -1181,12 +1375,35 @@ function ReceptionAppointments({ hideActions = false }) {
               <small className="rc-field-message">{doctorLoadMessage}</small>
             ) : null}
           </label>
+
+          {selectedDoctor ? (
+            <div className="rc-doc-preview-card">
+              <div className="rc-doc-preview-avatar">
+                {String(selectedDoctor.name || "DR").split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase() || "DR"}
+              </div>
+              <div className="rc-doc-preview-info">
+                <strong>Dr. {selectedDoctor.name}</strong>
+                <span>{selectedDoctor.specialization ? getSpecializationDisplayName(selectedDoctor.specialization) : "General Physician"}</span>
+              </div>
+              <span className="rc-doc-preview-fee">
+                Fee: {formatIndianCurrency(consultationFee)}
+              </span>
+            </div>
+          ) : null}
+
           <label>
-            <span>Date</span>
+            <span className="rc-field-label">
+              <Calendar size={13} className="rc-field-icon" />
+              Date
+            </span>
             <input type="date" value={form.date} onChange={(e) => setField("date", e.target.value)} />
           </label>
+
           <label>
-            <span>Chief Complaints</span>
+            <span className="rc-field-label">
+              <Activity size={13} className="rc-field-icon" />
+              Chief Complaints
+            </span>
             <input
               list="chief-complaint-options"
               value={form.chiefComplaints}
@@ -1210,8 +1427,16 @@ function ReceptionAppointments({ hideActions = false }) {
 
         <div className="rc-slot-panel">
           <div className="rc-slot-head">
-            <strong>Time Slots</strong>
-            <span>Available&nbsp;&nbsp; Selected&nbsp;&nbsp; Booked</span>
+            <div className="rc-slot-title-wrap">
+              <CalendarCheck size={16} className="rc-slot-title-icon" />
+              <strong>Consultation Time Slots</strong>
+            </div>
+            <div className="rc-slot-legend-group">
+              <span className="rc-legend-pill legend-available">● Available</span>
+              <span className="rc-legend-pill legend-selected">✓ Selected</span>
+              <span className="rc-legend-pill legend-booked">✕ Booked</span>
+              <span className="rc-legend-pill legend-timeout">◷ Time Out</span>
+            </div>
           </div>
           <div className="rc-slots">
             {slotLoading ? (
@@ -1223,13 +1448,6 @@ function ReceptionAppointments({ hideActions = false }) {
                 const isBooked = Boolean(isBookedSlot(slot) || bookedSlots.has(slotStart));
                 const isSelected = selectedSlot && normalizeSlotStart(selectedSlot) === slotStart;
                 const isCompleted = !isBooked && isTimeOutSlot(slot, form.date);
-                const statusLabel = isBooked
-                  ? "BOOKED"
-                  : isSelected
-                    ? "SELECTED"
-                    : isCompleted
-                      ? "TIME OUT"
-                      : "AVAILABLE";
                 const buttonClass = [
                   isBooked ? "booked" : isCompleted ? "completed" : "available",
                   isSelected && !isBooked && !isCompleted ? "selected" : "",
@@ -1242,14 +1460,20 @@ function ReceptionAppointments({ hideActions = false }) {
                     type="button"
                     key={`${label}-${slotStart}`}
                     disabled={isBooked || isCompleted}
-                    className={buttonClass}
+                    className={`rc-med-slot-btn ${buttonClass}`}
                     aria-pressed={Boolean(isSelected)}
                     onClick={() => {
                       setSelectedSlot(label);
                       setPaymentStep(false);
                     }}
                   >
-                    {label} - {statusLabel}
+                    <div className="rc-slot-time-box">
+                      <Clock size={12} className="rc-slot-clock-icon" />
+                      <span className="rc-slot-time-text">{label}</span>
+                    </div>
+                    <span className={`rc-slot-status-pill pill-${isBooked ? "booked" : isSelected ? "selected" : isCompleted ? "timeout" : "available"}`}>
+                      {isBooked ? "✕ Booked" : isSelected ? "✓ Locked" : isCompleted ? "◷ Expired" : "● Open"}
+                    </span>
                   </button>
                 );
               })
@@ -1257,8 +1481,8 @@ function ReceptionAppointments({ hideActions = false }) {
               <div className="rc-slot-empty">No slots available for this doctor on the selected date.</div>
             )}
           </div>
-          <button type="submit" className="rc-confirm" disabled={!canCreateBooking}>
-            <CheckCircle size={16} /> Confirm Booking
+          <button type="submit" className="rc-confirm rc-booking-submit-btn" disabled={!canCreateBooking}>
+            <CheckCircle size={18} /> Confirm Consultation Booking
           </button>
           {paymentStep ? (
             <div className="rc-consult-payment">
