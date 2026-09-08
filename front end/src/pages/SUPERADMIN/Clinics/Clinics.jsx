@@ -5,24 +5,8 @@ import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
 import { deleteClinic, fetchClinics, updateClinicStatus } from "../superAdminApi";
-import { assetUrl } from "../../../config/api";
-import { getDefaultClinicLogo, getPublicClinicLogoUrl } from "../../../utils/clinicBranding";
+import { getDefaultClinicLogo, loadPublicClinicLogo } from "../../../utils/clinicBranding";
 import { ActionsGroup } from "../../../components/ActionsGroup";
-
-const readLogoValue = (data = {}) => {
-  const source = data?.data && typeof data.data === "object" ? data.data : data || {};
-  return (
-    source.logoDataUrl ||
-    source.LogoDataUrl ||
-    source.logoUrl ||
-    source.LogoUrl ||
-    source.logoPath ||
-    source.LogoPath ||
-    source.logoFilePath ||
-    source.LogoFilePath ||
-    ""
-  );
-};
 
 function ClinicLogo({ clinic }) {
   const clinicId = clinic.id || clinic.clinicId || clinic.hospitalId || "";
@@ -33,20 +17,8 @@ function ClinicLogo({ clinic }) {
   useEffect(() => {
     let isCurrent = true;
     const loadLogo = async () => {
-      const publicLogoUrl = getPublicClinicLogoUrl(clinicId);
-      if (!publicLogoUrl) {
-        setLogoUrl(fallbackLogo);
-        return;
-      }
-      const response = await fetch(publicLogoUrl, {
-        headers: { "ngrok-skip-browser-warning": "true" },
-      }).catch(() => null);
-      if (!isCurrent || !response?.ok) return;
-      const contentType = String(response.headers.get("content-type") || "").toLowerCase();
-      const nextLogo = contentType.startsWith("image/")
-        ? publicLogoUrl
-        : assetUrl(readLogoValue(await response.json().catch(() => ({}))));
-      if (nextLogo) setLogoUrl(`${nextLogo}${nextLogo.includes("?") ? "&" : "?"}v=${Date.now()}`);
+      const nextLogo = await loadPublicClinicLogo(clinicId);
+      if (isCurrent) setLogoUrl(nextLogo || fallbackLogo);
     };
 
     loadLogo();
