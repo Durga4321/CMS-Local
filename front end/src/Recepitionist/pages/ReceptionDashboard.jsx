@@ -355,13 +355,6 @@ function ReceptionDashboard({
             <div className="db-kpi-trend trend-neutral">
               <span>● Scheduled Today</span>
             </div>
-            <svg className="db-sparkline" viewBox="0 0 160 30" preserveAspectRatio="none">
-              <path d="M0 26 Q 25 22, 50 24 T 100 18 T 160 8" fill="none" stroke="#0284c7" strokeWidth="2.5" strokeLinecap="round" />
-              <circle cx="0" cy="26" r="3" fill="#0284c7" />
-              <circle cx="50" cy="24" r="3" fill="#0284c7" />
-              <circle cx="100" cy="18" r="3" fill="#0284c7" />
-              <circle cx="160" cy="8" r="3" fill="#0284c7" />
-            </svg>
           </div>
         </div>
 
@@ -385,13 +378,6 @@ function ReceptionDashboard({
             <div className="db-kpi-trend trend-down">
               <span>● In Waiting Room</span>
             </div>
-            <svg className="db-sparkline" viewBox="0 0 160 30" preserveAspectRatio="none">
-              <path d="M0 24 Q 25 20, 50 24 T 100 18 T 160 10" fill="none" stroke="#f97316" strokeWidth="2.5" strokeLinecap="round" />
-              <circle cx="0" cy="24" r="3" fill="#f97316" />
-              <circle cx="50" cy="24" r="3" fill="#f97316" />
-              <circle cx="100" cy="18" r="3" fill="#f97316" />
-              <circle cx="160" cy="10" r="3" fill="#f97316" />
-            </svg>
           </div>
         </div>
 
@@ -415,13 +401,6 @@ function ReceptionDashboard({
             <div className="db-kpi-trend trend-up">
               <span>✓ Consulted Today</span>
             </div>
-            <svg className="db-sparkline" viewBox="0 0 160 30" preserveAspectRatio="none">
-              <path d="M0 15 H 160" fill="none" stroke="#10b981" strokeWidth="2.5" strokeDasharray="4 4" />
-              <circle cx="0" cy="15" r="3" fill="#10b981" />
-              <circle cx="50" cy="15" r="3" fill="#10b981" />
-              <circle cx="100" cy="15" r="3" fill="#10b981" />
-              <circle cx="160" cy="15" r="3" fill="#10b981" />
-            </svg>
           </div>
         </div>
       </div>
@@ -529,11 +508,21 @@ function ReceptionDashboard({
 
         <div className="rc-dash-table-container">
           <div className="rc-dash-table-header">
-            <span className="col-sno">S.No.</span>
-            <span className="col-patient">Patient</span>
-            <span className="col-doctor">Doctor</span>
-            <span className="col-time">Time</span>
-            <span className="col-status">Status</span>
+            <span className="col-sno">
+              <span className="rc-th-capsule rc-th-sno">S.No.</span>
+            </span>
+            <span className="col-patient">
+              <span className="rc-th-capsule rc-th-name">Patient</span>
+            </span>
+            <span className="col-doctor">
+              <span className="rc-th-capsule rc-th-doctor">Doctor</span>
+            </span>
+            <span className="col-time">
+              <span className="rc-th-capsule rc-th-time">Time</span>
+            </span>
+            <span className="col-status">
+              <span className="rc-th-capsule rc-th-status">Status</span>
+            </span>
           </div>
 
           <div className="rc-dash-table-body">

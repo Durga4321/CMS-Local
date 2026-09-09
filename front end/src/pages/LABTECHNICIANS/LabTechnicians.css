@@ -5,42 +5,13 @@
 .lab-technicians-page {
   position: relative !important;
   min-height: calc(100vh - 82px) !important;
-  background:
-    linear-gradient(135deg, rgba(240, 246, 252, 0.82) 0%, rgba(244, 249, 254, 0.74) 40%, rgba(240, 247, 253, 0.78) 70%, rgba(246, 250, 255, 0.86) 100%),
-    url('../../assets/lab_equipment_bg.jpg') center/cover no-repeat fixed !important;
-  background-size: cover !important;
+  background: transparent !important;
   overflow-x: hidden !important;
 }
 
-.lab-technicians-page .lab-bg-overlay {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background:
-    linear-gradient(135deg, rgba(240, 246, 252, 0.80) 0%, rgba(244, 249, 254, 0.70) 40%, rgba(240, 247, 253, 0.75) 70%, rgba(246, 250, 255, 0.84) 100%),
-    url('../../assets/lab_equipment_bg.jpg') center/cover no-repeat fixed !important;
-  background-size: cover !important;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Floating Lab Equipment Badges (Microscope, Flask, Test Tubes, DNA) */
+.lab-technicians-page .lab-bg-overlay,
 .lab-equipment-particle {
-  position: absolute;
-  border-radius: 16px;
-  pointer-events: none;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: #0284c7;
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
-  animation: floatLabParticle 10s ease-in-out infinite alternate;
+  display: none !important;
 }
 
 .lab-part-1 {

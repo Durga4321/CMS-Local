@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Eye, Syringe, HeartPulse, Scissors } from "lucide-react";
+import { Eye, Pencil, Syringe, HeartPulse, Trash2 } from "lucide-react";
 import { StatusToggle } from "./StatusToggle";
 import "./ActionsGroup.css";
 
@@ -93,8 +93,6 @@ export const ActionsGroup = ({
           aria-label="View Details"
           onClick={handleAction("view", onView)}
         >
-          <span className="instrument-led led-blue" />
-          <span className="instrument-ripple" />
           <Eye size={18} className="instrument-icon icon-eye" />
         </button>
       )}
@@ -103,15 +101,13 @@ export const ActionsGroup = ({
         <button
           type="button"
           className={`action-btn medical-instrument-btn edit-instrument-btn ${
-            activeEffect === "edit" || currentAction === "edit" ? "is-effecting effect-syringe" : ""
+            activeEffect === "edit" || currentAction === "edit" ? "is-effecting effect-edit effect-syringe" : ""
           }`}
           title="Edit Record"
           aria-label="Edit Record"
           onClick={handleAction("edit", onEdit)}
         >
-          <span className="instrument-led led-purple" />
-          <span className="instrument-ripple" />
-          <Syringe size={18} className="instrument-icon icon-syringe" />
+          <Pencil size={18} className="instrument-icon icon-pencil icon-edit" />
         </button>
       )}
 
@@ -134,8 +130,6 @@ export const ActionsGroup = ({
             onClick={handleAction("status", onStatus)}
             disabled={statusDisabled}
           >
-            <span className={`instrument-led ${isEnabled ? "led-green" : "led-red"}`} />
-            <span className="instrument-ripple" />
             {statusIcon ? (
               React.createElement(statusIcon, { size: 19, className: "instrument-icon" })
             ) : (
@@ -149,15 +143,13 @@ export const ActionsGroup = ({
         <button
           type="button"
           className={`action-btn medical-instrument-btn delete-instrument-btn ${
-            activeEffect === "delete" || currentAction === "delete" ? "is-effecting effect-scissors" : ""
+            activeEffect === "delete" || currentAction === "delete" ? "is-effecting effect-delete effect-scissors" : ""
           }`}
           title="Delete Record"
           aria-label="Delete Record"
           onClick={handleAction("delete", onDelete)}
         >
-          <span className="instrument-led led-red" />
-          <span className="instrument-ripple" />
-          <Scissors size={18} className="instrument-icon icon-scissors" />
+          <Trash2 size={18} className="instrument-icon icon-delete icon-trash" />
         </button>
       )}
     </div>

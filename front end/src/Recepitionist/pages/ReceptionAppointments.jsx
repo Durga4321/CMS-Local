@@ -1,16 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   ArrowLeft,
   Calendar,
   CalendarCheck,
+  Check,
   CheckCircle,
+  ChevronDown,
   Clock,
   CreditCard,
   Eye,
   Printer,
   RefreshCw,
   Stethoscope,
+  Syringe,
   User,
   Users,
 } from "lucide-react";
@@ -662,6 +665,8 @@ function ReceptionAppointments({ hideActions = false }) {
   const [patients, setPatients] = useState([]);
   const [patientSearch, setPatientSearch] = useState("");
   const [isPatientMenuOpen, setIsPatientMenuOpen] = useState(false);
+  const [isDoctorMenuOpen, setIsDoctorMenuOpen] = useState(false);
+  const doctorDropdownRef = useRef(null);
   const [doctors, setDoctors] = useState([]);
   const [doctorLoadMessage, setDoctorLoadMessage] = useState("");
   const [appointments, setAppointments] = useState([]);
@@ -814,6 +819,20 @@ function ReceptionAppointments({ hideActions = false }) {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (doctorDropdownRef.current && !doctorDropdownRef.current.contains(e.target)) {
+        setIsDoctorMenuOpen(false);
+      }
+    };
+    if (isDoctorMenuOpen) {
+      document.addEventListener("mousedown", handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [isDoctorMenuOpen]);
 
   const getPatientId = (patient = {}) =>
     patient.id ?? patient.patientId ?? patient.PatientId ?? patient.PID ?? "";
@@ -1298,17 +1317,19 @@ function ReceptionAppointments({ hideActions = false }) {
       <form className="rc-card rc-booking-form glass-panel" onSubmit={openPaymentStep} noValidate>
         <div className="rc-booking-fields">
           <div className="rc-booking-section-title">
-            <Stethoscope size={18} className="rc-title-med-icon" />
-            <div>
-              <h3>Consultation Details</h3>
-              <p>Assign patient, specialist doctor, date and clinical complaints</p>
+            <div className="rc-heading-capsule rc-capsule-cyan">
+              <Stethoscope size={16} className="rc-capsule-icon" />
+              <span>Consultation Details</span>
             </div>
+            <p className="rc-booking-section-subtitle">
+              Assign patient, specialist doctor, date and clinical complaints
+            </p>
           </div>
 
           <label>
-            <span className="rc-field-label">
+            <span className="rc-field-label rc-field-label--indigo">
               <User size={13} className="rc-field-icon" />
-              Patient
+              <span>Patient</span>
             </span>
             <div className="rc-patient-autocomplete">
               <input
@@ -1353,56 +1374,140 @@ function ReceptionAppointments({ hideActions = false }) {
             </div>
           </label>
 
-          <label>
-            <span className="rc-field-label">
+          <div className="rc-field-group rc-doctor-field-group">
+            <span className="rc-field-label rc-field-label--cyan">
               <Stethoscope size={13} className="rc-field-icon" />
-              Doctor
+              <span>Doctor</span>
             </span>
-            <select value={form.doctorId} onChange={(e) => setField("doctorId", e.target.value)}>
-              {doctors.length === 0 ? (
-                <option value="">
-                  {doctorLoadMessage || "No doctors available"}
-                </option>
-              ) : null}
-              {doctors.map((d) => (
-                <option key={getDoctorId(d)} value={getDoctorId(d)}>
-                  {d.name}
+            <div className="rc-doctor-selector" ref={doctorDropdownRef}>
+              <button
+                type="button"
+                className={`rc-doc-selector-btn ${isDoctorMenuOpen ? "rc-selector-open" : ""}`}
+                onClick={() => setIsDoctorMenuOpen((prev) => !prev)}
+                aria-haspopup="listbox"
+                aria-expanded={isDoctorMenuOpen}
+              >
+                {selectedDoctor ? (
+                  <div className="rc-doc-selected-content">
+                    <div className="rc-doc-preview-avatar">
+                      {String(selectedDoctor.name || "DR")
+                        .split(" ")
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((p) => p[0])
+                        .join("")
+                        .toUpperCase() || "DR"}
+                    </div>
+                    <div className="rc-doc-preview-info">
+                      <strong className="rc-doc-name">Dr. {selectedDoctor.name}</strong>
+                      <span className="rc-doc-spec">
+                        {selectedDoctor.specialization
+                          ? getSpecializationDisplayName(selectedDoctor.specialization)
+                          : "General Physician"}
+                      </span>
+                    </div>
+                    <span className="rc-doc-preview-fee">
+                      Fee: {formatIndianCurrency(consultationFee)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="rc-doc-placeholder">
+                    <Stethoscope size={16} className="rc-doc-placeholder-icon" />
+                    <span>{doctorLoadMessage || "Select Doctor"}</span>
+                  </div>
+                )}
+                <ChevronDown
+                  size={16}
+                  className={`rc-doc-dropdown-arrow ${isDoctorMenuOpen ? "is-open" : ""}`}
+                />
+              </button>
+
+              {/* Hidden native select for form serialization / compatibility */}
+              <select
+                value={form.doctorId}
+                onChange={(e) => setField("doctorId", e.target.value)}
+                style={{ display: "none" }}
+                tabIndex={-1}
+                aria-hidden="true"
+              >
+                {doctors.length === 0 ? (
+                  <option value="">{doctorLoadMessage || "No doctors available"}</option>
+                ) : null}
+                {doctors.map((d) => (
+                  <option key={getDoctorId(d)} value={getDoctorId(d)}>
+                    {d.name}
                     {d.specialization ? ` - ${getSpecializationDisplayName(d.specialization)}` : ""}
-                </option>
-              ))}
-            </select>
+                  </option>
+                ))}
+              </select>
+
+              {isDoctorMenuOpen && doctors.length > 0 ? (
+                <div className="rc-doctor-dropdown-menu" role="listbox">
+                  {doctors.map((doctor) => {
+                    const docId = getDoctorId(doctor);
+                    const isSelected = String(docId) === String(form.doctorId);
+                    const fee = getDoctorFee(doctor);
+                    const initials =
+                      String(doctor.name || "DR")
+                        .split(" ")
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((p) => p[0])
+                        .join("")
+                        .toUpperCase() || "DR";
+
+                    return (
+                      <button
+                        key={docId}
+                        type="button"
+                        role="option"
+                        aria-selected={isSelected}
+                        className={`rc-doctor-option-item ${isSelected ? "rc-option-selected" : ""}`}
+                        onClick={() => {
+                          setField("doctorId", docId);
+                          setIsDoctorMenuOpen(false);
+                        }}
+                      >
+                        <div className="rc-doctor-option-avatar">{initials}</div>
+                        <div className="rc-doctor-option-details">
+                          <span className="rc-doctor-option-name">Dr. {doctor.name}</span>
+                          <span className="rc-doctor-option-spec">
+                            {doctor.specialization
+                              ? getSpecializationDisplayName(doctor.specialization)
+                              : "General Physician"}
+                          </span>
+                        </div>
+                        <div className="rc-doctor-option-right">
+                          <span className="rc-doctor-option-fee">
+                            {formatIndianCurrency(fee)}
+                          </span>
+                          {isSelected ? (
+                            <Check size={16} className="rc-doctor-option-check" />
+                          ) : null}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
             {doctorLoadMessage ? (
               <small className="rc-field-message">{doctorLoadMessage}</small>
             ) : null}
-          </label>
-
-          {selectedDoctor ? (
-            <div className="rc-doc-preview-card">
-              <div className="rc-doc-preview-avatar">
-                {String(selectedDoctor.name || "DR").split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase() || "DR"}
-              </div>
-              <div className="rc-doc-preview-info">
-                <strong>Dr. {selectedDoctor.name}</strong>
-                <span>{selectedDoctor.specialization ? getSpecializationDisplayName(selectedDoctor.specialization) : "General Physician"}</span>
-              </div>
-              <span className="rc-doc-preview-fee">
-                Fee: {formatIndianCurrency(consultationFee)}
-              </span>
-            </div>
-          ) : null}
+          </div>
 
           <label>
-            <span className="rc-field-label">
+            <span className="rc-field-label rc-field-label--amber">
               <Calendar size={13} className="rc-field-icon" />
-              Date
+              <span>Date</span>
             </span>
             <input type="date" value={form.date} onChange={(e) => setField("date", e.target.value)} />
           </label>
 
           <label>
-            <span className="rc-field-label">
+            <span className="rc-field-label rc-field-label--purple">
               <Activity size={13} className="rc-field-icon" />
-              Chief Complaints
+              <span>Chief Complaints</span>
             </span>
             <input
               list="chief-complaint-options"
@@ -1427,9 +1532,11 @@ function ReceptionAppointments({ hideActions = false }) {
 
         <div className="rc-slot-panel">
           <div className="rc-slot-head">
-            <div className="rc-slot-title-wrap">
-              <CalendarCheck size={16} className="rc-slot-title-icon" />
-              <strong>Consultation Time Slots</strong>
+            <div className="rc-slot-head-top">
+              <div className="rc-heading-capsule rc-capsule-emerald">
+                <CalendarCheck size={16} className="rc-capsule-icon" />
+                <span>Consultation Time Slots</span>
+              </div>
             </div>
             <div className="rc-slot-legend-group">
               <span className="rc-legend-pill legend-available">● Available</span>

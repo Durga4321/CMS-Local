@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Activity,
+  ArrowLeftToLine,
   CalendarHeart,
+  ChevronDown,
   Droplet,
   HeartPulse,
   ListChecks,
@@ -99,7 +101,16 @@ function NurseSidebar({
   sectionLabel = "Nurse Desk",
   profile: providedProfile = null,
   showBookAppointment = false,
+  collapsed: controlledCollapsed,
+  onToggleCollapse,
 }) {
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+  const isControlled = controlledCollapsed !== undefined;
+  const collapsed = isControlled ? controlledCollapsed : internalCollapsed;
+  const handleToggleCollapse = isControlled
+    ? onToggleCollapse
+    : () => setInternalCollapsed((prev) => !prev);
+
   const location = useLocation();
   const profile = providedProfile || getNurseProfile();
   const { loading: permissionsLoading } = useRolePermissionsSync(profile);
@@ -124,24 +135,26 @@ function NurseSidebar({
       : filterItemsByViewPermission(baseItems, profile);
 
   return (
-    <aside className="rc-sidebar">
+    <aside className={`rc-sidebar ${collapsed ? "collapsed" : ""}`}>
       {/* Subtle Medical Instruments Backdrop Layer */}
       <div className="rc-sidebar-med-backdrop" aria-hidden="true">
         <div className="rc-sidebar-med-bg-img" />
-        <div className="rc-sidebar-med-particles">
-          <div className="rc-med-float-instrument med-float-1" title="Stethoscope">
-            <Stethoscope size={26} />
+        {!collapsed && (
+          <div className="rc-sidebar-med-particles">
+            <div className="rc-med-float-instrument med-float-1" title="Stethoscope">
+              <Stethoscope size={26} />
+            </div>
+            <div className="rc-med-float-instrument med-float-2" title="Syringe">
+              <Syringe size={20} />
+            </div>
+            <div className="rc-med-float-instrument med-float-3" title="Thermometer">
+              <Thermometer size={22} />
+            </div>
+            <div className="rc-med-float-instrument med-float-4" title="Heart Pulse">
+              <HeartPulse size={24} />
+            </div>
           </div>
-          <div className="rc-med-float-instrument med-float-2" title="Syringe">
-            <Syringe size={20} />
-          </div>
-          <div className="rc-med-float-instrument med-float-3" title="Thermometer">
-            <Thermometer size={22} />
-          </div>
-          <div className="rc-med-float-instrument med-float-4" title="Heart Pulse">
-            <HeartPulse size={24} />
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Mobile-only drawer close button (Hidden on desktop) */}
@@ -150,7 +163,7 @@ function NurseSidebar({
       </button>
 
       {/* Clinic Brand Card (NO cross symbol) */}
-      <div className="rc-brand">
+      <div className="rc-brand" title={collapsed ? `${hospitalName}${branchName ? ` (${branchName})` : ""}` : undefined}>
         <div className="rc-brand-icon rc-clinic-logo rc-clinic-logo--emerald">
           <img
             src={clinicBranding.logoUrl}
@@ -160,32 +173,38 @@ function NurseSidebar({
             }}
           />
         </div>
-        <div className="rc-brand-text">
-          <span className="rc-brand-tag">Clinic Center</span>
-          <strong>{hospitalName}</strong>
-          {branchName ? <em className="rc-brand-branch">{branchName}</em> : null}
-        </div>
+        {!collapsed && (
+          <div className="rc-brand-text">
+            <span className="rc-brand-tag">Clinic Center</span>
+            <strong>{hospitalName}</strong>
+            {branchName ? <em className="rc-brand-branch">{branchName}</em> : null}
+          </div>
+        )}
       </div>
 
       {/* Medical Section Header & ECG Wave */}
-      <div className="rc-section-label">
-        <span>{sectionLabel}</span>
-        <span className="rc-sec-badge"><Activity size={10} /> Station Active</span>
-      </div>
+      {!collapsed && (
+        <>
+          <div className="rc-section-label">
+            <span>{sectionLabel}</span>
+            <span className="rc-sec-badge"><Activity size={10} /> Station Active</span>
+          </div>
 
-      <div className="rc-sidebar-ecg-wave" aria-hidden="true">
-        <svg viewBox="0 0 200 20" className="rc-ecg-svg" preserveAspectRatio="none">
-          <path
-            d="M0,10 L45,10 L52,10 L58,3 L64,17 L70,5 L76,13 L82,10 L135,10 L141,2 L147,18 L153,6 L159,12 L165,10 L200,10"
-            fill="none"
-            stroke="rgba(14, 165, 233, 0.45)"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <circle cx="82" cy="10" r="2.2" fill="#0ea5e9" className="rc-ecg-runner" />
-        </svg>
-      </div>
+          <div className="rc-sidebar-ecg-wave" aria-hidden="true">
+            <svg viewBox="0 0 200 20" className="rc-ecg-svg" preserveAspectRatio="none">
+              <path
+                d="M0,10 L45,10 L52,10 L58,3 L64,17 L70,5 L76,13 L82,10 L135,10 L141,2 L147,18 L153,6 L159,12 L165,10 L200,10"
+                fill="none"
+                stroke="rgba(14, 165, 233, 0.45)"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="82" cy="10" r="2.2" fill="#0ea5e9" className="rc-ecg-runner" />
+            </svg>
+          </div>
+        </>
+      )}
 
       {/* Multi-color Transparent Medical Navigation Links */}
       <nav className="rc-nav">
@@ -201,31 +220,31 @@ function NurseSidebar({
                   className={`rc-nav-group-title rc-dropdown-toggle rc-syringe-dropdown-btn ${
                     appointmentsOpen ? "rc-syringe-group--open" : ""
                   }`}
-                  onClick={() => setAppointmentsOpen((prev) => !prev)}
+                  onClick={() => {
+                    if (collapsed && handleToggleCollapse) {
+                      handleToggleCollapse();
+                    } else {
+                      setAppointmentsOpen((prev) => !prev);
+                    }
+                  }}
                   aria-expanded={appointmentsOpen}
-                  title={`Click syringe to ${appointmentsOpen ? "close" : "inject"} ${item.label}`}
+                  title={collapsed ? item.label : `Click to ${appointmentsOpen ? "collapse" : "expand"} ${item.label}`}
                 >
                   <span className="rc-nav-icon-wrap">
-                    <Icon size={16} />
+                    <Icon size={18} />
                   </span>
-                  <span className="rc-nav-label">{item.label}</span>
+                  {!collapsed && <span className="rc-nav-label">{item.label}</span>}
 
-                  {/* Syringe replacing the dropdown arrow */}
-                  <span
-                    className={`rc-syringe-trigger ${appointmentsOpen ? "rc-syringe--active" : ""}`}
-                    title={appointmentsOpen ? "Syringe injected (click to close)" : "Click syringe to inject blood drop items"}
-                  >
-                    <Syringe size={17} className="rc-syringe-icon" />
-                    {appointmentsOpen ? (
-                      <>
-                        <span className="rc-syringe-drip-bead" />
-                        <span className="rc-syringe-falling-drop" />
-                      </>
-                    ) : null}
-                  </span>
+                  {/* Dropdown arrow */}
+                  {!collapsed && (
+                    <ChevronDown
+                      size={16}
+                      className={`rc-dropdown-arrow ${appointmentsOpen ? "is-open" : ""}`}
+                    />
+                  )}
                 </button>
 
-                {appointmentsOpen ? (
+                {!collapsed && appointmentsOpen ? (
                   <div className="rc-nav-children rc-blood-drops-flow">
                     {/* Capillary blood stream line */}
                     <div className="rc-blood-capillary-stream" aria-hidden="true">
@@ -270,13 +289,14 @@ function NurseSidebar({
             <NavLink
               key={item.to}
               to={item.to}
+              title={collapsed ? item.label : undefined}
               className={({ isActive }) => `rc-nav-link ${toneClass}${isActive ? " active" : ""}`}
             >
               <span className="rc-nav-icon-wrap">
-                <Icon size={16} />
+                <Icon size={18} />
               </span>
-              <span className="rc-nav-label">{item.label}</span>
-              {item.badge ? <span className="rc-med-nav-pill">{item.badge}</span> : null}
+              {!collapsed && <span className="rc-nav-label">{item.label}</span>}
+              {!collapsed && item.badge ? <span className="rc-med-nav-pill">{item.badge}</span> : null}
             </NavLink>
           );
         })}
@@ -284,20 +304,41 @@ function NurseSidebar({
 
       {/* Medical Staff Profile Docked at Bottom */}
       <div className="rc-sidebar-footer">
-        <div className="rc-sidebar-profile">
+        <div className="rc-sidebar-profile" title={collapsed ? `${profileName} (${hospitalName})` : undefined}>
           <div className="rc-sidebar-avatar-wrap">
             <div className="rc-sidebar-avatar">{getInitials(profileName)}</div>
             <span className="rc-staff-med-badge" title="Clinical Nursing Station">
               <ShieldCheck size={11} />
             </span>
           </div>
-          <div className="rc-sidebar-profile-info">
-            <strong title={profileName}>{profileName}</strong>
-            <span title={hospitalName}>{hospitalName}</span>
-            <p>
-              <span className="rc-status-dot" /> Online <span className="rc-role-tag">Nurse Desk</span>
-            </p>
-          </div>
+          {!collapsed && (
+            <div className="rc-sidebar-profile-info">
+              <strong title={profileName}>{profileName}</strong>
+              <span title={hospitalName}>{hospitalName}</span>
+              <p>
+                <span className="rc-status-dot" /> Online <span className="rc-role-tag">Nurse Desk</span>
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* BOTTOM COLLAPSE MENU TOGGLE (ADMIN THEMED) */}
+        <div className="rc-sidebar-bottom">
+          <button
+            type="button"
+            className="rc-collapse-btn collapse-btn"
+            onClick={handleToggleCollapse}
+            title={collapsed ? "Expand Menu" : "Collapse Menu"}
+          >
+            <ArrowLeftToLine
+              size={16}
+              style={{
+                transform: collapsed ? "rotate(180deg)" : "none",
+                transition: "transform 0.25s ease",
+              }}
+            />
+            {!collapsed && <span>Collapse Menu</span>}
+          </button>
         </div>
       </div>
     </aside>

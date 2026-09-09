@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Activity, CalendarHeart, KeyRound, ListChecks, LogOut, Syringe, UserRound } from "lucide-react";
+import { Activity, CalendarHeart, ChevronDown, KeyRound, ListChecks, LogOut, Syringe, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getInitials, getRoleProfile, logoutAndClearSessions } from "./sessionProfile";
 import { apiUrl } from "../config/api";
@@ -160,7 +160,6 @@ export function UserProfileMenu({ roleType = "admin" }) {
       <DropdownMenu
         isOpen={isOpen}
         onOpenChange={handleOpenChange}
-        syringeMode={true}
         placement="bottom-end"
         variant="light"
         ariaLabel="User Profile Menu"
@@ -187,14 +186,11 @@ export function UserProfileMenu({ roleType = "admin" }) {
               <em>{profile.email}</em>
             </span>
 
-            {/* Syringe button capsule in topbar - Turns downwards when clicked/open */}
-            <span
-              className={`user-profile-syringe-btn ${isOpen ? "is-open" : ""}`}
-              title={isOpen ? "Click to close profile" : "Click to view profile options"}
-            >
-              <Syringe size={18} className="syringe-icon" />
-              <span className="syringe-needle-drop" />
-            </span>
+            {/* Clean Dropdown Arrow */}
+            <ChevronDown
+              size={16}
+              className={`user-profile-dropdown-arrow ${isOpen ? "is-open" : ""}`}
+            />
           </button>
         )}
       >
@@ -241,13 +237,12 @@ export function UserProfileMenu({ roleType = "admin" }) {
           </div>
         )}
 
-        {/* 2. Menu Items: Exact same structure, all icons shaded with blood, 3 different colors */}
+        {/* 2. Menu Items: Clean, professional circular badge design */}
         <div className="hc-dropdown-list" role="menu">
           {/* Card 1: My Profile (Click anywhere on card navigates to profile) */}
           <DropdownItem
             variant="pink"
-            leftBadgeType="droplet"
-            dropletVariant="crimson"
+            leftBadgeType="circle"
             icon={UserRound}
             title="My Profile"
             subtitle="View and edit your profile"
@@ -259,8 +254,7 @@ export function UserProfileMenu({ roleType = "admin" }) {
           {/* Card 2: Change Password (Click anywhere on card navigates to password management) */}
           <DropdownItem
             variant="orange"
-            leftBadgeType="droplet"
-            dropletVariant="crimson"
+            leftBadgeType="circle"
             icon={KeyRound}
             title="Change Password"
             subtitle="Update your password"
@@ -272,8 +266,7 @@ export function UserProfileMenu({ roleType = "admin" }) {
           {/* Card 3: Logout (Click anywhere on card opens confirmation modal) */}
           <DropdownItem
             variant="danger"
-            leftBadgeType="droplet"
-            dropletVariant="crimson"
+            leftBadgeType="circle"
             icon={LogOut}
             title="Logout"
             subtitle="Sign out from your account"

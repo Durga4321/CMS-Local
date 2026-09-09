@@ -8,6 +8,7 @@ import {
   EyeOff,
   HeartPulse,
   KeyRound,
+  Lock,
   LogOut,
   Mail,
   ShieldCheck,
@@ -213,14 +214,12 @@ function UserProfilePage({ roleType = "admin" }) {
       <div className="profile-hero">
         <button
           type="button"
-          className="profile-back-btn profile-med-instrument-btn"
+          className="profile-back-btn"
           onClick={goBack}
           aria-label="Go back"
           title="Return to previous screen"
         >
-          <span className="profile-btn-instrument-model model--back">
-            <ArrowLeft size={16} />
-          </span>
+          <ArrowLeft size={16} />
           <span className="profile-btn-label">Back</span>
         </button>
 
@@ -276,9 +275,7 @@ function UserProfilePage({ roleType = "admin" }) {
             onClick={() => setActiveTab("profile")}
             title="View staff medical profile"
           >
-            <span className="profile-btn-instrument-model model--stethoscope">
-              <Stethoscope size={18} />
-            </span>
+            <Stethoscope size={18} />
             <span className="profile-tab-text">
               <strong>My Profile</strong>
               <small>Clinical ID & Credentials</small>
@@ -292,9 +289,7 @@ function UserProfilePage({ roleType = "admin" }) {
             onClick={() => setActiveTab("password")}
             title="Update access password"
           >
-            <span className="profile-btn-instrument-model model--keycard">
-              <KeyRound size={18} />
-            </span>
+            <KeyRound size={18} />
             <span className="profile-tab-text">
               <strong>Change Password</strong>
               <small>Security & HIPAA Vault</small>
@@ -308,9 +303,7 @@ function UserProfilePage({ roleType = "admin" }) {
             onClick={handleLogoutClick}
             title="End current clinical session"
           >
-            <span className="profile-btn-instrument-model model--emergency">
-              <LogOut size={18} />
-            </span>
+            <LogOut size={18} />
             <span className="profile-tab-text">
               <strong>Logout</strong>
               <small>End Hospital Session</small>
@@ -527,18 +520,14 @@ function UserProfilePage({ roleType = "admin" }) {
 
                 <button
                   type="submit"
-                  className="profile-save profile-submit-instrument-btn"
+                  className="profile-save"
                   disabled={saving}
-                  title="Click to encrypt and update password"
+                  title="Update Password"
                 >
-                  <span className="profile-btn-instrument-model model--syringe">
-                    <Syringe size={17} className="profile-submit-syringe-icon" />
-                    <span className="profile-submit-drip-bead" />
-                  </span>
+                  <Lock size={16} />
                   <span className="profile-submit-label">
-                    {saving ? "Encrypting & Updating..." : "Update Password"}
+                    {saving ? "Updating..." : "Update Password"}
                   </span>
-                  <span className="profile-submit-pulse-beam" />
                 </button>
               </div>
             </form>

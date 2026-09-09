@@ -20,16 +20,47 @@ const TITLES = {
 
 function LabLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("lab_sidebar_collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleCollapse = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("lab_sidebar_collapsed", String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const location = useLocation();
   if (!isLabSession()) return <Navigate to="/login" replace />;
   const title = Object.entries(TITLES).find(([path]) => location.pathname.startsWith(path))?.[1] || "Lab Dashboard";
 
   return (
-    <div className={`rc-shell lab-shell ${sidebarOpen ? "rc-sidebar-open" : ""}`}>
+    <div className={`rc-shell lab-shell ${sidebarOpen ? "rc-sidebar-open" : ""} ${collapsed ? "rc-sidebar-collapsed" : ""}`}>
       {sidebarOpen && <div className="rc-overlay" onClick={() => setSidebarOpen(false)} />}
-      <LabSidebar onClose={() => setSidebarOpen(false)} />
-      <div className="rc-main">
-        <LabTopbar title={title} onMenu={() => setSidebarOpen(true)} />
+      <LabSidebar
+        onClose={() => setSidebarOpen(false)}
+        collapsed={collapsed}
+        onToggleCollapse={handleToggleCollapse}
+      />
+      <div className={`rc-main ${collapsed ? "collapsed" : ""}`}>
+        <LabTopbar
+          title={title}
+          onMenu={() => {
+            if (typeof window !== "undefined" && window.innerWidth <= 900) {
+              setSidebarOpen((prev) => !prev);
+            } else {
+              handleToggleCollapse();
+            }
+          }}
+        />
         <main className="rc-content" onClick={() => sidebarOpen && setSidebarOpen(false)}>
           <Outlet />
         </main>

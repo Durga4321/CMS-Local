@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Printer } from "lucide-react";
+import { Check, Plus, Printer } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Consultation.css";
 import { apiUrl } from "../../config/api";
@@ -1006,71 +1006,36 @@ function Consultation() {
 
           <div className="cn-form-actions">
             <button
-              className="cn-btn-submit cn-surgical-btn cn-surgical-scalpel"
+              className="cn-btn-submit"
               type="button"
               onClick={handleSubmitConsultation}
               disabled={saving || !canCreateConsultation}
-              title="Surgical Suture & Submission Scalpel"
+              title="Submit Consultation"
             >
-              <span className="cn-surgical-grip" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </span>
-              <svg className="cn-surgical-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                <path d="M11 7l3 3" />
-                <path d="m3 21 5-2-2-5-6 7" />
-              </svg>
-              <span className="cn-surgical-label">{saving ? "Saving..." : "Submit"}</span>
-              <span className="cn-surgical-status-bead" aria-hidden="true" />
+              <Check size={16} />
+              <span>{saving ? "Saving..." : "Submit"}</span>
             </button>
 
             <button
-              className="cn-btn-print cn-surgical-btn cn-surgical-forceps"
+              className="cn-btn-print"
               type="button"
               onClick={printConsultation}
               disabled={saving || !canCreateConsultation}
-              title="Surgical Diagnostic Forceps Chart Tool"
+              title="Print Consultation"
             >
-              <span className="cn-surgical-grip" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </span>
-              <svg className="cn-surgical-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M7 2h10" />
-                <path d="M9 2v6l-2 14" />
-                <path d="M15 2v6l2 14" />
-                <path d="M8 10h8" />
-                <path d="M9 15h6" />
-              </svg>
-              <Printer size={15} className="cn-surgical-sub-icon" />
-              <span className="cn-surgical-label">Print</span>
+              <Printer size={16} />
+              <span>Print</span>
             </button>
 
             <button
-              className="cn-btn-primary cn-surgical-btn cn-surgical-syringe"
+              className="cn-btn-primary"
               type="button"
               onClick={handleAddPrescription}
               disabled={saving || !canCreateConsultation}
-              title="Precision Surgical Syringe Injector"
+              title="Add Prescription"
             >
-              <span className="cn-surgical-plunger" aria-hidden="true">
-                <span className="cn-syringe-ring" />
-                <span className="cn-syringe-shaft" />
-              </span>
-              <svg className="cn-surgical-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="m18 2 4 4" />
-                <path d="m17 7 3-3" />
-                <path d="M19 9 8.7 19.3c-.4.4-1 .4-1.4 0l-2.6-2.6c-.4-.4-.4-1 0-1.4L15 5" />
-                <path d="m9 11 4 4" />
-                <path d="m5 19-3 3" />
-                <path d="m14 4 6 6" />
-              </svg>
-              <span className="cn-syringe-ticks" aria-hidden="true">||||</span>
-              <span className="cn-surgical-label">{saving ? "Saving..." : "Add Prescription"}</span>
-              <span className="cn-syringe-needle-arrow" aria-hidden="true">→</span>
+              <Plus size={16} />
+              <span>{saving ? "Saving..." : "Add Prescription"}</span>
             </button>
           </div>
         </section>

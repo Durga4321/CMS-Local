@@ -9,57 +9,15 @@
   width: 100%;
   padding: 24px 32px 48px;
   box-sizing: border-box;
-  background: linear-gradient(
-      135deg,
-      rgba(238, 245, 255, 0.90) 0%,
-      rgba(242, 248, 255, 0.84) 40%,
-      rgba(248, 251, 255, 0.88) 70%,
-      rgba(253, 244, 250, 0.92) 100%
-    ),
-    url("../../assets/reports_analytics_3d_bg.jpg") center/cover no-repeat fixed;
-  background-size: cover;
+  background: transparent !important;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
 
-/* 3D Dashboard Background Animated Overlay */
-.reports-bg-overlay {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 85% 75%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.05) 0%, transparent 50%),
-    linear-gradient(
-      135deg,
-      rgba(238, 245, 255, 0.88) 0%,
-      rgba(242, 248, 255, 0.82) 40%,
-      rgba(248, 251, 255, 0.85) 70%,
-      rgba(253, 244, 250, 0.90) 100%
-    ),
-    url("../../assets/reports_analytics_3d_bg.jpg") center/cover no-repeat fixed;
-  background-size: cover;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* 3D Floating Clinical Analytics & BI Particles */
+.reports-bg-overlay,
 .reports-particle {
-  position: absolute;
-  border-radius: 16px;
-  pointer-events: none;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
-  animation: floatReportsParticle 10s ease-in-out infinite alternate;
+  display: none !important;
 }
 
 .report-part-1 {
@@ -107,25 +65,51 @@
   }
 }
 
+.rep-page-ecg {
+  display: none !important;
+}
+
 .reports-header-wrap {
   position: relative;
   z-index: 2;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
+}
+
+.rep-main-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(13, 148, 136, 0.28);
+  color: #0f766e;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.08);
+}
+
+.rep-main-badge-pulse {
+  color: #0d9488;
+  animation: repPulseScale 1.8s ease-in-out infinite;
 }
 
 .reports-page h1 {
   margin: 0;
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
   color: #0f172a;
-  line-height: 1.1;
+  line-height: 1.15;
   letter-spacing: -0.02em;
 }
 
 .subtitle {
-  color: #526f90;
-  margin: 6px 0 0;
-  font-size: 15px;
+  color: #475569;
+  margin: 3px 0 0;
+  font-size: 13px;
   font-weight: 500;
 }
 
@@ -133,87 +117,288 @@
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(3, minmax(0, 310px));
+  max-width: 980px;
+  gap: 14px;
 }
 
+/* MEDICAL & HOSPITALIZED REPORT CARDS */
 .report-card {
   position: relative;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04);
-  padding: 26px 28px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 6px 20px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  padding: 12px 14px 11px;
   display: flex;
   flex-direction: column;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .report-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.14);
-  border-color: rgba(59, 130, 246, 0.4);
+  transform: translateY(-3px);
+  box-shadow:
+    0 14px 32px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
-.report-card .icon {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.12) 0%, rgba(13, 148, 136, 0.12) 100%);
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
+.report-card--cyan {
+  border-color: rgba(6, 182, 212, 0.25);
+}
+.report-card--cyan:hover {
+  border-color: #06b6d4;
+  box-shadow: 0 16px 36px rgba(6, 182, 212, 0.14);
+}
+
+.report-card--emerald {
+  border-color: rgba(16, 185, 129, 0.25);
+}
+.report-card--emerald:hover {
+  border-color: #10b981;
+  box-shadow: 0 16px 36px rgba(16, 185, 129, 0.14);
+}
+
+.report-card--purple {
+  border-color: rgba(168, 85, 247, 0.25);
+}
+.report-card--purple:hover {
+  border-color: #a855f7;
+  box-shadow: 0 16px 36px rgba(168, 85, 247, 0.14);
+}
+
+/* Background Cross Watermark */
+.rep-card-cross {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  font-size: 64px;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(13, 148, 136, 0.035);
+  user-select: none;
+  pointer-events: none;
+  transition: transform 0.3s ease;
+}
+
+.report-card:hover .rep-card-cross {
+  transform: scale(1.08) rotate(5deg);
+  color: rgba(13, 148, 136, 0.06);
+}
+
+/* Top Telemetry Header Bar */
+.rep-card-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+}
+
+.rep-card-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2.5px 7px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #334155;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.rep-card-pill-icon {
+  flex-shrink: 0;
+}
+
+.report-card--cyan .rep-card-pill-icon {
+  color: #0284c7;
+}
+
+.report-card--emerald .rep-card-pill-icon {
+  color: #059669;
+}
+
+.report-card--purple .rep-card-pill-icon {
+  color: #7c3aed;
+}
+
+.rep-card-diode {
+  display: none !important;
+}
+
+.rep-card-code {
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+  font-family: monospace;
+}
+
+/* Hero Section: Icon chamber and cardiac mini-trace */
+.rep-card-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.rep-card-icon-chamber {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0d9488;
-  border: 1px solid rgba(13, 148, 136, 0.2);
-  transition: transform 0.2s ease;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.05);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.report-card:hover .icon {
+.report-card:hover .rep-card-icon-chamber {
+  transform: scale(1.06) rotate(-2deg);
+}
+
+.rep-card-icon-chamber.cyan {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  color: #0284c7;
+  border: 1px solid #7dd3fc;
+}
+
+.rep-card-icon-chamber.emerald {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #059669;
+  border: 1px solid #86efac;
+}
+
+.rep-card-icon-chamber.purple {
+  background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+  color: #7e22ce;
+  border: 1px solid #d8b4fe;
+}
+
+.rep-card-mini-ecg {
+  width: 42px;
+  height: 16px;
+  opacity: 0.55;
+  color: #0d9488;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.report-card:hover .rep-card-mini-ecg {
+  opacity: 0.95;
   transform: scale(1.08);
 }
 
-.report-card h3 {
-  margin: 16px 0 6px;
-  font-size: 19px;
-  font-weight: 700;
+.rep-mini-ecg-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Card Text */
+.rep-card-body {
+  flex: 1;
+}
+
+.rep-card-body h3 {
+  margin: 0 0 2px;
+  font-size: 14px;
+  font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.01em;
 }
 
-.report-card p {
+.rep-card-body p {
   color: #64748b;
-  font-size: 14px;
+  font-size: 11px;
+  line-height: 1.36;
   margin: 0;
-  line-height: 1.5;
-  flex: 1;
 }
 
-.link {
-  margin-top: 18px;
-  color: #0d9488;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  font-size: 14.5px;
+/* Clinical Scope Footnote */
+.rep-card-scope {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 7px 0 9px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  font-size: 10px;
+}
+
+.rep-card-scope-label {
+  color: #64748b;
   font-weight: 700;
+}
+
+.rep-card-scope-val {
+  color: #0f766e;
+  font-weight: 750;
+}
+
+/* SURGICAL INSTRUMENT ACTION BUTTON (TROCAR / SCOPE LAUNCHER) */
+.rep-instrument-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  transition: color 0.2s ease, transform 0.2s ease;
-  width: fit-content;
+  height: 32px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #0d9488;
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  outline: none;
+  box-shadow:
+    0 2px 6px rgba(13, 148, 136, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.link:hover {
-  color: #0f766e;
+.rep-instrument-btn:hover {
+  border-color: #047857;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  color: #ffffff;
+  transform: translateY(-1.5px);
+  box-shadow:
+    0 4px 14px rgba(13, 148, 136, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.rep-instrument-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(13, 148, 136, 0.2);
+}
+
+.rep-instrument-blade {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0d9488;
+  transition: transform 0.22s ease;
+}
+
+.rep-instrument-btn:hover .rep-instrument-blade {
   transform: translateX(4px);
 }
 
 @media (max-width: 1024px) {
   .report-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 310px));
   }
 }
 

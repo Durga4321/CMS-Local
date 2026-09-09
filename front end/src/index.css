@@ -1,30 +1,10 @@
-body {
-  margin: 0;
-  font-family: "Inter", "Segoe UI", Arial, sans-serif;
-  font-size: 14px;
-  color: #071120;
-  caret-color: transparent;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-html,
-body,
-* {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-html::-webkit-scrollbar,
-body::-webkit-scrollbar,
-*::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
-}
-
 :root {
-  --app-bg: #f8fafc;
+  --app-gradient-bg: 
+    radial-gradient(ellipse 70% 55% at 88% 10%, rgba(186, 230, 253, 0.75) 0%, rgba(209, 250, 229, 0.55) 35%, transparent 72%),
+    radial-gradient(ellipse 55% 45% at 8% 15%, rgba(191, 219, 254, 0.65) 0%, rgba(224, 242, 254, 0.3) 40%, transparent 70%),
+    radial-gradient(circle at 82% 88%, rgba(224, 242, 254, 0.45) 0%, rgba(209, 250, 229, 0.25) 45%, transparent 70%),
+    linear-gradient(140deg, #e1f0fe 0%, #edf6fd 26%, #f1f8fd 56%, #ecf8f5 100%);
+  --app-bg: #edf6fd;
   --app-surface: #ffffff;
   --app-border: #e5e7eb;
   --app-text: #071120;
@@ -35,6 +15,21 @@ body::-webkit-scrollbar,
   --app-title-size: 16px;
   --app-body-size: 14px;
   --app-caption-size: 12px;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--app-gradient-bg) !important;
+  background-attachment: fixed !important;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  color: #071120;
+  caret-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .app-action-button,
@@ -977,14 +972,13 @@ select.op-form-select,
 .pd-notification-sort select {
   appearance: none !important;
   -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none'%3E%3Cg transform='rotate(180 12 12)'%3E%3Cpath d='m18 2 4 4' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m17 7 3-3' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m9 11 4 4' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m5 19-3 3' stroke='%23e11d48' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m14 4 6 6' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='2.5' cy='21.5' r='2' fill='%23f43f5e'/%3E%3C/g%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-position: calc(100% - 12px) center !important;
-  background-size: 20px 20px !important;
-  padding-right: 40px !important;
+  background-size: 16px 16px !important;
+  padding-right: 36px !important;
   cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-image 0.25s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-image 0.2s ease;
 }
 
 select:hover,
@@ -1065,9 +1059,9 @@ select.op-form-select:focus,
 .pd-profile-input-label select:focus,
 .pd-notification-sort select:hover,
 .pd-notification-sort select:focus {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='m18 2 4 4' stroke='%23e11d48' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m17 7 3-3' stroke='%23e11d48' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5' stroke='%23e11d48' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m9 11 4 4' stroke='%23f43f5e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m5 19-3 3' stroke='%23be123c' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m14 4 6 6' stroke='%23e11d48' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='2.5' cy='21.5' r='2.5' fill='%23e11d48'/%3E%3Cpath d='M2.5 17c0 0-2 2-2 3.5a2 2 0 0 0 4 0c0-1.5-2-3.5-2-3.5z' fill='%23e11d48'/%3E%3C/svg%3E") !important;
-  border-color: #f43f5e !important;
-  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.16) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230284c7' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
 }
 
 /* Prevent double syringe on select elements that have custom adjacent syringe overlays */

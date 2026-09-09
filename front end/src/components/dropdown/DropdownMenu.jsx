@@ -199,16 +199,6 @@ export function DropdownMenu({
     <div className={`hc-dropdown-wrap ${className}`} ref={containerRef}>
       {renderTrigger()}
 
-      {/* Falling Blood Droplets Track if in Syringe Mode */}
-      {syringeMode && dropletsFired && (
-        <div className="hc-syringe-falling-drop-track" aria-hidden="true">
-          <span className="hc-falling-drop hc-falling-drop-1" />
-          <span className="hc-falling-drop hc-falling-drop-2" />
-          <span className="hc-falling-drop hc-falling-drop-3" />
-          <span className="hc-falling-drop hc-falling-drop-4" />
-        </div>
-      )}
-
       {/* Menu Container */}
       <div
         ref={menuRef}
@@ -218,37 +208,6 @@ export function DropdownMenu({
         className={`hc-dropdown-menu ${placementClass} ${variantClass} ${animClass}`}
         style={style}
       >
-        {/* Left Capillary Blood Stream Line matching reference design */}
-        <div className="hc-capillary-line" aria-hidden="true">
-          <span className="hc-capillary-dot-top" />
-          <span className="hc-capillary-dot-bottom" />
-        </div>
-
-        {/* Faint ECG Heartbeat Telemetry Watermark matching reference image */}
-        <div className="hc-dropdown-ecg-watermark-wrap" aria-hidden="true">
-          <svg
-            className="hc-dropdown-ecg-watermark"
-            viewBox="0 0 320 90"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M 5 50 L 50 50 L 62 38 L 72 62 L 82 18 L 94 76 L 104 50 L 120 50 L 130 42 L 140 50 L 180 50 L 190 36 L 200 64 L 210 20 L 222 78 L 232 50 L 265 50 L 275 42 L 285 50 L 315 50"
-              stroke="#fecdd3"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity="0.38"
-            />
-            {/* Soft Heart Silhouette */}
-            <path
-              d="M 235 60 C 235 52 245 46 253 53 C 261 46 271 52 271 60 C 271 70 253 82 253 82 C 253 82 235 70 235 60 Z"
-              fill="#ffe4e6"
-              opacity="0.45"
-            />
-          </svg>
-        </div>
-
         {typeof children === "function"
           ? children({ close, animState, isRevealed: animState === "open" || animState === "opening" })
           : children}

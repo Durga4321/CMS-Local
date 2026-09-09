@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, FileText, Play, RefreshCw, Filter, X, Calendar, User, Stethoscope, FileSpreadsheet, ArrowRight, Activity } from "lucide-react";
+import { Eye, FileText, Play, RefreshCw, Filter, X, Calendar, User, Stethoscope, FileSpreadsheet, ArrowRight, Activity, AlertCircle } from "lucide-react";
 import "./DoctorAppointments.css";
 import { apiUrl } from "../../config/api";
 import {
@@ -13,6 +13,14 @@ import { canUseModulePermission, useRolePermissionsSync } from "../../utils/role
 
 const APPOINTMENTS_API = apiUrl("Appointment");
 const CONSULTATION_API = apiUrl("Consultation");
+
+const parseList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.appointments)) return payload.appointments;
+  return [];
+};
 
 const STATUS_CLASS = {
   waiting: "status--waiting",
@@ -109,7 +117,7 @@ function DoctorAppointments() {
       if (!response.ok) throw new Error("Unable to load appointments.");
 
       const data = await response.json();
-      let appts = Array.isArray(data) ? data : [];
+      let appts = parseList(data);
       appts = filterByLoggedInDoctor(appts, doctor);
 
       appts.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -211,43 +219,12 @@ function DoctorAppointments() {
 
   return (
     <div className="da-page">
-      {/* ── Medical Telemetry & Monitor Ambient Background ── */}
-      <div className="da-medical-bg" aria-hidden="true">
-        <div className="da-ecg-track">
-          <svg className="da-ecg-svg" viewBox="0 0 1200 80" preserveAspectRatio="none">
-            <path
-              className="da-ecg-line-base"
-              d="M 0,40 L 180,40 L 195,35 L 205,45 L 215,40 L 240,40 L 250,10 L 262,72 L 274,28 L 284,48 L 295,40 L 330,40 Q 350,24 370,40 L 540,40 L 555,35 L 565,45 L 575,40 L 600,40 L 610,10 L 622,72 L 634,28 L 644,48 L 655,40 L 690,40 Q 710,24 730,40 L 900,40 L 915,35 L 925,45 L 935,40 L 960,40 L 970,10 L 982,72 L 994,28 L 1004,48 L 1015,40 L 1050,40 Q 1070,24 1090,40 L 1200,40"
-            />
-            <path
-              className="da-ecg-line-pulse"
-              d="M 0,40 L 180,40 L 195,35 L 205,45 L 215,40 L 240,40 L 250,10 L 262,72 L 274,28 L 284,48 L 295,40 L 330,40 Q 350,24 370,40 L 540,40 L 555,35 L 565,45 L 575,40 L 600,40 L 610,10 L 622,72 L 634,28 L 644,48 L 655,40 L 690,40 Q 710,24 730,40 L 900,40 L 915,35 L 925,45 L 935,40 L 960,40 L 970,10 L 982,72 L 994,28 L 1004,48 L 1015,40 L 1050,40 Q 1070,24 1090,40 L 1200,40"
-            />
-          </svg>
-        </div>
-
-        <div className="da-telemetry-bar">
-          <div className="da-telemetry-badge">
-            <span className="da-telemetry-cross">✚</span>
-            <span className="da-telemetry-station">CLINICAL TRIAGE &bull; STATION 01</span>
-          </div>
-          <div className="da-telemetry-badge">
-            <Activity size={13} className="da-telemetry-wave-icon" />
-            <span>LEAD II &bull; 74 BPM (NORMAL SINUS)</span>
-          </div>
-          <div className="da-telemetry-badge">
-            <span className="da-telemetry-bead-live" />
-            <span>QUEUE SYNC ACTIVE</span>
-          </div>
-        </div>
-
-        <div className="da-watermark-cross da-watermark-cross--tl">✚</div>
-        <div className="da-watermark-cross da-watermark-cross--br">✚</div>
-      </div>
-
       {error && (
         <div className="da-alert">
-          <span>{error}</span>
+          <div className="da-alert-left">
+            <AlertCircle size={18} className="da-alert-icon" />
+            <span>{error}</span>
+          </div>
           <button type="button" onClick={() => fetchAppointments()}>Try again</button>
         </div>
       )}
@@ -278,120 +255,111 @@ function DoctorAppointments() {
           </div>
 
           <button
-            className="da-refresh-btn da-instrument--calibrator"
+            className="da-refresh-btn"
             type="button"
             onClick={() => fetchAppointments({ silent: true })}
             disabled={refreshing}
-            title="Medical Telemetry Calibrator & Patient Queue Sync"
+            title="Sync Appointments"
           >
-            <span className="da-calibrator-body">
-              <span className="da-instrument-grip" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </span>
-              <span className="da-calibrator-dial">
-                <RefreshCw size={14} className={`da-instrument-icon ${refreshing ? "da-spin" : ""}`} />
-              </span>
-              <span className="da-instrument-text">{refreshing ? "CALIBRATING..." : "CALIBRATE / SYNC"}</span>
-              <span className="da-calibrator-bead" aria-hidden="true" />
-            </span>
+            <RefreshCw size={14} className={`da-refresh-icon ${refreshing ? "da-spin" : ""}`} />
+            <span>{refreshing ? "Syncing..." : "Sync"}</span>
           </button>
         </div>
       </div>
 
       {/* ── Patient Telemetry Queue Table ── */}
       <div className="da-table-card">
-        <div className="da-table">
-          <div className="da-thead">
-            <span className="da-sno-head">S.No.</span>
-            <span>Date & Time</span>
-            <span className="da-token-head">Token No.</span>
-            <span>Patient Name</span>
-            <span>Age / Gender</span>
-            <span className="da-status-head">Status</span>
-            <span className="da-actions-head">Action</span>
-          </div>
+        <div className="da-table-wrap">
+          <div className="da-table">
+            <div className="da-thead">
+              <span className="da-sno-head">S.No.</span>
+              <span>Date & Time</span>
+              <span className="da-token-head">Token No.</span>
+              <span>Patient Name</span>
+              <span>Age / Gender</span>
+              <span className="da-status-head">Status</span>
+              <span className="da-actions-head">Action</span>
+            </div>
 
-          {filteredAppointments.length > 0 ? (
-            filteredAppointments.map((patient, index) => (
-              <div className="da-row" key={patient.appointmentId || patient.tokenNumber}>
-                <span className="da-sno-cell">{index + 1}</span>
-                <span className="da-datetime">
-                  <span className="da-date">{patient.date}</span>
-                  <span className="da-time">{patient.time}</span>
-                </span>
-                <span className="da-token-cell">
-                  <span className="da-token">{patient.tokenNumber}</span>
-                </span>
-                <span className="da-name">{patient.patientName}</span>
-                <span className="da-age">{patient.ageGender}</span>
-                <span className="da-status-cell">
-                  <span className={`da-status ${getStatusClass(patient.status)}`}>
-                    {patient.status}
+            {filteredAppointments.length > 0 ? (
+              filteredAppointments.map((patient, index) => (
+                <div className="da-row" key={patient.appointmentId || patient.tokenNumber}>
+                  <span className="da-sno-cell">{index + 1}</span>
+                  <span className="da-datetime">
+                    <span className="da-date">{patient.date}</span>
+                    <span className="da-time">{patient.time}</span>
                   </span>
-                </span>
-                <span className="da-actions">
-                  {/* 1. Diagnostic Optical Scope (Ophthalmoscope) */}
-                  <button
-                    className="da-act-btn da-act-btn--scope"
-                    type="button"
-                    title="Diagnostic Ophthalmoscope (View Patient Record)"
-                    onClick={() => openPatient(patient)}
-                    disabled={!patient.patientId}
-                    aria-label="View Patient Record"
-                  >
-                    <span className="da-scope-bezel">
-                      <span className="da-scope-lens">
-                        <Eye size={15} />
-                      </span>
-                      <span className="da-scope-glare" />
+                  <span className="da-token-cell">
+                    <span className="da-token">{patient.tokenNumber}</span>
+                  </span>
+                  <span className="da-name">{patient.patientName}</span>
+                  <span className="da-age">{patient.ageGender}</span>
+                  <span className="da-status-cell">
+                    <span className={`da-status ${getStatusClass(patient.status)}`}>
+                      {patient.status}
                     </span>
-                  </button>
+                  </span>
+                  <span className="da-actions">
+                    {/* View Patient Record */}
+                    <button
+                      className="da-act-btn da-act-btn--scope"
+                      type="button"
+                      title="View Patient Record"
+                      onClick={() => openPatient(patient)}
+                      disabled={!patient.patientId}
+                      aria-label="View Patient Record"
+                    >
+                      <Eye size={15} />
+                    </button>
 
-                  {/* 2. Electronic Stethoscope & Clinical Notes Sensor */}
-                  <button
-                    className="da-act-btn da-act-btn--chart"
-                    type="button"
-                    title="Electronic Stethoscope & Clinical Notes Sensor"
-                    onClick={() => openNotes(patient)}
-                    aria-label="Open Clinical Notes"
-                  >
-                    <span className="da-steth-chestpiece">
-                      <span className="da-steth-diaphragm">
-                        <FileText size={15} />
-                        <span className="da-steth-pulse-ring" />
-                      </span>
-                      <span className="da-steth-stem" />
-                    </span>
-                  </button>
+                    {/* Consultation Notes */}
+                    <button
+                      className="da-act-btn da-act-btn--chart"
+                      type="button"
+                      title="Clinical Notes"
+                      onClick={() => openNotes(patient)}
+                      aria-label="Open Clinical Notes"
+                    >
+                      <FileText size={15} />
+                    </button>
 
-                  {/* 3. Surgical Laser Scalpel / Ultrasound Probe */}
+                    {/* Start Consultation */}
+                    <button
+                      className="da-act-btn da-act-btn--laser da-act-btn--primary"
+                      type="button"
+                      title="Start Consultation"
+                      onClick={() => startConsultation(patient)}
+                      disabled={!canCreateConsultation}
+                      aria-label="Start Consultation"
+                    >
+                      <Play size={14} fill="currentColor" />
+                    </button>
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="da-empty-state">
+                <div className="da-empty-icon-wrap">
+                  <Calendar size={32} className="da-empty-icon" />
+                </div>
+                <h4 className="da-empty-title">No Appointments Found</h4>
+                <p className="da-empty-desc">
+                  {filter !== "all"
+                    ? `There are currently no appointments matching the "${filter}" filter.`
+                    : "No appointments are scheduled for today."}
+                </p>
+                {filter !== "all" && (
                   <button
-                    className="da-act-btn da-act-btn--laser da-act-btn--primary"
                     type="button"
-                    title="Surgical Laser Scalpel (Start Consultation)"
-                    onClick={() => startConsultation(patient)}
-                    disabled={!canCreateConsultation}
-                    aria-label="Start Consultation"
+                    className="da-empty-reset-btn"
+                    onClick={() => setFilter("all")}
                   >
-                    <span className="da-laser-casing">
-                      <span className="da-laser-handle">
-                        <span className="da-laser-grip-line" />
-                        <span className="da-laser-grip-line" />
-                      </span>
-                      <span className="da-laser-emitter">
-                        <Play size={14} />
-                        <span className="da-laser-beam" />
-                      </span>
-                    </span>
+                    View All Appointments
                   </button>
-                </span>
+                )}
               </div>
-            ))
-          ) : (
-            <div className="da-empty-row">No appointments found.</div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
@@ -508,7 +476,7 @@ function DoctorAppointments() {
                   openPatient(patient);
                 }}
                 disabled={!selectedNotes.patient.patientId}
-                title="Diagnostic History Scanner"
+                title="View Patient History"
               >
                 <User size={15} />
                 <span>View Patient History</span>
@@ -516,14 +484,14 @@ function DoctorAppointments() {
 
               <button
                 type="button"
-                className="da-notes-btn da-notes-btn--primary da-instrument-btn"
+                className="da-notes-btn da-notes-btn--primary"
                 onClick={() => {
                   const patient = selectedNotes.patient;
                   setSelectedNotes(null);
                   startConsultation(patient);
                 }}
                 disabled={!canCreateConsultation}
-                title="Surgical Laser Probe / Launch Consultation"
+                title="Start Consultation"
               >
                 <Play size={15} />
                 <span>{selectedNotes.consultation ? "Edit Consultation" : "Start Consultation"}</span>

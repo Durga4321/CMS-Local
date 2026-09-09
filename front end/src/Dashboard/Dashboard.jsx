@@ -27,6 +27,7 @@ import {
 } from "recharts";
 
 import {
+  ChevronDown,
   Stethoscope,
   Users,
   CalendarCheck,
@@ -807,7 +808,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* RIGHT: 6 KPI CARDS (2 ROWS x 3 COLS GRID) WITH SPARKLINE GRAPHS */}
+        {/* RIGHT: 6 KPI CARDS (2 ROWS x 3 COLS GRID) */}
         <div className="db-6-kpi-grid">
           {/* 1. TODAY'S APPOINTMENTS */}
           <div
@@ -829,16 +830,6 @@ function Dashboard() {
               <div className="db-kpi-trend trend-down">
                 <span>↓ -25% vs yesterday</span>
               </div>
-              <svg className="db-sparkline" viewBox="0 0 160 30" preserveAspectRatio="none">
-                <path d="M0 15 Q 25 28, 50 12 T 100 24 T 160 8" fill="none" stroke="#a855f7" strokeWidth="2.5" strokeLinecap="round" />
-                <circle cx="0" cy="15" r="3" fill="#a855f7" />
-                <circle cx="25" cy="24" r="3" fill="#a855f7" />
-                <circle cx="50" cy="12" r="3" fill="#a855f7" />
-                <circle cx="75" cy="20" r="3" fill="#a855f7" />
-                <circle cx="100" cy="24" r="3" fill="#a855f7" />
-                <circle cx="130" cy="14" r="3" fill="#a855f7" />
-                <circle cx="160" cy="8" r="3" fill="#a855f7" />
-              </svg>
             </div>
           </div>
 
@@ -862,16 +853,6 @@ function Dashboard() {
               <div className="db-kpi-trend trend-up">
                 <span>↑ +12.5% vs last month</span>
               </div>
-              <svg className="db-sparkline" viewBox="0 0 160 30" preserveAspectRatio="none">
-                <path d="M0 24 Q 25 18, 50 22 T 100 12 T 160 6" fill="none" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round" />
-                <circle cx="0" cy="24" r="3" fill="#f43f5e" />
-                <circle cx="25" cy="19" r="3" fill="#f43f5e" />
-                <circle cx="50" cy="22" r="3" fill="#f43f5e" />
-                <circle cx="75" cy="16" r="3" fill="#f43f5e" />
-                <circle cx="100" cy="12" r="3" fill="#f43f5e" />
-                <circle cx="130" cy="10" r="3" fill="#f43f5e" />
-                <circle cx="160" cy="6" r="3" fill="#f43f5e" />
-              </svg>
             </div>
           </div>
 
@@ -895,15 +876,6 @@ function Dashboard() {
               <div className="db-kpi-trend trend-neutral">
                 <span>0% vs last month</span>
               </div>
-              <svg className="db-sparkline" viewBox="0 0 160 30" preserveAspectRatio="none">
-                <path d="M0 15 H 160" fill="none" stroke="#10b981" strokeWidth="2.5" strokeDasharray="4 4" />
-                <circle cx="0" cy="15" r="3" fill="#10b981" />
-                <circle cx="32" cy="15" r="3" fill="#10b981" />
-                <circle cx="64" cy="15" r="3" fill="#10b981" />
-                <circle cx="96" cy="15" r="3" fill="#10b981" />
-                <circle cx="128" cy="15" r="3" fill="#10b981" />
-                <circle cx="160" cy="15" r="3" fill="#10b981" />
-              </svg>
             </div>
           </div>
 
@@ -927,16 +899,6 @@ function Dashboard() {
               <div className="db-kpi-trend trend-neutral">
                 <span>0% vs last month</span>
               </div>
-              <svg className="db-sparkline" viewBox="0 0 160 30" preserveAspectRatio="none">
-                <path d="M0 24 Q 25 20, 50 24 T 100 18 T 160 10" fill="none" stroke="#f97316" strokeWidth="2.5" strokeLinecap="round" />
-                <circle cx="0" cy="24" r="3" fill="#f97316" />
-                <circle cx="25" cy="21" r="3" fill="#f97316" />
-                <circle cx="50" cy="24" r="3" fill="#f97316" />
-                <circle cx="75" cy="20" r="3" fill="#f97316" />
-                <circle cx="100" cy="18" r="3" fill="#f97316" />
-                <circle cx="130" cy="14" r="3" fill="#f97316" />
-                <circle cx="160" cy="10" r="3" fill="#f97316" />
-              </svg>
             </div>
           </div>
 
@@ -960,16 +922,6 @@ function Dashboard() {
               <div className="db-kpi-trend trend-up">
                 <span>↑ 18% vs last month</span>
               </div>
-              <svg className="db-sparkline" viewBox="0 0 160 30" preserveAspectRatio="none">
-                <path d="M0 25 Q 25 20, 50 24 T 100 16 T 160 8" fill="none" stroke="#ec4899" strokeWidth="2.5" strokeLinecap="round" />
-                <circle cx="0" cy="25" r="3" fill="#ec4899" />
-                <circle cx="25" cy="21" r="3" fill="#ec4899" />
-                <circle cx="50" cy="24" r="3" fill="#ec4899" />
-                <circle cx="75" cy="19" r="3" fill="#ec4899" />
-                <circle cx="100" cy="16" r="3" fill="#ec4899" />
-                <circle cx="130" cy="12" r="3" fill="#ec4899" />
-                <circle cx="160" cy="8" r="3" fill="#ec4899" />
-              </svg>
             </div>
           </div>
 
@@ -993,16 +945,6 @@ function Dashboard() {
               <div className="db-kpi-trend trend-up">
                 <span>↑ +8% vs last month</span>
               </div>
-              <svg className="db-sparkline" viewBox="0 0 160 30" preserveAspectRatio="none">
-                <path d="M0 26 Q 25 22, 50 24 T 100 18 T 160 8" fill="none" stroke="#0284c7" strokeWidth="2.5" strokeLinecap="round" />
-                <circle cx="0" cy="26" r="3" fill="#0284c7" />
-                <circle cx="25" cy="23" r="3" fill="#0284c7" />
-                <circle cx="50" cy="24" r="3" fill="#0284c7" />
-                <circle cx="75" cy="20" r="3" fill="#0284c7" />
-                <circle cx="100" cy="18" r="3" fill="#0284c7" />
-                <circle cx="130" cy="14" r="3" fill="#0284c7" />
-                <circle cx="160" cy="8" r="3" fill="#0284c7" />
-              </svg>
             </div>
           </div>
         </div>
@@ -1103,9 +1045,8 @@ function Dashboard() {
                 <option value="quarter">This Quarter</option>
                 <option value="year">This Year</option>
               </select>
-              <span className="db-select-syringe-wrapper" aria-hidden="true" title="Filter duration">
-                <Syringe size={14} className="db-select-syringe-icon" />
-                <span className="db-syringe-blood-drip" />
+              <span className="db-select-arrow-wrapper" aria-hidden="true" title="Filter duration">
+                <ChevronDown size={14} className="db-select-arrow-icon" />
               </span>
             </div>
           </div>

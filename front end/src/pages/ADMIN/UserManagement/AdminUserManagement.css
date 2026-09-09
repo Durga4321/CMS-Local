@@ -9,15 +9,7 @@
   width: 100%;
   padding: 24px 32px 48px;
   box-sizing: border-box;
-  background: linear-gradient(
-      135deg,
-      rgba(238, 245, 255, 0.90) 0%,
-      rgba(242, 248, 255, 0.84) 40%,
-      rgba(248, 251, 255, 0.88) 70%,
-      rgba(253, 244, 250, 0.92) 100%
-    ),
-    url("../../../assets/usermanagement_3d_bg.jpg") center/cover no-repeat fixed;
-  background-size: cover;
+  background: transparent !important;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
@@ -25,41 +17,12 @@
 
 /* 3D Dashboard Background Animated Overlay */
 .admin-users-bg-overlay {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 85% 75%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.05) 0%, transparent 50%),
-    linear-gradient(
-      135deg,
-      rgba(238, 245, 255, 0.88) 0%,
-      rgba(242, 248, 255, 0.82) 40%,
-      rgba(248, 251, 255, 0.85) 70%,
-      rgba(253, 244, 250, 0.90) 100%
-    ),
-    url("../../../assets/usermanagement_3d_bg.jpg") center/cover no-repeat fixed;
-  background-size: cover;
-  pointer-events: none;
-  z-index: 0;
+  display: none !important;
 }
 
 /* 3D Floating User Directory & Staff Telemetry Particles */
 .admin-users-particle {
-  position: absolute;
-  border-radius: 16px;
-  pointer-events: none;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
-  animation: floatUsersParticle 10s ease-in-out infinite alternate;
+  display: none !important;
 }
 
 .user-part-1 {
@@ -258,15 +221,17 @@
 }
 
 .admin-users-btn.is-light {
-  background: #fff;
-  color: #111827;
-  border: 1px solid #dbe3ef;
-  box-shadow: none;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  color: #0284c7;
+  border: 1.5px solid #bae6fd;
+  box-shadow: 0 2px 5px rgba(2, 132, 199, 0.1);
 }
 
 .admin-users-btn.is-light:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border-color: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
 }
 
 .admin-users-btn:disabled {

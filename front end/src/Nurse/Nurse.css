@@ -7,10 +7,7 @@
   position: relative;
   min-height: calc(100vh - 86px);
   padding: 24px 28px 48px;
-  background: 
-    radial-gradient(circle at 10% 20%, rgba(224, 242, 254, 0.75) 0%, transparent 45%),
-    radial-gradient(circle at 90% 80%, rgba(240, 253, 250, 0.65) 0%, transparent 50%),
-    linear-gradient(135deg, #f0f7fb 0%, #edf7f6 45%, #f4fbf9 100%);
+  background: transparent !important;
   overflow-x: hidden;
 }
 
@@ -49,9 +46,8 @@
   flex-shrink: 0 !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  background: rgba(255, 255, 255, 0.85) !important;
-  backdrop-filter: blur(16px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  background: transparent !important;
+  border-top: 1px solid rgba(203, 226, 248, 0.8) !important;
 }
 
 /* ============================================================
@@ -789,6 +785,23 @@
   letter-spacing: -0.01em;
 }
 
+/* Nurse Dropdown Arrow */
+.rc-dropdown-arrow {
+  color: #64748b;
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
+}
+
+.rc-nav-group-title:hover .rc-dropdown-arrow {
+  color: #0284c7;
+}
+
+.rc-dropdown-arrow.is-open {
+  transform: rotate(180deg);
+  color: #0284c7;
+}
+
 /* Syringe Toggle Icon Container (Square Pill with Solid Ruby Red Gradient & White Syringe) */
 .rc-syringe-trigger {
   width: 32px;
@@ -1199,19 +1212,7 @@
 }
 
 .med-history-bg-overlay {
-  position: absolute;
-  inset: -28px -30px -46px -30px;
-  background-image: 
-    radial-gradient(circle at 15% 15%, rgba(225, 29, 72, 0.07) 0%, transparent 40%),
-    radial-gradient(circle at 85% 85%, rgba(14, 165, 233, 0.07) 0%, transparent 40%),
-    linear-gradient(135deg, rgba(240, 249, 255, 0.88) 0%, rgba(245, 243, 255, 0.82) 45%, rgba(254, 242, 242, 0.88) 100%),
-    url('/medical_history_theme_bg.jpg');
-  background-size: cover;
-  background-position: center 30%;
-  background-attachment: local;
-  opacity: 0.96;
-  pointer-events: none;
-  z-index: 0;
+  display: none !important;
 }
 
 /* Hero Header with Medical History Theme */
@@ -1728,19 +1729,7 @@
 }
 
 .booking-bg-overlay {
-  position: absolute;
-  inset: -28px -30px -46px -30px;
-  background-image: 
-    radial-gradient(circle at 10% 20%, rgba(14, 165, 233, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(15, 157, 157, 0.08) 0%, transparent 40%),
-    linear-gradient(135deg, rgba(240, 249, 255, 0.88) 0%, rgba(224, 242, 254, 0.82) 45%, rgba(248, 250, 252, 0.90) 100%),
-    url('/appointment_booking_theme_bg.jpg');
-  background-size: cover;
-  background-position: center 25%;
-  background-attachment: local;
-  opacity: 0.97;
-  pointer-events: none;
-  z-index: 0;
+  display: none !important;
 }
 
 /* Hero Header */

@@ -9,57 +9,15 @@
   width: 100%;
   padding: 24px 32px 48px;
   box-sizing: border-box;
-  background: linear-gradient(
-      135deg,
-      rgba(238, 245, 255, 0.90) 0%,
-      rgba(242, 248, 255, 0.84) 40%,
-      rgba(248, 251, 255, 0.88) 70%,
-      rgba(253, 244, 250, 0.92) 100%
-    ),
-    url("../../assets/appointment_3d_bg.jpg") center/cover no-repeat fixed;
-  background-size: cover;
+  background: transparent !important;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
 
-/* 3D Dashboard Background Animated Overlay */
-.appointments-bg-overlay {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 85% 75%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.05) 0%, transparent 50%),
-    linear-gradient(
-      135deg,
-      rgba(238, 245, 255, 0.88) 0%,
-      rgba(242, 248, 255, 0.82) 40%,
-      rgba(248, 251, 255, 0.85) 70%,
-      rgba(253, 244, 250, 0.90) 100%
-    ),
-    url("../../assets/appointment_3d_bg.jpg") center/cover no-repeat fixed;
-  background-size: cover;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* 3D Floating Appointment Scheduling & Consultation Particles */
+.appointments-bg-overlay,
 .appointments-particle {
-  position: absolute;
-  border-radius: 16px;
-  pointer-events: none;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
-  animation: floatAppointmentParticle 10s ease-in-out infinite alternate;
+  display: none !important;
 }
 
 .appt-part-1 {
@@ -134,24 +92,26 @@
 }
 
 .appointments-new-btn {
-  border: none;
+  border: 1px solid #059669;
   border-radius: 12px;
   padding: 14px 22px;
-  background: linear-gradient(135deg, #1496a8 0%, #0d7685 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: #ffffff;
   display: inline-flex;
   align-items: center;
   gap: 10px;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(20, 150, 168, 0.25);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .appointments-new-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(20, 150, 168, 0.35);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  border-color: #047857;
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
 }
 
 /* Table Card */
@@ -249,12 +209,12 @@
 
 .appointments-clear-btn {
   justify-self: end;
-  border: 1px solid #d8e2ee;
+  border: 1px solid #fca5a5;
   border-radius: 10px;
-  background: #ffffff;
-  color: #0f172a;
+  background: linear-gradient(135deg, #fff1f2 0%, #fee2e2 100%);
+  color: #dc2626;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   height: 42px;
   padding: 0 16px;
@@ -262,19 +222,24 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.08);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .appointments-clear-btn:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #c8d6e5;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border-color: #dc2626;
+  color: #ffffff;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
 }
 
 .appointments-clear-btn:disabled {
   color: #94a3b8;
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.6;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
 }
 
 /* Table Content */
@@ -546,23 +511,28 @@
 }
 
 .appointments-view-btn {
-  border: none;
-  background: transparent;
-  padding: 0;
-  color: #0f172a;
+  border: 1px solid #bae6fd;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  padding: 6px 14px;
+  border-radius: 8px;
+  color: #0284c7;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
   width: fit-content;
-  transition: color 0.2s ease, transform 0.15s ease;
+  box-shadow: 0 2px 5px rgba(2, 132, 199, 0.12);
+  transition: all 0.2s ease;
 }
 
 .appointments-view-btn:hover {
-  color: #0284c7;
-  transform: scale(1.08);
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border-color: #0284c7;
+  color: #ffffff;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
 }
 
 .appointments-empty {

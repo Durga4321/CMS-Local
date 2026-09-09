@@ -1020,12 +1020,24 @@ function ReceptionPatients({
 
         <div className="rc-dash-table-container">
           <div className="rc-patient-table-header">
-            <span className="col-sno">S.NO.</span>
-            <span className="col-pid">PID</span>
-            <span className="col-name">NAME</span>
-            <span className="col-phone">PHONE</span>
-            <span className="col-age">AGE</span>
-            <span className="col-actions">ACTIONS</span>
+            <span className="col-sno">
+              <span className="rc-th-capsule rc-th-sno">S.NO.</span>
+            </span>
+            <span className="col-pid">
+              <span className="rc-th-capsule rc-th-pid">PID</span>
+            </span>
+            <span className="col-name">
+              <span className="rc-th-capsule rc-th-name">NAME</span>
+            </span>
+            <span className="col-phone">
+              <span className="rc-th-capsule rc-th-phone">PHONE</span>
+            </span>
+            <span className="col-age">
+              <span className="rc-th-capsule rc-th-age">AGE</span>
+            </span>
+            <span className="col-actions">
+              <span className="rc-th-capsule rc-th-actions">ACTIONS</span>
+            </span>
           </div>
 
           <div className="rc-dash-table-body">
@@ -1041,6 +1053,16 @@ function ReceptionPatients({
                   .slice(0, 2)
                   .map((p) => p[0].toUpperCase())
                   .join("") || "PT";
+                const avatarGradients = [
+                  { bg: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)", shadow: "rgba(2, 132, 199, 0.3)" },
+                  { bg: "linear-gradient(135deg, #10b981 0%, #047857 100%)", shadow: "rgba(16, 185, 129, 0.3)" },
+                  { bg: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)", shadow: "rgba(139, 92, 246, 0.3)" },
+                  { bg: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", shadow: "rgba(245, 158, 11, 0.3)" },
+                  { bg: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)", shadow: "rgba(236, 72, 153, 0.3)" },
+                  { bg: "linear-gradient(135deg, #06b6d4 0%, #0e7490 100%)", shadow: "rgba(6, 182, 212, 0.3)" },
+                  { bg: "linear-gradient(135deg, #6366f1 0%, #4338ca 100%)", shadow: "rgba(99, 102, 241, 0.3)" },
+                ];
+                const avatarStyle = avatarGradients[index % avatarGradients.length];
 
                 return (
                   <div
@@ -1057,7 +1079,15 @@ function ReceptionPatients({
 
                     <span className="col-name">
                       <div className="rc-dash-patient-cell">
-                        <div className="rc-dash-patient-avatar">{initials}</div>
+                        <div
+                          className="rc-dash-patient-avatar"
+                          style={{
+                            background: avatarStyle.bg,
+                            boxShadow: `0 3px 8px ${avatarStyle.shadow}`,
+                          }}
+                        >
+                          {initials}
+                        </div>
                         <span className="rc-dash-patient-name">{patientName}</span>
                       </div>
                     </span>
@@ -1109,7 +1139,9 @@ function ReceptionPatients({
               })
             ) : (
               <div className="rc-dash-empty">
-                <Users size={32} />
+                <div className="rc-dash-empty-icon-wrap">
+                  <Users size={32} />
+                </div>
                 <p>{searchTerm ? `No patients matching "${searchTerm}"` : "No patients found."}</p>
                 {showAddPatient && canCreatePatient && !searchTerm ? (
                   <button

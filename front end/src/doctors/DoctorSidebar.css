@@ -5,31 +5,27 @@
    ============================================================ */
 
 /* ── Sidebar container ── */
+/* ── Sidebar container ── */
 .dr-sidebar {
   width: 240px;
   min-width: 240px;
   height: 100vh;
-  /* Self-contained slate frosted glass theme — strictly invariant across all screen changes */
-  background: linear-gradient(180deg, #a9b1b6 0%, #adb4ba 45%, #afb2b7 100%);
-  border-right: 1px solid rgba(255, 255, 255, 0.45);
+  /* Reference ice-blue background theme */
+  background: linear-gradient(180deg, #e6f2fd 0%, #edf6fe 100%) !important;
+  border-right: 1px solid #d4e7f8 !important;
   display: flex;
   flex-direction: column;
   position: sticky;
   top: 0;
   overflow: hidden;
   transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 4px 0 25px rgba(15, 23, 42, 0.06);
+  box-shadow: 2px 0 16px rgba(186, 215, 243, 0.25) !important;
   z-index: 100;
   position: relative;
 }
 
 .dr-sidebar::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.22) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
+  display: none !important;
 }
 
 /* ────────────────────────
@@ -42,9 +38,9 @@
   margin: 14px 12px 0;
   padding: 12px 14px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.75) !important;
+  border: 1px solid rgba(203, 226, 248, 0.8) !important;
+  box-shadow: 0 4px 14px rgba(186, 215, 243, 0.2) !important;
   flex-shrink: 0;
   position: relative;
   z-index: 1;
@@ -54,7 +50,14 @@
 
 .dr-brand:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(15, 157, 157, 0.1);
+  background: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(186, 215, 243, 0.3) !important;
+}
+
+.dr-brand .dr-clinic-logo {
+  background: #ffffff !important;
+  border: 1.5px solid #ffffff !important;
+  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.16) !important;
 }
 
 .dr-brand-icon {
@@ -122,7 +125,7 @@
   margin: 0;
   font-size: 14px;
   font-weight: 800;
-  color: #0f172a;
+  color: #071120;
   line-height: 1.2;
   letter-spacing: -0.2px;
 }
@@ -130,7 +133,7 @@
 .dr-brand-sub {
   margin: 0 0 2px;
   font-size: 9.5px;
-  color: #0f766e;
+  color: #0369a1;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.6px;
@@ -139,8 +142,8 @@
 .dr-brand-branch {
   margin: 2px 0 0;
   font-size: 11px;
-  color: #64748b;
-  font-weight: 600;
+  color: #0284c7;
+  font-weight: 700;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
@@ -154,7 +157,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 18px 12px;
+  padding: 16px 10px;
   flex: 1;
   overflow-y: auto;
   scrollbar-width: thin;
@@ -166,32 +169,34 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 9px 12px;
-  border-radius: 14px;
-  font-size: 13.5px;
-  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 700;
+  min-height: 48px;
   color: #334155;
   text-decoration: none;
   background: transparent;
   border: 1px solid transparent;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
   position: relative;
   user-select: none;
 }
 
-/* Medical Instrument Icon Bezel */
+/* Reference Circular Icon Container */
 .dr-nav-icon-bezel {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  border-radius: 11px;
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  border-radius: 50% !important;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+  border: none !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
 }
 
 .dr-nav-icon {
@@ -199,13 +204,29 @@
   transition: transform 0.22s ease, stroke-width 0.22s ease;
 }
 
-.dr-nav-link:hover .dr-nav-icon {
-  transform: scale(1.12);
+.dr-nav-link:hover {
+  background: rgba(255, 255, 255, 0.65) !important;
+  border-color: rgba(255, 255, 255, 0.8) !important;
+  transform: translateX(3px);
+  box-shadow: 0 2px 8px rgba(186, 215, 243, 0.35);
+}
+
+.dr-nav-link:hover .dr-nav-icon-bezel {
+  transform: scale(1.06);
+}
+
+.dr-nav-link.active {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08) !important;
+  transform: translateX(2px);
 }
 
 .dr-nav-label {
   flex: 1;
-  letter-spacing: -0.15px;
+  letter-spacing: -0.01em;
+  font-size: 14.5px;
+  font-weight: 700;
 }
 
 /* Clinical Capsule Tag */
@@ -220,229 +241,103 @@
   flex-shrink: 0;
 }
 
-/* Right active indicator pill */
+/* Hide active bar pill */
 .dr-nav-active-pill {
-  width: 4px;
-  height: 16px;
-  border-radius: 4px;
-  opacity: 0;
-  transform: scaleY(0.4);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  margin-left: 2px;
+  display: none !important;
 }
 
 /* ==========================================================================
-   COLOR SCHEMES (DIFFERENT CURATED MEDICAL PALETTES)
+   COLOR SCHEMES (MATCHING PASTEL CIRCULAR CONTAINER & BOLD LABEL)
    ========================================================================== */
 
-/* 1. CYAN / AQUAMARINE (Dashboard) */
+/* 1. CYAN (Dashboard) */
 .dr-nav-link--cyan .dr-nav-icon-bezel {
-  background: #ecfeff;
-  border: 1px solid #a5f3fc;
-  color: #0891b2;
+  background: #e0f2fe !important;
+  color: #0284c7 !important;
+}
+.dr-nav-link--cyan .dr-nav-label {
+  color: #0369a1 !important;
+  font-weight: 700;
 }
 .dr-nav-link--cyan .dr-nav-tag {
-  background: #ecfeff;
-  color: #0891b2;
-  border: 1px solid #cffafe;
-}
-.dr-nav-link--cyan:hover {
-  background: rgba(236, 254, 255, 0.7);
-  border-color: #a5f3fc;
-  color: #0e7490;
-  transform: translateX(3px);
-}
-.dr-nav-link--cyan.active {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.14) 0%, rgba(8, 145, 178, 0.06) 100%);
-  border-color: #06b6d4;
-  color: #0e7490;
-  font-weight: 700;
-  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-.dr-nav-link--cyan.active .dr-nav-icon-bezel {
-  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-  border-color: #0891b2;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
-}
-.dr-nav-link--cyan.active .dr-nav-tag {
-  background: #0891b2;
-  color: #ffffff;
-  border-color: #0891b2;
-}
-.dr-nav-link--cyan.active .dr-nav-active-pill {
-  opacity: 1;
-  transform: scaleY(1);
-  background: #06b6d4;
-  box-shadow: 0 0 10px #06b6d4;
+  background: #e0f2fe;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
 }
 
 /* 2. ROYAL BLUE (Consultation) */
 .dr-nav-link--blue .dr-nav-icon-bezel {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #2563eb;
+  background: #dbeafe !important;
+  color: #2563eb !important;
+}
+.dr-nav-link--blue .dr-nav-label {
+  color: #1d4ed8 !important;
+  font-weight: 700;
 }
 .dr-nav-link--blue .dr-nav-tag {
-  background: #eff6ff;
+  background: #dbeafe;
   color: #2563eb;
-  border: 1px solid #dbeafe;
-}
-.dr-nav-link--blue:hover {
-  background: rgba(239, 246, 255, 0.7);
-  border-color: #bfdbfe;
-  color: #1d4ed8;
-  transform: translateX(3px);
-}
-.dr-nav-link--blue.active {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.14) 0%, rgba(29, 78, 216, 0.06) 100%);
-  border-color: #2563eb;
-  color: #1d4ed8;
-  font-weight: 700;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-.dr-nav-link--blue.active .dr-nav-icon-bezel {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  border-color: #1d4ed8;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
-}
-.dr-nav-link--blue.active .dr-nav-tag {
-  background: #2563eb;
-  color: #ffffff;
-  border-color: #2563eb;
-}
-.dr-nav-link--blue.active .dr-nav-active-pill {
-  opacity: 1;
-  transform: scaleY(1);
-  background: #2563eb;
-  box-shadow: 0 0 10px #2563eb;
+  border: 1px solid #bfdbfe;
 }
 
-/* 3. RX PURPLE (Prescription) */
+/* 3. PURPLE (Prescription) */
 .dr-nav-link--purple .dr-nav-icon-bezel {
-  background: #faf5ff;
-  border: 1px solid #e9d5ff;
-  color: #9333ea;
+  background: #f3e8ff !important;
+  color: #9333ea !important;
+}
+.dr-nav-link--purple .dr-nav-label {
+  color: #7e22ce !important;
+  font-weight: 700;
 }
 .dr-nav-link--purple .dr-nav-tag {
-  background: #faf5ff;
+  background: #f3e8ff;
   color: #9333ea;
-  border: 1px solid #f3e8ff;
-}
-.dr-nav-link--purple:hover {
-  background: rgba(250, 245, 255, 0.7);
-  border-color: #e9d5ff;
-  color: #7e22ce;
-  transform: translateX(3px);
-}
-.dr-nav-link--purple.active {
-  background: linear-gradient(135deg, rgba(147, 51, 234, 0.14) 0%, rgba(126, 34, 206, 0.06) 100%);
-  border-color: #9333ea;
-  color: #7e22ce;
-  font-weight: 700;
-  box-shadow: 0 4px 16px rgba(147, 51, 234, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-.dr-nav-link--purple.active .dr-nav-icon-bezel {
-  background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
-  border-color: #7e22ce;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(147, 51, 234, 0.4);
-}
-.dr-nav-link--purple.active .dr-nav-tag {
-  background: #9333ea;
-  color: #ffffff;
-  border-color: #9333ea;
-}
-.dr-nav-link--purple.active .dr-nav-active-pill {
-  opacity: 1;
-  transform: scaleY(1);
-  background: #9333ea;
-  box-shadow: 0 0 10px #9333ea;
+  border: 1px solid #e9d5ff;
 }
 
-/* 4. TRIAGE AMBER / CORAL (Appointments) */
+/* 4. AMBER (Appointments) */
 .dr-nav-link--amber .dr-nav-icon-bezel {
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  color: #ea580c;
+  background: #fef3c7 !important;
+  color: #d97706 !important;
+}
+.dr-nav-link--amber .dr-nav-label {
+  color: #b45309 !important;
+  font-weight: 700;
 }
 .dr-nav-link--amber .dr-nav-tag {
-  background: #fff7ed;
-  color: #ea580c;
-  border: 1px solid #ffedd5;
-}
-.dr-nav-link--amber:hover {
-  background: rgba(255, 247, 237, 0.7);
-  border-color: #fed7aa;
-  color: #c2410c;
-  transform: translateX(3px);
-}
-.dr-nav-link--amber.active {
-  background: linear-gradient(135deg, rgba(234, 88, 12, 0.14) 0%, rgba(194, 65, 12, 0.06) 100%);
-  border-color: #ea580c;
-  color: #c2410c;
-  font-weight: 700;
-  box-shadow: 0 4px 16px rgba(234, 88, 12, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-.dr-nav-link--amber.active .dr-nav-icon-bezel {
-  background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
-  border-color: #c2410c;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);
-}
-.dr-nav-link--amber.active .dr-nav-tag {
-  background: #ea580c;
-  color: #ffffff;
-  border-color: #ea580c;
-}
-.dr-nav-link--amber.active .dr-nav-active-pill {
-  opacity: 1;
-  transform: scaleY(1);
-  background: #ea580c;
-  box-shadow: 0 0 10px #ea580c;
+  background: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fde68a;
 }
 
-/* 5. VITAL EMERALD (My Schedule) */
+/* 5. EMERALD (My Schedule) */
 .dr-nav-link--emerald .dr-nav-icon-bezel {
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
-  color: #059669;
+  background: #d1fae5 !important;
+  color: #059669 !important;
+}
+.dr-nav-link--emerald .dr-nav-label {
+  color: #047857 !important;
+  font-weight: 700;
 }
 .dr-nav-link--emerald .dr-nav-tag {
-  background: #ecfdf5;
+  background: #d1fae5;
   color: #059669;
-  border: 1px solid #d1fae5;
+  border: 1px solid #a7f3d0;
 }
-.dr-nav-link--emerald:hover {
-  background: rgba(236, 253, 245, 0.7);
-  border-color: #a7f3d0;
-  color: #047857;
-  transform: translateX(3px);
+
+/* 6. RED */
+.dr-nav-link--red .dr-nav-icon-bezel {
+  background: #ffe4e6 !important;
+  color: #dc2626 !important;
 }
-.dr-nav-link--emerald.active {
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.14) 0%, rgba(4, 120, 87, 0.06) 100%);
-  border-color: #059669;
-  color: #047857;
+.dr-nav-link--red .dr-nav-label {
+  color: #b91c1c !important;
   font-weight: 700;
-  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
-.dr-nav-link--emerald.active .dr-nav-icon-bezel {
-  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
-  border-color: #047857;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
-}
-.dr-nav-link--emerald.active .dr-nav-tag {
-  background: #059669;
-  color: #ffffff;
-  border-color: #059669;
-}
-.dr-nav-link--emerald.active .dr-nav-active-pill {
-  opacity: 1;
-  transform: scaleY(1);
-  background: #059669;
-  box-shadow: 0 0 10px #059669;
+.dr-nav-link--red .dr-nav-tag {
+  background: #ffe4e6;
+  color: #dc2626;
+  border: 1px solid #fecdd3;
 }
 
 /* ────────────────────────
@@ -455,9 +350,9 @@
   margin: 12px;
   padding: 12px 14px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  border: 1.5px solid #bae6fd;
+  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.07);
   flex-shrink: 0;
   position: relative;
   z-index: 1;
@@ -466,7 +361,8 @@
 
 .dr-sidebar-profile:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.12);
+  border-color: #7dd3fc;
 }
 
 .dr-sidebar-avatar {
@@ -555,4 +451,36 @@
 @keyframes dr-pulse {
   0% { transform: scale(0.8); opacity: 0.8; }
   100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* ────────────────────────
+   BOTTOM COLLAPSE BUTTON (ADMIN MATCHED)
+   ──────────────────────── */
+.dr-sidebar-bottom {
+  padding: 10px 12px 14px;
+  margin-top: auto;
+  border-top: 1px solid rgba(203, 226, 248, 0.8);
+}
+
+.dr-collapse-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(203, 226, 248, 0.7);
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dr-collapse-btn:hover {
+  background: #ffffff;
+  border-color: #bfdbfe;
+  color: #0f172a;
+  box-shadow: 0 2px 8px rgba(186, 215, 243, 0.4);
 }

@@ -3290,7 +3290,7 @@ function ReceptionBilling() {
           <button
             key={mode}
             type="button"
-            className={`rc-med-billing-tab ${billingMode === mode ? "active" : ""}`}
+            className={`rc-med-billing-tab rc-med-billing-tab--${mode} ${billingMode === mode ? "active" : ""}`}
             onClick={() => {
               setBillingMode(mode);
               setMessage("");
@@ -3313,10 +3313,10 @@ function ReceptionBilling() {
 
       <div className="rc-billing-layout">
         {/* 1. TABLE FIRST AT THE TOP - ZERO EMPTY SPACE */}
-        <section className="rc-card rc-latest-bills glass-panel">
+        <section className={`rc-card rc-latest-bills glass-panel rc-latest-bills--${billingMode}`}>
           <div className="rc-latest-bills-head">
             <div className="rc-latest-bills-title-group">
-              <div className="rc-latest-bills-icon-capsule">
+              <div className={`rc-latest-bills-icon-capsule rc-latest-bills-icon-capsule--${billingMode}`}>
                 {billingMode === "pharmacy" ? (
                   <Syringe size={22} />
                 ) : billingMode === "diagnostic" ? (
@@ -3326,7 +3326,7 @@ function ReceptionBilling() {
                 )}
               </div>
               <div>
-                <h3>
+                <h3 className={`rc-latest-bills-title rc-latest-bills-title--${billingMode}`}>
                   {billingMode === "pharmacy"
                     ? "Pharmacy Dispensary Ledger"
                     : billingMode === "diagnostic"
@@ -3454,14 +3454,14 @@ function ReceptionBilling() {
 
         {/* 2. FORM PLACED BELOW THE TABLE WHEN CREATING OR EDITING */}
         {billingMode !== "consultation" && (showCreateForm || editingBill) ? (
-          <form className="rc-card rc-billing-form glass-panel" onSubmit={generate} noValidate>
+          <form className={`rc-card rc-billing-form glass-panel rc-billing-form--${billingMode}`} onSubmit={generate} noValidate>
             <div className="rc-billing-card-head">
               <div className="rc-billing-head-title-wrap">
-                <span className="rc-billing-head-icon-tag">
+                <span className={`rc-billing-head-icon-tag rc-billing-head-icon-tag--${billingMode}`}>
                   {billingMode === "pharmacy" ? <Syringe size={18} /> : <FlaskConical size={18} />}
                 </span>
                 <div>
-                  <h3>
+                  <h3 className={`rc-billing-form-h3--${billingMode}`}>
                     {editingBill
                       ? `Edit ${billingMode === "pharmacy" ? "Pharmacy" : "Diagnostic"} Bill (${editingBill.invoiceNo || "Draft"})`
                       : billingMode === "pharmacy"

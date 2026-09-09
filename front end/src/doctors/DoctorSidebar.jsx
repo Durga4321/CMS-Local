@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
+  ArrowLeftToLine,
   CalendarClock,
   CalendarDays,
   ClipboardList,
@@ -78,7 +79,7 @@ const rememberDoctorBranch = (branch = {}) => {
   );
 };
 
-function DoctorSidebar() {
+function DoctorSidebar({ onToggleCollapse = () => {} }) {
   const profile = getRoleProfile("doctor");
   const hospitalName = getClinicDisplayName(profile, "Clinic Name");
   const doctor = getLoggedInDoctor();
@@ -200,6 +201,19 @@ function DoctorSidebar() {
             <span className="dr-status-dot" /> Online
           </p>
         </div>
+      </div>
+
+      {/* BOTTOM COLLAPSE MENU TOGGLE (ADMIN MATCHED) */}
+      <div className="dr-sidebar-bottom">
+        <button
+          type="button"
+          className="dr-collapse-btn collapse-btn"
+          onClick={onToggleCollapse}
+          title="Collapse Menu"
+        >
+          <ArrowLeftToLine size={16} />
+          <span>Collapse Menu</span>
+        </button>
       </div>
     </aside>
   );

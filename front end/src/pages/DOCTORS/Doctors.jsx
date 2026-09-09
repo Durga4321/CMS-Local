@@ -1321,38 +1321,6 @@ function Doctors() {
 
   return (
     <div className="doctors-page">
-      {/* 3D Hospital & Blood Theme Background Animated Overlays */}
-      <div className="doctors-bg-overlay" />
-      <div className="doctors-blood-cell particle-blood-1" />
-      <div className="doctors-blood-cell particle-blood-2" />
-      <div className="doctors-blood-cell particle-blood-3" />
-      <div className="doctors-blood-cell particle-blood-4" />
-
-      {/* Screen Background Crimson Blood Heart Rate Pulse Wave */}
-      <div className="doctors-screen-ecg-bg">
-        <svg viewBox="0 0 1400 160" preserveAspectRatio="none" className="screen-ecg-svg">
-          <defs>
-            <linearGradient id="bloodEcgGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.85" />
-              <stop offset="50%" stopColor="#dc2626" stopOpacity="1" />
-              <stop offset="100%" stopColor="#e11d48" stopOpacity="0.85" />
-            </linearGradient>
-            <filter id="bloodGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-          </defs>
-          <path
-            d="M0,80 L300,80 L315,45 L330,120 L345,20 L365,140 L380,80 L400,80 L700,80 L715,45 L730,120 L745,20 L765,140 L780,80 L800,80 L1100,80 L1115,45 L1130,120 L1145,20 L1165,140 L1180,80 L1400,80"
-            fill="none"
-            stroke="url(#bloodEcgGradient)"
-            strokeWidth="3.5"
-            filter="url(#bloodGlow)"
-            className="screen-blood-ecg-path"
-          />
-        </svg>
-      </div>
-
       <div className="doctors-page-header">
         <div>
           <h2>Doctors</h2>

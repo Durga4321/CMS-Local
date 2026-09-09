@@ -16,6 +16,24 @@ const TITLES = {
 
 function NurseLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("nurse_sidebar_collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleCollapse = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("nurse_sidebar_collapsed", String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const location = useLocation();
 
   if (!isNurseSession()) {
@@ -27,7 +45,7 @@ function NurseLayout() {
     "Nurse Dashboard";
 
   return (
-    <div className={`rc-shell ${sidebarOpen ? "rc-sidebar-open" : ""}`}>
+    <div className={`rc-shell ${sidebarOpen ? "rc-sidebar-open" : ""} ${collapsed ? "rc-sidebar-collapsed" : ""}`}>
       {sidebarOpen && <div className="rc-overlay" onClick={() => setSidebarOpen(false)} />}
       <NurseSidebar
         onClose={() => setSidebarOpen(false)}
@@ -36,9 +54,22 @@ function NurseLayout() {
         sectionLabel="Nurse Desk"
         profile={getNurseProfile()}
         showBookAppointment={false}
+        collapsed={collapsed}
+        onToggleCollapse={handleToggleCollapse}
       />
-      <div className="rc-main">
-        <NurseTopbar title={title} onMenu={() => setSidebarOpen(true)} areaLabel="Nurse" roleType="nurse" />
+      <div className={`rc-main ${collapsed ? "collapsed" : ""}`}>
+        <NurseTopbar
+          title={title}
+          onMenu={() => {
+            if (typeof window !== "undefined" && window.innerWidth <= 900) {
+              setSidebarOpen((prev) => !prev);
+            } else {
+              handleToggleCollapse();
+            }
+          }}
+          areaLabel="Nurse"
+          roleType="nurse"
+        />
         <main className="rc-content" onClick={() => sidebarOpen && setSidebarOpen(false)}>
           <Outlet />
         </main>

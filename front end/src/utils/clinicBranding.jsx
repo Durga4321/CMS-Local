@@ -93,21 +93,26 @@ export const readClinicBrandingMap = () => {
 };
 
 export const saveClinicBranding = (branding = {}, scope = {}) => {
-  const key = getClinicBrandingScope(scope);
-  const map = readClinicBrandingMap();
-  const next = {
-    ...map,
-    [key]: {
-      ...map[key],
-      ...branding,
-      clinicId: scope.clinicId || branding.clinicId || "",
-      clinicName: formatClinicName(scope.clinicName || branding.clinicName || ""),
-      updatedAt: new Date().toISOString(),
-    },
-  };
-  localStorage.setItem(CLINIC_BRANDING_STORAGE_KEY, JSON.stringify(next));
-  window.dispatchEvent(new CustomEvent(CLINIC_BRANDING_UPDATED_EVENT, { detail: { key, branding: next[key] } }));
-  return next[key];
+  try {
+    const key = getClinicBrandingScope(scope);
+    const map = readClinicBrandingMap();
+    const next = {
+      ...map,
+      [key]: {
+        ...map[key],
+        ...branding,
+        clinicId: scope.clinicId || branding.clinicId || "",
+        clinicName: formatClinicName(scope.clinicName || branding.clinicName || ""),
+        updatedAt: new Date().toISOString(),
+      },
+    };
+    localStorage.setItem(CLINIC_BRANDING_STORAGE_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent(CLINIC_BRANDING_UPDATED_EVENT, { detail: { key, branding: next[key] } }));
+    return next[key];
+  } catch (error) {
+    console.warn("Unable to save clinic branding to localStorage:", error);
+    return branding;
+  }
 };
 
 const resolveAssetUrl = (value = "") => {
@@ -173,6 +178,13 @@ export const getPublicClinicLogoUrl = (clinicId = "") => {
 
 export const syncClinicBrandingFromBackend = async (scope = {}) => {
   if (scope.enabled === false) return null;
+  const key = getClinicBrandingScope(scope);
+  const current = readClinicBrandingMap()[key] || {};
+  // If user already uploaded a local data URL logo, do not overwrite it with background sync
+  if (current.logoDataUrl && String(current.logoDataUrl).startsWith("data:image/") && !scope.forceRemote) {
+    return null;
+  }
+
   const publicLogoUrl = getPublicClinicLogoUrl(scope.clinicId);
   if (!publicLogoUrl) return null;
 

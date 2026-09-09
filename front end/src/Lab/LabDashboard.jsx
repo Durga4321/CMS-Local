@@ -1,5 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CheckCircle, ClipboardList, Clock, Eye, FileBarChart2, FlaskConical, TestTube2, X, XCircle } from "lucide-react";
+import {
+  CheckCircle,
+  ChevronRight,
+  ClipboardList,
+  Clock,
+  Eye,
+  FileBarChart2,
+  FlaskConical,
+  TestTube2,
+  X,
+  XCircle,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { parseList, requestJson } from "./labApi";
 import LabToast from "./LabToast";
@@ -98,7 +109,7 @@ const computeCardsFromOrders = (orders = []) => ({
   pendingReports: orders.filter((order) => !hasCompletedReport(order) && !/cancel|cancelled|canceled/.test(statusText(order))).length,
 });
 
-const recentOrdersGridTemplate = "1fr 1.8fr 0.7fr 0.8fr 120px";
+const recentOrdersGridTemplate = "minmax(170px, 1.3fr) minmax(220px, 2fr) 110px 130px 110px";
 
 const getPatientGroupKey = (order = {}) =>
   String(orderPatientId(order) || orderPhone(order) || orderPatient(order)).trim().toLowerCase() || "patient";
@@ -176,67 +187,318 @@ function LabDashboard() {
   }, []);
 
   const cards = [
-    { label: "Today's orders", value: computedCards.todayOrders ?? dashboardCardValue(dashboard, ["todayOrders", "todaysOrders", "todayOrderCount", "ordersToday"]), icon: ClipboardList, tone: "blue", to: "/lab/patients?view=today" },
-    { label: "Pending orders", value: computedCards.pendingOrders ?? dashboardCardValue(dashboard, ["pendingOrders", "pendingOrderCount"]), icon: Clock, tone: "amber", to: "/lab/patients?view=pending" },
-    { label: "Sample collection needed", value: computedCards.sampleCollected ?? dashboardCardValue(dashboard, ["sampleCollected", "sampleCollectedCount", "samplesCollected"]), icon: TestTube2, tone: "blue", to: "/lab/sample-collection?view=samples" },
-    { label: "In-progress tests", value: computedCards.inProgress ?? dashboardCardValue(dashboard, ["inProgress", "inProgressTests", "inprogressTests", "processingTests"]), icon: FlaskConical, tone: "amber", to: "/lab/sample-collection?view=in-progress" },
-    { label: "Completed today", value: computedCards.completedToday ?? dashboardCardValue(dashboard, ["completedToday", "completedTodayCount", "todayCompleted"]), icon: CheckCircle, tone: "green", to: "/lab/reports?view=completed" },
-    { label: "Cancelled tests", value: computedCards.cancelled ?? dashboardCardValue(dashboard, ["cancelled", "cancelledTests", "canceledTests", "cancelledCount"]), icon: XCircle, tone: "red", to: "/lab/patients?view=cancelled" },
-    { label: "Pending reports", value: computedCards.pendingReports ?? dashboardCardValue(dashboard, ["pendingReports", "pendingReportCount"]), icon: FileBarChart2, tone: "amber", to: "/lab/reports?view=pending-reports" },
+    {
+      label: "Today's orders",
+      value: computedCards.todayOrders ?? dashboardCardValue(dashboard, ["todayOrders", "todaysOrders", "todayOrderCount", "ordersToday"]),
+      icon: ClipboardList,
+      theme: "card-blue-theme",
+      boxClass: "box-blue",
+      sparkColor: "#0284c7",
+      period: "Today",
+      trendText: "● Daily Orders",
+      trendClass: "trend-neutral",
+      to: "/lab/patients?view=today",
+    },
+    {
+      label: "Pending orders",
+      value: computedCards.pendingOrders ?? dashboardCardValue(dashboard, ["pendingOrders", "pendingOrderCount"]),
+      icon: Clock,
+      theme: "card-orange-theme",
+      boxClass: "box-orange",
+      sparkColor: "#f97316",
+      period: "Pending",
+      trendText: "● Awaiting Action",
+      trendClass: "trend-down",
+      to: "/lab/patients?view=pending",
+    },
+    {
+      label: "Sample collection needed",
+      value: computedCards.sampleCollected ?? dashboardCardValue(dashboard, ["sampleCollected", "sampleCollectedCount", "samplesCollected"]),
+      icon: TestTube2,
+      theme: "card-purple-theme",
+      boxClass: "box-purple",
+      sparkColor: "#8b5cf6",
+      period: "Samples",
+      trendText: "● Collection Required",
+      trendClass: "trend-neutral",
+      to: "/lab/sample-collection?view=samples",
+    },
+    {
+      label: "In-progress tests",
+      value: computedCards.inProgress ?? dashboardCardValue(dashboard, ["inProgress", "inProgressTests", "inprogressTests", "processingTests"]),
+      icon: FlaskConical,
+      theme: "card-teal-theme",
+      boxClass: "box-teal",
+      sparkColor: "#0d9488",
+      period: "Active",
+      trendText: "● Under Analysis",
+      trendClass: "trend-neutral",
+      to: "/lab/sample-collection?view=in-progress",
+    },
+    {
+      label: "Completed today",
+      value: computedCards.completedToday ?? dashboardCardValue(dashboard, ["completedToday", "completedTodayCount", "todayCompleted"]),
+      icon: CheckCircle,
+      theme: "card-green-theme",
+      boxClass: "box-green",
+      sparkColor: "#10b981",
+      period: "Done",
+      trendText: "✓ Completed Today",
+      trendClass: "trend-up",
+      to: "/lab/reports?view=completed",
+    },
+    {
+      label: "Cancelled tests",
+      value: computedCards.cancelled ?? dashboardCardValue(dashboard, ["cancelled", "cancelledTests", "canceledTests", "cancelledCount"]),
+      icon: XCircle,
+      theme: "card-rose-theme",
+      boxClass: "box-rose",
+      sparkColor: "#e11d48",
+      period: "Voided",
+      trendText: "● Cancelled Tests",
+      trendClass: "trend-down",
+      to: "/lab/patients?view=cancelled",
+    },
+    {
+      label: "Pending reports",
+      value: computedCards.pendingReports ?? dashboardCardValue(dashboard, ["pendingReports", "pendingReportCount"]),
+      icon: FileBarChart2,
+      theme: "card-amber-theme",
+      boxClass: "box-amber",
+      sparkColor: "#d97706",
+      period: "Reports",
+      trendText: "● Sign-off Needed",
+      trendClass: "trend-neutral",
+      to: "/lab/reports?view=pending-reports",
+    },
   ];
 
   const selectedTests = useMemo(() => selectedOrder?.__testRows || [], [selectedOrder]);
 
   return (
-    <section className="rc-page lab-page">
+    <section className="rc-page lab-page rc-dashboard-page">
+      {/* 3D Lab Theme Animated Background Overlays */}
+      <div className="db-3d-bg-overlay" />
+      <div className="db-3d-floating-particle p1" />
+      <div className="db-3d-floating-particle p2" />
+      <div className="db-3d-floating-particle p3" />
+      <div className="db-3d-ecg-wave">
+        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="db-ecg-svg">
+          <path
+            d="M0 60 L300 60 L310 40 L320 80 L330 20 L345 100 L355 60 L370 60 L400 60 L700 60 L710 35 L720 85 L730 15 L745 105 L755 60 L770 60 L1200 60"
+            fill="none"
+            stroke="rgba(14, 165, 233, 0.22)"
+            strokeWidth="2.5"
+            strokeDasharray="1200"
+            strokeDashoffset="1200"
+            className="ecg-path"
+          />
+        </svg>
+      </div>
+
       <LabToast toast={toast} onClose={() => setToast(null)} />
       {loading ? <div className="rc-card">Loading lab dashboard...</div> : null}
 
-      <div className="rc-stat-grid lab-dashboard-grid">
-        {cards.map(({ label, value, icon: Icon, tone, to }) => (
-          <article className="rc-stat-card" key={label} role="button" tabIndex={0} onClick={() => navigate(to)} onKeyDown={(event) => event.key === "Enter" && navigate(to)}>
-            <div className={`rc-stat-icon ${tone}`}><Icon size={22} /></div>
-            <span>Open</span>
-            <p>{label}</p>
-            <strong>{value}</strong>
-          </article>
+      {/* RADIANT MULTI-COLORED KPI STAT CARDS */}
+      <div className="rc-dash-kpi-grid lab-dashboard-grid">
+        {cards.map(({ label, value, icon: Icon, theme, boxClass, sparkColor, period, trendText, trendClass, to }) => (
+          <div
+            className={`rc-dash-kpi-card ${theme}`}
+            key={label}
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate(to)}
+            onKeyDown={(event) => event.key === "Enter" && navigate(to)}
+            title={`Open ${label}`}
+          >
+            <div className="db-kpi-content-wrap">
+              <div className="db-kpi-header">
+                <div className={`db-kpi-icon-box ${boxClass}`}>
+                  <Icon size={18} />
+                </div>
+                <span className="db-kpi-title">{label}</span>
+                <span className="rc-stat-period-pill">{period}</span>
+              </div>
+              <div className="db-kpi-num">{value}</div>
+              <div className={`db-kpi-trend ${trendClass}`}>
+                <span>{trendText}</span>
+              </div>
+              <svg className="db-sparkline" viewBox="0 0 160 30" preserveAspectRatio="none">
+                <path d="M0 24 Q 25 18, 50 22 T 100 16 T 160 8" fill="none" stroke={sparkColor} strokeWidth="2.5" strokeLinecap="round" />
+                <circle cx="0" cy="24" r="3" fill={sparkColor} />
+                <circle cx="50" cy="22" r="3" fill={sparkColor} />
+                <circle cx="100" cy="16" r="3" fill={sparkColor} />
+                <circle cx="160" cy="8" r="3" fill={sparkColor} />
+              </svg>
+            </div>
+          </div>
         ))}
       </div>
 
-      <div className="rc-action-grid">
-        <button type="button" onClick={() => navigate("/lab/diagnosis-tests")}><FlaskConical size={22} /><span><strong>Diagnosis Tests</strong> Manage lab master tests</span></button>
-        <button type="button" onClick={() => navigate("/lab/sample-collection")}><TestTube2 size={22} /><span><strong>Sample Collection</strong> Track order status</span></button>
-        <button type="button" onClick={() => navigate("/lab/reports")}><FileBarChart2 size={22} /><span><strong>Reports</strong> Review result reports</span></button>
+      {/* QUICK LAB ACTION TILES */}
+      <div className="rc-dash-action-grid lab-dash-action-grid">
+        <button
+          type="button"
+          className="rc-dash-action-tile qa-diagnostic-billing"
+          onClick={() => navigate("/lab/diagnosis-tests")}
+        >
+          <div className="rc-dash-action-icon-wrap icon-purple">
+            <FlaskConical size={22} />
+          </div>
+          <div className="rc-dash-action-content">
+            <div className="rc-dash-action-top-row">
+              <span className="rc-dash-action-tag tag-purple">Master Tests</span>
+              <span className="rc-dash-action-title">Diagnosis Tests</span>
+            </div>
+            <p className="rc-dash-action-desc">Manage lab test catalog, master parameters, and pricing</p>
+          </div>
+          <div className="rc-dash-action-chevron">
+            <ChevronRight size={18} />
+          </div>
+        </button>
+
+        <button
+          type="button"
+          className="rc-dash-action-tile qa-op-billing"
+          onClick={() => navigate("/lab/sample-collection")}
+        >
+          <div className="rc-dash-action-icon-wrap icon-cyan">
+            <TestTube2 size={22} />
+          </div>
+          <div className="rc-dash-action-content">
+            <div className="rc-dash-action-top-row">
+              <span className="rc-dash-action-tag tag-cyan">Specimens</span>
+              <span className="rc-dash-action-title">Sample Collection</span>
+            </div>
+            <p className="rc-dash-action-desc">Track tube barcoding, specimen drawing, and order status</p>
+          </div>
+          <div className="rc-dash-action-chevron">
+            <ChevronRight size={18} />
+          </div>
+        </button>
+
+        <button
+          type="button"
+          className="rc-dash-action-tile qa-pharmacy-billing"
+          onClick={() => navigate("/lab/reports")}
+        >
+          <div className="rc-dash-action-icon-wrap icon-emerald">
+            <FileBarChart2 size={22} />
+          </div>
+          <div className="rc-dash-action-content">
+            <div className="rc-dash-action-top-row">
+              <span className="rc-dash-action-tag tag-emerald">Diagnostics</span>
+              <span className="rc-dash-action-title">Lab Reports</span>
+            </div>
+            <p className="rc-dash-action-desc">Review test results, authorize reports, and download</p>
+          </div>
+          <div className="rc-dash-action-chevron">
+            <ChevronRight size={18} />
+          </div>
+        </button>
       </div>
 
-      <div className="rc-card">
-        <div className="rc-card-head">
-          <div>
-            <h3>Recent Lab Orders</h3>
-            <p>Latest 10 lab orders</p>
-          </div>
-        </div>
-        <div className="rc-table compact lab-table">
-          <div className="rc-table-head four" style={{ gridTemplateColumns: recentOrdersGridTemplate }}>
-            <span>Patient</span>
-            <span>Tests</span>
-            <span>Total Tests</span>
-            <span>Date</span>
-            <span>Action</span>
-          </div>
-          {recentOrders.length ? recentOrders.map((order, index) => (
-            <div className="rc-table-row four" style={{ gridTemplateColumns: recentOrdersGridTemplate }} key={readFirst(order, ["id", "Id", "orderId", "OrderId"], index)}>
-              <span>{orderPatient(order)}</span>
-              <span>{orderTest(order)}</span>
-              <span>{order.__testRows?.length || 0}</span>
-              <span>{orderDate(order)}</span>
-              <span>
-                <button className="lab-text-action" type="button" onClick={() => setSelectedOrder(order)}>
-                  <Eye size={15} /> View
-                </button>
-              </span>
+      {/* RECENT LAB ORDERS TABLE CARD WITH CAPSULE HEADINGS */}
+      <div className="rc-card rc-dash-table-card lab-dash-table-card">
+        <div className="rc-dash-table-head">
+          <div className="rc-dash-table-head-left">
+            <div className="rc-dash-panel-icon">
+              <FlaskConical size={18} />
             </div>
-          )) : <div className="rc-empty">No recent lab orders found.</div>}
+            <div>
+              <h3>Recent Lab Orders</h3>
+              <div className="rc-dash-meta-badges">
+                <span className="rc-dash-count-pill">
+                  {recentOrders.length} {recentOrders.length === 1 ? "Order" : "Orders"}
+                </span>
+                <span className="rc-dash-date-pill">
+                  Latest 10 entries
+                </span>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="rc-dash-manage-btn"
+            onClick={() => navigate("/lab/patients")}
+          >
+            <span>View All Patients</span>
+            <ChevronRight size={15} />
+          </button>
+        </div>
+
+        <div className="rc-table compact lab-table">
+          <div className="lab-table-head" style={{ gridTemplateColumns: recentOrdersGridTemplate }}>
+            <span className="col-left text-left">
+              <span className="rc-th-capsule rc-th-name">Patient</span>
+            </span>
+            <span className="col-left text-left">
+              <span className="rc-th-capsule rc-th-tests">Tests</span>
+            </span>
+            <span className="col-center text-center">
+              <span className="rc-th-capsule rc-th-total">Total Tests</span>
+            </span>
+            <span className="col-left text-left">
+              <span className="rc-th-capsule rc-th-pid">Date</span>
+            </span>
+            <span className="col-center text-center lab-head-actions">
+              <span className="rc-th-capsule rc-th-actions">Action</span>
+            </span>
+          </div>
+          {recentOrders.length ? (
+            recentOrders.map((order, index) => {
+              const pName = orderPatient(order);
+              const pInitials = pName
+                .split(" ")
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((p) => p[0].toUpperCase())
+                .join("") || "PT";
+              const avatarGradients = [
+                "linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)",
+                "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+                "linear-gradient(135deg, #7c3aed 0%, #9333ea 100%)",
+                "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
+                "linear-gradient(135deg, #e11d48 0%, #f43f5e 100%)",
+                "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
+              ];
+              const avatarBg = avatarGradients[index % avatarGradients.length];
+
+              return (
+                <div
+                  className="lab-table-row"
+                  style={{ gridTemplateColumns: recentOrdersGridTemplate }}
+                  key={readFirst(order, ["id", "Id", "orderId", "OrderId"], index)}
+                >
+                  <span className="col-left text-left lab-patient-cell">
+                    <div className="rc-dash-patient-avatar" style={{ background: avatarBg }}>{pInitials}</div>
+                    <strong className="lab-patient-name">{pName}</strong>
+                  </span>
+                  <span className="col-left text-left lab-test-names-cell" title={orderTest(order)}>
+                    {orderTest(order)}
+                  </span>
+                  <span className="col-center text-center">
+                    <span className="lab-total-badge">{order.__testRows?.length || 0}</span>
+                  </span>
+                  <span className="col-left text-left lab-date-cell">
+                    <span className="rc-lab-date-pill">{orderDate(order)}</span>
+                  </span>
+                  <span className="col-center text-center">
+                    <button
+                      className="lab-text-action"
+                      type="button"
+                      onClick={() => setSelectedOrder(order)}
+                      title="View order tests"
+                    >
+                      <Eye size={15} /> View
+                    </button>
+                  </span>
+                </div>
+              );
+            })
+          ) : (
+            <div className="rc-empty">No recent lab orders found.</div>
+          )}
         </div>
       </div>
 

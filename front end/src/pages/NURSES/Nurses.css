@@ -7,32 +7,16 @@
   width: 100%;
   padding: 10px 32px 32px;
   box-sizing: border-box;
-  background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.65) 0%,
-      rgba(240, 249, 255, 0.55) 50%,
-      rgba(253, 242, 248, 0.6) 100%
-    ),
-    url("../../assets/nurse_3d_bg.jpg") center/cover no-repeat fixed;
+  background: transparent !important;
   display: flex;
   flex-direction: column;
   gap: 6px;
   overflow-x: hidden;
 }
 
-/* Floating 3D Nurse Particles */
+/* Hide Floating 3D Nurse Particles */
 .nurses-nurse-particle {
-  position: absolute;
-  pointer-events: none;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 12px 32px rgba(6, 182, 212, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.9);
-  animation: nurseParticleFloat 6s ease-in-out infinite alternate;
+  display: none !important;
 }
 
 .particle-nurse-1 {
@@ -92,15 +76,7 @@
 
 /* Ambient Nursing Vitals Pulse Wave SVG */
 .nurses-screen-ecg-bg {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 140px;
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0.55;
-  overflow: hidden;
+  display: none !important;
 }
 
 .screen-ecg-svg {
@@ -166,31 +142,31 @@
   gap: 12px;
 }
 
-/* Refresh / Recycle Button (Background Removed as Requested) */
+/* Refresh / Recycle Button */
 .nurses-icon-button {
   width: 42px;
   height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: 2px solid #0891b2;
+  background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
+  border: 1.5px solid #06b6d4;
   border-radius: 12px;
   color: #0891b2;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: none;
+  box-shadow: 0 2px 6px rgba(6, 182, 212, 0.15);
 }
 
 .nurses-icon-button:hover:not(:disabled) {
-  background: #0891b2;
+  background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
   color: #ffffff;
   border-color: #0891b2;
   transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(8, 145, 178, 0.3);
+  box-shadow: 0 4px 14px rgba(8, 145, 178, 0.35);
 }
 
-/* Add Nurse Primary Button (Background Removed as Requested) */
+/* Add Nurse Primary Button */
 .nurses-primary-button {
   display: inline-flex;
   align-items: center;
@@ -199,21 +175,21 @@
   height: 42px;
   font-size: 0.9rem;
   font-weight: 800;
-  color: #0891b2;
-  background: transparent;
-  border: 2px solid #0891b2;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+  border: 1.5px solid #0891b2;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: none;
+  box-shadow: 0 4px 14px rgba(8, 145, 178, 0.3);
 }
 
 .nurses-primary-button:hover:not(:disabled) {
-  background: #0891b2;
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
   color: #ffffff;
-  border-color: #0891b2;
+  border-color: #06b6d4;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(8, 145, 178, 0.35);
+  box-shadow: 0 6px 20px rgba(8, 145, 178, 0.45);
 }
 
 /* Success & Message Banner */
@@ -803,19 +779,22 @@
   height: 40px;
   padding: 0 20px;
   border-radius: 10px;
-  border: 1.5px solid #cbd5e1;
-  background: #ffffff;
-  color: #475569;
+  border: 1.5px solid #fca5a5;
+  background: linear-gradient(135deg, #fff1f2 0%, #fee2e2 100%);
+  color: #dc2626;
   font-weight: 750;
   font-size: 0.88rem;
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.08);
   transition: all 0.2s ease;
 }
 
 .nurses-secondary-button:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #94a3b8;
-  color: #0f172a;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border-color: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+  transform: translateY(-1px);
 }
 
 .nurses-save-button {

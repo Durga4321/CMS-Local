@@ -18,7 +18,6 @@ import {
   X,
 } from "lucide-react";
 import "./DoctorDashboard.css";
-import HumanHeartBleedingBackground from "../../components/HumanHeartBleedingBackground";
 import { apiUrl } from "../../config/api";
 import {
   filterByLoggedInDoctor,
@@ -439,9 +438,6 @@ function DoctorDashboard() {
 
   return (
     <div className="dd-page">
-      {/* 3D Anatomical Human Heart & Bleeding Blood Animation Background */}
-      <HumanHeartBleedingBackground />
-
       {error ? (
         <div className="dd-alert">
           <span>{error}</span>
@@ -486,18 +482,6 @@ function DoctorDashboard() {
                 <span className={`dd-stat-trend dd-stat-trend--${color}`}>{trend}</span>
               </div>
               <p className="dd-stat-sub">{sub}</p>
-            </div>
-            {/* Medical Telemetry Waveform */}
-            <div className="dd-stat-wave-wrap" aria-hidden="true">
-              <svg className={`dd-stat-wave dd-stat-wave--${color}`} viewBox="0 0 160 32" fill="none">
-                <path
-                  d="M0 20 Q 20 20, 35 20 L 45 8 L 53 28 L 61 4 L 69 22 L 77 20 Q 115 20, 160 20"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
             </div>
           </div>
         ))}

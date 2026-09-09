@@ -81,17 +81,15 @@ export function DropdownItem({
       {Icon && (
         leftBadgeType === "circle" ? (
           <span className="hc-hero-circle-badge">
-            {React.isValidElement(Icon) ? Icon : <Icon size={17} strokeWidth={2.4} />}
+            {React.isValidElement(Icon) ? Icon : <Icon size={15} strokeWidth={2.2} />}
           </span>
         ) : dropletBadge ? (
-          <span className={`hc-blood-droplet-badge hc-blood-droplet-badge--${effectiveDropletVariant}`}>
-            <span className="hc-blood-droplet-badge-inner">
-              {React.isValidElement(Icon) ? Icon : <Icon size={16} strokeWidth={2.4} />}
-            </span>
+          <span className="hc-hero-circle-badge">
+            {React.isValidElement(Icon) ? Icon : <Icon size={15} strokeWidth={2.2} />}
           </span>
         ) : (
           <div className="hc-dropdown-item-icon-box">
-            {React.isValidElement(Icon) ? Icon : <Icon size={16} />}
+            {React.isValidElement(Icon) ? Icon : <Icon size={15} />}
           </div>
         )
       )}

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Download, Printer, Search, Syringe, Trash2 } from "lucide-react";
+import { Check, ChevronDown, Download, Plus, Printer, Search, Syringe, Trash2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Prescription.css";
 import { apiUrl } from "../../config/api";
@@ -145,18 +145,11 @@ const RxCustomSelect = ({
         <span className={`rx-custom-select-text ${!value ? "is-placeholder" : ""}`}>
           {value || placeholder}
         </span>
-        <span
-          className={`rx-syringe-wrap ${isOpen ? "rx-syringe--open" : ""}`}
+        <ChevronDown
+          size={16}
+          className={`rx-dropdown-arrow ${isOpen ? "is-open" : ""}`}
           aria-hidden="true"
-          title={isOpen ? "Click to close options" : "Click syringe to view options"}
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsOpen((prev) => !prev);
-          }}
-        >
-          <Syringe size={13} className="rx-syringe-icon" />
-          <span className="rx-syringe-needle-bead" />
-        </span>
+        />
       </button>
 
       {isOpen && (
@@ -1275,10 +1268,10 @@ function Prescription() {
                 />
                 <span className="rx-action-col">
                   <button
-                    className="rx-del-btn rx-instrument-trash"
+                    className="rx-del-btn"
                     type="button"
                     onClick={() => removeMedicine(medicine.id)}
-                    title="Remove medicine (Sterilizer clamp)"
+                    title="Remove medicine"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -1300,24 +1293,13 @@ function Prescription() {
           </datalist>
 
           <button
-            className="rx-add-med-btn rx-instrument-btn rx-instrument--dispenser"
+            className="rx-add-med-btn"
             type="button"
             onClick={addMedicine}
-            title="Pharmaceutical Tablet & Infusion Dispenser Instrument"
+            title="Add Medication"
           >
-            <span className="rx-instrument-grip" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </span>
-            <svg className="rx-instrument-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z" />
-              <path d="m5 2 5 5" />
-              <path d="m2 5 5 5" />
-              <circle cx="17" cy="7" r="1" fill="currentColor" />
-            </svg>
-            <span className="rx-instrument-label">+ Add Medication</span>
-            <span className="rx-dispenser-tag" aria-hidden="true">Rx Dose</span>
+            <Plus size={16} />
+            <span>Add Medication</span>
           </button>
 
           <div className="rx-field">
@@ -1358,51 +1340,34 @@ function Prescription() {
           <div className="rx-actions">
             <div className="rx-actions-right">
               <button
-                className="rx-btn-icon rx-instrument-btn rx-instrument--chart"
+                className="rx-btn-icon rx-btn-icon--print"
                 type="button"
                 onClick={printPrescription}
-                title="Autoclave Diagnostic Slip Printer Instrument"
+                title="Print Slip"
               >
-                <span className="rx-instrument-grip" aria-hidden="true">
-                  <span />
-                  <span />
-                </span>
-                <Printer size={16} className="rx-instrument-svg" />
-                <span className="rx-instrument-label">Print Slip</span>
+                <Printer size={16} />
+                <span>Print Slip</span>
               </button>
 
               <button
-                className="rx-btn-submit rx-instrument-btn rx-instrument--seal"
+                className="rx-btn-submit"
                 type="button"
                 onClick={submitPrescription}
                 disabled={submitting || !canCreatePrescription}
-                title="Electronic Rx Laser Validator & Surgical Suture Seal"
+                title="Submit Prescription"
               >
-                <span className="rx-instrument-grip" aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
-                </span>
-                <svg className="rx-instrument-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  <path d="m9 12 2 2 4-4" />
-                </svg>
-                <span className="rx-instrument-label">{submitting ? "Submitting..." : "Submit Prescription"}</span>
-                <span className="rx-surgical-status-bead" aria-hidden="true" />
+                <Check size={16} />
+                <span>{submitting ? "Submitting..." : "Submit Prescription"}</span>
               </button>
 
               <button
-                className="rx-btn-icon rx-instrument-btn rx-instrument--cartridge"
+                className="rx-btn-icon rx-btn-icon--download"
                 type="button"
                 onClick={downloadPrescription}
-                title="Digital Telemetry EHR Exporter Instrument"
+                title="Download PDF"
               >
-                <span className="rx-instrument-grip" aria-hidden="true">
-                  <span />
-                  <span />
-                </span>
-                <Download size={16} className="rx-instrument-svg" />
-                <span className="rx-instrument-label">Download PDF</span>
+                <Download size={16} />
+                <span>Download PDF</span>
               </button>
             </div>
           </div>

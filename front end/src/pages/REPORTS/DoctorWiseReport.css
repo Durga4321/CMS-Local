@@ -1,6 +1,6 @@
 .report-page {
   padding: 24px;
-  background: #f3f6fb;
+  background: transparent !important;
   min-height: 100vh;
 }
 
@@ -110,38 +110,31 @@
 .filter-card input,
 .filter-card select {
   width: 100%;
-
-  height: 54px;
-
+  height: 48px;
+  min-height: 48px;
   padding: 0 16px;
-
-  border-radius: 14px;
-
+  border-radius: 12px;
   border: 1px solid #dbe2ea;
-
   font-size: 15px;
-
-  background: white;
-
+  background-color: white;
   outline: none;
-
   transition: 0.2s;
+  box-sizing: border-box;
 }
 
 .filter-card input:focus,
 .filter-card select:focus {
   border-color: #159a8c;
-
-  box-shadow:
-    0 0 0 3px rgba(21, 154, 140, 0.1);
+  box-shadow: 0 0 0 3px rgba(21, 154, 140, 0.1);
 }
 
 /* APPLY */
 
 .doctor-wise-report-page .report-apply {
-  height: 44px;
+  height: 48px;
+  min-height: 48px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #159a8c;
   color: white;
   font-size: 14px;
@@ -150,6 +143,7 @@
   transition: 0.2s;
   width: 100%;
   align-self: end;
+  box-sizing: border-box;
 }
 
 .doctor-wise-report-page .report-apply:hover {

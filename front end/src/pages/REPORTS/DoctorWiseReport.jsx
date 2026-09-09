@@ -1,144 +1,24 @@
-// import React from "react";
-// import "./DoctorWiseReport.css";
-// import { ArrowLeft, Download } from "lucide-react";
-// import {
-//   BarChart,
-//   Bar,
-//   XAxis,
-//   YAxis,
-//   Tooltip,
-//   ResponsiveContainer,
-//   CartesianGrid,
-// } from "recharts";
-
-// const data = [
-//   { day: "Mon", value: 22 },
-//   { day: "Tue", value: 31 },
-//   { day: "Wed", value: 28 },
-//   { day: "Thu", value: 36 },
-//   { day: "Fri", value: 40 },
-//   { day: "Sat", value: 20 },
-//   { day: "Sun", value: 10 },
-// ];
-
-// const tableData = [
-//   { name: "Dr. Sarah Mitchell", spec: "Cardiology", app: 40, revenue: "$7,200" },
-//   { name: "Dr. Rajesh Kumar", spec: "Pediatrics", app: 47, revenue: "$4,230" },
-//   { name: "Dr. Emily Chen", spec: "Dermatology", app: 54, revenue: "$6,480" },
-//   { name: "Dr. Marcus Johnson", spec: "Orthopedics", app: 61, revenue: "$12,200" },
-//   { name: "Dr. Priya Sharma", spec: "Gynecology", app: 68, revenue: "$10,200" },
-//   { name: "Dr. Ahmed Hassan", spec: "Neurology", app: 75, revenue: "$16,500" },
-// ];
-
-// function DoctorWiseReport() {
-//   return (
-//     <div className="report-page">
-
-//       {/* HEADER */}
-//       <div className="report-header">
-//         <div>
-//           <button className="back">
-//             <ArrowLeft size={16}/> All reports
-//           </button>
-//           <h2>Doctor-wise Report</h2>
-//           <p>Performance per doctor</p>
-//         </div>
-
-//         <button className="export">
-//           <Download size={16}/> Export CSV
-//         </button>
-//       </div>
-
-//       {/* FILTER */}
-//       <div className="filter-card">
-//         <div>
-//           <label>From</label>
-//           <input type="date" defaultValue="2026-04-01"/>
-//         </div>
-
-//         <div>
-//           <label>To</label>
-//           <input type="date" defaultValue="2026-04-21"/>
-//         </div>
-
-//         <div>
-//           <label>Doctor</label>
-//           <select>
-//             <option>All doctors</option>
-//           </select>
-//         </div>
-
-//         <button className="apply">Apply</button>
-//       </div>
-
-//       {/* CHART */}
-//       <div className="chart-card">
-//         <h3>Visualization</h3>
-
-//         <ResponsiveContainer width="100%" height={300}>
-//           <BarChart data={data}>
-//             <CartesianGrid strokeDasharray="3 3" />
-
-//             <XAxis dataKey="day"/>
-//             <YAxis />
-
-//             <Tooltip
-//               cursor={{ fill: "rgba(0,0,0,0.05)" }}
-//               contentStyle={{
-//                 borderRadius: "10px",
-//                 border: "1px solid #e5e7eb",
-//               }}
-//               formatter={(value) => [`${value} appointments`, "Count"]}
-//             />
-
-//             <Bar
-//               dataKey="value"
-//               fill="#0d9488"
-//               radius={[8, 8, 0, 0]}
-//             />
-//           </BarChart>
-//         </ResponsiveContainer>
-//       </div>
-
-//       {/* TABLE */}
-//       <div className="table-card">
-//         <div className="thead">
-//           <span>Doctor</span>
-//           <span>Specialization</span>
-//           <span>Appointments</span>
-//           <span>Revenue</span>
-//         </div>
-
-//         {tableData.map((d, i) => (
-//           <div className="row" key={i}>
-//             <span>{d.name}</span>
-//             <span>{d.spec}</span>
-//             <span>{d.app}</span>
-//             <span>{d.revenue}</span>
-//           </div>
-//         ))}
-//       </div>
-
-//     </div>
-//   );
-// }
-
-// export default DoctorWiseReport;
-
-
-import React,
-{
+import React, {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 
+import "./ReportsTheme.css";
 import "./DoctorWiseReport.css";
 
 import {
+  Activity,
   ArrowLeft,
+  BarChart3,
   Download,
+  Filter,
+  IndianRupee,
+  RefreshCw,
+  Stethoscope,
+  Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -334,7 +214,22 @@ function DoctorWiseReport() {
 
   const [doctorId, setDoctorId] =
     useState("");
+  const [metricMode, setMetricMode] =
+    useState("revenue");
   const doctorsRef = useRef([]);
+
+  const chartData = useMemo(() => {
+    return data.map((item) => {
+      const rawName = item.doctorName || "Doctor";
+      const cleanName = rawName.replace(/^Dr\.\s*/i, "").trim();
+      const shortName = cleanName.length > 18 ? `${cleanName.slice(0, 16)}...` : cleanName;
+      return {
+        ...item,
+        displayLabel: doctorId ? (item.month || "Month") : `Dr. ${shortName}`,
+        fullName: rawName.startsWith("Dr.") ? rawName : `Dr. ${rawName}`,
+      };
+    });
+  }, [data, doctorId]);
 
   useEffect(() => {
     doctorsRef.current = doctors;
@@ -416,6 +311,17 @@ function DoctorWiseReport() {
     };
 
   }, []);
+  // ================= TOTALS =================
+
+  const totals = useMemo(() => {
+    return data.reduce(
+      (sum, row) => ({
+        appointments: sum.appointments + Number(row.appointments || 0),
+        revenue: sum.revenue + Number(row.revenue || 0),
+      }),
+      { appointments: 0, revenue: 0 }
+    );
+  }, [data]);
 
   // ================= EXPORT PDF =================
 
@@ -438,13 +344,6 @@ function DoctorWiseReport() {
     const clinicId = localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "";
     const branding = getClinicInvoiceBranding({ clinicId, clinicName });
     const selectedDoctor = doctors.find((doctor) => getDoctorId(doctor) === String(doctorId));
-    const totals = data.reduce(
-      (sum, row) => ({
-        appointments: sum.appointments + Number(row.appointments || 0),
-        revenue: sum.revenue + Number(row.revenue || 0),
-      }),
-      { appointments: 0, revenue: 0 }
-    );
     const rowsHtml = data.length
       ? data
           .map(
@@ -527,283 +426,307 @@ function DoctorWiseReport() {
     reportWindow.document.close();
   };
 
-
   return (
     <div className="report-page doctor-wise-report-page">
-
-      {/* HEADER */}
-
-      <div className="report-header">
-
-        <div>
-
-          <button
-            type="button"
-            className="report-back"
-            onClick={() => navigate("/reports")}
-          >
-            <ArrowLeft size={16} />
-            All reports
-          </button>
-
-          <h2>
-            Doctor-wise Report
-          </h2>
-
-          <p>
-            Performance per doctor
-          </p>
-
+      {/* MEDICAL & HOSPITALIZED AMBIENT TELEMETRY BACKGROUND */}
+      <div className="rep-medical-bg" aria-hidden="true">
+        <div className="rep-ecg-track">
+          <svg className="rep-ecg-svg" viewBox="0 0 1200 60" preserveAspectRatio="none">
+            <path
+              className="rep-ecg-line-base"
+              d="M0,30 L180,30 L195,12 L205,48 L215,6 L225,40 L235,30 L460,30 L475,10 L485,50 L495,4 L505,42 L515,30 L760,30 L775,12 L785,48 L795,6 L805,40 L815,30 L1020,30 L1035,10 L1045,50 L1055,4 L1065,42 L1075,30 L1200,30"
+            />
+            <path
+              className="rep-ecg-line-pulse"
+              d="M0,30 L180,30 L195,12 L205,48 L215,6 L225,40 L235,30 L460,30 L475,10 L485,50 L495,4 L505,42 L515,30 L760,30 L775,12 L785,48 L795,6 L805,40 L815,30 L1020,30 L1035,10 L1045,50 L1055,4 L1065,42 L1075,30 L1200,30"
+            />
+          </svg>
         </div>
-
-        <button
-          className="export"
-          onClick={exportPDF}
-        >
-
-          <Download size={16} />
-
-          Export PDF
-
-        </button>
-
+        <div className="rep-watermark-cross rep-watermark-cross--tl">+</div>
+        <div className="rep-watermark-cross rep-watermark-cross--br">+</div>
       </div>
 
-      {/* FILTER */}
+      {/* TOP HOSPITAL TELEMETRY HUD BAR */}
+      <div className="rep-telemetry-bar">
+        <span className="rep-telemetry-badge">
+          <span className="rep-telemetry-cross">+</span>
+          CLINICIAN AUDIT TELEMETRY
+        </span>
+        <span className="rep-telemetry-badge">
+          <Activity size={12} className="rep-telemetry-wave-icon" />
+          SYSTEM ONLINE
+          <span className="rep-telemetry-bead-live"></span>
+        </span>
+      </div>
 
+      {/* HEADER WITH SURGICAL INSTRUMENTS */}
+      <div className="report-header">
+        <div className="rep-header-title-group">
+          {/* ALL REPORTS NAVIGATION BUTTON */}
+          <button
+            type="button"
+            className="report-back rep-instrument--retractor"
+            onClick={() => navigate("/reports")}
+            title="Return to Reports"
+          >
+            <ArrowLeft size={16} />
+            <span>All reports</span>
+          </button>
+
+          <span className="rep-header-badge">
+            <span className="rep-header-badge-pulse">+</span>
+            CLINICIAN PERFORMANCE TELEMETRY
+          </span>
+          <h2>Doctor-wise Report</h2>
+          <p>Performance and consultation revenue audit per doctor</p>
+        </div>
+
+        {/* EXPORT PDF BUTTON */}
+        <button
+          type="button"
+          className="export rep-instrument--recorder"
+          onClick={exportPDF}
+          title="Export PDF"
+        >
+          <Download size={15} />
+          <span>Export PDF</span>
+        </button>
+      </div>
+
+      {/* DIAGNOSTIC LABORATORY FILTER PANEL */}
       <div className="filter-card">
-
+        {/* FROM */}
         <div>
-
           <label>From</label>
-
           <input
             type="date"
             value={fromDate}
-            onChange={(e) =>
-              setFromDate(
-                e.target.value
-              )
-            }
+            onChange={(e) => setFromDate(e.target.value)}
           />
-
         </div>
 
+        {/* TO */}
         <div>
-
           <label>To</label>
-
           <input
             type="date"
             value={toDate}
-            onChange={(e) =>
-              setToDate(
-                e.target.value
-              )
-            }
+            onChange={(e) => setToDate(e.target.value)}
           />
-
         </div>
 
+        {/* DOCTOR WITH ROTATING SYRINGE */}
         <div>
-
           <label>Doctor</label>
-
           <select
             value={doctorId}
-            onChange={(e) =>
-              setDoctorId(
-                e.target.value
-              )
-            }
+            onChange={(e) => setDoctorId(e.target.value)}
           >
-
-            <option value="">
-              All doctors
-            </option>
-
-            {doctors.map(
-              (doctor) => (
-
-                <option
-                  key={getDoctorId(doctor)}
-                  value={getDoctorId(doctor)}
-                >
-
-                  Dr. {getDoctorName(doctor)}
-
-                </option>
-              )
-            )}
-
+            <option value="">All doctors</option>
+            {doctors.map((doctor) => (
+              <option
+                key={getDoctorId(doctor)}
+                value={getDoctorId(doctor)}
+              >
+                Dr. {getDoctorName(doctor)}
+              </option>
+            ))}
           </select>
-
         </div>
 
+        {/* CLEAN PROFESSIONAL APPLY BUTTON */}
         <button
           type="button"
-          className="report-apply"
+          className="report-apply-clean"
           onClick={fetchReport}
+          disabled={loading}
+          title="Apply Date & Doctor Filters"
         >
-
-          Apply
-
+          <Filter size={15} />
+          <span>{loading ? "Applying..." : "Apply"}</span>
         </button>
-
       </div>
 
-      {/* CHART */}
+      {/* MEDICAL TELEMETRY STAT SUMMARY CARDS */}
+      <div className="rep-stats-grid">
+        <div className="rep-stat-card">
+          <div className="rep-stat-icon-wrap emerald">
+            <IndianRupee size={20} />
+          </div>
+          <div className="rep-stat-info">
+            <span className="rep-stat-label">Total OP Revenue</span>
+            <span className="rep-stat-value">{formatIndianCurrency(totals.revenue)}</span>
+          </div>
+        </div>
 
+        <div className="rep-stat-card">
+          <div className="rep-stat-icon-wrap cyan">
+            <Stethoscope size={20} />
+          </div>
+          <div className="rep-stat-info">
+            <span className="rep-stat-label">Total OP Consultations</span>
+            <span className="rep-stat-value">{totals.appointments}</span>
+          </div>
+        </div>
+
+        <div className="rep-stat-card">
+          <div className="rep-stat-icon-wrap purple">
+            <Users size={20} />
+          </div>
+          <div className="rep-stat-info">
+            <span className="rep-stat-label">Active Clinicians</span>
+            <span className="rep-stat-value">{doctors.length} Doctors</span>
+          </div>
+        </div>
+      </div>
+
+      {/* DOCTOR PERFORMANCE VISUALIZATION */}
       <div className="chart-card">
-
-        <h3>
-          Doctor Performance
-        </h3>
+        <div className="rep-chart-header">
+          <div className="rep-chart-title-wrap">
+            <div className="rep-chart-title-icon">
+              <BarChart3 size={18} />
+            </div>
+            <h3>Doctor Performance</h3>
+          </div>
+          <div className="rep-chart-controls">
+            <div className="rep-model-switch">
+              <button
+                type="button"
+                className={`rep-model-btn ${metricMode === "revenue" ? "active" : ""}`}
+                onClick={() => setMetricMode("revenue")}
+                title="View OP Revenue"
+              >
+                <IndianRupee size={13} />
+                <span>Revenue (₹)</span>
+              </button>
+              <button
+                type="button"
+                className={`rep-model-btn ${metricMode === "consultations" ? "active" : ""}`}
+                onClick={() => setMetricMode("consultations")}
+                title="View Consultations Volume"
+              >
+                <Stethoscope size={13} />
+                <span>Consultations</span>
+              </button>
+            </div>
+            <span className="rep-chart-telemetry-status">
+              <span className="rep-telemetry-bead-live"></span>
+              Doctor Analytics Active
+            </span>
+          </div>
+        </div>
 
         {loading ? (
-
-          <div className="empty">
-            Loading...
-          </div>
-
-        ) : data.length === 0 ? (
-
-          <div className="empty">
-            No report data found
-          </div>
-
+          <div className="empty">Loading doctor performance...</div>
+        ) : chartData.length === 0 ? (
+          <div className="empty">No report data found</div>
         ) : (
-
-          <ResponsiveContainer
-            width="100%"
-            height={320}
-          >
-
+          <ResponsiveContainer width="100%" height={320}>
             <BarChart
-              data={data}
-              barCategoryGap={80}
+              data={chartData}
+              margin={{ top: 25, right: 30, left: 15, bottom: 35 }}
             >
-
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-              />
+              <defs>
+                <linearGradient id="docRevenueGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0d9488" stopOpacity={0.92} />
+                  <stop offset="100%" stopColor="#14b8a6" stopOpacity={0.68} />
+                </linearGradient>
+                <linearGradient id="docConsultGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0284c7" stopOpacity={0.92} />
+                  <stop offset="100%" stopColor="#38bdf8" stopOpacity={0.68} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
 
               <XAxis
-                dataKey={doctorId ? "month" : "chartLabel"}
-                tick={{
-                  fontSize: 14,
-                }}
+                dataKey="displayLabel"
+                tick={{ fill: "#334155", fontSize: 12.5, fontWeight: 600 }}
+                tickLine={false}
+                axisLine={{ stroke: "#e2e8f0" }}
+                interval={0}
               />
 
               <YAxis
                 allowDecimals={false}
+                tick={{ fill: "#64748b", fontSize: 12 }}
+                tickFormatter={(val) =>
+                  metricMode === "revenue"
+                    ? val >= 1000 ? `₹${(val / 1000).toFixed(1)}k` : `₹${val}`
+                    : val
+                }
+                tickLine={false}
+                axisLine={{ stroke: "#e2e8f0" }}
               />
 
               <Tooltip
-                cursor={{
-                  fill:
-                    "rgba(0,0,0,0.04)",
-                }}
+                cursor={{ fill: "rgba(15, 23, 42, 0.03)" }}
                 contentStyle={{
-                  borderRadius:
-                    "12px",
-                  border:
-                    "1px solid #e5e7eb",
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.12)",
+                  fontSize: "13px",
+                  fontWeight: "600",
                 }}
-                formatter={(
-                  value
-                ) => [
-                    formatIndianCurrency(value),
-                    "OP Revenue",
-                  ]}
+                formatter={(value) => [
+                  metricMode === "revenue"
+                    ? formatIndianCurrency(value)
+                    : `${value} consultations`,
+                  metricMode === "revenue" ? "OP Revenue" : "Consultations",
+                ]}
+                labelFormatter={(label, payload) => {
+                  const row = payload?.[0]?.payload;
+                  return row?.doctorName
+                    ? `${row.doctorName} ${row.specialization ? `(${row.specialization})` : ""}`
+                    : label;
+                }}
               />
 
               <Bar
-                dataKey="revenue"
-
-                fill="#159a8c"
-
-                radius={[
-                  10,
-                  10,
-                  0,
-                  0,
-                ]}
-
-                maxBarSize={120}
+                dataKey={metricMode === "revenue" ? "revenue" : "appointments"}
+                fill={metricMode === "revenue" ? "url(#docRevenueGrad)" : "url(#docConsultGrad)"}
+                radius={[8, 8, 0, 0]}
+                maxBarSize={48}
               />
-
             </BarChart>
-
           </ResponsiveContainer>
-
         )}
-
       </div>
 
-      {/* TABLE */}
-
+      {/* CLINICAL MEDICAL AUDIT RECORD TABLE */}
       <div className="table-card">
+        <div className="rep-table-banner">
+          <div className="rep-table-banner-title">
+            <span>+</span>
+            <span>Clinician OP Billing Audit Registry</span>
+          </div>
+          <span className="rep-table-badge">{data.length} Doctor Records</span>
+        </div>
 
         <div className="thead">
-
           <span>S.No.</span>
-
           <span>Doctor</span>
-
           <span>Specialization</span>
-
           <span>Month</span>
-
           <span>OP Bills</span>
-
           <span>OP Revenue</span>
-
         </div>
 
         {data.map((d, i) => (
-
-          <div
-            className="row"
-            key={i}
-          >
+          <div className="row" key={i}>
             <span>{i + 1}</span>
-
-            <span>
-              Dr. {d.doctorName}
-            </span>
-
-            <span>
-              {d.specialization}
-            </span>
-
-            <span>
-              {d.month}
-            </span>
-
-            <span>
-              {d.appointments}
-            </span>
-
-            <span>
-              {formatIndianCurrency(d.revenue)}
-            </span>
-
+            <span>Dr. {d.doctorName}</span>
+            <span>{d.specialization}</span>
+            <span>{d.month}</span>
+            <span>{d.appointments}</span>
+            <span>{formatIndianCurrency(d.revenue)}</span>
           </div>
         ))}
 
-        {!loading &&
-          data.length === 0 && (
-
-          <div className="empty-table">
-            No report data found.
-          </div>
-
+        {!loading && data.length === 0 && (
+          <div className="empty-table">No report data found.</div>
         )}
-
       </div>
-
     </div>
   );
 }

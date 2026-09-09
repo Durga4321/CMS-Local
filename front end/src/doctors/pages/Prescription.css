@@ -500,6 +500,23 @@
   font-weight: 600;
 }
 
+/* ── Custom Select Dropdown Arrow ── */
+.rx-dropdown-arrow {
+  color: #64748b;
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: transform 0.22s ease, color 0.2s ease;
+}
+
+.rx-custom-select-trigger:hover .rx-dropdown-arrow {
+  color: #0f172a;
+}
+
+.rx-dropdown-arrow.is-open {
+  transform: rotate(180deg);
+  color: #0d9488;
+}
+
 /* ── Surgical Syringe Dropdown Trigger Icon ── */
 .rx-syringe-wrap {
   display: inline-flex;
@@ -711,9 +728,18 @@
   gap: 12px;
 }
 
+.rx-instrument-grip,
+.rx-surgical-status-bead,
+.rx-dispenser-tag {
+  display: none !important;
+}
+
+.rx-btn-icon,
+.rx-btn-submit,
 .rx-instrument-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 10px 20px;
   border-radius: 12px;
@@ -728,49 +754,16 @@
   box-sizing: border-box;
 }
 
+.rx-btn-icon:disabled,
+.rx-btn-submit:disabled,
 .rx-instrument-btn:disabled {
   cursor: not-allowed;
   opacity: 0.55;
   filter: grayscale(0.5);
 }
 
-.rx-instrument-grip {
-  display: flex;
-  flex-direction: column;
-  gap: 2.5px;
-  padding: 2px 5px 2px 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.25);
-  margin-right: 2px;
-}
-
-.rx-instrument-grip span {
-  display: block;
-  width: 9px;
-  height: 1.5px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 1px;
-}
-
-.rx-instrument-svg {
-  width: 17px;
-  height: 17px;
-  flex-shrink: 0;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
-  transition: transform 0.22s ease;
-}
-
-.rx-instrument-btn:hover:not(:disabled) .rx-instrument-svg {
-  transform: scale(1.15) rotate(-4deg);
-}
-
-.rx-instrument-label {
-  font-size: 13.5px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-/* 1. Pharmaceutical Tablet & Infusion Dispenser Instrument (+ Add Medication) */
-.rx-add-med-btn.rx-instrument--dispenser {
+/* 1. Add Medication Button */
+.rx-add-med-btn {
   width: 100%;
   display: flex;
   align-items: center;
@@ -781,7 +774,7 @@
   color: #ffffff;
   padding: 12px 24px;
   border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.45);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -789,125 +782,87 @@
   margin-top: 4px;
 }
 
-.rx-add-med-btn.rx-instrument--dispenser:hover {
+.rx-add-med-btn:hover {
   background: linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #6d28d9 100%);
   box-shadow: 0 6px 20px rgba(147, 51, 234, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.65);
   transform: translateY(-1.5px);
 }
 
-.rx-dispenser-tag {
-  font-size: 9.5px;
-  font-weight: 800;
-  text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  padding: 2px 8px;
-  border-radius: 999px;
-  letter-spacing: 0.5px;
-  margin-left: 6px;
-}
-
-/* 2. Electronic Rx Laser Validator & Surgical Suture Seal (Submit Prescription) */
-.rx-btn-submit.rx-instrument--seal {
+/* 2. Submit Prescription Button */
+.rx-btn-submit {
   background: linear-gradient(135deg, #059669 0%, #047857 45%, #064e3b 100%);
   border: 1px solid #34d399;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
-.rx-btn-submit.rx-instrument--seal:hover:not(:disabled) {
+.rx-btn-submit:hover:not(:disabled) {
   background: linear-gradient(135deg, #10b981 0%, #059669 45%, #047857 100%);
   box-shadow: 0 6px 20px rgba(5, 150, 105, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   transform: translateY(-1.5px);
 }
 
-.rx-surgical-status-bead {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #6ee7b7;
-  box-shadow: 0 0 8px #6ee7b7;
-  margin-left: 4px;
-  animation: rx-bead-pulse 1.8s infinite;
-}
-
-@keyframes rx-bead-pulse {
-  0%, 100% { opacity: 0.7; transform: scale(0.9); }
-  50% { opacity: 1; transform: scale(1.25); }
-}
-
-/* 3. Autoclave Diagnostic Slip Printer Instrument (Print) */
+/* 3. Print Slip Button */
+.rx-btn-icon--print,
 .rx-btn-icon.rx-instrument--chart {
-  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 45%, #e2e8f0 100%);
-  border: 1px solid #cbd5e1;
-  color: #1e293b;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border: 1px solid #c084fc;
+  color: #7c3aed;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
-.rx-btn-icon.rx-instrument--chart .rx-instrument-grip span {
-  background: #94a3b8;
-}
-
-.rx-btn-icon.rx-instrument--chart .rx-instrument-grip {
-  border-right-color: #cbd5e1;
-}
-
+.rx-btn-icon--print:hover,
 .rx-btn-icon.rx-instrument--chart:hover {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 45%, #ede9fe 100%);
-  border-color: #a855f7;
-  color: #6b21a8;
-  box-shadow: 0 6px 18px rgba(168, 85, 247, 0.25);
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  border-color: #6d28d9;
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.35);
   transform: translateY(-1.5px);
 }
 
-/* 4. Digital Telemetry EHR Exporter Instrument (Download PDF) */
+/* 4. Download PDF Button */
+.rx-btn-icon--download,
 .rx-btn-icon.rx-instrument--cartridge {
-  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 45%, #e0f2fe 100%);
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
   border: 1px solid #7dd3fc;
-  color: #0369a1;
-  box-shadow: 0 4px 12px rgba(3, 105, 161, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  color: #0284c7;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
-.rx-btn-icon.rx-instrument--cartridge .rx-instrument-grip span {
-  background: #38bdf8;
-}
-
-.rx-btn-icon.rx-instrument--cartridge .rx-instrument-grip {
-  border-right-color: #bae6fd;
-}
-
+.rx-btn-icon--download:hover,
 .rx-btn-icon.rx-instrument--cartridge:hover {
-  background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 45%, #bae6fd 100%);
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   border-color: #0284c7;
-  color: #0c4a6e;
-  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.25);
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.35);
   transform: translateY(-1.5px);
 }
 
-/* 5. Biohazard Sterilizer Clamp (Delete row) */
-.rx-del-btn.rx-instrument-trash {
+/* 5. Delete row button */
+.rx-del-btn {
   width: 34px;
   height: 34px;
   min-width: 34px;
-  border: 1px solid #fecdd3;
+  border: 1px solid #fca5a5;
   border-radius: 8px;
-  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
-  color: #be123c;
+  background: linear-gradient(135deg, #fff1f2 0%, #fee2e2 100%);
+  color: #dc2626;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.1);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.12);
   transition: all 0.2s ease;
 }
 
+.rx-del-btn:hover,
 .rx-del-btn.rx-instrument-trash:hover {
-  border-color: #e11d48;
-  background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
-  color: #9f1239;
+  border-color: #dc2626;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
   transform: scale(1.08);
-  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.2);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
 }
 
 /* ── Right preview panel ── */

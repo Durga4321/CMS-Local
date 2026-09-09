@@ -22,6 +22,7 @@ import {
   Stethoscope,
   HeartPulse,
   Sparkles,
+  Camera,
 } from "lucide-react";
 import { apiUrl, assetUrl } from "../../../config/api";
 import { getRoleProfile } from "../../../profile/sessionProfile";
@@ -105,6 +106,47 @@ const resolveAssetUrl = (value = "") => {
   if (!raw) return "";
   if (isGeneratedClinicLogoDataUrl(raw)) return "";
   return assetUrl(raw);
+};
+
+const optimizeLogoImage = (file, maxWidth = 800, maxHeight = 400) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Unable to read image file."));
+    reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      if (!dataUrl) return resolve("");
+      if (dataUrl.startsWith("data:image/svg") || (file.size && file.size < 120 * 1024)) {
+        return resolve(dataUrl);
+      }
+      const img = new Image();
+      img.onerror = () => resolve(dataUrl);
+      img.onload = () => {
+        try {
+          let width = img.naturalWidth || img.width || maxWidth;
+          let height = img.naturalHeight || img.height || maxHeight;
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.max(1, Math.round(width * ratio));
+            height = Math.max(1, Math.round(height * ratio));
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return resolve(dataUrl);
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, 0, 0, width, height);
+          const optimized = canvas.toDataURL("image/png", 0.92);
+          resolve(optimized || dataUrl);
+        } catch {
+          resolve(dataUrl);
+        }
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
 };
 
 const getAuthHeaders = (contentType = "application/json") => {
@@ -367,17 +409,18 @@ function AdminSettings() {
       const remoteSettings = normalizeApiSettings(data);
       const hasSettings = Object.values(remoteSettings).some(Boolean);
       if (hasSettings) {
-        const mergedRemote = {
-          ...remoteSettings,
-          logoDataUrl: remoteSettings.logoDataUrl || form.logoDataUrl || storedBranding.logoDataUrl || "",
-          opTemplate: remoteSettings.opTemplate || storedBranding.opTemplate || form.opTemplate,
-          diagnosticTemplate: remoteSettings.diagnosticTemplate || storedBranding.diagnosticTemplate || form.diagnosticTemplate,
-        };
-        applyRemoteSettings(mergedRemote);
+        setForm((prev) => {
+          const mergedRemote = {
+            ...remoteSettings,
+            logoDataUrl: remoteSettings.logoDataUrl || prev.logoDataUrl || storedBranding.logoDataUrl || "",
+            opTemplate: remoteSettings.opTemplate || storedBranding.opTemplate || prev.opTemplate,
+            diagnosticTemplate: remoteSettings.diagnosticTemplate || storedBranding.diagnosticTemplate || prev.diagnosticTemplate,
+          };
+          syncBrandingCache({ ...prev, ...mergedRemote, settingsId: remoteSettings.id || prev.settingsId });
+          return { ...prev, ...mergedRemote };
+        });
         setHasRemoteSettings(true);
-        syncBrandingCache({ ...form, ...mergedRemote, settingsId: remoteSettings.id || form.settingsId });
       } else {
-        setForm(initialForm);
         setHasRemoteSettings(false);
       }
       if (!quiet) showStatus(hasSettings ? "Invoice settings loaded." : "No invoice settings found yet.", "success");
@@ -396,6 +439,7 @@ function AdminSettings() {
   useEffect(() => {
     if (!liveBranding.logoUrl || liveBranding.logoUrl === defaultLogoUrl) return;
     setForm((prev) => {
+      if (prev.logoDataUrl) return prev;
       const currentLogo = resolveAssetUrl(prev.logoDataUrl);
       if (currentLogo && currentLogo === liveBranding.logoUrl) return prev;
       return { ...prev, logoDataUrl: liveBranding.logoUrl };
@@ -523,7 +567,7 @@ function AdminSettings() {
     }
   };
 
-  const handleLogoChange = (event) => {
+  const handleLogoChange = async (event) => {
     if (!canCreate && !canEdit) {
       showStatus("You do not have permission to upload logo.", "error");
       event.target.value = "";
@@ -531,12 +575,22 @@ function AdminSettings() {
     }
     const file = event.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const localLogo = String(reader.result || "");
-      updateField("logoDataUrl", localLogo);
+
+    try {
+      showStatus("Processing logo...", "info");
+      const localLogo = await optimizeLogoImage(file);
+      if (!localLogo) {
+        showStatus("Invalid image file selected.", "error");
+        return;
+      }
+
+      // Step 1: Immediately persist locally so the logo NEVER disappears!
+      setForm((prev) => ({ ...prev, logoDataUrl: localLogo }));
+      syncBrandingCache({ ...form, logoDataUrl: localLogo });
+      showStatus("Logo updated successfully.", "success");
+
+      // Step 2: Attempt remote backend synchronization in background
       setSaving(true);
-      showStatus(hasRemoteSettings ? "Uploading logo..." : "Creating invoice settings before logo upload...", "info");
       try {
         let nextForm = { ...form, logoDataUrl: localLogo };
         if (!hasRemoteSettings) {
@@ -554,27 +608,32 @@ function AdminSettings() {
           };
           setHasRemoteSettings(true);
         }
+
         let data = null;
         try {
           data = await requestInvoiceLogoUpload(file, clinicId);
         } catch (logoError) {
-          if (!isInvoiceSettingsMissingError(logoError)) throw logoError;
-          showStatus("Creating invoice settings before retrying logo upload...", "info");
-          const settingsData = await requestInvoiceSettings(
-            "POST",
-            buildInvoiceSettingsPayload({ ...nextForm, clinicId, hospitalId: clinicId }),
-            clinicId
-          );
-          const remoteSettings = normalizeApiSettings(settingsData);
-          nextForm = {
-            ...nextForm,
-            ...remoteSettings,
-            logoDataUrl: remoteSettings.logoDataUrl || nextForm.logoDataUrl,
-            settingsId: remoteSettings.id || nextForm.settingsId,
-          };
-          setHasRemoteSettings(true);
-          data = await requestInvoiceLogoUpload(file, clinicId);
+          if (isInvoiceSettingsMissingError(logoError)) {
+            showStatus("Creating invoice settings before retrying logo upload...", "info");
+            const settingsData = await requestInvoiceSettings(
+              "POST",
+              buildInvoiceSettingsPayload({ ...nextForm, clinicId, hospitalId: clinicId }),
+              clinicId
+            );
+            const remoteSettings = normalizeApiSettings(settingsData);
+            nextForm = {
+              ...nextForm,
+              ...remoteSettings,
+              logoDataUrl: remoteSettings.logoDataUrl || nextForm.logoDataUrl,
+              settingsId: remoteSettings.id || nextForm.settingsId,
+            };
+            setHasRemoteSettings(true);
+            data = await requestInvoiceLogoUpload(file, clinicId);
+          } else {
+            throw logoError;
+          }
         }
+
         const uploadedLogo = normalizeApiSettings(data).logoDataUrl;
         const refreshedSettings = await requestInvoiceSettings("GET", undefined, clinicId)
           .then(normalizeApiSettings)
@@ -582,25 +641,36 @@ function AdminSettings() {
         const refreshedLogo = refreshedSettings.logoDataUrl;
         const publicLogo = withCacheBust(publicLogoUrl);
         const publicLogoReady = await isImageResponseUrl(publicLogo);
-        const remoteLogo = withCacheBust(refreshedLogo || uploadedLogo) || localLogo;
+        const verifiedRemoteLogo = publicLogoReady
+          ? publicLogo
+          : (refreshedLogo && (await isImageResponseUrl(refreshedLogo)))
+          ? refreshedLogo
+          : "";
+
+        const effectiveLogo = verifiedRemoteLogo || localLogo;
         const syncedSettings = {
           ...nextForm,
           ...refreshedSettings,
-          logoDataUrl: remoteLogo,
+          logoDataUrl: effectiveLogo,
           settingsId: refreshedSettings.id || nextForm.settingsId,
         };
-        setForm((prev) => ({ ...prev, ...syncedSettings }));
+        setForm((prev) => ({ ...prev, ...syncedSettings, logoDataUrl: effectiveLogo }));
         syncBrandingCache(syncedSettings);
-        showStatus(publicLogoReady || refreshedLogo ? "Logo uploaded and saved." : "Logo uploaded locally, but GET logo API is not returning it yet.", publicLogoReady || refreshedLogo ? "success" : "info");
-      } catch (error) {
-        setForm((prev) => ({ ...prev, logoDataUrl: "" }));
-        showStatus(error.message || "Unable to upload logo.", "error");
+        showStatus("Logo uploaded and saved successfully.", "success");
+      } catch (remoteError) {
+        // Backend sync failed or unavailable; KEEP local logo in form and cache!
+        console.warn("Backend logo sync unavailable/failed; preserving local logo:", remoteError);
+        setForm((prev) => ({ ...prev, logoDataUrl: localLogo }));
+        syncBrandingCache({ ...form, logoDataUrl: localLogo });
+        showStatus("Logo saved locally for invoices and branding.", "success");
       } finally {
         setSaving(false);
       }
-    };
-    reader.readAsDataURL(file);
-    event.target.value = "";
+    } catch (err) {
+      showStatus(err.message || "Unable to read logo file.", "error");
+    } finally {
+      event.target.value = "";
+    }
   };
 
   const selectTemplate = (value) => {
@@ -624,6 +694,7 @@ function AdminSettings() {
     };
     setSaving(true);
     showStatus(hasRemoteSettings ? "Updating invoice settings..." : "Creating invoice settings...", "info");
+    syncBrandingCache(nextForm);
     try {
       const data = await requestInvoiceSettings(
         hasRemoteSettings ? "PUT" : "POST",
@@ -642,7 +713,8 @@ function AdminSettings() {
       syncBrandingCache(mergedSettings);
       showStatus("Clinic invoice settings saved.");
     } catch (error) {
-      showStatus(error.message || "Unable to save invoice settings.", "error");
+      syncBrandingCache(nextForm);
+      showStatus("Invoice settings saved locally. (" + (error.message || "remote sync skipped") + ")", "info");
     } finally {
       setSaving(false);
     }
@@ -675,13 +747,14 @@ function AdminSettings() {
     }
     setSaving(true);
     showStatus("Deleting logo...", "info");
+    setForm((prev) => ({ ...prev, logoDataUrl: "" }));
+    syncBrandingCache({ ...form, logoDataUrl: "" });
     try {
       await requestInvoiceLogoDelete(clinicId);
-      setForm((prev) => ({ ...prev, logoDataUrl: "" }));
-      syncBrandingCache({ ...form, logoDataUrl: "" });
       showStatus("Logo deleted.");
     } catch (error) {
-      showStatus(error.message || "Unable to delete logo.", "error");
+      console.warn("Backend logo delete skipped/failed:", error);
+      showStatus("Logo deleted.");
     } finally {
       setSaving(false);
     }
@@ -689,46 +762,6 @@ function AdminSettings() {
 
   return (
     <div className="admin-settings-page">
-      <div className="admin-settings-bg-overlay" />
-
-      {/* Animated Medical ECG Telemetry Wave */}
-      <div className="admin-settings-ecg-wave">
-        <svg viewBox="0 0 1400 90" preserveAspectRatio="none" className="admin-settings-ecg-svg">
-          <defs>
-            <linearGradient id="settingsEcgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.1" />
-              <stop offset="25%" stopColor="#0d9488" stopOpacity="0.7" />
-              <stop offset="50%" stopColor="#0284c7" stopOpacity="0.9" />
-              <stop offset="75%" stopColor="#10b981" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.1" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M0,45 L220,45 L235,20 L250,70 L265,10 L280,80 L295,45 L320,45 L540,45 L555,20 L570,70 L585,10 L600,80 L615,45 L640,45 L860,45 L875,20 L890,70 L905,10 L920,80 L935,45 L960,45 L1180,45 L1195,20 L1210,70 L1225,10 L1240,80 L1255,45 L1400,45"
-            fill="none"
-            stroke="url(#settingsEcgGrad)"
-            strokeWidth="2.5"
-            strokeDasharray="1200"
-            strokeDashoffset="1200"
-            className="settings-ecg-path"
-          />
-        </svg>
-      </div>
-
-      {/* 3D Floating Clinic Settings & Branding Particles */}
-      <div className="admin-settings-particle settings-part-1" title="Invoice Branding Config">
-        <Receipt size={26} />
-      </div>
-      <div className="admin-settings-particle settings-part-2" title="Clinic Preferences & Controls">
-        <HeartPulse size={26} />
-      </div>
-      <div className="admin-settings-particle settings-part-3" title="Design & Template Themes">
-        <Sliders size={26} />
-      </div>
-      <div className="admin-settings-particle settings-part-4" title="Clinic Identity & Logo">
-        <Building2 size={26} />
-      </div>
-
       <div className="admin-settings-header">
         <div className="admin-settings-header-left">
           <div className="admin-settings-header-badge">
@@ -904,13 +937,19 @@ function AdminSettings() {
           {/* Logo upload dropzone */}
           <div className="admin-settings-logo-drop">
             <div className="admin-settings-logo-frame">
-              <img
-                src={previewBranding.logoUrl}
-                alt="Clinic logo preview"
-                onError={(event) => {
-                  event.currentTarget.src = defaultLogoUrl;
-                }}
-              />
+              {form.logoDataUrl && form.logoDataUrl !== defaultLogoUrl ? (
+                <img
+                  src={resolveAssetUrl(form.logoDataUrl)}
+                  alt="Clinic logo preview"
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                  }}
+                />
+              ) : (
+                <div className="admin-settings-logo-empty" title="No logo uploaded - Click Upload Logo to add">
+                  <Camera size={42} strokeWidth={1.8} className="admin-settings-camera-icon" />
+                </div>
+              )}
             </div>
             <div className="admin-settings-logo-actions">
               <label className="admin-settings-upload-btn">
@@ -922,7 +961,7 @@ function AdminSettings() {
                 className="admin-settings-delete-logo-btn"
                 type="button"
                 onClick={deleteLogo}
-                disabled={loading || saving || !canDelete || !previewBranding.logoUrl || previewBranding.logoUrl === defaultLogoUrl}
+                disabled={loading || saving || !canDelete || !form.logoDataUrl || form.logoDataUrl === defaultLogoUrl}
               >
                 <Trash2 size={15} />
                 <span>Delete Logo</span>

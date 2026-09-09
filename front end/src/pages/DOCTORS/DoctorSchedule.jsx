@@ -508,23 +508,14 @@ function DoctorSchedule({ selfMode = false }) {
 
           {/* Autoclave Shift Lock Instrument Button */}
           <button
-            className="ds-primary ds-instrument--autoclave"
+            className="ds-primary"
             disabled={saving || (scheduleId ? !canEditSchedule : !canCreateSchedule)}
             onClick={saveBaseSchedule}
             type="button"
-            title="Surgical Autoclave Shift Seal"
           >
-            <span className="ds-instrument-body">
-              <span className="ds-instrument-grip" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </span>
-              <ShieldCheck size={16} className="ds-instrument-icon" />
-              <span className="ds-instrument-text">
-                {saving ? "Locking Shift..." : scheduleId ? "Update Recurring Schedule" : "Save Recurring Schedule"}
-              </span>
-              <span className="ds-instrument-bead ds-bead--emerald" aria-hidden="true" />
+            <ShieldCheck size={16} />
+            <span>
+              {saving ? "Locking Shift..." : scheduleId ? "Update Recurring Schedule" : "Save Recurring Schedule"}
             </span>
           </button>
         </div>
@@ -626,31 +617,22 @@ function DoctorSchedule({ selfMode = false }) {
             />
           </label>
 
-          {/* Precision Surgical Scalpel / Exception Applicator Button */}
+          {/* Exception Applicator Button */}
           <button
-            className="ds-primary ds-instrument--scalpel"
+            className="ds-primary"
             disabled={saving || (editingOverrideId ? !canEditSchedule : !canCreateSchedule)}
             onClick={saveOverride}
             type="button"
-            title="Surgical Scalpel Exception Applicator"
           >
-            <span className="ds-instrument-body">
-              <span className="ds-instrument-grip" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </span>
-              <Zap size={16} className="ds-instrument-icon" />
-              <span className="ds-instrument-text">
-                {saving ? "Applying Exception..." : editingOverrideId ? "Update Schedule Exception" : "Apply Schedule Exception"}
-              </span>
-              <span className="ds-instrument-bead ds-bead--amber" aria-hidden="true" />
+            <Zap size={16} />
+            <span>
+              {saving ? "Applying Exception..." : editingOverrideId ? "Update Schedule Exception" : "Apply Schedule Exception"}
             </span>
           </button>
 
           {editingOverrideId ? (
             <button
-              className="ds-secondary ds-instrument--cancel"
+              className="ds-secondary"
               onClick={() => setEditingOverrideId("")}
               type="button"
             >
@@ -691,18 +673,14 @@ function DoctorSchedule({ selfMode = false }) {
             </label>
           </div>
 
-          {/* Ultrasonic Telemetry Slot Scanner Button */}
+          {/* Refresh Slots Button */}
           <button
-            className="ds-secondary ds-instrument--scanner"
+            className="ds-secondary"
             onClick={previewSlots}
             type="button"
-            title="Ultrasonic Telemetry Slot Scanner"
           >
-            <span className="ds-instrument-body">
-              <RefreshCw size={14} className="ds-instrument-icon" />
-              <span className="ds-instrument-text">Refresh Duty Slots</span>
-              <span className="ds-instrument-bead ds-bead--cyan" aria-hidden="true" />
-            </span>
+            <RefreshCw size={14} />
+            <span>Refresh Duty Slots</span>
           </button>
 
           {slotMessage ? <p className="ds-note">{slotMessage}</p> : null}
@@ -782,7 +760,7 @@ function DoctorSchedule({ selfMode = false }) {
                             className="ds-action-btn ds-action-btn--edit"
                             onClick={() => editOverride(o)}
                             type="button"
-                            title="Micro-Surgical Forceps / Edit Exception"
+                            title="Edit Exception"
                           >
                             <Edit3 size={13} />
                             <span>Edit</span>
@@ -793,7 +771,7 @@ function DoctorSchedule({ selfMode = false }) {
                             className="ds-action-btn ds-action-btn--delete danger"
                             onClick={() => deleteOverride(id)}
                             type="button"
-                            title="Biohazard Disposal Clamp / Remove Exception"
+                            title="Delete Exception"
                           >
                             <Trash2 size={13} />
                             <span>Delete</span>

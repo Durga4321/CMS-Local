@@ -128,7 +128,7 @@ function Sidebar({
             }
           >
             <div className={`nav-icon-box tone-${tone}`}>
-              <Icon size={16} />
+              <Icon size={18} />
             </div>
             <span className={`nav-label text-${tone}`}>{label}</span>
             <ChevronRight size={14} className="nav-arrow" />
