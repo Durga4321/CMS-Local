@@ -17,6 +17,52 @@
   --app-caption-size: 12px;
 }
 
+/* Keep all scrolling functional while hiding vertical and horizontal scrollbars. */
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+*::-webkit-scrollbar,
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-corner {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+  background: transparent !important;
+}
+/* Keep each app shell fixed while its sidebar and content scroll independently. */
+:where(.layout, .rc-shell, .pp-shell, .patient-portal, .dr-layout) {
+  height: 100vh !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+:where(
+  .layout > .main,
+  .rc-shell > .rc-main,
+  .pp-shell > .pp-main,
+  .dr-layout > .dr-layout-body
+) {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+:where(.content, .rc-content, .pp-content, .dr-layout-content) {
+  flex: 1 1 auto;
+  min-height: 0 !important;
+  overflow-x: auto;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+
+:where(.sidebar, .rc-sidebar, .pp-sidebar, .dr-sidebar) {
+  max-height: 100dvh;
+  overscroll-behavior: contain;
+}
 html,
 body {
   margin: 0;
