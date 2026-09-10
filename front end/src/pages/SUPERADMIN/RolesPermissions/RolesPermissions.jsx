@@ -600,14 +600,14 @@ function RolesPermissions() {
       <div className="sa-table sa-table--roles">
         <div
           className="sa-table-head"
-          style={{ gridTemplateColumns: "44px minmax(130px,.7fr) minmax(120px,.65fr) minmax(170px,.9fr) minmax(230px,1fr) 88px" }}
+          style={{ gridTemplateColumns: "55px minmax(130px,.8fr) minmax(110px,.7fr) minmax(180px,1fr) minmax(200px,1.2fr) minmax(130px, auto)" }}
         >
           <span>S.No.</span>
           <span>Role</span>
           <span>Module</span>
           <span>Assigned Users</span>
           <span>Permissions</span>
-          <span>Actions</span>
+          <span style={{ textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>Actions</span>
         </div>
 
         {loading ? <div className="sa-state">Loading roles...</div> : null}
@@ -619,7 +619,7 @@ function RolesPermissions() {
           <div
             className="sa-table-row"
             key={role.key || role.id || `${role.roleName}-${index}`}
-            style={{ gridTemplateColumns: "44px minmax(130px,.7fr) minmax(120px,.65fr) minmax(170px,.9fr) minmax(230px,1fr) 88px" }}
+            style={{ gridTemplateColumns: "55px minmax(130px,.8fr) minmax(110px,.7fr) minmax(180px,1fr) minmax(200px,1.2fr) minmax(130px, auto)" }}
           >
             <span className="sa-table-cell">{index + 1}</span>
             <span className="sa-table-cell">
@@ -668,10 +668,9 @@ function RolesPermissions() {
                 canView={true}
                 canEdit={true}
                 canStatus={false}
-                canDelete={true}
+                canDelete={false}
                 onView={() => setSelectedAdminId(getAdminId(role.admin))}
                 onEdit={() => setSelectedAdminId(getAdminId(role.admin))}
-                onDelete={() => handleDelete(role)}
               />
             </span>
           </div>

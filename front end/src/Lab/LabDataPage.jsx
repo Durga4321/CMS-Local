@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle, Download, FileText, Play, RefreshCw, Search, TestTube2 } from "lucide-react";
+import { Activity, Calendar, CheckCircle, Download, FileText, FlaskConical, Phone, Play, RefreshCw, Search, TestTube2, UserCheck } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { downloadBlob, parseList, requestJson } from "./labApi";
 import { getLabProfile } from "./labSession";
@@ -24,6 +24,254 @@ const formatDate = (value) => {
   if (Number.isNaN(date.getTime())) return String(value);
   return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" }).format(date);
 };
+
+const CUSTOM_CATEGORY_PALETTE = [
+  { key: "teal", main: "#0d9488", color: "#0f766e", bg: "#f0fdfa", border: "#99f6e4", hoverBg: "#ccfbf1", badgeBg: "#ccfbf1", tagClass: "tone-emerald" },
+  { key: "purple", main: "#7c3aed", color: "#6d28d9", bg: "#faf5ff", border: "#e9d5ff", hoverBg: "#f3e8ff", badgeBg: "#f3e8ff", tagClass: "tone-purple" },
+  { key: "sky", main: "#0284c7", color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd", hoverBg: "#e0f2fe", badgeBg: "#e0f2fe", tagClass: "tone-cyan" },
+  { key: "rose", main: "#e11d48", color: "#be123c", bg: "#fff1f2", border: "#fecdd3", hoverBg: "#ffe4e6", badgeBg: "#ffe4e6", tagClass: "tone-rose" },
+  { key: "amber", main: "#d97706", color: "#b45309", bg: "#fffbeb", border: "#fde68a", hoverBg: "#fef3c7", badgeBg: "#fef3c7", tagClass: "tone-amber" },
+  { key: "emerald", main: "#059669", color: "#047857", bg: "#ecfdf5", border: "#a7f3d0", hoverBg: "#d1fae5", badgeBg: "#d1fae5", tagClass: "tone-emerald" },
+  { key: "indigo", main: "#4f46e5", color: "#3730a3", bg: "#eef2ff", border: "#c7d2fe", hoverBg: "#e0e7ff", badgeBg: "#e0e7ff", tagClass: "tone-indigo" },
+  { key: "orange", main: "#ea580c", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa", hoverBg: "#ffedd5", badgeBg: "#ffedd5", tagClass: "tone-amber" },
+  { key: "cyan", main: "#0891b2", color: "#0e7490", bg: "#ecfeff", border: "#a5f3fc", hoverBg: "#cffafe", badgeBg: "#cffafe", tagClass: "tone-cyan" },
+  { key: "fuchsia", main: "#c026d3", color: "#a21caf", bg: "#fdf4ff", border: "#f5d0fe", hoverBg: "#fae8ff", badgeBg: "#fae8ff", tagClass: "tone-purple" },
+  { key: "lime", main: "#65a30d", color: "#4d7c0f", bg: "#f7fee7", border: "#d9f99d", hoverBg: "#ecfccb", badgeBg: "#ecfccb", tagClass: "tone-emerald" },
+  { key: "blue", main: "#2563eb", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", hoverBg: "#dbeafe", badgeBg: "#dbeafe", tagClass: "tone-cyan" },
+];
+
+export const getCategoryTheme = (category = "", fallbackTestName = "") => {
+  const cat = String(category || "").trim().toLowerCase();
+  const test = String(fallbackTestName || "").trim().toLowerCase();
+  const raw = cat || test || "general";
+
+  // 1. Primary clinical department / category matcher
+  if (/cardiac\s*marker|troponin|ck-mb|myoglobin|bnp/.test(cat)) {
+    return {
+      key: "cardiac-markers",
+      label: "Cardiac Markers",
+      main: "#e11d48",
+      leftBorder: "#e11d48",
+      color: "#be123c",
+      bg: "#fff1f2",
+      border: "#fecdd3",
+      hoverBg: "#ffe4e6",
+      badgeBg: "#ffe4e6",
+      tagClass: "tone-rose",
+    };
+  }
+  if (/cardiology|cardio|ecg|echo|holter|heart/.test(cat)) {
+    return {
+      key: "cardiology",
+      label: "Cardiology Diagnostics",
+      main: "#7c3aed",
+      leftBorder: "#7c3aed",
+      color: "#6d28d9",
+      bg: "#faf5ff",
+      border: "#e9d5ff",
+      hoverBg: "#f3e8ff",
+      badgeBg: "#f3e8ff",
+      tagClass: "tone-purple",
+    };
+  }
+  if (/biochem|chemical|metabolic|liver|lft|kidney|kft|lipid|glucose|sugar|serum|creatinine|urea|electrolyte/.test(cat)) {
+    return {
+      key: "biochemistry",
+      label: "Biochemistry",
+      main: "#0d9488",
+      leftBorder: "#0d9488",
+      color: "#0f766e",
+      bg: "#f0fdfa",
+      border: "#99f6e4",
+      hoverBg: "#ccfbf1",
+      badgeBg: "#ccfbf1",
+      tagClass: "tone-emerald",
+    };
+  }
+  if (/hemat|haemat|blood|coagulation|platelet|cbc|hemoglobin|anemia|leukocyte/.test(cat)) {
+    return {
+      key: "hematology",
+      label: "Hematology",
+      main: "#dc2626",
+      leftBorder: "#dc2626",
+      color: "#b91c1c",
+      bg: "#fef2f2",
+      border: "#fecaca",
+      hoverBg: "#fee2e2",
+      badgeBg: "#fee2e2",
+      tagClass: "tone-rose",
+    };
+  }
+  if (/radio|imag|sono|ultra|scan|x-ray|xray|mri|ct|doppler/.test(cat)) {
+    return {
+      key: "radiology",
+      label: "Radiology",
+      main: "#0284c7",
+      leftBorder: "#0284c7",
+      color: "#0369a1",
+      bg: "#f0f9ff",
+      border: "#bae6fd",
+      hoverBg: "#e0f2fe",
+      badgeBg: "#e0f2fe",
+      tagClass: "tone-cyan",
+    };
+  }
+  if (/pulmo|respir|lung|pft|spirometry|asthma/.test(cat)) {
+    return {
+      key: "pulmonology",
+      label: "Pulmonology",
+      main: "#d97706",
+      leftBorder: "#d97706",
+      color: "#b45309",
+      bg: "#fffbeb",
+      border: "#fde68a",
+      hoverBg: "#fef3c7",
+      badgeBg: "#fef3c7",
+      tagClass: "tone-amber",
+    };
+  }
+  if (/patho|histo|cyto|biopsy/.test(cat)) {
+    return {
+      key: "pathology",
+      label: "Pathology",
+      main: "#4f46e5",
+      leftBorder: "#4f46e5",
+      color: "#3730a3",
+      bg: "#eef2ff",
+      border: "#c7d2fe",
+      hoverBg: "#e0e7ff",
+      badgeBg: "#e0e7ff",
+      tagClass: "tone-indigo",
+    };
+  }
+  if (/micro|sero|infect|bacteri|viro|parasit|culture|smear|widal/.test(cat)) {
+    return {
+      key: "microbiology",
+      label: "Microbiology",
+      main: "#059669",
+      leftBorder: "#059669",
+      color: "#047857",
+      bg: "#ecfdf5",
+      border: "#a7f3d0",
+      hoverBg: "#d1fae5",
+      badgeBg: "#d1fae5",
+      tagClass: "tone-emerald",
+    };
+  }
+  if (/endo|hormon|thyroid|diabet|adrenal|pituitary/.test(cat)) {
+    return {
+      key: "endocrinology",
+      label: "Endocrinology",
+      main: "#ea580c",
+      leftBorder: "#ea580c",
+      color: "#c2410c",
+      bg: "#fff7ed",
+      border: "#fed7aa",
+      hoverBg: "#ffedd5",
+      badgeBg: "#ffedd5",
+      tagClass: "tone-amber",
+    };
+  }
+  if (/immuno|allerg|autoimmune|rheumat/.test(cat)) {
+    return {
+      key: "immunology",
+      label: "Immunology",
+      main: "#c026d3",
+      leftBorder: "#c026d3",
+      color: "#a21caf",
+      bg: "#fdf4ff",
+      border: "#f5d0fe",
+      hoverBg: "#fae8ff",
+      badgeBg: "#fae8ff",
+      tagClass: "tone-purple",
+    };
+  }
+  if (/neuro|brain|eeg|emg|nerve/.test(cat)) {
+    return {
+      key: "neurology",
+      label: "Neurology",
+      main: "#2563eb",
+      leftBorder: "#2563eb",
+      color: "#1d4ed8",
+      bg: "#eff6ff",
+      border: "#bfdbfe",
+      hoverBg: "#dbeafe",
+      badgeBg: "#dbeafe",
+      tagClass: "tone-cyan",
+    };
+  }
+  if (/uro|nephro|renal|urinary/.test(cat)) {
+    return {
+      key: "urology",
+      label: "Urology",
+      main: "#0891b2",
+      leftBorder: "#0891b2",
+      color: "#0e7490",
+      bg: "#ecfeff",
+      border: "#a5f3fc",
+      hoverBg: "#cffafe",
+      badgeBg: "#cffafe",
+      tagClass: "tone-cyan",
+    };
+  }
+  if (/gastro|digest|hepatic|gi|endoscopy/.test(cat)) {
+    return {
+      key: "gastroenterology",
+      label: "Gastroenterology",
+      main: "#65a30d",
+      leftBorder: "#65a30d",
+      color: "#4d7c0f",
+      bg: "#f7fee7",
+      border: "#d9f99d",
+      hoverBg: "#ecfccb",
+      badgeBg: "#ecfccb",
+      tagClass: "tone-emerald",
+    };
+  }
+  if (/onco|tumor|cancer|malignan/.test(cat)) {
+    return {
+      key: "oncology",
+      label: "Oncology",
+      main: "#db2777",
+      leftBorder: "#db2777",
+      color: "#be185d",
+      bg: "#fdf2f8",
+      border: "#fbcfe8",
+      hoverBg: "#fce7f3",
+      badgeBg: "#fce7f3",
+      tagClass: "tone-rose",
+    };
+  }
+
+  // 2. Secondary fallback by test name if category is empty or generic
+  if ((!cat || cat === "general" || cat === "routine") && test) {
+    if (/cardiac|troponin|bnp|ck-mb|myoglobin/.test(test)) return getCategoryTheme("cardiac markers");
+    if (/echo|ecg|holter|cardio|heart/.test(test)) return getCategoryTheme("cardiology");
+    if (/scan|x-ray|xray|mri|ct|ultra|usg|doppler|radiology|sonography/.test(test)) return getCategoryTheme("radiology");
+    if (/blood|cbc|hemoglobin|haemogram|platelet|wbc|rbc|dengue|malaria|aec|esr|anemia/.test(test)) return getCategoryTheme("hematology");
+    if (/lipid|cholesterol|bilirubin|lft|kft|liver|kidney|urea|creatinine|glucose|sugar|biochem|sgot|sgpt|uric/.test(test)) return getCategoryTheme("biochemistry");
+    if (/pft|pulmonary|spirometry|lung|asthma|pefr|fev1/.test(test)) return getCategoryTheme("pulmonology");
+    if (/smear|culture|afb|gram|microbiology/.test(test)) return getCategoryTheme("microbiology");
+    if (/urine|stool|pathology|biopsy/.test(test)) return getCategoryTheme("pathology");
+    if (/thyroid|tsh|t3|t4|hormone/.test(test)) return getCategoryTheme("endocrinology");
+  }
+
+  // 3. Deterministic hash palette for any custom or uncategorized categories
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    hash = raw.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % CUSTOM_CATEGORY_PALETTE.length;
+  const picked = CUSTOM_CATEGORY_PALETTE[index];
+  return {
+    ...picked,
+    leftBorder: picked.main,
+    label: category || "General",
+  };
+};
+
+export const getTestTheme = (testName = "", category = "") =>
+  getCategoryTheme(category, testName);
 
 const pageConfig = {
   patients: {
@@ -413,9 +661,11 @@ function LabDataPage({ type }) {
 
   const hasActions = type === "samples" || type === "reports";
   const tableTemplate = useMemo(() => {
-    if (type === "patients") return "1fr 0.8fr 0.9fr 1.8fr";
-    if (type === "samples") return "1fr 0.8fr 0.9fr 1.6fr 0.7fr 150px";
-    const actionColumn = hasActions ? " 150px" : "";
+    if (type === "patients") return "minmax(180px, 1.4fr) 140px 140px minmax(260px, 2.5fr)";
+    if (type === "tests") return "minmax(220px, 1.8fr) 130px minmax(180px, 1.3fr) 130px";
+    if (type === "samples") return "minmax(170px, 1.3fr) 130px 130px minmax(220px, 2fr) 130px 150px";
+    if (type === "reports") return "minmax(200px, 1.6fr) minmax(170px, 1.3fr) 130px 130px 130px";
+    const actionColumn = hasActions ? " 130px" : "";
     return `repeat(${config.columns.length}, minmax(0, 1fr))${actionColumn}`;
   }, [config.columns.length, hasActions, type]);
 
@@ -460,23 +710,40 @@ function LabDataPage({ type }) {
       setToast({ type: "error", message: "You do not have permission to update sample collection." });
       return;
     }
-    const id = recordId(row);
-    if (!id) return;
     const target = actionConfig[action];
     if (!target) return;
 
+    const id = recordId(row);
     try {
-      await requestJson(`Lab/orders/${id}`).catch(() => null);
+      if (id && !isBillingBackedRecord(row)) {
+        await requestJson(target.labPath(id), {
+          method: target.method || "PUT",
+          body: JSON.stringify(target.payload),
+        }).catch(() => null);
+      }
 
-      const patch = {
-        ...target.payload,
-        Status: target.status,
-        updatedAt: new Date().toISOString(),
-      };
+      setRows((prevRows) =>
+        prevRows.map((item) => {
+          const isMatch =
+            (id && String(recordId(item)) === String(id)) ||
+            (item === row) ||
+            (readFirst(item, ["patientName", "PatientName"]) === readFirst(row, ["patientName", "PatientName"]) &&
+             readFirst(item, ["testName", "TestName", "test", "Test"]) === readFirst(row, ["testName", "TestName", "test", "Test"]));
 
-      await requestJson(target.labPath(id), { method: target.method, body: JSON.stringify(patch) });
+          if (!isMatch) return item;
 
-      await loadRows();
+          return {
+            ...item,
+            ...target.payload,
+            status: target.status,
+            Status: target.status,
+            __displayStatus: target.status,
+            sampleStatus: target.status,
+            SampleStatus: target.status,
+          };
+        })
+      );
+      window.dispatchEvent(new CustomEvent("labReportsUpdated"));
       setToast({ type: "success", message: `${target.status} updated successfully.` });
     } catch (actionError) {
       setToast({ type: "error", message: actionError.message || "Unable to update lab order." });
@@ -511,10 +778,33 @@ function LabDataPage({ type }) {
   };
 
   return (
-    <section className="rc-page lab-page">
+    <section className={`rc-page lab-page lab-screen-${type}`}>
       <LabToast toast={toast} onClose={() => setToast(null)} />
-      <div className="rc-page-head">
+      <div className="rc-page-head lab-page-head">
         <div>
+          <div className="lab-head-tag-row">
+            {type === "tests" ? (
+              <>
+                <span className="lab-head-badge badge-tests"><FlaskConical size={13} /> Diagnostic Master Tests</span>
+                <span className="lab-head-sub-badge badge-tests-sub"><Activity size={12} /> Pathology & Imaging Catalog</span>
+              </>
+            ) : type === "patients" ? (
+              <>
+                <span className="lab-head-badge badge-patients"><UserCheck size={13} /> Diagnostic Patients Queue</span>
+                <span className="lab-head-sub-badge badge-patients-sub"><Activity size={12} /> Active Clinical Orders</span>
+              </>
+            ) : type === "samples" ? (
+              <>
+                <span className="lab-head-badge badge-samples"><TestTube2 size={13} /> Specimen Collection Desk</span>
+                <span className="lab-head-sub-badge badge-samples-sub"><Activity size={12} /> Phlebotomy & Barcoding</span>
+              </>
+            ) : (
+              <>
+                <span className="lab-head-badge badge-reports"><FileText size={13} /> Diagnostic Reports Archive</span>
+                <span className="lab-head-sub-badge badge-reports-sub"><Activity size={12} /> Validated Laboratory Archive</span>
+              </>
+            )}
+          </div>
           <h2>{config.title}</h2>
           <p>{config.subtitle}</p>
         </div>
@@ -527,6 +817,26 @@ function LabDataPage({ type }) {
           <Search size={17} />
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Search ${config.title.toLowerCase()}...`} />
         </label>
+        {type === "patients" ? (
+          <div className="lab-filter-tabs" role="tablist" aria-label="Patient order date filter">
+            {[
+              ["", "All"],
+              ["today", "Today"],
+              ["past", "Past"],
+            ].map(([key, label]) => (
+              <button
+                key={label}
+                className={view === key ? "active" : ""}
+                type="button"
+                role="tab"
+                aria-selected={view === key}
+                onClick={() => setPatientView(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        ) : null}
         {requiresPatientSelection ? (
           <label className="lab-patient-select">
             <span>Select Patient</span>
@@ -539,67 +849,205 @@ function LabDataPage({ type }) {
           </label>
         ) : null}
       </div>
-      {type === "patients" ? (
-        <div className="lab-filter-tabs" role="tablist" aria-label="Patient order date filter">
-          {[
-            ["", "All"],
-            ["today", "Today"],
-            ["past", "Past"],
-          ].map(([key, label]) => (
-            <button
-              key={label}
-              className={view === key ? "active" : ""}
-              type="button"
-              role="tab"
-              aria-selected={view === key}
-              onClick={() => setPatientView(key)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      ) : null}
       {loading ? <div className="rc-card">Loading {config.title.toLowerCase()}...</div> : null}
-      <div className="rc-card">
+      <div className={`rc-card lab-data-card lab-card--${type}`}>
         <div className="rc-table compact lab-table">
-          <div className="rc-table-head four" style={{ gridTemplateColumns: tableTemplate }}>
-            {config.columns.map(([label]) => <span key={label}>{label}</span>)}
-            {hasActions ? <span>Actions</span> : null}
-          </div>
-          {requiresPatientSelection && !selectedPatient ? <div className="rc-empty">Select patient to view {config.title.toLowerCase()}.</div> : filteredRows.length ? filteredRows.map((row, index) => (
-            <div className="rc-table-row four" style={{ gridTemplateColumns: tableTemplate }} key={readFirst(row, ["id", "Id", "testId", "sampleId"], index)}>
-              {config.columns.map(([label, keys]) => {
-                const value = type === "reports" && label === "Status"
-                  ? getReportDisplayStatus(row)
-                  : type === "reports" && label === "Date"
-                    ? getReportDisplayDate(row)
-                    : readFirst(row, keys);
-                const displayValue = /date|created|collected|imported|exported/i.test(label)
-                  ? formatDate(value)
-                  : /amount|price/i.test(label) && Number(value) > 0
-                    ? Number(value).toFixed(2)
-                    : value;
-                return <span key={label}>{displayValue}</span>;
-              })}
-              {hasActions ? (
-                <span className="lab-row-actions">
-                  {type === "samples" ? (
-                    <>
-                      <button className="lab-action-btn collect" type="button" title="Sample collected" onClick={() => runOrderAction(row, "collected")} disabled={!canEditSamples}><TestTube2 size={15} /></button>
-                      <button className="lab-action-btn start" type="button" title="Start processing" onClick={() => runOrderAction(row, "start")} disabled={!canEditSamples}><Play size={15} /></button>
-                      <button className="lab-action-btn complete" type="button" title="Complete order" onClick={() => runOrderAction(row, "complete")} disabled={!canEditSamples}><CheckCircle size={15} /></button>
-                    </>
-                  ) : null}
-                  {type === "reports" ? (
-                    <>
-                      <button className="lab-action-btn report" type="button" title="Print report" onClick={() => printReport(row)}><FileText size={15} /></button>
-                      <button className="lab-action-btn download" type="button" title="Download report" onClick={() => downloadReport(row)}><Download size={15} /></button>
-                    </>
-                  ) : null}
+          <div className="lab-table-head" style={{ gridTemplateColumns: tableTemplate }}>
+            {config.columns.map(([label]) => {
+              const labelLower = label.toLowerCase();
+              let capClass = "rc-th-name";
+              if (labelLower.includes("patient") || labelLower === "name") capClass = "rc-th-name";
+              else if (labelLower.includes("test") || labelLower.includes("sample")) capClass = "rc-th-tests";
+              else if (labelLower.includes("date") || labelLower.includes("created")) capClass = "rc-th-pid";
+              else if (labelLower.includes("status")) capClass = "rc-th-status";
+              else if (labelLower.includes("price") || labelLower.includes("fee") || labelLower.includes("cost")) capClass = "rc-th-price";
+              else if (labelLower.includes("phone") || labelLower.includes("mobile")) capClass = "rc-th-phone";
+              else if (labelLower.includes("code")) capClass = "rc-th-code";
+              else if (labelLower.includes("category") || labelLower.includes("department")) capClass = "rc-th-category";
+              else capClass = "rc-th-total";
+
+              let alignClass = "col-left text-left";
+              if (labelLower.includes("status") || labelLower.includes("action") || labelLower.includes("code") || labelLower.includes("date") || labelLower.includes("phone")) alignClass = "col-center text-center";
+              else if (labelLower.includes("price") || labelLower.includes("amount") || labelLower.includes("fee")) alignClass = "col-right text-right";
+
+              return (
+                <span key={label} className={alignClass}>
+                  <span className={`rc-th-capsule ${capClass}`}>{label}</span>
                 </span>
-              ) : null}
-            </div>
-          )) : <div className="rc-empty">No {config.title.toLowerCase()} found.</div>}
+              );
+            })}
+            {hasActions ? (
+              <span className="col-center text-center lab-head-actions">
+                <span className="rc-th-capsule rc-th-actions">Actions</span>
+              </span>
+            ) : null}
+          </div>
+          {requiresPatientSelection && !selectedPatient ? <div className="rc-empty">Select patient to view {config.title.toLowerCase()}.</div> : filteredRows.length ? filteredRows.map((row, index) => {
+            const rowCategory = readFirst(row, ["category", "Category", "department", "Department", "specialization", "Specialization"], "");
+            const rowTestName = readFirst(row, ["testName", "TestName", "name", "Name", "__labTestNames"], "");
+            const catTheme = getCategoryTheme(rowCategory, rowTestName);
+            return (
+              <div
+                className={`lab-table-row lab-row-test-card theme-${catTheme.key}`}
+                style={{
+                  gridTemplateColumns: tableTemplate,
+                  borderLeft: type === "tests" ? `4px solid ${catTheme.main}` : undefined,
+                  "--cat-hover-bg": catTheme.hoverBg || catTheme.bg,
+                }}
+                key={readFirst(row, ["id", "Id", "testId", "sampleId"], index)}
+              >
+                {config.columns.map(([label, keys]) => {
+                  const value = type === "reports" && label === "Status"
+                    ? getReportDisplayStatus(row)
+                    : type === "reports" && label === "Date"
+                      ? getReportDisplayDate(row)
+                      : readFirst(row, keys);
+                  const displayValue = /date|created|collected|imported|exported/i.test(label)
+                    ? formatDate(value)
+                    : /amount|price/i.test(label) && Number(value) > 0
+                      ? Number(value).toFixed(2)
+                      : value;
+
+                  const labelLower = label.toLowerCase();
+                  let alignClass = "col-left text-left";
+                  if (labelLower.includes("status") || labelLower.includes("action") || labelLower.includes("code") || labelLower.includes("date") || labelLower.includes("phone")) alignClass = "col-center text-center";
+                  else if (labelLower.includes("price") || labelLower.includes("amount") || labelLower.includes("fee")) alignClass = "col-right text-right";
+
+                  let cellContent = displayValue;
+                  if (labelLower.includes("status")) {
+                    cellContent = (
+                      <span className={`rc-status ${String(displayValue || "").toLowerCase().replace(/\s+/g, "-")}`}>
+                        {displayValue || "Pending"}
+                      </span>
+                    );
+                  } else if (labelLower.includes("patient") || (labelLower === "name" && type !== "tests")) {
+                    const initials = String(displayValue || "PT")
+                      .split(" ")
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((p) => p[0].toUpperCase())
+                      .join("") || "PT";
+                    const avatarGradients = [
+                      "linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)",
+                      "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+                      "linear-gradient(135deg, #7c3aed 0%, #9333ea 100%)",
+                      "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
+                      "linear-gradient(135deg, #e11d48 0%, #f43f5e 100%)",
+                      "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
+                    ];
+                    const avatarBg = avatarGradients[index % avatarGradients.length];
+                    cellContent = (
+                      <div className="lab-patient-cell">
+                        <span className="lab-patient-avatar" style={{ background: avatarBg }}>{initials}</span>
+                        <strong className="lab-patient-name">{displayValue}</strong>
+                      </div>
+                    );
+                  } else if (type === "tests" && (labelLower.includes("test") || labelLower === "name")) {
+                    cellContent = (
+                      <div className="lab-test-title-wrap">
+                        <span
+                          className="lab-test-color-dot"
+                          style={{
+                            background: catTheme.main,
+                            boxShadow: `0 0 0 2px ${catTheme.border}`,
+                          }}
+                        />
+                        <strong className="lab-test-title-text" style={{ color: "#0f172a" }}>
+                          {displayValue}
+                        </strong>
+                      </div>
+                    );
+                  } else if (labelLower.includes("code")) {
+                    cellContent = (
+                      <span
+                        className="rc-lab-code-pill"
+                        style={{
+                          background: catTheme.bg,
+                          borderColor: catTheme.border,
+                          color: catTheme.color,
+                        }}
+                      >
+                        {displayValue}
+                      </span>
+                    );
+                  } else if (labelLower.includes("category")) {
+                    cellContent = (
+                      <span
+                        className="rc-lab-category-pill"
+                        style={{
+                          background: catTheme.bg,
+                          borderColor: catTheme.border,
+                          color: catTheme.color,
+                          boxShadow: `0 1px 3px ${catTheme.border}50`,
+                        }}
+                      >
+                        <span className="lab-cat-pill-dot" style={{ background: catTheme.main }} />
+                        {displayValue}
+                      </span>
+                    );
+                  } else if (labelLower.includes("price") || labelLower.includes("amount") || labelLower.includes("fee")) {
+                    cellContent = (
+                      <span className="rc-lab-price-pill">₹{displayValue}</span>
+                    );
+                  } else if (labelLower.includes("phone") || labelLower.includes("mobile")) {
+                    cellContent = (
+                      <span className="rc-lab-phone-pill">{displayValue}</span>
+                    );
+                  } else if (labelLower.includes("date") || labelLower.includes("created")) {
+                    cellContent = (
+                      <span className="rc-lab-date-pill">{displayValue}</span>
+                    );
+                  } else if (labelLower.includes("tests") && type === "patients") {
+                    const testsList = String(displayValue || "").split(",").map((t) => t.trim()).filter((t) => t && t !== "-");
+                    cellContent = (
+                      <div className="lab-test-pills-wrap">
+                        {testsList.length ? testsList.map((tName, tIdx) => {
+                          const tTheme = getTestTheme(tName);
+                          return (
+                            <span
+                              key={tIdx}
+                              className={`rc-lab-test-tag ${tTheme.tagClass}`}
+                              style={{
+                                background: tTheme.bg,
+                                borderColor: tTheme.border,
+                                color: tTheme.color,
+                              }}
+                              title={tName}
+                            >
+                              {tName}
+                            </span>
+                          );
+                        }) : "-"}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <span key={label} className={alignClass}>
+                      {cellContent}
+                    </span>
+                  );
+                })}
+                {hasActions ? (
+                  <span className="lab-row-actions">
+                    {type === "samples" ? (
+                      <>
+                        <button className="lab-action-btn collect" type="button" title="Sample collected" onClick={() => runOrderAction(row, "collected")} disabled={!canEditSamples}><TestTube2 size={15} /></button>
+                        <button className="lab-action-btn start" type="button" title="Start processing" onClick={() => runOrderAction(row, "start")} disabled={!canEditSamples}><Play size={15} /></button>
+                        <button className="lab-action-btn complete" type="button" title="Complete order" onClick={() => runOrderAction(row, "complete")} disabled={!canEditSamples}><CheckCircle size={15} /></button>
+                      </>
+                    ) : null}
+                    {type === "reports" ? (
+                      <>
+                        <button className="lab-action-btn report" type="button" title="Print report" onClick={() => printReport(row)}><FileText size={15} /></button>
+                        <button className="lab-action-btn download" type="button" title="Download report" onClick={() => downloadReport(row)}><Download size={15} /></button>
+                      </>
+                    ) : null}
+                  </span>
+                ) : null}
+              </div>
+            );
+          }) : <div className="rc-empty">No {config.title.toLowerCase()} found.</div>}
         </div>
       </div>
     </section>

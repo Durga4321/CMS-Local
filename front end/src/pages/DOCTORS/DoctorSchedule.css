@@ -1,81 +1,383 @@
+/* ============================================================
+   DOCTOR SCHEDULE — DoctorSchedule.css
+   Authentic Surgical Roster & Medical Telemetry Theme
+   Realistic Surgical & Clinical Instrument Models
+   ============================================================ */
+
 .doctor-schedule-page {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 32px 36px 44px;
+  gap: 22px;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   color: #0f172a;
+  position: relative;
+  z-index: 1;
 }
 
+/* ── 1. Medical & Surgical Telemetry Background ── */
+.ds-medical-bg {
+  position: absolute;
+  inset: -20px -20px -40px -20px;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  background-image:
+    radial-gradient(circle at 88% 12%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 10% 45%, rgba(6, 182, 212, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 50% 85%, rgba(245, 158, 11, 0.05) 0%, transparent 50%),
+    linear-gradient(to right, rgba(148, 163, 184, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 28px 28px, 28px 28px;
+}
+
+/* ECG Rhythm Oscilloscope Wave */
+.ds-ecg-track,
+.ds-medical-bg {
+  display: none !important;
+}
+
+.ds-ecg-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ds-ecg-line-base {
+  stroke: rgba(148, 163, 184, 0.25);
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.ds-ecg-line-pulse {
+  stroke: #10b981;
+  stroke-width: 2.2;
+  fill: none;
+  stroke-dasharray: 240 960;
+  stroke-dashoffset: 1200;
+  animation: dsEcgSweep 4s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.85));
+}
+
+@keyframes dsEcgSweep {
+  0% { stroke-dashoffset: 1200; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* Telemetry HUD Status Indicators */
+.ds-telemetry-bar {
+  position: absolute;
+  top: 75px;
+  right: 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  opacity: 0.8;
+}
+
+.ds-telemetry-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(203, 213, 225, 0.7);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.ds-telemetry-cross {
+  color: #10b981;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.ds-telemetry-wave-icon {
+  color: #06b6d4;
+  animation: dsPulseSoft 1.8s infinite;
+}
+
+.ds-telemetry-bead-live {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+  animation: dsBeadBlink 1.4s infinite;
+}
+
+@keyframes dsBeadBlink {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes dsPulseSoft {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); color: #047857; }
+}
+
+/* Ambient Watermarks */
+.ds-watermark-cross {
+  position: absolute;
+  font-weight: 900;
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+.ds-watermark-cross--tl {
+  top: 15px;
+  left: 25px;
+  font-size: 160px;
+  color: rgba(16, 185, 129, 0.025);
+}
+
+.ds-watermark-cross--br {
+  bottom: 25px;
+  right: 35px;
+  font-size: 120px;
+  letter-spacing: 0.1em;
+  color: rgba(15, 157, 157, 0.03);
+}
+
+/* ── 2. Roster Console Header ── */
 .ds-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.94) 100%);
+  padding: 22px 28px;
+  border-radius: 20px;
+  box-shadow:
+    0 10px 30px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(226, 232, 240, 0.6);
+  border: 1px solid rgba(186, 201, 215, 0.8);
+  border-top: 3.5px solid #10b981;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  position: relative;
+  z-index: 2;
+}
+
+.ds-head-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ds-head-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  width: fit-content;
+  border-radius: 6px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  margin-bottom: 3px;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #047857;
+}
+
+.ds-head-icon {
+  color: #10b981;
 }
 
 .ds-head h2 {
   margin: 0;
-  font-size: 34px;
-  line-height: 1.15;
-  letter-spacing: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
 }
 
 .ds-head p,
 .ds-note {
-  margin: 8px 0 0;
+  margin: 3px 0 0;
   color: #64748b;
-  font-size: 15px;
+  font-size: 13.5px;
   line-height: 1.5;
 }
 
+/* ── 3. Alerts ── */
 .ds-alert {
-  border-radius: 8px;
-  padding: 12px 14px;
-  border: 1px solid transparent;
-  font-weight: 700;
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
 }
 
 .ds-alert.error {
   background: #fef2f2;
-  border-color: #fecaca;
-  color: #b91c1c;
+  border: 1px solid #fecaca;
+  color: #991b1b;
 }
 
 .ds-alert.success {
-  background: #ecfdf5;
-  border-color: #bbf7d0;
-  color: #047857;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
 }
 
+/* ── 4. Main 3-Column Grid ── */
 .ds-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-  align-items: start;
+  gap: 20px;
+  align-items: stretch;
+  position: relative;
+  z-index: 2;
 }
 
+/* ── 5. Surgical Roster Console Cards ── */
 .ds-card {
-  background: #ffffff;
-  border: 1px solid #dbe5f2;
-  border-radius: 8px;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
-  padding: 22px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 20px;
+  box-shadow:
+    0 12px 36px rgba(15, 23, 42, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.22s ease;
 }
 
-.ds-card h3 {
-  margin: 0 0 18px;
-  font-size: 20px;
-  line-height: 1.25;
+.ds-card:hover {
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow:
+    0 16px 40px rgba(15, 23, 42, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
+/* Surgical Card Top Color Accents */
+.ds-card--recurring {
+  border-top: 3.5px solid #10b981;
+}
+
+.ds-card--override {
+  border-top: 3.5px solid #f59e0b;
+}
+
+.ds-preview-card {
+  border-top: 3.5px solid #06b6d4;
+  height: 100%;
+}
+
+.ds-overrides-card {
+  border-top: 3.5px solid #0f766e;
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+}
+
+/* Card Header Strip */
+.ds-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.ds-card-header h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ds-card-header-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+
+.ds-icon--emerald {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.ds-icon--amber {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.ds-icon--cyan {
+  background: #ecfeff;
+  color: #0891b2;
+  border: 1px solid #a5f3fc;
+}
+
+.ds-icon--teal {
+  background: #f0fdfa;
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+}
+
+.ds-card-badge {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #059669;
+}
+
+.ds-badge--amber {
+  color: #d97706;
+}
+
+.ds-badge--cyan {
+  color: #0891b2;
+}
+
+/* Card Form Labels & Inputs */
 .ds-card label {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
   margin-bottom: 14px;
   color: #334155;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
+}
+
+.ds-sub-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 6px;
 }
 
 .ds-card input,
@@ -85,26 +387,42 @@
   min-height: 42px;
   box-sizing: border-box;
   border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  background: #ffffff;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   color: #0f172a;
   font: inherit;
-  font-size: 15px;
-  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 14px;
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ds-card select {
+  padding-right: 40px !important;
 }
 
 .ds-card textarea {
-  min-height: 94px;
+  min-height: 88px;
   resize: vertical;
 }
 
 .ds-card input:focus,
 .ds-card select:focus,
 .ds-card textarea:focus {
-  border-color: #0f9d9d;
-  box-shadow: 0 0 0 3px rgba(15, 157, 157, 0.14);
+  border-color: #10b981;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3.5px rgba(16, 185, 129, 0.16);
+}
+
+.ds-card--override input:focus,
+.ds-card--override select:focus,
+.ds-card--override textarea:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3.5px rgba(245, 158, 11, 0.16);
 }
 
 .ds-two {
@@ -113,67 +431,255 @@
   gap: 12px;
 }
 
+/* ── 6. Tactile Surgical Duty Switches (Days Selector) ── */
+.ds-days-wrapper {
+  margin-bottom: 14px;
+}
+
 .ds-days {
   display: grid;
-  grid-template-columns: repeat(7, minmax(44px, 1fr));
-  gap: 8px;
-  margin: 4px 0 16px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
 }
 
-.ds-days button {
-  min-height: 38px;
-  border: 1px solid #dbe5f2;
-  border-radius: 8px;
-  background: #f8fafc;
-  color: #475569;
-  cursor: pointer;
-  font-weight: 800;
-}
-
-.ds-days button.active {
-  background: #0f9d9d;
-  border-color: #0f9d9d;
-  color: #ffffff;
-}
-
-.ds-primary,
-.ds-secondary,
-.ds-overrides-card button {
+.ds-day-btn {
   min-height: 42px;
-  border: 0;
-  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  color: #64748b;
   cursor: pointer;
-  font-weight: 800;
-  padding: 10px 16px;
+  font-weight: 700;
+  font-size: 12.5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px 2px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
 }
 
-.ds-primary {
-  width: 100%;
-  background: #0f9d9d;
+.ds-day-indicator {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  transition: all 0.2s ease;
+}
+
+.ds-day-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #1e293b;
+  transform: translateY(-1px);
+}
+
+.ds-day-btn.active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: #047857;
   color: #ffffff;
+  box-shadow:
+    0 4px 12px rgba(16, 185, 129, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
-.ds-secondary {
-  background: #eef6f7;
-  color: #0f766e;
-  border: 1px solid #b7e2e2;
+.ds-day-btn.active .ds-day-indicator {
+  background: #ffffff;
+  box-shadow: 0 0 6px #ffffff;
+}
+
+.ds-day-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── 7. Realistic Surgical & Medical Instrument Action Buttons ── */
+.ds-card > .ds-primary {
+  margin-top: auto;
+}
+
+.ds-instrument-body {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+}
+
+.ds-instrument-grip,
+.ds-instrument-bead {
+  display: none !important;
+}
+
+.ds-instrument-icon {
+  stroke-width: 2.2;
+}
+
+.ds-instrument-text {
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.ds-bead--emerald {
+  background: #ffffff;
+  box-shadow: 0 0 8px #ffffff;
+  animation: dsPulseSoft 1.6s infinite;
+}
+
+.ds-bead--amber {
+  background: #ffffff;
+  box-shadow: 0 0 8px #ffffff;
+  animation: dsPulseSoft 1.6s infinite;
+}
+
+.ds-bead--cyan {
+  background: #06b6d4;
+  box-shadow: 0 0 8px #06b6d4;
+  animation: dsPulseSoft 1.6s infinite;
+}
+
+/* Card 1: Save Recurring Schedule Button */
+.ds-card--recurring .ds-primary,
+.ds-card:nth-of-type(1) .ds-primary,
+.ds-primary.ds-instrument--autoclave {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #059669;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  cursor: pointer;
+  padding: 10px 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: auto;
+}
+
+.ds-card--recurring .ds-primary:hover:not(:disabled),
+.ds-card:nth-of-type(1) .ds-primary:hover:not(:disabled),
+.ds-primary.ds-instrument--autoclave:hover:not(:disabled) {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.48);
+}
+
+/* Card 2: Apply One-Day Schedule Exception Button */
+.ds-card--override .ds-primary,
+.ds-card:nth-of-type(2) .ds-primary,
+.ds-primary.ds-instrument--scalpel {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #d97706;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+  cursor: pointer;
+  padding: 10px 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: auto;
+}
+
+.ds-card--override .ds-primary:hover:not(:disabled),
+.ds-card:nth-of-type(2) .ds-primary:hover:not(:disabled),
+.ds-primary.ds-instrument--scalpel:hover:not(:disabled) {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.48);
+}
+
+/* Card 2: Cancel Edit Exception Button */
+.ds-card--override .ds-secondary,
+.ds-card:nth-of-type(2) .ds-secondary,
+.ds-secondary.ds-instrument--cancel {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #fff1f2 0%, #fee2e2 100%);
+  color: #dc2626;
+  cursor: pointer;
+  font-weight: 700;
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.ds-card--override .ds-secondary:hover,
+.ds-card:nth-of-type(2) .ds-secondary:hover,
+.ds-secondary.ds-instrument--cancel:hover {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+/* Card 3: Refresh Duty Slots Button */
+.ds-preview-card .ds-secondary,
+.ds-secondary.ds-instrument--scanner {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #0284c7;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  cursor: pointer;
+  padding: 10px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.28);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: 4px;
+}
+
+.ds-preview-card .ds-secondary:hover:not(:disabled),
+.ds-secondary.ds-instrument--scanner:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+  border-color: #0369a1;
+  color: #ffffff;
+  transform: translateY(-1.5px);
+  box-shadow: 0 5px 16px rgba(2, 132, 199, 0.4);
 }
 
 .ds-primary:disabled,
 .ds-secondary:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
-.ds-preview-card {
-  min-height: 100%;
-}
-
+/* ── 8. Clinical Duty Slots Preview ── */
 .ds-slots {
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-top: 14px;
-  max-height: 320px;
+  flex: 1 1 auto;
+  min-height: 140px;
+  max-height: 380px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -182,60 +688,89 @@
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 4px 10px;
-  border: 1px solid #dbe5f2;
-  border-left-width: 4px;
-  border-radius: 8px;
-  padding: 11px 12px;
-  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-left-width: 4.5px;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.03);
+  transition: all 0.2s ease;
+}
+
+.ds-slot:hover {
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+}
+
+.ds-slot-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .ds-slot strong {
-  font-size: 14px;
+  font-size: 13.5px;
+  color: #1e293b;
 }
 
-.ds-slot span {
-  font-size: 13px;
+.ds-slot-status {
+  font-size: 11.5px;
   font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 6px;
 }
 
 .ds-slot small {
   grid-column: 1 / -1;
   color: #64748b;
+  font-size: 11.5px;
 }
 
 .ds-slot.available {
-  border-left-color: #16a34a;
+  border-left-color: #10b981;
 }
 
-.ds-slot.available span {
-  color: #15803d;
+.ds-slot.available .ds-slot-status {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
 }
 
 .ds-slot.booked {
-  border-left-color: #dc2626;
+  border-left-color: #ef4444;
 }
 
-.ds-slot.booked span {
+.ds-slot.booked .ds-slot-status {
+  background: #fef2f2;
   color: #b91c1c;
+  border: 1px solid #fecaca;
 }
 
 .ds-empty {
   border: 1px dashed #cbd5e1;
-  border-radius: 8px;
+  border-radius: 12px;
   color: #64748b;
-  padding: 18px;
+  padding: 28px 20px;
   text-align: center;
+  background: rgba(248, 250, 252, 0.6);
+  font-size: 13.5px;
+  font-weight: 500;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  box-sizing: border-box;
 }
 
-.ds-overrides-card {
-  padding: 0;
-  overflow: hidden;
-}
-
-.ds-overrides-card h3 {
-  margin: 0;
-  padding: 20px 22px;
-  border-bottom: 1px solid #e2e8f0;
+/* ── 9. Upcoming Exceptions Table Console ── */
+.ds-card-header--table {
+  padding: 20px 24px;
+  margin-bottom: 0;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(248, 250, 252, 0.85);
 }
 
 .ds-table-wrap {
@@ -250,37 +785,141 @@
 
 .ds-overrides-card th,
 .ds-overrides-card td {
-  padding: 14px 16px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 14px 20px;
   text-align: left;
   vertical-align: middle;
-  font-size: 14px;
+  font-size: 13.5px;
 }
 
 .ds-overrides-card th {
-  background: #f8fafc;
+  background: rgba(248, 250, 252, 0.9);
+  border-bottom: 1.5px solid rgba(203, 213, 225, 0.7);
   color: #334155;
-  font-size: 13px;
+  font-size: 0.76rem;
+  font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
-.ds-overrides-card td:last-child {
-  display: flex;
-  gap: 8px;
+.ds-overrides-card th:last-child {
+  text-align: center;
+  width: 150px;
 }
 
-.ds-overrides-card button {
-  min-height: 34px;
-  padding: 7px 11px;
-  background: #eef6f7;
-  color: #0f766e;
+.ds-overrides-card td {
+  border-bottom: 1px solid rgba(226, 232, 240, 0.65);
+  background: rgba(255, 255, 255, 0.35);
+  color: #0f172a;
+  transition: all 0.2s ease;
 }
 
-.ds-overrides-card button.danger {
+.ds-overrides-card tr:hover td {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.ds-cell-date {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.ds-type-badge {
+  display: inline-flex;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ds-type--leave {
   background: #fef2f2;
   color: #b91c1c;
+  border: 1px solid #fecaca;
 }
 
+.ds-type--timechange {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.ds-type--branchshift {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.ds-cell-reason {
+  max-width: 220px;
+  color: #475569;
+}
+
+.ds-table-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Micro-Instrument Action Buttons */
+.ds-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid #cbd5e1;
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  color: #0f766e;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ds-action-btn--edit {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border-color: #ddd6fe;
+  color: #7c3aed;
+}
+
+.ds-action-btn--edit:hover {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  border-color: #6d28d9;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(124, 58, 237, 0.28);
+}
+
+.ds-action-btn--delete,
+.ds-action-btn--delete.danger {
+  background: linear-gradient(135deg, #fff1f2 0%, #fee2e2 100%);
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.ds-action-btn--delete:hover,
+.ds-action-btn--delete.danger:hover {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border-color: #dc2626;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(220, 38, 38, 0.3);
+}
+
+.ds-empty-table {
+  padding: 36px !important;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* ── 10. Responsive Breakpoints ── */
 @media (max-width: 1280px) {
   .ds-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -293,11 +932,19 @@
 
 @media (max-width: 780px) {
   .doctor-schedule-page {
-    padding: 22px 18px 34px;
+    padding: 14px 10px 30px;
+  }
+
+  .ds-telemetry-bar {
+    display: none;
+  }
+
+  .ds-head {
+    padding: 18px;
   }
 
   .ds-head h2 {
-    font-size: 28px;
+    font-size: 22px;
   }
 
   .ds-grid,

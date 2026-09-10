@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Camera, CheckCircle, Eye, Pencil, Plus, RefreshCw, Search, ShieldPlus, Trash2, ToggleLeft, ToggleRight, X } from "lucide-react";
+import { Camera, CheckCircle, Eye, Pencil, Plus, RefreshCw, Search, ShieldPlus, Trash2, ToggleLeft, ToggleRight, X, HeartPulse, Syringe, Activity, Stethoscope, Mail, Phone, MapPin, LayoutGrid, List } from "lucide-react";
 import { ActionsGroup } from "../../components/ActionsGroup";
-import "../RECEPTIONISTS/Receptionists.css";
+import "./Nurses.css";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
 import { getNurses as fetchStaffNurses } from "../../Nurse/nurseApi";
@@ -153,6 +153,7 @@ function Nurses() {
   const [deletingId, setDeletingId] = useState(null);
   const [editingNurse, setEditingNurse] = useState(null);
   const [imageFile, setImageFile] = useState(null);
+  const [viewMode, setViewMode] = useState("grid");
   const imageInputRef = useRef(null);
 
   const branchNameById = useMemo(
@@ -440,115 +441,129 @@ function Nurses() {
   };
 
   return (
-    <div className="receptionists-page">
-      <div className="receptionists-header">
+    <div className="nurses-page">
+      <div className="nurses-header">
         <div>
           <h2>Nurses</h2>
           <p>{loading ? "Loading nurses..." : `${filteredNurses.length} nurses registered for ${clinicName}`}</p>
         </div>
-        <div className="receptionists-header-actions">
-          <button type="button" className="receptionists-icon-button" onClick={loadNurses} disabled={loading} title="Refresh nurses">
+        <div className="nurses-header-actions">
+          <button type="button" className="nurses-icon-button" onClick={loadNurses} disabled={loading} title="Refresh nurses">
             <RefreshCw size={16} />
           </button>
-          <button type="button" className="receptionists-primary-button" onClick={openModal} disabled={!canCreate}>
+          <button type="button" className="nurses-primary-button" onClick={openModal} disabled={!canCreate}>
             <Plus size={16} /> Add Nurse
           </button>
         </div>
       </div>
 
-      <div className="receptionists-toolbar">
-        <label className="receptionists-search">
-          <Search size={17} />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search nurses..." />
-        </label>
-      </div>
+      {message ? <div className="nurses-success">{message}</div> : null}
 
-      {message ? <div className="receptionists-success">{message}</div> : null}
-
-      <div className="receptionists-table">
-        <div className="receptionists-thead">
-          <span>S.No.</span>
-          <span>Name</span>
-          <span>Branch</span>
-          <span>Email</span>
-          <span>Phone</span>
-          <span>Status</span>
-          <span>Actions</span>
+      <div className="nurses-table-card">
+        <div className="nurses-toolbar">
+          <label className="nurses-search">
+            <Search size={18} />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search nurses..."
+            />
+          </label>
         </div>
-        {!loading && filteredNurses.length === 0 ? (
-          <div className="receptionists-empty">No nurses found.</div>
-        ) : null}
-        {filteredNurses.map((nurse, index) => {
-          const name = getNurseName(nurse);
-          const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "N";
-          const status = getNurseStatus(nurse);
-          return (
-            <div className="receptionists-row" key={getNurseId(nurse) || `${name}-${index}`}>
-              <span>{index + 1}</span>
-              <div className="receptionists-name-cell">
-                <span className="receptionists-avatar"><span>{initials}</span></span>
-                <span>
-                  <b>{name}</b>
+
+        <div className="nurses-table">
+          <div className="nurses-thead">
+            <span>S.NO.</span>
+            <span>NAME</span>
+            <span>BRANCH</span>
+            <span>EMAIL</span>
+            <span>PHONE</span>
+            <span className="nurses-status-head">STATUS</span>
+            <span className="nurses-actions-head">ACTIONS</span>
+          </div>
+
+          {!loading && filteredNurses.length === 0 ? (
+            <div className="nurses-empty">No nurses found.</div>
+          ) : null}
+
+          {filteredNurses.map((nurse, index) => {
+            const name = getNurseName(nurse);
+            const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "N";
+            const status = getNurseStatus(nurse);
+            const isActive = !status.toLowerCase().includes("inactive");
+
+            return (
+              <div className="nurses-row" key={getNurseId(nurse) || `${name}-${index}`}>
+                <span className="nurses-sno">{index + 1}</span>
+
+                <div className="nurses-name-cell">
+                  <span className="nurses-avatar"><span>{initials}</span></span>
+                  <span className="nurses-name-highlight">
+                    <b>{name}</b>
+                  </span>
+                </div>
+
+                <span className="nurses-cell nurses-branch-cell">{getNurseBranchName(nurse, branchNameById)}</span>
+                <span className="nurses-cell nurses-email-cell">{getNurseEmail(nurse)}</span>
+                <span className="nurses-cell nurses-phone-cell">{getNursePhone(nurse)}</span>
+
+                <span className="nurses-cell nurses-status-cell">
+                  <span className={`nurses-status ${isActive ? "nurses-status-active" : "nurses-status-inactive"}`}>
+                    {status}
+                  </span>
                 </span>
+
+                <div className="nurses-actions">
+                  <ActionsGroup
+                    rowId={getNurseId(nurse)}
+                    activeActionState={activeActionState}
+                    setActiveActionState={setActiveActionState}
+                    canView={true}
+                    canEdit={canEdit}
+                    canStatus={canEdit}
+                    canDelete={canDelete}
+                    statusChecked={isActive}
+                    statusDisabled={deletingId === String(getNurseId(nurse))}
+                    statusTitle={isActive ? "Deactivate nurse" : "Activate nurse"}
+                    onView={() => window.alert(`Nurse: ${name || "-"}\nBranch: ${getNurseBranchName(nurse, branchNameById) || "-"}\nEmail: ${getNurseEmail(nurse) || "-"}\nPhone: ${getNursePhone(nurse) || "-"}\nStatus: ${status || "-"}`)}
+                    onEdit={() => openEditModal(nurse)}
+                    onStatus={() => toggleNurseStatus(nurse)}
+                    onDelete={() => handleDeleteNurse(nurse)}
+                  />
+                </div>
               </div>
-              <span className="receptionists-cell">{getNurseBranchName(nurse, branchNameById)}</span>
-              <span className="receptionists-cell receptionists-email">{getNurseEmail(nurse)}</span>
-              <span className="receptionists-cell">{getNursePhone(nurse)}</span>
-              <span className="receptionists-cell receptionists-status-cell">
-                <span className={`receptionists-status ${status.toLowerCase().includes("inactive") ? "receptionists-status-inactive" : "receptionists-status-active"}`}>
-                  {status}
-                </span>
-              </span>
-              <div className="receptionists-actions">
-                <ActionsGroup
-                  rowId={getNurseId(nurse)}
-                  activeActionState={activeActionState}
-                  setActiveActionState={setActiveActionState}
-                  canView={true}
-                  canEdit={canEdit}
-                  canStatus={canEdit}
-                  canDelete={canDelete}
-                  statusChecked={!status.toLowerCase().includes("inactive")}
-                  statusDisabled={deletingId === String(getNurseId(nurse))}
-                  statusTitle={status.toLowerCase().includes("inactive") ? "Activate nurse" : "Deactivate nurse"}
-                  onView={() => window.alert(`Nurse: ${name || "-"}\nBranch: ${getNurseBranchName(nurse, branchNameById) || "-"}\nEmail: ${getNurseEmail(nurse) || "-"}\nPhone: ${getNursePhone(nurse) || "-"}\nStatus: ${status || "-"}`)}
-                  onEdit={() => openEditModal(nurse)}
-                  onStatus={() => toggleNurseStatus(nurse)}
-                  onDelete={() => handleDeleteNurse(nurse)}
-                />
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {modalOpen ? (
-        <div className="receptionists-modal-overlay" onClick={closeModal}>
-          <div className="receptionists-modal" onClick={(event) => event.stopPropagation()}>
-            <div className="receptionists-modal-header">
-              <div className="receptionists-modal-title">
-                <div className="receptionists-modal-icon"><ShieldPlus size={20} /></div>
+        <div className="nurses-modal-overlay" onClick={closeModal}>
+          <div className="nurses-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="nurses-modal-header">
+              <div className="nurses-modal-title">
+                <div className="nurses-modal-icon"><ShieldPlus size={20} /></div>
                 <div>
                   <h3>{editingNurse ? "Edit Nurse" : "Add Nurse"}</h3>
                   <p>{clinicName}</p>
                 </div>
               </div>
-              <button type="button" className="receptionists-modal-close" onClick={closeModal} disabled={saving} aria-label="Close nurse form">
+              <button type="button" className="nurses-modal-close" onClick={closeModal} disabled={saving} aria-label="Close nurse form">
                 <X size={20} />
               </button>
             </div>
 
-            <form className="receptionists-form" onSubmit={handleSubmit} noValidate>
-              <div className="receptionists-image-upload">
+            <form className="nurses-form" onSubmit={handleSubmit} noValidate>
+              <div className="nurses-image-upload">
                 <button
                   type="button"
-                  className="receptionists-image-circle"
+                  className="nurses-image-circle"
                   onClick={() => imageInputRef.current?.click()}
                   disabled={saving}
                   title="Upload nurse image"
                 >
                   <span>{(form.name || "N").slice(0, 1).toUpperCase()}</span>
-                  <Camera size={18} className="receptionists-image-button" />
+                  <Camera size={18} className="nurses-image-button" />
                 </button>
                 <input
                   ref={imageInputRef}
@@ -558,38 +573,38 @@ function Nurses() {
                   onChange={(event) => setImageFile(event.target.files?.[0] || null)}
                   disabled={saving}
                 />
-                {imageFile ? <span className="receptionists-image-filename">{imageFile.name}</span> : null}
+                {imageFile ? <span className="nurses-image-filename">{imageFile.name}</span> : null}
               </div>
 
-              <div className="receptionists-field">
+              <div className="nurses-field">
                 <label htmlFor="nurse-name">Name</label>
                 <input id="nurse-name" value={form.name} onChange={(event) => updateField("name", event.target.value)} className={fieldErrors.name ? "is-invalid" : ""} disabled={saving} autoFocus />
-                {fieldErrors.name ? <span className="receptionists-field-error">{fieldErrors.name}</span> : null}
+                {fieldErrors.name ? <span className="nurses-field-error">{fieldErrors.name}</span> : null}
               </div>
-              <div className="receptionists-field">
+              <div className="nurses-field">
                 <label htmlFor="nurse-email">Email</label>
                 <input id="nurse-email" type="email" value={form.email} onChange={(event) => updateField("email", event.target.value)} className={fieldErrors.email ? "is-invalid" : ""} disabled={saving} />
-                {fieldErrors.email ? <span className="receptionists-field-error">{fieldErrors.email}</span> : null}
+                {fieldErrors.email ? <span className="nurses-field-error">{fieldErrors.email}</span> : null}
               </div>
-              <div className="receptionists-field">
+              <div className="nurses-field">
                 <label htmlFor="nurse-phone">Phone</label>
                 <input id="nurse-phone" value={form.phone} onChange={(event) => updateField("phone", event.target.value)} inputMode="numeric" maxLength={10} className={fieldErrors.phone ? "is-invalid" : ""} disabled={saving} />
-                {fieldErrors.phone ? <span className="receptionists-field-error">{fieldErrors.phone}</span> : null}
+                {fieldErrors.phone ? <span className="nurses-field-error">{fieldErrors.phone}</span> : null}
               </div>
-              <div className="receptionists-field">
+              <div className="nurses-field">
                 <label htmlFor="nurse-password">Password</label>
                 <input id="nurse-password" type="password" value={form.password} onChange={(event) => updateField("password", event.target.value)} className={fieldErrors.password ? "is-invalid" : ""} disabled={saving} />
-                {fieldErrors.password ? <span className="receptionists-field-error">{fieldErrors.password}</span> : null}
+                {fieldErrors.password ? <span className="nurses-field-error">{fieldErrors.password}</span> : null}
               </div>
-              <div className="receptionists-field">
+              <div className="nurses-field">
                 <label htmlFor="nurse-branch">Branch</label>
                 <select id="nurse-branch" value={form.branchId} onChange={(event) => updateField("branchId", event.target.value)} className={fieldErrors.branchId ? "is-invalid" : ""} disabled={loadingBranches || saving}>
                   <option value="">{loadingBranches ? "Loading branches..." : "Select branch"}</option>
                   {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
                 </select>
-                {fieldErrors.branchId ? <span className="receptionists-field-error">{fieldErrors.branchId}</span> : null}
+                {fieldErrors.branchId ? <span className="nurses-field-error">{fieldErrors.branchId}</span> : null}
               </div>
-              <div className="receptionists-field">
+              <div className="nurses-field">
                 <label htmlFor="nurse-is-active">Is Active</label>
                 <select
                   id="nurse-is-active"
@@ -602,11 +617,11 @@ function Nurses() {
                 </select>
               </div>
 
-              {fieldErrors.form ? <div className="receptionists-error receptionists-form-message">{fieldErrors.form}</div> : null}
+              {fieldErrors.form ? <div className="nurses-error nurses-form-message">{fieldErrors.form}</div> : null}
 
-              <div className="receptionists-modal-actions">
-                <button type="button" className="receptionists-secondary-button" onClick={closeModal} disabled={saving}>Cancel</button>
-                <button type="submit" className="receptionists-save-button" disabled={saving || (editingNurse ? !canEdit : !canCreate)}>
+              <div className="nurses-modal-actions">
+                <button type="button" className="nurses-secondary-button" onClick={closeModal} disabled={saving}>Cancel</button>
+                <button type="submit" className="nurses-save-button" disabled={saving || (editingNurse ? !canEdit : !canCreate)}>
                   <CheckCircle size={16} />
                   {saving ? "Saving..." : editingNurse ? "Update Nurse" : "Create Nurse"}
                 </button>

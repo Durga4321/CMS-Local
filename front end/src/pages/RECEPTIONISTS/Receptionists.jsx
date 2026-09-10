@@ -12,6 +12,10 @@ import {
   ToggleRight,
   UserCheck,
   X,
+  Calendar,
+  PhoneCall,
+  ClipboardCheck,
+  Clock,
 } from "lucide-react";
 import { ActionsGroup } from "../../components/ActionsGroup";
 import "./Receptionists.css";
@@ -718,6 +722,20 @@ function Receptionists() {
 
   return (
     <div className="receptionists-page">
+      {/* 3D Receptionist Desk Theme Background Animated Overlays */}
+      <div className="receptionists-bg-overlay" />
+      <div className="receptionists-reception-particle particle-rec-1" title="Calendar & Scheduling">
+        <Calendar size={26} />
+      </div>
+      <div className="receptionists-reception-particle particle-rec-2" title="Patient Calls & Desk Phone">
+        <PhoneCall size={28} />
+      </div>
+      <div className="receptionists-reception-particle particle-rec-3" title="Patient Check-in & Records">
+        <ClipboardCheck size={26} />
+      </div>
+      <div className="receptionists-reception-particle particle-rec-4" title="Appointment Timings">
+        <Clock size={24} />
+      </div>
       <div className="receptionists-header">
         <div>
           <h2>Receptionists</h2>
@@ -785,8 +803,8 @@ function Receptionists() {
           <span>Branch</span>
           <span>Email</span>
           <span>Phone</span>
-          <span>Status</span>
-          <span>Actions</span>
+          <span className="receptionists-status-head">Status</span>
+          <span className="receptionists-actions-head">Actions</span>
         </div>
 
         {!loading && filteredReceptionists.length === 0 ? (
@@ -823,9 +841,9 @@ function Receptionists() {
                     }}
                   />
                 </div>
-                <div>
+                <span className="receptionists-name-highlight">
                   <b>{receptionist.name || "-"}</b>
-                </div>
+                </span>
               </div>
 
               <span className="receptionists-cell">{getReceptionistBranchName(receptionist, branchNameById) || "-"}</span>

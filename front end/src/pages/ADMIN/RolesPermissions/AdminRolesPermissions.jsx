@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Check, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, X } from "lucide-react";
+import "./AdminRolesPermissions.css";
+import { Check, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, X, Lock, KeyRound, UserCheck, Search } from "lucide-react";
 import { apiUrl } from "../../../config/api";
 import {
   removeRoleModulePermissions,
@@ -364,6 +365,8 @@ function AdminRolesPermissions() {
   const [savingRole, setSavingRole] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
 
   const eligibleUsers = useMemo(
     () => users.filter((user) => STAFF_ROLE_KEYS.has(normalizeKey(user.role))),
@@ -379,6 +382,25 @@ function AdminRolesPermissions() {
     () => normalizeModulePermissionMap(form.modulePermissions, form.role),
     [form.modulePermissions, form.role]
   );
+
+  const filteredAssignments = useMemo(() => {
+    return assignments.filter((assignment) => {
+      const roleMatches =
+        roleFilter === "all" ||
+        normalizeKey(assignment.role) === normalizeKey(roleFilter);
+      if (!roleMatches) return false;
+
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+
+      const name = String(assignment.name || "").toLowerCase();
+      const email = String(assignment.email || "").toLowerCase();
+      const role = String(formatRoleLabel(assignment.role || "")).toLowerCase();
+      const module = String(assignment.module || "").toLowerCase();
+
+      return name.includes(q) || email.includes(q) || role.includes(q) || module.includes(q);
+    });
+  }, [assignments, searchQuery, roleFilter]);
 
   const loadData = async () => {
     setLoading(true);
@@ -841,6 +863,22 @@ function AdminRolesPermissions() {
 
   return (
     <div className="admin-roles-page">
+      <div className="admin-roles-bg-overlay" />
+
+      {/* 3D Floating Security & Access Control Telemetry Particles */}
+      <div className="admin-roles-particle roles-part-1" title="Security Access Shield">
+        <ShieldCheck size={28} />
+      </div>
+      <div className="admin-roles-particle roles-part-2" title="Role Key & Credentials">
+        <KeyRound size={26} />
+      </div>
+      <div className="admin-roles-particle roles-part-3" title="Access Control & Security Lock">
+        <Lock size={26} />
+      </div>
+      <div className="admin-roles-particle roles-part-4" title="Staff Role Profile">
+        <UserCheck size={26} />
+      </div>
+
       <div className="sa-page-header">
         <div>
           <h1>Roles & Permissions</h1>
@@ -965,65 +1003,107 @@ function AdminRolesPermissions() {
         </form>
       ) : null}
 
-      <div className="sa-table">
-        <div
-          className="sa-table-head"
-          style={{ gridTemplateColumns: "70px minmax(140px,.7fr) minmax(150px,.8fr) minmax(190px,1fr) minmax(220px,1fr) 120px" }}
-        >
-          <span>S.No.</span>
-          <span>Role</span>
-          <span>Module</span>
-          <span>Assigned Staff</span>
-          <span>Permissions</span>
-          <span>Actions</span>
+      <div className="admin-roles-table-card">
+        <div className="admin-roles-toolbar">
+          <label className="admin-roles-search">
+            <Search size={18} />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search staff, role, module, or email..."
+            />
+          </label>
+          <select
+            className="admin-roles-select"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+          >
+            <option value="all">All Roles</option>
+            {STAFF_ROLES.map((role) => (
+              <option key={role} value={role}>{formatRoleLabel(role)}</option>
+            ))}
+          </select>
         </div>
 
-        {loading ? <div className="sa-state">Loading roles...</div> : null}
-        {!loading && assignments.length === 0 ? <div className="sa-empty">No staff permissions found.</div> : null}
-
-        {assignments.map((assignment, index) => (
+        <div className="sa-table sa-table--roles">
           <div
-            className="sa-table-row"
-            key={assignment.id || `${assignment.email}-${index}`}
-            style={{ gridTemplateColumns: "70px minmax(140px,.7fr) minmax(150px,.8fr) minmax(190px,1fr) minmax(220px,1fr) 120px" }}
+            className="sa-table-head"
+            style={{ gridTemplateColumns: "60px minmax(130px,.8fr) minmax(100px,.7fr) minmax(280px,1.8fr) minmax(160px,1fr) 140px" }}
           >
-            <span className="sa-table-cell">{index + 1}</span>
-            <span className="sa-table-cell">
-              <b>{formatRoleLabel(assignment.role || "-")}</b>
-            </span>
-            <span className="sa-table-cell">
-              {Object.values(getPermissionModulesFromAssignment(assignment, assignment.role)).some((permissions) => permissions.length)
-                ? `${Object.values(getPermissionModulesFromAssignment(assignment, assignment.role)).filter((permissions) => permissions.length).length} modules`
-                : assignment.module || "-"}
-            </span>
-            <span className="sa-table-cell">
-              <span className="sa-role-admin-list">
-                <b>{assignment.name || assignment.email || "-"}</b>
-                <span className="sa-role-admin-names">{assignment.email || assignment.id}</span>
-              </span>
-            </span>
-            <span className="sa-table-cell">
-              {Object.entries(getPermissionModulesFromAssignment(assignment, assignment.role))
-                .filter(([, permissions]) => permissions.length)
-                .map(([module, permissions]) => `${module}: ${normalizePermissionList(permissions).join(", ")}`)
-                .join(" | ") || normalizePermissionList(assignment.permissions).join(", ") || "-"}
-            </span>
-            <span className="sa-actions">
-              <ActionsGroup
-                rowId={assignment.id || `${assignment.email}-${index}`}
-                activeActionState={activeActionState}
-                setActiveActionState={setActiveActionState}
-                canView={true}
-                canEdit={canEdit}
-                canStatus={false}
-                canDelete={canDelete}
-                onView={() => openEdit(assignment)}
-                onEdit={() => openEdit(assignment)}
-                onDelete={() => handleDelete(assignment)}
-              />
-            </span>
+            <span className="admin-roles-sno-head">S.No.</span>
+            <span className="admin-roles-role-head">Role</span>
+            <span className="admin-roles-module-head">Module</span>
+            <span className="admin-roles-staff-head">Assigned Staff</span>
+            <span className="admin-roles-permissions-head">Permissions</span>
+            <span className="admin-roles-actions-head" style={{ textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>Actions</span>
           </div>
-        ))}
+
+          {loading ? <div className="sa-state">Loading roles...</div> : null}
+          {!loading && filteredAssignments.length === 0 ? <div className="sa-empty">No staff permissions found.</div> : null}
+
+          {filteredAssignments.map((assignment, index) => {
+            const initials =
+              (assignment.name || assignment.email || "U")
+                .split(/\s+/)
+                .filter(Boolean)
+                .map((part) => part[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase() || "U";
+            const roleTone = index % 4;
+
+            return (
+              <div
+                className="sa-table-row"
+                key={assignment.id || `${assignment.email}-${index}`}
+                style={{ gridTemplateColumns: "60px minmax(130px,.8fr) minmax(100px,.7fr) minmax(280px,1.8fr) minmax(160px,1fr) 140px" }}
+              >
+                <span className="sa-table-cell admin-roles-sno">{index + 1}</span>
+                <span className="sa-table-cell">
+                  <span className="admin-roles-name-highlight">
+                    <b>{formatRoleLabel(assignment.role || "-")}</b>
+                  </span>
+                </span>
+                <span className="sa-table-cell">
+                  {Object.values(getPermissionModulesFromAssignment(assignment, assignment.role)).some((permissions) => permissions.length)
+                    ? `${Object.values(getPermissionModulesFromAssignment(assignment, assignment.role)).filter((permissions) => permissions.length).length} modules`
+                    : assignment.module || "-"}
+                </span>
+                <span className="sa-table-cell admin-roles-staff-cell">
+                  <span className={`admin-roles-avatar admin-roles-avatar--${roleTone}`}>
+                    {initials}
+                  </span>
+                  <span className="sa-role-admin-list">
+                    <b>{assignment.name || assignment.email || "-"}</b>
+                    <span className="admin-roles-email" title={assignment.email || assignment.id}>
+                      {assignment.email || assignment.id}
+                    </span>
+                  </span>
+                </span>
+                <span className="sa-table-cell">
+                  {Object.entries(getPermissionModulesFromAssignment(assignment, assignment.role))
+                    .filter(([, permissions]) => permissions.length)
+                    .map(([module, permissions]) => `${module}: ${normalizePermissionList(permissions).join(", ")}`)
+                    .join(" | ") || normalizePermissionList(assignment.permissions).join(", ") || "-"}
+                </span>
+                <span className="sa-actions">
+                  <ActionsGroup
+                    rowId={assignment.id || `${assignment.email}-${index}`}
+                    activeActionState={activeActionState}
+                    setActiveActionState={setActiveActionState}
+                    canView={true}
+                    canEdit={canEdit}
+                    canStatus={false}
+                    canDelete={canDelete}
+                    onView={() => openEdit(assignment)}
+                    onEdit={() => openEdit(assignment)}
+                    onDelete={() => handleDelete(assignment)}
+                  />
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="sa-form-card sa-permission-card">

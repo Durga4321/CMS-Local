@@ -1,3 +1,9 @@
+.lab-files-page {
+  position: relative !important;
+  min-height: calc(100vh - 82px) !important;
+  background: transparent !important;
+}
+
 .lab-files-export {
   background: #0f766e;
 }
@@ -14,31 +20,60 @@
 
 .lab-files-table {
   display: grid;
-  border: 1px solid #d8e4e8;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 20px;
+  overflow-x: auto;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .lab-files-head,
 .lab-files-row {
-  display: grid;
-  grid-template-columns: 1.35fr 0.95fr 1fr 1fr 0.65fr 0.75fr 112px;
+  display: grid !important;
+  grid-template-columns:
+    minmax(200px, 1.5fr)
+    minmax(110px, 0.8fr)
+    minmax(180px, 1.3fr)
+    minmax(160px, 1.1fr)
+    100px
+    130px
+    140px !important;
   gap: 12px;
   align-items: center;
-  padding: 14px 18px;
+  padding: 14px 20px;
+  min-width: 960px;
+  box-sizing: border-box;
 }
 
 .lab-files-head {
-  color: #64748b;
+  color: #1e293b;
+  font-size: 0.78rem;
   font-weight: 800;
-  background: #f8fafc;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+  min-height: 48px;
 }
 
 .lab-files-row {
-  border-top: 1px solid #edf2f5;
-  color: #1e293b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.2);
+  color: #0f172a;
   font-weight: 700;
+  min-height: 64px;
+  transition: all 0.2s ease;
+}
+
+.lab-files-row:hover {
+  background: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.1);
+}
+
+.lab-files-row:last-child {
+  border-bottom: 0;
 }
 
 .lab-files-row span {
@@ -46,37 +81,89 @@
   overflow-wrap: anywhere;
 }
 
+/* Column 1: Test Name (Left-Aligned, baseline anchored) */
+.lab-files-test-head,
+.lab-files-test-cell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+  font-weight: 750 !important;
+  color: #0f172a !important;
+  width: 100% !important;
+}
+
+/* Column 2: Test Code (Centered) */
+.lab-files-code-head,
+.lab-files-code-cell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+/* Column 3: Category (Left-Aligned) */
+.lab-files-category-head,
+.lab-files-category-cell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+  width: 100% !important;
+}
+
+/* Column 4: Sample Type (Left-Aligned) */
+.lab-files-sample-head,
+.lab-files-sample-cell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+  width: 100% !important;
+}
+
+/* Column 5: Price (Centered) */
+.lab-files-price-head,
+.lab-files-price-cell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  font-weight: 750 !important;
+  color: #0f766e !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+/* Column 6: Status (Centered) */
+.lab-files-status-head,
+.lab-files-status-cell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+/* Column 7: Actions (Centered) */
+.lab-files-actions-head,
 .lab-files-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.lab-files-actions button {
-  width: 36px;
-  height: 36px;
-  display: inline-grid;
-  place-items: center;
-  border: 1px solid #d8e4e8;
-  border-radius: 8px;
-  background: #fff;
-  color: #0f172a;
-  cursor: pointer;
-}
-
-.lab-files-actions button:hover {
-  background: #f0fdfa;
-  border-color: #99f6e4;
-  color: #0f766e;
-}
-
-.lab-files-actions button.danger {
-  color: #ef4444;
-}
-
-.lab-files-actions button.danger:hover {
-  background: #fef2f2;
-  border-color: #fecaca;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  min-width: 0 !important;
 }
 
 .lab-files-modal {
