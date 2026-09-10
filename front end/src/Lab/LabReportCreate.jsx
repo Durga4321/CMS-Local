@@ -1,5 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Eye, FileImage, FileText, Printer, Save, X } from "lucide-react";
+import {
+  Activity,
+  Download,
+  Eye,
+  FileImage,
+  FileText,
+  FlaskConical,
+  Microscope,
+  Printer,
+  Save,
+  ShieldCheck,
+  TestTube2,
+  UserCheck,
+  X,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { downloadBlob, parseList, requestJson } from "./labApi";
 import { getLabProfile } from "./labSession";
@@ -9,6 +23,7 @@ import { buildLabReportHtml, printLabReport, readReportField } from "./labReport
 import { fetchLabMasterTests } from "../utils/labMaster";
 import { canUseModulePermission, useRolePermissionsSync } from "../utils/rolePermissions";
 import LabToast from "./LabToast";
+import { getTestTheme } from "./LabDataPage";
 
 const readFirst = readReportField;
 const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
@@ -821,87 +836,322 @@ function LabReportCreate() {
     setToast({ type: "success", message: "Film downloaded." });
   };
 
-  return (
-    <section className="rc-page lab-page">
-      <div className="rc-page-head">
-        <div>
-          <h2>Create Report</h2>
-          <p>Create lab reports for diagnostic patients and save them to backend.</p>
-        </div>
-      </div>
-      <LabToast toast={toast} onClose={() => setToast(null)} />
-      <div className="rc-card lab-report-form-card">
-        <div className="rc-form-grid">
-          <label className="rc-form-field-full">
-            Patient
-            <select value={selectedPatientKey} onChange={(event) => setSelectedPatientKey(event.target.value)}>
-              {patientOptions.map((patient) => (
-                <option value={patient.key} key={patient.key}>
-                  {patient.name} {patient.phone && patient.phone !== "-" ? `- ${patient.phone}` : ""} ({patient.count} tests)
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="rc-form-field-full">
-            Report Name
-            <select value={selectedReportKey} onChange={(event) => setSelectedReportKey(event.target.value)} disabled={!selectedPatientKey}>
-              {reportOptions.map((report) => (
-                <option value={report.key} key={report.key}>
-                  {report.testName} {report.reported ? "(reported)" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          {selectedTemplate.type === "scan" ? (
-            <label className="rc-form-field-full">
-              Film / Scan Image
-              <span className="lab-upload-control lab-film-ready">
-                <FileImage size={16} />
-                <b>{filmFileName || "Film pending from scan machine"}</b>
-              </span>
-              <small className="lab-field-hint">Film is available after scan/X-Ray completion. Final written report can be saved after review.</small>
-              <span className="lab-film-actions">
-                <button className="rc-btn ghost" type="button" onClick={downloadFilm} disabled={!(filmFileUrl || sampleFilmUrl)}><Download size={16} /> Download Film</button>
-                <button className="rc-btn" type="button" onClick={printFilm} disabled={!(filmFileUrl || sampleFilmUrl)}><Printer size={16} /> Print Film</button>
-              </span>
-            </label>
-          ) : null}
+  const parameterFields = useMemo(
+    () => selectedTemplate.fields.filter((field) => field.type !== "textarea"),
+    [selectedTemplate]
+  );
+  const observationFields = useMemo(
+    () => selectedTemplate.fields.filter((field) => field.type === "textarea"),
+    [selectedTemplate]
+  );
+  const currentTestTheme = useMemo(
+    () => getTestTheme(selectedReport?.testName || selectedTestName, selectedTemplate?.department),
+    [selectedReport?.testName, selectedTemplate?.department, selectedTestName]
+  );
 
-          {selectedTemplate.fields.map((field) => (
-            <label className="rc-form-field-full" key={field.key}>
-              {field.label}{field.unit ? ` (${field.unit})` : ""}
-              {field.type === "textarea" ? (
-                <textarea
-                  value={form[field.key] || ""}
-                  onChange={(event) => setForm((prev) => ({ ...prev, [field.key]: event.target.value }))}
-                  rows={field.rows || 4}
-                  placeholder={`Enter ${field.label.toLowerCase()}...`}
-                />
-              ) : field.type === "select" ? (
-                <select value={form[field.key] || ""} onChange={(event) => setForm((prev) => ({ ...prev, [field.key]: event.target.value }))}>
-                  {field.options.map((option) => <option key={option} value={option}>{option}</option>)}
-                </select>
-              ) : (
-                <input value={form[field.key] || ""} onChange={(event) => setForm((prev) => ({ ...prev, [field.key]: event.target.value }))} />
-              )}
-              {field.referenceRange ? <small className="lab-field-hint">Reference: {field.referenceRange}</small> : null}
-            </label>
-          ))}
+  return (
+    <section className="rc-page lab-page lab-report-create-page">
+      <LabToast toast={toast} onClose={() => setToast(null)} />
+
+      {/* Screen Header Banner */}
+      <div className="rc-page-head lab-page-head">
+        <div>
+          <div className="lab-head-tag-row">
+            <span
+              className="lab-head-badge"
+              style={{
+                background: currentTestTheme.bg,
+                borderColor: currentTestTheme.border,
+                color: currentTestTheme.color,
+              }}
+            >
+              <FlaskConical size={13} /> {selectedTestName ? `${selectedTestName} Investigation` : "Diagnostic Lab Suite"}
+            </span>
+            <span className="lab-head-sub-badge"><Activity size={12} /> {selectedTemplate.department || "Clinical Diagnostics"}</span>
+          </div>
+          <h2>Create Diagnostic Report</h2>
+          <p>Generate, calibrate and authenticate laboratory & diagnostic test reports.</p>
         </div>
         <div className="lab-page-actions">
           {canCreateReport ? (
             <>
-              <button className="rc-btn primary" type="button" onClick={() => saveReport()} disabled={saving}><Save size={16} /> Save Report</button>
-              <button className="rc-btn" type="button" onClick={() => saveReport({ print: true })} disabled={saving}><Printer size={16} /> Save & Print</button>
+              <button className="rc-btn primary lab-btn-save" type="button" onClick={() => saveReport()} disabled={saving}><Save size={16} /> Save Report</button>
+              <button className="rc-btn lab-btn-print" type="button" onClick={() => saveReport({ print: true })} disabled={saving}><Printer size={16} /> Save & Print</button>
             </>
           ) : null}
           <button className="rc-btn ghost" type="button" onClick={() => navigate("/lab/reports")}><FileText size={16} /> Reports</button>
         </div>
+      </div>
+
+      <div className="lab-create-cards-wrap">
+        {/* CARD 1: PATIENT & DIAGNOSTIC ORDER DOSSIER */}
+        <div
+          className="rc-card lab-create-card lab-card--order"
+          style={{
+            borderTop: `3.5px solid ${currentTestTheme.leftBorder}`,
+            borderColor: currentTestTheme.border,
+          }}
+        >
+          <div className="lab-card-section-head">
+            <div className="lab-section-icon-box" style={{ background: currentTestTheme.leftBorder, color: "#fff" }}>
+              <UserCheck size={20} />
+            </div>
+            <div className="lab-section-head-text">
+              <h3>Patient & Diagnostic Order</h3>
+              <p>Select diagnostic patient and investigation test profile</p>
+            </div>
+            <span
+              className="lab-step-pill"
+              style={{
+                background: currentTestTheme.bg,
+                border: `1px solid ${currentTestTheme.border}`,
+                color: currentTestTheme.color,
+              }}
+            >
+              Step 1
+            </span>
+          </div>
+
+          <div className="lab-form-2col">
+            <div className="lab-field-group">
+              <label className="lab-field-label">
+                <span className="lab-field-title"><UserCheck size={14} /> Patient Name & Record</span>
+                <select
+                  className="lab-custom-input"
+                  value={selectedPatientKey}
+                  onChange={(event) => setSelectedPatientKey(event.target.value)}
+                >
+                  {patientOptions.map((patient) => (
+                    <option value={patient.key} key={patient.key}>
+                      {patient.name} {patient.phone && patient.phone !== "-" ? `- ${patient.phone}` : ""} ({patient.count} tests)
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="lab-field-group">
+              <label className="lab-field-label">
+                <span className="lab-field-title"><FlaskConical size={14} /> Report / Test Investigation</span>
+                <select
+                  className="lab-custom-input"
+                  value={selectedReportKey}
+                  onChange={(event) => setSelectedReportKey(event.target.value)}
+                  disabled={!selectedPatientKey}
+                >
+                  {reportOptions.map((report) => (
+                    <option value={report.key} key={report.key}>
+                      {report.testName} {report.reported ? "(reported)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+
+          {selectedRow ? (
+            <div className="lab-patient-dossier-strip">
+              <div className="lab-dossier-item">
+                <span className="lab-dossier-lbl">Patient:</span>
+                <strong className="lab-dossier-val">{getPatientName(selectedRow)}</strong>
+              </div>
+              {readFirst(selectedRow, ["patientId", "PatientId", "patient.id", "Patient.Id"], "") ? (
+                <div className="lab-dossier-item">
+                  <span className="lab-dossier-lbl">PID:</span>
+                  <strong className="lab-dossier-val">{readFirst(selectedRow, ["patientId", "PatientId", "patient.id", "Patient.Id"], "")}</strong>
+                </div>
+              ) : null}
+              {readFirst(selectedRow, ["phone", "Phone", "mobile", "Mobile", "patient.phone"], "") ? (
+                <div className="lab-dossier-item">
+                  <span className="lab-dossier-lbl">Phone:</span>
+                  <strong className="lab-dossier-val">{readFirst(selectedRow, ["phone", "Phone", "mobile", "Mobile", "patient.phone"], "")}</strong>
+                </div>
+              ) : null}
+              <div className="lab-dossier-item">
+                <span className="lab-dossier-lbl">Department:</span>
+                <strong className="lab-dossier-val tag-dept">{selectedTemplate.department || "Laboratory"}</strong>
+              </div>
+              {form.bloodGroup || getPatientBloodGroup(selectedRow) ? (
+                <div className="lab-dossier-item">
+                  <span className="lab-dossier-lbl">Blood Group:</span>
+                  <strong className="lab-dossier-val tag-blood">{form.bloodGroup || getPatientBloodGroup(selectedRow)}</strong>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {selectedTemplate.type === "scan" ? (
+            <div className="lab-scan-film-panel">
+              <label className="lab-field-label">
+                <span className="lab-field-title"><FileImage size={14} /> Film / Diagnostic Scan Image</span>
+                <span className="lab-upload-control lab-film-ready">
+                  <FileImage size={16} />
+                  <b>{filmFileName || "Film pending from scan machine"}</b>
+                </span>
+                <small className="lab-field-hint">Film is available after scan/X-Ray completion. Final written report can be saved after review.</small>
+                <span className="lab-film-actions">
+                  <button className="rc-btn ghost" type="button" onClick={downloadFilm} disabled={!(filmFileUrl || sampleFilmUrl)}><Download size={16} /> Download Film</button>
+                  <button className="rc-btn" type="button" onClick={printFilm} disabled={!(filmFileUrl || sampleFilmUrl)}><Printer size={16} /> Print Film</button>
+                </span>
+              </label>
+            </div>
+          ) : null}
+        </div>
+
+        {/* CARD 2: SPECIMEN & PARAMETER CALIBRATION */}
+        {parameterFields.length ? (
+          <div
+            className="rc-card lab-create-card lab-card--params"
+            style={{
+              borderTop: `3.5px solid ${currentTestTheme.leftBorder}`,
+              borderColor: currentTestTheme.border,
+            }}
+          >
+            <div className="lab-card-section-head">
+              <div className="lab-section-icon-box" style={{ background: currentTestTheme.leftBorder, color: "#fff" }}>
+                <TestTube2 size={20} />
+              </div>
+              <div className="lab-section-head-text">
+                <h3>Specimen & Test Measurements</h3>
+                <p>Calibrate observed laboratory readings, units, and reference standards</p>
+              </div>
+              <span
+                className="lab-step-pill"
+                style={{
+                  background: currentTestTheme.bg,
+                  border: `1px solid ${currentTestTheme.border}`,
+                  color: currentTestTheme.color,
+                }}
+              >
+                Step 2
+              </span>
+            </div>
+
+            <div className="lab-form-2col">
+              {parameterFields.map((field) => (
+                <div className="lab-field-group" key={field.key}>
+                  <label className="lab-field-label">
+                    <span className="lab-field-title">
+                      {field.label}
+                      {field.unit ? <span className="lab-unit-tag">({field.unit})</span> : null}
+                    </span>
+                    {field.type === "select" ? (
+                      <select
+                        className="lab-custom-input"
+                        value={form[field.key] || ""}
+                        onChange={(event) => setForm((prev) => ({ ...prev, [field.key]: event.target.value }))}
+                      >
+                        {field.options.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        className="lab-custom-input"
+                        value={form[field.key] || ""}
+                        onChange={(event) => setForm((prev) => ({ ...prev, [field.key]: event.target.value }))}
+                        placeholder={`Enter ${field.label.toLowerCase()}...`}
+                      />
+                    )}
+                    {field.referenceRange ? (
+                      <span className="lab-field-ref-pill">
+                        <Activity size={12} /> Ref: {field.referenceRange}
+                      </span>
+                    ) : null}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {/* CARD 3: CLINICAL FINDINGS & DIAGNOSTIC IMPRESSION */}
+        {observationFields.length ? (
+          <div
+            className="rc-card lab-create-card lab-card--findings"
+            style={{
+              borderTop: `3.5px solid ${currentTestTheme.leftBorder}`,
+              borderColor: currentTestTheme.border,
+            }}
+          >
+            <div className="lab-card-section-head">
+              <div className="lab-section-icon-box" style={{ background: currentTestTheme.leftBorder, color: "#fff" }}>
+                <Microscope size={20} />
+              </div>
+              <div className="lab-section-head-text">
+                <h3>Clinical Findings & Diagnostic Impression</h3>
+                <p>Doctor and pathologist qualitative remarks, findings, and diagnostic impression</p>
+              </div>
+              <span
+                className="lab-step-pill"
+                style={{
+                  background: currentTestTheme.bg,
+                  border: `1px solid ${currentTestTheme.border}`,
+                  color: currentTestTheme.color,
+                }}
+              >
+                Step 3
+              </span>
+            </div>
+
+            <div className="lab-observations-stack">
+              {observationFields.map((field) => (
+                <div className="lab-field-group full-width" key={field.key}>
+                  <label className="lab-field-label">
+                    <span className="lab-field-title">
+                      {field.label}
+                      {field.unit ? <span className="lab-unit-tag">({field.unit})</span> : null}
+                    </span>
+                    <textarea
+                      className="lab-custom-textarea"
+                      value={form[field.key] || ""}
+                      onChange={(event) => setForm((prev) => ({ ...prev, [field.key]: event.target.value }))}
+                      rows={field.rows || 4}
+                      placeholder={`Enter ${field.label.toLowerCase()}...`}
+                    />
+                    {field.referenceRange ? (
+                      <span className="lab-field-ref-pill">
+                        <Activity size={12} /> Ref: {field.referenceRange}
+                      </span>
+                    ) : null}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {/* CARD 4: AUTHORIZATION & ACTIONS BAR */}
+        <div className="rc-card lab-create-card lab-card--actions">
+          <div className="lab-actions-strip">
+            <div className="lab-compliance-info">
+              <ShieldCheck size={20} className="text-emerald" />
+              <div>
+                <strong>NABL Accredited Quality Standard</strong>
+                <p>Verified laboratory diagnostic workflow ready for clinical authentication</p>
+              </div>
+            </div>
+            <div className="lab-page-actions">
+              {canCreateReport ? (
+                <>
+                  <button className="rc-btn primary lab-btn-save" type="button" onClick={() => saveReport()} disabled={saving}><Save size={16} /> Save Report</button>
+                  <button className="rc-btn lab-btn-print" type="button" onClick={() => saveReport({ print: true })} disabled={saving}><Printer size={16} /> Save & Print</button>
+                </>
+              ) : null}
+              <button className="rc-btn ghost" type="button" onClick={() => navigate("/lab/reports")}><FileText size={16} /> View Reports</button>
+            </div>
+          </div>
+        </div>
+
+        {/* CARD 5: LATEST REPORTS FOR PATIENT */}
         {latestPatientReports.length ? (
-          <div className="lab-latest-reports">
+          <div className="rc-card lab-create-card lab-card--history">
             <div className="lab-latest-reports-head">
-              <h3>Latest Reports</h3>
-              <span>{getPatientName(selectedRow)}</span>
+              <div className="lab-history-title-wrap">
+                <FileText size={18} className="text-purple" />
+                <h3>Latest Reports History</h3>
+              </div>
+              <span className="lab-history-patient-badge">{getPatientName(selectedRow)}</span>
             </div>
             <div className="lab-latest-report-list">
               {latestPatientReports.map((report) => (

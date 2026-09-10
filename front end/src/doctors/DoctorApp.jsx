@@ -27,6 +27,7 @@ function DoctorApp() {
         <Route path="schedule" element={<PermissionRoute roleType="doctor" module="My Schedule"><DoctorSchedule selfMode /></PermissionRoute>} />
         <Route path="completion" element={<Completion />} />
         <Route path="profile" element={<UserProfilePage roleType="doctor" />} />
+        <Route path="change-password" element={<Navigate to="/doctor/profile?tab=password" replace />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="dashboard" replace />} />

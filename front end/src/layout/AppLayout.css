@@ -1,30 +1,40 @@
 .layout {
   display: flex;
   min-height: 100vh;
-  background: #f4f7fb;
+  min-height: 100dvh;
+  background: var(--app-gradient-bg) !important;
+  background-attachment: fixed !important;
 }
 
 .main {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: 248px;
+  margin-left: 256px;
   min-width: 0;
   min-height: 100vh;
+  background: transparent !important;
+  transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.main.collapsed,
+.layout.sidebar-collapsed .main {
+  margin-left: 84px;
 }
 
 .content {
   flex: 1;
-  padding: var(--space-4, 16px);
+  padding: 0;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: transparent !important;
 }
 
 @media (max-width: 768px) {
-  .main {
+  .main,
+  .main.collapsed,
+  .layout.sidebar-collapsed .main {
     margin-left: 0;
-  }
-
-  .content {
-    padding: 12px;
   }
 }

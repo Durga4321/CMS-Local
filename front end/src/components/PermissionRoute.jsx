@@ -80,9 +80,14 @@ const getPermissionProfile = (roleType = "admin") => {
   return getRoleProfile(roleType);
 };
 
-const getFallbackPath = (roleType = "admin", profile = {}) => {
+const getFallbackPath = (roleType = "admin", profile = {}, currentModule = "") => {
   const routes = ROLE_FALLBACK_ROUTES[roleType] || ROLE_FALLBACK_ROUTES.admin;
-  return routes.find((route) => hasAnyModulePermission(profile, route.module, "View"))?.to || null;
+  const match = routes.find(
+    (route) =>
+      String(route.module) !== String(currentModule) &&
+      hasAnyModulePermission(profile, route.module, "View")
+  );
+  return match?.to || null;
 };
 
 function PermissionRoute({ roleType, module, children }) {
@@ -90,7 +95,7 @@ function PermissionRoute({ roleType, module, children }) {
   const { loading: permissionsLoading } = useRolePermissionsSync(profile);
 
   const hasSavedPermissions = hasAnySavedModulePermissions(profile);
-  if (roleType === "admin" && !hasSavedPermissions) return children;
+  if (roleType === "admin" && (module === "Dashboard" || !hasSavedPermissions)) return children;
 
   if (permissionsLoading && !hasSavedPermissions) {
     return <div className="app-route-loading">Loading...</div>;
@@ -100,7 +105,9 @@ function PermissionRoute({ roleType, module, children }) {
     : !shouldFailClosedForPermissions(profile);
 
   if (!allowed) {
-    return <Navigate to={getFallbackPath(roleType, profile) || "/dashboard"} replace />;
+    const fallback = getFallbackPath(roleType, profile, module);
+    if (!fallback || fallback === "/dashboard") return children;
+    return <Navigate to={fallback} replace />;
   }
 
   return children;

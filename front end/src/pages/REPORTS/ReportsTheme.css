@@ -1,0 +1,743 @@
+/* ==========================================================================
+   REPORTS MEDICAL & HOSPITALIZED THEME & SURGICAL INSTRUMENT ACTION MODELS
+   ========================================================================== */
+
+/* ── 1. Page Background & Ambient Telemetry ── */
+.report-page,
+.daily-report {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 24px 28px 48px;
+  background: transparent !important;
+  overflow-x: hidden;
+}
+
+/* Medical background container */
+.rep-medical-bg {
+  display: none !important;
+}
+
+/* ECG Track across upper section */
+.rep-ecg-track {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  opacity: 0.45;
+  mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+}
+
+.rep-ecg-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.rep-ecg-line-base {
+  fill: none;
+  stroke: rgba(13, 148, 136, 0.25);
+  stroke-width: 1.6;
+}
+
+.rep-ecg-line-pulse {
+  fill: none;
+  stroke: #0d9488;
+  stroke-width: 2.2;
+  stroke-dasharray: 120 480;
+  animation: repEcgSweep 4.8s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(13, 148, 136, 0.8));
+}
+
+@keyframes repEcgSweep {
+  0% { stroke-dashoffset: 600; }
+  100% { stroke-dashoffset: -600; }
+}
+
+/* Clinical Telemetry Top HUD Bar */
+.rep-telemetry-bar {
+  position: absolute;
+  top: 14px;
+  right: 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.85;
+}
+
+.rep-telemetry-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(13, 148, 136, 0.22);
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  color: #0f766e;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+.rep-telemetry-cross {
+  color: #0d9488;
+  font-weight: 900;
+  font-size: 11px;
+}
+
+.rep-telemetry-wave-icon {
+  color: #0d9488;
+  animation: repPulseScale 2s ease-in-out infinite;
+}
+
+.rep-telemetry-bead-live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: repPulseScale 1.6s ease-in-out infinite;
+}
+
+@keyframes repPulseScale {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+
+/* Medical Cross Watermarks */
+.rep-watermark-cross {
+  position: absolute;
+  font-size: 180px;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(13, 148, 136, 0.03);
+  user-select: none;
+  pointer-events: none;
+}
+
+.rep-watermark-cross--tl {
+  top: -30px;
+  left: -20px;
+}
+
+.rep-watermark-cross--br {
+  bottom: 40px;
+  right: -20px;
+}
+
+/* ── 2. Header & Title Section ── */
+.report-header,
+.header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.rep-header-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rep-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%);
+  border: 1px solid rgba(13, 148, 136, 0.28);
+  color: #0f766e;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  width: fit-content;
+  margin-bottom: 2px;
+}
+
+.rep-header-badge-pulse {
+  color: #0d9488;
+  animation: repPulseScale 2s ease-in-out infinite;
+}
+
+.report-header h2,
+.header h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.report-header p,
+.header p {
+  color: #475569;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.rep-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ── 3. Surgical Instrument Action Buttons ── */
+
+/* A. Surgical Retractor Navigation Scope (Back Button) */
+.report-back.rep-instrument--retractor,
+.revenue-report-page .report-back,
+.doctor-wise-report-page .report-back,
+.daily-report .report-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 11px;
+  border: 1.5px solid #5eead4;
+  background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+  color: #0f766e;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  box-shadow:
+    0 2px 6px rgba(13, 148, 136, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 6px;
+  width: fit-content;
+  position: relative;
+  overflow: hidden;
+}
+
+.report-back:hover {
+  border-color: #0d9488;
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  color: #ffffff;
+  transform: translateX(-2px);
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
+}
+
+.rep-retractor-blade {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0d9488;
+  transition: transform 0.22s ease, color 0.22s ease;
+}
+
+.report-back:hover .rep-retractor-blade {
+  transform: translateX(-3px);
+  color: #ffffff;
+}
+
+/* B. Diagnostic Telemetry Chart Recorder & Data Scribe (Export PDF) */
+.export.rep-instrument--recorder,
+.export {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 42px;
+  height: 42px;
+  box-sizing: border-box;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1.5px solid #7dd3fc;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  color: #0284c7;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  box-shadow:
+    0 2px 8px rgba(2, 132, 199, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  position: relative;
+}
+
+.export:hover {
+  border-color: #0284c7;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  transform: translateY(-1.5px);
+  box-shadow:
+    0 6px 18px rgba(2, 132, 199, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.export:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);
+}
+
+.rep-instrument-grip,
+.rep-recorder-bead,
+.rep-calibrator-bead {
+  display: none !important;
+}
+
+/* Clean Professional Apply Button */
+.report-apply-clean,
+.report-apply.rep-instrument--calibrator,
+.revenue-report-page .report-apply,
+.doctor-wise-report-page .report-apply,
+.daily-report .report-apply {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px !important;
+  height: 44px !important;
+  box-sizing: border-box !important;
+  padding: 0 22px;
+  border-radius: 11px;
+  border: 1px solid #0d9488;
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 3px 10px rgba(13, 148, 136, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  align-self: end;
+  width: auto;
+}
+
+.report-apply-clean:hover:not(:disabled),
+.report-apply:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 16px rgba(13, 148, 136, 0.35);
+}
+
+.report-apply-clean:active:not(:disabled),
+.report-apply:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(13, 148, 136, 0.2);
+}
+
+.report-apply-clean:disabled,
+.report-apply:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Graph Model Switcher */
+.rep-model-switch {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 9px;
+  border: 1px solid #e2e8f0;
+  gap: 3px;
+}
+
+.rep-model-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.rep-model-btn:hover {
+  color: #0f172a;
+}
+
+.rep-model-btn.active {
+  background: #ffffff;
+  color: #0d9488;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+.rep-calibrator-dial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rep-calibrator-bead {
+  width: 6.5px;
+  height: 6.5px;
+  border-radius: 50%;
+  background: #a7f3d0;
+  box-shadow: 0 0 8px #a7f3d0;
+  animation: repPulseScale 1.4s infinite ease-in-out;
+}
+
+.rep-spin {
+  animation: repSpin 1s linear infinite;
+}
+
+@keyframes repSpin {
+  100% { transform: rotate(360deg); }
+}
+
+/* ── 4. Medical Telemetry Stat Summary Cards ── */
+.rep-stats-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.rep-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 4px 16px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rep-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 22px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+.rep-stat-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+}
+
+.rep-stat-icon-wrap.emerald {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #059669;
+  border: 1px solid #86efac;
+}
+
+.rep-stat-icon-wrap.cyan {
+  background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%);
+  color: #0891b2;
+  border: 1px solid #67e8f9;
+}
+
+.rep-stat-icon-wrap.purple {
+  background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+  color: #7e22ce;
+  border: 1px solid #d8b4fe;
+}
+
+.rep-stat-icon-wrap.amber {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #d97706;
+  border: 1px solid #fcd34d;
+}
+
+.rep-stat-icon-wrap.ruby {
+  background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
+  color: #e11d48;
+  border: 1px solid #fda4af;
+}
+
+.rep-stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rep-stat-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rep-stat-value {
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+/* ── 5. Diagnostic Laboratory Filter Panel ── */
+.filter-card,
+.filters {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(200px, 1fr)) 160px;
+  gap: 16px;
+  padding: 20px 22px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  align-items: end;
+  margin-top: 0 !important;
+  margin-bottom: 24px;
+}
+
+.filter-card > div,
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.filter-card label,
+.field label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.rep-filter-aperture {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.filter-card input,
+.filter-card select,
+.field input,
+.field select {
+  width: 100%;
+  min-height: 48px !important;
+  height: 48px !important;
+  box-sizing: border-box !important;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.filter-card input:focus,
+.filter-card select:focus,
+.field input:focus,
+.field select:focus {
+  border-color: #0d9488;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3.5px rgba(13, 148, 136, 0.16);
+}
+
+/* ── 6. Hospital Telemetry Monitor Chart Screen ── */
+.chart-card {
+  position: relative;
+  z-index: 1;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  padding: 24px;
+  margin-top: 0 !important;
+  margin-bottom: 24px;
+}
+
+.rep-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.rep-chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rep-chart-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rep-chart-title-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.15) 0%, rgba(6, 182, 212, 0.1) 100%);
+  color: #0d9488;
+}
+
+.chart-card h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.rep-chart-telemetry-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 750;
+  color: #0f766e;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+}
+
+/* ── 7. Clinical Medical Audit Record Table ── */
+.table-card,
+.table {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  overflow: hidden;
+  padding: 0;
+}
+
+.rep-table-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.rep-table-banner-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 750;
+  color: #1e293b;
+}
+
+.rep-table-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.thead {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #334155;
+  font-weight: 750;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.row {
+  border-bottom: 1px solid #eef2f6;
+  font-size: 13.5px;
+  color: #1e293b;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.row:hover {
+  background: rgba(240, 253, 250, 0.75);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .filter-card,
+  .filters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .report-page,
+  .daily-report {
+    padding: 16px;
+  }
+
+  .filter-card,
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .rep-telemetry-bar {
+    display: none;
+  }
+}

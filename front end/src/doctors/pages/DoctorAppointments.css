@@ -1,143 +1,255 @@
+/* ============================================================
+   DOCTOR APPOINTMENTS — DoctorAppointments.css
+   Authentic Clinical Workstation & Medical Telemetry Theme
+   Realistic Surgical & Diagnostic Instrument Models
+   ============================================================ */
+
 .da-page {
-  padding: 32px;
-  max-width: 1200px;
+  padding: 0;
+  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 22px;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
+/* ── 1. Error / State Notifications ── */
 .da-alert {
   background: #fef2f2;
   border: 1px solid #fecaca;
   color: #991b1b;
-  padding: 16px 20px;
-  border-radius: 12px;
+  padding: 14px 20px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   font-size: 14px;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.06);
+}
+
+.da-alert-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.da-alert-icon {
+  color: #dc2626;
+  flex-shrink: 0;
 }
 
 .da-alert button {
-  background: #991b1b;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   color: #fff;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 6px;
+  border: 1px solid #b91c1c;
+  padding: 7px 18px;
+  border-radius: 999px;
   cursor: pointer;
-  font-weight: 500;
-  transition: background 0.2s;
+  font-weight: 600;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
+  transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .da-alert button:hover {
-  background: #7f1d1d;
+  background: #991b1b;
+  transform: translateY(-1px);
 }
 
 .da-state-card {
   margin: 40px;
-  padding: 40px;
+  padding: 48px;
   text-align: center;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  color: #64748b;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  border-radius: 18px;
+  color: #475569;
   font-size: 16px;
+  font-weight: 500;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
 }
 
+/* ── 2. Clinical Triage Header Console ── */
 .da-header-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fff;
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  gap: 20px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 20px;
+  padding: 22px 28px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.035), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  position: relative;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.da-header-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
+}
+
+.da-header-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.da-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  width: fit-content;
+  border-radius: 6px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  margin-bottom: 3px;
+}
+
+.da-header-pulse-icon {
+  color: #ea580c;
+}
+
+.da-header-badge-text {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #c2410c;
 }
 
 .da-title {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 21px;
+  font-weight: 700;
   color: #0f172a;
-  margin: 0 0 4px 0;
+  margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .da-subtitle {
-  font-size: 14px;
+  font-size: 13.5px;
   color: #64748b;
-  margin: 0;
+  margin: 3px 0 0 0;
 }
 
 .da-header-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
+/* ── 3. Diagnostic Triage Scope (Filter Select) ── */
 .da-filter-group {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.da-filter-icon {
+.da-filter-lens-ring {
   position: absolute;
   left: 12px;
-  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: none;
+  z-index: 2;
+}
+
+.da-filter-icon {
+  color: #ea580c;
 }
 
 .da-filter-select {
-  padding: 10px 16px 10px 38px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  background: #f8fafc;
-  color: #334155;
-  font-size: 14px;
-  font-weight: 500;
+  min-height: 42px;
+  height: 42px;
+  box-sizing: border-box;
+  padding: 0 38px 0 36px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 13.5px;
+  font-weight: 600;
   outline: none;
   cursor: pointer;
-  transition: all 0.2s;
   appearance: none;
-  padding-right: 32px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
+  background-position: calc(100% - 12px) center;
+  background-size: 14px;
+  transition: all 0.2s ease;
 }
 
 .da-filter-select:hover {
-  background-color: #f1f5f9;
+  background-color: #fffaf5;
+  border-color: #fdba74;
 }
 
-.da-filter-select:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+.da-filter-select:focus,
+.da-filter-select:active {
+  border-color: #ea580c;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
 }
 
+/* ── Refresh / Sync Button ── */
 .da-refresh-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #3b82f6;
+  min-height: 42px;
+  height: 42px;
+  box-sizing: border-box;
+  border: 1px solid #0284c7;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border-radius: 12px;
+  padding: 0 18px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.03em;
   cursor: pointer;
-  transition: all 0.2s;
+  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.28);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .da-refresh-btn:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+  border-color: #0369a1;
+  color: #ffffff;
+  transform: translateY(-1.5px);
+  box-shadow: 0 5px 16px rgba(2, 132, 199, 0.4);
 }
 
 .da-refresh-btn:disabled {
-  opacity: 0.7;
+  opacity: 0.55;
   cursor: not-allowed;
+  transform: none;
+}
+
+.da-refresh-icon {
+  color: #ffffff;
+  stroke-width: 2.2;
 }
 
 .da-spin {
@@ -148,40 +260,55 @@
   100% { transform: rotate(360deg); }
 }
 
+/* ── 4. Clinical Workstation Telemetry Queue Table ── */
 .da-table-card {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   overflow: hidden;
+  position: relative;
+  z-index: 2;
+}
+
+.da-table-wrap {
+  width: 100%;
+  overflow-x: auto;
 }
 
 .da-table {
+  min-width: 860px;
   width: 100%;
 }
 
 .da-thead {
   display: grid;
-  grid-template-columns: minmax(60px, 0.4fr) 140px 120px 2fr 1.5fr 140px 140px;
+  grid-template-columns: 65px 140px 110px 1.8fr 1.2fr 130px 140px;
   gap: 16px;
   padding: 16px 24px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-  font-size: 13px;
-  font-weight: 600;
+  background: rgba(248, 250, 252, 0.9);
+  border-bottom: 1.5px solid rgba(226, 232, 240, 0.85);
+  font-size: 0.76rem;
+  font-weight: 800;
   color: #475569;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  align-items: center;
 }
 
 .da-row {
   display: grid;
-  grid-template-columns: minmax(60px, 0.4fr) 140px 120px 2fr 1.5fr 140px 140px;
+  grid-template-columns: 65px 140px 110px 1.8fr 1.2fr 130px 140px;
   gap: 16px;
-  padding: 16px 24px;
-  border-bottom: 1px solid #f1f5f9;
+  padding: 14px 24px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.65);
+  background: rgba(255, 255, 255, 0.35);
+  color: #0f172a;
   align-items: center;
-  transition: background 0.2s;
+  transition: all 0.22s ease;
+  position: relative;
 }
 
 .da-row:last-child {
@@ -189,133 +316,283 @@
 }
 
 .da-row:hover {
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow:
+    inset 4px 0 0 #f97316,
+    0 4px 16px rgba(15, 23, 42, 0.05);
+}
+
+/* Empty queue state */
+.da-empty-state {
+  padding: 56px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.da-empty-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1.5px solid #fed7aa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  box-shadow: 0 6px 18px rgba(249, 115, 22, 0.12);
+}
+
+.da-empty-icon {
+  color: #ea580c;
+}
+
+.da-empty-title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.da-empty-desc {
+  margin: 0 0 16px;
+  font-size: 13.5px;
+  color: #64748b;
+  max-width: 440px;
+  line-height: 1.5;
+}
+
+.da-empty-reset-btn {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  padding: 7px 18px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.da-empty-reset-btn:hover {
+  background: #2563eb;
+  color: #ffffff;
 }
 
 .da-datetime {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .da-date {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13.5px;
+  font-weight: 600;
   color: #1e293b;
 }
 
 .da-time {
-  font-size: 13px;
+  font-size: 12.5px;
+  font-weight: 500;
   color: #64748b;
 }
 
 .da-token {
-  font-size: 14px;
-  font-weight: 600;
-  color: #3b82f6;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #2563eb;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
 }
 
 .da-name {
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: #0f172a;
 }
 
 .da-age {
-  font-size: 14px;
+  font-size: 13.5px;
   color: #64748b;
+  font-weight: 500;
 }
 
+/* Status Badges */
 .da-status {
   display: inline-flex;
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 99px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: capitalize;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
 }
 
 .da-status.status--waiting {
   background: #fef3c7;
   color: #b45309;
+  border-color: #fde68a;
 }
 
 .da-status.status--inprogress {
   background: #f3e8ff;
   color: #7e22ce;
+  border-color: #e9d5ff;
 }
 
 .da-status.status--completed {
-  background: #dcfce3;
-  color: #166534;
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #bbf7d0;
 }
 
 .da-status.status--prescription {
   background: #e0f2fe;
   color: #0369a1;
+  border-color: #bae6fd;
+}
+
+/* Cell Alignments */
+.da-sno-head,
+.da-sno-cell,
+.da-thead > span:first-child,
+.da-row > span:first-child {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.da-token-head,
+.da-token-cell,
+.da-thead > span:nth-child(3),
+.da-row > span:nth-child(3) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.da-status-head,
+.da-status-cell,
+.da-thead > span:nth-child(6),
+.da-row > span:nth-child(6) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.da-actions-head,
+.da-thead > span:last-child {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin: 0 auto !important;
 }
 
 .da-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  min-width: 126px;
+  justify-content: center !important;
+  gap: 10px;
+  min-width: 130px;
+  width: 100% !important;
+  margin: 0 auto !important;
   overflow: visible;
 }
 
+/* ── 7. Medical Instrumental Action Buttons (Realistic Models) ── */
 .da-act-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  color: #2563eb;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #e2e8f0 100%);
   cursor: pointer;
-  transition: all 0.2s;
-}
-
-.da-act-btn svg {
-  display: block;
-  color: currentColor;
-  stroke: currentColor;
-  stroke-width: 2.4;
-}
-
-.da-act-btn:nth-child(2) {
-  color: #0f766e;
-}
-
-.da-act-btn--primary,
-.da-act-btn:nth-child(3) {
-  color: #7c3aed;
-}
-
-.da-act-btn:hover:not(:disabled) {
-  background: #f1f5f9;
-  color: #1e293b;
-  border-color: #cbd5e1;
+  box-shadow:
+    0 2px 6px rgba(15, 23, 42, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(148, 163, 184, 0.3);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  padding: 0;
 }
 
 .da-act-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
+  filter: grayscale(0.6);
+  box-shadow: none;
 }
 
+/* ── Action Buttons ── */
+.da-act-btn--scope {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1.5px solid #7dd3fc;
+  color: #0284c7;
+  box-shadow: 0 2px 6px rgba(14, 165, 233, 0.16);
+}
+
+.da-act-btn--scope:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border-color: #0284c7;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 14px rgba(14, 165, 233, 0.38);
+}
+
+.da-act-btn--chart {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border: 1.5px solid #d8b4fe;
+  color: #7e22ce;
+  box-shadow: 0 2px 6px rgba(147, 51, 234, 0.16);
+}
+
+.da-act-btn--chart:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
+  border-color: #9333ea;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 14px rgba(147, 51, 234, 0.38);
+}
+
+.da-act-btn--laser,
 .da-act-btn--primary {
-  color: #3b82f6;
-  border-color: #bfdbfe;
-  background: #eff6ff;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 1.5px solid #34d399;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35);
 }
 
+.da-act-btn--laser:hover:not(:disabled),
 .da-act-btn--primary:hover:not(:disabled) {
-  background: #3b82f6;
-  color: #fff;
-  border-color: #3b82f6;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  border-color: #10b981;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.5);
 }
 
 .da-empty-row {
@@ -323,22 +600,319 @@
   text-align: center;
   color: #64748b;
   font-size: 15px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
 }
 
+/* ── 8. Consultation Notes Modal & Instruments ── */
+.da-notes-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: daFadeIn 0.2s ease-out;
+}
+
+@keyframes daFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.da-notes-modal {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow:
+    0 24px 48px -12px rgba(15, 23, 42, 0.2),
+    0 0 0 1px rgba(203, 213, 225, 0.8);
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: daSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes daSlideUp {
+  from { transform: translateY(16px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.da-notes-head {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.da-notes-head-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.da-notes-head-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dbeafe;
+}
+
+.da-notes-head h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.da-notes-head p {
+  margin: 2px 0 0 0;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.da-notes-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.da-notes-close-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.da-notes-body {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.da-notes-summary-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.da-notes-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.da-notes-summary-item svg {
+  color: #3b82f6;
+}
+
+.da-notes-loading {
+  padding: 48px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #3b82f6;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.da-notes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.da-notes-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.da-notes-wide {
+  grid-column: 1 / -1;
+}
+
+.da-notes-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.da-notes-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.da-notes-highlight {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.da-notes-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.da-notes-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  color: #334155;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+}
+
+.da-notes-empty {
+  text-align: center;
+  padding: 36px 20px;
+  background: #f8fafc;
+  border-radius: 16px;
+  border: 1px dashed #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.da-notes-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: #eff6ff;
+  color: #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.da-notes-empty h4 {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.da-notes-empty p {
+  margin: 0;
+  font-size: 13.5px;
+  color: #64748b;
+  max-width: 380px;
+  line-height: 1.45;
+}
+
+.da-notes-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #f1f5f9;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.da-notes-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+}
+
+.da-notes-btn--secondary {
+  background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+  color: #0f766e;
+  border: 1.5px solid #5eead4;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(13, 148, 136, 0.12);
+}
+
+.da-notes-btn--secondary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  color: #ffffff;
+  border-color: #0d9488;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+}
+
+.da-notes-btn--primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border-color: #3b82f6;
+  box-shadow:
+    0 4px 12px rgba(37, 99, 235, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.da-notes-btn--primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
+}
+
+.da-notes-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* ── 9. Responsive Breakpoints ── */
 @media (max-width: 768px) {
   .da-page {
-    padding: 0;
     gap: 16px;
-  }
-
-  .da-alert {
-    gap: 12px;
-    padding: 12px 14px;
-  }
-
-  .da-alert button {
-    flex: 0 0 auto;
   }
 
   .da-header-card {
@@ -360,8 +934,13 @@
     width: 100%;
   }
 
-  .da-refresh-btn {
+  .da-refresh-btn.da-instrument--calibrator {
     justify-content: center;
+  }
+
+  .da-calibrator-body {
+    justify-content: center;
+    width: 100%;
   }
 
   .da-thead,
@@ -388,5 +967,20 @@
 
   .da-empty-row {
     padding: 32px 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .da-notes-modal {
+    max-height: 95vh;
+  }
+  .da-notes-grid {
+    grid-template-columns: 1fr;
+  }
+  .da-notes-footer {
+    flex-direction: column;
+  }
+  .da-notes-btn {
+    width: 100%;
   }
 }

@@ -1,49 +1,76 @@
 /* ============================================================
    DOCTOR SIDEBAR — DoctorSidebar.css
-   Light teal sidebar aligned with Admin theme
+   Transparent Frosted Glassmorphic Sidebar with Medical Instrument
+   Multi-Colored Navigation System
    ============================================================ */
 
 /* ── Sidebar container ── */
+/* ── Sidebar container ── */
 .dr-sidebar {
-  width: 220px;
-  min-width: 220px;
+  width: 240px;
+  min-width: 240px;
   height: 100vh;
-  background: #f8fafc;
-  border-right: 1px solid #e5e7eb;
+  /* Reference ice-blue background theme */
+  background: linear-gradient(180deg, #e6f2fd 0%, #edf6fe 100%) !important;
+  border-right: 1px solid #d4e7f8 !important;
   display: flex;
   flex-direction: column;
   position: sticky;
   top: 0;
   overflow: hidden;
-  transition: width 0.25s ease;
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 2px 0 16px rgba(186, 215, 243, 0.25) !important;
+  z-index: 100;
+  position: relative;
+}
+
+.dr-sidebar::before {
+  display: none !important;
 }
 
 /* ────────────────────────
-   BRAND / LOGO
+   BRAND / LOGO SECTION
    ──────────────────────── */
 .dr-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin: 14px 12px 0;
-  padding: 14px 12px;
-  border-bottom: 1px solid #e5e7eb;
-  border: 1px solid #99d4d9;
-  border-radius: 12px;
-  background: #e4f7f8;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.75) !important;
+  border: 1px solid rgba(203, 226, 248, 0.8) !important;
+  box-shadow: 0 4px 14px rgba(186, 215, 243, 0.2) !important;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dr-brand:hover {
+  transform: translateY(-1px);
+  background: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(186, 215, 243, 0.3) !important;
+}
+
+.dr-brand .dr-clinic-logo {
+  background: #ffffff !important;
+  border: 1.5px solid #ffffff !important;
+  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.16) !important;
 }
 
 .dr-brand-icon {
-  width: 38px;
-  height: 38px;
-  background: #0f9d9d;
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #0f9d9d 0%, #0d7f7f 100%);
   color: #fff;
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(15, 157, 157, 0.25);
 }
 
 .dr-clinic-logo {
@@ -53,10 +80,10 @@
   flex-direction: column;
   gap: 1px;
   border: 1px solid #e4ecf7;
-  border-radius: 10px;
+  border-radius: 12px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   color: #10b981;
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.07);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
 }
 
 .dr-clinic-logo svg {
@@ -71,9 +98,9 @@
 }
 
 .dr-clinic-logo small {
-  max-width: 36px;
+  max-width: 38px;
   color: #1d65c1;
-  font-size: 6px;
+  font-size: 6.5px;
   font-weight: 900;
   line-height: 1;
   overflow: hidden;
@@ -94,161 +121,287 @@
   display: none;
 }
 
-.dr-clinic-logo--green {
-  color: #16a34a;
-}
-
-.dr-clinic-logo--sky {
-  color: #0ea5e9;
-}
-
-.dr-clinic-logo--amber {
-  color: #f59e0b;
-}
-
-.dr-clinic-tooth-svg {
-  color: #1d7ff2;
-}
-
 .dr-brand-name {
   margin: 0;
   font-size: 14px;
-  font-weight: 900;
-  color: #111827;
-  line-height: 1.15;
+  font-weight: 800;
+  color: #071120;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
 }
 
 .dr-brand-sub {
-  margin: 0 0 3px;
-  font-size: 10px;
-  color: #0f6f76;
+  margin: 0 0 2px;
+  font-size: 9.5px;
+  color: #0369a1;
   font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 0.6px;
 }
 
 .dr-brand-branch {
-  margin: 3px 0 0;
+  margin: 2px 0 0;
   font-size: 11px;
-  color: #4b6078;
+  color: #0284c7;
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 /* ────────────────────────
-   NAVIGATION
+   NAVIGATION ITEMS
    ──────────────────────── */
 .dr-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 16px 12px;
-  flex: 1;           /* pushes profile to the bottom */
+  gap: 6px;
+  padding: 16px 10px;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  position: relative;
+  z-index: 1;
 }
 
 .dr-nav-link {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 14px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 700;
+  min-height: 48px;
+  color: #334155;
   text-decoration: none;
-  transition: background 0.15s, color 0.15s;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
+  position: relative;
+  user-select: none;
 }
 
-.dr-nav-link svg {
+/* Reference Circular Icon Container */
+.dr-nav-icon-bezel {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  border-radius: 50% !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  border: none !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.dr-nav-icon {
   flex: 0 0 auto;
-  transition: color 0.15s ease, stroke-width 0.15s ease;
-}
-
-.dr-nav-link:nth-child(5n + 1) svg {
-  color: #0ea5e9;
-}
-
-.dr-nav-link:nth-child(5n + 2) svg {
-  color: #0f9d9d;
-}
-
-.dr-nav-link:nth-child(5n + 3) svg {
-  color: #7c3aed;
-}
-
-.dr-nav-link:nth-child(5n + 4) svg {
-  color: #f59e0b;
-}
-
-.dr-nav-link:nth-child(5n + 5) svg {
-  color: #16a34a;
+  transition: transform 0.22s ease, stroke-width 0.22s ease;
 }
 
 .dr-nav-link:hover {
-  background: #eef6f6;
-  color: #0f9d9d;
+  background: rgba(255, 255, 255, 0.65) !important;
+  border-color: rgba(255, 255, 255, 0.8) !important;
+  transform: translateX(3px);
+  box-shadow: 0 2px 8px rgba(186, 215, 243, 0.35);
+}
+
+.dr-nav-link:hover .dr-nav-icon-bezel {
+  transform: scale(1.06);
 }
 
 .dr-nav-link.active {
-  background: #dff3f3;
-  color: #0f9d9d;
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08) !important;
+  transform: translateX(2px);
+}
+
+.dr-nav-label {
+  flex: 1;
+  letter-spacing: -0.01em;
+  font-size: 14.5px;
   font-weight: 700;
 }
 
-.dr-nav-link.active svg {
-  stroke-width: 2.6;
+/* Clinical Capsule Tag */
+.dr-nav-tag {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+/* Hide active bar pill */
+.dr-nav-active-pill {
+  display: none !important;
+}
+
+/* ==========================================================================
+   COLOR SCHEMES (MATCHING PASTEL CIRCULAR CONTAINER & BOLD LABEL)
+   ========================================================================== */
+
+/* 1. CYAN (Dashboard) */
+.dr-nav-link--cyan .dr-nav-icon-bezel {
+  background: #e0f2fe !important;
+  color: #0284c7 !important;
+}
+.dr-nav-link--cyan .dr-nav-label {
+  color: #0369a1 !important;
+  font-weight: 700;
+}
+.dr-nav-link--cyan .dr-nav-tag {
+  background: #e0f2fe;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+}
+
+/* 2. ROYAL BLUE (Consultation) */
+.dr-nav-link--blue .dr-nav-icon-bezel {
+  background: #dbeafe !important;
+  color: #2563eb !important;
+}
+.dr-nav-link--blue .dr-nav-label {
+  color: #1d4ed8 !important;
+  font-weight: 700;
+}
+.dr-nav-link--blue .dr-nav-tag {
+  background: #dbeafe;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+/* 3. PURPLE (Prescription) */
+.dr-nav-link--purple .dr-nav-icon-bezel {
+  background: #f3e8ff !important;
+  color: #9333ea !important;
+}
+.dr-nav-link--purple .dr-nav-label {
+  color: #7e22ce !important;
+  font-weight: 700;
+}
+.dr-nav-link--purple .dr-nav-tag {
+  background: #f3e8ff;
+  color: #9333ea;
+  border: 1px solid #e9d5ff;
+}
+
+/* 4. AMBER (Appointments) */
+.dr-nav-link--amber .dr-nav-icon-bezel {
+  background: #fef3c7 !important;
+  color: #d97706 !important;
+}
+.dr-nav-link--amber .dr-nav-label {
+  color: #b45309 !important;
+  font-weight: 700;
+}
+.dr-nav-link--amber .dr-nav-tag {
+  background: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+/* 5. EMERALD (My Schedule) */
+.dr-nav-link--emerald .dr-nav-icon-bezel {
+  background: #d1fae5 !important;
+  color: #059669 !important;
+}
+.dr-nav-link--emerald .dr-nav-label {
+  color: #047857 !important;
+  font-weight: 700;
+}
+.dr-nav-link--emerald .dr-nav-tag {
+  background: #d1fae5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+/* 6. RED */
+.dr-nav-link--red .dr-nav-icon-bezel {
+  background: #ffe4e6 !important;
+  color: #dc2626 !important;
+}
+.dr-nav-link--red .dr-nav-label {
+  color: #b91c1c !important;
+  font-weight: 700;
+}
+.dr-nav-link--red .dr-nav-tag {
+  background: #ffe4e6;
+  color: #dc2626;
+  border: 1px solid #fecdd3;
 }
 
 /* ────────────────────────
-   DOCTOR PROFILE (bottom)
+   DOCTOR PROFILE (BOTTOM)
    ──────────────────────── */
 .dr-sidebar-profile {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 16px 16px 20px;
-  border-top: 1px solid #e5e7eb;
+  gap: 12px;
+  margin: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  border: 1.5px solid #bae6fd;
+  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.07);
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dr-sidebar-profile:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.12);
+  border-color: #7dd3fc;
 }
 
 .dr-sidebar-avatar {
-  width: 38px;
-  height: 38px;
-  background: #dff3f3;
-  color: #0f9d9d;
-  border-radius: 50%;
-  font-size: 13px;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  color: #ffffff;
+  border-radius: 12px;
+  font-size: 14px;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
 }
 
 .dr-sidebar-profile-info {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 1.5px;
   overflow: hidden;
 }
 
 .dr-sidebar-profile-name {
   margin: 0;
   font-size: 13px;
-  font-weight: 700;
-  color: #111827;
+  font-weight: 800;
+  color: #0f172a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: -0.2px;
 }
 
 .dr-sidebar-profile-role {
   margin: 0;
-  font-size: 10px;
-  color: #6b7280;
+  font-size: 10.5px;
+  color: #64748b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -257,7 +410,7 @@
 .dr-sidebar-profile-branch {
   margin: 0;
   font-size: 10px;
-  color: #0f6f76;
+  color: #0f766e;
   font-weight: 800;
   white-space: nowrap;
   overflow: hidden;
@@ -265,19 +418,69 @@
 }
 
 .dr-sidebar-profile-status {
-  margin: 3px 0 0;
+  margin: 2px 0 0;
   font-size: 10px;
-  color: #0f9d9d;
+  font-weight: 700;
+  color: #10b981;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .dr-status-dot {
   width: 7px;
   height: 7px;
-  background: #0f9d9d;
+  background: #10b981;
   border-radius: 50%;
   display: inline-block;
   flex-shrink: 0;
+  box-shadow: 0 0 8px #10b981;
+  position: relative;
+}
+
+.dr-status-dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid #10b981;
+  opacity: 0.6;
+  animation: dr-pulse 2s infinite ease-out;
+}
+
+@keyframes dr-pulse {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* ────────────────────────
+   BOTTOM COLLAPSE BUTTON (ADMIN MATCHED)
+   ──────────────────────── */
+.dr-sidebar-bottom {
+  padding: 10px 12px 14px;
+  margin-top: auto;
+  border-top: 1px solid rgba(203, 226, 248, 0.8);
+}
+
+.dr-collapse-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(203, 226, 248, 0.7);
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dr-collapse-btn:hover {
+  background: #ffffff;
+  border-color: #bfdbfe;
+  color: #0f172a;
+  box-shadow: 0 2px 8px rgba(186, 215, 243, 0.4);
 }

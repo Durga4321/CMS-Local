@@ -10,6 +10,7 @@ import {
   X,
   Camera,
   RotateCw,
+  Activity,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AuthImage, {
@@ -1452,6 +1453,17 @@ function Doctors() {
               <div className="doctor-card-inner">
                 <div className="doctor-card-face doctor-card-front">
                   <div className="doctor-card-corner" />
+                  <div className="doctor-card-ecg-bg">
+                    <svg viewBox="0 0 500 100" preserveAspectRatio="none" className="card-ecg-svg">
+                      <path
+                        d="M0,50 L100,50 L110,35 L120,70 L130,15 L145,85 L155,50 L170,50 L320,50 L330,35 L340,70 L350,15 L365,85 L375,50 L390,50 L500,50"
+                        fill="none"
+                        stroke="rgba(16, 185, 129, 0.4)"
+                        strokeWidth="2.8"
+                        className="card-ecg-path"
+                      />
+                    </svg>
+                  </div>
                   <button
                     type="button"
                     className="doctor-card-flip-btn"
@@ -1538,6 +1550,17 @@ function Doctors() {
                 </div>
 
                 <div className="doctor-card-face doctor-card-back">
+                  <div className="doctor-card-ecg-bg">
+                    <svg viewBox="0 0 500 100" preserveAspectRatio="none" className="card-ecg-svg">
+                      <path
+                        d="M0,50 L100,50 L110,35 L120,70 L130,15 L145,85 L155,50 L170,50 L320,50 L330,35 L340,70 L350,15 L365,85 L375,50 L390,50 L500,50"
+                        fill="none"
+                        stroke="rgba(16, 185, 129, 0.4)"
+                        strokeWidth="2.8"
+                        className="card-ecg-path"
+                      />
+                    </svg>
+                  </div>
                   <button
                     type="button"
                     className="doctor-card-flip-btn"

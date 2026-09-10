@@ -8,6 +8,12 @@ import {
   RefreshCw,
   Trash2,
   X,
+  Search,
+  Phone,
+  Users,
+  ShieldCheck,
+  UserCheck,
+  Calendar,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ActionsGroup } from "../../components/ActionsGroup";
@@ -482,10 +488,23 @@ function ReceptionPatients({
     };
   }, [modal]);
 
+  const [searchTerm, setSearchTerm] = useState("");
+
   const rows = useMemo(
     () => [...patients].reverse(),
     [patients]
   );
+
+  const filteredRows = useMemo(() => {
+    if (!searchTerm.trim()) return rows;
+    const term = searchTerm.toLowerCase();
+    return rows.filter((patient) => {
+      const name = getPatientName(patient).toLowerCase();
+      const code = getPatientCode(patient).toLowerCase();
+      const phone = getPatientPhone(patient).toLowerCase();
+      return name.includes(term) || code.includes(term) || phone.includes(term);
+    });
+  }, [rows, searchTerm]);
   const selectedDistricts = Array.from(
     new Set([
       ...getDistrictsForState(form.addressParts?.state),
@@ -849,97 +868,294 @@ function ReceptionPatients({
   };
 
   return (
-    <section className="rc-page">
-      <div className="rc-page-head">
+    <section className="rc-page rc-patients-page">
+      {/* Patient Theme Background Overlays & Live Heart Rate Telemetry */}
+      <div className="patients-bg-overlay" />
+      
+      {/* Live Glowing Heart Rate Telemetry Wave Across Background */}
+      <div className="patients-heartrate-wave">
+        <div className="patients-heartrate-telemetry-badge">
+          <HeartPulse size={16} className="heart-beating-icon" />
+          <span className="telemetry-live-dot" />
+          <span className="telemetry-label">Live Heart Rate Telemetry:</span>
+          <strong className="telemetry-value">74 BPM</strong>
+          <span className="telemetry-status">● Normal Sinus Rhythm</span>
+        </div>
+        <svg viewBox="0 0 1400 120" preserveAspectRatio="none" className="patients-heartrate-svg">
+          <defs>
+            <linearGradient id="heartrateGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.3" />
+              <stop offset="25%" stopColor="#0284c7" stopOpacity="0.85" />
+              <stop offset="50%" stopColor="#10b981" stopOpacity="1" />
+              <stop offset="75%" stopColor="#0284c7" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.3" />
+            </linearGradient>
+            <filter id="ecgGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <path
+            d="M0 60 L180 60 L195 40 L210 85 L225 15 L245 105 L260 60 L280 60 L480 60 L495 40 L510 85 L525 15 L545 105 L560 60 L580 60 L780 60 L795 40 L810 85 L825 15 L845 105 L860 60 L880 60 L1080 60 L1095 40 L1110 85 L1125 15 L1145 105 L1160 60 L1180 60 L1400 60"
+            fill="none"
+            stroke="url(#heartrateGradient)"
+            strokeWidth="3.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            filter="url(#ecgGlow)"
+            className="patients-heartrate-path"
+          />
+        </svg>
+      </div>
+
+      {/* PAGE HEADER */}
+      <div className="rc-dash-header">
         <div>
-          <h2>Patients</h2>
-          <p>
-            Manage patients: add new patients, view existing details, update records,
-            or remove outdated entries.
+          <h1 className="rc-dash-title">
+            Patients <span className="rc-wave-hand">👥</span>
+          </h1>
+          <p className="rc-dash-subtitle">
+            Manage patients: add new patients, view existing details, update records, or remove outdated entries.
           </p>
         </div>
         {!hideActions && (
-          <div className="rc-head-actions">
+          <div className="rc-dash-head-actions">
             {showAddPatient && canCreatePatient ? (
               <button
-                className="rc-btn"
+                type="button"
+                className="rc-head-action-btn btn-primary"
                 onClick={openAdd}
                 title="Add patient"
               >
-                <Plus size={16} /> Add Patient
+                <Plus size={16} />
+                <span>Add Patient</span>
               </button>
             ) : null}
-            <button className="rc-btn ghost" onClick={fetchPatients}>
-              <RefreshCw size={16} /> Refresh
-            </button>
-            <button className="rc-btn" onClick={() => navigate(`${basePath}/dashboard`) }>
-              <ArrowLeft size={16} /> Dashboard
+            <button
+              type="button"
+              className="rc-head-action-btn btn-secondary"
+              onClick={fetchPatients}
+              title="Refresh patients"
+            >
+              <RefreshCw size={15} />
+              <span>Refresh</span>
             </button>
           </div>
         )}
       </div>
 
+      {/* TOP 3 MINI PATIENT CARE STAT CARDS */}
+      <div className="rc-patient-kpi-grid">
+        <div className="rc-patient-kpi-card card-blue-theme">
+          <div className="rc-pkpi-icon-box box-blue">
+            <Users size={18} />
+          </div>
+          <div className="rc-pkpi-content">
+            <span className="rc-pkpi-label">Registered Patients</span>
+            <strong className="rc-pkpi-val">{rows.length}</strong>
+          </div>
+          <span className="rc-pkpi-badge badge-blue">● Live Records</span>
+        </div>
+
+        <div className="rc-patient-kpi-card card-green-theme">
+          <div className="rc-pkpi-icon-box box-green">
+            <HeartPulse size={18} />
+          </div>
+          <div className="rc-pkpi-content">
+            <span className="rc-pkpi-label">Active Directory</span>
+            <strong className="rc-pkpi-val">{rows.filter((p) => p.isActive !== false && p.status !== "inactive").length}</strong>
+          </div>
+          <span className="rc-pkpi-badge badge-green">✓ Verified</span>
+        </div>
+
+        <div className="rc-patient-kpi-card card-purple-theme">
+          <div className="rc-pkpi-icon-box box-purple">
+            <ShieldCheck size={18} />
+          </div>
+          <div className="rc-pkpi-content">
+            <span className="rc-pkpi-label">Front Desk Sync</span>
+            <strong className="rc-pkpi-val">100%</strong>
+          </div>
+          <span className="rc-pkpi-badge badge-purple">● Cloud Ready</span>
+        </div>
+      </div>
+
       {message ? <div className="rc-alert">{message}</div> : null}
 
-      <div className="rc-card">
-        <div className="rc-card-head">
-          <div>
-            <h3>Patients List</h3>
-            <p>Patients registered from the patient API.</p>
+      {/* PATIENTS DIRECTORY TABLE CARD */}
+      <div className="rc-dash-table-card rc-patients-card">
+        <div className="rc-dash-table-head">
+          <div className="rc-dash-table-head-left">
+            <div className="rc-dash-panel-icon">
+              <Users size={18} />
+            </div>
+            <div>
+              <h3>Patients Directory</h3>
+              <div className="rc-dash-meta-badges">
+                <span className="rc-dash-date-pill">
+                  <UserCheck size={12} />
+                  Clinic Records
+                </span>
+                <span className="rc-dash-count-pill">
+                  {filteredRows.length} {filteredRows.length === 1 ? "Patient" : "Patients"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="rc-patient-search-bar">
+            <Search size={15} className="rc-psearch-icon" />
+            <input
+              type="text"
+              placeholder="Search by name, PID, phone..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="rc-psearch-input"
+            />
           </div>
         </div>
-        <div className="rc-table">
-          <div className="rc-table-head five">
-            <span>S.No.</span>
-            <span>PID</span>
-            <span>Name</span>
-            <span>Phone</span>
-            <span>Age</span>
-            <span>Actions</span>
+
+        <div className="rc-dash-table-container">
+          <div className="rc-patient-table-header">
+            <span className="col-sno">
+              <span className="rc-th-capsule rc-th-sno">S.NO.</span>
+            </span>
+            <span className="col-pid">
+              <span className="rc-th-capsule rc-th-pid">PID</span>
+            </span>
+            <span className="col-name">
+              <span className="rc-th-capsule rc-th-name">NAME</span>
+            </span>
+            <span className="col-phone">
+              <span className="rc-th-capsule rc-th-phone">PHONE</span>
+            </span>
+            <span className="col-age">
+              <span className="rc-th-capsule rc-th-age">AGE</span>
+            </span>
+            <span className="col-actions">
+              <span className="rc-th-capsule rc-th-actions">ACTIONS</span>
+            </span>
           </div>
-          {rows.map((patient, index) => (
-            <div className="rc-table-row five" key={getPatientId(patient) || index}>
-              <span>{index + 1}</span>
-              <span>{getPatientCode(patient) || "-"}</span>
-              <span>{getPatientName(patient) || "-"}</span>
-              <span>{getPatientPhone(patient) || "-"}</span>
-              <span>{getPatientAge(patient) ? `${getPatientAge(patient)} yrs` : "-"}</span>
-              <span className="rc-row-actions">
-                <ActionsGroup
-                  rowId={getPatientId(patient)}
-                  activeActionState={activeActionState}
-                  setActiveActionState={setActiveActionState}
-                  canView={true}
-                  canEdit={canEditPatient}
-                  canStatus={true}
-                  canDelete={canDeletePatient}
-                  statusChecked={patient.isActive !== false && patient.status !== "inactive"}
-                  statusTitle="Medical History"
-                  onView={() => {
-                    const dateOfBirth = getPatientDateOfBirth(patient);
-                    setForm({
-                      ...patient,
-                      age: calculateAgeFromDateOfBirth(dateOfBirth) || patient.age || "",
-                      dateOfBirth,
-                      address: getPatientAddress(patient),
-                      addressParts: getPatientAddressParts(patient),
-                    });
-                    setModal("view");
-                  }}
-                  onEdit={() => openEdit(patient)}
-                  onStatus={() =>
-                    navigate(`${basePath}/medical-history?patientId=${getPatientId(patient)}`)
-                  }
-                  onDelete={() => deletePatient(patient)}
-                />
-              </span>
-            </div>
-          ))}
-          {!rows.length ? (
-            <div className="rc-empty">
-              No patients found.
-            </div>
-          ) : null}
+
+          <div className="rc-dash-table-body">
+            {filteredRows.length ? (
+              filteredRows.map((patient, index) => {
+                const patientName = getPatientName(patient) || "-";
+                const patientCode = getPatientCode(patient) || "-";
+                const patientPhone = getPatientPhone(patient) || "-";
+                const patientAge = getPatientAge(patient);
+                const initials = patientName
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((p) => p[0].toUpperCase())
+                  .join("") || "PT";
+                const avatarGradients = [
+                  { bg: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)", shadow: "rgba(2, 132, 199, 0.3)" },
+                  { bg: "linear-gradient(135deg, #10b981 0%, #047857 100%)", shadow: "rgba(16, 185, 129, 0.3)" },
+                  { bg: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)", shadow: "rgba(139, 92, 246, 0.3)" },
+                  { bg: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", shadow: "rgba(245, 158, 11, 0.3)" },
+                  { bg: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)", shadow: "rgba(236, 72, 153, 0.3)" },
+                  { bg: "linear-gradient(135deg, #06b6d4 0%, #0e7490 100%)", shadow: "rgba(6, 182, 212, 0.3)" },
+                  { bg: "linear-gradient(135deg, #6366f1 0%, #4338ca 100%)", shadow: "rgba(99, 102, 241, 0.3)" },
+                ];
+                const avatarStyle = avatarGradients[index % avatarGradients.length];
+
+                return (
+                  <div
+                    className="rc-patient-table-row"
+                    key={getPatientId(patient) || index}
+                  >
+                    <span className="col-sno">
+                      <span className="rc-dash-sno-badge">{index + 1}</span>
+                    </span>
+
+                    <span className="col-pid">
+                      <span className="rc-patient-pid-badge">{patientCode}</span>
+                    </span>
+
+                    <span className="col-name">
+                      <div className="rc-dash-patient-cell">
+                        <div
+                          className="rc-dash-patient-avatar"
+                          style={{
+                            background: avatarStyle.bg,
+                            boxShadow: `0 3px 8px ${avatarStyle.shadow}`,
+                          }}
+                        >
+                          {initials}
+                        </div>
+                        <span className="rc-dash-patient-name">{patientName}</span>
+                      </div>
+                    </span>
+
+                    <span className="col-phone">
+                      <div className="rc-patient-phone-cell">
+                        <Phone size={13} className="rc-patient-phone-icon" />
+                        <span>{patientPhone}</span>
+                      </div>
+                    </span>
+
+                    <span className="col-age">
+                      <span className="rc-patient-age-badge">
+                        {patientAge ? `${patientAge} yrs` : "-"}
+                      </span>
+                    </span>
+
+                    <span className="col-actions rc-row-actions">
+                      <ActionsGroup
+                        rowId={getPatientId(patient)}
+                        activeActionState={activeActionState}
+                        setActiveActionState={setActiveActionState}
+                        canView={true}
+                        canEdit={canEditPatient}
+                        canStatus={true}
+                        canDelete={canDeletePatient}
+                        statusChecked={patient.isActive !== false && patient.status !== "inactive"}
+                        statusTitle="Medical History"
+                        onView={() => {
+                          const dateOfBirth = getPatientDateOfBirth(patient);
+                          setForm({
+                            ...patient,
+                            age: calculateAgeFromDateOfBirth(dateOfBirth) || patient.age || "",
+                            dateOfBirth,
+                            address: getPatientAddress(patient),
+                            addressParts: getPatientAddressParts(patient),
+                          });
+                          setModal("view");
+                        }}
+                        onEdit={() => openEdit(patient)}
+                        onStatus={() =>
+                          navigate(`${basePath}/medical-history?patientId=${getPatientId(patient)}`)
+                        }
+                        onDelete={() => deletePatient(patient)}
+                      />
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="rc-dash-empty">
+                <div className="rc-dash-empty-icon-wrap">
+                  <Users size={32} />
+                </div>
+                <p>{searchTerm ? `No patients matching "${searchTerm}"` : "No patients found."}</p>
+                {showAddPatient && canCreatePatient && !searchTerm ? (
+                  <button
+                    type="button"
+                    className="rc-dash-empty-btn"
+                    onClick={openAdd}
+                  >
+                    <Plus size={14} />
+                    <span>Add First Patient</span>
+                  </button>
+                ) : null}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

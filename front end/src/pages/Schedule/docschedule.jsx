@@ -544,6 +544,10 @@ import {
   Trash2,
   Save,
   Pencil,
+  CalendarDays,
+  Clock,
+  Sliders,
+  CalendarOff,
 } from "lucide-react";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
@@ -955,6 +959,21 @@ function ScheduleSettingsPage() {
 
   return (
     <div className="schedule-page">
+      <div className="schedule-bg-overlay" />
+
+      {/* 3D Floating Schedule & Time Planning Particles */}
+      <div className="schedule-particle sched-part-1" title="Calendar Planning">
+        <CalendarDays size={28} />
+      </div>
+      <div className="schedule-particle sched-part-2" title="Slot Timings">
+        <Clock size={26} />
+      </div>
+      <div className="schedule-particle sched-part-3" title="Clinic Configuration">
+        <Sliders size={26} />
+      </div>
+      <div className="schedule-particle sched-part-4" title="Holidays & Days Off">
+        <CalendarOff size={26} />
+      </div>
 
       {/* HEADER */}
 

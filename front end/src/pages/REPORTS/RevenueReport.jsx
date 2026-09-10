@@ -1,249 +1,36 @@
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-//   const [doctorId, setDoctorId] = useState(0);
-
-//   // ================= LOAD =================
-
-//   useEffect(() => {
-//     fetchDoctors();
-
-//     fetchRevenue();
-//   }, []);
-
-//   // ================= DOCTORS =================
-
-//   const fetchDoctors = async () => {
-//     try {
-//       const response = await fetch(DOCTOR_API, {
-//         headers: {
-//           "ngrok-skip-browser-warning": "true",
-//         },
-//       });
-
-//       const result = await response.json();
-
-//       setDoctors(result);
-//     } catch (error) {
-//       console.log(error);
-//     }
-//   };
-
-//   // ================= REVENUE =================
-
-//   const fetchRevenue = async () => {
-//     try {
-//       setLoading(true);
-
-//       let url = `${REPORT_API}?doctorId=${doctorId}`;
-
-//       if (fromDate) {
-//         url += `&fromDate=${fromDate}`;
-//       }
-
-//       if (toDate) {
-//         url += `&toDate=${toDate}`;
-//       }
-
-//       const response = await fetch(url, {
-//         headers: {
-//           "ngrok-skip-browser-warning": "true",
-//         },
-//       });
-
-//       const result = await response.json();
-
-//       console.log("REVENUE:", result);
-
-//       setData(result);
-//     } catch (error) {
-//       console.log(error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   // ================= CSV =================
-
-//   const exportCSV = () => {
-//     const rows = [
-//       ["Month", "Revenue", "Growth"],
-
-//       ...data.map((x) => [x.month, x.revenue, x.growth]),
-//     ];
-
-//     const csvContent = rows.map((e) => e.join(",")).join("\n");
-
-//     const blob = new Blob([csvContent], {
-//       type: "text/csv",
-//     });
-
-//     const url = window.URL.createObjectURL(blob);
-
-//     const a = document.createElement("a");
-
-//     a.href = url;
-
-//     a.download = "revenue-report.csv";
-
-//     a.click();
-//   };
-
-//   return (
-//     <div className="report-page">
-//       {/* HEADER */}
-
-//       <div className="report-header">
-//         <div>
-//           <button className="back" onClick={() => navigate("/reports")}>
-//             <ArrowLeft size={16} />
-//             All reports
-//           </button>
-
-//           <h2>Revenue Report</h2>
-
-//           <p>Earnings, refunds, net revenue</p>
-//         </div>
-
-//         <button className="export" onClick={exportCSV}>
-//           <Download size={16} />
-//           Export CSV
-//         </button>
-//       </div>
-
-//       {/* FILTER */}
-
-//       <div className="filter-card">
-//         {/* FROM */}
-
-//         <div>
-//           <label>From</label>
-
-//           <input
-//             type="date"
-//             value={fromDate}
-//             onChange={(e) => setFromDate(e.target.value)}
-//           />
-//         </div>
-
-//         {/* TO */}
-
-//         <div>
-//           <label>To</label>
-
-//           <input
-//             type="date"
-//             value={toDate}
-//             onChange={(e) => setToDate(e.target.value)}
-//           />
-//         </div>
-
-//         {/* DOCTOR */}
-
-//         <div>
-//           <label>Doctor</label>
-
-//           <select
-//             value={doctorId}
-//             onChange={(e) => setDoctorId(Number(e.target.value))}
-//           >
-//             <option value={0}>All doctors</option>
-
-//             {doctors.map((doctor) => (
-//               <option key={doctor.id} value={doctor.id}>
-//                 Dr. {doctor.name}
-//               </option>
-//             ))}
-//           </select>
-//         </div>
-
-//         {/* APPLY */}
-
-//         <button className="apply" onClick={fetchRevenue}>
-//           Apply
-//         </button>
-//       </div>
-
-//       {/* CHART */}
-
-//       <div className="chart-card">
-//         <h3>Revenue Visualization</h3>
-
-//         {loading ? (
-//           <div className="empty">Loading...</div>
-//         ) : data.length === 0 ? (
-//           <div className="empty">No revenue data found</div>
-//         ) : (
-//           <ResponsiveContainer width="100%" height={320}>
-//             <LineChart data={data}>
-//               <CartesianGrid strokeDasharray="3 3" />
-
-//               <XAxis dataKey="month" />
-
-//               <YAxis />
-
-//               <Tooltip
-//                 contentStyle={{
-//                   borderRadius: "10px",
-//                   border: "1px solid #e5e7eb",
-//                 }}
-//                 formatter={(value) => [`₹${value}`, "Revenue"]}
-//               />
-
-//               <Line
-//                 type="monotone"
-//                 dataKey="revenue"
-//                 stroke="#159a8c"
-//                 strokeWidth={3}
-//                 dot={{ r: 5 }}
-//               />
-//             </LineChart>
-//           </ResponsiveContainer>
-//         )}
-//       </div>
-
-//       {/* TABLE */}
-
-//       <div className="table-card">
-//         <div className="thead">
-//           <span>Month</span>
-
-//           <span>Revenue</span>
-
-//           <span>Growth</span>
-//         </div>
-
-//         {data.map((d, i) => (
-//           <div className="row" key={i}>
-//             <span>{d.month}</span>
-
-//             <span>₹{d.revenue?.toLocaleString()}</span>
-
-//             <span className="growth">{d.growth}%</span>
-//           </div>
-//         ))}
-
-//         {!loading && data.length === 0 && (
-//           <div className="empty-table">No revenue data found.</div>
-//         )}
-//       </div>
-//     </div>
-//   );
-// }
-
-import React, { useCallback, useEffect, useState } from "react";
-
+import "./ReportsTheme.css";
 import "./RevenueReport.css";
 
-import { ArrowLeft, Download } from "lucide-react";
+import {
+  Activity,
+  ArrowLeft,
+  BarChart3,
+  Download,
+  Filter,
+  FlaskConical,
+  IndianRupee,
+  Pill,
+  Receipt,
+  RefreshCw,
+  Stethoscope,
+  TrendingUp,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import {
-  LineChart,
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
 } from "recharts";
 
 import { apiUrl } from "../../config/api";
@@ -419,6 +206,7 @@ function RevenueReport() {
   const [toDate, setToDate] = useState("");
 
   const [branchId, setBranchId] = useState("");
+  const [graphModel, setGraphModel] = useState("bar");
 
   // ================= LOAD =================
 
@@ -521,6 +309,31 @@ function RevenueReport() {
     fetchRevenue();
   }, [fetchRevenue]);
 
+  // ================= TOTALS =================
+
+  const totals = useMemo(() => {
+    return branchRows.reduce(
+      (sum, row) => ({
+        opRevenue: sum.opRevenue + Number(row.opRevenue || 0),
+        diagnosticRevenue: sum.diagnosticRevenue + Number(row.diagnosticRevenue || 0),
+        pharmacyRevenue: sum.pharmacyRevenue + Number(row.pharmacyRevenue || 0),
+        cgstAmount: sum.cgstAmount + Number(row.cgstAmount || 0),
+        sgstAmount: sum.sgstAmount + Number(row.sgstAmount || 0),
+        gstAmount: sum.gstAmount + Number(row.gstAmount || 0),
+        revenue: sum.revenue + Number(row.revenue || 0),
+      }),
+      {
+        opRevenue: 0,
+        diagnosticRevenue: 0,
+        pharmacyRevenue: 0,
+        cgstAmount: 0,
+        sgstAmount: 0,
+        gstAmount: 0,
+        revenue: 0,
+      }
+    );
+  }, [branchRows]);
+
   // ================= EXPORT PDF =================
 
   const exportPDF = () => {
@@ -553,26 +366,7 @@ function RevenueReport() {
       minute: "2-digit",
       hour12: true,
     });
-    const totals = branchRows.reduce(
-      (sum, row) => ({
-        opRevenue: sum.opRevenue + Number(row.opRevenue || 0),
-        diagnosticRevenue: sum.diagnosticRevenue + Number(row.diagnosticRevenue || 0),
-        pharmacyRevenue: sum.pharmacyRevenue + Number(row.pharmacyRevenue || 0),
-        cgstAmount: sum.cgstAmount + Number(row.cgstAmount || 0),
-        sgstAmount: sum.sgstAmount + Number(row.sgstAmount || 0),
-        gstAmount: sum.gstAmount + Number(row.gstAmount || 0),
-        revenue: sum.revenue + Number(row.revenue || 0),
-      }),
-      {
-        opRevenue: 0,
-        diagnosticRevenue: 0,
-        pharmacyRevenue: 0,
-        cgstAmount: 0,
-        sgstAmount: 0,
-        gstAmount: 0,
-        revenue: 0,
-      }
-    );
+
     const printWindow = window.open("", "_blank", "width=1120,height=780");
     if (!printWindow) return;
 
@@ -672,38 +466,76 @@ function RevenueReport() {
 
   return (
     <div className="report-page revenue-report-page">
-      {/* HEADER */}
+      {/* MEDICAL & HOSPITALIZED AMBIENT TELEMETRY BACKGROUND */}
+      <div className="rep-medical-bg" aria-hidden="true">
+        <div className="rep-ecg-track">
+          <svg className="rep-ecg-svg" viewBox="0 0 1200 60" preserveAspectRatio="none">
+            <path
+              className="rep-ecg-line-base"
+              d="M0,30 L180,30 L195,12 L205,48 L215,6 L225,40 L235,30 L460,30 L475,10 L485,50 L495,4 L505,42 L515,30 L760,30 L775,12 L785,48 L795,6 L805,40 L815,30 L1020,30 L1035,10 L1045,50 L1055,4 L1065,42 L1075,30 L1200,30"
+            />
+            <path
+              className="rep-ecg-line-pulse"
+              d="M0,30 L180,30 L195,12 L205,48 L215,6 L225,40 L235,30 L460,30 L475,10 L485,50 L495,4 L505,42 L515,30 L760,30 L775,12 L785,48 L795,6 L805,40 L815,30 L1020,30 L1035,10 L1045,50 L1055,4 L1065,42 L1075,30 L1200,30"
+            />
+          </svg>
+        </div>
+        <div className="rep-watermark-cross rep-watermark-cross--tl">+</div>
+        <div className="rep-watermark-cross rep-watermark-cross--br">+</div>
+      </div>
 
+      {/* TOP HOSPITAL TELEMETRY HUD BAR */}
+      <div className="rep-telemetry-bar">
+        <span className="rep-telemetry-badge">
+          <span className="rep-telemetry-cross">+</span>
+          HOSPITAL REVENUE TELEMETRY
+        </span>
+        <span className="rep-telemetry-badge">
+          <Activity size={12} className="rep-telemetry-wave-icon" />
+          SYSTEM ONLINE
+          <span className="rep-telemetry-bead-live"></span>
+        </span>
+      </div>
+
+      {/* HEADER WITH SURGICAL INSTRUMENTS */}
       <div className="report-header">
-        <div>
+        <div className="rep-header-title-group">
+          {/* ALL REPORTS NAVIGATION BUTTON */}
           <button
             type="button"
-            className="report-back"
+            className="report-back rep-instrument--retractor"
             onClick={() => navigate("/reports")}
+            title="Return to Reports"
           >
             <ArrowLeft size={16} />
-            All reports
+            <span>All reports</span>
           </button>
 
+          <span className="rep-header-badge">
+            <span className="rep-header-badge-pulse">+</span>
+            AUDIT & EARNINGS CONSOLE
+          </span>
           <h2>Revenue Report</h2>
-
-          <p>Earnings and total revenue</p>
+          <p>Earnings and total revenue telemetry across clinical departments</p>
         </div>
 
-        <button className="export" onClick={exportPDF}>
-          <Download size={16} />
-          Export PDF
+        {/* EXPORT PDF BUTTON */}
+        <button
+          type="button"
+          className="export rep-instrument--recorder"
+          onClick={exportPDF}
+          title="Export PDF"
+        >
+          <Download size={15} />
+          <span>Export PDF</span>
         </button>
       </div>
 
-      {/* FILTER */}
-
+      {/* DIAGNOSTIC LABORATORY FILTER PANEL */}
       <div className="filter-card">
         {/* FROM */}
-
         <div>
           <label>From</label>
-
           <input
             type="date"
             value={fromDate}
@@ -712,10 +544,8 @@ function RevenueReport() {
         </div>
 
         {/* TO */}
-
         <div>
           <label>To</label>
-
           <input
             type="date"
             value={toDate}
@@ -723,17 +553,14 @@ function RevenueReport() {
           />
         </div>
 
-        {/* BRANCH */}
-
+        {/* BRANCH WITH ROTATING SYRINGE */}
         <div>
           <label>Branch</label>
-
           <select
             value={branchId}
             onChange={(e) => setBranchId(e.target.value)}
           >
             <option value="">All branches</option>
-
             {branches.map((branch) => (
               <option key={getBranchOptionId(branch)} value={getBranchOptionId(branch)}>
                 {getBranchOptionName(branch)}
@@ -742,61 +569,209 @@ function RevenueReport() {
           </select>
         </div>
 
-        {/* APPLY */}
-
-        <button type="button" className="report-apply" onClick={fetchRevenue}>
-          Apply
+        {/* CLEAN PROFESSIONAL APPLY BUTTON */}
+        <button
+          type="button"
+          className="report-apply-clean"
+          onClick={fetchRevenue}
+          disabled={loading}
+          title="Apply Date & Branch Filters"
+        >
+          <Filter size={15} />
+          <span>{loading ? "Applying..." : "Apply"}</span>
         </button>
       </div>
 
-      {/* CHART */}
+      {/* MEDICAL TELEMETRY STAT SUMMARY CARDS */}
+      <div className="rep-stats-grid">
+        <div className="rep-stat-card">
+          <div className="rep-stat-icon-wrap emerald">
+            <IndianRupee size={20} />
+          </div>
+          <div className="rep-stat-info">
+            <span className="rep-stat-label">Total Revenue</span>
+            <span className="rep-stat-value">{formatIndianCurrency(totals.revenue)}</span>
+          </div>
+        </div>
 
+        <div className="rep-stat-card">
+          <div className="rep-stat-icon-wrap cyan">
+            <Stethoscope size={20} />
+          </div>
+          <div className="rep-stat-info">
+            <span className="rep-stat-label">OP Consultations</span>
+            <span className="rep-stat-value">{formatIndianCurrency(totals.opRevenue)}</span>
+          </div>
+        </div>
+
+        <div className="rep-stat-card">
+          <div className="rep-stat-icon-wrap purple">
+            <FlaskConical size={20} />
+          </div>
+          <div className="rep-stat-info">
+            <span className="rep-stat-label">Diagnostic Labs</span>
+            <span className="rep-stat-value">{formatIndianCurrency(totals.diagnosticRevenue)}</span>
+          </div>
+        </div>
+
+        <div className="rep-stat-card">
+          <div className="rep-stat-icon-wrap amber">
+            <Pill size={20} />
+          </div>
+          <div className="rep-stat-info">
+            <span className="rep-stat-label">Pharmacy Dispensary</span>
+            <span className="rep-stat-value">{formatIndianCurrency(totals.pharmacyRevenue)}</span>
+          </div>
+        </div>
+
+        <div className="rep-stat-card">
+          <div className="rep-stat-icon-wrap ruby">
+            <Receipt size={20} />
+          </div>
+          <div className="rep-stat-info">
+            <span className="rep-stat-label">Total GST Tax</span>
+            <span className="rep-stat-value">{formatIndianCurrency(totals.gstAmount)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* REVENUE VISUALIZATION CHART SCREEN */}
       <div className="chart-card">
-        <h3>Revenue Visualization</h3>
+        <div className="rep-chart-header">
+          <div className="rep-chart-title-wrap">
+            <div className="rep-chart-title-icon">
+              <BarChart3 size={18} />
+            </div>
+            <h3>Revenue Visualization</h3>
+          </div>
+          <div className="rep-chart-controls">
+            <div className="rep-model-switch">
+              <button
+                type="button"
+                className={`rep-model-btn ${graphModel === "bar" ? "active" : ""}`}
+                onClick={() => setGraphModel("bar")}
+                title="Bar Chart View"
+              >
+                <BarChart3 size={13} />
+                <span>Bar Chart</span>
+              </button>
+              <button
+                type="button"
+                className={`rep-model-btn ${graphModel === "area" ? "active" : ""}`}
+                onClick={() => setGraphModel("area")}
+                title="Area Trend View"
+              >
+                <TrendingUp size={13} />
+                <span>Area Trend</span>
+              </button>
+            </div>
+            <span className="rep-chart-telemetry-status">
+              <span className="rep-telemetry-bead-live"></span>
+              Revenue Analytics Active
+            </span>
+          </div>
+        </div>
 
         {loading ? (
-          <div className="empty">Loading...</div>
+          <div className="empty">Loading revenue data...</div>
         ) : data.length === 0 ? (
           <div className="empty">No revenue data found</div>
-        ) : (
+        ) : graphModel === "bar" ? (
           <ResponsiveContainer width="100%" height={320}>
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-
-              <XAxis dataKey="month" />
-
-              <YAxis />
-
+            <BarChart data={data} margin={{ top: 25, right: 30, left: 15, bottom: 25 }}>
+              <defs>
+                <linearGradient id="revBarGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0d9488" stopOpacity={0.92} />
+                  <stop offset="100%" stopColor="#14b8a6" stopOpacity={0.68} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis
+                dataKey="month"
+                tick={{ fill: "#334155", fontSize: 13, fontWeight: 600 }}
+                tickLine={false}
+                axisLine={{ stroke: "#e2e8f0" }}
+              />
+              <YAxis
+                tick={{ fill: "#64748b", fontSize: 12 }}
+                tickFormatter={(val) => `₹${val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val}`}
+                tickLine={false}
+                axisLine={{ stroke: "#e2e8f0" }}
+              />
               <Tooltip
                 contentStyle={{
                   borderRadius: "12px",
-                  border: "1px solid #e5e7eb",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.12)",
+                  fontSize: "13px",
+                  fontWeight: "600",
                 }}
-                formatter={(value) => [formatIndianCurrency(value), "Revenue"]}
+                formatter={(value) => [formatIndianCurrency(value), "Total Revenue"]}
               />
-
-              <Line
+              <Bar
+                dataKey="revenue"
+                fill="url(#revBarGrad)"
+                radius={[8, 8, 0, 0]}
+                maxBarSize={55}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <ResponsiveContainer width="100%" height={320}>
+            <AreaChart data={data} margin={{ top: 25, right: 30, left: 15, bottom: 25 }}>
+              <defs>
+                <linearGradient id="revAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0d9488" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#0d9488" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis
+                dataKey="month"
+                tick={{ fill: "#334155", fontSize: 13, fontWeight: 600 }}
+                tickLine={false}
+                axisLine={{ stroke: "#e2e8f0" }}
+              />
+              <YAxis
+                tick={{ fill: "#64748b", fontSize: 12 }}
+                tickFormatter={(val) => `₹${val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val}`}
+                tickLine={false}
+                axisLine={{ stroke: "#e2e8f0" }}
+              />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.12)",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                }}
+                formatter={(value) => [formatIndianCurrency(value), "Total Revenue"]}
+              />
+              <Area
                 type="monotone"
                 dataKey="revenue"
-                stroke="#159a8c"
-                strokeWidth={4}
-                dot={{
-                  r: 7,
-                  fill: "#159a8c",
-                }}
-                activeDot={{
-                  r: 9,
-                }}
-                connectNulls
+                stroke="#0d9488"
+                strokeWidth={3.5}
+                fill="url(#revAreaGrad)"
+                dot={{ r: 6, fill: "#0d9488", stroke: "#ffffff", strokeWidth: 2.5 }}
+                activeDot={{ r: 8, fill: "#0f766e" }}
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         )}
       </div>
 
-      {/* TABLE */}
-
+      {/* CLINICAL MEDICAL AUDIT RECORD TABLE */}
       <div className="table-card">
+        <div className="rep-table-banner">
+          <div className="rep-table-banner-title">
+            <span>+</span>
+            <span>Clinical Audit & Monthly Revenue Log</span>
+          </div>
+          <span className="rep-table-badge">{branchRows.length} Monthly Entries</span>
+        </div>
+
         <div className="thead">
           <span>S.No.</span>
           <span>Month</span>

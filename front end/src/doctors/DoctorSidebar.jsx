@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
+  ArrowLeftToLine,
   CalendarClock,
+  CalendarDays,
   ClipboardList,
+  FileText,
   LayoutDashboard,
   Stethoscope,
 } from "lucide-react";
@@ -15,11 +18,11 @@ import { getAuthToken, getLoggedInDoctor } from "./utils/doctorSession";
 import { filterItemsByViewPermission, hasAnySavedModulePermissions, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const NAV_ITEMS = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/doctor/dashboard" },
-  { label: "Consultation", icon: Stethoscope, path: "/doctor/consultation" },
-  { label: "Prescription", icon: ClipboardList, path: "/doctor/prescription" },
-  { label: "Appointments", icon: ClipboardList, path: "/doctor/appointments" },
-  { label: "My Schedule", icon: CalendarClock, path: "/doctor/schedule" },
+  { label: "Dashboard", icon: LayoutDashboard, path: "/doctor/dashboard", colorScheme: "cyan", tag: "LIVE" },
+  { label: "Consultation", icon: Stethoscope, path: "/doctor/consultation", colorScheme: "blue", tag: "EXAM" },
+  { label: "Prescription", icon: FileText, path: "/doctor/prescription", colorScheme: "purple", tag: "Rx" },
+  { label: "Appointments", icon: CalendarDays, path: "/doctor/appointments", colorScheme: "amber", tag: "QUEUE" },
+  { label: "My Schedule", icon: CalendarClock, path: "/doctor/schedule", colorScheme: "emerald", tag: "ROSTER" },
 ];
 
 const getInitials = (name) =>
@@ -76,7 +79,7 @@ const rememberDoctorBranch = (branch = {}) => {
   );
 };
 
-function DoctorSidebar() {
+function DoctorSidebar({ onToggleCollapse = () => {} }) {
   const profile = getRoleProfile("doctor");
   const hospitalName = getClinicDisplayName(profile, "Clinic Name");
   const doctor = getLoggedInDoctor();
@@ -168,16 +171,20 @@ function DoctorSidebar() {
       </div>
 
       <nav className="dr-nav">
-        {navItems.map(({ label, icon: Icon, path }) => (
+        {navItems.map(({ label, icon: Icon, path, colorScheme, tag }) => (
           <NavLink
             key={path}
             to={path}
             className={({ isActive }) =>
-              isActive ? "dr-nav-link active" : "dr-nav-link"
+              `dr-nav-link dr-nav-link--${colorScheme || "cyan"} ${isActive ? "active" : ""}`
             }
           >
-            <Icon size={18} />
-            <span>{label}</span>
+            <span className="dr-nav-icon-bezel">
+              <Icon size={18} className="dr-nav-icon" />
+            </span>
+            <span className="dr-nav-label">{label}</span>
+            {tag ? <span className="dr-nav-tag">{tag}</span> : null}
+            <span className="dr-nav-active-pill" aria-hidden="true" />
           </NavLink>
         ))}
       </nav>
@@ -194,6 +201,19 @@ function DoctorSidebar() {
             <span className="dr-status-dot" /> Online
           </p>
         </div>
+      </div>
+
+      {/* BOTTOM COLLAPSE MENU TOGGLE (ADMIN MATCHED) */}
+      <div className="dr-sidebar-bottom">
+        <button
+          type="button"
+          className="dr-collapse-btn collapse-btn"
+          onClick={onToggleCollapse}
+          title="Collapse Menu"
+        >
+          <ArrowLeftToLine size={16} />
+          <span>Collapse Menu</span>
+        </button>
       </div>
     </aside>
   );

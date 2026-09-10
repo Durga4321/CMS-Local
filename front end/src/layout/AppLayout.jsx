@@ -44,6 +44,24 @@ const useAuth = () => {
 
 function AppLayout() {
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("sidebar_collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleCollapse = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("sidebar_collapsed", String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const { user } = useAuth();
   const location = useLocation();
 
@@ -59,10 +77,15 @@ function AppLayout() {
   }
 
   return (
-    <div className="layout">
-      <Sidebar open={open} onClose={() => setOpen(false)} />
+    <div className={`layout ${collapsed ? "sidebar-collapsed" : ""}`}>
+      <Sidebar
+        open={open}
+        onClose={() => setOpen(false)}
+        collapsed={collapsed}
+        onToggleCollapse={handleToggleCollapse}
+      />
 
-      <div className="main">
+      <div className={`main ${collapsed ? "collapsed" : ""}`}>
         <Topbar onMenu={() => setOpen(true)} />
 
         <div className="content">

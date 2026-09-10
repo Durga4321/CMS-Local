@@ -52,8 +52,12 @@
   outline: none;
   background: transparent;
   width: 100%;
-  font-size: 15px;
+  font-size: 14.5px;
   color: #334155;
+}
+
+.search-shortcut {
+  display: none !important;
 }
 
 .topbar-search-results {

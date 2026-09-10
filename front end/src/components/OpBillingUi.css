@@ -101,10 +101,12 @@
 }
 
 select.op-form-select {
-  appearance: auto;
-  -webkit-appearance: auto;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+  padding-right: 40px !important;
 }
 
 .op-form-select:focus,
@@ -191,19 +193,21 @@ select.op-form-select {
 .op-btn-clear-date {
   height: 44px;
   padding: 0 24px;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
+  background: linear-gradient(135deg, #fff1f2 0%, #fee2e2 100%);
+  border: 1px solid #fca5a5;
   border-radius: 8px;
-  color: #0f172a;
+  color: #dc2626;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.15s;
+  transition: all 0.2s ease;
 }
 
 .op-btn-clear-date:hover {
-  background: #f8fafc;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border-color: #dc2626;
+  color: #ffffff;
 }
 
 /* Payment Mode & Discount Row */
@@ -310,37 +314,50 @@ select.op-form-select {
 }
 
 .op-action-btn.btn-preview {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-  color: #2563eb;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-color: #7dd3fc;
+  color: #0284c7;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.12);
 }
 
 .op-action-btn.btn-preview:hover {
-  background: #dbeafe;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border-color: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
 }
 
 .op-action-btn.btn-print {
-  background: #fff7ed;
-  border-color: #ffedd5;
-  color: #ea580c;
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border-color: #c084fc;
+  color: #7c3aed;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.12);
 }
 
 .op-action-btn.btn-print:hover {
-  background: #ffedd5;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  border-color: #6d28d9;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
 }
 
 .op-action-btn.btn-submit {
-  background: #0f9d9d;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: #059669;
   color: #ffffff;
   font-weight: 800;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
 }
 
 .op-action-btn.btn-submit:hover:not(:disabled) {
-  background: #0d8b8b;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  border-color: #047857;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
 }
 
 .op-action-btn.btn-submit.is-paid {
   background: #0d9488;
+  border-color: #0d9488;
   cursor: not-allowed;
 }
 

@@ -1,101 +1,285 @@
 /* ============================================================
    DOCTOR DASHBOARD — DoctorDashboard.css
+   Modern Clinical Workstation, Medical Instrument Controls,
+   and Real-Time Patient Telemetry Styling
    ============================================================ */
 
 .dd-page {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 22px;
+  max-width: 100%;
 }
 
-/* ── Stat cards ── */
-.dd-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-}
-
-.dd-stat-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 20px 24px;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.dd-stat-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.dd-stat-icon--blue  { background: #eff6ff; color: #2563eb; }
-.dd-stat-icon--amber { background: #fffbeb; color: #d97706; }
-.dd-stat-icon--violet { background: #f5f3ff; color: #7c3aed; }
-.dd-stat-icon--green { background: #f0fdf4; color: #16a34a; }
-
-.dd-state-card,
-.dd-alert {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 18px 20px;
-  color: #475569;
-  font-size: 14px;
-}
-
-.dd-alert {
+/* ────────────────────────────────────────────────────────────
+   1. CLINICAL HEADER BANNER
+   ──────────────────────────────────────────────────────────── */
+.dd-header-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  border-color: #fecaca;
-  color: #991b1b;
-  background: #fff7f7;
+  gap: 20px;
+  padding: 20px 26px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.035), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  position: relative;
+  overflow: hidden;
 }
 
-.dd-alert button {
-  border: 1px solid #fecaca;
-  background: #ffffff;
-  border-radius: 8px;
-  color: #991b1b;
-  font-weight: 700;
-  padding: 8px 12px;
-  cursor: pointer;
+.dd-header-banner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  background: linear-gradient(180deg, #06b6d4 0%, #0284c7 100%);
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
 }
 
-.dd-stat-label {
+.dd-header-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.dd-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #ecfeff;
+  border: 1px solid #a5f3fc;
+  color: #0891b2;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  align-self: flex-start;
+  margin-bottom: 4px;
+}
+
+.dd-pulse-icon {
+  animation: dd-telemetry-pulse 1.8s infinite ease-in-out;
+}
+
+@keyframes dd-telemetry-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.15); }
+}
+
+.dd-header-title {
+  margin: 2px 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.4px;
+}
+
+.dd-header-subtitle {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   color: #64748b;
   font-weight: 500;
 }
 
-.dd-stat-value {
-  margin: 4px 0;
-  font-size: 30px;
+.dd-header-telemetry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dd-telemetry-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+  font-size: 11px;
   font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.1);
+}
+
+.dd-telemetry-led {
+  width: 7px;
+  height: 7px;
+  background: #16a34a;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #16a34a;
+  position: relative;
+}
+
+.dd-telemetry-led::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid #16a34a;
+  animation: dr-pulse 2s infinite ease-out;
+}
+
+/* ────────────────────────────────────────────────────────────
+   2. MEDICAL STATS TELEMETRY CARDS
+   ──────────────────────────────────────────────────────────── */
+.dd-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.dd-stat-card {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 20px;
+  padding: 20px 22px 20px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease;
+}
+
+.dd-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.dd-stat-card--blue:hover   { border-color: #93c5fd; }
+.dd-stat-card--amber:hover  { border-color: #fcd34d; }
+.dd-stat-card--violet:hover { border-color: #c4b5fd; }
+.dd-stat-card--green:hover  { border-color: #6ee7b7; }
+
+/* Top section: Icon bezel & Badge */
+.dd-stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+/* 3D Medical Instrument Icon Bezel */
+.dd-stat-icon-bezel {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: transform 0.22s ease;
+}
+
+.dd-stat-card:hover .dd-stat-icon-bezel {
+  transform: scale(1.08);
+}
+
+.dd-stat-icon-bezel--blue {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1.5px solid #bfdbfe;
+  color: #2563eb;
+}
+.dd-stat-icon-bezel--amber {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1.5px solid #fde68a;
+  color: #d97706;
+}
+.dd-stat-icon-bezel--violet {
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border: 1.5px solid #ddd6fe;
+  color: #7c3aed;
+}
+.dd-stat-icon-bezel--green {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1.5px solid #bbf7d0;
+  color: #16a34a;
+}
+
+.dd-stat-badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.dd-stat-badge--blue   { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
+.dd-stat-badge--amber  { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+.dd-stat-badge--violet { background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; }
+.dd-stat-badge--green  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+
+.dd-stat-body {
+  position: relative;
+  z-index: 2;
+}
+
+.dd-stat-label {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.dd-stat-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 4px 0 2px;
+}
+
+.dd-stat-value {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 900;
   color: #0f172a;
   line-height: 1;
+  letter-spacing: -0.6px;
 }
+
+.dd-stat-trend {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.dd-stat-trend--blue   { background: #eff6ff; color: #1d4ed8; }
+.dd-stat-trend--amber  { background: #fffbeb; color: #92400e; }
+.dd-stat-trend--violet { background: #f5f3ff; color: #6d28d9; }
+.dd-stat-trend--green  { background: #f0fdf4; color: #15803d; }
 
 .dd-stat-sub {
   margin: 0;
-  font-size: 12px;
+  font-size: 11.5px;
   color: #94a3b8;
+  font-weight: 500;
 }
 
-/* ── Queue card ── */
+/* ────────────────────────────────────────────────────────────
+   3. QUEUE WORKSTATION CONSOLE
+   ──────────────────────────────────────────────────────────── */
 .dd-queue-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 22px;
+  box-shadow: 0 10px 32px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   overflow: hidden;
 }
 
@@ -103,16 +287,35 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 18px;
   padding: 18px 24px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.75);
+  background: rgba(255, 255, 255, 0.5);
+  flex-wrap: wrap;
+}
+
+.dd-queue-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .dd-queue-title {
   margin: 0;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 800;
   color: #0f172a;
+  letter-spacing: -0.3px;
+}
+
+.dd-queue-count-pill {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #ecfeff;
+  border: 1px solid #a5f3fc;
+  color: #0891b2;
 }
 
 .dd-queue-tools {
@@ -121,17 +324,31 @@
   gap: 12px;
 }
 
+/* Medical Scanner Search Port */
 .dd-search {
-  height: 34px;
-  min-width: 220px;
-  border: 1px solid #e2e8f0;
-  border-radius: 9px;
-  background: #f8fafc;
+  height: 38px;
+  min-width: 250px;
+  border: 1.5px solid rgba(203, 213, 225, 0.8);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 10px;
-  color: #94a3b8;
+  padding: 0 14px;
+  color: #64748b;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.dd-search:focus-within {
+  border-color: #0284c7;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15), inset 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.dd-search-optic {
+  color: #0284c7;
+  flex-shrink: 0;
 }
 
 .dd-search input {
@@ -142,27 +359,65 @@
   background: transparent;
   color: #0f172a;
   font-size: 13px;
+  font-weight: 500;
 }
 
-.dd-refresh-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.dd-search input::placeholder {
+  color: #94a3b8;
+}
+
+.dd-search-clear {
   border: none;
-  background: transparent;
-  font-size: 13px;
-  font-weight: 600;
-  color: #2563eb;
+  background: #f1f5f9;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 8px;
+  color: #64748b;
   transition: background 0.15s;
 }
 
-.dd-refresh-btn:hover { background: #eff6ff; }
+.dd-search-clear:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Medical Instrument Calibrator Refresh Button */
+.dd-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid #38bdf8;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 12px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0284c7;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.dd-refresh-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  transform: translateY(-1px);
+}
+
+.dd-refresh-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.97);
+}
+
 .dd-refresh-btn:disabled {
   cursor: default;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
 .dd-spin {
@@ -173,7 +428,101 @@
   to { transform: rotate(360deg); }
 }
 
-/* ── Table ── */
+/* ────────────────────────────────────────────────────────────
+   4. QUICK FILTER DOSAGE CAPSULES
+   ──────────────────────────────────────────────────────────── */
+.dd-queue-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: rgba(248, 250, 252, 0.65);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.75);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.dd-filter-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.85);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.dd-filter-capsule:hover {
+  border-color: #cbd5e1;
+  background: #ffffff;
+  transform: translateY(-1px);
+  color: #0f172a;
+}
+
+.dd-filter-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dd-filter-dot--all    { background: #0ea5e9; }
+.dd-filter-dot--amber  { background: #f59e0b; }
+.dd-filter-dot--blue   { background: #3b82f6; }
+.dd-filter-dot--green  { background: #10b981; }
+
+.dd-filter-count {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+/* Active State for Filter Capsules */
+.dd-filter-capsule.is-active {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
+
+.dd-filter-capsule.is-active .dd-filter-count {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.dd-filter-capsule--amber.is-active {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  border-color: #d97706;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
+}
+
+.dd-filter-capsule--blue.is-active {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border-color: #2563eb;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.dd-filter-capsule--green.is-active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: #10b981;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+/* ────────────────────────────────────────────────────────────
+   5. PATIENT TABLE
+   ──────────────────────────────────────────────────────────── */
 .dd-table {
   display: flex;
   flex-direction: column;
@@ -182,250 +531,441 @@
 .dd-thead,
 .dd-row {
   display: grid;
-  grid-template-columns: minmax(60px, 0.4fr) 120px 1.5fr 1fr 1fr 1.2fr 150px;
+  grid-template-columns: minmax(60px, 0.4fr) 120px 1.5fr 1fr 1fr 1.3fr 150px;
   align-items: center;
-  padding: 12px 24px;
-  gap: 12px;
+  padding: 13px 24px;
+  gap: 14px;
 }
 
 .dd-thead {
-  font-size: 12px;
-  font-weight: 700;
-  color: #64748b;
-  border-bottom: 1px solid #f1f5f9;
-  background: #fafafa;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1.5px solid rgba(226, 232, 240, 0.8);
+  background: rgba(248, 250, 252, 0.7);
 }
 
 .dd-row {
-  font-size: 13px;
-  color: #334155;
-  border-bottom: 1px solid #f8fafc;
+  font-size: 13.5px;
+  color: #0f172a;
+  border-bottom: 1px solid rgba(241, 245, 249, 0.9);
+  background: rgba(255, 255, 255, 0.45);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.dd-row:last-child { border-bottom: none; }
-.dd-row:hover { background: #fafcff; }
+.dd-row:last-child {
+  border-bottom: none;
+}
 
+.dd-row:hover {
+  background: rgba(240, 253, 250, 0.75);
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.07);
+}
+
+.dd-sno-head,
+.dd-sno-cell {
+  text-align: center;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.dd-token-head,
+.dd-token-cell {
+  text-align: center;
+}
+
+/* Medical Triage Token Pin */
 .dd-token {
-  color: #2563eb;
-  font-weight: 600;
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-weight: 800;
+  font-size: 12.5px;
+  font-family: monospace;
+  box-shadow: 0 1px 3px rgba(29, 78, 216, 0.08);
+}
+
+.dd-name {
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.15px;
+}
+
+.dd-age {
+  color: #64748b;
+  font-weight: 500;
   font-size: 13px;
 }
 
-.dd-name { font-weight: 600; color: #0f172a; }
+.dd-time {
+  color: #475569;
+  font-weight: 600;
+  font-size: 12.5px;
+}
 
-/* ── Status badge ── */
+.dd-status-head,
+.dd-status-cell {
+  text-align: center;
+}
+
+/* Medical Dosage Status Pill with Live LED Dot */
 .dd-status {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  gap: 6px;
+  padding: 4px 11px;
   border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-transform: capitalize;
 }
 
-.status--waiting      { background: #fef9c3; color: #a16207; }
-.status--inprogress   { background: #dbeafe; color: #1d4ed8; }
-.status--prescription { background: #f3e8ff; color: #7c3aed; }
-.status--completed    { background: #dcfce7; color: #15803d; }
+.dd-status-dot-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 
-/* ── Action buttons ── */
+.status--waiting {
+  background: #fefce8;
+  color: #a16207;
+  border: 1px solid #fef08a;
+}
+.status--waiting .dd-status-dot-indicator {
+  background: #eab308;
+  box-shadow: 0 0 6px #eab308;
+}
+
+.status--inprogress {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+.status--inprogress .dd-status-dot-indicator {
+  background: #2563eb;
+  box-shadow: 0 0 6px #2563eb;
+  animation: dr-pulse 1.8s infinite;
+}
+
+.status--prescription {
+  background: #faf5ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+}
+.status--prescription .dd-status-dot-indicator {
+  background: #9333ea;
+  box-shadow: 0 0 6px #9333ea;
+}
+
+.status--completed {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.status--completed .dd-status-dot-indicator {
+  background: #16a34a;
+  box-shadow: 0 0 6px #16a34a;
+}
+
+/* ────────────────────────────────────────────────────────────
+   6. MEDICAL INSTRUMENT MODEL ACTION BUTTONS
+   ──────────────────────────────────────────────────────────── */
+.dd-actions-head,
 .dd-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 8px;
-  min-width: 126px;
-  overflow: visible;
 }
 
 .dd-act-btn {
   width: 36px;
   height: 36px;
   min-width: 36px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #fff;
-  color: #2563eb;
+  border-radius: 11px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  user-select: none;
 }
 
-.dd-act-btn svg {
-  display: block;
-  color: currentColor;
-  stroke: currentColor;
-  stroke-width: 2.4;
-}
-
-.dd-act-btn:nth-child(2) {
-  color: #0f766e;
-}
-
-.dd-act-btn:nth-child(3) {
-  color: #7c3aed;
-}
-
-.dd-act-btn:hover {
-  background: #eff6ff;
-  color: #2563eb;
-  border-color: #bfdbfe;
+.dd-act-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.93);
 }
 
 .dd-act-btn:disabled {
   cursor: not-allowed;
-  color: #cbd5e1;
-  background: #f8fafc;
+  opacity: 0.35;
+  filter: grayscale(1);
 }
 
-.dd-empty-row {
-  padding: 28px 24px;
-  color: #94a3b8;
-  font-size: 13px;
+/* Button 1: Diagnostic Scope (Ophthalmoscope) */
+.dd-act-btn--scope {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1.5px solid #7dd3fc;
+  color: #0284c7;
+  box-shadow: 0 2px 6px rgba(14, 165, 233, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.dd-act-btn--scope:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 5px 14px rgba(14, 165, 233, 0.42);
+  transform: translateY(-2px);
+}
+
+/* Button 2: Digital Chart / Clinical Sensor Probe */
+.dd-act-btn--chart {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border: 1.5px solid #d8b4fe;
+  color: #7e22ce;
+  box-shadow: 0 2px 6px rgba(147, 51, 234, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.dd-act-btn--chart:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
+  color: #ffffff;
+  border-color: #9333ea;
+  box-shadow: 0 5px 14px rgba(147, 51, 234, 0.42);
+  transform: translateY(-2px);
+}
+
+/* Button 3: Surgical Ultrasound / Laser Activator Trigger */
+.dd-act-btn--trigger {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 1.5px solid #34d399;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.dd-act-btn--trigger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  border-color: #10b981;
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.55);
+  transform: translateY(-2px) scale(1.06);
+}
+
+/* ────────────────────────────────────────────────────────────
+   7. EMPTY TELEMETRY STATE
+   ──────────────────────────────────────────────────────────── */
+.dd-empty-telemetry {
+  padding: 46px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 
-/* ── Queue footer ── */
+.dd-empty-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ecfeff 0%, #e0f2fe 100%);
+  border: 1.5px solid #a5f3fc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  position: relative;
+  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.15);
+}
+
+.dd-empty-stetho {
+  color: #0891b2;
+}
+
+.dd-empty-radar-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1.5px solid #06b6d4;
+  opacity: 0.4;
+  animation: dr-pulse 2.2s infinite ease-out;
+}
+
+.dd-empty-telemetry h4 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.dd-empty-telemetry p {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: #64748b;
+  max-width: 440px;
+}
+
+.dd-empty-reset-btn {
+  border: 1.5px solid #0284c7;
+  background: #ffffff;
+  color: #0284c7;
+  border-radius: 999px;
+  padding: 7px 18px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dd-empty-reset-btn:hover {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+}
+
+/* ────────────────────────────────────────────────────────────
+   8. QUEUE FOOTER
+   ──────────────────────────────────────────────────────────── */
 .dd-queue-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 14px 24px;
-  border-top: 1px solid #f1f5f9;
-  font-size: 13px;
-  color: #64748b;
-}
-
-.dd-view-all {
-  border: none;
-  background: transparent;
-  color: #2563eb;
-  font-size: 13px;
+  border-top: 1px solid rgba(226, 232, 240, 0.7);
+  font-size: 12.5px;
   font-weight: 600;
-  cursor: pointer;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.4);
 }
 
-.dd-view-all:hover { text-decoration: underline; }
+/* ────────────────────────────────────────────────────────────
+   9. MODALS & ALERTS
+   ──────────────────────────────────────────────────────────── */
+.dd-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-radius: 14px;
+  border: 1.5px solid #fecaca;
+  color: #991b1b;
+  background: #fff7f7;
+  padding: 14px 20px;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.08);
+}
+
+.dd-alert button {
+  border: 1px solid #fca5a5;
+  background: #ffffff;
+  border-radius: 8px;
+  color: #991b1b;
+  font-weight: 700;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.dd-alert button:hover {
+  background: #fef2f2;
+}
+
+.dd-state-card {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+}
 
 .dd-notes-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 40;
-  background: rgba(15, 23, 42, 0.35);
+  z-index: 1200;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(8px);
   display: grid;
   place-items: center;
   padding: 20px;
 }
 
 .dd-notes-modal {
-  width: min(560px, 100%);
-  background: #fff;
+  width: min(580px, 100%);
+  background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  box-shadow: 0 20px 56px rgba(15, 23, 42, 0.18);
-  padding: 18px;
-}
-
-.dd-patient-modal {
-  width: min(620px, 100%);
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.22);
+  padding: 22px;
+  position: relative;
 }
 
 .dd-notes-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
   border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 12px;
-  margin-bottom: 14px;
 }
 
-.dd-notes-head h3,
+.dd-notes-head h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
 .dd-notes-head p {
   margin: 0;
-}
-
-.dd-notes-head p {
-  margin-top: 4px;
+  font-size: 12.5px;
   color: #64748b;
-  font-size: 12px;
 }
 
-.dd-notes-head button {
-  border: 0;
-  background: #f8fafc;
-  border-radius: 8px;
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-}
-
-.dd-notes-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.dd-notes-grid div,
-.dd-notes-empty {
+.dd-notes-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
   background: #f8fafc;
-  padding: 12px;
-}
-
-.dd-notes-grid span {
-  display: block;
-  margin-bottom: 6px;
   color: #64748b;
-  font-size: 12px;
-}
-
-.dd-notes-grid strong {
-  color: #0f172a;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.dd-notes-wide {
-  grid-column: 1 / -1;
-}
-
-.dd-notes-empty {
-  color: #64748b;
-  text-align: center;
-}
-
-.dd-modal-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 14px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-/* ── Responsive ── */
+.dd-notes-close:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.dd-notes-body {
+  font-size: 13.5px;
+  color: #334155;
+  line-height: 1.6;
+}
+
+.dd-patient-modal {
+  width: min(640px, 100%);
+}
+
 @media (max-width: 900px) {
-  .dd-stats { grid-template-columns: 1fr; }
-
-  .dd-queue-header,
-  .dd-queue-tools {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .dd-search {
-    min-width: 0;
-  }
-
   .dd-thead,
   .dd-row {
-    grid-template-columns: 100px 1fr 1fr;
+    grid-template-columns: 50px 100px 1.4fr 1fr 120px;
   }
-
-  .dd-thead span:nth-child(n+4),
-  .dd-row  span:nth-child(n+4) { display: none; }
+  .dd-time,
+  .dd-thead > span:nth-child(5),
+  .dd-row > span:nth-child(5) {
+    display: none !important;
+  }
 }

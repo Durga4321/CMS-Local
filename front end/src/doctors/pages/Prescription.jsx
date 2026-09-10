@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Download, Printer, Search, Trash2 } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, Download, Plus, Printer, Search, Syringe, Trash2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Prescription.css";
 import { apiUrl } from "../../config/api";
@@ -90,6 +90,99 @@ const formatPrintDateTime = (value = new Date()) => {
     minute: "2-digit",
     hour12: true,
   });
+};
+
+const RxCustomSelect = ({
+  value,
+  placeholder,
+  options,
+  onChange,
+  className = "",
+  ariaLabel,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePointerDown = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  return (
+    <div
+      ref={dropdownRef}
+      className={`rx-custom-select-container ${isOpen ? "rx-dropdown--open" : ""}`}
+    >
+      <button
+        type="button"
+        className={`rx-cell-input rx-custom-select-trigger ${className} ${isOpen ? "rx-select-open" : ""}`}
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-label={ariaLabel || placeholder}
+      >
+        <span className={`rx-custom-select-text ${!value ? "is-placeholder" : ""}`}>
+          {value || placeholder}
+        </span>
+        <ChevronDown
+          size={16}
+          className={`rx-dropdown-arrow ${isOpen ? "is-open" : ""}`}
+          aria-hidden="true"
+        />
+      </button>
+
+      {isOpen && (
+        <div className="rx-custom-dropdown-menu" role="listbox">
+          <button
+            type="button"
+            className={`rx-custom-dropdown-item is-placeholder ${!value ? "active" : ""}`}
+            onClick={() => {
+              onChange("");
+              setIsOpen(false);
+            }}
+          >
+            <span>{placeholder}</span>
+            {!value && <span className="rx-dropdown-check">✓</span>}
+          </button>
+          {options.map((option) => (
+            <button
+              type="button"
+              key={option}
+              className={`rx-custom-dropdown-item ${value === option ? "active" : ""}`}
+              onClick={() => {
+                onChange(option);
+                setIsOpen(false);
+              }}
+            >
+              <span>{option}</span>
+              {value === option && <span className="rx-dropdown-check">✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const createMedicine = () => ({
@@ -1111,7 +1204,7 @@ function Prescription() {
               <span>Frequency</span>
               <span>Duration</span>
               <span>Notes</span>
-              <span>Actions</span>
+              <span className="rx-action-col">Actions</span>
             </div>
             {medicines.map((medicine) => (
               <div className="rx-row" key={medicine.id}>
@@ -1124,19 +1217,19 @@ function Prescription() {
                     updateMedicine(medicine.id, "medicineName", value);
                   }}
                   onBlur={(event) => registerTypedMedicine(event.target.value)}
-                  placeholder="Select or type medicine"
+                  placeholder="Medicine name"
                 />
-                <input
-                  className="rx-cell-input"
-                  list="prescription-dosage-options"
+                <RxCustomSelect
                   value={medicine.dosage}
-                  onChange={(event) =>
-                    updateMedicine(medicine.id, "dosage", event.target.value)
+                  placeholder="Dosage"
+                  options={DOSAGE_OPTIONS}
+                  onChange={(value) =>
+                    updateMedicine(medicine.id, "dosage", value)
                   }
-                  placeholder="Select or type dosage"
+                  ariaLabel="Dosage"
                 />
                 <input
-                  className="rx-cell-input"
+                  className="rx-cell-input rx-qty-input"
                   type="number"
                   min="1"
                   inputMode="numeric"
@@ -1146,43 +1239,34 @@ function Prescription() {
                   }
                   placeholder="Qty"
                 />
-                <select
-                  className="rx-cell-input rx-freq"
+                <RxCustomSelect
+                  className="rx-freq"
                   value={medicine.frequency}
-                  onChange={(event) =>
-                    updateMedicine(medicine.id, "frequency", event.target.value)
+                  placeholder="Frequency"
+                  options={FREQUENCY_OPTIONS}
+                  onChange={(value) =>
+                    updateMedicine(medicine.id, "frequency", value)
                   }
-                >
-                  <option value="">Frequency</option>
-                  {FREQUENCY_OPTIONS.map((option) => (
-                    <option value={option} key={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+                  ariaLabel="Frequency"
+                />
                 <input
                   className="rx-cell-input"
                   value={medicine.duration}
                   onChange={(event) =>
                     updateMedicine(medicine.id, "duration", event.target.value)
                   }
-                  placeholder="5 Days"
+                  placeholder="Duration"
                 />
-                <select
-                  className="rx-cell-input"
+                <RxCustomSelect
                   value={medicine.notes}
-                  onChange={(event) =>
-                    updateMedicine(medicine.id, "notes", event.target.value)
+                  placeholder="Notes"
+                  options={NOTE_OPTIONS}
+                  onChange={(value) =>
+                    updateMedicine(medicine.id, "notes", value)
                   }
-                >
-                  <option value="">Notes</option>
-                  {NOTE_OPTIONS.map((option) => (
-                    <option value={option} key={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-                <span>
+                  ariaLabel="Notes"
+                />
+                <span className="rx-action-col">
                   <button
                     className="rx-del-btn"
                     type="button"
@@ -1212,9 +1296,10 @@ function Prescription() {
             className="rx-add-med-btn"
             type="button"
             onClick={addMedicine}
-            title="Add medicine"
+            title="Add Medication"
           >
-            + Add Medicine
+            <Plus size={16} />
+            <span>Add Medication</span>
           </button>
 
           <div className="rx-field">
@@ -1254,20 +1339,35 @@ function Prescription() {
 
           <div className="rx-actions">
             <div className="rx-actions-right">
-              <button className="rx-btn-icon" type="button" onClick={printPrescription}>
-                <Printer size={16} /> Print
-              </button>
               <button
-              className="rx-btn-submit"
-              type="button"
-              onClick={submitPrescription}
-                disabled={submitting || !canCreatePrescription}
-                title="Submit prescription"
+                className="rx-btn-icon rx-btn-icon--print"
+                type="button"
+                onClick={printPrescription}
+                title="Print Slip"
               >
-                {submitting ? "Submitting..." : "Submit Prescription"}
+                <Printer size={16} />
+                <span>Print Slip</span>
               </button>
-              <button className="rx-btn-icon" type="button" onClick={downloadPrescription}>
-                <Download size={16} /> Download PDF
+
+              <button
+                className="rx-btn-submit"
+                type="button"
+                onClick={submitPrescription}
+                disabled={submitting || !canCreatePrescription}
+                title="Submit Prescription"
+              >
+                <Check size={16} />
+                <span>{submitting ? "Submitting..." : "Submit Prescription"}</span>
+              </button>
+
+              <button
+                className="rx-btn-icon rx-btn-icon--download"
+                type="button"
+                onClick={downloadPrescription}
+                title="Download PDF"
+              >
+                <Download size={16} />
+                <span>Download PDF</span>
               </button>
             </div>
           </div>

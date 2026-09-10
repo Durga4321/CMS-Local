@@ -4,17 +4,20 @@
    ============================================================ */
 
 .dr-topbar {
-  height: 86px;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  height: 84px;
+  background: linear-gradient(90deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdfa 100%) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1.5px solid #bae6fd !important;
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 0 24px;
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
   flex-shrink: 0;
+  box-shadow: 0 4px 18px rgba(2, 132, 199, 0.08);
 }
 
 /* ── Left ── */

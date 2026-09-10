@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import {
-  Activity, Bell, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, ClipboardList,
-  CreditCard, Download, Eye, EyeOff, FileText, Heart, KeyRound, LogOut, Mail, MapPin, Pill,
-  Menu, Phone, Printer, Search, Share2, Star, Stethoscope, Trash2, UserRound, X,
+  Activity, ArrowLeftToLine, Bell, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, ClipboardList,
+  CreditCard, Download, Droplet, Eye, EyeOff, FileText, Heart, KeyRound, LogOut, Mail, MapPin, Pill,
+  Menu, Phone, Printer, Search, Share2, Star, Stethoscope, Syringe, Trash2, UserRound, X,
 } from "lucide-react";
 import PatientDashboard from "./PatientDashboard";
 import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
@@ -866,14 +866,43 @@ const normalizeSlotOption = (slot, doctorId = "", selectedDate = "") => {
   };
 };
 
+const PATIENT_PAGE_TITLES = {
+  "/patient/dashboard": { title: "Patient Dashboard", area: "Overview" },
+  "/patient/appointments/book": { title: "Book Appointment", area: "Appointments" },
+  "/patient/appointments": { title: "Appointments", area: "Schedule" },
+  "/patient/medical-history": { title: "Medical History", area: "Health Records" },
+  "/patient/prescriptions": { title: "Prescriptions", area: "Pharmacy" },
+  "/patient/bills": { title: "Bills & Payments", area: "Billing" },
+  "/patient/notifications": { title: "Notifications", area: "Alerts" },
+  "/patient/profile": { title: "Patient Profile", area: "Account" },
+  "/patient/change-password": { title: "Change Password", area: "Security" },
+};
+
 function PatientShell({ notifications, children, patient }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("patient_sidebar_collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleCollapse = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("patient_sidebar_collapsed", String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const menuRef = useRef(null);
-  const searchRef = useRef(null);
   const unreadCount = (notifications || []).filter((item) => item.unread).length;
 
   useEffect(() => {
@@ -886,10 +915,6 @@ function PatientShell({ notifications, children, patient }) {
     document.addEventListener("mousedown", closeMenu);
     return () => document.removeEventListener("mousedown", closeMenu);
   }, []);
-
-  useEffect(() => {
-    if (searchOpen) searchRef.current?.focus();
-  }, [searchOpen]);
 
   const logout = async () => {
     setMenuOpen(false);
@@ -913,7 +938,6 @@ function PatientShell({ notifications, children, patient }) {
     const match = destinations.find(({ terms }) => terms.some((term) => term.includes(query) || query.includes(term)));
     if (match) {
       navigate(match.path);
-      setSearchOpen(false);
     }
   };
 
@@ -940,184 +964,232 @@ function PatientShell({ notifications, children, patient }) {
       .toUpperCase();
   })();
 
+  const currentPathMatch = Object.entries(PATIENT_PAGE_TITLES).find(([path]) =>
+    location.pathname === path || (path !== "/patient/dashboard" && location.pathname.startsWith(path))
+  );
+  const currentTitle = currentPathMatch ? currentPathMatch[1].title : "Patient Portal";
+  const currentArea = currentPathMatch ? currentPathMatch[1].area : "Dashboard";
+
+  const navItems = [
+    { to: "/patient/dashboard", label: "Dashboard", icon: Activity, tone: "cyan", badge: "Live" },
+    { to: "/patient/appointments", label: "Appointments", icon: Calendar, tone: "purple", badge: "Book" },
+    { to: "/patient/medical-history", label: "Medical History", icon: FileText, tone: "emerald", badge: "Records" },
+    { to: "/patient/prescriptions", label: "Prescriptions", icon: Pill, tone: "rose", badge: "Rx" },
+    { to: "/patient/bills", label: "Bills & Payments", icon: CreditCard, tone: "amber", badge: "Pay" },
+    { to: "/patient/notifications", label: "Notifications", icon: Bell, tone: "indigo", badge: unreadCount ? String(unreadCount) : undefined },
+  ];
+
   return (
-    <div className={`patient-portal ${searchOpen ? "pp-search-open" : ""}`}>
-      <button
-        type="button"
-        className={`pp-sidebar-overlay ${sidebarOpen ? "is-visible" : ""}`}
-        onClick={() => setSidebarOpen(false)}
-        aria-label="Close navigation menu"
-        tabIndex={sidebarOpen ? 0 : -1}
-      />
-      <aside className={`pp-sidebar ${sidebarOpen ? "is-open" : ""}`}>
+    <div className={`pp-shell patient-portal ${sidebarOpen ? "pp-sidebar-open" : ""} ${collapsed ? "pp-sidebar-collapsed" : ""}`}>
+      {sidebarOpen && (
+        <div
+          className="pp-overlay"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <aside className={`pp-sidebar ${sidebarOpen ? "is-open" : ""} ${collapsed ? "collapsed" : ""}`}>
         <div className="pp-brand">
           <div className="pp-brand-mark">
-            <Heart size={20} />
+            <Heart size={22} />
           </div>
-          <div>
-            <strong>CMS</strong>
-            <span>Patient Portal</span>
-          </div>
-        </div>
-        <nav className="pp-nav" onClick={() => setSidebarOpen(false)}>
-          <span className="pp-nav-label">MAIN MENU</span>
-          <NavLink to="/patient/dashboard" className={({ isActive }) => `pp-nav-item ${isActive ? "active" : ""}`}>
-            <ClipboardList size={16} />
-            <span>Dashboard</span>
-          </NavLink>
-          <NavLink to="/patient/appointments" className={({ isActive }) => `pp-nav-item ${isActive ? "active" : ""}`}>
-            <Calendar size={16} />
-            <span>Appointments</span>
-          </NavLink>
-          <NavLink to="/patient/medical-history" className={({ isActive }) => `pp-nav-item ${isActive ? "active" : ""}`}>
-            <FileText size={16} />
-            <span>Medical History</span>
-          </NavLink>
-          <NavLink to="/patient/prescriptions" className={({ isActive }) => `pp-nav-item ${isActive ? "active" : ""}`}>
-            <Pill size={16} />
-            <span>Prescriptions</span>
-          </NavLink>
-          <NavLink to="/patient/bills" className={({ isActive }) => `pp-nav-item ${isActive ? "active" : ""}`}>
-            <CreditCard size={16} />
-            <span>Bills</span>
-          </NavLink>
-          <NavLink to="/patient/notifications" className={({ isActive }) => `pp-nav-item ${isActive ? "active" : ""}`}>
-            <Bell size={16} />
-            <span>Notifications</span>
-            {unreadCount ? <em>{unreadCount}</em> : null}
-          </NavLink>
-        </nav>
-        <div className="pp-patient-chip">
-          <div className="pp-avatar">{initials}</div>
-          <div>
-            <strong>{patientTitle}</strong>
-            <span>{patientSubtitle}</span>
-            <div className="pp-patient-status">
-              <span className="pp-status-dot pp-status-dot--online" />
-              Online
+          {!collapsed && (
+            <div className="pp-brand-text">
+              <strong>CMS</strong>
+              <span>Patient Portal</span>
             </div>
+          )}
+        </div>
+
+        <nav className="pp-nav" onClick={() => setSidebarOpen(false)}>
+          {!collapsed && <span className="pp-nav-label">MAIN MENU</span>}
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) => `pp-nav-item tone-${item.tone} ${isActive ? "active" : ""}`}
+              title={collapsed ? item.label : undefined}
+            >
+              <div className="pp-nav-icon-box">
+                <item.icon size={18} />
+              </div>
+              {!collapsed && <span className="pp-nav-text">{item.label}</span>}
+              {!collapsed && item.badge ? (
+                <span className={`pp-nav-pill tone-${item.tone}`}>{item.badge}</span>
+              ) : null}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="pp-sidebar-footer">
+          <div className="pp-patient-chip">
+            <div className="pp-avatar">{initials}</div>
+            {!collapsed && (
+              <div className="pp-patient-chip-copy">
+                <strong>{patientTitle}</strong>
+                <span>{patientSubtitle}</span>
+                <div className="pp-patient-status">
+                  <span className="pp-status-dot pp-status-dot--online" />
+                  Online
+                </div>
+              </div>
+            )}
           </div>
+
+          <button
+            type="button"
+            className="pp-collapse-btn"
+            onClick={handleToggleCollapse}
+            title={collapsed ? "Expand menu" : "Collapse menu"}
+          >
+            <ArrowLeftToLine size={16} style={{ transform: collapsed ? "rotate(180deg)" : "none", transition: "transform 0.25s ease" }} />
+            {!collapsed && <span>Collapse Menu</span>}
+          </button>
         </div>
       </aside>
-      <main className="pp-main">
+
+      <div className={`pp-main ${collapsed ? "collapsed" : ""}`}>
         <header className="pp-topbar">
-          <form className={`pp-search-box ${searchOpen ? "is-expanded" : ""}`} onSubmit={submitSearch}>
+          <div className="pp-topbar-left">
             <button
               type="button"
-              className="pp-search-toggle"
-              onClick={() => setSearchOpen(true)}
-              aria-label="Search patient portal"
+              className="pp-topbar-menu"
+              onClick={() => {
+                if (typeof window !== "undefined" && window.innerWidth <= 900) {
+                  setSidebarOpen((prev) => !prev);
+                } else {
+                  handleToggleCollapse();
+                }
+              }}
+              aria-label="Toggle navigation menu"
             >
-              <Search size={18} className="pp-search-icon" />
+              <Menu size={20} />
             </button>
-            <input
-              type="search"
-              ref={searchRef}
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search appointments, bills, prescriptions..."
-              aria-label="Search patient portal"
-            />
-            <button
-              type="button"
-              className="pp-search-close"
-              onClick={() => setSearchOpen(false)}
-              aria-label="Close search"
-            >
-              <X size={18} />
-            </button>
-          </form>
+            <div className="pp-topbar-title-wrap">
+              <h1>{currentTitle}</h1>
+              <div className="pp-crumbs">
+                <span>Home</span>
+                <ChevronRight size={13} />
+                <span>Patient Portal</span>
+                <ChevronRight size={13} />
+                <span className="pp-crumb-active">{currentArea}</span>
+              </div>
+            </div>
+          </div>
+
           <div className="pp-top-actions">
-            <button
-              type="button"
-              className="pp-menu-btn"
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Open navigation menu"
-              aria-expanded={sidebarOpen}
-            >
-              <Menu size={21} />
-            </button>
-            <NavLink to="/patient/notifications" className="pp-icon-btn">
-              <Bell size={17} />
+            <form className="pp-search-box" onSubmit={submitSearch}>
+              <Search size={17} className="pp-search-icon" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search appointments, bills, prescriptions..."
+                aria-label="Search patient portal"
+              />
+            </form>
+
+            <NavLink to="/patient/notifications" className="pp-icon-btn" title="Notifications">
+              <Bell size={18} />
               {unreadCount ? <span className="pp-dot" /> : null}
             </NavLink>
+
             <div className="pp-account-menu" ref={menuRef}>
               <button
-                className="pp-account-toggle"
+                className={`pp-account-toggle ${menuOpen ? "open" : ""}`}
                 type="button"
                 onClick={() => setMenuOpen((open) => !open)}
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
               >
                 <span className="pp-avatar">{initials}</span>
-                <span className="pp-account-name">{formatTitleCase(patient?.firstName || patient?.name || '')}</span>
-                <ChevronDown size={15} />
+                <span className="pp-account-name">{formatTitleCase(patient?.firstName || patient?.name || "Patient")}</span>
+                <ChevronDown size={16} className={`pp-dropdown-arrow ${menuOpen ? "is-open" : ""}`} />
               </button>
+
               {menuOpen ? (
-                <div className="pp-account-dropdown" role="menu">
+                <div className="pp-account-dropdown rc-blood-profile-dropdown" role="menu">
+                  <div className="rc-blood-capillary-stream" aria-hidden="true">
+                    <span className="rc-blood-capillary-drop-1" />
+                    <span className="rc-blood-capillary-drop-2" />
+                  </div>
+
                   <div className="pp-account-summary">
                     <span className="pp-account-summary-avatar">{initials}</span>
-                    <strong>{formatTitleCase(patient?.name || patient?.firstName || '')}</strong>
-                    <span>{patient?.email || ''}</span>
-                    <span className="pp-account-badge">Patient</span>
+                    <div className="pp-account-summary-details">
+                      <strong>{formatTitleCase(patient?.name || patient?.firstName || "")}</strong>
+                      <span>{patient?.email || ""}</span>
+                      <span className="pp-account-badge">Patient</span>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    className="pp-account-item"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      navigate('/patient/profile');
-                    }}
-                    role="menuitem"
-                  >
-                    <span className="pp-account-menu-icon">
-                      <UserRound size={20} />
-                    </span>
-                    <span className="pp-account-menu-copy">
-                      <b>My Profile</b>
-                      <small>View and edit your profile</small>
-                    </span>
-                    <ChevronRight size={17} className="pp-account-menu-arrow" />
-                  </button>
-                  <button
-                    type="button"
-                    className="pp-account-item"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      navigate('/patient/change-password');
-                    }}
-                    role="menuitem"
-                  >
-                    <span className="pp-account-menu-icon">
-                      <KeyRound size={20} />
-                    </span>
-                    <span className="pp-account-menu-copy">
-                      <b>Change Password</b>
-                      <small>Update your password</small>
-                    </span>
-                    <ChevronRight size={17} className="pp-account-menu-arrow" />
-                  </button>
-                  <button
-                    type="button"
-                    className="pp-account-item pp-account-item--logout"
-                    onClick={logout}
-                    role="menuitem"
-                  >
-                    <span className="pp-account-menu-icon danger">
-                      <LogOut size={20} />
-                    </span>
-                    <span className="pp-account-menu-copy">
-                      <b>Logout</b>
-                      <small>Sign out from your account</small>
-                    </span>
-                  </button>
+
+                  <div className="pp-account-menu-flow">
+                    <button
+                      type="button"
+                      className="pp-account-item rc-blood-drop-item"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        navigate("/patient/profile");
+                      }}
+                      role="menuitem"
+                    >
+                      <span className="rc-blood-drop-badge">
+                        <Droplet size={16} className="rc-blood-drop-svg" />
+                        <UserRound size={13} className="rc-blood-drop-inner-icon" />
+                      </span>
+                      <span className="pp-account-menu-copy rc-blood-drop-text">
+                        <b>My Profile</b>
+                        <small>View and edit your profile</small>
+                      </span>
+                      <ChevronRight size={17} className="pp-account-menu-arrow" />
+                    </button>
+
+                    <button
+                      type="button"
+                      className="pp-account-item rc-blood-drop-item"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        navigate("/patient/change-password");
+                      }}
+                      role="menuitem"
+                    >
+                      <span className="rc-blood-drop-badge">
+                        <Droplet size={16} className="rc-blood-drop-svg" />
+                        <KeyRound size={13} className="rc-blood-drop-inner-icon" />
+                      </span>
+                      <span className="pp-account-menu-copy rc-blood-drop-text">
+                        <b>Change Password</b>
+                        <small>Update your password</small>
+                      </span>
+                      <ChevronRight size={17} className="pp-account-menu-arrow" />
+                    </button>
+
+                    <button
+                      type="button"
+                      className="pp-account-item pp-account-item--logout rc-blood-drop-item danger"
+                      onClick={logout}
+                      role="menuitem"
+                    >
+                      <span className="rc-blood-drop-badge rc-blood-drop-badge--logout">
+                        <Droplet size={16} className="rc-blood-drop-svg" />
+                        <LogOut size={13} className="rc-blood-drop-inner-icon" />
+                      </span>
+                      <span className="pp-account-menu-copy rc-blood-drop-text">
+                        <b>Logout</b>
+                        <small>Sign out from your account</small>
+                      </span>
+                    </button>
+                  </div>
                 </div>
               ) : null}
             </div>
           </div>
         </header>
-        {children}
-      </main>
+
+        <main className="pp-content" onClick={() => sidebarOpen && setSidebarOpen(false)}>
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

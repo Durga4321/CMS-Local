@@ -47,7 +47,7 @@ function DoctorLayout() {
         tabIndex={sidebarOpen ? 0 : -1}
         onClick={() => setSidebarOpen(false)}
       />
-      <DoctorSidebar />
+      <DoctorSidebar onToggleCollapse={() => setSidebarOpen((p) => !p)} />
       <div className="dr-layout-body">
             <DoctorTopbar
               title={title}

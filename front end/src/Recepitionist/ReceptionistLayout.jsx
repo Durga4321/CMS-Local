@@ -17,6 +17,24 @@ const TITLES = {
 
 function ReceptionistLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("reception_sidebar_collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleCollapse = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("reception_sidebar_collapsed", String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const location = useLocation();
 
   if (!isReceptionistSession()) {
@@ -28,11 +46,24 @@ function ReceptionistLayout() {
     "Reception Dashboard";
 
   return (
-    <div className={`rc-shell ${sidebarOpen ? "rc-sidebar-open" : ""}`}>
+    <div className={`rc-shell ${sidebarOpen ? "rc-sidebar-open" : ""} ${collapsed ? "rc-sidebar-collapsed" : ""}`}>
       {sidebarOpen && <div className="rc-overlay" onClick={() => setSidebarOpen(false)} />}
-      <ReceptionSidebar onClose={() => setSidebarOpen(false)} />
-      <div className="rc-main">
-        <ReceptionTopbar title={title} onMenu={() => setSidebarOpen(true)} />
+      <ReceptionSidebar
+        onClose={() => setSidebarOpen(false)}
+        collapsed={collapsed}
+        onToggleCollapse={handleToggleCollapse}
+      />
+      <div className={`rc-main ${collapsed ? "collapsed" : ""}`}>
+        <ReceptionTopbar
+          title={title}
+          onMenu={() => {
+            if (typeof window !== "undefined" && window.innerWidth <= 900) {
+              setSidebarOpen((prev) => !prev);
+            } else {
+              handleToggleCollapse();
+            }
+          }}
+        />
         <main className="rc-content" onClick={() => sidebarOpen && setSidebarOpen(false)}>
           <Outlet />
         </main>

@@ -1,125 +1,3 @@
-// import React from "react";
-// import { useNavigate } from "react-router-dom";
-// import { Download } from "lucide-react";
-// import "./DailyReport.css";
-
-// function DailyReport() {
-//   const navigate = useNavigate();
-
-//   const data = [
-//     { day: "Mon", total: 24, completed: 20 },
-//     { day: "Tue", total: 31, completed: 26 },
-//     { day: "Wed", total: 28, completed: 24 },
-//     { day: "Thu", total: 36, completed: 31 },
-//     { day: "Fri", total: 41, completed: 35 },
-//     { day: "Sat", total: 22, completed: 19 },
-//     { day: "Sun", total: 9, completed: 8 },
-//   ];
-
-//   return (
-//     <div className="daily-report">
-
-//       {/* BACK */}
-//       <button className="back" onClick={() => navigate("/reports")}>
-//         ← All reports
-//       </button>
-
-//       {/* HEADER */}
-//       <div className="header">
-//         <div>
-//           <h1>Daily Appointments</h1>
-//           <p>Volume of appointments per day</p>
-//         </div>
-
-//         <button className="export">
-//           <Download size={16} /> Export CSV
-//         </button>
-//       </div>
-
-//       {/* FILTERS */}
-//       <div className="filters">
-
-//         <div className="field">
-//           <label>From</label>
-//           <input type="date" />
-//         </div>
-
-//         <div className="field">
-//           <label>To</label>
-//           <input type="date" />
-//         </div>
-
-//         <div className="field">
-//           <label>Doctor</label>
-//           <select>
-//             <option>All doctors</option>
-//           </select>
-//         </div>
-
-//         <button className="apply">Apply</button>
-//       </div>
-
-//       {/* CHART */}
-//      {/* VISUALIZATION CARD */}
-// <div className="chart-card">
-
- 
-
-//   <div className="chart-container">
-
-
-//     {/* Y AXIS */}
-//     <div className="y-axis">
-//        <h3>Visualization</h3>
-//       {[60, 45, 30, 15, 0].map((n) => (
-//         <span key={n}>{n}</span>
-//       ))}
-//     </div>
-
-//     {/* BARS */}
-//     <div className="chart">
-//       {data.map((d, i) => (
-//         <div key={i} className="bar">
-//           <div
-//             className="fill"
-//             style={{ height: `${d.total * 2}px` }}
-//           />
-//           <span>{d.day}</span>
-//         </div>
-//       ))}
-//     </div>
-
-//   </div>
-
-// </div>
-
-//       {/* TABLE */}
-//       <div className="table">
-
-//         <div className="thead">
-//           <span>Day</span>
-//           <span>Appointments</span>
-//           <span>Completed</span>
-//         </div>
-
-//         {data.map((d, i) => (
-//           <div key={i} className="row">
-//             <span>{d.day}</span>
-//             <span>{d.total}</span>
-//             <span>{d.completed}</span>
-//           </div>
-//         ))}
-
-//       </div>
-
-//     </div>
-//   );
-// }
-
-// export default DailyReport;
-
-
-
 import React, {
   useCallback,
   useEffect,
@@ -127,14 +5,21 @@ import React, {
   useState,
 } from "react";
 
+import "./ReportsTheme.css";
+import "./DailyReport.css";
+
 import {
+  Activity,
   ArrowLeft,
-  X,
+  CalendarDays,
+  CheckCircle2,
   Download,
+  Filter,
+  RefreshCw,
+  TrendingUp,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-import "./DailyReport.css";
 import { apiUrl } from "../../config/api";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
@@ -416,6 +301,18 @@ function DailyReport() {
     [appointmentRecords, doctorId, fromDate, toDate]
   );
 
+  // ================= TOTALS =================
+
+  const totals = useMemo(() => {
+    return data.reduce(
+      (sum, row) => ({
+        appointments: sum.appointments + Number(row.appointments || 0),
+        completed: sum.completed + Number(row.completed || 0),
+      }),
+      { appointments: 0, completed: 0 }
+    );
+  }, [data]);
+
   // ================= EXPORT PDF =================
 
   const exportPDF = () => {
@@ -438,13 +335,6 @@ function DailyReport() {
       minute: "2-digit",
       hour12: true,
     });
-    const totals = data.reduce(
-      (sum, row) => ({
-        appointments: sum.appointments + Number(row.appointments || 0),
-        completed: sum.completed + Number(row.completed || 0),
-      }),
-      { appointments: 0, completed: 0 }
-    );
     const rowsHtml = data.length
       ? data
           .map(
@@ -479,16 +369,16 @@ function DailyReport() {
             p { margin: 4px 0; color: #475569; font-size: 12px; }
             .meta { text-align: right; min-width: 220px; }
             .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0; }
-            .metric { border: 1px solid #dbe7ee; border-radius: 10px; padding: 13px; background: #f8fafc; }
+            .metric { border: 1px solid #dce8ef; border-radius: 10px; padding: 12px 14px; background: #f8fafc; }
             .metric span { display: block; color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: 700; }
-            .metric b { display: block; margin-top: 7px; font-size: 22px; }
+            .metric b { display: block; margin-top: 6px; font-size: 22px; color: #0f172a; }
             table { width: 100%; border-collapse: collapse; margin-top: 18px; }
-            th, td { border: 1px solid #d7e1ea; padding: 10px; text-align: left; font-size: 12px; }
-            th { background: #e8f7f5; color: #0f172a; text-transform: uppercase; font-size: 11px; }
+            th, td { border: 1px solid #dbe5ec; padding: 10px 12px; font-size: 12px; text-align: left; }
+            th { background: #eef6f8; color: #1e293b; text-transform: uppercase; font-size: 11px; }
             td:nth-child(1), td:nth-child(3), td:nth-child(4) { text-align: right; }
             .empty-row { text-align: center !important; color: #64748b; }
-            footer { margin-top: 24px; color: #64748b; font-size: 11px; text-align: center; }
-            @media print { main { padding: 0; } body { print-color-adjust: exact; } }
+            footer { margin-top: 24px; color: #64748b; font-size: 11px; }
+            @media print { body { print-color-adjust: exact; } }
           </style>
         </head>
         <body>
@@ -498,19 +388,18 @@ function DailyReport() {
                 <img src="${escapeHtml(branding.logoUrl)}" alt="Clinic logo" />
                 <div>
                   <h1>${escapeHtml(branding.headerTitle || clinicName)}</h1>
-                  <p>Daily Appointments Report</p>
-                  <p>Volume of appointments per day</p>
+                  <p>Daily Appointment Volume and Patient Flow Report</p>
                 </div>
               </div>
               <div class="meta">
                 <p>Generated: ${escapeHtml(generatedAt)}</p>
-                <p>Doctor: ${escapeHtml(selectedDoctor ? `Dr. ${getDoctorName(selectedDoctor)}` : "All doctors")}</p>
-                <p>Period: ${escapeHtml(fromDate || "Start")} to ${escapeHtml(toDate || "Today")}</p>
+                <p>Doctor: ${escapeHtml(selectedDoctor ? getDoctorName(selectedDoctor) : "All doctors")}</p>
+                <p>Range: ${escapeHtml(fromDate || "Initial")} to ${escapeHtml(toDate || "Current")}</p>
               </div>
             </header>
             <section class="metrics">
               <div class="metric"><span>Total Appointments</span><b>${totals.appointments}</b></div>
-              <div class="metric"><span>Completed</span><b>${totals.completed}</b></div>
+              <div class="metric"><span>Total Completed</span><b>${totals.completed}</b></div>
             </section>
             <table>
               <thead>
@@ -529,233 +418,228 @@ function DailyReport() {
 
   return (
     <div className="daily-report">
-
-      {/* HEADER */}
-
-      <div className="header">
-
-        <div>
-
-          <button
-            type="button"
-            className="report-back"
-            onClick={() => navigate("/reports")}
-          >
-            <ArrowLeft size={16} />
-            All reports
-          </button>
-
-          <h1>
-            Daily Appointments
-          </h1>
-
-          <p>
-            Volume of appointments per day
-          </p>
-
+      {/* MEDICAL & HOSPITALIZED AMBIENT TELEMETRY BACKGROUND */}
+      <div className="rep-medical-bg" aria-hidden="true">
+        <div className="rep-ecg-track">
+          <svg className="rep-ecg-svg" viewBox="0 0 1200 60" preserveAspectRatio="none">
+            <path
+              className="rep-ecg-line-base"
+              d="M0,30 L180,30 L195,12 L205,48 L215,6 L225,40 L235,30 L460,30 L475,10 L485,50 L495,4 L505,42 L515,30 L760,30 L775,12 L785,48 L795,6 L805,40 L815,30 L1020,30 L1035,10 L1045,50 L1055,4 L1065,42 L1075,30 L1200,30"
+            />
+            <path
+              className="rep-ecg-line-pulse"
+              d="M0,30 L180,30 L195,12 L205,48 L215,6 L225,40 L235,30 L460,30 L475,10 L485,50 L495,4 L505,42 L515,30 L760,30 L775,12 L785,48 L795,6 L805,40 L815,30 L1020,30 L1035,10 L1045,50 L1055,4 L1065,42 L1075,30 L1200,30"
+            />
+          </svg>
         </div>
-
-        <button
-          className="export"
-          onClick={exportPDF}
-        >
-
-          <Download size={16} />
-
-          Export PDF
-
-        </button>
-
+        <div className="rep-watermark-cross rep-watermark-cross--tl">+</div>
+        <div className="rep-watermark-cross rep-watermark-cross--br">+</div>
       </div>
 
-      {/* FILTERS */}
+      {/* TOP HOSPITAL TELEMETRY HUD BAR */}
+      <div className="rep-telemetry-bar">
+        <span className="rep-telemetry-badge">
+          <span className="rep-telemetry-cross">+</span>
+          PATIENT FLOW TELEMETRY
+        </span>
+        <span className="rep-telemetry-badge">
+          <Activity size={12} className="rep-telemetry-wave-icon" />
+          SYSTEM ONLINE
+          <span className="rep-telemetry-bead-live"></span>
+        </span>
+      </div>
 
-      <div className="filters">
+      {/* HEADER WITH SURGICAL INSTRUMENTS */}
+      <div className="header">
+        <div className="rep-header-title-group">
+          {/* ALL REPORTS NAVIGATION BUTTON */}
+          <button
+            type="button"
+            className="report-back rep-instrument--retractor"
+            onClick={() => navigate("/reports")}
+            title="Return to Reports"
+          >
+            <ArrowLeft size={16} />
+            <span>All reports</span>
+          </button>
 
+          <span className="rep-header-badge">
+            <span className="rep-header-badge-pulse">+</span>
+            APPOINTMENT VOLUME TELEMETRY
+          </span>
+          <h1>Daily Appointments</h1>
+          <p>Volume of patient bookings, clinical flow, and completed consultations</p>
+        </div>
+
+        {/* EXPORT PDF BUTTON */}
+        <button
+          type="button"
+          className="export rep-instrument--recorder"
+          onClick={exportPDF}
+          title="Export PDF"
+        >
+          <Download size={15} />
+          <span>Export PDF</span>
+        </button>
+      </div>
+
+      {/* DIAGNOSTIC LABORATORY FILTER PANEL */}
+      <div className="filter-card">
         {/* FROM */}
-
-        <div className="field">
-
+        <div>
           <label>From</label>
-
           <input
             type="date"
             value={fromDate}
-            onChange={(e) =>
-              setFromDate(
-                e.target.value
-              )
-            }
+            onChange={(e) => setFromDate(e.target.value)}
           />
-
         </div>
 
         {/* TO */}
-
-        <div className="field">
-
+        <div>
           <label>To</label>
-
           <input
             type="date"
             value={toDate}
-            onChange={(e) =>
-              setToDate(
-                e.target.value
-              )
-            }
+            onChange={(e) => setToDate(e.target.value)}
           />
-
         </div>
 
-        {/* DOCTOR */}
-
-        <div className="field">
-
+        {/* DOCTOR WITH ROTATING SYRINGE */}
+        <div>
           <label>Doctor</label>
-
           <select
             value={doctorId}
-            onChange={(e) =>
-              setDoctorId(
-                Number(
-                  e.target.value
-                )
-              )
-            }
+            onChange={(e) => setDoctorId(Number(e.target.value))}
           >
-
-            <option value={0}>
-              All doctors
-            </option>
-
-            {doctors.map(
-              (doctor) => (
-
-                <option
-                  key={getDoctorId(doctor)}
-                  value={getDoctorId(doctor)}
-                >
-
-                  Dr. {getDoctorName(doctor)}
-
-                </option>
-              )
-            )}
-
+            <option value={0}>All doctors</option>
+            {doctors.map((doctor) => (
+              <option
+                key={getDoctorId(doctor)}
+                value={getDoctorId(doctor)}
+              >
+                Dr. {getDoctorName(doctor)}
+              </option>
+            ))}
           </select>
-
         </div>
 
-        {/* APPLY */}
-
+        {/* CLEAN PROFESSIONAL APPLY BUTTON */}
         <button
           type="button"
-          className="report-apply"
+          className="report-apply-clean"
           onClick={fetchReport}
+          disabled={loading}
+          title="Apply Date & Doctor Filters"
         >
-
-          Apply
-
+          <Filter size={15} />
+          <span>{loading ? "Applying..." : "Apply"}</span>
         </button>
-
       </div>
 
-      {/* CHART */}
+      {/* MEDICAL TELEMETRY STAT SUMMARY CARDS */}
+      <div className="rep-stats-grid">
+        <div className="rep-stat-card">
+          <div className="rep-stat-icon-wrap cyan">
+            <CalendarDays size={20} />
+          </div>
+          <div className="rep-stat-info">
+            <span className="rep-stat-label">Total Appointments</span>
+            <span className="rep-stat-value">{totals.appointments}</span>
+          </div>
+        </div>
 
+        <div className="rep-stat-card">
+          <div className="rep-stat-icon-wrap emerald">
+            <CheckCircle2 size={20} />
+          </div>
+          <div className="rep-stat-info">
+            <span className="rep-stat-label">Completed Consultations</span>
+            <span className="rep-stat-value">{totals.completed}</span>
+          </div>
+        </div>
+
+        <div className="rep-stat-card">
+          <div className="rep-stat-icon-wrap amber">
+            <TrendingUp size={20} />
+          </div>
+          <div className="rep-stat-info">
+            <span className="rep-stat-label">Peak Daily Volume</span>
+            <span className="rep-stat-value">{maxAppointments} Max</span>
+          </div>
+        </div>
+      </div>
+
+      {/* HOSPITAL TELEMETRY MONITOR CHART SCREEN */}
       <div className="chart-card">
+        <div className="rep-chart-header">
+          <div className="rep-chart-title-wrap">
+            <div className="rep-chart-title-icon">
+              <Activity size={18} />
+            </div>
+            <h3>Visualization</h3>
+          </div>
+          <span className="rep-chart-telemetry-status">
+            <span className="rep-telemetry-bead-live"></span>
+            PATIENT FLOW ACTIVE
+          </span>
+        </div>
 
         <div className="chart-container">
-
           {/* Y AXIS */}
-
           <div className="y-axis">
-
-            <h3>
-              Visualization
-            </h3>
-
             {[maxAppointments, Math.floor(maxAppointments * 0.75), Math.floor(maxAppointments * 0.5), Math.floor(maxAppointments * 0.25), 0]
               .map((n) => (
                 <span key={n}>
                   {n}
                 </span>
               ))}
-
           </div>
 
           {/* BARS */}
-
           <div className="chart">
-
             {loading ? (
-
-              <div className="empty">
-                Loading...
-              </div>
-
+              <div className="empty">Loading...</div>
             ) : data.length === 0 ? (
-
-              <div className="empty">
-                No appointment data found
-              </div>
-
+              <div className="empty">No appointment data found</div>
             ) : (
-
               data.map((d, i) => (
-
-                <div
-                  key={i}
-                  className="bar"
-                >
-
+                <div key={i} className="bar">
                   <div
                     className="fill"
                     style={{
                       height: `${(d.appointments / maxAppointments) * 220}px`,
                     }}
                   />
-
-                  <span>
-                    {d.day}
-                  </span>
-
+                  <span>{d.day}</span>
                 </div>
               ))
             )}
-
           </div>
-
         </div>
-
       </div>
 
-      {/* TABLE */}
-
-      <div className="table">
+      {/* CLINICAL MEDICAL AUDIT RECORD TABLE */}
+      <div className="table table-card">
+        <div className="rep-table-banner">
+          <div className="rep-table-banner-title">
+            <span>+</span>
+            <span>Daily Appointment & Consultation Registry</span>
+          </div>
+          <span className="rep-table-badge">{data.length} Days Recorded</span>
+        </div>
 
         <div className="thead">
-
           <span>S.No.</span>
-
           <span>Day</span>
-
           <span>Appointments</span>
-
           <span>Completed</span>
-
         </div>
 
         {data.map((d, i) => (
-
-          <div
-            key={i}
-            className="row"
-          >
+          <div key={i} className="row">
             <span>{i + 1}</span>
-
             <span>{d.day}</span>
-
             <span>
               <button
                 type="button"
@@ -767,23 +651,13 @@ function DailyReport() {
                 {d.appointments}
               </button>
             </span>
-
-            <span>
-              {d.completed}
-            </span>
-
+            <span>{d.completed}</span>
           </div>
         ))}
 
-        {!loading &&
-          data.length === 0 && (
-
-          <div className="empty-table">
-            No report data found.
-          </div>
-
+        {!loading && data.length === 0 && (
+          <div className="empty-table">No report data found.</div>
         )}
-
       </div>
 
       {selectedDay ? (

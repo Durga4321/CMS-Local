@@ -1,30 +1,10 @@
-body {
-  margin: 0;
-  font-family: "Inter", "Segoe UI", Arial, sans-serif;
-  font-size: 14px;
-  color: #071120;
-  caret-color: transparent;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-html,
-body,
-* {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-html::-webkit-scrollbar,
-body::-webkit-scrollbar,
-*::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
-}
-
 :root {
-  --app-bg: #f8fafc;
+  --app-gradient-bg: 
+    radial-gradient(ellipse 70% 55% at 88% 10%, rgba(186, 230, 253, 0.75) 0%, rgba(209, 250, 229, 0.55) 35%, transparent 72%),
+    radial-gradient(ellipse 55% 45% at 8% 15%, rgba(191, 219, 254, 0.65) 0%, rgba(224, 242, 254, 0.3) 40%, transparent 70%),
+    radial-gradient(circle at 82% 88%, rgba(224, 242, 254, 0.45) 0%, rgba(209, 250, 229, 0.25) 45%, transparent 70%),
+    linear-gradient(140deg, #e1f0fe 0%, #edf6fd 26%, #f1f8fd 56%, #ecf8f5 100%);
+  --app-bg: #edf6fd;
   --app-surface: #ffffff;
   --app-border: #e5e7eb;
   --app-text: #071120;
@@ -35,6 +15,21 @@ body::-webkit-scrollbar,
   --app-title-size: 16px;
   --app-body-size: 14px;
   --app-caption-size: 12px;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--app-gradient-bg) !important;
+  background-attachment: fixed !important;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  color: #071120;
+  caret-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .app-action-button,
@@ -852,8 +847,10 @@ code {
   .sa-table-row,
   .admin-users-table-head,
   .admin-users-row,
+  .branches-thead,
   .branches-table-head,
   .branches-row,
+  .receptionists-thead,
   .receptionists-table-head,
   .receptionists-row,
   .doctors-table-head,
@@ -928,3 +925,549 @@ code {
     --app-section-gap: var(--space-3);
   }
 }
+
+/* ==========================================================================
+   GLOBAL MEDICAL SYRINGE & BLOOD DROP DROPDOWN THEME FOR COMPLETE APPLICATION
+   ========================================================================== */
+
+/* 1. Global <select> Surgical Syringe Dropdown Styling for Complete Application */
+select,
+select:not([multiple]),
+select.form-control,
+select.form-select,
+select.op-form-select,
+.da-filter-select,
+.ds-card select,
+.filter-card select,
+.field select,
+.sa-search-filter select,
+.sa-audit-scope-filter select,
+.sa-form-field select,
+.admin-users-toolbar select,
+.admin-settings-select,
+.admin-roles-select,
+.receptionists-field select,
+.nurses-field select,
+.branches-field select,
+.branches-toolbar select,
+.doctors-toolbar select,
+.doctor-edit-field select,
+.patients-field select,
+.patients-toolbar select,
+.lab-files-field select,
+.lab-tech-field select,
+.rc-filter-field select,
+.rc-service-grid select,
+.rc-form-grid select,
+.rc-booking-form select,
+.rc-billing-form select,
+.hc-branch-select-input,
+.hc-branch-selector select,
+.doctor-settings-card select,
+.add-patient-field select,
+.add-doctor-field select,
+.add-doctor-input-group select,
+.input-group select,
+.pd-profile-input-label select,
+.pd-notification-sort select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: calc(100% - 12px) center !important;
+  background-size: 16px 16px !important;
+  padding-right: 36px !important;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-image 0.2s ease;
+}
+
+select:hover,
+select:focus,
+select:not([multiple]):hover,
+select:not([multiple]):focus,
+select.form-control:hover,
+select.form-control:focus,
+select.form-select:hover,
+select.form-select:focus,
+select.op-form-select:hover,
+select.op-form-select:focus,
+.da-filter-select:hover,
+.da-filter-select:focus,
+.ds-card select:hover,
+.ds-card select:focus,
+.filter-card select:hover,
+.filter-card select:focus,
+.field select:hover,
+.field select:focus,
+.sa-search-filter select:hover,
+.sa-search-filter select:focus,
+.sa-audit-scope-filter select:hover,
+.sa-audit-scope-filter select:focus,
+.sa-form-field select:hover,
+.sa-form-field select:focus,
+.admin-users-toolbar select:hover,
+.admin-users-toolbar select:focus,
+.admin-settings-select:hover,
+.admin-settings-select:focus,
+.admin-roles-select:hover,
+.admin-roles-select:focus,
+.receptionists-field select:hover,
+.receptionists-field select:focus,
+.nurses-field select:hover,
+.nurses-field select:focus,
+.branches-field select:hover,
+.branches-field select:focus,
+.branches-toolbar select:hover,
+.branches-toolbar select:focus,
+.doctors-toolbar select:hover,
+.doctors-toolbar select:focus,
+.doctor-edit-field select:hover,
+.doctor-edit-field select:focus,
+.patients-field select:hover,
+.patients-field select:focus,
+.patients-toolbar select:hover,
+.patients-toolbar select:focus,
+.lab-files-field select:hover,
+.lab-files-field select:focus,
+.lab-tech-field select:hover,
+.lab-tech-field select:focus,
+.rc-filter-field select:hover,
+.rc-filter-field select:focus,
+.rc-service-grid select:hover,
+.rc-service-grid select:focus,
+.rc-form-grid select:hover,
+.rc-form-grid select:focus,
+.rc-booking-form select:hover,
+.rc-booking-form select:focus,
+.rc-billing-form select:hover,
+.rc-billing-form select:focus,
+.hc-branch-select-input:hover,
+.hc-branch-select-input:focus,
+.hc-branch-selector select:hover,
+.hc-branch-selector select:focus,
+.doctor-settings-card select:hover,
+.doctor-settings-card select:focus,
+.add-patient-field select:hover,
+.add-patient-field select:focus,
+.add-doctor-field select:hover,
+.add-doctor-field select:focus,
+.add-doctor-input-group select:hover,
+.add-doctor-input-group select:focus,
+.input-group select:hover,
+.input-group select:focus,
+.pd-profile-input-label select:hover,
+.pd-profile-input-label select:focus,
+.pd-notification-sort select:hover,
+.pd-notification-sort select:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230284c7' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+}
+
+/* Prevent double syringe on select elements that have custom adjacent syringe overlays */
+.db-filter-select {
+  background-image: none !important;
+}
+
+/* 2. Syringe Dropdown Trigger Elements */
+.rc-syringe-trigger,
+.user-profile-syringe-trigger,
+.pp-syringe-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 55%, #be123c 100%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.45);
+  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
+}
+
+.rc-syringe-trigger:hover,
+.user-profile-syringe-trigger:hover,
+.pp-syringe-trigger:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px rgba(225, 29, 72, 0.6);
+}
+
+.rc-syringe-icon {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  transform: rotate(135deg); /* Needle points UPWARDS when closed */
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.rc-syringe-trigger.rc-syringe--active,
+.user-profile-syringe-trigger.rc-syringe--active,
+.pp-syringe-trigger.rc-syringe--active,
+.rc-syringe-trigger:active,
+.user-profile-syringe-trigger:active,
+.pp-syringe-trigger:active {
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 55%, #9f1239 100%);
+  border-color: #fda4af;
+  box-shadow: 0 6px 18px rgba(225, 29, 72, 0.65);
+  animation: syringeInject 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.rc-syringe-trigger.rc-syringe--active .rc-syringe-icon,
+.user-profile-syringe-trigger.rc-syringe--active .rc-syringe-icon,
+.pp-syringe-trigger.rc-syringe--active .rc-syringe-icon,
+.rc-syringe-trigger:active .rc-syringe-icon,
+.user-profile-syringe-trigger:active .rc-syringe-icon,
+.pp-syringe-trigger:active .rc-syringe-icon {
+  transform: rotate(-45deg) scale(1.08); /* Needle points straight DOWN to inject blood */
+}
+
+@keyframes syringeInject {
+  0% { transform: scale(1) translateY(0); }
+  40% { transform: scale(0.9) translateY(2px); }
+  75% { transform: scale(1.06) translateY(-1px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+/* Ruby Blood Drip from the Needle */
+.rc-syringe-drip-bead {
+  position: absolute;
+  bottom: -7px;
+  left: calc(50% - 3.5px);
+  width: 7px;
+  height: 7px;
+  background: radial-gradient(circle at 35% 35%, #ff809b 0%, #e11d48 60%, #9f1239 100%);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.7);
+  animation: syringeNeedleDrip 1.4s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Falling Blood Drop that drips down from syringe needle */
+.rc-syringe-falling-drop {
+  position: absolute;
+  width: 8px;
+  height: 10px;
+  background: radial-gradient(circle at 35% 30%, #ff4d6d 0%, #e11d48 60%, #991b1b 100%);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  bottom: -8px;
+  left: calc(50% - 4px);
+  box-shadow: 0 0 10px rgba(225, 29, 72, 0.85);
+  pointer-events: none;
+  z-index: 10;
+  animation: syringeDropFall 0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes syringeDropFall {
+  0% {
+    transform: translateY(0) rotate(-45deg) scale(0.6);
+    opacity: 0;
+  }
+  25% {
+    transform: translateY(4px) rotate(-45deg) scale(1.25);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(28px) rotate(-45deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(55px) rotate(-45deg) scale(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes syringeNeedleDrip {
+  0% { transform: translateY(0) rotate(-45deg) scale(0.5); opacity: 0; }
+  30% { transform: translateY(2px) rotate(-45deg) scale(1.2); opacity: 1; }
+  65% { transform: translateY(10px) rotate(-45deg) scale(1); opacity: 0.9; }
+  100% { transform: translateY(20px) rotate(-45deg) scale(0.4); opacity: 0; }
+}
+
+/* Capillary Blood Stream Connecting Syringe to Droplet Cards */
+.rc-blood-capillary-stream {
+  position: absolute;
+  left: 6px;
+  top: -6px;
+  bottom: 8px;
+  width: 2.5px;
+  background: linear-gradient(180deg, #e11d48 0%, rgba(244, 63, 94, 0.5) 60%, rgba(244, 63, 94, 0.1) 100%);
+  border-radius: 999px;
+  box-shadow: 0 0 6px rgba(225, 29, 72, 0.35);
+  pointer-events: none;
+  z-index: 1;
+  transform-origin: top;
+  animation: capillaryStreamDraw 0.4s ease-out forwards, bloodCapillaryPulse 2s infinite ease-in-out 0.4s;
+}
+
+@keyframes capillaryStreamDraw {
+  0% {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes bloodCapillaryPulse {
+  0%, 100% { opacity: 0.65; }
+  50% { opacity: 1; box-shadow: 0 0 10px rgba(225, 29, 72, 0.7); }
+}
+
+.rc-blood-capillary-drop-1,
+.rc-blood-capillary-drop-2 {
+  position: absolute;
+  left: -1.25px;
+  width: 5px;
+  height: 5px;
+  background: #e11d48;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #f43f5e;
+}
+
+.rc-blood-capillary-drop-1 {
+  top: 25%;
+  animation: capillaryDropFlow 2.2s infinite ease-in-out;
+}
+
+.rc-blood-capillary-drop-2 {
+  top: 65%;
+  animation: capillaryDropFlow 2.2s infinite ease-in-out 1.1s;
+}
+
+@keyframes capillaryDropFlow {
+  0% { transform: translateY(-8px) scale(0.7); opacity: 0.3; }
+  50% { transform: translateY(8px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(20px) scale(0.6); opacity: 0.2; }
+}
+
+/* Blood Droplet Cards (Capsule Pills Matching Screenshot) */
+.rc-blood-drop-item {
+  position: relative;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 6px 14px 6px 6px !important;
+  border-radius: 999px !important;
+  min-height: 48px !important;
+  background: linear-gradient(90deg, #fff0f3 0%, #ffe4e6 100%) !important;
+  border: 1.5px solid #ffccd5 !important;
+  box-shadow: 0 3px 12px rgba(225, 29, 72, 0.08) !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  animation: bloodCardCascade 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  z-index: 2;
+}
+
+.rc-blood-drop-item:nth-child(2) { animation-delay: 0.05s; }
+.rc-blood-drop-item:nth-child(3) { animation-delay: 0.14s; }
+.rc-blood-drop-item:nth-child(4) { animation-delay: 0.23s; }
+.rc-blood-drop-item:nth-child(5) { animation-delay: 0.32s; }
+
+@keyframes bloodCardCascade {
+  0% {
+    opacity: 0;
+    transform: translateY(-22px) scale(0.85);
+    filter: blur(2px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(4px) scale(1.02);
+    filter: blur(0);
+  }
+  85% {
+    transform: translateY(-2px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.rc-blood-drop-item:hover {
+  background: linear-gradient(90deg, #ffe4e6 0%, #fecdd3 100%) !important;
+  border-color: #f43f5e !important;
+  box-shadow: 0 6px 20px rgba(225, 29, 72, 0.22) !important;
+  transform: translateX(6px) scale(1.02) !important;
+}
+
+/* ACTIVE STATE: Rich, Luminous Orange Gradient (EXACT MATCH to Screenshot) */
+.rc-blood-drop-item.active {
+  background: linear-gradient(90deg, #ea580c 0%, #f97316 60%, #fb923c 100%) !important;
+  border: 1.5px solid #f97316 !important;
+  box-shadow: 0 8px 24px rgba(234, 88, 12, 0.45) !important;
+  transform: translateX(4px) !important;
+}
+
+.rc-blood-drop-item.active:hover {
+  background: linear-gradient(90deg, #c2410c 0%, #ea580c 60%, #f97316 100%) !important;
+  box-shadow: 0 10px 28px rgba(234, 88, 12, 0.55) !important;
+  transform: translateX(6px) scale(1.02) !important;
+}
+
+.rc-blood-drop-item.active .rc-blood-drop-text,
+.rc-blood-drop-item.active .rc-blood-drop-text b,
+.rc-blood-drop-item.active .rc-blood-drop-text small {
+  color: #ffffff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.rc-blood-drop-item.danger {
+  background: linear-gradient(90deg, #fff1f2 0%, #ffe4e6 100%) !important;
+  border-color: #fca5a5 !important;
+}
+
+.rc-blood-drop-item.danger:hover {
+  background: linear-gradient(90deg, #dc2626 0%, #ef4444 60%, #f87171 100%) !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.45) !important;
+  color: #ffffff !important;
+}
+
+.rc-blood-drop-item.danger:hover .rc-blood-drop-text b,
+.rc-blood-drop-item.danger:hover .rc-blood-drop-text small {
+  color: #ffffff !important;
+}
+
+/* 3D Ruby Droplet Badge with Point Pointing Straight Down & Specular Highlight */
+.rc-blood-drop-badge {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: radial-gradient(circle at 35% 30%, #ff4d6d 0%, #e11d48 55%, #9f1239 100%) !important;
+  box-shadow: 0 4px 10px rgba(225, 29, 72, 0.45), inset 0 2px 3px rgba(255, 255, 255, 0.4) !important;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  animation: dropletPlop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes dropletPlop {
+  0% {
+    transform: rotate(-45deg) scale(0.25);
+    opacity: 0;
+  }
+  65% {
+    transform: rotate(-45deg) scale(1.2);
+  }
+  85% {
+    transform: rotate(-45deg) scale(0.95);
+  }
+  100% {
+    transform: rotate(-45deg) scale(1);
+    opacity: 1;
+  }
+}
+
+.rc-blood-drop-item:hover .rc-blood-drop-badge {
+  transform: rotate(-45deg) scale(1.12);
+  box-shadow: 0 6px 14px rgba(225, 29, 72, 0.6) !important;
+}
+
+/* Active State Droplet Badge (Frosted White-Pink with Specular Shine) */
+.rc-blood-drop-item.active .rc-blood-drop-badge {
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #ffe4e6 55%, #fecdd3 100%) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16), inset 0 2px 3px rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Specular light reflection on droplet */
+.rc-blood-drop-badge::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4.5px;
+  width: 7px;
+  height: 4.5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  transform: rotate(15deg);
+  filter: blur(0.2px);
+  pointer-events: none;
+}
+
+.rc-blood-drop-badge--logout {
+  background: radial-gradient(circle at 35% 30%, #ff4d6d 0%, #dc2626 55%, #991b1b 100%) !important;
+}
+
+.rc-blood-drop-svg {
+  display: none;
+}
+
+/* Upright icon inside rotated droplet */
+.rc-blood-drop-inner-icon {
+  transform: rotate(45deg);
+  color: #ffffff !important;
+  stroke-width: 2.4;
+  z-index: 1;
+}
+
+.rc-blood-drop-item.active .rc-blood-drop-inner-icon {
+  color: #e11d48 !important;
+}
+
+/* Clear, High-Contrast Typography */
+.rc-blood-drop-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  text-align: left;
+  font-size: 14.5px !important;
+  font-weight: 800 !important;
+  color: #701a31 !important;
+  letter-spacing: -0.01em;
+}
+
+.rc-blood-drop-text b {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #701a31;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rc-blood-drop-text small {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #9f1239;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status Pill ("ONLINE" / "DESK") */
+.rc-blood-drop-pill {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  padding: 3px 12px !important;
+  border-radius: 999px !important;
+  border: 1.5px solid #fda4af !important;
+  background: rgba(255, 228, 230, 0.7) !important;
+  color: #be123c !important;
+  transition: all 0.2s ease;
+}
+
+.rc-blood-drop-item.active .rc-blood-drop-pill {
+  border: 1.5px solid rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+}
+

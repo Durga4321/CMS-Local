@@ -24,6 +24,7 @@ function ReceptionistApp() {
         <Route path="appointments/offline" element={<PermissionRoute roleType="receptionist" module="Offline Bookings"><ReceptionOfflineBookings /></PermissionRoute>} />
         <Route path="billing" element={<PermissionRoute roleType="receptionist" module="Billing"><ReceptionBilling /></PermissionRoute>} />
         <Route path="profile" element={<UserProfilePage roleType="receptionist" />} />
+        <Route path="change-password" element={<Navigate to="/reception/profile?tab=password" replace />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Route>
     </Routes>

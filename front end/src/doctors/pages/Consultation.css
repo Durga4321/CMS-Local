@@ -53,11 +53,13 @@
 .cn-stepper {
   display: flex;
   align-items: center;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(186, 201, 215, 0.75);
+  border-radius: 16px;
   padding: 18px 32px;
   gap: 0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
 }
 
 .cn-step {
@@ -132,78 +134,86 @@
 }
 
 .cn-patient-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(186, 201, 215, 0.75);
+  border-radius: 16px;
   padding: 16px;
   display: flex;
   gap: 12px;
   align-items: flex-start;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
 }
 
 .cn-pat-avatar {
   width: 44px;
   height: 44px;
-  background: #dbeafe;
-  color: #1d4ed8;
-  border-radius: 10px;
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: #ffffff;
+  border-radius: 12px;
   font-size: 16px;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
 }
 
 .cn-pat-name { margin: 0; font-size: 14px; font-weight: 700; color: #0f172a; }
 .cn-pat-sub  { margin: 2px 0 6px; font-size: 11px; color: #64748b; }
 .cn-pat-badge {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: #e0f2fe;
+  color: #0369a1;
   font-size: 10px;
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 999px;
+  border: 1px solid #bae6fd;
 }
 
 .cn-panel-section {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(186, 201, 215, 0.75);
+  border-radius: 16px;
   padding: 14px 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
 }
 
 .cn-panel-heading {
   margin: 0 0 10px;
   font-size: 12px;
-  font-weight: 700;
-  color: #64748b;
+  font-weight: 800;
+  color: #0f766e;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
 }
 
 .cn-history-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 5px 0;
-  border-bottom: 1px solid #f8fafc;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.7);
 }
 .cn-history-row:last-child { border-bottom: none; }
 
-.cn-history-key { font-size: 11px; color: #64748b; }
+.cn-history-key { font-size: 11px; color: #64748b; font-weight: 500; }
 .cn-history-val { font-size: 11px; font-weight: 700; color: #0f172a; text-align: right; }
-.cn-vitals-val  { color: #2563eb; }
+.cn-vitals-val  { color: #0891b2; font-weight: 800; }
 
 /* ── Right form panel ── */
 .cn-form-panel {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(186, 201, 215, 0.75);
+  border-radius: 16px;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
 }
 
 .cn-field {
@@ -221,18 +231,20 @@
 .cn-input {
   width: 100%;
   height: 44px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #cbd5e1;
   border-radius: 10px;
   padding: 0 14px;
   font-size: 14px;
   color: #0f172a;
+  background: #f8fafc;
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: all 0.18s ease;
   box-sizing: border-box;
 }
 .cn-input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  background: #ffffff;
+  border-color: #0891b2;
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15);
 }
 
 .cn-test-chips {
@@ -354,75 +366,121 @@
   gap: 14px;
 }
 
-/* ── Action buttons ── */
+/* ── Action buttons (Surgical Instrument Models) ── */
 .cn-form-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 12px;
-  padding-top: 4px;
+  gap: 14px;
+  padding-top: 8px;
 }
 
-.cn-btn-save,
-.cn-btn-submit,
-.cn-btn-print {
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  border-radius: 10px;
-  padding: 11px 24px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #334155;
+.cn-surgical-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s;
-}
-.cn-btn-save:hover { background: #f8fafc; }
-.cn-btn-save:disabled,
-.cn-btn-submit:disabled,
-.cn-btn-print:disabled,
-.cn-btn-primary:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  letter-spacing: 0.2px;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
 
-.cn-btn-submit {
-  border-color: #86efac;
-  background: #16a34a;
-  color: #fff;
+.cn-surgical-grip,
+.cn-surgical-status-bead,
+.cn-surgical-plunger,
+.cn-syringe-ring,
+.cn-syringe-shaft,
+.cn-syringe-ticks,
+.cn-syringe-needle-arrow {
+  display: none !important;
 }
 
-.cn-btn-submit:hover {
-  background: #15803d;
+.cn-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
 }
 
-.cn-btn-print {
+.cn-btn-submit,
+.cn-btn-print,
+.cn-btn-primary,
+.cn-surgical-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-color: #fbcfe8;
-  background: #fdf2f8;
-  color: #2563eb;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
-}
-
-.cn-btn-print:hover {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-}
-
-.cn-btn-primary {
-  background: #2563eb;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 11px 24px;
-  font-size: 14px;
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 11px;
+  font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  outline: none;
 }
-.cn-btn-primary:hover { background: #1d4ed8; }
+
+.cn-btn-submit:disabled,
+.cn-btn-print:disabled,
+.cn-btn-primary:disabled,
+.cn-surgical-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: grayscale(0.5);
+}
+
+/* Submit */
+.cn-btn-submit {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  border: 1px solid #10b981;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(5, 150, 105, 0.3);
+}
+
+.cn-btn-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.45);
+  transform: translateY(-1.5px);
+}
+
+/* Print */
+.cn-btn-print {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border: 1px solid #c084fc;
+  color: #7c3aed;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.12);
+}
+
+.cn-btn-print:hover:not(:disabled) {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  border-color: #6d28d9;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.32);
+  transform: translateY(-1.5px);
+}
+
+/* Add Prescription */
+.cn-btn-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border: 1px solid #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3);
+}
+
+.cn-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+  transform: translateY(-1.5px);
+}
 
 @media (max-width: 900px) {
   .cn-body { grid-template-columns: 1fr; }

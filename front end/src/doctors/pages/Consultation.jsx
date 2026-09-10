@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Printer } from "lucide-react";
+import { Check, Plus, Printer } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Consultation.css";
 import { apiUrl } from "../../config/api";
@@ -1010,24 +1010,32 @@ function Consultation() {
               type="button"
               onClick={handleSubmitConsultation}
               disabled={saving || !canCreateConsultation}
+              title="Submit Consultation"
             >
-              {saving ? "Saving..." : "Submit"}
+              <Check size={16} />
+              <span>{saving ? "Saving..." : "Submit"}</span>
             </button>
+
             <button
               className="cn-btn-print"
               type="button"
               onClick={printConsultation}
               disabled={saving || !canCreateConsultation}
+              title="Print Consultation"
             >
-              <Printer size={16} /> Print
+              <Printer size={16} />
+              <span>Print</span>
             </button>
+
             <button
               className="cn-btn-primary"
               type="button"
               onClick={handleAddPrescription}
               disabled={saving || !canCreateConsultation}
+              title="Add Prescription"
             >
-              {saving ? "Saving..." : "Add Prescription →"}
+              <Plus size={16} />
+              <span>{saving ? "Saving..." : "Add Prescription"}</span>
             </button>
           </div>
         </section>

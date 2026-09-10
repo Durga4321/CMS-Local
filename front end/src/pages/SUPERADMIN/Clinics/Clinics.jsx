@@ -127,13 +127,14 @@ function Clinics() {
     {
       key: "serial",
       label: "S.No.",
-      width: "70px",
+      width: "48px",
+      align: "center",
       render: (_clinic, index) => index + 1,
     },
     {
       key: "name",
       label: "Clinic Name",
-      width: "minmax(200px, 1.2fr)",
+      width: "minmax(130px, 1.1fr)",
       render: (clinic) => (
         <div className="sa-clinic-name-cell">
           <span className="sa-clinic-logo sa-clinic-logo--emerald">
@@ -146,7 +147,7 @@ function Clinics() {
     {
       key: "address",
       label: "Address",
-      width: "minmax(300px, 2fr)",
+      width: "minmax(160px, 1.6fr)",
       render: (clinic) => (
         <span className="sa-clinic-icon-text">
           <MapPin size={14} />
@@ -157,7 +158,7 @@ function Clinics() {
     {
       key: "contactNumber",
       label: "Contact Number",
-      width: "minmax(160px, 1fr)",
+      width: "minmax(120px, 0.95fr)",
       render: (clinic) => (
         <span className="sa-clinic-icon-text sa-clinic-icon-text--phone">
           <Phone size={14} />
@@ -168,7 +169,7 @@ function Clinics() {
     {
       key: "email",
       label: "Email",
-      width: "minmax(180px, 1fr)",
+      width: "minmax(140px, 1fr)",
       cellClassName: "sa-table-cell--nowrap",
       render: (clinic) => (
         <span title={clinic.email || ""} className="sa-table-text-overflow">
@@ -179,7 +180,8 @@ function Clinics() {
     {
       key: "status",
       label: "Status",
-      width: "130px",
+      width: "88px",
+      align: "center",
       render: (clinic) => (
         <span className={`sa-badge sa-clinic-status ${clinic.status === "Active" ? "is-active" : "is-danger"}`}>
           {clinic.status}
@@ -189,7 +191,8 @@ function Clinics() {
     {
       key: "actions",
       label: "Actions",
-      width: "minmax(210px, auto)",
+      width: "150px",
+      align: "center",
       cellClassName: "sa-table-cell--actions",
       render: (clinic) => {
         const isActive = String(clinic.status || "").trim().toLowerCase() === "active";
