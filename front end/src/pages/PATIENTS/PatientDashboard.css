@@ -2110,3 +2110,95 @@
 .pd-reference-dashboard .pd-notification-list { gap: 0; }.pd-reference-dashboard .pd-notification-item { align-items: center; gap: 10px; padding: 10px 0; border: 0; border-radius: 0; border-bottom: 1px solid #edf1f4; box-shadow: none; transform: none; }.pd-reference-dashboard .pd-notification-item:hover { background: transparent; }.pd-reference-dashboard .pd-notification-item > svg { color: #078a82; flex: 0 0 auto; }.pd-reference-dashboard .pd-notification-body strong { font-size: 11px; font-weight: 550; }.pd-reference-dashboard .pd-notification-item em { flex: 0 0 auto; color: #64748b; font-size: 10px; font-style: normal; }
 @media (max-width: 1240px) { .pd-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.pd-dashboard-row { grid-template-columns: minmax(0, 1fr) minmax(260px, .8fr); }.pd-notifications-panel { grid-column: 1 / -1; } }
 @media (max-width: 760px) { .pd-overview-grid, .pd-dashboard-row { grid-template-columns: 1fr; }.pd-notifications-panel { grid-column: auto; }.pd-reference-dashboard .pd-appointment-panel, .pd-reference-dashboard .pd-summary-card { min-height: auto; }.pd-queue-track { overflow-x: auto; margin-left: 0; }.pd-queue-step { min-width: 58px; }.pd-header-actions { width: 100%; }.pd-header-actions .pd-header-btn { flex: 1; } }
+/* Admin-inspired color effects for the active Patient dashboard. */
+.pd-reference-dashboard .pd-header {
+  padding: 18px;
+  border: 1px solid rgba(14, 165, 233, 0.16);
+  border-left: 5px solid #0ea5e9;
+  border-radius: 12px;
+  background: linear-gradient(100deg, #f0f9ff 0%, #ecfdf5 56%, #ffffff 100%);
+  box-shadow: 0 12px 28px rgba(14, 116, 144, 0.08);
+}
+
+.pd-reference-dashboard .pd-card {
+  position: relative;
+  overflow: hidden;
+  border-width: 1px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.pd-reference-dashboard .pd-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+}
+
+.pd-reference-dashboard .pd-card:hover {
+  transform: translateY(-3px);
+}
+
+.pd-reference-dashboard .pd-token-panel {
+  border-color: #99f6e4;
+  background: linear-gradient(145deg, #ffffff 48%, #ecfdf5 100%);
+  box-shadow: 0 16px 34px rgba(13, 148, 136, 0.14);
+}
+
+.pd-reference-dashboard .pd-token-panel::before,
+.pd-reference-dashboard .pd-queue-panel::before {
+  background: #14b8a6;
+}
+
+.pd-reference-dashboard .pd-appointment-panel {
+  border-color: #bfdbfe;
+  background: linear-gradient(145deg, #ffffff 48%, #eff6ff 100%);
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.14);
+}
+
+.pd-reference-dashboard .pd-appointment-panel::before {
+  background: #3b82f6;
+}
+
+.pd-reference-dashboard .pd-summary-card--billing {
+  border-color: #fde68a;
+  background: linear-gradient(145deg, #ffffff 48%, #fffbeb 100%);
+  box-shadow: 0 16px 34px rgba(217, 119, 6, 0.14);
+}
+
+.pd-reference-dashboard .pd-summary-card--billing::before {
+  background: #f59e0b;
+}
+
+.pd-reference-dashboard .pd-summary-card--records {
+  border-color: #bbf7d0;
+  background: linear-gradient(145deg, #ffffff 48%, #f0fdf4 100%);
+  box-shadow: 0 16px 34px rgba(22, 163, 74, 0.14);
+}
+
+.pd-reference-dashboard .pd-summary-card--records::before {
+  background: #22c55e;
+}
+
+.pd-reference-dashboard .pd-queue-panel {
+  border-color: #99f6e4;
+  background: linear-gradient(180deg, #f0fdfa 0%, #ffffff 30%);
+}
+
+.pd-reference-dashboard .pd-actions-panel {
+  border-color: #ddd6fe;
+  background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 30%);
+}
+
+.pd-reference-dashboard .pd-actions-panel::before {
+  background: #8b5cf6;
+}
+
+.pd-reference-dashboard .pd-notifications-panel {
+  border-color: #fecdd3;
+  background: linear-gradient(180deg, #fff1f2 0%, #ffffff 30%);
+}
+
+.pd-reference-dashboard .pd-notifications-panel::before {
+  background: #f43f5e;
+}

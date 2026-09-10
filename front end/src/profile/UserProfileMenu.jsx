@@ -146,9 +146,18 @@ export function UserProfileMenu({ roleType = "admin" }) {
   const handleBranchChange = (event) => {
     const nextBranchId = event.target.value;
     const nextBranch = branchOptions.find((branch) => String(branch.id) === String(nextBranchId));
+    const nextBranchName = getBranchName(nextBranch) || String(nextBranchId);
     setActiveBranchId(String(nextBranchId));
-    rememberDoctorBranch(nextBranch || { branchId: nextBranchId });
+    rememberDoctorBranch(nextBranch || { branchId: nextBranchId, branchName: nextBranchName });
     setProfileTick((value) => value + 1);
+    handleOpenChange(false);
+    navigate("/doctor/dashboard", {
+      state: {
+        branchId: String(nextBranchId),
+        branchName: nextBranchName,
+        branchChangedAt: Date.now(),
+      },
+    });
   };
 
   const activeBranch = branchOptions.find((branch) => String(branch.id) === String(activeBranchId));
@@ -281,3 +290,4 @@ export function UserProfileMenu({ roleType = "admin" }) {
 }
 
 export default UserProfileMenu;
+

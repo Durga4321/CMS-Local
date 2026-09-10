@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Bell,
@@ -25,6 +25,7 @@ import {
 import "./Sidebar.css";
 import { getInitials, getRoleProfile } from "../profile/sessionProfile";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
+import { getDefaultClinicLogo, useClinicInvoiceBranding } from "../utils/clinicBranding";
 import { filterItemsByViewPermission, hasAnySavedModulePermissions, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const items = [
@@ -65,6 +66,14 @@ const superAdminItems = [
   { to: "/superadmin/notifications", label: "Notifications", icon: Bell, tone: "rose" },
 ];
 
+const getProfileClinicId = (profile = {}) =>
+  profile.clinicId ||
+  profile.hospitalId ||
+  profile.assignedClinicId ||
+  localStorage.getItem("hospitalId") ||
+  localStorage.getItem("clinicId") ||
+  "";
+
 function Sidebar({
   open = false,
   onClose = () => {},
@@ -100,6 +109,20 @@ function Sidebar({
         : filterItemsByViewPermission(baseNavItems, profile);
 
   const brandName = isSuperAdmin ? "CMS" : isPatient ? "Patient Portal" : getClinicDisplayName(profile, "Hp Clinic");
+  const clinicId = getProfileClinicId(profile);
+  const clinicBrandingScope = useMemo(
+    () => ({
+      clinicId,
+      clinicName: brandName,
+      enabled: !isSuperAdmin && !isPatient,
+    }),
+    [brandName, clinicId, isPatient, isSuperAdmin]
+  );
+  const clinicBranding = useClinicInvoiceBranding(clinicBrandingScope);
+  const defaultSidebarLogoUrl = getDefaultClinicLogo(brandName, clinicId);
+  const sidebarLogoUrl = !isSuperAdmin && !isPatient
+    ? clinicBranding.logoUrl || defaultSidebarLogoUrl
+    : "";
 
   return (
     <>
@@ -108,7 +131,17 @@ function Sidebar({
       {/* BRAND LOGO HEADER (NO CROSS SYMBOL) */}
       <div className="sidebar-header" title={brandName}>
         <div className="sidebar-brand-icon">
-          <Activity size={20} className="brand-icon" />
+          {sidebarLogoUrl ? (
+            <img
+              src={sidebarLogoUrl}
+              alt=""
+              onError={(event) => {
+                event.currentTarget.src = defaultSidebarLogoUrl;
+              }}
+            />
+          ) : (
+            <Activity size={20} className="brand-icon" />
+          )}
         </div>
         <div className="sidebar-brand-text">
           <h3 title={brandName}>{brandName}</h3>
@@ -161,3 +194,5 @@ function Sidebar({
 }
 
 export default Sidebar;
+
+

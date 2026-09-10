@@ -264,10 +264,16 @@ function DoctorDashboard() {
   }, [fetchDashboard]);
 
   useEffect(() => {
-    const handleBranchChanged = () => fetchDashboard({ silent: true });
+    const handleBranchChanged = () => {
+      setSearch("");
+      setNotes(null);
+      setPatientOverview(null);
+      setDashboard(null);
+      fetchDashboard();
+    };
     window.addEventListener("doctorBranchChanged", handleBranchChanged);
     return () => window.removeEventListener("doctorBranchChanged", handleBranchChanged);
-  }, [fetchDashboard]);
+  }, [fetchDashboard, setSearch]);
 
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -749,3 +755,4 @@ function DoctorDashboard() {
 }
 
 export default DoctorDashboard;
+

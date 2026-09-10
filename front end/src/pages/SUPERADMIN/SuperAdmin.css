@@ -217,6 +217,74 @@
   flex-basis: 48px;
   border-radius: 14px;
 }
+/* Dashboard-only color treatment; shared Super Admin pages remain unchanged. */
+.sa-dashboard-page .sa-page-header {
+  padding: 16px 18px;
+  border: 1px solid rgba(14, 165, 233, 0.16);
+  border-left: 5px solid #0ea5e9;
+  border-radius: 12px;
+  background: linear-gradient(100deg, #f0f9ff 0%, #ecfdf5 55%, #ffffff 100%);
+  box-shadow: 0 12px 28px rgba(14, 116, 144, 0.08);
+}
+
+.sa-dashboard-page .sa-stat-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.sa-dashboard-page .sa-stat-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 4px;
+  background: currentColor;
+  opacity: 0.72;
+}
+
+.sa-dashboard-page .sa-stat-card--teal {
+  color: #0f766e;
+  border-color: #99f6e4;
+  background: linear-gradient(135deg, #ffffff 12%, #e6fffb 100%);
+  box-shadow: 0 16px 34px rgba(13, 148, 136, 0.13);
+}
+
+.sa-dashboard-page .sa-stat-card--blue {
+  color: #2563eb;
+  border-color: #bfdbfe;
+  background: linear-gradient(135deg, #ffffff 12%, #eaf2ff 100%);
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.13);
+}
+
+.sa-dashboard-page .sa-stat-card--amber {
+  color: #b45309;
+  border-color: #fde68a;
+  background: linear-gradient(135deg, #ffffff 12%, #fff7d6 100%);
+  box-shadow: 0 16px 34px rgba(217, 119, 6, 0.13);
+}
+
+.sa-dashboard-page .sa-stat-card h2 {
+  color: #0f172a;
+}
+
+.sa-dashboard-page .sa-stat-card:not(:disabled):hover {
+  transform: translateY(-4px);
+}
+
+.sa-dashboard-page .sa-stat-card--teal:not(:disabled):hover {
+  border-color: #2dd4bf;
+  box-shadow: 0 22px 44px rgba(13, 148, 136, 0.2);
+}
+
+.sa-dashboard-page .sa-stat-card--blue:not(:disabled):hover {
+  border-color: #60a5fa;
+  box-shadow: 0 22px 44px rgba(37, 99, 235, 0.2);
+}
+
+.sa-dashboard-page .sa-stat-card--amber:not(:disabled):hover {
+  border-color: #fbbf24;
+  box-shadow: 0 22px 44px rgba(217, 119, 6, 0.2);
+}
 
 .sa-dashboard-shell {
   display: flex;
@@ -263,6 +331,17 @@
   max-height: calc(100vh - 330px);
   min-height: 0;
   overflow: hidden;
+}
+.sa-dashboard-page .sa-panel--highlighted {
+  border-top: 4px solid #14b8a6;
+  background: linear-gradient(180deg, #f0fdfa 0%, #ffffff 24%);
+  box-shadow: 0 18px 40px rgba(13, 148, 136, 0.11);
+}
+
+.sa-dashboard-page .sa-panel--activity {
+  border-top: 4px solid #3b82f6;
+  background: linear-gradient(180deg, #eff6ff 0%, #ffffff 24%);
+  box-shadow: 0 18px 40px rgba(37, 99, 235, 0.11);
 }
 
 .sa-panel__header {
@@ -376,6 +455,7 @@
   scrollbar-color: #cbd5e1 transparent;
   scrollbar-width: thin;
 }
+
 
 .sa-activity-list::-webkit-scrollbar {
   width: 5px;

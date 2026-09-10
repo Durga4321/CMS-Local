@@ -453,6 +453,7 @@ function AdminSettings() {
     logoUrl: resolveAssetUrl(form.logoDataUrl) || liveBranding.logoUrl || defaultLogoUrl,
     watermarkUrl: resolveAssetUrl(form.logoDataUrl) || liveBranding.logoUrl || defaultLogoUrl,
   };
+  const hasUploadedLogo = Boolean(resolveAssetUrl(form.logoDataUrl));
   const effectiveTemplateValue = form.template;
   const builtInTemplate = BUILT_IN_TEMPLATES.find((template) => template.value === form.template);
   const templatePreview = builtInTemplate;
@@ -937,12 +938,12 @@ function AdminSettings() {
           {/* Logo upload dropzone */}
           <div className="admin-settings-logo-drop">
             <div className="admin-settings-logo-frame">
-              {form.logoDataUrl && form.logoDataUrl !== defaultLogoUrl ? (
+              {previewBranding.logoUrl ? (
                 <img
-                  src={resolveAssetUrl(form.logoDataUrl)}
+                  src={previewBranding.logoUrl}
                   alt="Clinic logo preview"
                   onError={(event) => {
-                    event.currentTarget.style.display = "none";
+                    event.currentTarget.src = defaultLogoUrl;
                   }}
                 />
               ) : (
@@ -961,7 +962,7 @@ function AdminSettings() {
                 className="admin-settings-delete-logo-btn"
                 type="button"
                 onClick={deleteLogo}
-                disabled={loading || saving || !canDelete || !form.logoDataUrl || form.logoDataUrl === defaultLogoUrl}
+                disabled={loading || saving || !canDelete || !hasUploadedLogo}
               >
                 <Trash2 size={15} />
                 <span>Delete Logo</span>
@@ -1434,3 +1435,4 @@ function AdminSettings() {
 }
 
 export default AdminSettings;
+

@@ -157,6 +157,20 @@ const toNumber = (value) => {
   return Number.isFinite(number) ? number : 0;
 };
 
+const DIAGNOSTIC_REVENUE_KEYS = [
+  "diagnosticRevenue",
+  "DiagnosticRevenue",
+  "Diagnostic Revenue",
+  "diagnostic revenue",
+  "labRevenue",
+  "LabRevenue",
+  "Lab Revenue",
+  "lab revenue",
+  "labCharge",
+  "labCharges",
+  "diagnosticCharge",
+  "diagnosticCharges",
+];
 const normalizeStatus = (value) => {
   if (typeof value === "boolean") return value ? "Active" : "Inactive";
   const status = String(value || "").trim();
@@ -1159,7 +1173,7 @@ export const normalizeReportRow = (row = {}, index = 0) => ({
   adminEmail: getReportAdminEmail(row),
   revenue: toNumber(pick(row, ["revenue", "Revenue", "totalRevenue", "TotalRevenue", "Total Revenue", "total revenue", "netRevenue", "NetRevenue", "Net Revenue", "net revenue", "amount", "Amount", "total", "Total"], 0)),
   opRevenue: toNumber(pick(row, ["opRevenue", "OPRevenue", "OP Revenue", "op revenue"], 0)),
-  diagnosticRevenue: toNumber(pick(row, ["diagnosticRevenue", "DiagnosticRevenue", "Diagnostic Revenue", "diagnostic revenue"], 0)),
+  diagnosticRevenue: toNumber(pick(row, DIAGNOSTIC_REVENUE_KEYS, 0)),
   pharmacyRevenue: toNumber(pick(row, ["pharmacyRevenue", "PharmacyRevenue", "Pharmacy Revenue", "pharmacy revenue"], 0)),
   cgstAmount: toNumber(pick(row, ["cgstAmount", "CGSTAmount", "CGST Amount", "cgst amount", "cgst", "CGST"], 0)),
   sgstAmount: toNumber(pick(row, ["sgstAmount", "SGSTAmount", "SGST Amount", "sgst amount", "sgst", "SGST"], 0)),
@@ -1209,7 +1223,7 @@ const getBillingType = (item = {}) => {
   ).toLowerCase();
   const consultation = toNumber(pick(item, ["consultationCharge", "consultationCharges", "consultationFee", "opCharge", "opCharges", "opRevenue", "OPRevenue", "OP Revenue", "op revenue"], 0));
   const medicine = toNumber(pick(item, ["medicineCharge", "medicineCharges", "pharmacyCharge", "pharmacyCharges", "pharmacyRevenue", "PharmacyRevenue", "Pharmacy Revenue", "pharmacy revenue"], 0));
-  const lab = toNumber(pick(item, ["labCharge", "labCharges", "diagnosticCharge", "diagnosticCharges", "diagnosticRevenue", "DiagnosticRevenue", "Diagnostic Revenue", "diagnostic revenue"], 0));
+  const lab = toNumber(pick(item, DIAGNOSTIC_REVENUE_KEYS, 0));
 
   if ((rawType.includes("consultation") || rawType.includes("op") || rawType.includes("patient portal")) && !rawType.includes("pharmacy") && !rawType.includes("diagnostic")) return "op";
   if (consultation > 0 && lab === 0 && medicine === 0) return "op";
@@ -1585,7 +1599,7 @@ const enrichReportRows = ({ rows = [], clinicRows = [], adminRows = [], userRows
     return {
       ...normalizedRow,
       opRevenue: toNumber(row.opRevenue ?? row.OPRevenue ?? row["OP Revenue"] ?? row["op revenue"] ?? normalizedRow.opRevenue),
-      diagnosticRevenue: toNumber(row.diagnosticRevenue ?? row.DiagnosticRevenue ?? row["Diagnostic Revenue"] ?? row["diagnostic revenue"] ?? normalizedRow.diagnosticRevenue),
+      diagnosticRevenue: toNumber(pick(row, DIAGNOSTIC_REVENUE_KEYS, normalizedRow.diagnosticRevenue)),
       pharmacyRevenue: toNumber(row.pharmacyRevenue ?? row.PharmacyRevenue ?? row["Pharmacy Revenue"] ?? row["pharmacy revenue"] ?? normalizedRow.pharmacyRevenue),
       cgstAmount: toNumber(row.cgstAmount ?? row.CGSTAmount ?? row["CGST Amount"] ?? row["cgst amount"] ?? row.cgst ?? row.CGST ?? normalizedRow.cgstAmount),
       sgstAmount: toNumber(row.sgstAmount ?? row.SGSTAmount ?? row["SGST Amount"] ?? row["sgst amount"] ?? row.sgst ?? row.SGST ?? normalizedRow.sgstAmount),
@@ -1779,7 +1793,10 @@ const getClinicRevenueRowKey = (row = {}) =>
 
 const mergeRevenueRow = (current = {}, next = {}) => {
   const opRevenue = Math.max(toNumber(current.opRevenue), toNumber(next.opRevenue));
-  const diagnosticRevenue = Math.max(toNumber(current.diagnosticRevenue), toNumber(next.diagnosticRevenue));
+  const diagnosticRevenue = Math.max(
+    toNumber(pick(current, DIAGNOSTIC_REVENUE_KEYS, current.diagnosticRevenue)),
+    toNumber(pick(next, DIAGNOSTIC_REVENUE_KEYS, next.diagnosticRevenue))
+  );
   const pharmacyRevenue = Math.max(toNumber(current.pharmacyRevenue), toNumber(next.pharmacyRevenue));
   const cgstAmount = Math.max(toNumber(current.cgstAmount), toNumber(next.cgstAmount));
   const sgstAmount = Math.max(toNumber(current.sgstAmount), toNumber(next.sgstAmount));
@@ -3708,3 +3725,4 @@ export const countActiveUsers = async () => {
     return 0;
   }
 };
+

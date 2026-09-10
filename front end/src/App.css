@@ -3651,4 +3651,183 @@
     grid-template-columns: 1fr;
   }
 }
+/* Admin-style effects across every authenticated Patient screen. */
+.patient-portal .patient-dashboard:not(.pd-reference-dashboard) > .pd-header {
+  padding: 18px;
+  border: 1px solid rgba(14, 165, 233, 0.18);
+  border-left: 5px solid #0ea5e9;
+  border-radius: 12px;
+  background: linear-gradient(100deg, #f0f9ff 0%, #ecfdf5 56%, #ffffff 100%);
+  box-shadow: 0 12px 28px rgba(14, 116, 144, 0.09);
+}
 
+.patient-portal :where(
+  .pd-card,
+  .mh-card,
+  .mh-panel,
+  .pd-prescription-card,
+  .pb-generate-card,
+  .pb-latest-card,
+  .pb-total-card,
+  .pb-invoice-card,
+  .booking-panel,
+  .pp-account-card,
+  .pp-account-panel,
+  .pp-password-form
+) {
+  border-color: rgba(148, 163, 184, 0.3);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.patient-portal :where(
+  .pd-notification-item,
+  .mh-mini-item,
+  .mh-visit-item,
+  .booking-card,
+  .pb-info-item
+) {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.patient-portal :where(
+  .pd-notification-item,
+  .mh-mini-item,
+  .mh-visit-item,
+  .booking-card,
+  .pb-info-item
+):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+}
+
+.patient-portal .patient-dashboard:not(.pd-reference-dashboard) > .pd-card {
+  border-top: 4px solid #3b82f6;
+  background: linear-gradient(180deg, #eff6ff 0%, #ffffff 150px);
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.11);
+}
+
+.patient-portal .booking-page {
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(240, 249, 255, 0.72), rgba(236, 253, 245, 0.72));
+}
+
+.patient-portal .booking-panel {
+  border-top: 4px solid #0ea5e9;
+  background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 140px);
+  box-shadow: 0 16px 36px rgba(14, 165, 233, 0.12);
+}
+
+.patient-portal .booking-card {
+  border-color: #bae6fd;
+  background: linear-gradient(145deg, #ffffff 45%, #f0f9ff 100%);
+}
+
+.patient-portal .booking-card:nth-child(3n + 2) {
+  border-color: #99f6e4;
+  background: linear-gradient(145deg, #ffffff 45%, #f0fdfa 100%);
+}
+
+.patient-portal .booking-card:nth-child(3n) {
+  border-color: #ddd6fe;
+  background: linear-gradient(145deg, #ffffff 45%, #f5f3ff 100%);
+}
+
+.patient-portal .mh-card {
+  border-top: 4px solid #14b8a6;
+  background: linear-gradient(145deg, #ffffff 46%, #f0fdfa 100%);
+  box-shadow: 0 16px 32px rgba(13, 148, 136, 0.11);
+}
+
+.patient-portal .mh-card:nth-child(3n + 2) {
+  border-top-color: #3b82f6;
+  background: linear-gradient(145deg, #ffffff 46%, #eff6ff 100%);
+}
+
+.patient-portal .mh-card:nth-child(3n) {
+  border-top-color: #8b5cf6;
+  background: linear-gradient(145deg, #ffffff 46%, #f5f3ff 100%);
+}
+
+.patient-portal .mh-panel {
+  border-top: 4px solid #0ea5e9;
+  background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 150px);
+  box-shadow: 0 18px 38px rgba(2, 132, 199, 0.11);
+}
+
+.patient-portal .mh-visit-item {
+  border-color: #bae6fd;
+  background: linear-gradient(135deg, #ffffff, #f0f9ff);
+}
+
+.patient-portal .pd-prescription-card {
+  border-top: 4px solid #8b5cf6;
+  border-color: #ddd6fe;
+  background: linear-gradient(145deg, #ffffff 50%, #f5f3ff 100%);
+  box-shadow: 0 16px 34px rgba(124, 58, 237, 0.12);
+}
+
+.patient-portal .pd-prescription-card:nth-child(even) {
+  border-top-color: #ec4899;
+  border-color: #fbcfe8;
+  background: linear-gradient(145deg, #ffffff 50%, #fdf2f8 100%);
+}
+
+.patient-portal :where(.pb-generate-card, .pb-latest-card, .pb-invoice-card) {
+  border-top: 4px solid #f59e0b;
+  border-color: #fde68a;
+  background: linear-gradient(180deg, #fffbeb 0%, #ffffff 150px);
+  box-shadow: 0 16px 34px rgba(217, 119, 6, 0.12);
+}
+
+.patient-portal .pb-total-card {
+  border-color: #99f6e4;
+  background: linear-gradient(145deg, #ffffff 42%, #ecfdf5 100%);
+  box-shadow: 0 14px 30px rgba(13, 148, 136, 0.12);
+}
+
+.patient-portal .pd-notifications-page > .pd-card {
+  border-top-color: #f43f5e;
+  background: linear-gradient(180deg, #fff1f2 0%, #ffffff 150px);
+  box-shadow: 0 16px 34px rgba(225, 29, 72, 0.11);
+}
+
+.patient-portal .pd-notification-item {
+  border-color: #fecdd3;
+  background: linear-gradient(135deg, #ffffff, #fff7f8);
+}
+
+.patient-portal .pd-notification-item.is-unread {
+  border-color: #86efac;
+  background: linear-gradient(135deg, #f0fdf4, #ffffff);
+}
+
+.patient-portal .pp-account-card {
+  border-top: 4px solid #0ea5e9;
+  background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 130px);
+}
+
+.patient-portal .pp-account-panel {
+  min-width: 0;
+}
+
+.patient-portal :where(.pp-password-form, .pd-profile-page-grid > .pd-card) {
+  border-top: 4px solid #14b8a6;
+  background: linear-gradient(180deg, #f0fdfa 0%, #ffffff 160px);
+  box-shadow: 0 18px 38px rgba(13, 148, 136, 0.12);
+}
+
+@media (max-width: 760px) {
+  .patient-portal .patient-dashboard:not(.pd-reference-dashboard) > .pd-header {
+    padding: 14px;
+  }
+
+  .patient-portal :where(
+    .pd-notification-item,
+    .mh-mini-item,
+    .mh-visit-item,
+    .booking-card,
+    .pb-info-item
+  ):hover {
+    transform: none;
+  }
+}
