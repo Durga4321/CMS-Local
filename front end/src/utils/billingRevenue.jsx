@@ -138,7 +138,7 @@ export const getBillingType = (row = {}) => {
   ).toLowerCase();
   const consultation = toNumber(pick(row, ["consultationCharge", "consultationCharges", "consultationFee", "opCharge", "opCharges", "opRevenue", "OPRevenue", "OP Revenue", "op revenue"], 0));
   const medicine = toNumber(pick(row, ["medicineCharge", "medicineCharges", "pharmacyCharge", "pharmacyCharges", "pharmacyRevenue", "PharmacyRevenue", "Pharmacy Revenue", "pharmacy revenue"], 0));
-  const lab = toNumber(pick(row, ["labCharge", "labCharges", "diagnosticCharge", "diagnosticCharges", "diagnosticRevenue", "DiagnosticRevenue", "Diagnostic Revenue", "diagnostic revenue"], 0));
+  const lab = toNumber(pick(row, ["labRevenue", "LabRevenue", "Lab Revenue", "lab revenue", "labCharge", "labCharges", "diagnosticCharge", "diagnosticCharges", "diagnosticRevenue", "DiagnosticRevenue", "Diagnostic Revenue", "diagnostic revenue"], 0));
 
   if ((rawType.includes("consultation") || rawType.includes("op") || rawType.includes("patient portal")) && !rawType.includes("pharmacy") && !rawType.includes("diagnostic")) return "op";
   if (consultation > 0 && lab === 0 && medicine === 0) return "op";
@@ -151,7 +151,7 @@ export const getBillingType = (row = {}) => {
 
 export const getRevenueBreakdown = (row = {}) => {
   const opAmount = toNumber(pick(row, ["opRevenue", "OPRevenue", "OP Revenue", "op revenue", "consultationCharge", "consultationCharges", "consultationFee", "opCharge", "opCharges"], 0));
-  const diagnosticAmount = toNumber(pick(row, ["diagnosticRevenue", "DiagnosticRevenue", "Diagnostic Revenue", "diagnostic revenue", "labCharge", "labCharges", "diagnosticCharge", "diagnosticCharges", "testCharge", "testCharges"], 0));
+  const diagnosticAmount = toNumber(pick(row, ["diagnosticRevenue", "DiagnosticRevenue", "Diagnostic Revenue", "diagnostic revenue", "labRevenue", "LabRevenue", "Lab Revenue", "lab revenue", "labCharge", "labCharges", "diagnosticCharge", "diagnosticCharges", "testCharge", "testCharges"], 0));
   const pharmacyAmount = toNumber(pick(row, ["pharmacyRevenue", "PharmacyRevenue", "Pharmacy Revenue", "pharmacy revenue", "medicineCharge", "medicineCharges", "pharmacyCharge", "pharmacyCharges", "medicationCharges"], 0));
   const hasBreakdown = opAmount > 0 || diagnosticAmount > 0 || pharmacyAmount > 0;
   if (hasBreakdown) {
@@ -451,3 +451,4 @@ export const groupRevenueByMonth = (rows = []) => {
 
   return Array.from(byMonth.values()).sort((left, right) => String(left.monthSort).localeCompare(String(right.monthSort)));
 };
+

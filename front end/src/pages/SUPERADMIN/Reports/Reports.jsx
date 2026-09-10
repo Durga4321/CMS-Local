@@ -201,7 +201,7 @@ function Reports() {
         adminName: source.adminName || clinic.adminName,
         adminEmail: source.adminEmail || clinic.adminEmail,
         opRevenue: toNumber(source.opRevenue ?? source.OPRevenue ?? source["OP Revenue"] ?? source["op revenue"] ?? clinic.opRevenue),
-        diagnosticRevenue: toNumber(source.diagnosticRevenue ?? source.DiagnosticRevenue ?? source["Diagnostic Revenue"] ?? source["diagnostic revenue"] ?? clinic.diagnosticRevenue),
+        diagnosticRevenue: toNumber(source.diagnosticRevenue ?? source.DiagnosticRevenue ?? source["Diagnostic Revenue"] ?? source["diagnostic revenue"] ?? source.labRevenue ?? source.LabRevenue ?? source["Lab Revenue"] ?? source["lab revenue"] ?? clinic.diagnosticRevenue),
         pharmacyRevenue: toNumber(source.pharmacyRevenue ?? source.PharmacyRevenue ?? source["Pharmacy Revenue"] ?? source["pharmacy revenue"] ?? clinic.pharmacyRevenue),
         cgstAmount: toNumber(source.cgstAmount ?? source.CGSTAmount ?? source["CGST Amount"] ?? source["cgst amount"] ?? source.cgst ?? source.CGST ?? clinic.cgstAmount),
         sgstAmount: toNumber(source.sgstAmount ?? source.SGSTAmount ?? source["SGST Amount"] ?? source["sgst amount"] ?? source.sgst ?? source.SGST ?? clinic.sgstAmount),
@@ -704,3 +704,4 @@ function Reports() {
 }
 
 export default Reports;
+

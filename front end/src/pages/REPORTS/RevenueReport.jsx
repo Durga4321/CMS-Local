@@ -119,11 +119,27 @@ const getMonthLabel = (value, index = 0) => {
 
 const normalizeRevenueRows = (value) =>
   parseList(value)
-    .map((row, index) => ({
-      month: pick(row, ["month", "name", "date", "label"], getMonthLabel(getRowDate(row), index)),
-      revenue: getRevenueAmount(row),
-      growth: toNumber(pick(row, ["growth", "growthPercentage", "change"], 0)),
-    }))
+    .map((row, index) => {
+      const month = pick(row, ["month", "name", "date", "label"], getMonthLabel(getRowDate(row), index));
+      const cgstAmount = toNumber(pick(row, ["cgstAmount", "CGSTAmount", "cgst", "CGST"], 0));
+      const sgstAmount = toNumber(pick(row, ["sgstAmount", "SGSTAmount", "sgst", "SGST"], 0));
+
+      return {
+        ...row,
+        month,
+        monthSort: pick(row, ["monthSort", "monthKey"], month),
+        branchId: pick(row, ["branchId", "BranchId"], ""),
+        branchName: pick(row, ["branchName", "BranchName", "branch", "Branch"], "All Branches"),
+        opRevenue: toNumber(pick(row, ["opRevenue", "OPRevenue", "op", "OP"], 0)),
+        diagnosticRevenue: toNumber(pick(row, ["diagnosticRevenue", "DiagnosticRevenue", "labRevenue"], 0)),
+        pharmacyRevenue: toNumber(pick(row, ["pharmacyRevenue", "PharmacyRevenue"], 0)),
+        cgstAmount,
+        sgstAmount,
+        gstAmount: toNumber(pick(row, ["gstAmount", "GSTAmount", "totalGst", "TotalGst"], cgstAmount + sgstAmount)),
+        revenue: getRevenueAmount(row),
+        growth: toNumber(pick(row, ["growth", "growthPercentage", "change"], 0)),
+      };
+    })
     .filter((row) => row.month || row.revenue);
 
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
@@ -243,6 +259,16 @@ function RevenueReport() {
 
       const result = await response.json();
       const reportRows = normalizeRevenueRows(result);
+      const detailedReportRows = reportRows.filter((row) =>
+        row.branchId ||
+        normalizeText(row.branchName) !== "all branches" ||
+        row.opRevenue ||
+        row.diagnosticRevenue ||
+        row.pharmacyRevenue ||
+        row.cgstAmount ||
+        row.sgstAmount ||
+        row.gstAmount
+      );
 
       const backendBillingRows = await fetchRevenueBillingRows({ apiUrl, headers, params });
 
@@ -270,8 +296,11 @@ function RevenueReport() {
         );
 
       const nextBranchRows = groupRevenueByMonthBranch(billingRows);
-      setBranchRows(nextBranchRows);
-      if (nextBranchRows.length) {
+      if (detailedReportRows.length) {
+        setBranchRows(detailedReportRows);
+        setData(reportRows);
+      } else if (nextBranchRows.length) {
+        setBranchRows(nextBranchRows);
         setData(groupRevenueByMonth(billingRows));
       } else if (branchId) {
         setData([]);
