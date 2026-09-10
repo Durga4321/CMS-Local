@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { BellRing, CalendarDays, CheckCircle2, CreditCard, Megaphone, Send, Trash2 } from "lucide-react";
+import { BellRing, CalendarDays, CheckCircle2, CreditCard, Receipt, Megaphone, Send, Trash2 } from "lucide-react";
 import { markNotificationRead } from "../../pages/SUPERADMIN/superAdminApi";
 
 function NotificationPanel({ items = [], onDelete = () => {}, onRead = () => {} }) {
@@ -13,7 +13,7 @@ function NotificationPanel({ items = [], onDelete = () => {}, onRead = () => {} 
   const getNotificationTone = (item = {}, index = 0) => {
     const text = `${item.title || ""} ${item.message || ""}`.toLowerCase();
     if (text.includes("payment") || text.includes("paid") || text.includes("invoice") || text.includes("bill")) {
-      return { tone: "payment", Icon: CreditCard };
+      return { tone: "payment", Icon: Receipt };
     }
     if (text.includes("maintenance") || text.includes("system") || text.includes("notice") || text.includes("alert")) {
       return { tone: "system", Icon: Megaphone };

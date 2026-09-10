@@ -1212,6 +1212,66 @@
   margin: 0 auto !important;
 }
 
+.sa-table-head .sa-sno-head,
+.sa-table-row .sa-table-cell--sno,
+.sa-sno-head,
+.sa-table-cell--sno {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.sa-table-head .sa-status-head,
+.sa-table-row .sa-table-cell--status,
+.sa-status-head,
+.sa-table-cell--status {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.sa-align-center,
+.sa-table-head .sa-align-center,
+.sa-table-row .sa-align-center {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.sa-align-right,
+.sa-table-head .sa-align-right,
+.sa-table-row .sa-align-right {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  text-align: right !important;
+}
+
+.sa-align-left,
+.sa-name-head,
+.sa-table-cell--name,
+.sa-admin-name-cell,
+.sa-clinic-name-cell,
+.sa-admin-clinic-cell,
+.sa-table-head .sa-align-left,
+.sa-table-row .sa-align-left {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
 .sa-table-row {
   min-width: 760px;
   display: grid;
@@ -1471,10 +1531,18 @@
 }
 
 .sa-table--clinics {
-  overflow-x: auto;
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
   border-radius: 12px;
   border-color: #dde6f1;
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+}
+
+@media (max-width: 900px) {
+  .sa-table--clinics {
+    overflow-x: auto;
+  }
 }
 
 .sa-table--clinics .sa-table-head {
@@ -1497,6 +1565,11 @@
 
 .sa-table--clinics .sa-table-cell {
   overflow: hidden;
+  min-width: 0;
+}
+
+.sa-table--clinics .sa-table-cell--actions {
+  overflow: visible !important;
 }
 
 .sa-table--clinics .sa-table-row:hover {
@@ -1871,10 +1944,23 @@
   background: #f3e8ff;
 }
 
+.sa-notification-icon svg {
+  display: block !important;
+  width: 22px !important;
+  height: 22px !important;
+  stroke: currentColor !important;
+  stroke-width: 2.2 !important;
+  flex-shrink: 0 !important;
+}
+
 .sa-notification-icon--appointment-3,
 .sa-notification-icon--payment {
-  color: #f59e0b;
-  background: #ffedd5;
+  color: #d97706 !important;
+  background: #fef3c7 !important;
+}
+
+.sa-notification-icon--payment svg {
+  stroke: #d97706 !important;
 }
 
 .sa-notification-icon--cancelled {
@@ -1934,9 +2020,45 @@
   font-size: 13px;
 }
 
+.sa-notification-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 14px !important;
+}
+
 .sa-notification-item-btn {
-  flex: 1 1 auto;
-  min-width: 0;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  text-align: left !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+}
+
+.sa-notification-item-btn > div {
+  width: 100% !important;
+  text-align: left !important;
+}
+
+.sa-notification-item-btn b,
+.sa-notification-item-btn p {
+  text-align: left !important;
+  margin: 0 !important;
+}
+
+.sa-notification-item-btn p {
+  margin-top: 3px !important;
+}
+
+.sa-notification-actions {
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
 }
 
 .sa-notification-item-btn span {
@@ -2170,12 +2292,71 @@
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
+.sa-table--admins {
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .sa-table--admins {
+    overflow-x: auto;
+  }
+}
+
 .sa-table--admins .sa-table-head,
 .sa-table--admins .sa-table-row {
-  min-width: 0;
-  width: 100%;
-  column-gap: 6px;
-  padding: 8px 10px;
+  min-width: 0 !important;
+  width: 100% !important;
+  column-gap: 8px !important;
+  padding: 8px 12px !important;
+}
+
+.sa-table--admins .sa-table-head > :nth-child(1),
+.sa-table--admins .sa-table-row > :nth-child(1) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  margin: 0 auto !important;
+}
+
+.sa-table--admins .sa-table-head > :nth-child(2),
+.sa-table--admins .sa-table-row > :nth-child(2),
+.sa-table--admins .sa-admin-name-cell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.sa-table .actions-group,
+.sa-table-cell--actions .actions-group {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  padding: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.sa-table .actions-group .action-btn,
+.sa-table-cell--actions .action-btn {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  border-radius: 7px !important;
+}
+
+.sa-table .actions-group .action-btn svg,
+.sa-table-cell--actions .action-btn svg {
+  width: 14px !important;
+  height: 14px !important;
 }
 
 .sa-table--admins .sa-table-row {
@@ -2190,20 +2371,20 @@
 }
 
 .sa-admin-name-cell {
-  gap: 12px;
+  gap: 10px;
 }
 
 .sa-admin-avatar {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
   color: #ffffff;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 800;
   border: 2px solid #ffffff;
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);

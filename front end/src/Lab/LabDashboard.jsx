@@ -193,7 +193,6 @@ function LabDashboard() {
       icon: ClipboardList,
       theme: "card-blue-theme",
       boxClass: "box-blue",
-      sparkColor: "#0284c7",
       period: "Today",
       trendText: "● Daily Orders",
       trendClass: "trend-neutral",
@@ -205,7 +204,6 @@ function LabDashboard() {
       icon: Clock,
       theme: "card-orange-theme",
       boxClass: "box-orange",
-      sparkColor: "#f97316",
       period: "Pending",
       trendText: "● Awaiting Action",
       trendClass: "trend-down",
@@ -217,7 +215,6 @@ function LabDashboard() {
       icon: TestTube2,
       theme: "card-purple-theme",
       boxClass: "box-purple",
-      sparkColor: "#8b5cf6",
       period: "Samples",
       trendText: "● Collection Required",
       trendClass: "trend-neutral",
@@ -229,7 +226,6 @@ function LabDashboard() {
       icon: FlaskConical,
       theme: "card-teal-theme",
       boxClass: "box-teal",
-      sparkColor: "#0d9488",
       period: "Active",
       trendText: "● Under Analysis",
       trendClass: "trend-neutral",
@@ -241,7 +237,6 @@ function LabDashboard() {
       icon: CheckCircle,
       theme: "card-green-theme",
       boxClass: "box-green",
-      sparkColor: "#10b981",
       period: "Done",
       trendText: "✓ Completed Today",
       trendClass: "trend-up",
@@ -253,7 +248,6 @@ function LabDashboard() {
       icon: XCircle,
       theme: "card-rose-theme",
       boxClass: "box-rose",
-      sparkColor: "#e11d48",
       period: "Voided",
       trendText: "● Cancelled Tests",
       trendClass: "trend-down",
@@ -265,7 +259,6 @@ function LabDashboard() {
       icon: FileBarChart2,
       theme: "card-amber-theme",
       boxClass: "box-amber",
-      sparkColor: "#d97706",
       period: "Reports",
       trendText: "● Sign-off Needed",
       trendClass: "trend-neutral",
@@ -301,7 +294,7 @@ function LabDashboard() {
 
       {/* RADIANT MULTI-COLORED KPI STAT CARDS */}
       <div className="rc-dash-kpi-grid lab-dashboard-grid">
-        {cards.map(({ label, value, icon: Icon, theme, boxClass, sparkColor, period, trendText, trendClass, to }) => (
+        {cards.map(({ label, value, icon: Icon, theme, boxClass, period, trendText, trendClass, to }) => (
           <div
             className={`rc-dash-kpi-card ${theme}`}
             key={label}
@@ -323,13 +316,6 @@ function LabDashboard() {
               <div className={`db-kpi-trend ${trendClass}`}>
                 <span>{trendText}</span>
               </div>
-              <svg className="db-sparkline" viewBox="0 0 160 30" preserveAspectRatio="none">
-                <path d="M0 24 Q 25 18, 50 22 T 100 16 T 160 8" fill="none" stroke={sparkColor} strokeWidth="2.5" strokeLinecap="round" />
-                <circle cx="0" cy="24" r="3" fill={sparkColor} />
-                <circle cx="50" cy="22" r="3" fill={sparkColor} />
-                <circle cx="100" cy="16" r="3" fill={sparkColor} />
-                <circle cx="160" cy="8" r="3" fill={sparkColor} />
-              </svg>
             </div>
           </div>
         ))}

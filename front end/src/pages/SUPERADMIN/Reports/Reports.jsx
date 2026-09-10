@@ -227,13 +227,14 @@ function Reports() {
     {
       key: "serial",
       label: "S.No.",
-      width: "46px",
+      width: "42px",
+      align: "center",
       render: (_item, index) => index + 1,
     },
     {
       key: "adminName",
       label: "Admin",
-      width: "minmax(180px, 1fr)",
+      width: "minmax(120px, 0.9fr)",
       render: (clinic) => {
         const adminName = getAdminDisplayName(clinic.adminName);
         return (
@@ -244,41 +245,41 @@ function Reports() {
         );
       },
     },
-    { key: "name", label: "Clinic", width: "minmax(170px, 1fr)" },
+    { key: "name", label: "Clinic", width: "minmax(110px, 0.8fr)" },
     {
       key: "opRevenue",
       label: "OP",
-      width: "minmax(110px, 0.7fr)",
+      width: "minmax(80px, 0.6fr)",
       render: (clinic) => formatIndianCurrency(clinic.opRevenue),
     },
     {
       key: "diagnosticRevenue",
       label: "Diagnostic",
-      width: "minmax(120px, 0.75fr)",
+      width: "minmax(85px, 0.6fr)",
       render: (clinic) => formatIndianCurrency(clinic.diagnosticRevenue),
     },
     {
       key: "pharmacyRevenue",
       label: "Pharmacy",
-      width: "minmax(120px, 0.75fr)",
+      width: "minmax(85px, 0.6fr)",
       render: (clinic) => formatIndianCurrency(clinic.pharmacyRevenue),
     },
     {
       key: "gstAmount",
       label: "GST",
-      width: "minmax(110px, 0.7fr)",
+      width: "minmax(75px, 0.55fr)",
       render: (clinic) => formatIndianCurrency(clinic.gstAmount),
     },
     {
       key: "revenue",
       label: "Total Revenue",
-      width: "minmax(140px, 0.8fr)",
+      width: "minmax(105px, 0.75fr)",
       render: (clinic) => formatIndianCurrency(clinic.revenue),
     },
     {
       key: "performance",
       label: "Clinic Performance",
-      width: "minmax(230px, 1.1fr)",
+      width: "minmax(150px, 1fr)",
       cellClassName: "sa-table-cell--performance",
       render: (clinic) => {
         const maxRevenue = Math.max(...rows.map((row) => toNumber(row.revenue)), 1);
@@ -294,7 +295,8 @@ function Reports() {
     {
       key: "actions",
       label: "Actions",
-      width: "76px",
+      width: "60px",
+      align: "center",
       cellClassName: "sa-table-cell--actions",
       render: (clinic) => (
         <button

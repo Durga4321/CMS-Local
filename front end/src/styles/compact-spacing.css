@@ -447,8 +447,72 @@
   overflow: visible !important;
 }
 
+.sa-table--clinics {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+@media (max-width: 900px) {
+  .sa-table--clinics {
+    overflow-x: auto !important;
+  }
+}
+
+.sa-table--clinics .sa-table-head,
+.sa-table--clinics .sa-table-row {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.sa-table--admins {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+@media (max-width: 900px) {
+  .sa-table--admins {
+    overflow-x: auto !important;
+  }
+}
+
+.sa-table--admins .sa-table-head,
+.sa-table--admins .sa-table-row {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.sa-table .actions-group,
+.sa-table-cell--actions .actions-group {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  padding: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.sa-table .actions-group .action-btn,
+.sa-table-cell--actions .action-btn {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  border-radius: 7px !important;
+}
+
+.sa-table .actions-group .action-btn svg,
+.sa-table-cell--actions .action-btn svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
 .sa-table--clinics .sa-table-cell--actions {
   min-width: 0;
+  overflow: visible !important;
 }
 
 .sa-table--clinics .sa-icon-btn {
@@ -464,12 +528,21 @@
 }
 
 .sa-table--report {
-  overflow-x: auto !important;
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+@media (max-width: 900px) {
+  .sa-table--report {
+    overflow-x: auto !important;
+  }
 }
 
 .sa-table--report .sa-table-head,
 .sa-table--report .sa-table-row {
-  min-width: 1280px;
+  min-width: 0 !important;
+  width: 100% !important;
 }
 
 .sa-table--report .sa-table-cell--performance {
@@ -480,7 +553,7 @@
 .sa-table--report .sa-report-performance {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) 48px;
+  grid-template-columns: minmax(70px, 1fr) 42px;
   align-items: center;
   gap: var(--space-2);
 }
@@ -708,7 +781,6 @@
   .nurses-thead > :nth-child(2),
   .branches-thead > :nth-child(2),
   .rc-table-head > :nth-child(2),
-  .sa-table-head > :nth-child(2),
   .doctors-table-head > :nth-child(2),
   .receptionists-name-head,
   .nurses-name-head,
@@ -728,7 +800,8 @@
   .appointments-patient-head,
   .admin-users-table-head > :nth-child(2),
   .admin-users-name-head,
-  .admin-roles-staff-head
+  .admin-roles-staff-head,
+  .sa-table-head > :nth-child(2)
 ) {
   display: flex !important;
   align-items: center !important;
@@ -740,9 +813,7 @@
 :where(
   .receptionists-name-cell,
   .nurses-name-cell,
-  .branches-name-cell,
-  .sa-clinic-name-cell,
-  .sa-admin-name-cell
+  .branches-name-cell
 ) {
   display: flex !important;
   align-items: center !important;
@@ -756,7 +827,9 @@
   .admin-users-name-cell,
   .patients-info,
   .appointments-patient-cell,
-  .admin-roles-staff-cell
+  .admin-roles-staff-cell,
+  .sa-clinic-name-cell,
+  .sa-admin-name-cell
 ) {
   display: flex !important;
   align-items: center !important;
@@ -764,6 +837,7 @@
   text-align: left !important;
   gap: 10px !important;
   width: 100% !important;
+  margin: 0 !important;
 }
 
 :where(
@@ -821,6 +895,49 @@
   text-align: center !important;
   width: 100% !important;
   margin: 0 auto !important;
+}
+
+.sa-status-head,
+.sa-table-cell--status,
+.sa-sno-head,
+.sa-table-cell--sno,
+.sa-actions-header,
+.sa-table-cell--actions,
+.sa-align-center {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.sa-align-right {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  text-align: right !important;
+}
+
+.sa-align-left,
+.sa-name-head,
+.sa-table-cell--name,
+.sa-admin-name-cell,
+.sa-clinic-name-cell,
+.sa-admin-clinic-cell,
+.sa-table--admins .sa-table-head > :nth-child(2),
+.sa-table--admins .sa-table-row > :nth-child(2),
+.sa-table--admins .sa-admin-name-cell,
+.sa-table--admins .sa-admin-clinic-cell,
+.sa-table--clinics .sa-table-head > :nth-child(2),
+.sa-table--clinics .sa-table-row > :nth-child(2),
+.sa-table--clinics .sa-clinic-name-cell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+  width: 100% !important;
+  margin: 0 !important;
 }
 
 /* Universal Table Actions Header & Cell Flex Centering */
@@ -1419,9 +1536,7 @@
   .lab-files-head > :nth-child(2),
   .lab-files-row > :nth-child(2),
   .lab-files-code-head,
-  .lab-files-code-cell,
-  .sa-clinic-name-cell,
-  .sa-admin-name-cell
+  .lab-files-code-cell
 ) {
   text-align: center !important;
   display: flex !important;
@@ -1447,13 +1562,16 @@
   .admin-users-name-head,
   .admin-users-name-cell,
   .sa-table-head > :nth-child(2),
-  .sa-table-cell--name
+  .sa-table-cell--name,
+  .sa-clinic-name-cell,
+  .sa-admin-name-cell
 ) {
   text-align: left !important;
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
   width: 100% !important;
+  margin: 0 !important;
 }
 
 /* Intermediate Columns: Text & Stack Columns (Left-Aligned) */

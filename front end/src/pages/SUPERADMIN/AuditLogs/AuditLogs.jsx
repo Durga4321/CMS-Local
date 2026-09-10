@@ -640,12 +640,13 @@ function AuditLogs() {
       key: "serial",
       label: "S.No.",
       width: "42px",
+      align: "center",
       render: (_log, index) => index + 1,
     },
     {
       key: "userName",
       label: "User",
-      width: "minmax(105px, 0.75fr)",
+      width: "minmax(110px, 0.75fr)",
       render: (row) => {
         const name = row.userName || row.user || row.action || "-";
         const tone = getRoleTone(row.role);
@@ -660,7 +661,7 @@ function AuditLogs() {
     {
       key: "email",
       label: "Email Address",
-      width: "minmax(170px, 1fr)",
+      width: "minmax(160px, 1fr)",
       cellClassName: "sa-table-cell--nowrap",
       render: (row) => (
         <span title={row.email || row.userEmail || ""} className="sa-table-text-overflow">
@@ -671,7 +672,8 @@ function AuditLogs() {
     {
       key: "action",
       label: "Action",
-      width: "minmax(78px, 0.5fr)",
+      width: "minmax(80px, 0.5fr)",
+      align: "center",
       render: (row) => {
         const action = getActionLabel(row);
         return <span className={`sa-audit-pill sa-audit-pill--${getActionTone(action)}`}>{action}</span>;
@@ -680,7 +682,7 @@ function AuditLogs() {
     {
       key: "ipAddress",
       label: "IP Address",
-      width: "minmax(220px, 1.2fr)",
+      width: "minmax(180px, 1.1fr)",
       cellClassName: "sa-table-cell--nowrap",
       render: (row) => (
         <span title={row.ipAddress || ""} className="sa-table-text-overflow">
@@ -691,7 +693,8 @@ function AuditLogs() {
     {
       key: "isLoginActivity",
       label: "Login",
-      width: "52px",
+      width: "56px",
+      align: "center",
       render: (row) => (
         <span className={`sa-audit-login ${row.isLoginActivity ? "is-yes" : "is-no"}`}>
           {row.isLoginActivity ? "Yes" : "No"}
@@ -701,7 +704,7 @@ function AuditLogs() {
     {
       key: "timestamp",
       label: "Timestamp",
-      width: "minmax(130px, 0.82fr)",
+      width: "minmax(140px, 0.82fr)",
       cellClassName: "sa-table-cell--nowrap",
       render: (row) => (
         <span title={row.timestamp || ""} className="sa-table-text-overflow">
@@ -712,7 +715,8 @@ function AuditLogs() {
     {
       key: "role",
       label: "Role",
-      width: "minmax(92px, 0.58fr)",
+      width: "minmax(96px, 0.58fr)",
+      align: "center",
       render: (row) => {
         const role = row.role || "-";
         const tone = getRoleTone(role);

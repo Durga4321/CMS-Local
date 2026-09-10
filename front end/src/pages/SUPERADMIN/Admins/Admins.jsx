@@ -538,13 +538,14 @@ function Admins() {
     {
       key: "serial",
       label: "S.No.",
-      width: "44px",
+      width: "50px",
+      align: "center",
       render: (_admin, index) => index + 1,
     },
     {
       key: "name",
       label: "Name",
-      width: "minmax(170px, 0.95fr)",
+      width: "minmax(125px, 1.1fr)",
       render: (admin) => (
         <span className="sa-admin-name-cell">
           <span className={`sa-admin-avatar sa-admin-avatar--${getInitials(admin.name || admin.email).charCodeAt(0) % 4}`}>
@@ -559,7 +560,7 @@ function Admins() {
     {
       key: "email",
       label: "Email",
-      width: "minmax(210px, 1fr)",
+      width: "minmax(145px, 1.25fr)",
       cellClassName: "sa-table-cell--nowrap",
       render: (admin) => (
         <span title={admin.email || ""} className="sa-table-text-overflow sa-admin-email">
@@ -567,48 +568,50 @@ function Admins() {
         </span>
       ),
     },
-            {
-              key: "assignedClinic",
-              label: "Assigned Clinic",
-              width: "minmax(160px, 0.8fr)",
-              render: (admin) => {
-                const clinicId = getAdminClinicId(admin, clinics);
-                const clinicName = getAdminClinicName(admin, clinics);
-                return (
-                  <span className="sa-admin-clinic-cell">
-                    <span className="sa-admin-clinic-logo sa-admin-clinic-logo--emerald">
-                      <AssignedClinicLogo clinicId={clinicId} clinicName={clinicName || admin.assignedClinic || "Clinic"} />
-                    </span>
-                    <span>{admin.assignedClinic || "-"}</span>
-                  </span>
-                );
-              },
-            },
-            {
-              key: "phone",
-              label: "Mobile Number",
-              width: "minmax(126px, 0.6fr)",
-              render: (admin) => (
-                <span className="sa-admin-icon-text sa-admin-icon-text--phone">
-                  <Phone size={15} />
-                  <span>{admin.phone || admin.raw?.phone || admin.raw?.mobileNumber || "-"}</span>
-                </span>
-              ),
-            },
-            {
-              key: "status",
-              label: "Status",
-              width: "100px",
-              render: (admin) => (
-                <span className={`sa-badge ${admin.status === "Active" ? "is-active" : "is-danger"}`}>
-                  {admin.status}
-                </span>
-              ),
-            },
+    {
+      key: "assignedClinic",
+      label: "Assigned Clinic",
+      width: "minmax(115px, 0.95fr)",
+      render: (admin) => {
+        const clinicId = getAdminClinicId(admin, clinics);
+        const clinicName = getAdminClinicName(admin, clinics);
+        return (
+          <span className="sa-admin-clinic-cell">
+            <span className="sa-admin-clinic-logo sa-admin-clinic-logo--emerald">
+              <AssignedClinicLogo clinicId={clinicId} clinicName={clinicName || admin.assignedClinic || "Clinic"} />
+            </span>
+            <span>{admin.assignedClinic || "-"}</span>
+          </span>
+        );
+      },
+    },
+    {
+      key: "phone",
+      label: "Mobile Number",
+      width: "minmax(105px, 0.85fr)",
+      render: (admin) => (
+        <span className="sa-admin-icon-text sa-admin-icon-text--phone">
+          <Phone size={15} />
+          <span>{admin.phone || admin.raw?.phone || admin.raw?.mobileNumber || "-"}</span>
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      label: "Status",
+      width: "80px",
+      align: "center",
+      render: (admin) => (
+        <span className={`sa-badge ${admin.status === "Active" ? "is-active" : "is-danger"}`}>
+          {admin.status}
+        </span>
+      ),
+    },
     {
       key: "actions",
       label: "Actions",
-      width: "minmax(210px, auto)",
+      width: "135px",
+      align: "center",
       cellClassName: "sa-table-cell--actions",
       render: (admin) => {
         const isActive = String(admin.status || "").trim().toLowerCase() === "active";
