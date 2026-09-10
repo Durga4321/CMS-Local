@@ -176,6 +176,33 @@ export const getPublicClinicLogoUrl = (clinicId = "") => {
   return id ? apiUrl(`public/clinics/${encodeURIComponent(id)}/logo`) : "";
 };
 
+const imageBlobToDataUrl = (blob) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+
+// An <img> request cannot send ngrok's bypass header, so render the fetched image data.
+export const loadPublicClinicLogo = async (clinicId = "") => {
+  const publicLogoUrl = getPublicClinicLogoUrl(clinicId);
+  if (!publicLogoUrl) return "";
+
+  const response = await fetch(publicLogoUrl, {
+    method: "GET",
+    headers: { "ngrok-skip-browser-warning": "true" },
+  }).catch(() => null);
+  if (!response?.ok) return "";
+
+  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+  if (contentType.startsWith("image/")) {
+    return imageBlobToDataUrl(await response.blob()).catch(() => "");
+  }
+
+  return resolveAssetUrl(readRemoteLogoValue(await parseApiPayload(response)));
+};
+
 export const syncClinicBrandingFromBackend = async (scope = {}) => {
   if (scope.enabled === false) return null;
   const key = getClinicBrandingScope(scope);
@@ -185,24 +212,8 @@ export const syncClinicBrandingFromBackend = async (scope = {}) => {
     return null;
   }
 
-  const publicLogoUrl = getPublicClinicLogoUrl(scope.clinicId);
-  if (!publicLogoUrl) return null;
-
-  const response = await fetch(publicLogoUrl, {
-    method: "GET",
-    headers: {
-      "ngrok-skip-browser-warning": "true",
-    },
-  }).catch(() => null);
-  if (!response?.ok) return null;
-
-  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
-  const version = Date.now();
-  const logoDataUrl = contentType.startsWith("image/")
-    ? publicLogoUrl
-    : resolveAssetUrl(readRemoteLogoValue(await parseApiPayload(response)));
-
-  return logoDataUrl ? saveClinicBranding({ logoDataUrl: withCacheBust(logoDataUrl, version) }, scope) : null;
+  const logoDataUrl = await loadPublicClinicLogo(scope.clinicId);
+  return logoDataUrl ? saveClinicBranding({ logoDataUrl: withCacheBust(logoDataUrl) }, scope) : null;
 };
 
 export const getClinicInvoiceBranding = ({ clinicId = "", clinicName = "" } = {}) => {
