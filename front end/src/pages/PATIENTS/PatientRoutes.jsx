@@ -6,7 +6,7 @@ import {
   Menu, Phone, Printer, Search, Share2, Star, Stethoscope, Syringe, Trash2, UserRound, X,
 } from "lucide-react";
 import PatientDashboard from "./PatientDashboard";
-import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
+import { apiUrl, assetUrl, patientApiUrl, PATIENT_API } from "../../config/api";
 import { validateStrongPassword } from "../../utils/validation";
 import { formatIndianCurrency, formatTitleCase } from "../../utils/format";
 import {
@@ -3108,7 +3108,7 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
       try {
         let historyData = null;
         let hadServerError = false;
-        const response = await fetch(patientApiUrl(PATIENT_API.medicalHistory), { headers, cache: "no-store" }).catch(() => null);
+        const response = await fetch(patientApiUrl(PATIENT_API.medicalHistory, { patientId }), { headers, cache: "no-store" }).catch(() => null);
         if (response?.ok) {
           const data = await response.json().catch(() => null);
           const records = normalizeHistoryRecords(data).filter(belongsToCurrentPatient);
@@ -3248,6 +3248,7 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
       "allergyList",
       "currentMedications",
       "medications",
+      "surgeries",
       "reports",
       "labReports",
       "prescriptions",
@@ -3548,8 +3549,43 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
   const readReportTitle = (report) =>
     readFirst(report, ['title', 'reportTitle', 'reportName', 'name', 'testName']) || 'Report';
 
-  const readReportDate = (report) =>
-    readFirst(report, ['date', 'reportDate', 'createdAt', 'appointmentDate']) || 'Unknown date';
+  const readReportDate = (report) => {
+    const rawDate = readFirst(report, [
+      'reportedAt',
+      'ReportedAt',
+      'reportGeneratedAt',
+      'ReportGeneratedAt',
+      'generatedAt',
+      'GeneratedAt',
+      'reportCompletedAt',
+      'ReportCompletedAt',
+      'completedAt',
+      'CompletedAt',
+      'reportDate',
+      'ReportDate',
+      'reportGeneratedDate',
+      'ReportGeneratedDate',
+      'generatedDate',
+      'GeneratedDate',
+      'completedDate',
+      'CompletedDate',
+      'reportCreatedAt',
+      'ReportCreatedAt',
+      'report.createdAt',
+      'Report.CreatedAt',
+      'finishedAt',
+      'FinishedAt',
+      'updatedAt',
+      'UpdatedAt',
+      'createdAt',
+      'CreatedAt',
+      'appointmentDate',
+      'AppointmentDate',
+      'date',
+      'Date',
+    ]);
+    return formatPatientDate(rawDate) || 'Unknown date';
+  };
 
   const readReportType = (report) =>
     readFirst(report, ['type', 'category', 'reportType', 'documentType']) || 'Other Attachment';
@@ -3713,9 +3749,9 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
     if (/^data:/i.test(rawUrl) || /^blob:/i.test(rawUrl)) return rawUrl;
     if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
     if (/^\/?api\//i.test(rawUrl)) return apiUrl(rawUrl.replace(/^\/?api\/?/i, ''));
-    if (/^\//.test(rawUrl)) return `${window.location.origin}${rawUrl}`;
+    if (/^\//.test(rawUrl)) return assetUrl(rawUrl);
     if (/\.pdf(\?|$)/i.test(rawUrl) || /\/[^"]+\.[a-z0-9]{2,5}(\?|$)/i.test(rawUrl)) {
-      return `${window.location.origin}/${rawUrl.replace(/^\/?/, '')}`;
+      return assetUrl(rawUrl);
     }
     return '';
   };
@@ -4131,9 +4167,9 @@ function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits =
     if (/^data:/i.test(rawUrl) || /^blob:/i.test(rawUrl)) return rawUrl;
     if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
     if (/^\/?api\//i.test(rawUrl)) return apiUrl(rawUrl.replace(/^\/?api\/?/i, ''));
-    if (/^\//.test(rawUrl)) return `${window.location.origin}${rawUrl}`;
+    if (/^\//.test(rawUrl)) return assetUrl(rawUrl);
     if (/\.pdf(\?|$)/i.test(rawUrl) || /\/[^\s]+\.[a-z0-9]{2,5}(\?|$)/i.test(rawUrl)) {
-      return `${window.location.origin}/${rawUrl.replace(/^\/?/, '')}`;
+      return assetUrl(rawUrl);
     }
     return '';
   };
