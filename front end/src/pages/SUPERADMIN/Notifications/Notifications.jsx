@@ -249,7 +249,7 @@ function Notifications() {
   };
 
   return (
-    <div className="sa-notifications-page">
+    <>
       <Header
         title="Notifications"
         subtitle="Create and send platform notifications."
@@ -364,7 +364,7 @@ function Notifications() {
             />
         ) : null}
       </div>
-    </div>
+    </>
   );
 }
 

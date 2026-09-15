@@ -265,6 +265,12 @@ function Reports() {
       render: (clinic) => formatIndianCurrency(clinic.pharmacyRevenue),
     },
     {
+      key: "gstAmount",
+      label: "GST",
+      width: "minmax(75px, 0.55fr)",
+      render: (clinic) => formatIndianCurrency(clinic.gstAmount),
+    },
+    {
       key: "revenue",
       label: "Total Revenue",
       width: "minmax(105px, 0.75fr)",
@@ -275,7 +281,6 @@ function Reports() {
       label: "Clinic Performance",
       width: "minmax(150px, 1fr)",
       cellClassName: "sa-table-cell--performance",
-      headerClassName: "sa-report-performance-head",
       render: (clinic) => {
         const maxRevenue = Math.max(...rows.map((row) => toNumber(row.revenue)), 1);
         const score = getPerformanceScore(clinic, maxRevenue);
@@ -286,6 +291,24 @@ function Reports() {
           </span>
         );
       },
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      width: "60px",
+      align: "center",
+      cellClassName: "sa-table-cell--actions",
+      render: (clinic) => (
+        <button
+          className="sa-icon-btn sa-icon-btn--view"
+          type="button"
+          title={`Refresh ${clinic.name || "clinic"} revenue`}
+          disabled={detailLoadingId === String(clinic.hospitalId || clinic.clinicId || clinic.id)}
+          onClick={() => handleViewClinicRevenue(clinic)}
+        >
+          <Eye size={14} />
+        </button>
+      ),
     },
   ];
 
@@ -570,7 +593,6 @@ function Reports() {
         filters={statusFilters}
         selectedFilter={status}
         onFilterChange={setStatus}
-        className="sa-search-filter--reports"
       />
 
       <div className="sa-report-shell">

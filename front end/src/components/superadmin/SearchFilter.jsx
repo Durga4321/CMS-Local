@@ -8,10 +8,9 @@ function SearchFilter({
   filters = [],
   selectedFilter = "All",
   onFilterChange,
-  className = "",
 }) {
   return (
-    <div className={`sa-search-filter ${className}`.trim()}>
+    <div className="sa-search-filter">
       <div className="sa-search-box">
         <Search size={16} />
         <input
