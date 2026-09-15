@@ -916,7 +916,11 @@ function Receptionists() {
 
             <form className="receptionists-form" onSubmit={handleSubmit} noValidate>
               <div className="receptionists-image-upload">
-                <div className="receptionists-image-circle">
+                <div
+                  className="receptionists-image-circle"
+                  onClick={() => imageInputRef.current?.click()}
+                  title="Upload profile picture"
+                >
                   {imagePreview ? (
                     <AuthImage
                       src={imagePreview}
@@ -937,35 +941,42 @@ function Receptionists() {
                   <button
                     type="button"
                     className="receptionists-image-button"
-                    onClick={() => imageInputRef.current?.click()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      imageInputRef.current?.click();
+                    }}
                     title="Upload profile picture"
                     aria-label="Upload profile picture"
                     disabled={saving}
                   >
-                    <Camera size={17} />
+                    <Camera size={16} />
                   </button>
                   {imagePreview ? (
                     <button
                       type="button"
                       className="receptionists-image-remove"
-                      onClick={handleRemoveImage}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveImage();
+                      }}
                       title="Remove profile picture"
                       aria-label="Remove profile picture"
                       disabled={saving}
                     >
-                      <X size={15} />
+                      <X size={14} />
                     </button>
                   ) : null}
                   <input
                     ref={imageInputRef}
                     type="file"
                     className="receptionists-image-input"
+                    style={{ display: "none" }}
                     accept="image/*"
                     onChange={handleImageChange}
                   />
                 </div>
                 {fieldErrors.image ? (
-                  <span className="receptionists-field-error">{fieldErrors.image}</span>
+                  <span className="receptionists-field-error" style={{ marginTop: "6px" }}>{fieldErrors.image}</span>
                 ) : null}
               </div>
 

@@ -31,10 +31,15 @@
   }
 
   .rc-main {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
     margin-left: 280px !important;
     width: calc(100% - 280px) !important;
     min-width: 0 !important;
-    overflow-x: clip !important;
+    overflow: hidden !important;
   }
 }
 

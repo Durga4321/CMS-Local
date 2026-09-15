@@ -1382,12 +1382,19 @@
 
 .rc-main {
   flex: 1;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  max-height: 100vh !important;
+  max-height: 100dvh !important;
   margin-left: 280px;
   width: calc(100% - 280px);
   min-width: 0;
   position: relative;
   background: transparent !important;
-  overflow-x: clip;
+  overflow: hidden !important;
   transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1), width 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
@@ -1398,6 +1405,7 @@
 }
 
 .rc-topbar {
+  flex-shrink: 0 !important;
   height: 86px;
   padding: 16px 24px;
   background: linear-gradient(90deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdfa 100%) !important;
@@ -1668,7 +1676,34 @@
 }
 
 .rc-content {
-  padding: 28px 30px 46px;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 24px 28px 48px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(2, 132, 199, 0.35) transparent !important;
+}
+
+.rc-content::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+  display: block !important;
+}
+
+.rc-content::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.rc-content::-webkit-scrollbar-thumb {
+  background: rgba(2, 132, 199, 0.28) !important;
+  border-radius: 999px !important;
+}
+
+.rc-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(2, 132, 199, 0.5) !important;
 }
 
 .rc-filter-grid {
