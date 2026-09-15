@@ -100,7 +100,7 @@ export const PATIENT_API = {
   appointmentToken: "patient-portal/appointments/{id}/token",
   cancelAppointment: "patient-portal/appointments/{id}/cancel",
   rescheduleAppointment: "patient-portal/appointments/{id}/reschedule",
-  medicalHistory: "patient-portal/medical-history",
+  medicalHistory: "MedicalHistory/{patientId}",
   prescriptions: "patient-portal/prescriptions",
   prescriptionById: "patient-portal/prescriptions/{id}",
   bills: "patient-portal/bills",
