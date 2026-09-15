@@ -218,7 +218,7 @@ function RolesPermissions() {
       const nextAdmins = await fetchAdmins().catch(() => []);
       setRoles(nextRoles);
       setAdmins(nextAdmins);
-      setSelectedAdminId((previous) => previous || getAdminId(nextAdmins[0]) || "");
+      setSelectedAdminId((previous) => previous || "");
     } catch (loadError) {
       setError(loadError.message || "Unable to load roles and permissions.");
       setRoles([]);
@@ -309,7 +309,7 @@ function RolesPermissions() {
   };
 
   const selectedAdmin = useMemo(
-    () => activeAdmins.find((admin) => getAdminId(admin) === String(selectedAdminId)) || activeAdmins[0] || null,
+    () => activeAdmins.find((admin) => getAdminId(admin) === String(selectedAdminId)) || null,
     [activeAdmins, selectedAdminId]
   );
 
@@ -510,7 +510,7 @@ function RolesPermissions() {
   };
 
   return (
-    <div>
+    <div className="sa-roles-permissions-page">
       <div className="sa-page-header">
         <div>
           <h1>Roles & Permissions</h1>
@@ -688,6 +688,7 @@ function RolesPermissions() {
               onChange={(event) => setSelectedAdminId(event.target.value)}
               disabled={loading || saving || !admins.length}
             >
+              <option value="">Select Admin</option>
               {activeAdmins.map((admin, index) => (
                 <option value={getAdminId(admin)} key={getAdminId(admin) || admin.email || index}>
                   {getAdminDisplayName(admin)} {getAdminId(admin) ? `- ID ${getAdminId(admin)}` : ""}

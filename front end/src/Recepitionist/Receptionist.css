@@ -1668,7 +1668,20 @@
 }
 
 .rc-content {
+  flex: 1 1 auto;
+  min-height: 0 !important;
+  overflow-x: auto;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
   padding: 28px 30px 46px;
+}
+
+.rc-main {
+  height: 100% !important;
+  min-height: 0 !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
 }
 
 .rc-filter-grid {
