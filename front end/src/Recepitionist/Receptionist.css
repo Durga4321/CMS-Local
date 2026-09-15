@@ -1382,12 +1382,19 @@
 
 .rc-main {
   flex: 1;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  max-height: 100vh !important;
+  max-height: 100dvh !important;
   margin-left: 280px;
   width: calc(100% - 280px);
   min-width: 0;
   position: relative;
   background: transparent !important;
-  overflow-x: clip;
+  overflow: hidden !important;
   transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1), width 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
@@ -1398,6 +1405,7 @@
 }
 
 .rc-topbar {
+  flex-shrink: 0 !important;
   height: 86px;
   padding: 16px 24px;
   background: linear-gradient(90deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdfa 100%) !important;
