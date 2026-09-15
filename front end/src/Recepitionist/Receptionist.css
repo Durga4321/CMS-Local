@@ -1676,34 +1676,20 @@
 }
 
 .rc-content {
-  flex: 1 1 0% !important;
+  flex: 1 1 auto;
   min-height: 0 !important;
-  height: 100% !important;
+  overflow-x: auto;
   overflow-y: auto !important;
-  overflow-x: hidden !important;
-  padding: 24px 28px 48px;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin !important;
-  scrollbar-color: rgba(2, 132, 199, 0.35) transparent !important;
+  overscroll-behavior: contain;
+  padding: 28px 30px 46px;
 }
 
-.rc-content::-webkit-scrollbar {
-  width: 6px !important;
-  height: 6px !important;
-  display: block !important;
-}
-
-.rc-content::-webkit-scrollbar-track {
-  background: transparent !important;
-}
-
-.rc-content::-webkit-scrollbar-thumb {
-  background: rgba(2, 132, 199, 0.28) !important;
-  border-radius: 999px !important;
-}
-
-.rc-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(2, 132, 199, 0.5) !important;
+.rc-main {
+  height: 100% !important;
+  min-height: 0 !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
 }
 
 .rc-filter-grid {

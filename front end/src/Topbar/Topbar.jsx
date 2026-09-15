@@ -112,7 +112,13 @@ function Topbar({ onMenu }) {
   const [query, setQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [activityCount, setActivityCount] = useState(0);
-  const isSuperAdmin = location.pathname.startsWith("/superadmin");
+  const sessionRole = String(
+    localStorage.getItem("adminRole") || sessionStorage.getItem("adminRole") || ""
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+  const isSuperAdmin = location.pathname.startsWith("/superadmin") || sessionRole === "superadmin";
   const searchItems = isSuperAdmin ? superAdminModuleSearchItems : adminModuleSearchItems;
   const placeholder = isSuperAdmin
     ? "Search dashboard, clinics, admins, reports..."

@@ -199,6 +199,40 @@ const parseApiList = (value) => {
   return [];
 };
 
+const getPrescriptionDisplayKey = (prescription = {}) => {
+  const prescriptionId = readFirst(prescription, [
+    "prescriptionId",
+    "PrescriptionId",
+    "id",
+    "Id",
+    "_id",
+    "referenceId",
+    "prescription.id",
+    "Prescription.Id",
+  ]);
+  if (prescriptionId) return `id:${String(prescriptionId).trim()}`;
+
+  const medicineList = [
+    prescription.medicines,
+    prescription.medications,
+    prescription.medicineList,
+    prescription.prescribedMedicines,
+    prescription.items,
+    prescription.drugs,
+  ].find(Array.isArray) || [];
+  const medicineKey = medicineList.map((medicine) =>
+    typeof medicine === "object" ? JSON.stringify(medicine) : String(medicine)
+  ).join("|");
+
+  return [
+    readFirst(prescription, ["appointmentId", "appointment.id", "visitId"]),
+    readFirst(prescription, ["prescriptionDate", "date", "createdAt", "createdOn", "appointmentDate"]),
+    readFirst(prescription, ["doctorName", "doctor.name", "doctor.fullName", "prescribedBy", "providerName"]),
+    readFirst(prescription, ["diagnosis", "title", "condition", "chiefComplaint"]),
+    medicineKey,
+  ].map((value) => String(value || "").trim().toLowerCase()).join("|");
+};
+
 const PATIENT_PORTAL_BILLING_TYPES = ["op", "lab", "pharmacy"];
 
 const normalizePortalBillingType = (type = "") => {
@@ -4108,9 +4142,17 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
 function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits = [] }) {
   const [apiPrescriptions, setApiPrescriptions] = useState([]);
   const prescriptionRecords = useMemo(
-    () =>
-      parseApiList([...parseApiList(prescriptions), ...apiPrescriptions])
-        .filter((prescription) => appointmentBelongsToPatient(prescription, patient || {})),
+    () => {
+      const seen = new Set();
+      return parseApiList([...parseApiList(prescriptions), ...apiPrescriptions])
+        .filter((prescription) => appointmentBelongsToPatient(prescription, patient || {}))
+        .filter((prescription) => {
+          const key = getPrescriptionDisplayKey(prescription);
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+    },
     [apiPrescriptions, patient, prescriptions]
   );
   const [selectedPrescription, setSelectedPrescription] = useState(prescriptionRecords[0] || null);
