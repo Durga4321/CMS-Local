@@ -88,7 +88,13 @@ function Sidebar({
     ? onToggleCollapse
     : () => setInternalCollapsed((prev) => !prev);
 
-  const isSuperAdmin = location.pathname.startsWith("/superadmin");
+  const sessionRole = String(
+    localStorage.getItem("adminRole") || sessionStorage.getItem("adminRole") || ""
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+  const isSuperAdmin = location.pathname.startsWith("/superadmin") || sessionRole === "superadmin";
   const isPatient =
     location.pathname === "/patient" ||
     location.pathname.startsWith("/patient/");
@@ -108,7 +114,7 @@ function Sidebar({
         ? []
         : filterItemsByViewPermission(baseNavItems, profile);
 
-  const brandName = isSuperAdmin ? "CMS" : isPatient ? "Patient Portal" : getClinicDisplayName(profile, "Hp Clinic");
+  const brandName = isSuperAdmin ? "Super Admin" : isPatient ? "Patient Portal" : getClinicDisplayName(profile, "Hp Clinic");
   const clinicId = getProfileClinicId(profile);
   const clinicBrandingScope = useMemo(
     () => ({
@@ -145,7 +151,7 @@ function Sidebar({
         </div>
         <div className="sidebar-brand-text">
           <h3 title={brandName}>{brandName}</h3>
-          <span>Admin Console</span>
+          <span>{isSuperAdmin ? "Super Admin Console" : "Admin Console"}</span>
         </div>
       </div>
 

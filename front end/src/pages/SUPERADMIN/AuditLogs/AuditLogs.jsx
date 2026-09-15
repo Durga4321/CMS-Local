@@ -732,7 +732,7 @@ function AuditLogs() {
   ];
 
   return (
-    <>
+    <div className="sa-audit-logs-page">
       <Header
         title="Audit Logs"
         subtitle="Trace backend audit records, login activity, IP address, and timestamps."
@@ -892,7 +892,7 @@ function AuditLogs() {
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
