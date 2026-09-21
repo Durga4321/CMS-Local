@@ -151,6 +151,7 @@ function Nurses() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [message, setMessage] = useState("");
   const [deletingId, setDeletingId] = useState(null);
+  const [statusUpdatingId, setStatusUpdatingId] = useState(null);
   const [editingNurse, setEditingNurse] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
@@ -374,9 +375,8 @@ function Nurses() {
       return;
     }
     const nurseId = getNurseId(nurse);
-    if (!nurseId || deletingId) return;
-    setDeletingId(nurseId);
-    setMessage("");
+    if (!nurseId || deletingId || statusUpdatingId) return;
+    setStatusUpdatingId(nurseId);
     try {
       const response = await fetch(STAFF_TOGGLE_STATUS(nurseId), {
         method: "PATCH",
@@ -400,11 +400,10 @@ function Nurses() {
       );
       const nextStatus = updated?.isActive ? "Active" : updated?.isActive === false ? "Inactive" : getNurseStatus(nurse).toLowerCase().includes("inactive") ? "Active" : "Inactive";
       toast.success(`Nurse status updated to ${nextStatus}.`);
-      setMessage(`Nurse status updated to ${nextStatus}.`);
     } catch (error) {
       toast.error(error.message || "Unable to update nurse status.");
     } finally {
-      setDeletingId(null);
+      setStatusUpdatingId(null);
     }
   };
 
@@ -414,7 +413,7 @@ function Nurses() {
       return;
     }
     const nurseId = getNurseId(nurse);
-    if (!nurseId || deletingId) return;
+    if (!nurseId || deletingId || statusUpdatingId) return;
     const name = getNurseName(nurse);
     const confirmed = window.confirm(`Delete nurse ${name || "this nurse"}?`);
     if (!confirmed) return;
@@ -523,7 +522,10 @@ function Nurses() {
                     canStatus={canEdit}
                     canDelete={canDelete}
                     statusChecked={isActive}
-                    statusDisabled={deletingId === String(getNurseId(nurse))}
+                    statusDisabled={
+                      deletingId === String(getNurseId(nurse)) ||
+                      String(statusUpdatingId) === String(getNurseId(nurse))
+                    }
                     statusTitle={isActive ? "Deactivate nurse" : "Activate nurse"}
                     onView={() => window.alert(`Nurse: ${name || "-"}\nBranch: ${getNurseBranchName(nurse, branchNameById) || "-"}\nEmail: ${getNurseEmail(nurse) || "-"}\nPhone: ${getNursePhone(nurse) || "-"}\nStatus: ${status || "-"}`)}
                     onEdit={() => openEditModal(nurse)}

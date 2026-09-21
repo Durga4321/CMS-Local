@@ -313,8 +313,8 @@ function ClinicForm({ mode }) {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!validateForm()) {
-      setError("Please fix the highlighted fields.");
-      toast.error("Please fix the highlighted fields.");
+      setError("Please fill the highlighted fields.");
+      toast.error("Please fill the highlighted fields.");
       return;
     }
 
@@ -384,7 +384,7 @@ function ClinicForm({ mode }) {
         subtitle="Manage clinic profile and availability status."
       />
 
-      <form className="sa-form-card" onSubmit={handleSubmit} noValidate>
+      <form className="sa-form-card sa-clinic-form" onSubmit={handleSubmit} noValidate>
         {error ? <div className="sa-state sa-state--error">{error}</div> : null}
 
         <div className="sa-form-grid">
@@ -557,7 +557,7 @@ function ClinicForm({ mode }) {
           </button>
           <button type="submit" className="sa-btn sa-btn-primary" disabled={saving}>
             <Save size={16} />
-            {saving ? "Saving..." : "Save Clinic"}
+            {saving ? "Saving..." : mode === "edit" ? "Update Clinic" : "Save Clinic"}
           </button>
         </div>
       </form>

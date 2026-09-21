@@ -7,18 +7,8 @@
   padding: 0;
 }
 
-.content:has(.sa-roles-permissions-page) {
-  flex: 0 0 auto;
-  height: auto !important;
-  min-height: max-content !important;
-  overflow: visible !important;
-}
-
-.layout:has(.sa-roles-permissions-page),
-.main:has(.sa-roles-permissions-page) {
-  height: max-content !important;
-  min-height: max-content !important;
-  overflow: visible !important;
+.content:has(.sa-page-header) {
+  padding-top: 16px !important;
 }
 
 .sa-roles-permissions-page {
@@ -1165,6 +1155,29 @@
   border-color: #06b6d4;
   background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+}
+
+.sa-admin-search-filter {
+  width: 100%;
+  margin-bottom: 16px !important;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-sizing: border-box;
+}
+
+.sa-admin-search-filter .sa-search-box {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sa-admin-search-filter select {
+  flex: 0 1 160px;
+  width: 160px;
+  max-width: 100%;
 }
 
 .sa-search-filter--reports {
@@ -3091,6 +3104,22 @@
   padding: 18px;
 }
 
+.sa-admin-form > .sa-state--error,
+.sa-clinic-form > .sa-state--error {
+  margin: 0 0 14px;
+  padding: 8px 0;
+}
+
+.sa-admin-form,
+.sa-clinic-form {
+  height: auto !important;
+  min-height: max-content;
+}
+
+.sa-admin-form {
+  margin-top: 16px !important;
+}
+
 .sa-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -3176,6 +3205,297 @@
   height: fit-content;
   min-height: 0;
   align-self: flex-start;
+}
+
+.sa-permission-card > .sa-form-grid {
+  margin-bottom: 16px;
+}
+
+/* Page-specific color accents for the super-admin workspace. */
+.sa-roles-permissions-page .sa-page-header h1 {
+  color: #0f766e;
+}
+
+.sa-roles-permissions-page .sa-table--roles {
+  border-color: #bae6fd;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.sa-roles-permissions-page .sa-table--roles .sa-table-head {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.sa-roles-permissions-page .sa-permission-card {
+  height: auto !important;
+  min-height: 0 !important;
+  border-top: 4px solid #0f9f8f;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
+}
+
+.sa-settings-form {
+  border: 1px solid #bae6fd;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+}
+
+.sa-settings-form .sa-tabs {
+  border-bottom-color: #bae6fd;
+}
+
+.sa-settings-form .sa-tab {
+  color: #0369a1;
+}
+
+.sa-settings-form .sa-tab.active {
+  border-color: #0891b2;
+  background: #cffafe;
+  color: #0e7490;
+}
+
+.sa-settings-form .sa-tab:nth-child(2) {
+  color: #7c3aed;
+}
+
+.sa-settings-form .sa-tab:nth-child(3) {
+  color: #db2777;
+}
+
+.sa-settings-form .sa-tab:nth-child(4) {
+  color: #b45309;
+}
+
+.sa-settings-form .sa-form-field:nth-child(3n + 1) input,
+.sa-settings-form .sa-form-field:nth-child(3n + 1) select,
+.sa-settings-form .sa-form-field:nth-child(3n + 1) textarea {
+  border-color: #a5f3fc;
+  background: #ecfeff;
+}
+
+.sa-settings-form .sa-form-field:nth-child(3n + 2) input,
+.sa-settings-form .sa-form-field:nth-child(3n + 2) select,
+.sa-settings-form .sa-form-field:nth-child(3n + 2) textarea {
+  border-color: #ddd6fe;
+  background: #f5f3ff;
+}
+
+.sa-settings-form .sa-form-field:nth-child(3n) input,
+.sa-settings-form .sa-form-field:nth-child(3n) select,
+.sa-settings-form .sa-form-field:nth-child(3n) textarea {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.sa-roles-permissions-page .sa-permission-head {
+  background: #ccfbf1;
+  color: #115e59;
+}
+
+.sa-roles-permissions-page .sa-permission-row:nth-child(odd) {
+  background: #f0fdfa;
+}
+
+.sa-roles-permissions-page .sa-permission-row:nth-child(even) {
+  background: #eff6ff;
+}
+
+.sa-roles-permissions-page .sa-permission-row:hover {
+  background: #fef3c7;
+}
+
+.sa-report-shell .sa-report-filters {
+  background: #f8fafc;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.sa-report-shell .sa-report-filters .sa-form-field:nth-child(1) input {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+}
+
+.sa-report-shell .sa-report-filters .sa-form-field:nth-child(2) input {
+  border-color: #c4b5fd;
+  background: #f5f3ff;
+}
+
+.sa-report-shell .sa-report-bar-item:nth-child(3n + 1) span {
+  background: linear-gradient(180deg, #22d3ee 0%, #0891b2 100%);
+}
+
+.sa-report-shell .sa-report-bar-item:nth-child(3n + 2) span {
+  background: linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%);
+}
+
+.sa-report-shell .sa-report-bar-item:nth-child(3n) span {
+  background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+}
+
+.sa-report-shell .sa-report-table-wrap .sa-table-head {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Revenue report table: use soft row tones and distinct revenue colours so
+   values can be scanned quickly without reducing readability. */
+.sa-report-table-wrap .sa-table--report .sa-table-row:nth-of-type(even) {
+  background: #f8fbff;
+}
+
+.sa-report-table-wrap .sa-table--report .sa-table-row:hover {
+  background: #eef8ff;
+}
+
+.sa-table--report .sa-table-row > :nth-child(3) {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.sa-table--report .sa-table-row > :nth-child(4) {
+  color: #0284c7;
+  font-weight: 700;
+}
+
+.sa-table--report .sa-table-row > :nth-child(5) {
+  color: #7c3aed;
+  font-weight: 700;
+}
+
+.sa-table--report .sa-table-row > :nth-child(6) {
+  color: #d97706;
+  font-weight: 700;
+}
+
+.sa-table--report .sa-table-row > :nth-child(7) {
+  color: #0f766e;
+  font-weight: 800;
+}
+
+.sa-audit-logs-page .sa-audit-scope-filter {
+  padding: 12px;
+  border: 1px solid #c4b5fd;
+  border-radius: 12px;
+  background: #faf5ff;
+}
+
+.sa-audit-logs-page .sa-audit-scope-filter label:nth-child(1) span {
+  color: #0f766e;
+}
+
+.sa-audit-logs-page .sa-audit-scope-filter label:nth-child(2) span {
+  color: #7c3aed;
+}
+
+.sa-audit-logs-page .sa-audit-scope-filter label:nth-child(3) span {
+  color: #c2410c;
+}
+
+.sa-audit-logs-page .sa-audit-scope-filter label:nth-child(4) span {
+  color: #be185d;
+}
+
+.sa-audit-logs-page .sa-table-row:nth-child(odd) {
+  background: #f8fafc;
+}
+
+.sa-audit-logs-page .sa-table-row:nth-child(even) {
+  background: #f0fdfa;
+}
+
+.sa-audit-logs-page .sa-table-row:hover {
+  background: #fefce8;
+}
+
+/* Keep every super-admin table header and row on the same grid geometry. */
+.sa-table-head > *,
+.sa-table-row > *,
+.sa-table-cell {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.sa-table-head > *,
+.sa-table-row > * {
+  align-self: stretch;
+}
+
+.sa-table-cell > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.sa-table--clinics .sa-table-head,
+.sa-table--clinics .sa-table-row,
+.sa-table--admins .sa-table-head,
+.sa-table--admins .sa-table-row,
+.sa-table--users .sa-table-head,
+.sa-table--users .sa-table-row,
+.sa-table--audit .sa-table-head,
+.sa-table--audit .sa-table-row,
+.sa-table--report .sa-table-head,
+.sa-table--report .sa-table-row,
+.sa-table--roles .sa-table-head,
+.sa-table--roles .sa-table-row {
+  align-items: center;
+}
+
+.sa-table--clinics .sa-table-cell,
+.sa-table--admins .sa-table-cell,
+.sa-table--users .sa-table-cell,
+.sa-table--audit .sa-table-cell,
+.sa-table--report .sa-table-cell,
+.sa-table--roles .sa-table-cell {
+  overflow-wrap: anywhere;
+}
+
+.sa-table--clinics .sa-table-cell--actions,
+.sa-table--admins .sa-table-cell--actions,
+.sa-table--users .sa-table-cell--actions,
+.sa-table--audit .sa-table-cell--actions,
+.sa-table--report .sa-table-cell--actions,
+.sa-table--roles .sa-table-cell--actions {
+  justify-content: center !important;
+}
+
+.sa-report-shell .sa-report-metric:nth-child(1) {
+  border-color: #99f6e4;
+  background: linear-gradient(135deg, #ffffff 0%, #ecfeff 100%);
+}
+
+.sa-report-shell .sa-report-metric:nth-child(2) {
+  border-color: #bfdbfe;
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+}
+
+.sa-report-shell .sa-report-metric:nth-child(3) {
+  border-color: #fde68a;
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+}
+
+.sa-report-shell .sa-report-panel {
+  border-color: #c7d2fe;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.sa-audit-logs-page .sa-audit-summary-card:nth-child(1) {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+}
+
+.sa-audit-logs-page .sa-audit-summary-card:nth-child(2) {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.sa-audit-logs-page .sa-audit-summary-card:nth-child(3) {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.sa-audit-logs-page .sa-table .sa-table-head {
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .sa-permissions-field {
@@ -3434,6 +3754,11 @@
   }
 
   .sa-search-filter--reports select {
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .sa-admin-search-filter select {
     width: 100%;
     flex-basis: auto;
   }

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Activity,
-  ArrowLeftToLine,
   CalendarHeart,
   ChevronDown,
   Droplet,
@@ -320,25 +319,6 @@ function NurseSidebar({
               </p>
             </div>
           )}
-        </div>
-
-        {/* BOTTOM COLLAPSE MENU TOGGLE (ADMIN THEMED) */}
-        <div className="rc-sidebar-bottom">
-          <button
-            type="button"
-            className="rc-collapse-btn collapse-btn"
-            onClick={handleToggleCollapse}
-            title={collapsed ? "Expand Menu" : "Collapse Menu"}
-          >
-            <ArrowLeftToLine
-              size={16}
-              style={{
-                transform: collapsed ? "rotate(180deg)" : "none",
-                transition: "transform 0.25s ease",
-              }}
-            />
-            {!collapsed && <span>Collapse Menu</span>}
-          </button>
         </div>
       </div>
     </aside>

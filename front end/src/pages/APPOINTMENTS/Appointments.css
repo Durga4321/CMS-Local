@@ -5,7 +5,8 @@
 .appointments-page {
   position: relative;
   min-height: calc(100vh - 82px);
-  flex: 1;
+  /* Let the page grow with every result; the admin content pane owns vertical scrolling. */
+  flex: 0 0 auto;
   width: 100%;
   padding: 24px 32px 48px;
   box-sizing: border-box;
@@ -245,16 +246,25 @@
 /* Table Content */
 .appointments-table-scroll {
   overflow-x: auto;
+  /* Do not cap the appointment list—every filtered appointment remains reachable. */
+  overflow-y: visible;
+  height: auto;
+  max-height: none;
   width: 100%;
+  min-width: 0;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 .appointments-thead,
 .appointments-row {
   display: grid !important;
-  grid-template-columns: 60px minmax(190px, 1.4fr) minmax(170px, 1.2fr) minmax(120px, 0.9fr) minmax(120px, 0.9fr) minmax(130px, 1fr) 134px 100px !important;
+  /* Keep header and body on one shared, responsive column contract. */
+  grid-template-columns: 42px minmax(145px, 1.35fr) minmax(135px, 1.15fr) minmax(100px, 0.85fr) minmax(100px, 0.85fr) minmax(90px, 0.8fr) 118px 56px !important;
   align-items: center !important;
-  column-gap: 12px !important;
-  min-width: 1050px !important;
+  column-gap: 10px !important;
+  width: 100%;
+  min-width: 0 !important;
   padding: 12px 16px !important;
   box-sizing: border-box !important;
 }
@@ -444,6 +454,14 @@
   flex-direction: column;
   gap: 3px;
   min-width: 0;
+  overflow: hidden;
+}
+
+.appointments-cell-stack b {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .appointments-cell-stack span {

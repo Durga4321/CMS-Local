@@ -5,7 +5,8 @@
 .patients-page {
   position: relative;
   min-height: calc(100vh - 82px);
-  flex: 1;
+  /* Keep the full patient table in document flow instead of shrinking its rows. */
+  flex: 0 0 auto;
   width: 100%;
   padding: 24px 32px 48px;
   box-sizing: border-box;
@@ -162,8 +163,14 @@
 
 .patients-table-scroll {
   overflow-x: auto;
+  /* All matching patients are rendered in one continuous, vertically scrollable page. */
+  overflow-y: visible;
+  height: auto;
+  max-height: none;
   overscroll-behavior-x: contain;
   scrollbar-width: thin;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 .patients-search-wrap {

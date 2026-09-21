@@ -33,6 +33,11 @@ const ROLE_SIDEBAR_MODULES = {
 const getRoleModules = (role = "Doctor") =>
   ROLE_SIDEBAR_MODULES[normalizeKey(role) === "labtechnician" ? "LabTechnician" : role] || ROLE_SIDEBAR_MODULES.Doctor;
 
+// A staff role always has the same set of sidebar modules.  Keep this separate
+// from the saved permission map so the table does not collapse the module
+// column to the legacy "General" value before permissions have been assigned.
+const getDisplayModules = (role = "Doctor") => getRoleModules(role);
+
 const getToken = () =>
   localStorage.getItem("token") ||
   localStorage.getItem("adminToken") ||
@@ -396,7 +401,7 @@ function AdminRolesPermissions() {
       const name = String(assignment.name || "").toLowerCase();
       const email = String(assignment.email || "").toLowerCase();
       const role = String(formatRoleLabel(assignment.role || "")).toLowerCase();
-      const module = String(assignment.module || "").toLowerCase();
+      const module = [assignment.module, ...getDisplayModules(assignment.role)].join(" ").toLowerCase();
 
       return name.includes(q) || email.includes(q) || role.includes(q) || module.includes(q);
     });
@@ -885,9 +890,6 @@ function AdminRolesPermissions() {
           <p>Create roles for doctors, receptionists, nurses, and lab technicians, then assign View, Create, Edit, and Delete permissions.</p>
         </div>
         <div className="sa-page-actions">
-          <button className="sa-btn sa-btn-primary" type="button" onClick={openAdd} disabled={loading || !eligibleUsers.length || !canCreate}>
-            <Plus size={16} /> Create Role
-          </button>
           <button className="sa-btn" type="button" onClick={loadData} disabled={loading}>
             <RefreshCw size={16} /> Refresh
           </button>
@@ -1064,10 +1066,10 @@ function AdminRolesPermissions() {
                     <b>{formatRoleLabel(assignment.role || "-")}</b>
                   </span>
                 </span>
-                <span className="sa-table-cell">
-                  {Object.values(getPermissionModulesFromAssignment(assignment, assignment.role)).some((permissions) => permissions.length)
-                    ? `${Object.values(getPermissionModulesFromAssignment(assignment, assignment.role)).filter((permissions) => permissions.length).length} modules`
-                    : assignment.module || "-"}
+                <span className="sa-table-cell admin-roles-module-list" title={getDisplayModules(assignment.role).join(", ")}>
+                  {getDisplayModules(assignment.role).map((module) => (
+                    <span className="admin-roles-module-pill" key={module}>{module}</span>
+                  ))}
                 </span>
                 <span className="sa-table-cell admin-roles-staff-cell">
                   <span className={`admin-roles-avatar admin-roles-avatar--${roleTone}`}>
@@ -1150,7 +1152,7 @@ function AdminRolesPermissions() {
                 {getRoleModules(role).map((module, index) => {
                   const permissions = normalizePermissionList(rolePermissions[module]);
                   return (
-                    <div className="sa-permission-row" key={`${role}-${module}`}>
+                    <div className={`sa-permission-row sa-permission-row--${normalizeKey(role)}`} key={`${role}-${module}`}>
                       <span>
                         {index === 0 ? <ShieldCheck size={15} /> : null}
                         {index === 0 ? formatRoleLabel(role) : ""}

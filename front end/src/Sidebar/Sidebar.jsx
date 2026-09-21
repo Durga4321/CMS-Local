@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Bell,
@@ -18,7 +18,6 @@ import {
   ShieldCheck,
   X,
   ChevronRight,
-  ArrowLeftToLine,
   Activity,
 } from "lucide-react";
 
@@ -77,16 +76,9 @@ const getProfileClinicId = (profile = {}) =>
 function Sidebar({
   open = false,
   onClose = () => {},
-  collapsed: controlledCollapsed,
-  onToggleCollapse,
 }) {
   const location = useLocation();
-  const [internalCollapsed, setInternalCollapsed] = useState(false);
-  const isControlled = controlledCollapsed !== undefined;
-  const collapsed = isControlled ? controlledCollapsed : internalCollapsed;
-  const handleToggleCollapse = isControlled
-    ? onToggleCollapse
-    : () => setInternalCollapsed((prev) => !prev);
+  const collapsed = false;
 
   const sessionRole = String(
     localStorage.getItem("adminRole") || sessionStorage.getItem("adminRole") || ""
@@ -175,24 +167,6 @@ function Sidebar({
         ))}
       </div>
 
-      {/* BOTTOM COLLAPSE MENU TOGGLE */}
-      <div className="sidebar-bottom">
-        <button
-          type="button"
-          className="collapse-btn"
-          onClick={handleToggleCollapse}
-          title={collapsed ? "Expand Menu" : "Collapse Menu"}
-        >
-          <ArrowLeftToLine
-            size={16}
-            style={{
-              transform: collapsed ? "rotate(180deg)" : "none",
-              transition: "transform 0.25s ease",
-            }}
-          />
-          <span>Collapse Menu</span>
-        </button>
-      </div>
       </div>
       <div className={`sidebar-overlay ${open ? 'visible' : ''}`} onClick={onClose} />
     </>

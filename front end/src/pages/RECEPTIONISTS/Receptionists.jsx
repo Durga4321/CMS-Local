@@ -274,6 +274,7 @@ function Receptionists() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [statusUpdatingId, setStatusUpdatingId] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -621,12 +622,10 @@ function Receptionists() {
       toast.error("You do not have permission to edit receptionists.");
       return;
     }
-    if (!receptionist?.id || deletingId) return;
+    if (!receptionist?.id || deletingId || statusUpdatingId) return;
 
     const nextStatus = receptionist.isActive ? "Inactive" : "Active";
-    setDeletingId(receptionist.id);
-    setError("");
-    setSuccess("");
+    setStatusUpdatingId(receptionist.id);
 
     try {
       const response = await fetch(`${RECEPTIONIST_API}/${receptionist.id}`, {
@@ -651,14 +650,9 @@ function Receptionists() {
       setReceptionists((previous) =>
         previous.map((item) =>
           String(item.id) === String(receptionist.id)
-            ? { ...item, isActive: nextStatus === "Active" }
+            ? { ...item, isActive: nextStatus === "Active", status: nextStatus }
             : item
         )
-      );
-      setSuccess(
-        nextStatus === "Active"
-          ? "Receptionist activated successfully"
-          : "Receptionist deactivated successfully"
       );
       toast.success(
         nextStatus === "Active"
@@ -668,10 +662,9 @@ function Receptionists() {
     } catch (toggleError) {
       const message =
         toggleError.message || "Unable to update receptionist status.";
-      setError(message);
       toast.error(message);
     } finally {
-      setDeletingId(null);
+      setStatusUpdatingId(null);
     }
   };
 
@@ -680,7 +673,7 @@ function Receptionists() {
       toast.error("You do not have permission to delete receptionists.");
       return;
     }
-    if (!receptionist?.id || deletingId) return;
+    if (!receptionist?.id || deletingId || statusUpdatingId) return;
 
     const shouldDelete = window.confirm(
       `Delete receptionist ${receptionist.name || ""}?`
@@ -821,6 +814,7 @@ function Receptionists() {
               .slice(0, 2)
               .toUpperCase() || "R";
           const isDeleting = deletingId === receptionist.id;
+          const isStatusUpdating = statusUpdatingId === receptionist.id;
           const isActive = receptionist.isActive !== false;
 
           return (
@@ -871,7 +865,7 @@ function Receptionists() {
                   canStatus={canEdit}
                   canDelete={canDelete}
                   statusChecked={isActive}
-                  statusDisabled={isDeleting}
+                  statusDisabled={isDeleting || isStatusUpdating}
                   statusTitle={isActive ? "Deactivate receptionist" : "Activate receptionist"}
                   onView={() => window.alert(`Receptionist: ${receptionist.name || "-"}\nBranch: ${getReceptionistBranchName(receptionist, branchNameById) || "-"}\nEmail: ${receptionist.email || "-"}\nPhone: ${receptionist.phone || "-"}\nStatus: ${isActive ? "Active" : "Inactive"}`)}
                   onEdit={() => openEditModal(receptionist)}

@@ -663,7 +663,7 @@ function LabDataPage({ type }) {
   const tableTemplate = useMemo(() => {
     if (type === "patients") return "minmax(180px, 1.4fr) 140px 140px minmax(260px, 2.5fr)";
     if (type === "tests") return "minmax(220px, 1.8fr) 130px minmax(180px, 1.3fr) 130px";
-    if (type === "samples") return "minmax(170px, 1.3fr) 130px 130px minmax(220px, 2fr) 130px 150px";
+    if (type === "samples") return "minmax(140px, 1.2fr) 110px 110px minmax(160px, 1.5fr) 110px 180px";
     if (type === "reports") return "minmax(200px, 1.6fr) minmax(170px, 1.3fr) 130px 130px 130px";
     const actionColumn = hasActions ? " 130px" : "";
     return `repeat(${config.columns.length}, minmax(0, 1fr))${actionColumn}`;

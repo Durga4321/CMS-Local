@@ -253,7 +253,7 @@ function Settings() {
     <>
       <Header title="System Settings" subtitle="Configure global platform preferences." />
 
-      <form className="sa-panel" onSubmit={handleSave} noValidate>
+      <form className="sa-panel sa-settings-form" onSubmit={handleSave} noValidate>
         <div className="sa-tabs">
           {tabs.map((tab) => (
             <button

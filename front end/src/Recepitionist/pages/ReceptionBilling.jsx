@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Activity, ArrowLeft, CalendarDays, CheckCircle, CreditCard, Edit3, Eye, FileText, FlaskConical, History, Minus, Pill, Plus, Printer, Receipt, ShieldCheck, Sparkles, Stethoscope, Syringe, Thermometer, Trash2 } from "lucide-react";
+import { Activity, ArrowLeft, CalendarDays, CheckCircle, CreditCard, Edit3, Eye, FileText, FlaskConical, History, Minus, Pill, Plus, Printer, Receipt, ShieldCheck, Sparkles, Stethoscope, Thermometer, Trash2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { PaymentStatusBadge, PaidStamp, formatPaidDateTime } from "../../components/PaymentStatus";
 import { ActionsGroup } from "../../components/ActionsGroup";
@@ -3260,7 +3260,7 @@ function ReceptionBilling() {
 
         <div className="billing-kpi-card rx-card">
           <div className="billing-kpi-icon-wrap rx-icon">
-            <Syringe size={20} />
+            <Pill size={20} />
           </div>
           <div className="billing-kpi-details">
             <span className="billing-kpi-label">Pharmacy Dispensary</span>
@@ -3285,7 +3285,7 @@ function ReceptionBilling() {
         {[
           ["consultation", "OP Billing", Stethoscope, "Clinical Consultation", billingStats.opBillsCount],
           ["diagnostic", "Diagnosis Test Billing", FlaskConical, "Pathology & Tests", billingStats.diagBillsCount],
-          ["pharmacy", "Pharmacy Billing", Syringe, "Medication Dispensary", billingStats.rxBillsCount],
+          ["pharmacy", "Pharmacy Billing", Pill, "Medication Dispensary", billingStats.rxBillsCount],
         ].map(([mode, label, IconComponent, tagText, count]) => (
           <button
             key={mode}
@@ -3318,7 +3318,7 @@ function ReceptionBilling() {
             <div className="rc-latest-bills-title-group">
               <div className={`rc-latest-bills-icon-capsule rc-latest-bills-icon-capsule--${billingMode}`}>
                 {billingMode === "pharmacy" ? (
-                  <Syringe size={22} />
+                  <Pill size={22} />
                 ) : billingMode === "diagnostic" ? (
                   <FlaskConical size={22} />
                 ) : (
@@ -3388,7 +3388,7 @@ function ReceptionBilling() {
                   <article className={`rc-latest-bill-row rc-bill-type-${billType}`} key={`${invoiceNo}-${index}`}>
                     <div className={`rc-latest-bill-pdf rc-instrument-capsule-${billType}`}>
                       {billType === "pharmacy" ? (
-                        <Syringe size={20} />
+                        <Pill size={20} />
                       ) : billType === "diagnostic" ? (
                         <FlaskConical size={20} />
                       ) : (
@@ -3405,7 +3405,7 @@ function ReceptionBilling() {
                       <div className="rc-bill-meta-tags">
                         <span className="rc-bill-inv-no">{invoiceNo}</span>
                         <span className={`rc-bill-type-tag type-${billType}`}>
-                          {billType === "pharmacy" ? "💉 Pharmacy" : billType === "diagnostic" ? "🔬 Diagnostic" : "🩺 OP Consultation"}
+                          {billType === "pharmacy" ? "💊 Pharmacy" : billType === "diagnostic" ? "🔬 Diagnostic" : "🩺 OP Consultation"}
                         </span>
                         <span className="rc-bill-date-tag">
                           <CalendarDays size={11} /> {createdAt ? formatInvoiceDate(createdAt) : "Just now"}
@@ -3444,7 +3444,7 @@ function ReceptionBilling() {
           ) : (
             <div className="rc-latest-bills-empty">
               <div className="rc-bills-empty-icon">
-                {billingMode === "pharmacy" ? <Syringe size={36} /> : billingMode === "diagnostic" ? <FlaskConical size={36} /> : <Stethoscope size={36} />}
+                {billingMode === "pharmacy" ? <Pill size={36} /> : billingMode === "diagnostic" ? <FlaskConical size={36} /> : <Stethoscope size={36} />}
               </div>
               <h4>No Invoices Recorded Yet</h4>
               <p>No submitted {billingMode === "pharmacy" ? "pharmacy" : billingMode === "diagnostic" ? "diagnostic" : "OP"} bills currently found in the system.</p>
@@ -3458,7 +3458,7 @@ function ReceptionBilling() {
             <div className="rc-billing-card-head">
               <div className="rc-billing-head-title-wrap">
                 <span className={`rc-billing-head-icon-tag rc-billing-head-icon-tag--${billingMode}`}>
-                  {billingMode === "pharmacy" ? <Syringe size={18} /> : <FlaskConical size={18} />}
+                  {billingMode === "pharmacy" ? <Pill size={18} /> : <FlaskConical size={18} />}
                 </span>
                 <div>
                   <h3 className={`rc-billing-form-h3--${billingMode}`}>

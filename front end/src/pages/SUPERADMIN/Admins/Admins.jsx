@@ -256,6 +256,7 @@ function Admins() {
     setEditingAdminId("");
     setForm(emptyAdmin);
     setOriginalAdminClinic(emptyAdminClinic);
+    setFieldErrors({});
     setShowForm(true);
     setError("");
   };
@@ -282,6 +283,7 @@ function Admins() {
       id: getAdminClinicId(admin, clinics) || "",
       name: getAdminClinicName(admin, clinics) || "",
     });
+    setFieldErrors({});
     setShowForm(true);
     setError("");
   };
@@ -291,6 +293,8 @@ function Admins() {
     setEditingAdminId("");
     setForm(emptyAdmin);
     setOriginalAdminClinic(emptyAdminClinic);
+    setFieldErrors({});
+    setError("");
   };
 
   const handleChange = (event) => {
@@ -336,8 +340,8 @@ function Admins() {
   const handleCreateAdmin = async (event) => {
     event.preventDefault();
     if (!validateForm()) {
-      setError("Please fix the highlighted fields.");
-      toast.error("Please fix the highlighted fields.");
+      setError("Please fill the highlighted fields.");
+      toast.error("Please fill the highlighted fields.");
       return;
     }
 
@@ -596,7 +600,7 @@ function Admins() {
             canView={true}
             canEdit={isActive}
             canStatus={true}
-            canDelete={isActive}
+            canDelete={false}
             statusChecked={isActive}
             statusTitle={admin.status === "Active" ? "Deactivate admin" : "Activate admin"}
             onView={() => setSelectedAdmin(admin)}
@@ -626,6 +630,7 @@ function Admins() {
       />
 
       <SearchFilter
+        className="sa-admin-search-filter"
         value={search}
         onChange={setSearch}
         placeholder="Search admins by name, email, clinic, or role..."
@@ -635,7 +640,7 @@ function Admins() {
       />
 
       {showForm ? (
-        <form className="sa-form-card" style={{ marginBottom: 16 }} onSubmit={handleCreateAdmin} noValidate>
+        <form className="sa-form-card sa-admin-form" style={{ marginBottom: 16 }} onSubmit={handleCreateAdmin} noValidate>
           <h3>{editingAdminId ? "Edit admin" : "Create new admin"}</h3>
           <p className="sa-form-subtitle">Manage administrator access for a clinic.</p>
           {error ? <div className="sa-state sa-state--error">{error}</div> : null}
@@ -746,7 +751,7 @@ function Admins() {
               Cancel
             </button>
             <button className="sa-btn sa-btn-primary" disabled={saving}>
-              {saving ? "Saving..." : editingAdminId ? "Save admin" : "Create admin"}
+              {saving ? "Saving..." : editingAdminId ? "Update Admin" : "Create admin"}
             </button>
           </div>
         </form>

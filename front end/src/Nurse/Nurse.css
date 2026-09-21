@@ -794,7 +794,9 @@
 .rc-dropdown-arrow {
   color: #64748b;
   margin-left: auto;
+  margin-right: 4px;
   flex-shrink: 0;
+  transform-origin: center;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
 }
 
@@ -1520,6 +1522,160 @@
   color: #64748b;
   font-size: 12px;
   font-weight: 600;
+}
+
+/* Keep clinical-history headers and record cells on the same column tracks. */
+.med-history-card .rc-table {
+  /* Desktop layout deliberately has no horizontal overflow. */
+  overflow-x: hidden;
+}
+
+.med-history-card .rc-table-head.six,
+.med-history-card .rc-table-row.six {
+  /* Named tracks prevent shared table rules from re-ordering or collapsing cells. */
+  grid-template-columns: 64px 180px minmax(190px, 1.1fr) minmax(190px, 1.15fr) minmax(175px, 1fr) 120px 156px;
+  grid-template-areas: "serial patient allergies chronic medications surgeries actions";
+  column-gap: 0;
+  min-width: 0;
+  width: 100%;
+  padding: 0 !important;
+  box-sizing: border-box;
+}
+
+.med-history-card .rc-table-head.six > span,
+.med-history-card .rc-table-row.six > span {
+  min-width: 0;
+  padding: 0 8px;
+  box-sizing: border-box;
+}
+
+.med-history-card .rc-table-head.six > :nth-child(1),
+.med-history-card .rc-table-row.six > :nth-child(1) { grid-area: serial; }
+.med-history-card .rc-table-head.six > :nth-child(2),
+.med-history-card .rc-table-row.six > :nth-child(2) { grid-area: patient; }
+.med-history-card .rc-table-head.six > :nth-child(3),
+.med-history-card .rc-table-row.six > :nth-child(3) { grid-area: allergies; }
+.med-history-card .rc-table-head.six > :nth-child(4),
+.med-history-card .rc-table-row.six > :nth-child(4) { grid-area: chronic; }
+.med-history-card .rc-table-head.six > :nth-child(5),
+.med-history-card .rc-table-row.six > :nth-child(5) { grid-area: medications; }
+.med-history-card .rc-table-head.six > :nth-child(6),
+.med-history-card .rc-table-row.six > :nth-child(6) { grid-area: surgeries; }
+.med-history-card .rc-table-head.six > :nth-child(7),
+.med-history-card .rc-table-row.six > :nth-child(7) { grid-area: actions; }
+
+.med-history-card .rc-table-head.six > :first-child,
+.med-history-card .rc-table-row.six > :first-child,
+.med-history-card .rc-table-head.six > :last-child {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: auto !important;
+  margin: 0 !important;
+}
+
+.med-history-card .med-row-actions {
+  width: 100%;
+  min-width: 0;
+  gap: 4px;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.med-history-card .med-action-btn {
+  flex: 0 0 30px;
+  margin: 0;
+}
+
+/* This page uses a real table: one colgroup governs both the header and every record. */
+.med-history-table-scroll {
+  width: 100%;
+  overflow-x: hidden;
+  border: 1px solid #dbe5f1;
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.med-history-table {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed !important;
+}
+
+.med-history-table .med-col-number { width: 6%; }
+.med-history-table .med-col-patient { width: 16%; }
+.med-history-table .med-col-allergies { width: 18%; }
+.med-history-table .med-col-chronic { width: 19%; }
+.med-history-table .med-col-medications { width: 17%; }
+.med-history-table .med-col-surgeries { width: 10%; }
+.med-history-table .med-col-actions { width: 14%; }
+
+.med-history-table th,
+.med-history-table td {
+  padding: 14px 10px !important;
+  box-sizing: border-box;
+  vertical-align: middle !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.med-history-table th {
+  height: 72px;
+  color: #173f92;
+  background: #f8fafc;
+  border-bottom: 1px solid #dbe5f1;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.med-history-table td {
+  border-bottom: 1px solid #eef2f7;
+  color: #0f172a;
+  font-size: 13px;
+  text-align: center;
+}
+
+.med-history-table td:nth-child(2) {
+  text-align: left;
+}
+
+.med-history-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.med-history-table .med-row-actions {
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 1050px) {
+  .med-history-table-scroll {
+    overflow-x: auto;
+  }
+
+  .med-history-table {
+    min-width: 1050px !important;
+    max-width: none;
+  }
+}
+
+@media (max-width: 1050px) {
+  .med-history-card .rc-table {
+    overflow-x: auto;
+  }
+
+  .med-history-card .rc-table-head.six,
+  .med-history-card .rc-table-row.six {
+    grid-template-columns: 64px 180px 205px 205px 180px 120px 156px;
+    min-width: 1110px;
+  }
 }
 
 /* Patient Chip */
@@ -2279,6 +2435,112 @@
   text-align: center !important;
 }
 
+/* Keep the receptionist appointment table aligned within its card at every width. */
+.booking-page .rc-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.booking-page .rc-table-data {
+  width: 100%;
+  min-width: 1180px;
+  table-layout: fixed;
+}
+
+.booking-page .rc-table-data th,
+.booking-page .rc-table-data td {
+  width: auto !important;
+  max-width: none;
+  padding: 10px 8px;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.booking-page .rc-table-data th > *,
+.booking-page .rc-table-data td > * {
+  max-width: 100%;
+}
+
+.booking-page .booking-patient-cell,
+.booking-page .booking-patient-cell > div:last-child {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.booking-page .rc-table-data th:nth-child(1),
+.booking-page .rc-table-data td:nth-child(1) { width: 7% !important; }
+.booking-page .rc-table-data th:nth-child(2),
+.booking-page .rc-table-data td:nth-child(2) { width: 14% !important; }
+.booking-page .rc-table-data th:nth-child(3),
+.booking-page .rc-table-data td:nth-child(3) { width: 14% !important; }
+.booking-page .rc-table-data th:nth-child(4),
+.booking-page .rc-table-data td:nth-child(4) { width: 12% !important; }
+.booking-page .rc-table-data th:nth-child(5),
+.booking-page .rc-table-data td:nth-child(5) { width: 12% !important; }
+.booking-page .rc-table-data th:nth-child(6),
+.booking-page .rc-table-data td:nth-child(6) { width: 8% !important; }
+.booking-page .rc-table-data th:nth-child(7),
+.booking-page .rc-table-data td:nth-child(7) { width: 8% !important; }
+.booking-page .rc-table-data th:nth-child(8),
+.booking-page .rc-table-data td:nth-child(8) { width: 10% !important; }
+.booking-page .rc-table-data th:nth-child(9),
+.booking-page .rc-table-data td:nth-child(9) { width: 9% !important; }
+.booking-page .rc-table-data th:nth-child(10),
+.booking-page .rc-table-data td:nth-child(10) { width: 6% !important; }
+
+/* Clinical color accents for the booking table without changing its data or controls. */
+.booking-page .rc-table-data thead th {
+  background: #f8fafc;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.booking-page .rc-table-data thead th:nth-child(1) { color: #0369a1; background: #e0f2fe; }
+.booking-page .rc-table-data thead th:nth-child(2) { color: #6d28d9; background: #ede9fe; }
+.booking-page .rc-table-data thead th:nth-child(3) { color: #3730a3; background: #e0e7ff; }
+.booking-page .rc-table-data thead th:nth-child(4) { color: #0f766e; background: #ccfbf1; }
+.booking-page .rc-table-data thead th:nth-child(5) { color: #be123c; background: #ffe4e6; }
+.booking-page .rc-table-data thead th:nth-child(6) { color: #0369a1; background: #e0f2fe; }
+.booking-page .rc-table-data thead th:nth-child(7) { color: #b45309; background: #fef3c7; }
+.booking-page .rc-table-data thead th:nth-child(8) { color: #7e22ce; background: #fae8ff; }
+.booking-page .rc-table-data thead th:nth-child(9) { color: #047857; background: #d1fae5; }
+.booking-page .rc-table-data thead th:nth-child(10) { color: #be123c; background: #ffe4e6; }
+
+.booking-page .rc-table-data tbody tr:nth-child(odd) td {
+  background: rgba(240, 249, 255, 0.72);
+}
+
+.booking-page .rc-table-data tbody tr:nth-child(even) td {
+  background: rgba(236, 253, 245, 0.52);
+}
+
+.booking-page .rc-table-data tbody tr:hover td {
+  background: #ffffff;
+  box-shadow: inset 0 2px 0 #bae6fd, inset 0 -2px 0 #bae6fd;
+}
+
+.booking-page .booking-payment-cell > span {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1px solid #a7f3d0;
+}
+
+.booking-page .booking-token-badge {
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.14);
+}
+
+.booking-page .booking-vitals-btn {
+  background: #fce7f3;
+  color: #db2777;
+  border-color: #f9a8d4;
+}
+
 /* Empty State */
 .booking-empty-state {
   padding: 48px 20px;
@@ -2340,7 +2602,7 @@
 
 .booking-vitals-modal {
   width: min(780px, calc(100vw - 32px)) !important;
-  height: auto !important;
+  height: min(720px, calc(100dvh - 48px)) !important;
   min-height: 0 !important;
   max-height: calc(100vh - 48px) !important;
   margin: auto !important;
@@ -2351,7 +2613,7 @@
   padding: 18px 22px !important;
   display: flex !important;
   flex-direction: column !important;
-  overflow-y: auto !important;
+  overflow: hidden !important;
   box-sizing: border-box !important;
   animation: modalPop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -2443,7 +2705,16 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 0;
+}
+
+.vitals-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 6px 2px 2px;
+  margin: 0 -6px 0 -2px;
 }
 
 .vital-detail-card {
@@ -2556,6 +2827,14 @@
   color: #0f172a !important;
   font-family: inherit;
   min-width: 0;
+  text-align: left !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+.vital-card-input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
 }
 
 .vital-card-unit {
@@ -2581,6 +2860,7 @@
   padding-top: 12px;
   border-top: 1.5px solid #f1f5f9;
   margin-top: 2px;
+  flex-shrink: 0;
 }
 
 .vital-btn-cancel {

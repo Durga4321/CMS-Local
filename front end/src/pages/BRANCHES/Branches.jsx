@@ -544,8 +544,6 @@ function Branches() {
 
     const nextIsActive = !getBranchIsActive(branch);
     setUpdatingStatusId(branchId);
-    setError("");
-    setSuccess("");
 
     try {
       const response = await fetch(`${BRANCH_API_URL}/${branchId}/status`, {
@@ -569,14 +567,10 @@ function Branches() {
             : item
         )
       );
-      const message = nextIsActive
-        ? "Branch activated successfully"
-        : "Branch disabled successfully";
-      setSuccess(message);
-      toast.success(message);
+      toast.success(nextIsActive ? "Branch activated successfully" : "Branch disabled successfully");
     } catch (statusError) {
       const message = statusError.message || "Unable to update branch status.";
-      showError(message);
+      toast.error(message);
     } finally {
       setUpdatingStatusId(null);
     }

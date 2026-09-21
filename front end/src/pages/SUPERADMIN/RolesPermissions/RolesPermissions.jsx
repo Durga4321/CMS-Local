@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Check, Pencil, Plus, Save, ShieldCheck, Trash2, UsersRound, X } from "lucide-react";
+import { Check, Pencil, Save, ShieldCheck, Trash2, UsersRound, X } from "lucide-react";
 import {
   deleteRole,
   fetchAdmins,
@@ -7,7 +7,6 @@ import {
   saveRole,
   saveRoleModulePermission,
 } from "../superAdminApi";
-import { ActionsGroup } from "../../../components/ActionsGroup";
 import { saveRoleModulePermissions } from "../../../utils/rolePermissions";
 
 const PERMISSIONS = ["View", "Create", "Edit", "Delete"];
@@ -182,7 +181,6 @@ const roleMatchesAdmin = (role = {}, admin = {}, index = 0) => {
 
 function RolesPermissions() {
   const [roles, setRoles] = useState([]);
-  const [activeActionState, setActiveActionState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -230,13 +228,6 @@ function RolesPermissions() {
   useEffect(() => {
     loadRoles();
   }, []);
-
-  const openAdd = () => {
-    setForm(emptyForm);
-    setError("");
-    setSuccess("");
-    setShowForm(true);
-  };
 
   const closeForm = () => {
     if (saving) return;
@@ -516,11 +507,6 @@ function RolesPermissions() {
           <h1>Roles & Permissions</h1>
           <p>Create roles and assign View, Create, Edit, and Delete permissions.</p>
         </div>
-        <div className="sa-page-actions">
-          <button className="sa-btn sa-btn-primary" type="button" onClick={openAdd}>
-            <Plus size={16} /> Create Role
-          </button>
-        </div>
       </div>
 
       {success ? <div className="sa-state">{success}</div> : null}
@@ -600,14 +586,13 @@ function RolesPermissions() {
       <div className="sa-table sa-table--roles">
         <div
           className="sa-table-head"
-          style={{ gridTemplateColumns: "55px minmax(130px,.8fr) minmax(110px,.7fr) minmax(180px,1fr) minmax(200px,1.2fr) minmax(130px, auto)" }}
+          style={{ gridTemplateColumns: "55px minmax(130px,.8fr) minmax(110px,.7fr) minmax(180px,1fr) minmax(200px,1.4fr)" }}
         >
           <span>S.No.</span>
           <span>Role</span>
           <span>Module</span>
           <span>Assigned Users</span>
           <span>Permissions</span>
-          <span style={{ textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>Actions</span>
         </div>
 
         {loading ? <div className="sa-state">Loading roles...</div> : null}
@@ -619,7 +604,7 @@ function RolesPermissions() {
           <div
             className="sa-table-row"
             key={role.key || role.id || `${role.roleName}-${index}`}
-            style={{ gridTemplateColumns: "55px minmax(130px,.8fr) minmax(110px,.7fr) minmax(180px,1fr) minmax(200px,1.2fr) minmax(130px, auto)" }}
+            style={{ gridTemplateColumns: "55px minmax(130px,.8fr) minmax(110px,.7fr) minmax(180px,1fr) minmax(200px,1.4fr)" }}
           >
             <span className="sa-table-cell">{index + 1}</span>
             <span className="sa-table-cell">
@@ -659,19 +644,6 @@ function RolesPermissions() {
                   </span>
                 ))}
               </span>
-            </span>
-            <span className="sa-actions">
-              <ActionsGroup
-                rowId={role.id || getAdminId(role.admin) || index}
-                activeActionState={activeActionState}
-                setActiveActionState={setActiveActionState}
-                canView={true}
-                canEdit={true}
-                canStatus={false}
-                canDelete={false}
-                onView={() => setSelectedAdminId(getAdminId(role.admin))}
-                onEdit={() => setSelectedAdminId(getAdminId(role.admin))}
-              />
             </span>
           </div>
         ))}
