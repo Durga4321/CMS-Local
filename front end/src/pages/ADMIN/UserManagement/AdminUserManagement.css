@@ -4,15 +4,23 @@
 
 .admin-users-page {
   position: relative;
-  min-height: calc(100vh - 82px);
-  flex: 1;
+  min-height: 100%;
+  flex: 0 0 auto;
   width: 100%;
   padding: 24px 32px 48px;
   box-sizing: border-box;
   background: transparent !important;
-  overflow-x: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
+}
+
+/* Keep the complete user directory in the main app scroll area. */
+.content:has(.admin-users-page) {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* 3D Dashboard Background Animated Overlay */
@@ -109,7 +117,7 @@
   -webkit-backdrop-filter: blur(18px);
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 20px;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   display: flex;
   flex-direction: column;
@@ -288,6 +296,13 @@
   align-items: center !important;
   padding: 14px 20px !important;
   box-sizing: border-box !important;
+}
+
+/* Compact the directory rows so the current user set is visible together. */
+.admin-users-page .admin-users-table .admin-users-table-head,
+.admin-users-page .admin-users-table .admin-users-row {
+  min-height: 48px !important;
+  padding: 8px 16px !important;
 }
 
 .admin-users-table-head {

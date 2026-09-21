@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -81,6 +81,7 @@ function ReceptionMedicalHistory({
   const canEditHistory = canUseModulePermission(permissionProfile, "Medical History", "Edit");
   const canDeleteHistory = canUseModulePermission(permissionProfile, "Medical History", "Delete");
   const handledPatientHistoryLink = useRef("");
+  const historyTableRef = useRef(null);
   const [histories, setHistories] = useState([]);
   const [patients, setPatients] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -125,6 +126,13 @@ function ReceptionMedicalHistory({
       );
     });
   }, [rows, searchQuery, patientsById]);
+
+  // Do not retain a previous horizontal position after filtering or hot reloads.
+  useLayoutEffect(() => {
+    const table = historyTableRef.current;
+    if (!table) return;
+    table.scrollLeft = 0;
+  }, [filteredRows]);
 
   const hasHistoryContent = (record = {}) =>
     Boolean(
@@ -533,16 +541,25 @@ function ReceptionMedicalHistory({
           </div>
         </div>
 
-        <div className="rc-table">
-          <div className="rc-table-head six">
-            <span>S.No.</span>
-            <span>Patient</span>
-            <span>Allergies</span>
-            <span>Chronic Diseases</span>
-            <span>Medications</span>
-            <span>Surgeries</span>
-            <span>Actions</span>
-          </div>
+        <div className="med-history-table-scroll" ref={historyTableRef}>
+          <table className="med-history-table">
+            <colgroup>
+              <col className="med-col-number" />
+              <col className="med-col-patient" />
+              <col className="med-col-allergies" />
+              <col className="med-col-chronic" />
+              <col className="med-col-medications" />
+              <col className="med-col-surgeries" />
+              <col className="med-col-actions" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th scope="col">S.No.</th><th scope="col">Patient</th><th scope="col">Allergies</th>
+                <th scope="col">Chronic Diseases</th><th scope="col">Medications</th><th scope="col">Surgeries</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
           {filteredRows.map((record, index) => {
             const historyId = getHistoryId(record) || `${getPatientId(record)}-${index}`;
             const patientName = getPatientName(record, patientsById);
@@ -550,9 +567,9 @@ function ReceptionMedicalHistory({
             const initial = (patientName || "P").charAt(0).toUpperCase();
 
             return (
-              <div className="rc-table-row six" key={historyId}>
-                <span>{index + 1}</span>
-                <span>
+              <tr key={historyId}>
+                <td>{index + 1}</td>
+                <td>
                   <div className="med-patient-chip">
                     <div className="med-patient-avatar">{initial}</div>
                     <div>
@@ -560,8 +577,8 @@ function ReceptionMedicalHistory({
                       <span className="med-patient-pid">PID: {pid}</span>
                     </div>
                   </div>
-                </span>
-                <span>
+                </td>
+                <td>
                   {record.allergies ? (
                     <span className="med-badge med-badge--allergy" title={record.allergies}>
                       <AlertTriangle size={11} /> {record.allergies}
@@ -569,8 +586,8 @@ function ReceptionMedicalHistory({
                   ) : (
                     <span className="med-badge med-badge--none">None</span>
                   )}
-                </span>
-                <span>
+                </td>
+                <td>
                   {record.chronicDiseases ? (
                     <span className="med-badge med-badge--chronic" title={record.chronicDiseases}>
                       <Activity size={11} /> {record.chronicDiseases}
@@ -578,8 +595,8 @@ function ReceptionMedicalHistory({
                   ) : (
                     <span className="med-badge med-badge--none">None</span>
                   )}
-                </span>
-                <span>
+                </td>
+                <td>
                   {record.currentMedications ? (
                     <span className="med-badge med-badge--meds" title={record.currentMedications}>
                       <Pill size={11} /> {record.currentMedications}
@@ -587,8 +604,8 @@ function ReceptionMedicalHistory({
                   ) : (
                     <span className="med-badge med-badge--none">None</span>
                   )}
-                </span>
-                <span>
+                </td>
+                <td>
                   {record.surgeries ? (
                     <span className="med-badge med-badge--surg" title={record.surgeries}>
                       <Stethoscope size={11} /> {record.surgeries}
@@ -596,8 +613,9 @@ function ReceptionMedicalHistory({
                   ) : (
                     <span className="med-badge med-badge--none">None</span>
                   )}
-                </span>
-                <span className="med-row-actions">
+                </td>
+                <td>
+                  <div className="med-row-actions">
                   <button
                     className="med-action-btn med-action-btn--view"
                     aria-label="View medical history"
@@ -626,10 +644,13 @@ function ReceptionMedicalHistory({
                       <Trash2 size={14} />
                     </button>
                   ) : null}
-                </span>
-              </div>
+                  </div>
+                </td>
+              </tr>
             );
           })}
+            </tbody>
+          </table>
 
           {!filteredRows.length ? (
             <div className="med-empty-history">
@@ -660,7 +681,7 @@ function ReceptionMedicalHistory({
         <div className="rc-modal-backdrop" onClick={() => setModal(null)}>
           <form
             noValidate
-            className="rc-modal rc-modal-compact"
+            className="rc-modal rc-modal-compact rc-medical-history-modal"
             onSubmit={saveHistory}
             onClick={(event) => event.stopPropagation()}
           >

@@ -774,6 +774,12 @@ aside.rc-sidebar.lab-sidebar {
   width: 100% !important;
 }
 
+.lab-screen-samples .lab-table-head,
+.lab-screen-samples .lab-table-row {
+  column-gap: 12px !important;
+  min-width: 0 !important;
+}
+
 .lab-table .rc-table-head,
 .lab-table-head {
   padding: 10px 18px !important;

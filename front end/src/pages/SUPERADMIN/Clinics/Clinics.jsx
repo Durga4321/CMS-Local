@@ -205,7 +205,7 @@ function Clinics() {
             canView={true}
             canEdit={isActive}
             canStatus={true}
-            canDelete={isActive}
+            canDelete={false}
             statusChecked={isActive}
             statusDisabled={updatingClinicId === clinic.id}
             statusTitle={clinic.status === "Active" ? "Deactivate clinic" : "Activate clinic"}

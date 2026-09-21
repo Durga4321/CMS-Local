@@ -700,15 +700,6 @@ function Dashboard() {
           <h1 className="db-title">Dashboard 👋</h1>
           <p className="db-subtitle">Welcome back, Ravi! Here's what's happening at the clinic today.</p>
         </div>
-        <button
-          type="button"
-          className="db-add-doctor-btn"
-          onClick={openAddDoctor}
-          title="Add Doctor"
-        >
-          <Plus size={16} />
-          <span>Add Doctor</span>
-        </button>
       </div>
 
       {/* TOP SECTION: CLINIC INFO (LEFT) + 6 KPI CARDS (RIGHT 2x3 GRID) */}
@@ -1148,15 +1139,6 @@ function Dashboard() {
           </div>
 
           <div className="db-quick-actions-grid">
-            <button
-              type="button"
-              className="db-qa-chip qa-purple"
-              onClick={openAddDoctor}
-            >
-              <UserPlus size={18} />
-              <span>Add Doctor</span>
-            </button>
-
             <button
               type="button"
               className="db-qa-chip qa-mint"

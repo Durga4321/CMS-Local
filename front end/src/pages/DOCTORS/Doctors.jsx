@@ -123,6 +123,14 @@ const getImageUrl = (entity = {}) => {
     entity?.ProfileImage,
     entity?.profileImageUrl,
     entity?.ProfileImageUrl,
+    entity?.profilePicture,
+    entity?.ProfilePicture,
+    entity?.profilePictureUrl,
+    entity?.ProfilePictureUrl,
+    entity?.doctorImage,
+    entity?.DoctorImage,
+    entity?.doctorImageUrl,
+    entity?.DoctorImageUrl,
     entity?.imagePath,
     entity?.ImagePath,
   ];
@@ -561,9 +569,7 @@ function Doctors() {
 
     try {
       const response = await fetch(DOCTORS_API_URL, {
-        headers: {
-          "ngrok-skip-browser-warning": "true",
-        },
+        headers: getApiHeaders(),
       });
 
       if (!response.ok) {
@@ -1135,7 +1141,11 @@ function Doctors() {
       removeImage: removeEditImage,
     });
     if (editImageFile) {
-      formData.append("Image", editImageFile);
+      // Backends in use expose different DTO property names; submit the same
+      // selected image under each supported name so it is retained on update.
+      formData.append("Image", editImageFile, editImageFile.name);
+      formData.append("ProfileImage", editImageFile, editImageFile.name);
+      formData.append("ProfilePicture", editImageFile, editImageFile.name);
     }
     if (removeEditImage) {
       params.set("RemoveImage", "true");
@@ -1664,34 +1674,35 @@ function Doctors() {
                       display: "flex",
                     }}
                   />
+                </div>
+                <div className="doctor-edit-image-actions">
                   <button
                     type="button"
                     className="doctor-edit-image-btn"
                     onClick={() => editImageInputRef.current?.click()}
-                    title="Upload profile image"
-                    aria-label="Upload profile image"
                   >
-                    <Camera size={17} />
+                    <Camera size={17} /> Choose File
                   </button>
                   {editImagePreview ? (
                     <button
                       type="button"
                       className="doctor-edit-image-remove-btn"
                       onClick={handleRemoveEditImage}
-                      title="Remove profile image"
-                      aria-label="Remove profile image"
                     >
-                      <X size={15} />
+                      <X size={15} /> Remove
                     </button>
                   ) : null}
-                  <input
-                    ref={editImageInputRef}
-                    type="file"
-                    className="doctor-edit-image-input"
-                    accept="image/*"
-                    onChange={handleEditImageChange}
-                  />
                 </div>
+                <span className="doctor-edit-image-file-name">
+                  {editImageFile ? editImageFile.name : "No new file selected"}
+                </span>
+                <input
+                  ref={editImageInputRef}
+                  type="file"
+                  className="doctor-edit-image-input"
+                  accept="image/*"
+                  onChange={handleEditImageChange}
+                />
               </div>
 
               <div className="doctor-edit-grid">
@@ -1924,7 +1935,7 @@ function Doctors() {
                   className="doctor-edit-save"
                   disabled={savingEdit || !canEdit}
                 >
-                  {savingEdit ? "Saving..." : "Save Changes"}
+                  {savingEdit ? "Updating..." : "Update Doctor"}
                 </button>
               </div>
             </form>

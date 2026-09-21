@@ -26,9 +26,83 @@
   flex: 1;
   padding: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   background: transparent !important;
+  min-height: 0;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin !important;
+  scrollbar-color: #0f9d9d #e7f3f6 !important;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* The content pane is the single vertical scroll owner for all admin pages. */
+.content::-webkit-scrollbar {
+  display: block !important;
+  width: 10px !important;
+}
+
+.content::-webkit-scrollbar-track {
+  display: block !important;
+  background: #e7f3f6 !important;
+  border-radius: 999px;
+}
+
+.content::-webkit-scrollbar-thumb {
+  display: block !important;
+  background: linear-gradient(#38bdf8, #0f9d9d) !important;
+  border: 2px solid #e7f3f6 !important;
+  border-radius: 999px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: #0d7f7f !important;
+}
+
+.main.superadmin-main {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.content.superadmin-content {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: auto !important;
+  -ms-overflow-style: auto !important;
+}
+
+.content.superadmin-content::-webkit-scrollbar {
+  display: block !important;
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.content.superadmin-content::-webkit-scrollbar-track {
+  display: block !important;
+  background: #e2e8f0;
+  border-radius: 8px;
+}
+
+.content.superadmin-content::-webkit-scrollbar-thumb {
+  display: block !important;
+  background: #94a3b8;
+  border: 3px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.content.superadmin-content::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 @media (max-width: 768px) {

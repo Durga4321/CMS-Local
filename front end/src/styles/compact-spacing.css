@@ -81,6 +81,12 @@
   padding: 0 !important;
 }
 
+/* The Super Admin dashboard header is a bordered card, so it needs its own
+   interior spacing instead of the shared zero-padding header reset. */
+.sa-dashboard-page .sa-page-header {
+  padding: 16px 20px !important;
+}
+
 :where(
   .dashboard-header h1,
   .branches-header h1,

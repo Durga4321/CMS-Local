@@ -73,7 +73,9 @@ export const ActionsGroup = ({
       setActiveEffect((current) => (current === actionName ? null : current));
     }, 650);
 
-    if (setActiveActionState) {
+    // Status changes are already reflected by the row data. Avoid a page-level
+    // action state update here, which re-renders every table row just to animate one button.
+    if (setActiveActionState && actionName !== "status") {
       setActiveActionState({ rowId, action: actionName });
     }
     if (handler) {

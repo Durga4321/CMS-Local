@@ -272,12 +272,12 @@
 .branches-row {
   display: grid !important;
   grid-template-columns:
-    60px
-    minmax(200px, 1.3fr)
-    minmax(200px, 1.3fr)
-    minmax(260px, 2fr)
-    134px
-    150px !important;
+    52px
+    minmax(130px, 1.2fr)
+    minmax(150px, 1.15fr)
+    minmax(170px, 1.5fr)
+    108px
+    220px !important;
   column-gap: 14px;
   align-items: center;
   width: 100%;
@@ -863,7 +863,7 @@
 @media (max-width: 1100px) {
   .branches-thead,
   .branches-row {
-    min-width: 900px;
+    min-width: 860px;
   }
 }
 

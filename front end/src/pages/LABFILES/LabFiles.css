@@ -19,10 +19,15 @@
 }
 
 .lab-files-table {
-  display: grid;
+  display: block;
+  position: relative;
+  z-index: 1;
+  width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 20px;
-  overflow-x: auto;
+  /* Desktop columns fit within the card, so the first column can never be
+     shifted off-screen by a retained horizontal scroll position. */
+  overflow-x: hidden !important;
   background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -33,17 +38,17 @@
 .lab-files-row {
   display: grid !important;
   grid-template-columns:
-    minmax(200px, 1.5fr)
-    minmax(110px, 0.8fr)
-    minmax(180px, 1.3fr)
-    minmax(160px, 1.1fr)
-    100px
-    130px
-    140px !important;
-  gap: 12px;
+    minmax(120px, 1.3fr)
+    minmax(90px, 0.72fr)
+    minmax(120px, 1.1fr)
+    minmax(120px, 1.1fr)
+    80px
+    140px
+    170px !important;
+  gap: 10px;
   align-items: center;
-  padding: 14px 20px;
-  min-width: 960px;
+  padding: 14px 16px;
+  min-width: 0;
   box-sizing: border-box;
 }
 
@@ -79,6 +84,16 @@
 .lab-files-row span {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.lab-files-page .receptionists-toolbar {
+  flex: 0 0 auto;
+  margin: 0 0 18px !important;
+}
+
+.lab-files-page .receptionists-search {
+  position: relative;
+  z-index: 2;
 }
 
 /* Column 1: Test Name (Left-Aligned, baseline anchored) */
@@ -163,7 +178,7 @@
   text-align: center !important;
   width: 100% !important;
   margin: 0 auto !important;
-  min-width: 0 !important;
+  min-width: 170px !important;
 }
 
 .lab-files-modal {
@@ -205,12 +220,17 @@
 }
 
 @media (max-width: 900px) {
+  .lab-files-table {
+    overflow-x: auto !important;
+  }
+
   .lab-files-head {
     display: none;
   }
 
   .lab-files-row {
     grid-template-columns: 1fr;
+    min-width: 0;
   }
 
   .lab-files-actions {

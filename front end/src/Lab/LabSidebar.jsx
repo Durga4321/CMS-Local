@@ -2,7 +2,6 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import {
   Activity,
-  ArrowLeftToLine,
   FileBarChart2,
   FlaskConical,
   Gauge,
@@ -28,7 +27,7 @@ const items = [
   { to: "/lab/reports", label: "Reports", icon: FileBarChart2, tone: "rose", badge: "Archive" },
 ];
 
-function LabSidebar({ onClose = () => {}, collapsed = false, onToggleCollapse = () => {} }) {
+function LabSidebar({ onClose = () => {}, collapsed = false }) {
   const profile = getLabProfile();
   const { loading: permissionsLoading } = useRolePermissionsSync(profile);
   const profileName = profile.name || "Lab Technician";
@@ -153,25 +152,6 @@ function LabSidebar({ onClose = () => {}, collapsed = false, onToggleCollapse = 
               </p>
             </div>
           )}
-        </div>
-
-        {/* BOTTOM COLLAPSE MENU TOGGLE */}
-        <div className="rc-sidebar-bottom">
-          <button
-            type="button"
-            className="rc-collapse-btn collapse-btn"
-            onClick={onToggleCollapse}
-            title={collapsed ? "Expand Menu" : "Collapse Menu"}
-          >
-            <ArrowLeftToLine
-              size={16}
-              style={{
-                transform: collapsed ? "rotate(180deg)" : "none",
-                transition: "transform 0.25s ease",
-              }}
-            />
-            <span>{collapsed ? "Expand" : "Collapse Menu"}</span>
-          </button>
         </div>
       </div>
     </aside>

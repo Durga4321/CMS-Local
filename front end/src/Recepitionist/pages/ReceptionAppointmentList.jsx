@@ -323,15 +323,7 @@ function ReceptionAppointmentList({
       return;
     }
     setVitalsAppointment(appointment);
-    setVitalsForm(
-      vitalFields.reduce(
-        (form, field) => ({
-          ...form,
-          [field.name]: getVitalValue(appointment, field.name),
-        }),
-        {}
-      )
-    );
+    setVitalsForm(emptyVitals);
   };
 
   const closeVitals = () => {
@@ -766,40 +758,42 @@ function ReceptionAppointmentList({
               </button>
             </div>
 
-            {/* Vital Instrument Detail Cards */}
-            <div className="vitals-cards-grid">
-              {vitalFields.map((field) => {
-                const IconComponent = field.icon || HeartPulse;
-                return (
-                  <div className="vital-detail-card" key={field.name}>
-                    <div className="vital-card-top">
-                      <div className="vital-card-header-left">
-                        <div
-                          className="vital-card-icon"
-                          style={{ background: field.iconBg, color: field.iconColor }}
-                        >
-                          <IconComponent size={15} />
+            {/* This is the only scrolling region so the title and actions stay reachable. */}
+            <div className="vitals-modal-body">
+              <div className="vitals-cards-grid">
+                {vitalFields.map((field) => {
+                  const IconComponent = field.icon || HeartPulse;
+                  return (
+                    <div className="vital-detail-card" key={field.name}>
+                      <div className="vital-card-top">
+                        <div className="vital-card-header-left">
+                          <div
+                            className="vital-card-icon"
+                            style={{ background: field.iconBg, color: field.iconColor }}
+                          >
+                            <IconComponent size={15} />
+                          </div>
+                          <div className="vital-card-meta">
+                            <span className="vital-card-label">{field.label}</span>
+                            <span className="vital-instrument-name">{field.instrumentName}</span>
+                          </div>
                         </div>
-                        <div className="vital-card-meta">
-                          <span className="vital-card-label">{field.label}</span>
-                          <span className="vital-instrument-name">{field.instrumentName}</span>
-                        </div>
+                        <span className="vital-card-ref">{field.refRange}</span>
                       </div>
-                      <span className="vital-card-ref">{field.refRange}</span>
+                      <div className="vital-card-input-wrap">
+                        <input
+                          className="vital-card-input"
+                          value={vitalsForm[field.name] || ""}
+                          onChange={(event) => setVitalField(field.name, event.target.value)}
+                          placeholder={field.placeholder}
+                          inputMode={field.name === "bloodPressure" ? "numeric" : "decimal"}
+                        />
+                        <span className="vital-card-unit">{field.unit}</span>
+                      </div>
                     </div>
-                    <div className="vital-card-input-wrap">
-                      <input
-                        className="vital-card-input"
-                        value={vitalsForm[field.name] || ""}
-                        onChange={(event) => setVitalField(field.name, event.target.value)}
-                        placeholder={field.placeholder}
-                        inputMode={field.name === "bloodPressure" ? "numeric" : "decimal"}
-                      />
-                      <span className="vital-card-unit">{field.unit}</span>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
             {/* Modal Action Buttons */}

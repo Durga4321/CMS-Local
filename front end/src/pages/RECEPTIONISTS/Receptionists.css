@@ -230,7 +230,7 @@
   position: relative;
   z-index: 2;
   width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden !important;
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.55);
@@ -244,11 +244,12 @@
   width: 100%;
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: 60px minmax(200px, 1.4fr) minmax(140px, 1fr) minmax(260px, 1.8fr) minmax(140px, 1fr) 120px minmax(200px, auto) !important;
+  /* One shared desktop grid: every header, cell, and action remains visible. */
+  grid-template-columns: 48px minmax(180px, 1.15fr) minmax(130px, 0.82fr) minmax(250px, 1.55fr) minmax(120px, 0.75fr) 112px 178px !important;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   padding: 14px 20px;
-  min-width: 980px;
+  min-width: 0;
 }
 
 .receptionists-thead {
@@ -367,7 +368,37 @@
 .receptionists-cell.receptionists-email {
   color: #0284c7 !important;
   font-weight: 800 !important;
-  word-break: break-all;
+  font-size: 12px;
+  line-height: 1.35;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Fit all four row controls into the Actions column without reducing data columns. */
+.receptionists-actions .actions-group {
+  gap: 6px;
+  padding: 2px;
+}
+
+.receptionists-actions .action-btn.medical-instrument-btn,
+.receptionists-actions .action-btn {
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+}
+
+@media (max-width: 1180px) {
+  .receptionists-table {
+    overflow-x: auto !important;
+  }
+
+  .receptionists-thead,
+  .receptionists-row {
+    min-width: 1120px;
+  }
 }
 
 /* Status Badge */
