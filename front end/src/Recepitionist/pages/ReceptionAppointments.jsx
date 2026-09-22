@@ -39,6 +39,7 @@ import {
 import { getSpecializationDisplayName } from "../../pages/DOCTORS/doctorExpertiseOptions";
 import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 import { getNurseProfile } from "../../Nurse/nurseSession";
+import { fetchScheduleSettings, getCachedScheduleSlotDuration } from "../../utils/scheduleSettings";
 
 const parseSlotLabel = (slot) => {
   if (!slot) return "";
@@ -190,8 +191,33 @@ const generateDoctorDailySlots = (fetchedSlots = [], doctor = {}, dateStr = "") 
     if (key && !fetchedMap.has(key)) fetchedMap.set(key, slot);
   });
 
+  const getConfiguredSlotDuration = () => getCachedScheduleSlotDuration();
+
+  const getSlotDurationFromRange = (slot) => {
+    const label = parseSlotLabel(slot);
+    const [startLabel, endLabel] = String(label || "").split(" - ").map((part) => part.trim());
+    const start = parseTimeToMinutes(startLabel);
+    const end = parseTimeToMinutes(endLabel);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+    return end - start;
+  };
+
+  const getSlotDurationFromStarts = () => {
+    const starts = (fetchedSlots || [])
+      .map((slot) => parseTimeToMinutes(getSlotStart(slot)))
+      .filter((minutes) => Number.isFinite(minutes))
+      .sort((a, b) => a - b);
+
+    for (let i = 1; i < starts.length; i += 1) {
+      const diff = starts[i] - starts[i - 1];
+      if (diff > 0) return diff;
+    }
+    return null;
+  };
+
+  const slotDuration = getConfiguredSlotDuration();
+
   const slotsList = [];
-  const slotDuration = 30;
 
   for (let m = startMins; m + slotDuration <= endMins; m += slotDuration) {
     if (m >= breakStartMins && m < breakEndMins) {
@@ -671,6 +697,7 @@ function ReceptionAppointments({ hideActions = false }) {
   const [doctorLoadMessage, setDoctorLoadMessage] = useState("");
   const [appointments, setAppointments] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
+  const [scheduleSettingsVersion, setScheduleSettingsVersion] = useState(0);
   const [slotLoading, setSlotLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState("");
   const [message, setMessage] = useState("");
@@ -819,6 +846,29 @@ function ReceptionAppointments({ hideActions = false }) {
   useEffect(() => {
     refresh();
   }, [refresh]);
+  useEffect(() => {
+    let active = true;
+
+    const refreshScheduleSettings = () => {
+      fetchScheduleSettings()
+        .catch(() => null)
+        .finally(() => {
+          if (active) {
+            setScheduleSettingsVersion((value) => value + 1);
+          }
+        });
+    };
+
+    refreshScheduleSettings();
+    window.addEventListener("scheduleSettingsUpdated", refreshScheduleSettings);
+    window.addEventListener("storage", refreshScheduleSettings);
+
+    return () => {
+      active = false;
+      window.removeEventListener("scheduleSettingsUpdated", refreshScheduleSettings);
+      window.removeEventListener("storage", refreshScheduleSettings);
+    };
+  }, []);
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -987,7 +1037,7 @@ function ReceptionAppointments({ hideActions = false }) {
         setSelectedSlot("");
       })
       .finally(() => setSlotLoading(false));
-  }, [form.doctorId, form.date, receptionistBranchId, selectedDoctor]);
+  }, [form.doctorId, form.date, receptionistBranchId, selectedDoctor, scheduleSettingsVersion]);
 
   const validateBookingForm = () => {
     if (!form.patientId || !form.doctorId || !selectedSlot) {
@@ -1244,7 +1294,7 @@ function ReceptionAppointments({ hideActions = false }) {
       <div className="rc-dash-header">
         <div>
           <h1 className="rc-dash-title">
-            Appointment Booking <span className="rc-wave-hand">🩺</span>
+            Appointment Booking
           </h1>
           <p className="rc-dash-subtitle">
             Select patient, doctor, date, lock a consultation slot, and confirm booking.
@@ -1284,7 +1334,7 @@ function ReceptionAppointments({ hideActions = false }) {
             <span className="rc-pkpi-label">Registered Patients</span>
             <strong className="rc-pkpi-val">{patientCount}</strong>
           </div>
-          <span className="rc-pkpi-badge badge-blue">● Ready for Care</span>
+          <span className="rc-pkpi-badge badge-blue">Ready for Care</span>
         </div>
 
         <div className="rc-patient-kpi-card card-green-theme">
@@ -1295,7 +1345,7 @@ function ReceptionAppointments({ hideActions = false }) {
             <span className="rc-pkpi-label">Specialist Doctors</span>
             <strong className="rc-pkpi-val">{doctors.length}</strong>
           </div>
-          <span className="rc-pkpi-badge badge-green">✓ Active OPD</span>
+          <span className="rc-pkpi-badge badge-green"><Check size={13} /> Active OPD</span>
         </div>
 
         <div className="rc-patient-kpi-card card-purple-theme">
@@ -1308,7 +1358,7 @@ function ReceptionAppointments({ hideActions = false }) {
               {visibleSlots.filter((s) => !isBookedSlot(s) && !isTimeOutSlot(s, form.date)).length}
             </strong>
           </div>
-          <span className="rc-pkpi-badge badge-purple">● Live Booking</span>
+          <span className="rc-pkpi-badge badge-purple">Live Booking</span>
         </div>
       </div>
 
@@ -1539,10 +1589,10 @@ function ReceptionAppointments({ hideActions = false }) {
               </div>
             </div>
             <div className="rc-slot-legend-group">
-              <span className="rc-legend-pill legend-available">● Available</span>
-              <span className="rc-legend-pill legend-selected">✓ Selected</span>
-              <span className="rc-legend-pill legend-booked">✕ Booked</span>
-              <span className="rc-legend-pill legend-timeout">◷ Time Out</span>
+              <span className="rc-legend-pill legend-available">Available</span>
+              <span className="rc-legend-pill legend-selected"><Check size={13} /> Selected</span>
+              <span className="rc-legend-pill legend-booked">Booked</span>
+              <span className="rc-legend-pill legend-timeout">Time Out</span>
             </div>
           </div>
           <div className="rc-slots">
@@ -1579,7 +1629,7 @@ function ReceptionAppointments({ hideActions = false }) {
                       <span className="rc-slot-time-text">{label}</span>
                     </div>
                     <span className={`rc-slot-status-pill pill-${isBooked ? "booked" : isSelected ? "selected" : isCompleted ? "timeout" : "available"}`}>
-                      {isBooked ? "✕ Booked" : isSelected ? "✓ Locked" : isCompleted ? "◷ Expired" : "● Open"}
+                      {isBooked ? "Booked" : isSelected ? "Locked" : isCompleted ? "Expired" : "Open"}
                     </span>
                   </button>
                 );
@@ -1673,3 +1723,4 @@ function ReceptionAppointments({ hideActions = false }) {
 }
 
 export default ReceptionAppointments;
+

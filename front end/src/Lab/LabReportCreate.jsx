@@ -69,12 +69,40 @@ const getPatientName = (record = {}) =>
 const getPatientBloodGroup = (record = {}) =>
   readFirst(record, ["bloodGroup", "BloodGroup", "blood_group", "patient.bloodGroup", "Patient.BloodGroup"], "");
 
-const getPatientKey = (record = {}) =>
-  [
-    readFirst(record, ["patientId", "PatientId", "patient.id", "Patient.Id"], ""),
-    getPatientName(record),
-    readFirst(record, ["phone", "Phone", "mobile", "Mobile", "patient.phone"], ""),
-  ].map((value) => normalizeId(value)).filter(Boolean).join("|") || getPatientName(record);
+const getRecordDateValue = (record = {}) =>
+  readFirst(record, ["orderedAt", "OrderedAt", "visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"], "");
+
+const formatVisitDate = (value) => {
+  const date = new Date(value || "");
+  if (Number.isNaN(date.getTime())) return String(value || "").trim();
+  return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" }).format(date);
+};
+
+const isToday = (value) => {
+  const date = new Date(value || "");
+  if (Number.isNaN(date.getTime())) return false;
+  const today = new Date();
+  return date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
+};
+
+const filterRowsByVisitView = (rows = [], view = "") => {
+  if (view === "today") return rows.filter((row) => isToday(getRecordDateValue(row)));
+  if (view === "past") return rows.filter((row) => !isToday(getRecordDateValue(row)));
+  return rows;
+};
+
+const getPatientKey = (record = {}) => {
+  const appointmentId = normalizeId(readFirst(record, [
+    "appointmentId", "AppointmentId", "appointment.id", "appointment.appointmentId", "Appointment.Id", "Appointment.AppointmentId",
+  ], ""));
+  if (appointmentId) return `appointment:${appointmentId}`;
+
+  const patientId = normalizeId(readFirst(record, ["patientId", "PatientId", "patient.id", "Patient.Id"], ""));
+  const patientName = normalizeId(getPatientName(record));
+  const phone = normalizeId(readFirst(record, ["phone", "Phone", "mobile", "Mobile", "patient.phone"], ""));
+  const visitDate = normalizeId(getRecordDateValue(record));
+  return ["visit", patientId || patientName, phone, visitDate].filter(Boolean).join("|") || getPatientName(record);
+};
 
 const splitTestNames = (record = {}) =>
   Array.from(new Set(getPatientTestNames(record).split(",").map((name) => name.trim()).filter((name) => name && name !== "-")));
@@ -345,7 +373,7 @@ const buildPdfBlob = ({ title = "Lab Report", lines = [] } = {}) => {
   return new Blob([pdf], { type: "application/pdf" });
 };
 
-const buildReportKey = (record, testName) => `${recordId(record)}::${slug(testName)}`;
+const buildReportKey = (record, testName) => `${recordId(record) || getPatientKey(record)}::${slug(testName)}`;
 
 const getRecordClinicId = (record = {}) =>
   normalizeId(readFirst(record, ["hospitalId", "HospitalId", "clinicId", "ClinicId", "patient.hospitalId", "patient.clinicId"], ""));
@@ -452,6 +480,7 @@ function LabReportCreate() {
   const clinicName = getClinicDisplayName(labProfile, "Clinic");
   const clinicBranding = getClinicInvoiceBranding({ clinicId: labProfile.hospitalId, clinicName });
   const [rows, setRows] = useState([]);
+  const [visitView, setVisitView] = useState("");
   const [labTests, setLabTests] = useState([]);
   const [selectedPatientKey, setSelectedPatientKey] = useState("");
   const [selectedReportKey, setSelectedReportKey] = useState("");
@@ -492,26 +521,29 @@ function LabReportCreate() {
     return () => URL.revokeObjectURL(nextUrl);
   }, [filmFile]);
 
+  const visitRows = useMemo(() => filterRowsByVisitView(rows, visitView), [rows, visitView]);
+
   const patientOptions = useMemo(() => {
     const byPatient = new Map();
-    rows.forEach((row) => {
+    visitRows.forEach((row) => {
       const key = getPatientKey(row);
       if (!byPatient.has(key)) {
         byPatient.set(key, {
           key,
           name: getPatientName(row),
           phone: readFirst(row, ["phone", "Phone", "mobile", "Mobile", "patient.phone"], "-"),
+          visitDate: formatVisitDate(getRecordDateValue(row)),
           count: 0,
         });
       }
       byPatient.get(key).count += splitTestNames(row).length || 1;
     });
     return Array.from(byPatient.values());
-  }, [rows]);
+  }, [visitRows]);
 
   const selectedPatientRows = useMemo(
-    () => rows.filter((row) => getPatientKey(row) === selectedPatientKey),
-    [rows, selectedPatientKey]
+    () => visitRows.filter((row) => getPatientKey(row) === selectedPatientKey),
+    [visitRows, selectedPatientKey]
   );
 
   const reportOptions = useMemo(
@@ -565,7 +597,13 @@ function LabReportCreate() {
   );
 
   useEffect(() => {
-    if (!selectedPatientKey && patientOptions.length) setSelectedPatientKey(patientOptions[0].key);
+    if (!patientOptions.length) {
+      if (selectedPatientKey) setSelectedPatientKey("");
+      return;
+    }
+    if (!selectedPatientKey || !patientOptions.some((patient) => patient.key === selectedPatientKey)) {
+      setSelectedPatientKey(patientOptions[0].key);
+    }
   }, [patientOptions, selectedPatientKey]);
 
   useEffect(() => {
@@ -872,15 +910,6 @@ function LabReportCreate() {
           <h2>Create Diagnostic Report</h2>
           <p>Generate, calibrate and authenticate laboratory & diagnostic test reports.</p>
         </div>
-        <div className="lab-page-actions">
-          {canCreateReport ? (
-            <>
-              <button className="rc-btn primary lab-btn-save" type="button" onClick={() => saveReport()} disabled={saving}><Save size={16} /> Save Report</button>
-              <button className="rc-btn lab-btn-print" type="button" onClick={() => saveReport({ print: true })} disabled={saving}><Printer size={16} /> Save & Print</button>
-            </>
-          ) : null}
-          <button className="rc-btn ghost" type="button" onClick={() => navigate("/lab/reports")}><FileText size={16} /> Reports</button>
-        </div>
       </div>
 
       <div className="lab-create-cards-wrap">
@@ -912,6 +941,25 @@ function LabReportCreate() {
             </span>
           </div>
 
+          <div className="lab-filter-tabs lab-report-visit-tabs" role="tablist" aria-label="Report visit date filter">
+            {[
+              ["", "All"],
+              ["today", "Today"],
+              ["past", "Past"],
+            ].map(([key, label]) => (
+              <button
+                key={label}
+                className={visitView === key ? "active" : ""}
+                type="button"
+                role="tab"
+                aria-selected={visitView === key}
+                onClick={() => setVisitView(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           <div className="lab-form-2col">
             <div className="lab-field-group">
               <label className="lab-field-label">
@@ -923,7 +971,7 @@ function LabReportCreate() {
                 >
                   {patientOptions.map((patient) => (
                     <option value={patient.key} key={patient.key}>
-                      {patient.name} {patient.phone && patient.phone !== "-" ? `- ${patient.phone}` : ""} ({patient.count} tests)
+                      {patient.name} {patient.visitDate ? `- ${patient.visitDate}` : ""} {patient.phone && patient.phone !== "-" ? `- ${patient.phone}` : ""} ({patient.count} tests)
                     </option>
                   ))}
                 </select>

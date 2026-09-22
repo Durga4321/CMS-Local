@@ -114,32 +114,63 @@ const cleanDisplayText = (value) => {
 };
 
 const getImageUrl = (entity = {}) => {
-  const candidates = [
-    entity?.imageUrl,
-    entity?.ImageUrl,
-    entity?.image,
-    entity?.Image,
-    entity?.profileImage,
-    entity?.ProfileImage,
-    entity?.profileImageUrl,
-    entity?.ProfileImageUrl,
-    entity?.profilePicture,
-    entity?.ProfilePicture,
-    entity?.profilePictureUrl,
-    entity?.ProfilePictureUrl,
-    entity?.doctorImage,
-    entity?.DoctorImage,
-    entity?.doctorImageUrl,
-    entity?.DoctorImageUrl,
-    entity?.imagePath,
-    entity?.ImagePath,
+  const imageKeys = [
+    "imageUrl",
+    "ImageUrl",
+    "image",
+    "Image",
+    "profileImage",
+    "ProfileImage",
+    "profileImageUrl",
+    "ProfileImageUrl",
+    "profilePicture",
+    "ProfilePicture",
+    "profilePictureUrl",
+    "ProfilePictureUrl",
+    "profilePhoto",
+    "ProfilePhoto",
+    "profilePhotoUrl",
+    "ProfilePhotoUrl",
+    "doctorImage",
+    "DoctorImage",
+    "doctorImageUrl",
+    "DoctorImageUrl",
+    "doctorImagePath",
+    "DoctorImagePath",
+    "doctorPhoto",
+    "DoctorPhoto",
+    "doctorPhotoUrl",
+    "DoctorPhotoUrl",
+    "photo",
+    "Photo",
+    "photoUrl",
+    "PhotoUrl",
+    "imagePath",
+    "ImagePath",
+    "filePath",
+    "FilePath",
+    "path",
+    "Path",
+    "url",
+    "Url",
   ];
+
+  const sources = [entity, entity?.doctor, entity?.Doctor, entity?.data, entity?.Data];
+  const candidates = sources.flatMap((source) =>
+    source && typeof source === "object"
+      ? imageKeys.map((key) => source[key])
+      : []
+  );
 
   for (const candidate of candidates) {
     const text = String(candidate ?? "").trim();
-    if (text && text.toLowerCase() !== "string") {
-      return text;
+    if (!text || text.toLowerCase() === "string") continue;
+
+    if (/^[a-z0-9+/=\r\n]+$/i.test(text) && text.length > 120 && !text.includes("/")) {
+      return `data:image/jpeg;base64,${text.replace(/\s/g, "")}`;
     }
+
+    return text;
   }
 
   return "";

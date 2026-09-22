@@ -878,7 +878,9 @@ const validateBranchSelection = (values = form) => {
     formData.append("IsActive", requestPayload.isActive);
 
     if (imageFile) {
-      formData.append("Image", imageFile);
+      formData.append("Image", imageFile, imageFile.name);
+      formData.append("ProfileImage", imageFile, imageFile.name);
+      formData.append("ProfilePicture", imageFile, imageFile.name);
     }
 
     try {

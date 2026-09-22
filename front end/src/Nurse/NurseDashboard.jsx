@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -194,7 +194,7 @@ function NurseDashboard() {
               <span className="nd-live-dot" /> Live Patient Queue
             </span>
           </div>
-          <h2 className="nd-hero-title">Nurse Care Station</h2>
+          <h2 className="nd-hero-title">Nurse Dashboard</h2>
           <p className="nd-hero-subtitle">
             Real-time patient vitals triage, assigned appointments queue, and clinical care actions.
           </p>

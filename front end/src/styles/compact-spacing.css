@@ -1958,3 +1958,157 @@
 
 
 
+
+/* Receptionists: force single-screen table visibility like Nurses, including all action buttons. */
+.receptionists-page .receptionists-table {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.receptionists-page .receptionists-thead,
+.receptionists-page .receptionists-row {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  grid-template-columns: 58px minmax(170px, 1.35fr) minmax(90px, 0.7fr) minmax(220px, 1.65fr) minmax(108px, 0.8fr) 118px 178px !important;
+  column-gap: 6px !important;
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+}
+
+.receptionists-page .receptionists-thead > *,
+.receptionists-page .receptionists-row > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.receptionists-page .receptionists-actions-head,
+.receptionists-page .receptionists-actions {
+  width: 178px !important;
+  min-width: 178px !important;
+  max-width: 178px !important;
+  justify-self: center !important;
+  overflow: visible !important;
+}
+
+.receptionists-page .receptionists-actions .actions-group {
+  width: 178px !important;
+  min-width: 178px !important;
+  max-width: 178px !important;
+  gap: 5px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+  overflow: visible !important;
+}
+
+.receptionists-page .receptionists-actions .action-btn.medical-instrument-btn,
+.receptionists-page .receptionists-actions .action-btn {
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  border-radius: 11px !important;
+}
+
+.receptionists-page .receptionists-cell,
+.receptionists-page .receptionists-name-highlight b {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.receptionists-page .receptionists-email {
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+/* Receptionists compact fit pass: keep every action button visible on 1366px admin viewport. */
+.receptionists-page {
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+.receptionists-page .receptionists-table {
+  overflow: hidden !important;
+}
+
+.receptionists-page .receptionists-thead,
+.receptionists-page .receptionists-row {
+  grid-template-columns: 54px minmax(160px, 1.15fr) minmax(78px, 0.55fr) minmax(210px, 1.45fr) minmax(102px, 0.7fr) 112px 162px !important;
+  column-gap: 4px !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
+
+.receptionists-page .receptionists-thead {
+  font-size: 0.72rem !important;
+  letter-spacing: 0.04em !important;
+}
+
+.receptionists-page .receptionists-row {
+  min-height: 72px !important;
+}
+
+.receptionists-page .receptionists-cell,
+.receptionists-page .receptionists-name-highlight b {
+  font-size: 12px !important;
+}
+
+.receptionists-page .receptionists-avatar {
+  width: 36px !important;
+  height: 36px !important;
+  flex-basis: 36px !important;
+  font-size: 12px !important;
+}
+
+.receptionists-page .receptionists-name-cell {
+  gap: 8px !important;
+}
+
+.receptionists-page .receptionists-name-highlight {
+  padding: 3px 10px !important;
+  max-width: 92px !important;
+}
+
+.receptionists-page .receptionists-status {
+  min-width: 92px !important;
+  height: 28px !important;
+  padding: 0 22px 0 10px !important;
+  font-size: 11px !important;
+}
+
+.receptionists-page .receptionists-actions-head,
+.receptionists-page .receptionists-actions {
+  width: 162px !important;
+  min-width: 162px !important;
+  max-width: 162px !important;
+}
+
+.receptionists-page .receptionists-actions .actions-group {
+  width: 162px !important;
+  min-width: 162px !important;
+  max-width: 162px !important;
+  gap: 4px !important;
+  padding: 0 !important;
+}
+
+.receptionists-page .receptionists-actions .action-btn.medical-instrument-btn,
+.receptionists-page .receptionists-actions .action-btn {
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  border-radius: 10px !important;
+}
+
+.receptionists-page .receptionists-actions .action-btn svg,
+.receptionists-page .receptionists-actions .instrument-icon {
+  width: 17px !important;
+  height: 17px !important;
+}

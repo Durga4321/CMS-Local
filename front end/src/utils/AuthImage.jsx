@@ -34,7 +34,11 @@ export const resolveApiImageUrl = (
   }
 
   const cleanUrl =
-    String(imageUrl).trim();
+    String(imageUrl)
+      .trim()
+      .replace(/\\/g, "/")
+      .replace(/^[a-z]:\/+[^/]*\/+/i, "/")
+      .replace(/^.*?wwwroot\//i, "/");
 
   if (/^(data:|blob:)/i.test(cleanUrl)) {
     return cleanUrl;

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { Check, Plus, Printer } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Consultation.css";
@@ -18,7 +18,7 @@ import { formatDateMMDDYYYY } from "../../utils/dateFormat";
 import { fetchConsultationVitals, mergeStoredAppointmentVitals } from "../../utils/appointmentVitals";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
 import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
-import { fetchLabMasterTests, filterLabTestsBySpecialization } from "../../utils/labMaster";
+import { fetchLabMasterTests, filterLabTestsBySpecialization, normalizeLabTest } from "../../utils/labMaster";
 import { savePendingDiagnosticRequest } from "../../utils/diagnosticRequests";
 import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
 
@@ -195,12 +195,14 @@ const getStepFromStatus = (status) => {
   return 1;
 };
 
+const CONSULTATION_QUEUE_STATUSES = ["waiting", "inprogress", "in progress"];
+
 const getFallbackAppointment = (appointments) =>
   appointments.find((item) =>
-    ["waiting", "inprogress", "in progress"].includes(
+    CONSULTATION_QUEUE_STATUSES.includes(
       String(item.status || "").trim().toLowerCase()
     )
-  ) || appointments[0];
+  ) || null;
 
 const parseList = (data) => {
   if (Array.isArray(data)) return data;
@@ -466,37 +468,46 @@ function Consultation() {
     };
   }, [appointment, overview]);
 
+  const doctorSpecializationForOptions =
+    appointment?.doctorSpecialization ||
+    appointment?.specialization ||
+    sessionDoctor.specialization;
+
+  const scopedLabTests = useMemo(
+    () => filterLabTestsBySpecialization(labTests, doctorSpecializationForOptions),
+    [doctorSpecializationForOptions, labTests]
+  );
+
   const diagnosisSelectOptions = useMemo(() => {
-    const doctorSpecialization =
-      appointment?.doctorSpecialization ||
-      appointment?.specialization ||
-      sessionDoctor.specialization;
     const options = new Set(
       filterDiagnosisOptionsBySpecialization(
         DEFAULT_DIAGNOSIS_OPTIONS,
-        doctorSpecialization
+        doctorSpecializationForOptions
       )
     );
-    filterDiagnosisOptionsBySpecialization(diagnosisOptions, doctorSpecialization).forEach((diagnosis) => {
+
+    filterDiagnosisOptionsBySpecialization(diagnosisOptions, doctorSpecializationForOptions).forEach((diagnosis) => {
       if (diagnosis) options.add(diagnosis);
     });
+
     if (form.diagnosis) options.add(form.diagnosis);
     return Array.from(options).sort((a, b) => a.localeCompare(b));
-  }, [appointment, diagnosisOptions, form.diagnosis, sessionDoctor.specialization]);
-  const diagnosisTestOptions = useMemo(() => {
-    const doctorSpecialization =
-      appointment?.doctorSpecialization ||
-      appointment?.specialization ||
-      sessionDoctor.specialization;
-    const options = new Set(
-      filterLabTestsBySpecialization(labTests, doctorSpecialization).map((test) => test.item)
-    );
-    return Array.from(options).sort((a, b) => a.localeCompare(b));
-  }, [appointment, labTests, sessionDoctor.specialization]);
+  }, [diagnosisOptions, doctorSpecializationForOptions, form.diagnosis]);
+
+  const diagnosisTestOptions = useMemo(
+    () => labTests.map((test) => normalizeLabTest(test)).filter((test) => test.item && test.isActive !== false),
+    [labTests]
+  );
+
   const selectedDiagnosisTests = useMemo(
     () => splitDiagnosisTests(form.diagnosisTests),
     [form.diagnosisTests]
   );
+
+  const selectedDiagnosisTestDetails = useMemo(() => {
+    const selected = new Set(selectedDiagnosisTests.map((test) => test.toLowerCase()));
+    return diagnosisTestOptions.filter((test) => selected.has(String(test.item || test.testName || "").toLowerCase()));
+  }, [diagnosisTestOptions, selectedDiagnosisTests]);
   const hospitalName = getClinicDisplayName(
     {
       hospitalName: appointment?.hospitalName || appointment?.clinicName || localStorage.getItem("hospitalName") || localStorage.getItem("clinicName"),
@@ -634,18 +645,18 @@ function Consultation() {
         throw new Error(data.message || validationMessage || data.title || "Unable to save consultation.");
       }
 
-      const updatedStatus = "In Progress";
+      const updatedStatus = "Prescription Added";
       await updateAppointmentStatusAPI(appointment.appointmentId, updatedStatus, headers);
 
       setAppointment((prev) => ({
         ...prev,
         status: updatedStatus,
       }));
-      setStep(1);
+      setStep(2);
       setDiagnosisOptions((prev) =>
         mergeDiagnosisOption(prev, form.diagnosis)
       );
-      setMessage(data.message || "Consultation saved.");
+      setMessage(data.message || "Consultation saved. Continue with prescription.");
 
       if (diagnosisTests) {
         savePendingDiagnosticRequest({
@@ -656,6 +667,7 @@ function Consultation() {
           doctorName,
           diagnosis,
           tests: diagnosisTests,
+          testDetails: selectedDiagnosisTestDetails,
           clinicId: hospitalId,
           clinicName: hospitalName,
           branchId: appointment.branchId,
@@ -685,8 +697,8 @@ function Consultation() {
       state: {
         appointmentId: appointment.appointmentId,
         patientId: appointment.patientId,
-        appointment,
-        patient,
+        appointment: { ...appointment, status: "Prescription Added" },
+        patient: { ...appointment, status: "Prescription Added" },
         consultation: {
           ...result,
           diagnosis: result.diagnosis || form.diagnosis,
@@ -861,7 +873,7 @@ function Consultation() {
                 className={`cn-step-circle ${i < step ? "done" : i === step ? "active" : ""
                   }`}
               >
-                {i < step ? "✓" : i + 1}
+                {i < step ? <Check size={20} strokeWidth={3} aria-hidden="true" /> : i + 1}
               </div>
               <span className={`cn-step-label ${i === step ? "active" : ""}`}>
                 {label}
@@ -884,7 +896,7 @@ function Consultation() {
             <div>
               <p className="cn-pat-name">{patient.name}</p>
               <p className="cn-pat-sub">
-                PID: {patient.pid} · {patient.age}
+                PID: {patient.pid} Â· {patient.age}
               </p>
               <span className="cn-pat-badge">{patient.type}</span>
             </div>
@@ -985,11 +997,14 @@ function Consultation() {
               <option value="">
                 {diagnosisTestOptions.length ? "Select diagnosis test" : "No lab file tests available"}
               </option>
-              {diagnosisTestOptions.map((test) => (
-                <option value={test} key={test}>
-                  {test}
-                </option>
-              ))}
+              {diagnosisTestOptions.map((test) => {
+                const testName = test.item || test.testName;
+                return (
+                  <option value={testName} key={test.id || testName}>
+                    {testName}
+                  </option>
+                );
+              })}
             </select>
             <div className="cn-test-chips">
               {selectedDiagnosisTests.length ? (

@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import DoctorSidebar from "./DoctorSidebar";
 import DoctorTopbar from "./DoctorTopbar";
 import "./DoctorLayout.css";
 
 const PAGE_TITLES = {
-  "/doctor/dashboard":    "Dashboard",
+  "/doctor/dashboard":    "Doctor Dashboard",
   "/doctor/consultation": "Consultation",
   "/doctor/prescription": "Prescription",
   "/doctor/appointments": "Appointments",

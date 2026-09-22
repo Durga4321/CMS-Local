@@ -1,15 +1,15 @@
-const DEFAULT_API_BASE_URL = "https://theater-outreach-unable.ngrok-free.dev";
-//const DEFAULT_API_BASE_URL = " https://irritant-kilobyte-until.ngrok-free.dev";
+//const DEFAULT_API_BASE_URL = "https://theater-outreach-unable.ngrok-free.dev";
+const DEFAULT_API_BASE_URL = "https://irritant-kilobyte-until.ngrok-free.dev";
 const DEFAULT_API_ASSET_BASE_URL = DEFAULT_API_BASE_URL;
 export const CMS_GLOBAL_SETTINGS_KEY = "cms_global_settings";
 
 export const API_BASE_URL = (
   process.env.REACT_APP_API_BASE_URL || DEFAULT_API_BASE_URL
-).replace(/\/+$/, "");
+).trim().replace(/\/+$/, "");
 
 export const API_ASSET_BASE_URL = (
   process.env.REACT_APP_API_ASSET_BASE_URL || DEFAULT_API_ASSET_BASE_URL
-).replace(/\/+$/, "");
+).trim().replace(/\/+$/, "");
 
 export const apiUrl = (path) => {
   const cleanPath = String(path || "")
@@ -110,3 +110,4 @@ export const PATIENT_API = {
   notificationRead: "patient-portal/notifications/{id}/read",
   notificationDelete: "patient-portal/notifications/{id}",
 };
+

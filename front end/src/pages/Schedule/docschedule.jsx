@@ -550,6 +550,7 @@ import {
   CalendarOff,
 } from "lucide-react";
 import { apiUrl } from "../../config/api";
+import { cacheScheduleSettings } from "../../utils/scheduleSettings";
 import { useToast } from "../../components/ToastProvider";
 import { getRoleProfile } from "../../profile/sessionProfile";
 import {
@@ -643,8 +644,10 @@ function ScheduleSettingsPage() {
         data
       );
 
+      cacheScheduleSettings(data);
+
       setSlotDuration(
-        data.slotDuration || 30
+        data.slotDuration || data.SlotDuration || 30
       );
 
       setClinicOpen(
@@ -743,6 +746,12 @@ function ScheduleSettingsPage() {
             `${clinicClose}:00`,
         }),
       });
+      cacheScheduleSettings({
+        slotDuration: Number(slotDuration),
+        clinicOpen: `${clinicOpen}:00`,
+        clinicClose: `${clinicClose}:00`,
+      });
+      window.dispatchEvent(new Event("scheduleSettingsUpdated"));
 
       toast.success(
         "Schedule settings saved successfully"
@@ -1015,6 +1024,14 @@ function ScheduleSettingsPage() {
             }
           >
 
+            <option value={5}>
+              5 minutes
+            </option>
+
+            <option value={10}>
+              10 minutes
+            </option>
+
             <option value={15}>
               15 minutes
             </option>
@@ -1025,14 +1042,6 @@ function ScheduleSettingsPage() {
 
             <option value={30}>
               30 minutes
-            </option>
-
-            <option value={45}>
-              45 minutes
-            </option>
-
-            <option value={60}>
-              60 minutes
             </option>
 
           </select>

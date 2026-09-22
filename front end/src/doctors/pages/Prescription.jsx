@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, Download, Plus, Printer, Search, Syringe, Trash2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Prescription.css";
@@ -26,6 +26,9 @@ const STEPS = [
 const APPOINTMENTS_API = apiUrl("Appointment");
 const CONSULTATION_API = apiUrl("Consultation");
 const PRESCRIPTION_API = apiUrl("Prescription");
+
+const normalizeStatusKey = (status) => String(status || "").trim().toLowerCase().replace(/\s+/g, "");
+const PRESCRIPTION_QUEUE_STATUSES = ["prescriptionadded"];
 
 const emptyValue = "-";
 const DEFAULT_MEDICINE_OPTIONS = [
@@ -163,7 +166,7 @@ const RxCustomSelect = ({
             }}
           >
             <span>{placeholder}</span>
-            {!value && <span className="rx-dropdown-check">✓</span>}
+            {!value && <Check size={14} className="rx-dropdown-check" />}
           </button>
           {options.map((option) => (
             <button
@@ -176,7 +179,7 @@ const RxCustomSelect = ({
               }}
             >
               <span>{option}</span>
-              {value === option && <span className="rx-dropdown-check">✓</span>}
+              {value === option && <Check size={14} className="rx-dropdown-check" />}
             </button>
           ))}
         </div>
@@ -512,11 +515,8 @@ function Prescription() {
             ) ||
             selectedAppointment ||
             appointments.find((item) =>
-              ["inprogress", "in progress", "waiting"].includes(
-                String(item.status || "").trim().toLowerCase()
-              )
-            ) ||
-            appointments[0];
+              PRESCRIPTION_QUEUE_STATUSES.includes(normalizeStatusKey(item.status))
+            );
         }
 
         if (!selectedAppointment?.appointmentId) {
@@ -1130,7 +1130,7 @@ function Prescription() {
                 className={`rx-step-circle ${i < 2 ? "done" : i === 2 ? "active" : ""
                   }`}
               >
-                {i < 2 ? "✓" : i + 1}
+                {i < 2 ? <Check size={18} /> : i + 1}
               </div>
               <span className={`rx-step-label ${i === 2 ? "active" : ""}`}>
                 {label}

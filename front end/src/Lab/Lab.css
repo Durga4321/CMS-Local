@@ -1889,3 +1889,47 @@ aside.rc-sidebar.lab-sidebar {
 
 
 
+
+.lab-screen-samples .lab-list-controls {
+  align-items: flex-end !important;
+  flex-wrap: nowrap !important;
+}
+
+.lab-screen-samples .lab-list-controls .lab-search,
+.lab-screen-samples .lab-filter-tabs,
+.lab-screen-samples .lab-patient-select select {
+  height: 60px !important;
+}
+
+.lab-screen-samples .lab-list-controls .lab-search {
+  flex: 1 1 420px !important;
+  min-width: 280px !important;
+}
+
+.lab-screen-samples .lab-filter-tabs {
+  flex: 0 0 auto !important;
+  align-self: flex-end !important;
+}
+
+.lab-screen-samples .lab-filter-tabs button {
+  height: 50px !important;
+}
+
+.lab-screen-samples .lab-patient-select {
+  flex: 0 0 390px !important;
+  min-width: 300px !important;
+  align-self: flex-end !important;
+}
+
+.lab-screen-samples .lab-patient-select select {
+  min-height: 60px !important;
+}
+
+@media (max-width: 1100px) {
+  .lab-screen-samples .lab-list-controls {
+    flex-wrap: wrap !important;
+  }
+  .lab-screen-samples .lab-patient-select {
+    flex: 1 1 300px !important;
+  }
+}
