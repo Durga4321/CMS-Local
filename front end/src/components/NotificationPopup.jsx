@@ -201,8 +201,17 @@ function NotificationPopup({ isSuperAdmin = false }) {
   const ref = useRef(null);
   const navigate = useNavigate();
   const role = useMemo(() => normalizeRole(getCurrentRole()), []);
+  const shouldFetchNotifications = isSuperAdmin || ADMIN_ROLES.includes(role);
 
   const loadNotifications = useCallback(async () => {
+    if (!shouldFetchNotifications) {
+      setNotifications([]);
+      setActiveNotification(null);
+      setLoading(false);
+      setError("");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -227,9 +236,17 @@ function NotificationPopup({ isSuperAdmin = false }) {
     } finally {
       setLoading(false);
     }
-  }, [isSuperAdmin, role]);
+  }, [isSuperAdmin, role, shouldFetchNotifications]);
 
   useEffect(() => {
+    if (!shouldFetchNotifications) {
+      setNotifications([]);
+      setActiveNotification(null);
+      setLoading(false);
+      setError("");
+      return undefined;
+    }
+
     loadNotifications();
 
     const interval = window.setInterval(() => {
@@ -243,7 +260,7 @@ function NotificationPopup({ isSuperAdmin = false }) {
       window.clearInterval(interval);
       window.removeEventListener("focus", onFocus);
     };
-  }, [loadNotifications]);
+  }, [loadNotifications, shouldFetchNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -407,6 +424,8 @@ function NotificationPopup({ isSuperAdmin = false }) {
 }
 
 export default NotificationPopup;
+
+
 
 
 
