@@ -124,41 +124,7 @@ const getDisplayName = (authData, claims, email, role) => {
   return 'Admin';
 };
 
-const fetchPublicIp = async () => {
-  const providers = [
-    {
-      url: 'https://api.ipify.org?format=json',
-      read: (data) => getFirstText(data.ip),
-    },
-    {
-      url: 'https://api64.ipify.org?format=json',
-      read: (data) => getFirstText(data.ip),
-    },
-    {
-      url: 'https://ipapi.co/json/',
-      read: (data) => getFirstText(data.ip),
-    },
-    {
-      url: 'https://api.my-ip.io/v2/ip.json',
-      read: (data) => getFirstText(data.ip),
-    },
-  ];
-
-  for (const provider of providers) {
-    try {
-      const response = await fetch(provider.url);
-      if (!response.ok) continue;
-
-      const data = await response.json();
-      const ip = provider.read(data);
-      if (ip) return ip;
-    } catch {
-      // Try the next provider.
-    }
-  }
-
-  return '';
-};
+const fetchPublicIp = async () => localStorage.getItem('loginIpAddress') || '';
 
 const getLoginIp = async (authData, claims) => {
   const expectedIp = getFirstText(
@@ -766,3 +732,4 @@ export default AdminLogin;
 // select * from Appointments;
 
 // delete Schedules where id=1;
+

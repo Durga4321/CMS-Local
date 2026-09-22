@@ -6,17 +6,54 @@ import { Trash2 } from "lucide-react";
 import { resolveNotificationPath } from "../utils/notificationNavigation";
 import "./NotificationPopup.css";
 
-const getCurrentRole = () =>
-  localStorage.getItem("superAdminRole") ||
-  localStorage.getItem("adminRole") ||
-  localStorage.getItem("doctorRole") ||
-  localStorage.getItem("receptionistRole") ||
-  localStorage.getItem("labRole") ||
-  localStorage.getItem("userRole") ||
-  "";
-
 const normalizeRole = (role = "") =>
   String(role).trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+
+const getCurrentRole = () => {
+  const explicitRole =
+    localStorage.getItem("superAdminRole") ||
+    sessionStorage.getItem("superAdminRole") ||
+    localStorage.getItem("adminRole") ||
+    sessionStorage.getItem("adminRole") ||
+    localStorage.getItem("doctorRole") ||
+    sessionStorage.getItem("doctorRole") ||
+    localStorage.getItem("receptionistRole") ||
+    sessionStorage.getItem("receptionistRole") ||
+    localStorage.getItem("labRole") ||
+    sessionStorage.getItem("labRole") ||
+    localStorage.getItem("userRole") ||
+    sessionStorage.getItem("userRole") ||
+    "";
+
+  const roleKey = normalizeRole(explicitRole);
+  if (roleKey.includes("superadmin")) return "superadmin";
+  if (roleKey.includes("admin") || roleKey.includes("clinicadmin")) return "admin";
+  if (roleKey.includes("doctor")) return "doctor";
+  if (roleKey.includes("reception")) return "receptionist";
+  if (roleKey.includes("nurse")) return "nurse";
+  if (roleKey.includes("lab")) return "labtechnician";
+  if (roleKey.includes("patient") || roleKey.includes("user")) return "patient";
+
+  const path = String(window.location?.pathname || "").toLowerCase();
+  const isAdminPath =
+    path &&
+    !path.startsWith("/superadmin") &&
+    !path.startsWith("/doctor") &&
+    !path.startsWith("/reception") &&
+    !path.startsWith("/nurse") &&
+    !path.startsWith("/lab") &&
+    !path.startsWith("/patient");
+
+  if (localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken")) return "admin";
+  if (isAdminPath && (localStorage.getItem("token") || sessionStorage.getItem("token"))) return "admin";
+  if (localStorage.getItem("doctorToken") || sessionStorage.getItem("doctorToken")) return "doctor";
+  if (localStorage.getItem("receptionistToken") || sessionStorage.getItem("receptionistToken")) return "receptionist";
+  if (localStorage.getItem("nurseToken") || sessionStorage.getItem("nurseToken")) return "nurse";
+  if (localStorage.getItem("labToken") || sessionStorage.getItem("labToken")) return "labtechnician";
+  if (localStorage.getItem("patientToken") || sessionStorage.getItem("patientToken")) return "patient";
+
+  return explicitRole;
+};
 
 const getCurrentUserKey = () =>
   [
@@ -164,9 +201,10 @@ function NotificationPopup({ isSuperAdmin = false }) {
   const ref = useRef(null);
   const navigate = useNavigate();
   const role = useMemo(() => normalizeRole(getCurrentRole()), []);
+  const shouldFetchNotifications = isSuperAdmin || ADMIN_ROLES.includes(role);
 
   const loadNotifications = useCallback(async () => {
-    if (!isSuperAdmin) {
+    if (!shouldFetchNotifications) {
       setNotifications([]);
       setActiveNotification(null);
       setLoading(false);
@@ -198,9 +236,17 @@ function NotificationPopup({ isSuperAdmin = false }) {
     } finally {
       setLoading(false);
     }
-  }, [isSuperAdmin, role]);
+  }, [isSuperAdmin, role, shouldFetchNotifications]);
 
   useEffect(() => {
+    if (!shouldFetchNotifications) {
+      setNotifications([]);
+      setActiveNotification(null);
+      setLoading(false);
+      setError("");
+      return undefined;
+    }
+
     loadNotifications();
 
     const interval = window.setInterval(() => {
@@ -214,7 +260,7 @@ function NotificationPopup({ isSuperAdmin = false }) {
       window.clearInterval(interval);
       window.removeEventListener("focus", onFocus);
     };
-  }, [loadNotifications]);
+  }, [loadNotifications, shouldFetchNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -378,3 +424,9 @@ function NotificationPopup({ isSuperAdmin = false }) {
 }
 
 export default NotificationPopup;
+
+
+
+
+
+

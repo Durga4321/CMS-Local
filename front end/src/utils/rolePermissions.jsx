@@ -202,7 +202,7 @@ const isAdminAppPath = () => {
 };
 
 const shouldSkipAdminPermissionSync = (profile = {}) =>
-  !isSuperAdminPermissionProfile(profile) && !isAdminPermissionProfile(profile) && isAdminAppPath();
+  isSuperAdminPermissionProfile(profile) || (!isAdminPermissionProfile(profile) && isAdminAppPath());
 
 const normalizeModuleName = (module, index = 0) => {
   const value =
@@ -558,6 +558,7 @@ export const syncRolePermissionsFromBackend = async (profile = {}) => {
   if (shouldSkipAdminPermissionSync(profile)) return getRoleModulePermissions(profile);
 
   const effectiveProfile = await resolveAdminPermissionProfile(profile);
+  if (isSuperAdminPermissionProfile(effectiveProfile)) return getRoleModulePermissions(effectiveProfile);
   const keys = permissionIdentityKeys(effectiveProfile);
   const syncKey = keys.join("|");
   if (!syncKey || syncingKeys.has(syncKey)) return getRoleModulePermissions(effectiveProfile);
@@ -784,3 +785,5 @@ export const filterItemsByViewPermission = (items = [], profile = {}) => {
     })
     .filter(Boolean);
 };
+
+

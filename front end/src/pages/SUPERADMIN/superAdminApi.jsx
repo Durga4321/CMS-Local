@@ -990,11 +990,15 @@ const buildNotificationPayload = (notification = {}) => {
     )
   );
   const audienceCode = getNotificationAudienceCode(targetUsers);
+  const targetRoles = audienceCode === "admins" ? "Admin,ClinicAdmin,Clinic Admin" : "User";
 
   return {
     title: String(pick(notification, ["title", "subject"], "")).trim(),
     message: String(pick(notification, ["message", "body", "description"], "")).trim(),
     targetUsers,
+    targetRoles,
+    roles: targetRoles,
+    recipientRoles: targetRoles,
     audience: audienceCode,
     target: audienceCode,
     recipient: audienceCode,
@@ -2677,47 +2681,7 @@ const addCurrentSessionEmailLookup = (lookup) => {
   addEmailLookupValue(lookup, name, email);
 };
 
-const publicIpProviders = [
-  {
-    url: "https://api.ipify.org?format=json",
-    read: (data) => pick(data, ["ip"], ""),
-  },
-  {
-    url: "https://api64.ipify.org?format=json",
-    read: (data) => pick(data, ["ip"], ""),
-  },
-  {
-    url: "https://ipapi.co/json/",
-    read: (data) => pick(data, ["ip"], ""),
-  },
-  {
-    url: "https://api.my-ip.io/v2/ip.json",
-    read: (data) => pick(data, ["ip"], ""),
-  },
-];
-
-const fetchCurrentIpAddress = async () => {
-  const storedIp = localStorage.getItem("loginIpAddress") || "";
-  if (storedIp) return storedIp;
-
-  for (const provider of publicIpProviders) {
-    try {
-      const response = await fetch(provider.url);
-      if (!response.ok) continue;
-
-      const data = await response.json();
-      const ipAddress = provider.read(data) || pick(data, AUDIT_IP_KEYS, "");
-      if (ipAddress) {
-        localStorage.setItem("loginIpAddress", ipAddress);
-        return ipAddress;
-      }
-    } catch {
-      // Try the next provider.
-    }
-  }
-
-  return "";
-};
+const fetchCurrentIpAddress = async () => localStorage.getItem("loginIpAddress") || "";
 
 const getCurrentSessionIdentity = (ipAddress = "") => ({
   role: getCurrentSessionRole(),
@@ -3725,4 +3689,9 @@ export const countActiveUsers = async () => {
     return 0;
   }
 };
+
+
+
+
+
 

@@ -4,14 +4,6 @@ import React, {
 } from "react";
 import { API_ASSET_BASE_URL } from "../config/api";
 
-const getStoredAuthToken = () =>
-  localStorage.getItem("token") ||
-  localStorage.getItem("adminToken") ||
-  localStorage.getItem("doctorToken") ||
-  localStorage.getItem("receptionistToken") ||
-  "";
-
-
 
 const shouldUseDirectImage = (imageUrl) => {
   if (!imageUrl) return false;
@@ -126,43 +118,9 @@ function AuthImage({
       };
     }
 
-    // Blob, data, and localhost URLs: use directly
-    if (shouldUseDirectImage(imageSrc) || imageSrc.includes("localhost")) {
-      setResolvedSrc(imageSrc);
-      return () => {
-        active = false;
-      };
-    }
-
-    // All other URLs (API images via ngrok, etc.): fetch with headers
-    const loadImage = async () => {
-      try {
-        const token = getStoredAuthToken();
-        const headers = {
-          "ngrok-skip-browser-warning": "true",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        };
-
-        const response = await fetch(imageSrc, { headers });
-
-        if (!response.ok) {
-          throw new Error(`Image request failed with status ${response.status}`);
-        }
-
-        const blob = await response.blob();
-        if (!active) return;
-
-        objectUrl = URL.createObjectURL(blob);
-        setResolvedSrc(objectUrl);
-      } catch (error) {
-        if (active) {
-          console.log("Image fetch failed:", imageSrc, error);
-          setFailed(true);
-        }
-      }
-    };
-
-    loadImage();
+    // Use image URLs directly. Browser image loading avoids the CORS preflight/fetch
+    // failures that appear when static assets are requested with auth headers.
+    setResolvedSrc(imageSrc);
 
     return () => {
       active = false;
@@ -199,3 +157,4 @@ function AuthImage({
 }
 
 export default AuthImage;
+

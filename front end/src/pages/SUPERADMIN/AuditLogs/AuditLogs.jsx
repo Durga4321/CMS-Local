@@ -345,6 +345,7 @@ const isDataChangeLog = (row = {}) => {
 function AuditLogs() {
   const [search, setSearch] = useState("");
   const [systemAction, setSystemAction] = useState("All");
+  const [summaryFilter, setSummaryFilter] = useState("login");
   const [view, setView] = useState("login");
   const [auditLogs, setAuditLogs] = useState([]);
   const [allAuditLogs, setAllAuditLogs] = useState([]);
@@ -561,15 +562,22 @@ function AuditLogs() {
       ]
         .some((value) => String(value).toLowerCase().includes(query));
       const matchesSystemAction = systemAction === "All" || getActionLabel(log) === systemAction;
+      const matchesSummaryFilter =
+        summaryFilter === "login"
+          ? Boolean(log.isLoginActivity)
+          : summaryFilter === "changes"
+            ? isDataChangeLog(log)
+            : true;
       return (
         matchesSearch &&
         matchesSystemAction &&
+        matchesSummaryFilter &&
         isWithinDateRange(log, startDate, endDate) &&
         matchesClinic(log, selectedClinic) &&
         matchesBranch(log, selectedBranch)
       );
     });
-  }, [auditLogs, endDate, search, selectedBranch, selectedClinic, startDate, systemAction]);
+  }, [auditLogs, endDate, search, selectedBranch, selectedClinic, startDate, summaryFilter, systemAction]);
 
   const scopedRows = useMemo(() => {
     const rows = allAuditLogs.length ? allAuditLogs : auditLogs;
@@ -603,6 +611,7 @@ function AuditLogs() {
         detail: "All time records",
         icon: FileText,
         tone: "total",
+        filterKey: "all",
       },
       {
         label: "Login Activities",
@@ -610,6 +619,7 @@ function AuditLogs() {
         detail: "This period",
         icon: LogIn,
         tone: "login",
+        filterKey: "login",
       },
       {
         label: "Data Changes",
@@ -617,11 +627,19 @@ function AuditLogs() {
         detail: "This period",
         icon: PencilLine,
         tone: "changes",
+        filterKey: "changes",
       },
     ],
     [dashboardDataChanges, dashboardLoginActivities, dashboardTotalLogs]
   );
 
+  const handleSummaryFilterClick = (filterKey) => {
+    const nextFilter = summaryFilter === filterKey ? "all" : filterKey;
+    setSummaryFilter(nextFilter);
+    setView(nextFilter === "login" ? "login" : "all");
+    setSystemAction("All");
+    setCurrentPage(1);
+  };
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
@@ -746,16 +764,22 @@ function AuditLogs() {
         {summaryCards.map((card) => {
           const SummaryIcon = card.icon;
           return (
-            <article className="sa-audit-summary-card" key={card.label}>
+            <button
+              className={`sa-audit-summary-card${summaryFilter === card.filterKey ? " is-active" : ""}`}
+              key={card.label}
+              type="button"
+              onClick={() => handleSummaryFilterClick(card.filterKey)}
+              aria-pressed={summaryFilter === card.filterKey}
+            >
               <span className={`sa-audit-summary-icon sa-audit-summary-icon--${card.tone}`}>
                 <SummaryIcon size={22} />
               </span>
               <span>
                 <b>{card.label}</b>
                 <strong>{card.value}</strong>
-                <small>{card.detail}</small>
+                <small>{summaryFilter === card.filterKey ? "Showing below" : card.detail}</small>
               </span>
-            </article>
+            </button>
           );
         })}
       </div>
@@ -769,6 +793,7 @@ function AuditLogs() {
             aria-selected={view === item.key}
             onClick={() => {
               setView(item.key);
+              setSummaryFilter(item.key === "login" ? "login" : "all");
               setSystemAction("All");
             }}
           >
@@ -897,3 +922,4 @@ function AuditLogs() {
 }
 
 export default AuditLogs;
+
