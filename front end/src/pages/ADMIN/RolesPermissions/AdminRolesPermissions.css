@@ -247,7 +247,7 @@
 .admin-roles-page .admin-roles-table-card .sa-table .sa-table-row {
   display: grid !important;
   /* One shared grid keeps each header exactly over its corresponding cell. */
-  grid-template-columns: 50px minmax(120px, 0.8fr) minmax(90px, 0.55fr) minmax(240px, 1.45fr) minmax(95px, 1fr) 164px !important;
+  grid-template-columns: 50px minmax(120px, 0.72fr) minmax(150px, 0.9fr) minmax(210px, 1.05fr) minmax(420px, 2.4fr) 164px !important;
   width: 100%;
   min-width: 0 !important;
   column-gap: 10px !important;
@@ -712,5 +712,1053 @@
 
   .admin-roles-particle {
     display: none;
+  }
+}
+
+/* Roles table permission details: stack each module one below another. */
+.admin-roles-page .admin-roles-table-card .sa-table .sa-table-row {
+  align-items: flex-start !important;
+}
+
+.admin-roles-permission-list {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  white-space: normal !important;
+}
+
+.admin-roles-permission-item {
+  display: grid !important;
+  grid-template-columns: minmax(130px, 0.45fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(248, 250, 252, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  box-sizing: border-box;
+}
+
+.admin-roles-permission-item b {
+  color: #1e3a8a;
+  font-size: 12.5px;
+  font-weight: 850;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.admin-roles-permission-item span {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 5px;
+  min-width: 0;
+}
+
+.admin-roles-permission-item em {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.22);
+  color: #0369a1;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.admin-roles-permission-item .admin-roles-permission-empty {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.24);
+  color: #64748b;
+}
+
+/* Compact single-screen roles table layout. */
+.admin-roles-page .admin-roles-table-card .sa-table {
+  overflow-x: hidden !important;
+}
+
+.admin-roles-page .admin-roles-table-card .sa-table .sa-table-head,
+.admin-roles-page .admin-roles-table-card .sa-table .sa-table-row {
+  grid-template-columns: 42px minmax(88px, 0.55fr) minmax(140px, 0.85fr) minmax(150px, 0.8fr) minmax(360px, 2.75fr) 118px !important;
+  column-gap: 6px !important;
+  padding: 10px 12px !important;
+}
+
+.admin-roles-page .sa-table-head {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.admin-roles-name-highlight {
+  padding: 3px 9px;
+  border-radius: 8px;
+}
+
+.admin-roles-name-highlight b,
+.admin-roles-page .sa-role-admin-list b {
+  font-size: 12.5px;
+}
+
+.admin-roles-module-list {
+  gap: 4px !important;
+  align-content: flex-start;
+}
+
+.admin-roles-module-pill {
+  padding: 2px 7px;
+  border-radius: 7px;
+  font-size: 0.74rem;
+  line-height: 1.2;
+  max-width: 132px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-roles-avatar {
+  width: 32px;
+  height: 32px;
+  flex-basis: 32px;
+  font-size: 0.78rem;
+}
+
+.admin-roles-staff-cell {
+  gap: 8px !important;
+}
+
+.admin-roles-permission-list {
+  gap: 5px !important;
+}
+
+.admin-roles-permission-item {
+  grid-template-columns: minmax(112px, 0.42fr) minmax(0, 1fr) !important;
+  gap: 6px !important;
+  padding: 5px 8px !important;
+  border-radius: 8px !important;
+}
+
+.admin-roles-permission-item b {
+  font-size: 11.5px !important;
+}
+
+.admin-roles-permission-item span {
+  gap: 3px !important;
+}
+
+.admin-roles-permission-item em {
+  min-height: 18px !important;
+  padding: 1px 6px !important;
+  font-size: 10.5px !important;
+}
+
+.admin-roles-page .sa-actions {
+  transform: scale(0.9);
+  transform-origin: center;
+}
+
+@media (max-width: 1280px) {
+  .admin-roles-page .admin-roles-table-card .sa-table .sa-table-head,
+  .admin-roles-page .admin-roles-table-card .sa-table .sa-table-row {
+    grid-template-columns: 36px 82px 128px 132px minmax(300px, 1fr) 104px !important;
+    column-gap: 5px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .admin-roles-module-pill {
+    max-width: 116px;
+    font-size: 0.7rem;
+  }
+
+  .admin-roles-permission-item {
+    grid-template-columns: 96px minmax(0, 1fr) !important;
+  }
+}
+
+/* Final column balance: show full role names and remove extra actions-side slack. */
+.admin-roles-page .admin-roles-table-card .sa-table .sa-table-head,
+.admin-roles-page .admin-roles-table-card .sa-table .sa-table-row {
+  grid-template-columns: 38px minmax(126px, 0.78fr) minmax(150px, 0.9fr) minmax(150px, 0.82fr) minmax(400px, 2fr) 92px !important;
+  column-gap: 6px !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
+
+.admin-roles-role-head,
+.admin-roles-name-highlight,
+.admin-roles-name-highlight b {
+  max-width: none !important;
+  white-space: nowrap !important;
+}
+
+.admin-roles-name-highlight {
+  min-width: 102px;
+  justify-content: center;
+}
+
+.admin-roles-actions-head,
+.admin-roles-page .sa-actions {
+  justify-content: center !important;
+  width: 92px !important;
+  max-width: 92px !important;
+}
+
+.admin-roles-page .sa-actions {
+  transform: scale(0.86);
+}
+
+.admin-roles-permission-item {
+  grid-template-columns: minmax(108px, 0.38fr) minmax(0, 1fr) !important;
+  max-width: 100%;
+}
+
+.admin-roles-permission-item em {
+  padding-left: 5px !important;
+  padding-right: 5px !important;
+}
+
+@media (max-width: 1280px) {
+  .admin-roles-page .admin-roles-table-card .sa-table .sa-table-head,
+  .admin-roles-page .admin-roles-table-card .sa-table .sa-table-row {
+    grid-template-columns: 34px 118px 126px 126px minmax(330px, 1fr) 82px !important;
+    column-gap: 4px !important;
+  }
+
+  .admin-roles-name-highlight {
+    min-width: 98px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .admin-roles-name-highlight b {
+    font-size: 11.8px !important;
+  }
+
+  .admin-roles-actions-head,
+  .admin-roles-page .sa-actions {
+    width: 82px !important;
+    max-width: 82px !important;
+  }
+}
+
+/* Centered role view/edit modal. */
+.admin-roles-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.28);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+  width: min(1120px, calc(100vw - 56px));
+  max-height: min(82vh, 820px);
+  margin: 0 !important;
+  overflow: auto;
+  overscroll-behavior: contain;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.admin-roles-centered-modal .sa-permission-matrix {
+  max-height: 44vh;
+  overflow: auto;
+}
+
+.admin-roles-centered-modal .sa-form-field select:disabled,
+.admin-roles-centered-modal input:disabled {
+  cursor: default;
+}
+
+.admin-roles-centered-modal .sa-form-field select:disabled {
+  color: #334155;
+  background: rgba(241, 245, 249, 0.8);
+  opacity: 1;
+}
+
+.admin-roles-centered-modal .sa-checkbox input:disabled {
+  opacity: 1;
+}
+
+@media (max-width: 900px) {
+  .admin-roles-modal-backdrop {
+    padding: 12px;
+  }
+
+  .admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+    width: calc(100vw - 24px);
+    max-height: 88vh;
+  }
+}
+
+/* Shrink permission module rows to the actual badge content instead of leaving a long empty tail. */
+.admin-roles-permission-item {
+  width: max-content !important;
+  max-width: 100% !important;
+  grid-template-columns: minmax(108px, max-content) max-content !important;
+  justify-content: start !important;
+}
+
+.admin-roles-permission-item span {
+  flex-wrap: nowrap !important;
+  width: max-content;
+}
+
+.admin-roles-permission-list {
+  align-items: flex-start !important;
+}
+
+@media (max-width: 1280px) {
+  .admin-roles-permission-item {
+    grid-template-columns: minmax(96px, max-content) max-content !important;
+  }
+}
+
+/* Compact centered View/Edit role dialog so all module rows stay visible. */
+.admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+  width: min(980px, calc(100vw - 96px)) !important;
+  max-height: min(72vh, 650px) !important;
+  padding: 20px 24px 18px !important;
+  border-radius: 14px !important;
+}
+
+.admin-roles-centered-modal .sa-modal-header {
+  margin-bottom: 12px !important;
+}
+
+.admin-roles-centered-modal .sa-modal-header h3 {
+  font-size: 22px !important;
+}
+
+.admin-roles-centered-modal .sa-form-subtitle {
+  margin-bottom: 10px !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+}
+
+.admin-roles-centered-modal .sa-form-grid {
+  gap: 12px !important;
+}
+
+.admin-roles-centered-modal .sa-form-field {
+  gap: 4px !important;
+}
+
+.admin-roles-centered-modal .sa-form-field label {
+  font-size: 13px !important;
+}
+
+.admin-roles-centered-modal .sa-form-field select,
+.admin-roles-centered-modal .sa-form-field input {
+  height: 38px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+}
+
+.admin-roles-centered-modal h3 {
+  margin-top: 10px !important;
+  margin-bottom: 8px !important;
+  font-size: 18px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-matrix {
+  max-height: none !important;
+  overflow: visible !important;
+  border-radius: 12px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-head,
+.admin-roles-centered-modal .sa-permission-row {
+  grid-template-columns: minmax(160px, 1.35fr) repeat(4, 92px) !important;
+  gap: 8px !important;
+  padding: 8px 12px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-head {
+  font-size: 0.68rem !important;
+}
+
+.admin-roles-centered-modal .sa-permission-head .sa-btn {
+  height: 24px !important;
+  padding: 0 8px !important;
+  font-size: 10.5px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-row {
+  min-height: 42px !important;
+}
+
+.admin-roles-centered-modal .sa-checkbox {
+  gap: 5px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+}
+
+.admin-roles-centered-modal .sa-checkbox input,
+.admin-roles-centered-modal .sa-permission-head input {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+.admin-roles-centered-modal .sa-form-actions {
+  margin-top: 12px !important;
+}
+
+.admin-roles-centered-modal .sa-form-actions .sa-btn {
+  height: 34px !important;
+  padding: 0 14px !important;
+}
+
+@media (max-height: 780px) {
+  .admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+    max-height: 78vh !important;
+    padding-top: 16px !important;
+    padding-bottom: 14px !important;
+  }
+
+  .admin-roles-centered-modal .sa-permission-row {
+    min-height: 36px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .admin-roles-centered-modal .sa-form-field select,
+  .admin-roles-centered-modal .sa-form-field input {
+    height: 34px !important;
+  }
+}
+
+/* Rebalance table columns: move excess permission/action space into role/module/staff columns. */
+.admin-roles-page .admin-roles-table-card .sa-table .sa-table-head,
+.admin-roles-page .admin-roles-table-card .sa-table .sa-table-row {
+  grid-template-columns: 44px 180px 230px 220px minmax(430px, 460px) 92px !important;
+  column-gap: 8px !important;
+  justify-content: start !important;
+}
+
+.admin-roles-permission-list {
+  justify-self: start !important;
+  width: max-content !important;
+  max-width: 460px !important;
+}
+
+.admin-roles-permissions-head {
+  justify-content: flex-start !important;
+}
+
+.admin-roles-actions-head,
+.admin-roles-page .sa-actions {
+  justify-self: start !important;
+}
+
+.admin-roles-module-pill {
+  max-width: 190px !important;
+}
+
+.admin-roles-page .sa-role-admin-list b {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1280px) {
+  .admin-roles-page .admin-roles-table-card .sa-table .sa-table-head,
+  .admin-roles-page .admin-roles-table-card .sa-table .sa-table-row {
+    grid-template-columns: 36px 136px 178px 164px minmax(380px, 410px) 82px !important;
+    column-gap: 6px !important;
+  }
+
+  .admin-roles-permission-list {
+    max-width: 410px !important;
+  }
+
+  .admin-roles-module-pill {
+    max-width: 150px !important;
+  }
+}
+
+/* Final compact role modal: show staff context and all module permissions without wasted space. */
+.admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+  width: min(860px, calc(100vw - 140px)) !important;
+  max-height: min(66vh, 560px) !important;
+  padding: 14px 18px 12px !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
+
+.admin-roles-centered-modal .sa-modal-header {
+  margin-bottom: 8px !important;
+}
+
+.admin-roles-centered-modal .sa-modal-header h3 {
+  font-size: 20px !important;
+  line-height: 1.1 !important;
+  margin: 0 !important;
+}
+
+.admin-roles-staff-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  margin: 2px 0 10px;
+  padding: 6px 10px;
+  border: 1px solid #cfe7ff;
+  border-radius: 10px;
+  background: #f8fbff;
+  color: #0f172a;
+}
+
+.admin-roles-staff-summary span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.admin-roles-staff-summary strong {
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.admin-roles-staff-summary em {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #dff7ff;
+  border: 1px solid #8fe3f7;
+  color: #0787ad;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.admin-roles-permission-section {
+  margin-top: 0 !important;
+}
+
+.admin-roles-centered-modal .sa-permission-matrix {
+  max-height: none !important;
+  overflow: visible !important;
+  border-radius: 10px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-head,
+.admin-roles-centered-modal .sa-permission-row {
+  grid-template-columns: minmax(150px, 1fr) repeat(4, 74px) !important;
+  gap: 6px !important;
+  padding: 5px 10px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-head {
+  min-height: 38px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-row {
+  min-height: 34px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-row > span {
+  font-size: 13px !important;
+  line-height: 1.15 !important;
+}
+
+.admin-roles-centered-modal .sa-checkbox,
+.admin-roles-centered-modal .sa-permission-head label {
+  gap: 5px !important;
+  font-size: 11.5px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+.admin-roles-centered-modal .sa-checkbox input,
+.admin-roles-centered-modal .sa-permission-head input {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.admin-roles-centered-modal .sa-btn {
+  min-height: 28px !important;
+}
+
+.admin-roles-centered-modal .sa-form-actions {
+  margin-top: 8px !important;
+  padding-top: 8px !important;
+}
+
+@media (max-height: 720px) {
+  .admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+    max-height: calc(100vh - 160px) !important;
+    padding: 12px 16px 10px !important;
+  }
+
+  .admin-roles-centered-modal .sa-modal-header h3 {
+    font-size: 18px !important;
+  }
+
+  .admin-roles-staff-summary {
+    margin-bottom: 6px;
+    padding: 5px 9px;
+  }
+
+  .admin-roles-centered-modal .sa-permission-head,
+  .admin-roles-centered-modal .sa-permission-row {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  .admin-roles-centered-modal .sa-permission-row {
+    min-height: 30px !important;
+  }
+}
+
+/* Keep the Roles table action column visible inside the available screen width. */
+.admin-roles-page .admin-roles-table-card .sa-table {
+  overflow-x: visible !important;
+}
+
+.admin-roles-page .admin-roles-table-card .sa-table .sa-table-head,
+.admin-roles-page .admin-roles-table-card .sa-table .sa-table-row {
+  grid-template-columns: 42px minmax(130px, 0.75fr) minmax(185px, 1.05fr) minmax(185px, 1fr) minmax(370px, 1.7fr) 108px !important;
+  column-gap: 8px !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+
+.admin-roles-permission-list {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.admin-roles-permission-item {
+  max-width: 100% !important;
+}
+
+.admin-roles-actions-head,
+.admin-roles-page .sa-actions {
+  display: flex !important;
+  width: 108px !important;
+  max-width: 108px !important;
+  min-width: 108px !important;
+  justify-content: center !important;
+  justify-self: center !important;
+  transform: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.admin-roles-page .sa-actions .actions-group,
+.admin-roles-page .sa-actions > * {
+  flex-shrink: 0 !important;
+}
+
+@media (max-width: 1280px) {
+  .admin-roles-page .admin-roles-table-card .sa-table .sa-table-head,
+  .admin-roles-page .admin-roles-table-card .sa-table .sa-table-row {
+    grid-template-columns: 34px 116px 158px 150px minmax(300px, 1fr) 100px !important;
+    column-gap: 5px !important;
+  }
+
+  .admin-roles-actions-head,
+  .admin-roles-page .sa-actions {
+    width: 100px !important;
+    max-width: 100px !important;
+    min-width: 100px !important;
+  }
+}
+
+/* Show every module in View/Edit modals instead of clipping the permission matrix. */
+.admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+  width: min(900px, calc(100vw - 120px)) !important;
+  max-height: calc(100vh - 210px) !important;
+  overflow: visible !important;
+  padding: 12px 18px 10px !important;
+}
+
+.admin-roles-centered-modal .sa-modal-header {
+  margin-bottom: 6px !important;
+}
+
+.admin-roles-staff-summary {
+  margin-bottom: 8px !important;
+  padding: 5px 10px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-head,
+.admin-roles-centered-modal .sa-permission-row {
+  grid-template-columns: minmax(180px, 1fr) repeat(4, 82px) !important;
+  min-height: 0 !important;
+  padding: 6px 14px !important;
+  gap: 8px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-head {
+  height: 42px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-row {
+  height: 46px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-row > span {
+  font-size: 14px !important;
+}
+
+.admin-roles-centered-modal .sa-checkbox,
+.admin-roles-centered-modal .sa-permission-head label {
+  font-size: 12px !important;
+}
+
+.admin-roles-centered-modal .sa-form-actions {
+  margin-top: 6px !important;
+  padding-top: 6px !important;
+}
+
+@media (max-height: 760px) {
+  .admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+    max-height: calc(100vh - 180px) !important;
+    padding-top: 10px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .admin-roles-centered-modal .sa-permission-head,
+  .admin-roles-centered-modal .sa-permission-row {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  .admin-roles-centered-modal .sa-permission-head {
+    height: 36px !important;
+  }
+
+  .admin-roles-centered-modal .sa-permission-row {
+    height: 38px !important;
+  }
+}
+
+/* Polished compact view/edit modal: contained card, no footer needed in view mode. */
+.admin-roles-modal-backdrop {
+  align-items: center !important;
+  padding: 16px 24px !important;
+}
+
+.admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+  width: min(880px, calc(100vw - 180px)) !important;
+  max-height: calc(100vh - 210px) !important;
+  overflow: hidden !important;
+  padding: 14px 26px 16px !important;
+  border-radius: 14px !important;
+}
+
+.admin-roles-centered-modal .sa-modal-header {
+  min-height: 36px !important;
+  margin-bottom: 10px !important;
+}
+
+.admin-roles-centered-modal .sa-modal-header h3 {
+  font-size: 19px !important;
+  font-weight: 850 !important;
+}
+
+.admin-roles-centered-modal .sa-icon-btn {
+  width: 34px !important;
+  height: 34px !important;
+}
+
+.admin-roles-staff-summary {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 0 12px !important;
+  padding: 7px 14px !important;
+  border-radius: 10px !important;
+}
+
+.admin-roles-staff-summary strong {
+  font-size: 15px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-matrix {
+  max-height: calc(100vh - 390px) !important;
+  overflow: hidden !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.admin-roles-centered-modal .sa-permission-head,
+.admin-roles-centered-modal .sa-permission-row {
+  grid-template-columns: minmax(220px, 1fr) repeat(4, 92px) !important;
+  gap: 10px !important;
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-head {
+  height: 44px !important;
+  border-radius: 0 !important;
+}
+
+.admin-roles-centered-modal .sa-permission-row {
+  height: 42px !important;
+  background: #fff !important;
+}
+
+.admin-roles-centered-modal .sa-permission-row:nth-child(even) {
+  background: rgba(240, 249, 255, 0.5) !important;
+}
+
+.admin-roles-centered-modal .sa-permission-row > span {
+  font-size: 14px !important;
+  color: #0f172a !important;
+  font-weight: 500 !important;
+}
+
+.admin-roles-centered-modal .sa-checkbox {
+  color: #0f9f45 !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+}
+
+.admin-roles-centered-modal .sa-checkbox input {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+@media (max-height: 760px) {
+  .admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+    max-height: calc(100vh - 190px) !important;
+    padding: 12px 24px 14px !important;
+  }
+
+  .admin-roles-centered-modal .sa-permission-matrix {
+    max-height: calc(100vh - 350px) !important;
+  }
+
+  .admin-roles-centered-modal .sa-permission-head {
+    height: 38px !important;
+  }
+
+  .admin-roles-centered-modal .sa-permission-row {
+    height: 36px !important;
+  }
+}
+
+/* Module-count based modal sizing: every role fits neatly without clipped rows. */
+.admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+  width: min(var(--role-modal-width, 880px), calc(100vw - 160px)) !important;
+  max-height: calc(100vh - 170px) !important;
+  overflow: hidden !important;
+  padding: 12px 24px 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.admin-roles-centered-modal .sa-modal-header {
+  flex: 0 0 auto !important;
+  min-height: 32px !important;
+  margin-bottom: 8px !important;
+}
+
+.admin-roles-staff-summary {
+  flex: 0 0 auto !important;
+  margin-bottom: 10px !important;
+}
+
+.admin-roles-permission-section {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+}
+
+.admin-roles-centered-modal .sa-permission-matrix {
+  height: calc(40px + (var(--role-module-count, 5) * var(--role-row-height, 40px))) !important;
+  max-height: calc(100vh - 315px) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(203, 213, 225, 0.55) !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+}
+
+.admin-roles-centered-modal .sa-permission-head,
+.admin-roles-centered-modal .sa-permission-row {
+  grid-template-columns: minmax(210px, 1fr) repeat(4, 92px) !important;
+  gap: 10px !important;
+  padding: 0 18px !important;
+  min-height: 0 !important;
+}
+
+.admin-roles-centered-modal .sa-permission-head {
+  height: 40px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-row {
+  height: var(--role-row-height, 40px) !important;
+}
+
+.admin-roles-centered-modal .sa-permission-row > span {
+  font-size: 13.5px !important;
+  line-height: 1.1 !important;
+}
+
+.admin-roles-centered-modal .sa-checkbox,
+.admin-roles-centered-modal .sa-permission-head label {
+  font-size: 11.5px !important;
+  line-height: 1 !important;
+}
+
+.admin-roles-centered-modal .sa-form-actions {
+  position: static !important;
+  flex: 0 0 auto !important;
+  justify-content: flex-end !important;
+  margin-top: 10px !important;
+  padding: 0 !important;
+  border-top: 0 !important;
+  background: transparent !important;
+}
+
+.admin-roles-centered-modal .sa-form-actions .sa-btn {
+  height: 36px !important;
+  min-height: 36px !important;
+}
+
+@media (max-height: 760px) {
+  .admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+    max-height: calc(100vh - 150px) !important;
+    padding: 10px 22px 12px !important;
+  }
+
+  .admin-roles-centered-modal .sa-permission-matrix {
+    max-height: calc(100vh - 285px) !important;
+  }
+
+  .admin-roles-centered-modal .sa-permission-head {
+    height: 36px !important;
+  }
+}
+
+/* Clear edit footer and reliable header checkbox states. */
+.admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+  max-height: calc(100vh - 140px) !important;
+  padding-bottom: 18px !important;
+}
+
+.admin-roles-centered-modal .sa-permission-matrix {
+  max-height: none !important;
+}
+
+.admin-roles-centered-modal .sa-form-actions {
+  display: flex !important;
+  width: 100% !important;
+  min-height: 44px !important;
+  margin-top: 12px !important;
+  padding-top: 0 !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+}
+
+.admin-roles-centered-modal .sa-form-actions .sa-btn.sa-btn-primary {
+  min-width: 150px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 0 22px !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+  box-shadow: 0 12px 24px rgba(15, 118, 110, 0.22) !important;
+}
+
+.admin-roles-centered-modal .sa-permission-head input,
+.admin-roles-centered-modal .sa-checkbox input {
+  cursor: pointer !important;
+}
+
+.admin-roles-centered-modal .sa-checkbox input:disabled {
+  cursor: default !important;
+}
+
+@media (max-height: 760px) {
+  .admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+    max-height: calc(100vh - 125px) !important;
+  }
+
+  .admin-roles-centered-modal .sa-form-actions {
+    min-height: 38px !important;
+    margin-top: 8px !important;
+  }
+
+  .admin-roles-centered-modal .sa-form-actions .sa-btn.sa-btn-primary {
+    height: 36px !important;
+    min-height: 36px !important;
+  }
+}
+
+/* Final edit-permissions modal sizing: keep the Update Permissions action clearly visible. */
+.admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+  height: auto !important;
+  min-height: min(620px, calc(100vh - 110px)) !important;
+  max-height: calc(100vh - 88px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 22px 34px 24px !important;
+}
+
+.admin-roles-centered-modal .admin-roles-permission-section {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.admin-roles-centered-modal .sa-permission-matrix {
+  max-height: none !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-gutter: stable !important;
+}
+
+.admin-roles-centered-modal .sa-form-actions {
+  flex: 0 0 auto !important;
+  min-height: 56px !important;
+  margin-top: 14px !important;
+  padding: 10px 0 0 !important;
+  background: #ffffff !important;
+  border-top: 1px solid #e2e8f0 !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 2 !important;
+}
+
+.admin-roles-centered-modal .sa-form-actions .sa-btn.sa-btn-primary {
+  height: 46px !important;
+  min-height: 46px !important;
+  min-width: 260px !important;
+  font-size: 15px !important;
+}
+
+@media (max-height: 760px) {
+  .admin-roles-page .sa-form-card.sa-role-form.admin-roles-centered-modal {
+    min-height: calc(100vh - 96px) !important;
+    max-height: calc(100vh - 72px) !important;
+    padding: 18px 28px 20px !important;
+  }
+
+  .admin-roles-centered-modal .sa-form-actions {
+    min-height: 52px !important;
+    margin-top: 12px !important;
   }
 }

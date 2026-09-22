@@ -205,13 +205,6 @@ export const loadPublicClinicLogo = async (clinicId = "") => {
 
 export const syncClinicBrandingFromBackend = async (scope = {}) => {
   if (scope.enabled === false) return null;
-  const key = getClinicBrandingScope(scope);
-  const current = readClinicBrandingMap()[key] || {};
-  // If user already uploaded a local data URL logo, do not overwrite it with background sync
-  if (current.logoDataUrl && String(current.logoDataUrl).startsWith("data:image/") && !scope.forceRemote) {
-    return null;
-  }
-
   const logoDataUrl = await loadPublicClinicLogo(scope.clinicId);
   return logoDataUrl ? saveClinicBranding({ logoDataUrl: withCacheBust(logoDataUrl) }, scope) : null;
 };
@@ -270,3 +263,4 @@ export const useClinicInvoiceBranding = (scope = {}) => {
   }, [scopeKey, enabled]);
   return getClinicInvoiceBranding({ ...scope, version });
 };
+

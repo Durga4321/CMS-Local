@@ -642,8 +642,11 @@ function AdminSettings() {
         const refreshedLogo = refreshedSettings.logoDataUrl;
         const publicLogo = withCacheBust(publicLogoUrl);
         const publicLogoReady = await isImageResponseUrl(publicLogo);
+        const uploadedLogoReady = uploadedLogo && (await isImageResponseUrl(uploadedLogo));
         const verifiedRemoteLogo = publicLogoReady
           ? publicLogo
+          : uploadedLogoReady
+          ? uploadedLogo
           : (refreshedLogo && (await isImageResponseUrl(refreshedLogo)))
           ? refreshedLogo
           : "";
@@ -1435,4 +1438,5 @@ function AdminSettings() {
 }
 
 export default AdminSettings;
+
 

@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   useEffect,
   useState,
   useCallback,
@@ -269,6 +269,59 @@ const getLocalDateKey = (value) => {
 
   return raw;
 };
+
+const toDateOnly = (value) => {
+  if (value instanceof Date) {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+
+  const key = getLocalDateKey(value);
+  if (!key) return null;
+
+  const match = key.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day));
+};
+
+const isValidDate = (date) =>
+  date instanceof Date && !Number.isNaN(date.getTime());
+
+const isSameDay = (date, comparisonDate) =>
+  isValidDate(date) &&
+  isValidDate(comparisonDate) &&
+  date.getFullYear() === comparisonDate.getFullYear() &&
+  date.getMonth() === comparisonDate.getMonth() &&
+  date.getDate() === comparisonDate.getDate();
+
+const isThisWeek = (date, comparisonDate) => {
+  if (!isValidDate(date) || !isValidDate(comparisonDate)) return false;
+
+  const weekStart = new Date(comparisonDate);
+  weekStart.setDate(comparisonDate.getDate() - comparisonDate.getDay());
+  weekStart.setHours(0, 0, 0, 0);
+
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 7);
+
+  return date >= weekStart && date < weekEnd;
+};
+
+const isSameMonth = (date, comparisonDate) =>
+  isValidDate(date) &&
+  isValidDate(comparisonDate) &&
+  date.getFullYear() === comparisonDate.getFullYear() &&
+  date.getMonth() === comparisonDate.getMonth();
+
+const isSameYear = (date, comparisonDate) =>
+  isValidDate(date) &&
+  isValidDate(comparisonDate) &&
+  date.getFullYear() === comparisonDate.getFullYear();
+
+const isSameQuarter = (date, comparisonDate) =>
+  isSameYear(date, comparisonDate) &&
+  Math.floor(date.getMonth() / 3) === Math.floor(comparisonDate.getMonth() / 3);
 
 const countTodayAppointments = (data) => {
   const todayKey = formatToday();
@@ -651,23 +704,38 @@ function Dashboard() {
     1
   );
 
-  const displayRecentAppointments = dashboardData?.recentAppointmentsList?.length
-    ? dashboardData.recentAppointmentsList.map((apt) => ({
-        name: apt.patientName || apt.patient?.name || "Ramesh Kumar",
-        subtitle: apt.chiefComplaints || apt.complaint || "General Checkup",
-        time: apt.time || apt.slotTime || "09:30 AM",
-        date: apt.date || "04 Sep, 2026",
-        status: apt.status || "Confirmed",
+  const appointmentRows = Array.isArray(dashboardData?.recentAppointmentsList)
+    ? dashboardData.recentAppointmentsList
+    : [];
+
+  const appointmentDates = appointmentRows
+    .map((appointment) => toDateOnly(getAppointmentDateValue(appointment)))
+    .filter(Boolean);
+  const today = toDateOnly(new Date());
+  const todayAppointmentCount = dashboardData?.todayAppointments ?? appointmentDates.filter((date) => isSameDay(date, today)).length;
+  const weekAppointmentCount = appointmentDates.filter((date) => isThisWeek(date, today)).length;
+  const monthAppointmentCount = appointmentDates.filter((date) => isSameMonth(date, today)).length;
+  const selectedPeriodAppointmentCount =
+    timeFilter === "year"
+      ? appointmentDates.filter((date) => isSameYear(date, today)).length
+      : timeFilter === "quarter"
+        ? appointmentDates.filter((date) => isSameQuarter(date, today)).length
+        : monthAppointmentCount;
+  const totalPatients = dashboardData?.totalPatients ?? 0;
+  const consultationCount = selectedPeriodAppointmentCount;
+  const growthValue = chartPoints.length
+    ? chartPoints.reduce((sum, point) => sum + toNumericAmount(point.value), 0)
+    : selectedPeriodAppointmentCount;
+
+  const displayRecentAppointments = appointmentRows.length
+    ? appointmentRows.slice(0, 4).map((apt) => ({
+        name: apt.patientName || apt.patient?.name || apt.name || "Unknown Patient",
+        subtitle: apt.chiefComplaints || apt.complaint || apt.reason || "General Checkup",
+        time: apt.time || apt.slotTime || apt.appointmentTime || "--",
+        date: getAppointmentDateValue(apt) || "--",
+        status: apt.status || apt.appointmentStatus || "Scheduled",
       }))
-    : [
-        {
-          name: "Ramesh Kumar",
-          subtitle: "General Checkup",
-          time: "09:30 AM",
-          date: "04 Sep, 2026",
-          status: "Confirmed",
-        },
-      ];
+    : [];
 
   const Skeleton = ({ width = "100%", height = 16, style = {} }) => (
     <div className="skeleton" style={{ width, height, borderRadius: 6, ...style }} />
@@ -697,7 +765,7 @@ function Dashboard() {
       {/* PAGE HEADER */}
       <div className="db-header">
         <div>
-          <h1 className="db-title">Dashboard 👋</h1>
+          <h1 className="db-title">Admin Dashboard</h1>
           <p className="db-subtitle">Welcome back, Ravi! Here's what's happening at the clinic today.</p>
         </div>
       </div>
@@ -817,10 +885,7 @@ function Dashboard() {
               </div>
               <div className="db-kpi-num">
                 {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.todayAppointments ?? 1)}
-              </div>
-              <div className="db-kpi-trend trend-down">
-                <span>↓ -25% vs yesterday</span>
-              </div>
+              </div>
             </div>
           </div>
 
@@ -840,10 +905,7 @@ function Dashboard() {
               </div>
               <div className="db-kpi-num">
                 {loading ? <Skeleton width={80} height={32} /> : formatCurrency(totalRevenue || 502)}
-              </div>
-              <div className="db-kpi-trend trend-up">
-                <span>↑ +12.5% vs last month</span>
-              </div>
+              </div>
             </div>
           </div>
 
@@ -863,10 +925,7 @@ function Dashboard() {
               </div>
               <div className="db-kpi-num">
                 {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.totalDoctors ?? 2)}
-              </div>
-              <div className="db-kpi-trend trend-neutral">
-                <span>0% vs last month</span>
-              </div>
+              </div>
             </div>
           </div>
 
@@ -886,10 +945,7 @@ function Dashboard() {
               </div>
               <div className="db-kpi-num">
                 {loading ? <Skeleton width={50} height={32} /> : formatNumber(nurseCount)}
-              </div>
-              <div className="db-kpi-trend trend-neutral">
-                <span>0% vs last month</span>
-              </div>
+              </div>
             </div>
           </div>
 
@@ -909,10 +965,7 @@ function Dashboard() {
               </div>
               <div className="db-kpi-num">
                 {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.totalPatients ?? 2)}
-              </div>
-              <div className="db-kpi-trend trend-up">
-                <span>↑ 18% vs last month</span>
-              </div>
+              </div>
             </div>
           </div>
 
@@ -932,10 +985,7 @@ function Dashboard() {
               </div>
               <div className="db-kpi-num">
                 {loading ? <Skeleton width={50} height={32} /> : formatNumber(labTechnicianCount)}
-              </div>
-              <div className="db-kpi-trend trend-up">
-                <span>↑ +8% vs last month</span>
-              </div>
+              </div>
             </div>
           </div>
         </div>
@@ -990,8 +1040,7 @@ function Dashboard() {
                 <Users size={16} />
               </div>
               <div>
-                <div className="db-sum-val"><b>1</b> Today</div>
-                <div className="db-sum-sub red">-25% vs yesterday</div>
+                <div className="db-sum-val"><b>{formatNumber(todayAppointmentCount)}</b> Today</div>
               </div>
             </div>
 
@@ -1000,8 +1049,7 @@ function Dashboard() {
                 <CalendarCheck size={16} />
               </div>
               <div>
-                <div className="db-sum-val"><b>5</b> This Week</div>
-                <div className="db-sum-sub green">+12% vs last week</div>
+                <div className="db-sum-val"><b>{formatNumber(weekAppointmentCount)}</b> This Week</div>
               </div>
             </div>
 
@@ -1010,8 +1058,7 @@ function Dashboard() {
                 <TrendingUp size={16} />
               </div>
               <div>
-                <div className="db-sum-val"><b>18</b> This Month</div>
-                <div className="db-sum-sub green">+20% vs last month</div>
+                <div className="db-sum-val"><b>{formatNumber(monthAppointmentCount)}</b> This Month</div>
               </div>
             </div>
           </div>
@@ -1046,8 +1093,7 @@ function Dashboard() {
             <div className="db-metric-item">
               <span className="db-metric-sub">Appointments</span>
               <div className="db-metric-val-row">
-                <span className="db-metric-val">12</span>
-                <span className="db-growth-pill green">↑ 20% vs last month</span>
+                <span className="db-metric-val">{formatNumber(selectedPeriodAppointmentCount)}</span>
               </div>
             </div>
           </div>
@@ -1088,7 +1134,7 @@ function Dashboard() {
               </div>
               <div className="db-mini-text">
                 <span>Patients</span>
-                <b>8 <small className="green">↑ 15%</small></b>
+                <b>{formatNumber(totalPatients)}</b>
               </div>
             </div>
 
@@ -1098,7 +1144,7 @@ function Dashboard() {
               </div>
               <div className="db-mini-text">
                 <span>Consultations</span>
-                <b>12 <small className="green">↑ 10%</small></b>
+                <b>{formatNumber(consultationCount)}</b>
               </div>
             </div>
 
@@ -1108,7 +1154,7 @@ function Dashboard() {
               </div>
               <div className="db-mini-text">
                 <span>Revenue</span>
-                <b>₹502 <small className="green">↑ 12.5%</small></b>
+                <b>{formatCurrency(totalRevenue)}</b>
               </div>
             </div>
 
@@ -1118,127 +1164,13 @@ function Dashboard() {
               </div>
               <div className="db-mini-text">
                 <span>Growth</span>
-                <b>20% <small className="green">↑ 3%</small></b>
+                <b>{formatNumber(growthValue)}</b>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* BOTTOM SECTION: QUICK ACTIONS (LEFT) & NOTIFICATIONS (RIGHT) */}
-      <div className="db-bottom-grid">
-        {/* QUICK ACTIONS PANEL */}
-        <div className="db-panel db-qa-panel">
-          <div className="db-panel-head">
-            <div className="db-panel-title">
-              <div className="db-panel-icon db-icon-purple-sm">
-                <Rocket size={18} />
-              </div>
-              <h3>Quick Actions</h3>
-            </div>
-          </div>
-
-          <div className="db-quick-actions-grid">
-            <button
-              type="button"
-              className="db-qa-chip qa-mint"
-              onClick={() => navigate("/patients")}
-            >
-              <UserRoundCheck size={18} />
-              <span>Add Patient</span>
-            </button>
-
-            <button
-              type="button"
-              className="db-qa-chip qa-sky"
-              onClick={() => navigate("/appointments")}
-            >
-              <CalendarPlus size={18} />
-              <span>New Appointment</span>
-            </button>
-
-            <button
-              type="button"
-              className="db-qa-chip qa-amber"
-              onClick={() => navigate("/reports")}
-            >
-              <FileSpreadsheet size={18} />
-              <span>Generate Report</span>
-            </button>
-
-            <button
-              type="button"
-              className="db-qa-chip qa-rose"
-              onClick={() => navigate("/settings")}
-            >
-              <Send size={18} />
-              <span>Send Notification</span>
-            </button>
-          </div>
-        </div>
-
-        {/* NOTIFICATIONS PANEL */}
-        <div className="db-panel db-noti-panel">
-          <div className="db-panel-head">
-            <div className="db-panel-title">
-              <div className="db-panel-icon db-icon-blue-sm">
-                <Bell size={18} />
-              </div>
-              <h3>Notifications</h3>
-            </div>
-            <button
-              type="button"
-              className="db-view-all-btn"
-              onClick={() => navigate("/notifications")}
-            >
-              <span>View All</span>
-              <ArrowRight size={13} />
-            </button>
-          </div>
-
-          <div className="db-notifications-list">
-            <div className="db-notification-item">
-              <div className="db-noti-icon noti-purple">
-                <Calendar size={18} />
-              </div>
-              <div className="db-noti-content">
-                <h4>New appointment booked</h4>
-                <p>Ramesh Kumar - 09:30 AM</p>
-              </div>
-              <div className="db-noti-time">
-                <span>10m ago</span>
-                <span className="db-noti-dot" />
-              </div>
-            </div>
-
-            <div className="db-notification-item">
-              <div className="db-noti-icon noti-green">
-                <FileSpreadsheet size={18} />
-              </div>
-              <div className="db-noti-content">
-                <h4>Lab Report Generated</h4>
-                <p>Blood Test results ready for Dr. Anitha</p>
-              </div>
-              <div className="db-noti-time">
-                <span>45m ago</span>
-              </div>
-            </div>
-
-            <div className="db-notification-item">
-              <div className="db-noti-icon noti-blue">
-                <UserRoundCheck size={18} />
-              </div>
-              <div className="db-noti-content">
-                <h4>New Patient Registered</h4>
-                <p>Suresh Varma - Patient ID #4092</p>
-              </div>
-              <div className="db-noti-time">
-                <span>2h ago</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

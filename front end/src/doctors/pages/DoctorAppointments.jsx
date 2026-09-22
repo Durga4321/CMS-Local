@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, FileText, Play, RefreshCw, Filter, X, Calendar, User, Stethoscope, FileSpreadsheet, ArrowRight, Activity, AlertCircle } from "lucide-react";
 import "./DoctorAppointments.css";
@@ -32,6 +32,10 @@ const STATUS_CLASS = {
 
 const getStatusClass = (status) =>
   STATUS_CLASS[String(status || "").trim().toLowerCase()] || "status--waiting";
+
+
+const normalizeStatusKey = (status) => String(status || "").trim().toLowerCase().replace(/\s+/g, "");
+const isCompletedStatus = (status) => normalizeStatusKey(status) === "completed";
 
 const formatTime = (value) => {
   if (!value) return "-";
@@ -151,12 +155,13 @@ function DoctorAppointments() {
   const normalizedAppointments = useMemo(() => normalizeQueue(appointments), [appointments]);
 
   const filteredAppointments = useMemo(() => {
-    if (filter === "all") return normalizedAppointments;
+    const activeAppointments = normalizedAppointments.filter((appointment) => !isCompletedStatus(appointment.status));
+    if (filter === "all") return activeAppointments;
     if (filter === "today") {
       const todayStr = formatDateMMDDYYYY(new Date(), "-");
-      return normalizedAppointments.filter(a => a.date === todayStr);
+      return activeAppointments.filter((appointment) => appointment.date === todayStr);
     }
-    return normalizedAppointments.filter(a => String(a.status).toLowerCase().replace(/\s+/g, '') === filter);
+    return normalizedAppointments.filter((appointment) => normalizeStatusKey(appointment.status) === filter);
   }, [normalizedAppointments, filter]);
 
   const openPatient = (patient) => {
@@ -167,15 +172,21 @@ function DoctorAppointments() {
   };
 
   const startConsultation = (patient) => {
-    if (!canCreateConsultation) return;
-    navigate("/doctor/consultation", {
-      state: {
-        appointmentId: patient.appointmentId,
-        patientId: patient.patientId,
-        appointment: patient.raw,
-        patient: patient.raw,
-      },
-    });
+    if (!canCreateConsultation || isCompletedStatus(patient.status)) return;
+
+    const state = {
+      appointmentId: patient.appointmentId,
+      patientId: patient.patientId,
+      appointment: patient.raw,
+      patient: patient.raw,
+    };
+
+    if (normalizeStatusKey(patient.status) === "prescriptionadded") {
+      navigate("/doctor/prescription", { state });
+      return;
+    }
+
+    navigate("/doctor/consultation", { state });
   };
 
   const openNotes = async (patient) => {
@@ -229,7 +240,7 @@ function DoctorAppointments() {
         </div>
       )}
 
-      {/* ── Clinical Triage Header Card ── */}
+      {/* Clinical Triage Header Card */}
       <div className="da-header-card">
         <div className="da-header-title-group">
           <div className="da-header-badge">
@@ -267,7 +278,7 @@ function DoctorAppointments() {
         </div>
       </div>
 
-      {/* ── Patient Telemetry Queue Table ── */}
+      {/* Patient Telemetry Queue Table */}
       <div className="da-table-card">
         <div className="da-table-wrap">
           <div className="da-table">
@@ -329,7 +340,7 @@ function DoctorAppointments() {
                       type="button"
                       title="Start Consultation"
                       onClick={() => startConsultation(patient)}
-                      disabled={!canCreateConsultation}
+                      disabled={!canCreateConsultation || isCompletedStatus(patient.status)}
                       aria-label="Start Consultation"
                     >
                       <Play size={14} fill="currentColor" />
@@ -490,7 +501,7 @@ function DoctorAppointments() {
                   setSelectedNotes(null);
                   startConsultation(patient);
                 }}
-                disabled={!canCreateConsultation}
+                disabled={!canCreateConsultation || isCompletedStatus(patient.status)}
                 title="Start Consultation"
               >
                 <Play size={15} />

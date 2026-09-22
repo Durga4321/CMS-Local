@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import {
   Activity,
@@ -460,7 +460,7 @@ function DoctorDashboard() {
             <Activity size={14} className="dd-pulse-icon" />
             <span>CLINICAL TRIAGE CONSOLE</span>
           </div>
-          <h2 className="dd-header-title">Doctor Workstation</h2>
+          <h2 className="dd-header-title">Doctor Dashboard</h2>
           <p className="dd-header-subtitle">Real-time patient triage, consultation queue, and diagnostic telemetry</p>
         </div>
         <div className="dd-header-telemetry">

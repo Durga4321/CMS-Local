@@ -26,7 +26,7 @@ const canonicalStaffRole = (role = "") => {
 const ROLE_SIDEBAR_MODULES = {
   Doctor: ["Dashboard", "Consultation", "Prescription", "Appointments", "My Schedule"],
   Receptionist: ["Reception Dashboard", "Patients", "Appointments", "Book Appointment", "Billing"],
-  Nurse: ["Nurse Dashboard", "Patients", "Medical History", "Appointments", "Book Appointment", "Online Bookings", "Offline Bookings", "Billing"],
+  Nurse: ["Nurse Dashboard", "Patients", "Medical History", "Appointments", "Book Appointment", "Online Bookings", "Offline Bookings"],
   LabTechnician: ["Lab Dashboard", "Patients", "Diagnosis Tests", "Sample Collection", "Create Report", "Reports"],
 };
 
@@ -364,6 +364,7 @@ function AdminRolesPermissions() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [formMode, setFormMode] = useState("create");
   const [activeActionState, setActiveActionState] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [roleMatrix, setRoleMatrix] = useState(emptyRoleMatrix);
@@ -388,6 +389,12 @@ function AdminRolesPermissions() {
     [form.modulePermissions, form.role]
   );
 
+  const selectedStaffLabel = useMemo(() => {
+    const staff =
+      selectedUser || eligibleUsers.find((user) => String(user.id) === String(form.userId)) || {};
+    return staff.name || staff.fullName || staff.userName || staff.email || form.userId || "Selected staff";
+  }, [eligibleUsers, form.userId, selectedUser]);
+
   const filteredAssignments = useMemo(() => {
     return assignments.filter((assignment) => {
       const roleMatches =
@@ -399,11 +406,10 @@ function AdminRolesPermissions() {
       if (!q) return true;
 
       const name = String(assignment.name || "").toLowerCase();
-      const email = String(assignment.email || "").toLowerCase();
       const role = String(formatRoleLabel(assignment.role || "")).toLowerCase();
       const module = [assignment.module, ...getDisplayModules(assignment.role)].join(" ").toLowerCase();
 
-      return name.includes(q) || email.includes(q) || role.includes(q) || module.includes(q);
+      return name.includes(q) || role.includes(q) || module.includes(q);
     });
   }, [assignments, searchQuery, roleFilter]);
 
@@ -567,6 +573,24 @@ function AdminRolesPermissions() {
     });
     setError("");
     setSuccess("");
+    setFormMode("create");
+    setShowForm(true);
+  };
+  const fillFormFromAssignment = (assignment) => {
+    setForm({
+      userId: assignment.id,
+      role: assignment.role || "Doctor",
+      module: GENERAL_MODULE,
+      permissions: normalizePermissionList(assignment.permissions),
+      modulePermissions: getPermissionModulesFromAssignment(assignment, assignment.role || "Doctor"),
+    });
+  };
+
+  const openView = (assignment) => {
+    fillFormFromAssignment(assignment);
+    setError("");
+    setSuccess("");
+    setFormMode("view");
     setShowForm(true);
   };
 
@@ -575,26 +599,22 @@ function AdminRolesPermissions() {
       setError("You do not have permission to edit roles.");
       return;
     }
-    setForm({
-      userId: assignment.id,
-      role: assignment.role || "Doctor",
-      module: GENERAL_MODULE,
-      permissions: normalizePermissionList(assignment.permissions),
-      modulePermissions: getPermissionModulesFromAssignment(assignment, assignment.role || "Doctor"),
-    });
+    fillFormFromAssignment(assignment);
     setError("");
     setSuccess("");
+    setFormMode("edit");
     setShowForm(true);
   };
 
   const closeForm = () => {
     if (saving) return;
     setShowForm(false);
+    setFormMode("create");
     setForm(emptyForm);
   };
 
   const togglePermission = (module, permission) => {
-    if (!canEdit && !canCreate) return;
+    if (formMode === "view" || (!canEdit && !canCreate)) return;
     setForm((previous) => {
       const currentMap = normalizeModulePermissionMap(previous.modulePermissions, previous.role);
       const currentPermissions = normalizePermissionList(currentMap[module] || []);
@@ -718,6 +738,7 @@ function AdminRolesPermissions() {
   }, [formModulePermissions, form.role]);
 
   const toggleFormSelectAll = () => {
+    if (formMode === "view") return;
     setForm((previous) => {
       const modules = getRoleModules(previous.role);
       const shouldSelectAll = !isFormAllPermissionsSelected;
@@ -733,10 +754,13 @@ function AdminRolesPermissions() {
   };
 
   const toggleFormColumnPermission = (permission) => {
+    if (formMode === "view") return;
     setForm((previous) => {
       const currentMap = normalizeModulePermissionMap(previous.modulePermissions, previous.role);
       const modules = getRoleModules(previous.role);
-      const shouldSelectColumn = !isFormColumnAllSelected(permission);
+      const shouldSelectColumn = !modules.every((module) =>
+        normalizePermissionList(currentMap[module] || []).includes(permission)
+      );
       const nextMap = {};
       modules.forEach((module) => {
         const currentList = normalizePermissionList(currentMap[module] || []);
@@ -801,6 +825,8 @@ function AdminRolesPermissions() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (formMode === "view") return;
+    if (formMode === "view") return;
     const isEditing = assignments.some((item) => String(item.id) === String(form.userId));
     if (isEditing ? !canEdit : !canCreate) {
       setError(`You do not have permission to ${isEditing ? "edit" : "create"} roles.`);
@@ -865,6 +891,15 @@ function AdminRolesPermissions() {
       setError(deleteError.message || "Unable to remove permissions.");
     }
   };
+  const isViewMode = formMode === "view";
+  const isEditMode = formMode === "edit";
+  const formRoleModules = getRoleModules(form.role);
+  const modalModuleCount = formRoleModules.length;
+  const roleModalStyle = {
+    "--role-module-count": modalModuleCount,
+    "--role-row-height": modalModuleCount > 6 ? "34px" : modalModuleCount > 5 ? "38px" : "42px",
+    "--role-modal-width": modalModuleCount > 5 ? "920px" : "860px",
+  };
 
   return (
     <div className="admin-roles-page">
@@ -900,78 +935,91 @@ function AdminRolesPermissions() {
       {error ? <div className="sa-state sa-state--error">{error}</div> : null}
 
       {showForm ? (
-        <form className="sa-form-card sa-role-form" onSubmit={handleSubmit}>
+        <div className="admin-roles-modal-backdrop" role="presentation">
+          <form className="sa-form-card sa-role-form admin-roles-centered-modal" style={roleModalStyle} onSubmit={handleSubmit}>
           <div className="sa-modal-header">
             <div>
-              <h3>{assignments.some((item) => String(item.id) === String(form.userId)) ? "Edit Role" : "Create Role"}</h3>
-              <p className="sa-form-subtitle">Select a staff member and assign screen-level permissions from that role sidebar.</p>
+              <h3>{isViewMode ? "View Permissions" : isEditMode ? "Edit Permissions" : "Create Role"}</h3>
+              {!(isViewMode || isEditMode) ? (
+                <p className="sa-form-subtitle">Select a staff member and assign screen-level permissions from that role sidebar.</p>
+              ) : null}
             </div>
             <button className="sa-icon-btn" type="button" onClick={closeForm} disabled={saving} aria-label="Close role form">
               <X size={18} />
             </button>
           </div>
 
-          <div className="sa-form-grid">
-            <div className="sa-form-field">
-              <label>Staff</label>
-              <select value={form.userId} onChange={(event) => updateForm("userId", event.target.value)}>
-                <option value="">Select staff</option>
-                {eligibleUsers.map((user) => (
-                  <option value={user.id} key={user.id}>
-                    {user.name || user.email || user.id} - {formatRoleLabel(user.role || "Staff")}
-                  </option>
-                ))}
-              </select>
+          {isViewMode || isEditMode ? (
+            <div className="admin-roles-staff-summary">
+              <span>Staff</span>
+              <strong>{selectedStaffLabel}</strong>
+              <em>{formatRoleLabel(form.role || "Staff")}</em>
             </div>
+          ) : (
+            <div className="sa-form-grid">
+              <div className="sa-form-field">
+                <label>Staff</label>
+                <select value={form.userId} onChange={(event) => updateForm("userId", event.target.value)} disabled={isViewMode}>
+                  <option value="">Select staff</option>
+                  {eligibleUsers.map((user) => (
+                    <option value={user.id} key={user.id}>
+                      {user.name || user.email || user.id} - {formatRoleLabel(user.role || "Staff")}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="sa-form-field">
-              <label>Role</label>
-              <select value={form.role} onChange={(event) => updateForm("role", event.target.value)}>
-                {STAFF_ROLES.map((role) => (
-                  <option value={role} key={role}>
-                    {formatRoleLabel(role)}
-                  </option>
-                ))}
-              </select>
+              <div className="sa-form-field">
+                <label>Role</label>
+                <select value={form.role} onChange={(event) => updateForm("role", event.target.value)} disabled={isViewMode}>
+                  {STAFF_ROLES.map((role) => (
+                    <option value={role} key={role}>
+                      {formatRoleLabel(role)}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div style={{ marginTop: 18 }}>
-            <h3>Module Permissions</h3>
-            <p className="sa-form-subtitle">Only screens with View permission will appear in the staff sidebar.</p>
+          <div className="admin-roles-permission-section">
             <div className="sa-permission-matrix">
               <div className="sa-permission-head">
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
                   <span>Module</span>
-                  <button
-                    type="button"
-                    className="sa-btn sa-btn-primary"
-                    style={{ padding: "3px 10px", fontSize: "11px", height: "26px", fontWeight: 700 }}
-                    onClick={toggleFormSelectAll}
-                    disabled={!(canCreate || canEdit)}
-                    title={isFormAllPermissionsSelected ? "Uncheck all module permissions" : "Check all module permissions"}
-                  >
-                    <Check size={13} />
-                    {isFormAllPermissionsSelected ? "Deselect All" : "Select All"}
-                  </button>
+                  {!isViewMode ? (
+                    <button
+                      type="button"
+                      className="sa-btn sa-btn-primary"
+                      style={{ padding: "3px 10px", fontSize: "11px", height: "26px", fontWeight: 700 }}
+                      onClick={toggleFormSelectAll}
+                      disabled={!(canCreate || canEdit)}
+                      title={isFormAllPermissionsSelected ? "Uncheck all module permissions" : "Check all module permissions"}
+                    >
+                      <Check size={13} />
+                      {isFormAllPermissionsSelected ? "Deselect All" : "Select All"}
+                    </button>
+                  ) : null}
                 </div>
                 {PERMISSIONS.map((permission) => {
                   const checked = isFormColumnAllSelected(permission);
                   return (
-                    <label key={permission} style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", fontWeight: 700 }}>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        disabled={!(canCreate || canEdit)}
-                        onChange={() => toggleFormColumnPermission(permission)}
-                        title={`Check/Uncheck ${permission} for all modules`}
-                      />
+                    <label key={permission} style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: isViewMode ? "default" : "pointer", fontWeight: 700 }}>
+                      {!isViewMode ? (
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={!(canCreate || canEdit)}
+                          onChange={() => toggleFormColumnPermission(permission)}
+                          title={`Check/Uncheck ${permission} for all modules`}
+                        />
+                      ) : null}
                       <span>{permission}</span>
                     </label>
                   );
                 })}
               </div>
-              {getRoleModules(form.role).map((module) => {
+              {formRoleModules.map((module) => {
                 const permissions = normalizePermissionList(formModulePermissions[module]);
                 return (
                   <div className="sa-permission-row" key={module}>
@@ -981,7 +1029,7 @@ function AdminRolesPermissions() {
                         <input
                           type="checkbox"
                           checked={permissions.includes(permission)}
-                          disabled={!(canCreate || canEdit)}
+                          disabled={isViewMode || !(canCreate || canEdit)}
                           onChange={() => togglePermission(module, permission)}
                         />
                         {permission}
@@ -993,16 +1041,16 @@ function AdminRolesPermissions() {
             </div>
           </div>
 
-          <div className="sa-page-actions sa-form-actions">
-            <button className="sa-btn" type="button" onClick={closeForm} disabled={saving}>
-              Close
-            </button>
-            <button className="sa-btn sa-btn-primary" type="submit" disabled={saving || (assignments.some((item) => String(item.id) === String(form.userId)) ? !canEdit : !canCreate)}>
-              <Check size={16} />
-              {saving ? "Saving..." : "Save Role"}
-            </button>
-          </div>
-        </form>
+          {!isViewMode ? (
+            <div className="sa-page-actions sa-form-actions">
+              <button className="sa-btn sa-btn-primary" type="submit" disabled={saving || (assignments.some((item) => String(item.id) === String(form.userId)) ? !canEdit : !canCreate)}>
+                <Check size={16} />
+                {saving ? "Updating..." : isEditMode ? "Update Permissions" : "Save Role"}
+              </button>
+            </div>
+          ) : null}
+          </form>
+        </div>
       ) : null}
 
       <div className="admin-roles-table-card">
@@ -1012,7 +1060,7 @@ function AdminRolesPermissions() {
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search staff, role, module, or email..."
+              placeholder="Search staff, role, or module..."
             />
           </label>
           <select
@@ -1030,7 +1078,6 @@ function AdminRolesPermissions() {
         <div className="sa-table sa-table--roles">
           <div
             className="sa-table-head"
-            style={{ gridTemplateColumns: "60px minmax(130px,.8fr) minmax(100px,.7fr) minmax(280px,1.8fr) minmax(160px,1fr) 140px" }}
           >
             <span className="admin-roles-sno-head">S.No.</span>
             <span className="admin-roles-role-head">Role</span>
@@ -1053,12 +1100,13 @@ function AdminRolesPermissions() {
                 .slice(0, 2)
                 .toUpperCase() || "U";
             const roleTone = index % 4;
+            const staffName = assignment.name || assignment.fullName || assignment.userName || assignment.id || "-";
+            const permissionModules = Object.entries(getPermissionModulesFromAssignment(assignment, assignment.role));
 
             return (
               <div
                 className="sa-table-row"
                 key={assignment.id || `${assignment.email}-${index}`}
-                style={{ gridTemplateColumns: "60px minmax(130px,.8fr) minmax(100px,.7fr) minmax(280px,1.8fr) minmax(160px,1fr) 140px" }}
               >
                 <span className="sa-table-cell admin-roles-sno">{index + 1}</span>
                 <span className="sa-table-cell">
@@ -1076,17 +1124,23 @@ function AdminRolesPermissions() {
                     {initials}
                   </span>
                   <span className="sa-role-admin-list">
-                    <b>{assignment.name || assignment.email || "-"}</b>
-                    <span className="admin-roles-email" title={assignment.email || assignment.id}>
-                      {assignment.email || assignment.id}
-                    </span>
+                    <b title={staffName}>{staffName}</b>
                   </span>
                 </span>
-                <span className="sa-table-cell">
-                  {Object.entries(getPermissionModulesFromAssignment(assignment, assignment.role))
-                    .filter(([, permissions]) => permissions.length)
-                    .map(([module, permissions]) => `${module}: ${normalizePermissionList(permissions).join(", ")}`)
-                    .join(" | ") || normalizePermissionList(assignment.permissions).join(", ") || "-"}
+                <span className="sa-table-cell admin-roles-permission-list">
+                  {permissionModules.map(([module, permissions]) => {
+                    const permissionList = normalizePermissionList(permissions);
+                    return (
+                      <span className="admin-roles-permission-item" key={module}>
+                        <b>{module}</b>
+                        <span>
+                          {permissionList.length
+                            ? permissionList.map((permission) => <em key={permission}>{permission}</em>)
+                            : <em className="admin-roles-permission-empty">No access</em>}
+                        </span>
+                      </span>
+                    );
+                  })}
                 </span>
                 <span className="sa-actions">
                   <ActionsGroup
@@ -1097,7 +1151,7 @@ function AdminRolesPermissions() {
                     canEdit={canEdit}
                     canStatus={false}
                     canDelete={canDelete}
-                    onView={() => openEdit(assignment)}
+                    onView={() => openView(assignment)}
                     onEdit={() => openEdit(assignment)}
                     onDelete={() => handleDelete(assignment)}
                   />
@@ -1193,4 +1247,5 @@ function AdminRolesPermissions() {
 }
 
 export default AdminRolesPermissions;
+
 

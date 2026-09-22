@@ -476,6 +476,11 @@ const enrichLabPatientRow = (record = {}) => ({
 const getRecordDateValue = (record = {}) =>
   readFirst(record, ["orderedAt", "OrderedAt", "visitDate", "VisitDate", "appointmentDate", "AppointmentDate", "invoiceDate", "InvoiceDate", "billDate", "BillDate", "createdAt", "CreatedAt", "date", "Date"], "");
 
+const formatVisitDate = (value) => {
+  const date = new Date(value || "");
+  if (Number.isNaN(date.getTime())) return String(value || "").trim();
+  return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" }).format(date);
+};
 const isToday = (value) => {
   const date = new Date(value || "");
   if (Number.isNaN(date.getTime())) return false;
@@ -512,7 +517,22 @@ const isCurrentLabWork = (record = {}) => {
 
 const isBillingBackedRecord = (record = {}) => {
   const source = normalizeText(record.__sourcePath);
-  return source.includes("billing") || source.includes("diagnosticbilling");
+  const status = normalizeText(readFirst(record, [
+    "paymentStatus", "PaymentStatus", "billStatus", "BillStatus", "payment.status", "Payment.Status", "status", "Status",
+  ], ""));
+  const billingId = readFirst(record, [
+    "billingId", "BillingId", "billId", "BillId", "invoiceId", "InvoiceId", "invoiceNo", "InvoiceNo", "invoiceNumber", "InvoiceNumber", "billNumber", "BillNumber",
+  ], "");
+  const billingType = normalizeText(readFirst(record, ["billingType", "BillingType", "invoiceType", "InvoiceType", "serviceType", "ServiceType", "type", "Type"], ""));
+  return (
+    source.includes("billing") ||
+    source.includes("diagnosticbilling") ||
+    Boolean(billingId) ||
+    status.includes("paid") ||
+    status.includes("settled") ||
+    (billingType.includes("lab") && !status.includes("pending")) ||
+    (billingType.includes("diagnostic") && !status.includes("pending"))
+  );
 };
 
 const recordIdentifier = (row = {}) =>
@@ -637,23 +657,29 @@ function LabDataPage({ type }) {
 
   const patientOptions = useMemo(() => {
     if (!requiresPatientSelection) return [];
-    const patients = rows
-      .map((row) => readFirst(row, ["patientName", "PatientName", "patient.name", "Patient.Name", "name", "Name"], ""))
-      .map((name) => String(name).trim())
-      .filter((name) => name && name !== "-");
-    return Array.from(new Set(patients)).sort((a, b) => a.localeCompare(b));
+    const byVisit = new Map();
+    rows.forEach((row) => {
+      const key = getPatientGroupKey(row);
+      if (!byVisit.has(key)) {
+        const patientName = readFirst(row, ["patientName", "PatientName", "patient.name", "Patient.Name", "name", "Name"], "");
+        byVisit.set(key, {
+          key,
+          label: `${patientName || "Patient"}${formatVisitDate(getRecordDateValue(row)) ? ` - ${formatVisitDate(getRecordDateValue(row))}` : ""}`,
+        });
+      }
+    });
+    return Array.from(byVisit.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [requiresPatientSelection, rows]);
 
   useEffect(() => {
     if (!selectedPatient) return;
-    if (!patientOptions.includes(selectedPatient)) setSelectedPatient("");
+    if (!patientOptions.some((patient) => patient.key === selectedPatient)) setSelectedPatient("");
   }, [patientOptions, selectedPatient]);
 
   const filteredRows = useMemo(() => {
     const term = search.trim().toLowerCase();
     return rows.filter((row) => {
-      const patientName = readFirst(row, ["patientName", "PatientName", "patient.name", "Patient.Name", "name", "Name"], "");
-      const matchesPatient = requiresPatientSelection ? patientName === selectedPatient : true;
+      const matchesPatient = requiresPatientSelection ? getPatientGroupKey(row) === selectedPatient : true;
       const matchesSearch = !term || JSON.stringify(row).toLowerCase().includes(term);
       return matchesPatient && matchesSearch;
     });
@@ -706,6 +732,10 @@ function LabDataPage({ type }) {
   };
 
   const runOrderAction = async (row, action) => {
+    if (type === "samples" && !isBillingBackedRecord(row)) {
+      setToast({ type: "error", message: "Billing has not done." });
+      return;
+    }
     if (!canEditSamples) {
       setToast({ type: "error", message: "You do not have permission to update sample collection." });
       return;
@@ -715,7 +745,7 @@ function LabDataPage({ type }) {
 
     const id = recordId(row);
     try {
-      if (id && !isBillingBackedRecord(row)) {
+      if (id) {
         await requestJson(target.labPath(id), {
           method: target.method || "PUT",
           body: JSON.stringify(target.payload),
@@ -817,7 +847,7 @@ function LabDataPage({ type }) {
           <Search size={17} />
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Search ${config.title.toLowerCase()}...`} />
         </label>
-        {type === "patients" ? (
+        {(type === "patients" || type === "samples") ? (
           <div className="lab-filter-tabs" role="tablist" aria-label="Patient order date filter">
             {[
               ["", "All"],
@@ -840,10 +870,20 @@ function LabDataPage({ type }) {
         {requiresPatientSelection ? (
           <label className="lab-patient-select">
             <span>Select Patient</span>
-            <select value={selectedPatient} onChange={(event) => setSelectedPatient(event.target.value)}>
+            <select value={selectedPatient} onChange={(event) => {
+              const nextPatient = event.target.value;
+              if (type === "samples" && nextPatient) {
+                const patientRows = rows.filter((row) => getPatientGroupKey(row) === nextPatient);
+                if (patientRows.length && patientRows.some((row) => !isBillingBackedRecord(row))) {
+                  setToast({ type: "error", message: "Billing has not done." });
+                  return;
+                }
+              }
+              setSelectedPatient(nextPatient);
+            }}>
               <option value="">Select patient</option>
               {patientOptions.map((patient) => (
-                <option key={patient} value={patient}>{patient}</option>
+                <option key={patient.key} value={patient.key}>{patient.label}</option>
               ))}
             </select>
           </label>
