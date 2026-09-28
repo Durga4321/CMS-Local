@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Check, Plus, Printer } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Consultation.css";
@@ -195,7 +195,7 @@ const getStepFromStatus = (status) => {
   return 1;
 };
 
-const CONSULTATION_QUEUE_STATUSES = ["waiting", "inprogress", "in progress"];
+const CONSULTATION_QUEUE_STATUSES = ["waiting"];
 
 const getFallbackAppointment = (appointments) =>
   appointments.find((item) =>
@@ -896,7 +896,7 @@ function Consultation() {
             <div>
               <p className="cn-pat-name">{patient.name}</p>
               <p className="cn-pat-sub">
-                PID: {patient.pid} Â· {patient.age}
+                PID: {patient.pid} · {patient.age}
               </p>
               <span className="cn-pat-badge">{patient.type}</span>
             </div>

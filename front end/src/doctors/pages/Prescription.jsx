@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, Download, Plus, Printer, Search, Syringe, Trash2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Prescription.css";
@@ -28,7 +28,10 @@ const CONSULTATION_API = apiUrl("Consultation");
 const PRESCRIPTION_API = apiUrl("Prescription");
 
 const normalizeStatusKey = (status) => String(status || "").trim().toLowerCase().replace(/\s+/g, "");
-const PRESCRIPTION_QUEUE_STATUSES = ["prescriptionadded"];
+const isPrescriptionQueueStatus = (status) => {
+  const key = normalizeStatusKey(status);
+  return key && key !== "waiting" && key !== "completed";
+};
 
 const emptyValue = "-";
 const DEFAULT_MEDICINE_OPTIONS = [
@@ -515,7 +518,7 @@ function Prescription() {
             ) ||
             selectedAppointment ||
             appointments.find((item) =>
-              PRESCRIPTION_QUEUE_STATUSES.includes(normalizeStatusKey(item.status))
+              isPrescriptionQueueStatus(item.status)
             );
         }
 

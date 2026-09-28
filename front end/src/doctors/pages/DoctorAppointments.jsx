@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, FileText, Play, RefreshCw, Filter, X, Calendar, User, Stethoscope, FileSpreadsheet, ArrowRight, Activity, AlertCircle } from "lucide-react";
 import "./DoctorAppointments.css";
@@ -27,6 +27,8 @@ const STATUS_CLASS = {
   "in progress": "status--inprogress",
   inprogress: "status--inprogress",
   "prescription added": "status--prescription",
+  awaitinglab: "status--prescription",
+  "awaiting lab": "status--prescription",
   completed: "status--completed",
 };
 
@@ -36,6 +38,8 @@ const getStatusClass = (status) =>
 
 const normalizeStatusKey = (status) => String(status || "").trim().toLowerCase().replace(/\s+/g, "");
 const isCompletedStatus = (status) => normalizeStatusKey(status) === "completed";
+const isWaitingStatus = (status) => normalizeStatusKey(status) === "waiting";
+const shouldOpenPrescription = (status) => !isWaitingStatus(status) && !isCompletedStatus(status);
 
 const formatTime = (value) => {
   if (!value) return "-";
@@ -181,7 +185,7 @@ function DoctorAppointments() {
       patient: patient.raw,
     };
 
-    if (normalizeStatusKey(patient.status) === "prescriptionadded") {
+    if (shouldOpenPrescription(patient.status)) {
       navigate("/doctor/prescription", { state });
       return;
     }
