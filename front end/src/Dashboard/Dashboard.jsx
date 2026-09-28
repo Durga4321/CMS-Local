@@ -1,4 +1,4 @@
-﻿import React, {
+import React, {
   useEffect,
   useState,
   useCallback,
@@ -677,7 +677,7 @@ function Dashboard() {
       "receptionistTotal",
       "receptionist_count",
     ],
-    1
+    0
   );
 
   const nurseCount = getDashboardMetricValue(
@@ -688,7 +688,7 @@ function Dashboard() {
       "nurseTotal",
       "nurse_count",
     ],
-    1
+    0
   );
 
   const labTechnicianCount = getDashboardMetricValue(
@@ -701,7 +701,7 @@ function Dashboard() {
       "labTechs",
       "lab_count",
     ],
-    1
+    0
   );
 
   const appointmentRows = Array.isArray(dashboardData?.recentAppointmentsList)
@@ -884,7 +884,7 @@ function Dashboard() {
                 <span className="db-kpi-title">Today's Appointments</span>
               </div>
               <div className="db-kpi-num">
-                {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.todayAppointments ?? 1)}
+                {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.todayAppointments ?? 0)}
               </div>
             </div>
           </div>
@@ -904,7 +904,7 @@ function Dashboard() {
                 <span className="db-kpi-title">Total Revenue</span>
               </div>
               <div className="db-kpi-num">
-                {loading ? <Skeleton width={80} height={32} /> : formatCurrency(totalRevenue || 502)}
+                {loading ? <Skeleton width={80} height={32} /> : formatCurrency(totalRevenue)}
               </div>
             </div>
           </div>
@@ -924,7 +924,7 @@ function Dashboard() {
                 <span className="db-kpi-title">Total Doctors</span>
               </div>
               <div className="db-kpi-num">
-                {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.totalDoctors ?? 2)}
+                {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.totalDoctors ?? 0)}
               </div>
             </div>
           </div>
@@ -964,7 +964,7 @@ function Dashboard() {
                 <span className="db-kpi-title">Total Patients</span>
               </div>
               <div className="db-kpi-num">
-                {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.totalPatients ?? 2)}
+                {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.totalPatients ?? 0)}
               </div>
             </div>
           </div>

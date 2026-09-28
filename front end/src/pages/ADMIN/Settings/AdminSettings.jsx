@@ -38,8 +38,7 @@ import {
 import "./AdminSettings.css";
 
 const BUILT_IN_TEMPLATES = [
-  { value: "op", label: "OP Invoice" },
-  { value: "diagnostic", label: "Diagnostic Invoice" },
+  { value: "billing", label: "Billing Invoice" },
 ];
 
 const normalizeTemplateValue = (value = "") =>
@@ -60,24 +59,33 @@ const normalizeHexColor = (value = "", fallback = "#0f9d9d") => {
 
 const parseInvoiceTemplate = (value = "") => {
   const raw = String(value || "").trim();
-  if (!raw) return { selected: "op", templates: {} };
+  if (!raw) return { selected: "billing", templates: {} };
   try {
     const parsed = JSON.parse(raw);
+    const templates = parsed.templates && typeof parsed.templates === "object" ? parsed.templates : {};
+    const billingTemplate = parsed.billingTemplate || templates.billing || templates.op || templates.diagnostic || null;
     return {
-      selected: normalizeTemplateValue(parsed.selected || parsed.template || "op"),
-      templates: parsed.templates && typeof parsed.templates === "object" ? parsed.templates : {},
+      selected: "billing",
+      templates: {
+        ...templates,
+        billing: billingTemplate,
+        op: billingTemplate,
+        diagnostic: billingTemplate,
+      },
     };
   } catch {
-    return { selected: normalizeTemplateValue(raw), templates: {} };
+    return { selected: "billing", templates: {} };
   }
 };
 
 const stringifyInvoiceTemplate = (settings = {}) =>
   JSON.stringify({
-    selected: normalizeTemplateValue(settings.template || "op"),
+    selected: "billing",
+    billingTemplate: settings.billingTemplate || settings.opTemplate || settings.diagnosticTemplate || null,
     templates: {
-      op: settings.opTemplate || null,
-      diagnostic: settings.diagnosticTemplate || null,
+      billing: settings.billingTemplate || settings.opTemplate || settings.diagnosticTemplate || null,
+      op: settings.billingTemplate || settings.opTemplate || settings.diagnosticTemplate || null,
+      diagnostic: settings.billingTemplate || settings.opTemplate || settings.diagnosticTemplate || null,
     },
   });
 
@@ -204,9 +212,10 @@ const normalizeApiSettings = (data = {}) => {
     "";
   return {
     id: source.id || source.Id || source.invoiceSettingsId || source.InvoiceSettingsId || "",
-    template: templateSettings.selected,
-    opTemplate: templateSettings.templates.op || null,
-    diagnosticTemplate: templateSettings.templates.diagnostic || null,
+    template: "billing",
+    billingTemplate: templateSettings.templates.billing || templateSettings.templates.op || templateSettings.templates.diagnostic || null,
+    opTemplate: templateSettings.templates.billing || templateSettings.templates.op || templateSettings.templates.diagnostic || null,
+    diagnosticTemplate: templateSettings.templates.billing || templateSettings.templates.op || templateSettings.templates.diagnostic || null,
     headerTitle: source.headerTitle || source.HeaderTitle || "",
     headerSubtitle: source.headerSubtitle || source.HeaderSubtitle || "",
     clinicAddress: source.clinicAddress || source.ClinicAddress || "",
@@ -340,7 +349,7 @@ function AdminSettings() {
   const storedLogoDataUrl = resolveAssetUrl(storedBranding.logoDataUrl);
   const initialForm = {
     settingsId: "",
-    template: normalizeTemplateValue(storedBranding.template || "op"),
+    template: "billing",
     headerTitle: storedBranding.headerTitle || clinicName,
     headerSubtitle: storedBranding.headerSubtitle || "Consultation and Patient Care Centre",
     footerNote: storedBranding.footerNote || "Thank you for choosing our clinic. Please retain this invoice for your records.",
@@ -351,8 +360,9 @@ function AdminSettings() {
     registrationNumber: storedBranding.registrationNumber || localStorage.getItem("clinicRegistration") || "",
     accentColor: normalizeHexColor(storedBranding.accentColor || "#0f9d9d"),
     logoDataUrl: storedLogoDataUrl || "",
-    opTemplate: storedBranding.opTemplate || null,
-    diagnosticTemplate: storedBranding.diagnosticTemplate || null,
+    billingTemplate: storedBranding.billingTemplate || storedBranding.opTemplate || storedBranding.diagnosticTemplate || null,
+    opTemplate: storedBranding.billingTemplate || storedBranding.opTemplate || storedBranding.diagnosticTemplate || null,
+    diagnosticTemplate: storedBranding.billingTemplate || storedBranding.opTemplate || storedBranding.diagnosticTemplate || null,
   };
   const [form, setForm] = useState({
     ...initialForm,
@@ -372,7 +382,7 @@ function AdminSettings() {
     setForm((prev) => ({
       ...prev,
       settingsId: settings.id || prev.settingsId,
-      template: normalizeTemplateValue(settings.template || prev.template),
+      template: "billing",
       headerTitle: settings.headerTitle || prev.headerTitle,
       headerSubtitle: settings.headerSubtitle || prev.headerSubtitle,
       clinicAddress: settings.clinicAddress || prev.clinicAddress,
@@ -383,8 +393,9 @@ function AdminSettings() {
       footerNote: settings.footerNote || prev.footerNote,
       accentColor: normalizeHexColor(settings.accentColor || prev.accentColor),
       logoDataUrl: settings.logoDataUrl || prev.logoDataUrl,
-      opTemplate: settings.opTemplate || prev.opTemplate,
-      diagnosticTemplate: settings.diagnosticTemplate || prev.diagnosticTemplate,
+      billingTemplate: settings.billingTemplate || settings.opTemplate || settings.diagnosticTemplate || prev.billingTemplate,
+      opTemplate: settings.billingTemplate || settings.opTemplate || settings.diagnosticTemplate || prev.opTemplate,
+      diagnosticTemplate: settings.billingTemplate || settings.opTemplate || settings.diagnosticTemplate || prev.diagnosticTemplate,
     }));
   };
 
@@ -393,10 +404,11 @@ function AdminSettings() {
       {
         ...settings,
         settingsId: settings.settingsId || settings.id || "",
-        template: settings.template,
+        template: "billing",
         logoDataUrl: settings.logoDataUrl || "",
-        opTemplate: settings.opTemplate || null,
-        diagnosticTemplate: settings.diagnosticTemplate || null,
+        billingTemplate: settings.billingTemplate || settings.opTemplate || settings.diagnosticTemplate || null,
+        opTemplate: settings.billingTemplate || settings.opTemplate || settings.diagnosticTemplate || null,
+        diagnosticTemplate: settings.billingTemplate || settings.opTemplate || settings.diagnosticTemplate || null,
       },
       scope
     );
@@ -413,8 +425,9 @@ function AdminSettings() {
           const mergedRemote = {
             ...remoteSettings,
             logoDataUrl: remoteSettings.logoDataUrl || prev.logoDataUrl || storedBranding.logoDataUrl || "",
-            opTemplate: remoteSettings.opTemplate || storedBranding.opTemplate || prev.opTemplate,
-            diagnosticTemplate: remoteSettings.diagnosticTemplate || storedBranding.diagnosticTemplate || prev.diagnosticTemplate,
+            billingTemplate: remoteSettings.billingTemplate || remoteSettings.opTemplate || remoteSettings.diagnosticTemplate || storedBranding.billingTemplate || storedBranding.opTemplate || storedBranding.diagnosticTemplate || prev.billingTemplate,
+            opTemplate: remoteSettings.billingTemplate || remoteSettings.opTemplate || remoteSettings.diagnosticTemplate || storedBranding.billingTemplate || storedBranding.opTemplate || storedBranding.diagnosticTemplate || prev.opTemplate,
+            diagnosticTemplate: remoteSettings.billingTemplate || remoteSettings.opTemplate || remoteSettings.diagnosticTemplate || storedBranding.billingTemplate || storedBranding.opTemplate || storedBranding.diagnosticTemplate || prev.diagnosticTemplate,
           };
           syncBrandingCache({ ...prev, ...mergedRemote, settingsId: remoteSettings.id || prev.settingsId });
           return { ...prev, ...mergedRemote };
@@ -454,15 +467,11 @@ function AdminSettings() {
     watermarkUrl: resolveAssetUrl(form.logoDataUrl) || liveBranding.logoUrl || defaultLogoUrl,
   };
   const hasUploadedLogo = Boolean(resolveAssetUrl(form.logoDataUrl));
-  const effectiveTemplateValue = form.template;
-  const builtInTemplate = BUILT_IN_TEMPLATES.find((template) => template.value === form.template);
-  const templatePreview = builtInTemplate;
-  const selectedTemplateKey = normalizeTemplateKey(templatePreview?.name || effectiveTemplateValue);
-  const invoiceKind = selectedTemplateKey.includes("diagnostic") || selectedTemplateKey.includes("lab") || selectedTemplateKey.includes("test")
-    ? "diagnostic"
-    : "op";
-  const activeUploadedTemplate = invoiceKind === "diagnostic" ? form.diagnosticTemplate : form.opTemplate;
-  const invoiceTitle = invoiceKind === "diagnostic" ? "Diagnostic GST Invoice" : "OP Billing Invoice";
+  const effectiveTemplateValue = "billing";
+  const builtInTemplate = BUILT_IN_TEMPLATES[0];
+  const invoiceKind = "op";
+  const activeUploadedTemplate = form.billingTemplate || form.opTemplate || form.diagnosticTemplate;
+  const invoiceTitle = "Billing Invoice";
   const invoiceRows = invoiceKind === "diagnostic"
     ? [
         { name: "Complete Blood Count", amount: 450 },
@@ -476,7 +485,7 @@ function AdminSettings() {
   const invoiceCgst = Math.round(invoiceSubtotal * 0.09 * 100) / 100;
   const invoiceSgst = Math.round(invoiceSubtotal * 0.09 * 100) / 100;
   const invoiceTotal = invoiceSubtotal + invoiceCgst + invoiceSgst;
-  const invoiceDiscount = invoiceKind === "diagnostic" ? 120 : 0;
+  const invoiceDiscount = 0;
   const invoiceNetAmount = invoiceTotal - invoiceDiscount;
 
   const updateField = (name, value) => {
@@ -484,30 +493,36 @@ function AdminSettings() {
     setForm((prev) => ({ ...prev, [name]: name === "accentColor" ? normalizeHexColor(value, prev.accentColor) : value }));
   };
 
-  const readTemplateFile = (file, type) => {
+  const readTemplateFile = (file) => {
     const reader = new FileReader();
     reader.onload = () => {
       const nextTemplate = {
-        type,
+        type: "billing",
         name: file.name.replace(/\.[^.]+$/, "") || file.name,
         fileName: file.name,
         dataUrl: String(reader.result || ""),
         updatedAt: new Date().toISOString(),
       };
-      setForm((prev) => ({ ...prev, [`${type}Template`]: nextTemplate, template: type }));
-      showStatus(`${type === "op" ? "OP" : "Diagnostic"} template ready. Click Save beside the template.`, "info");
+      setForm((prev) => ({
+        ...prev,
+        template: "billing",
+        billingTemplate: nextTemplate,
+        opTemplate: nextTemplate,
+        diagnosticTemplate: nextTemplate,
+      }));
+      showStatus("Billing template ready. Click Save beside the template.", "info");
     };
     reader.readAsDataURL(file);
   };
 
-  const handleTemplateUpload = (type, event) => {
+  const handleTemplateUpload = (event) => {
     if (!canCreate) {
       showStatus("You do not have permission to upload templates.", "error");
       event.target.value = "";
       return;
     }
     const file = event.target.files?.[0];
-    if (file) readTemplateFile(file, type);
+    if (file) readTemplateFile(file);
     event.target.value = "";
   };
 
@@ -520,28 +535,28 @@ function AdminSettings() {
     win.document.close();
   };
 
-  const saveBillingTemplate = async (type) => {
+  const saveBillingTemplate = async () => {
     if (!canEdit) {
       showStatus("You do not have permission to save templates.", "error");
       return;
     }
-    const template = form[`${type}Template`];
+    const template = form.billingTemplate || form.opTemplate || form.diagnosticTemplate;
     if (!template?.dataUrl) {
-      showStatus(`Upload a ${type === "op" ? "OP" : "Diagnostic"} template first.`, "error");
+      showStatus("Upload a billing template first.", "error");
       return;
     }
 
+    const savedTemplate = { ...template, type: "billing", savedAt: new Date().toISOString() };
     const nextForm = {
       ...form,
-      template: type,
-      [`${type}Template`]: {
-        ...template,
-        savedAt: new Date().toISOString(),
-      },
+      template: "billing",
+      billingTemplate: savedTemplate,
+      opTemplate: savedTemplate,
+      diagnosticTemplate: savedTemplate,
     };
 
     setSaving(true);
-    showStatus(`Saving ${type === "op" ? "OP" : "Diagnostic"} template...`, "info");
+    showStatus("Saving shared billing template...", "info");
     try {
       const data = await requestInvoiceSettings(
         hasRemoteSettings ? "PUT" : "POST",
@@ -553,16 +568,17 @@ function AdminSettings() {
         ...nextForm,
         ...remoteSettings,
         logoDataUrl: remoteSettings.logoDataUrl || nextForm.logoDataUrl,
-        opTemplate: remoteSettings.opTemplate || nextForm.opTemplate,
-        diagnosticTemplate: remoteSettings.diagnosticTemplate || nextForm.diagnosticTemplate,
+        billingTemplate: remoteSettings.billingTemplate || nextForm.billingTemplate,
+        opTemplate: remoteSettings.billingTemplate || remoteSettings.opTemplate || nextForm.billingTemplate,
+        diagnosticTemplate: remoteSettings.billingTemplate || remoteSettings.diagnosticTemplate || nextForm.billingTemplate,
         settingsId: remoteSettings.id || nextForm.settingsId,
       };
       setForm((prev) => ({ ...prev, ...mergedSettings }));
       setHasRemoteSettings(true);
       syncBrandingCache(mergedSettings);
-      showStatus(`${type === "op" ? "OP" : "Diagnostic"} template saved in backend.`);
+      showStatus("Shared billing template saved in backend.");
     } catch (error) {
-      showStatus(error.message || `Unable to save ${type === "op" ? "OP" : "Diagnostic"} template.`, "error");
+      showStatus(error.message || "Unable to save billing template.", "error");
     } finally {
       setSaving(false);
     }
@@ -808,14 +824,14 @@ function AdminSettings() {
             </div>
             <div>
               <h3>Billing Templates</h3>
-              <p>Choose your primary invoice layout and manage OP/Diagnostic templates</p>
+              <p>Manage the single invoice layout used for OP, lab, diagnostic, and pharmacy billing</p>
             </div>
           </div>
 
           <div className="admin-settings-field">
             <label htmlFor="invoice-template-select">
               <span className="admin-settings-field-label">
-                <FileText size={15} /> Primary Invoice Template
+                <FileText size={15} /> Invoice Template
               </span>
             </label>
             <select
@@ -845,7 +861,7 @@ function AdminSettings() {
                   <b>INV-0001</b>
                 </div>
                 <div className="admin-settings-builtin-template-row">
-                  <span>{form.template === "diagnostic" ? "Diagnostic Test" : "Consultation Fee"}</span>
+                  <span>{"Invoice Particular"}</span>
                   <b>Rs. 500.00</b>
                 </div>
               </div>
@@ -858,8 +874,7 @@ function AdminSettings() {
               <span>Support for HTML, PDF, DOCX and Images</span>
             </div>
             {[
-              { type: "op", label: "OP Billing Template", template: form.opTemplate, desc: "Outpatient consultation & medicine receipts" },
-              { type: "diagnostic", label: "Diagnostic Billing Template", template: form.diagnosticTemplate, desc: "Laboratory, pathology & diagnostic invoices" },
+              { type: "billing", label: "Billing Template", template: activeUploadedTemplate, desc: "Used for OP, lab, diagnostic, and pharmacy invoices" },
             ].map((item) => (
               <article className="admin-settings-template-card" key={item.type}>
                 <div className="admin-settings-template-card-preview">
@@ -888,12 +903,12 @@ function AdminSettings() {
                     <label className="admin-settings-template-action admin-settings-template-action--upload">
                       <FileUp size={15} />
                       <span>Upload</span>
-                      <input type="file" accept=".html,.htm,.pdf,.doc,.docx,image/*" onChange={(event) => handleTemplateUpload(item.type, event)} disabled={!canCreate} />
+                      <input type="file" accept=".html,.htm,.pdf,.doc,.docx,image/*" onChange={handleTemplateUpload} disabled={!canCreate} />
                     </label>
                     <button
                       className="admin-settings-template-action admin-settings-template-action--save"
                       type="button"
-                      onClick={() => saveBillingTemplate(item.type)}
+                      onClick={saveBillingTemplate}
                       disabled={!item.template?.dataUrl || saving || !canEdit}
                     >
                       <Save size={15} />

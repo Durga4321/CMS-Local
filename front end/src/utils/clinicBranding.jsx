@@ -234,8 +234,9 @@ export const getClinicInvoiceBranding = ({ clinicId = "", clinicName = "" } = {}
     customTemplateDataUrl: branding.customTemplateDataUrl || "",
     customTemplates: Array.isArray(branding.customTemplates) ? branding.customTemplates : [],
     selectedCustomTemplateId: branding.selectedCustomTemplateId || "",
-    opTemplate: branding.opTemplate || null,
-    diagnosticTemplate: branding.diagnosticTemplate || null,
+    billingTemplate: branding.billingTemplate || branding.opTemplate || branding.diagnosticTemplate || null,
+    opTemplate: branding.billingTemplate || branding.opTemplate || null,
+    diagnosticTemplate: branding.billingTemplate || branding.diagnosticTemplate || null,
   };
 };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Activity, ArrowLeft, CalendarDays, CheckCircle, CreditCard, Edit3, Eye, FileText, FlaskConical, History, Minus, Pill, Plus, Printer, Receipt, ShieldCheck, Sparkles, Stethoscope, Thermometer, Trash2 } from "lucide-react";
+import { Activity, ArrowLeft, CalendarDays, CheckCircle, CreditCard, Edit3, Eye, FileText, FlaskConical, History, Minus, Pill, Plus, Printer, Receipt, RefreshCw, ShieldCheck, Sparkles, Stethoscope, Thermometer, Trash2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { PaymentStatusBadge, PaidStamp, formatPaidDateTime } from "../../components/PaymentStatus";
 import { ActionsGroup } from "../../components/ActionsGroup";
@@ -515,6 +515,7 @@ const printServiceInvoice = ({
   createdAt,
   doctorName,
   paymentMode,
+  paymentStatus = "Draft",
   clinicName,
   clinicId,
   clinicPhone,
@@ -540,6 +541,8 @@ const printServiceInvoice = ({
     minute: "2-digit",
     hour12: true,
   });
+  const invoicePaymentStatus = String(paymentStatus || "Draft").trim();
+  const isInvoicePaid = invoicePaymentStatus.toLowerCase() === "paid";
   const title = type === "pharmacy" ? "Pharmacy GST Invoice" : "Diagnostic Test GST Invoice";
   const itemHeader = type === "pharmacy" ? "Product / Medicine" : "Diagnostic Test";
   const branding = getClinicInvoiceBranding({ clinicId, clinicName });
@@ -553,6 +556,9 @@ const printServiceInvoice = ({
   const brandingGstNumber = branding.gstNumber || "";
   const brandingRegistrationNumber = branding.registrationNumber || "";
   const accentColor = branding.accentColor || "#0f9d9d";
+  const billingTemplate = branding.billingTemplate || branding.opTemplate || branding.diagnosticTemplate || null;
+  const billingTemplateUrl = billingTemplate?.dataUrl || "";
+  const billingTemplateIsImage = /^data:image\//i.test(billingTemplateUrl);
   const printWindow = window.open("", "_blank", "width=980,height=720");
   if (!printWindow) return false;
 
@@ -565,7 +571,11 @@ const printServiceInvoice = ({
           @page { size: A4; margin: 14mm; }
           body { margin: 0; color: #111827; font-family: Arial, Helvetica, sans-serif; background: #f3f8fb; }
           .invoice { max-width: 940px; min-height: 100vh; margin: 0 auto; background: #fff; padding: 28px; border-top: 8px solid ${escapeHtml(accentColor)}; box-sizing: border-box; position: relative; overflow: hidden; }
-          .invoice > *:not(.watermark) { position: relative; z-index: 1; }
+          .invoice > *:not(.watermark):not(.template-bg) { position: relative; z-index: 1; }
+          .template-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .16; }
+          .template-bg img, .template-bg iframe { width: 100%; height: 100%; border: 0; object-fit: cover; background: transparent; }
+          .invoice.has-template { border-top-width: 0; }
+          .invoice.has-template .head, .invoice.has-template .meta div, .invoice.has-template .panel, .invoice.has-template th, .invoice.has-template td { background-color: rgba(255,255,255,.9); }
           .watermark { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
           .watermark img { width: 410px; height: 410px; object-fit: contain; opacity: .18; filter: saturate(1.35) contrast(1.08); }
           .head { display: grid; grid-template-columns: 1fr auto; gap: 20px; border-bottom: 2px solid #0f172a; padding-bottom: 14px; }
@@ -601,11 +611,10 @@ const printServiceInvoice = ({
         </style>
       </head>
       <body>
-        <main class="invoice">
+        <main class="invoice${billingTemplateUrl ? " has-template" : ""}">
+          ${billingTemplateUrl ? `<div class="template-bg">${billingTemplateIsImage ? `<img src="${escapeHtml(billingTemplateUrl)}" alt="" />` : `<iframe src="${escapeHtml(billingTemplateUrl)}" title="Billing template"></iframe>`}</div>` : ""}
           <div class="watermark"><img src="${escapeHtml(logoUrl)}" alt="" /></div>
-          <div style="position: absolute; top: 22px; right: 28px; border: 3px double #10b981; border-radius: 6px; padding: 4px 14px; color: #059669; font-size: 20px; font-weight: 900; letter-spacing: 2.5px; transform: rotate(-6deg); background: rgba(16,185,129,0.08); text-transform: uppercase; z-index: 10; pointer-events: none;">
-            PAID
-          </div>
+          ${isInvoicePaid ? `<div style="position: absolute; top: 22px; right: 28px; border: 3px double #10b981; border-radius: 6px; padding: 4px 14px; color: #059669; font-size: 20px; font-weight: 900; letter-spacing: 2.5px; transform: rotate(-6deg); background: rgba(16,185,129,0.08); text-transform: uppercase; z-index: 10; pointer-events: none;">PAID</div>` : `<div style="position: absolute; top: 22px; right: 28px; border: 3px double #f59e0b; border-radius: 6px; padding: 4px 14px; color: #b45309; font-size: 18px; font-weight: 900; letter-spacing: 2px; transform: rotate(-6deg); background: rgba(245,158,11,0.08); text-transform: uppercase; z-index: 10; pointer-events: none;">${escapeHtml(invoicePaymentStatus)}</div>`}
           <section class="head">
             <div>
               <div class="clinic-title">
@@ -769,6 +778,34 @@ const deleteBillingBill = async (bill) => {
   return true;
 };
 
+const getBillingPaymentBillId = (bill) =>
+  firstValue(
+    bill?.billId,
+    bill?.BillId,
+    bill?.billingId,
+    bill?.BillingId,
+    bill?.invoiceId,
+    bill?.InvoiceId,
+    bill?.id,
+    bill?.Id
+  ) || "";
+
+const getBillingPaymentStatus = async (bill) => {
+  const billId = getBillingPaymentBillId(bill);
+  if (!billId) throw new Error("Bill id is not available for payment status.");
+  return requestJson(`BillingPayment/${encodeURIComponent(String(billId))}/status`);
+};
+
+const startBillingPayment = async (bill, paymentMode) => {
+  const billId = getBillingPaymentBillId(bill);
+  if (!billId) throw new Error("Bill id is not available for payment.");
+
+  const method = String(paymentMode || "Cash").trim().toLowerCase();
+  const endpoint = method === "card" ? "card" : method === "upi" ? "upi" : "cash";
+  return requestJson(`BillingPayment/${encodeURIComponent(String(billId))}/${endpoint}`, {
+    method: "POST",
+  });
+};
 const getInvoiceStatus = (invoice) =>
   firstValue(invoice?.paymentStatus, invoice?.invoiceStatus, invoice?.billingStatus, invoice?.status) ||
   "Paid";
@@ -2005,6 +2042,90 @@ function ReceptionBilling() {
     };
   };
 
+  const mergePaymentResponse = (bill, response, fallbackMode) => {
+    const responseData = response && typeof response === "object" ? response : {};
+    const data = responseData.data && typeof responseData.data === "object" ? responseData.data : {};
+    const result = responseData.result && typeof responseData.result === "object" ? responseData.result : {};
+    const payment = firstValue(responseData.payment, data.payment, result.payment, responseData.Payment, data.Payment, result.Payment) || {};
+    const billData = firstValue(responseData.bill, data.bill, result.bill, responseData.Bill, data.Bill, result.Bill, data, result, responseData) || {};
+    const paymentMode = firstValue(payment.paymentMode, payment.PaymentMode, payment.method, payment.Method, billData.paymentMode, billData.PaymentMode, fallbackMode, bill.paymentMode, bill.PaymentMode);
+    const rawStatus = firstValue(
+      payment.paymentStatus,
+      payment.PaymentStatus,
+      payment.status,
+      payment.Status,
+      billData.paymentStatus,
+      billData.PaymentStatus,
+      billData.status,
+      billData.Status,
+      String(paymentMode || "").toLowerCase() === "cash" ? "Paid" : "Pending"
+    );
+    const normalizedStatus = String(rawStatus || "Pending").trim();
+    const isPaid = normalizedStatus.toLowerCase() === "paid";
+    const paidDate = firstValue(payment.paidDate, payment.PaidDate, payment.completedAt, billData.paidDate, billData.PaidDate, isPaid ? new Date().toISOString() : "");
+
+    return {
+      ...bill,
+      ...billData,
+      payment,
+      paymentMode,
+      PaymentMode: paymentMode,
+      paymentMethod: firstValue(payment.paymentMethod, payment.PaymentMethod, payment.method, payment.Method, paymentMode),
+      paymentStatus: normalizedStatus,
+      PaymentStatus: normalizedStatus,
+      status: normalizedStatus,
+      Status: normalizedStatus,
+      paidDate,
+      PaidDate: paidDate,
+      transactionId: firstValue(payment.transactionId, payment.TransactionId, payment.providerReference, billData.transactionId, billData.TransactionId, bill.transactionId),
+      latestPaymentStatusCheckedAt: new Date().toISOString(),
+    };
+  };
+
+  const applyBillPayment = async (bill, paymentMode) => {
+    try {
+      const paymentResponse = await startBillingPayment(bill, paymentMode);
+      const nextBill = mergePaymentResponse(bill, paymentResponse, paymentMode);
+      const nextStoredBills = storeRecentServiceBill(nextBill);
+      setRecentServiceBills((prev) => mergeRecentServiceBills([nextBill], nextStoredBills, prev));
+      return nextBill;
+    } catch (error) {
+      const fallbackStatus = String(paymentMode || "").toLowerCase() === "cash" ? "Paid" : "Pending";
+      const fallbackBill = {
+        ...bill,
+        paymentStatus: bill.paymentStatus || fallbackStatus,
+        PaymentStatus: bill.PaymentStatus || fallbackStatus,
+        status: bill.status || fallbackStatus,
+        Status: bill.Status || fallbackStatus,
+      };
+      const nextStoredBills = storeRecentServiceBill(fallbackBill);
+      setRecentServiceBills((prev) => mergeRecentServiceBills([fallbackBill], nextStoredBills, prev));
+      showMessage(error.message || "Bill saved, but payment confirmation could not be started.", "error");
+      toast.error(error.message || "Bill saved, but payment confirmation could not be started.");
+      return fallbackBill;
+    }
+  };
+
+  const refreshBillPaymentStatus = async (bill) => {
+    try {
+      const response = await getBillingPaymentStatus(bill);
+      const nextBill = mergePaymentResponse(bill, response, bill.paymentMode || bill.PaymentMode);
+      const nextStoredBills = storeRecentServiceBill(nextBill);
+      setRecentServiceBills((prev) => mergeRecentServiceBills([nextBill], nextStoredBills, prev));
+      if (String(getInvoiceId(invoice)) === String(getInvoiceId(nextBill))) {
+        setInvoice(nextBill);
+        storeLatestInvoice(nextBill);
+      }
+      showMessage(`Payment status: ${nextBill.paymentStatus || nextBill.status || "Pending"}`, "success", { autoHide: true });
+      toast.success(`Payment status: ${nextBill.paymentStatus || nextBill.status || "Pending"}`);
+      return nextBill;
+    } catch (error) {
+      showMessage(error.message || "Unable to check payment status.", "error");
+      toast.error(error.message || "Unable to check payment status.");
+      return null;
+    }
+  };
+
   const buildServiceBillingPayload = (details) => {
     const isPharmacy = details.type === "pharmacy";
     const subtotal = Number(details.totals.subtotal || 0);
@@ -2014,6 +2135,8 @@ function ReceptionBilling() {
     const patientId = Number(details.patientId || selectedAppointment?.patientId || selectedAppointment?.PatientId || 0);
     const branchId = Number(details.branchId || receptionistScope.branchId || 0);
     const totalAmount = Number(details.totals.total || 0);
+    const paymentMode = String(details.paymentMode || "Cash");
+    const initialPaymentStatus = paymentMode.toLowerCase() === "cash" ? "Paid" : "Pending";
     const labCharge = isPharmacy ? 0 : subtotal;
     const medicineCharge = isPharmacy ? subtotal : 0;
 
@@ -2040,16 +2163,16 @@ function ReceptionBilling() {
       GstPercentage: 18,
       totalAmount,
       TotalAmount: totalAmount,
-      paymentMode: String(details.paymentMode || "Cash"),
-      PaymentMode: String(details.paymentMode || "Cash"),
-      paymentStatus: "Paid",
-      PaymentStatus: "Paid",
-      paidDate: new Date().toISOString(),
-      PaidDate: new Date().toISOString(),
-      paymentMethod: String(details.paymentMode || "Cash"),
+      paymentMode,
+      PaymentMode: paymentMode,
+      paymentStatus: initialPaymentStatus,
+      PaymentStatus: initialPaymentStatus,
+      paidDate: initialPaymentStatus === "Paid" ? new Date().toISOString() : "",
+      PaidDate: initialPaymentStatus === "Paid" ? new Date().toISOString() : "",
+      paymentMethod: paymentMode,
       transactionId: details.transactionId || `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
-      status: "Paid",
-      Status: "Paid",
+      status: initialPaymentStatus,
+      Status: initialPaymentStatus,
     };
   };
 
@@ -2141,18 +2264,16 @@ function ReceptionBilling() {
         grossTotal: details.totals.grossTotal,
         totalAmount: details.totals.total,
         paidAmount: details.totals.total,
-        paymentStatus: "Paid",
-        PaymentStatus: "Paid",
-        paidDate: savedInvoice.paidDate || savedInvoice.PaidDate || editingBill?.paidDate || new Date().toISOString(),
+        paymentStatus: payload.paymentStatus,
+        PaymentStatus: payload.PaymentStatus,
+        paidDate: payload.paidDate,
         paymentMethod: details.paymentMode || "Cash",
         transactionId: savedInvoice.transactionId || savedInvoice.TransactionId || editingBill?.transactionId || `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
         backendSynced: true,
       };
-      setInvoice(invoiceShape);
-      storeLatestInvoice(invoiceShape);
-      setRecentServiceBills((prev) =>
-        mergeRecentServiceBills([invoiceShape], storeRecentServiceBill(invoiceShape), prev)
-      );
+      const paymentInvoiceShape = await applyBillPayment(invoiceShape, details.paymentMode);
+      setInvoice(paymentInvoiceShape);
+      storeLatestInvoice(paymentInvoiceShape);
       if (details.type === "diagnostic") {
         clearPendingDiagnosticRequest({
           appointmentId: details.appointmentId,
@@ -2163,9 +2284,9 @@ function ReceptionBilling() {
       setEditingBill(null);
       showMessage(`${billingMode === "pharmacy" ? "Pharmacy" : "Diagnostic test"} bill ${canUpdate ? "updated" : "generated"} successfully`, "success", { autoHide: true });
       showTopNotification({
-        message: `✓ ${billingMode === "pharmacy" ? "Pharmacy" : "Diagnostic"} bill of ${formatCurrency(details.totals.total)} paid successfully for ${details.patientName}!`,
+        message: `${billingMode === "pharmacy" ? "Pharmacy" : "Diagnostic"} bill of ${formatCurrency(details.totals.total)} is ${paymentInvoiceShape.paymentStatus || "Pending"} for ${details.patientName}.`,
         patientName: details.patientName,
-        invoiceNo: invoiceShape.invoiceNo,
+        invoiceNo: paymentInvoiceShape.invoiceNo,
         amount: details.totals.total,
       });
 
@@ -2180,7 +2301,7 @@ function ReceptionBilling() {
       setDiagnosticRows([]);
       setPharmacyRows([]);
 
-      printServiceInvoice({ ...details, invoiceNo: invoiceShape.invoiceNo, autoPrint });
+      printServiceInvoice({ ...details, invoiceNo: paymentInvoiceShape.invoiceNo, paymentStatus: paymentInvoiceShape.paymentStatus || paymentInvoiceShape.status, autoPrint });
       return true;
     }
 
@@ -2298,6 +2419,8 @@ function ReceptionBilling() {
         0
       )
     ) || 0;
+    const paymentMode = String(form.paymentMode || "Cash");
+    const initialPaymentStatus = paymentMode.toLowerCase() === "cash" ? "Paid" : "Pending";
 
     const body = {
       appointmentId,
@@ -2322,16 +2445,16 @@ function ReceptionBilling() {
       GstPercentage: 0,
       totalAmount,
       TotalAmount: totalAmount,
-      paymentMode: String(form.paymentMode || "Cash"),
-      PaymentMode: String(form.paymentMode || "Cash"),
-      paymentStatus: "Paid",
-      PaymentStatus: "Paid",
-      paidDate: new Date().toISOString(),
-      PaidDate: new Date().toISOString(),
-      paymentMethod: String(form.paymentMode || "Cash"),
+      paymentMode,
+      PaymentMode: paymentMode,
+      paymentStatus: initialPaymentStatus,
+      PaymentStatus: initialPaymentStatus,
+      paidDate: initialPaymentStatus === "Paid" ? new Date().toISOString() : "",
+      PaidDate: initialPaymentStatus === "Paid" ? new Date().toISOString() : "",
+      paymentMethod: paymentMode,
       transactionId: `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
-      status: "Paid",
-      Status: "Paid",
+      status: initialPaymentStatus,
+      Status: initialPaymentStatus,
     };
 
     try {
@@ -2394,26 +2517,24 @@ function ReceptionBilling() {
         doctorName:
           invoiceData?.doctorName ||
           getAppointmentDoctorName(selectedAppointment),
-        paymentStatus: "Paid",
-        PaymentStatus: "Paid",
-        paidDate: invoiceData?.paidDate || invoiceData?.PaidDate || editingBill?.paidDate || new Date().toISOString(),
-        paymentMethod: String(form.paymentMode || "Cash"),
+        paymentStatus: body.paymentStatus,
+        PaymentStatus: body.PaymentStatus,
+        paidDate: body.paidDate,
+        paymentMethod: paymentMode,
         transactionId: invoiceData?.transactionId || invoiceData?.TransactionId || editingBill?.transactionId || `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
         backendSynced: true,
       };
-      setInvoice(nextInvoice);
-      storeLatestInvoice(nextInvoice);
-      setRecentServiceBills((prev) =>
-        mergeRecentServiceBills([nextInvoice], storeRecentServiceBill(nextInvoice), prev)
-      );
+      const paidNextInvoice = await applyBillPayment(nextInvoice, paymentMode);
+      setInvoice(paidNextInvoice);
+      storeLatestInvoice(paidNextInvoice);
       setEditingBill(null);
       const text = invoiceData?.message || `Bill ${canUpdate ? "updated" : "generated"} successfully`;
       showMessage(text, "success", { autoHide: true });
       showTopNotification({
-        message: `✓ OP Bill of ${formatCurrency(nextInvoice.totalAmount)} paid successfully for ${nextInvoice.patientName}!`,
-        patientName: nextInvoice.patientName,
-        invoiceNo: nextInvoice.invoiceNo,
-        amount: nextInvoice.totalAmount,
+        message: `OP Bill of ${formatCurrency(paidNextInvoice.totalAmount)} is ${paidNextInvoice.paymentStatus || "Pending"} for ${paidNextInvoice.patientName}.`,
+        patientName: paidNextInvoice.patientName,
+        invoiceNo: paidNextInvoice.invoiceNo,
+        amount: paidNextInvoice.totalAmount,
       });
 
       // Clear / reset form for next bill
@@ -2425,7 +2546,7 @@ function ReceptionBilling() {
         discount: "0",
       }));
 
-      downloadInvoicePdf(nextInvoice, invoiceWindow);
+      downloadInvoicePdf(paidNextInvoice, invoiceWindow);
     } catch (error) {
       if (invoiceWindow) invoiceWindow.close();
       showMessage(error.message, "error");
@@ -2535,6 +2656,7 @@ function ReceptionBilling() {
       createdAt: bill.createdAt || bill.invoiceDate || bill.billDate,
       doctorName: bill.doctorName || bill.DoctorName || bill.doctor?.name,
       paymentMode: bill.paymentMode || bill.PaymentMode,
+      paymentStatus: bill.paymentStatus || bill.PaymentStatus || bill.status || bill.Status,
       clinicName: bill.clinicName || clinicName,
       clinicId,
       clinicPhone,
@@ -2700,6 +2822,12 @@ function ReceptionBilling() {
       getAppointmentPatientGender(selectedAppointment);
     const doctorName = activeInvoice.doctorName || getAppointmentDoctorName(selectedAppointment);
     const status = getInvoiceStatus(activeInvoice);
+    const normalizedPrintStatus = String(status || "Pending").trim();
+    const isPrintPaid = normalizedPrintStatus.toLowerCase() === "paid";
+    const stampStyle = isPrintPaid
+      ? "border: 3px double #10b981; color: #059669; background: rgba(16,185,129,0.08); font-size: 20px; letter-spacing: 2.5px;"
+      : "border: 3px double #f59e0b; color: #b45309; background: rgba(245,158,11,0.08); font-size: 18px; letter-spacing: 2px;";
+    const paymentLineText = isPrintPaid ? "Payment received via" : "Payment initiated via";
     const paymentMode = activeInvoice.paymentMode || form.paymentMode || "-";
     const appointmentId = activeInvoice.appointmentId || form.appointmentId || "-";
     const tokenNumber =
@@ -3019,9 +3147,7 @@ function ReceptionBilling() {
         <body>
           <main class="invoice">
             <div class="watermark"><img src="${escapeHtml(logoUrl)}" alt="" /></div>
-            <div style="position: absolute; top: 22px; right: 28px; border: 3px double #10b981; border-radius: 6px; padding: 4px 14px; color: #059669; font-size: 20px; font-weight: 900; letter-spacing: 2.5px; transform: rotate(-6deg); background: rgba(16,185,129,0.08); text-transform: uppercase; z-index: 10; pointer-events: none;">
-              PAID
-            </div>
+            <div style="position: absolute; top: 22px; right: 28px; border-radius: 6px; padding: 4px 14px; font-weight: 900; transform: rotate(-6deg); text-transform: uppercase; z-index: 10; pointer-events: none; ${stampStyle}">${escapeHtml(normalizedPrintStatus)}</div>
             <section class="brand-row">
               <div class="brand">
                 <img src="${escapeHtml(logoUrl)}" alt="Clinic logo" />
@@ -3087,7 +3213,7 @@ function ReceptionBilling() {
             <div class="total"><span>Total</span><span>${escapeHtml(formatCurrency(opTotal))}</span></div>
 
             <div class="payment">
-              <span>Payment received via <strong>${escapeHtml(paymentMode)}</strong></span>
+              <span>${escapeHtml(paymentLineText)} <strong>${escapeHtml(paymentMode)}</strong></span>
               <span>Status: <strong>${escapeHtml(status)}</strong></span>
             </div>
 
@@ -3425,6 +3551,16 @@ function ReceptionBilling() {
                       <b className="rc-bill-amount-text">{formatCurrency(amount)}</b>
                     </div>
                     <div className="rc-latest-bill-actions">
+                      <button
+                        type="button"
+                        className="rc-payment-refresh-btn"
+                        onClick={() => refreshBillPaymentStatus(bill)}
+                        disabled={!getBillingPaymentBillId(bill)}
+                        title="Check payment status"
+                        aria-label="Check payment status"
+                      >
+                        <RefreshCw size={14} />
+                      </button>
                       <ActionsGroup
                         rowId={invoiceNo}
                         activeActionState={activeActionState}
