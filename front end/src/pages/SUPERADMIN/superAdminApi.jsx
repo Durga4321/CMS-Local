@@ -776,13 +776,57 @@ export const normalizeClinic = (clinic = {}) => ({
   address: formatClinicAddress(clinic),
   contactNumber: pick(clinic, ["contactNumber", "phone", "phoneNumber", "mobile", "contact"]),
   email: pick(clinic, ["email", "clinicEmail"]),
-  status: normalizeStatus(pick(clinic, ["status", "isActive", "active"], "Active")),
+  status: normalizeStatus(pick(clinic, ["status", "Status", "isActive", "IsActive", "active", "Active"], "Active")),
   createdDate: formatDateTime(pick(clinic, ["createdDate", "createdAt", "createdOn", "CreatedDate", "CreatedAt"], "")),
   updatedDate: formatDateTime(pick(clinic, ["updatedDate", "updatedAt", "modifiedAt", "UpdatedDate", "UpdatedAt"], "")),
   revenue: toNumber(pick(clinic, ["revenue", "totalRevenue"], 0)),
   users: toNumber(pick(clinic, ["users", "userCount", "totalUsers"], 0)),
   raw: clinic,
 });
+
+
+const CLINIC_VISIBILITY_CACHE_KEY = "cms_superadmin_clinic_visibility_cache";
+
+const readClinicVisibilityCache = () => {
+  try {
+    const rows = JSON.parse(localStorage.getItem(CLINIC_VISIBILITY_CACHE_KEY) || "[]");
+    return Array.isArray(rows) ? rows.map(normalizeClinic).filter((clinic) => clinic.id) : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeClinicVisibilityCache = (rows = []) => {
+  try {
+    localStorage.setItem(CLINIC_VISIBILITY_CACHE_KEY, JSON.stringify(rows.map(normalizeClinic).filter((clinic) => clinic.id)));
+  } catch {
+    /* localStorage may be unavailable in tests or private mode. */
+  }
+};
+
+const rememberClinicForVisibility = (clinic = {}) => {
+  const normalized = normalizeClinic(clinic);
+  if (!normalized.id) return normalized;
+
+  const rows = readClinicVisibilityCache();
+  const nextRows = [normalized, ...rows.filter((row) => String(row.id) !== String(normalized.id))];
+  writeClinicVisibilityCache(nextRows);
+  return normalized;
+};
+
+const forgetClinicForVisibility = (id) => {
+  if (!id) return;
+  writeClinicVisibilityCache(readClinicVisibilityCache().filter((row) => String(row.id) !== String(id)));
+};
+
+const mergeClinicRows = (rows = []) => {
+  const merged = new Map();
+  readClinicVisibilityCache().forEach((clinic) => merged.set(String(clinic.id), clinic));
+  rows.map(normalizeClinic).forEach((clinic) => {
+    if (clinic.id) merged.set(String(clinic.id), clinic);
+  });
+  return Array.from(merged.values());
+};
 
 export const normalizeAdmin = (admin = {}) => ({
   id: pick(admin, ["id", "Id", "adminId", "AdminId", "adminID", "userId", "UserId", "_id"]),
@@ -2147,26 +2191,28 @@ export const normalizeSettings = (settings = {}) => {
 };
 
 export const fetchClinics = async () =>
-  asArray(await superAdminRequest(SUPER_ADMIN_API.clinics)).map(normalizeClinic);
+  mergeClinicRows(asArray(await superAdminRequest(SUPER_ADMIN_API.clinics)));
 
 export const fetchClinic = async (id) =>
-  normalizeClinic(await superAdminRequest(`${SUPER_ADMIN_API.clinics}/${id}`));
+  rememberClinicForVisibility(await superAdminRequest(`${SUPER_ADMIN_API.clinics}/${id}`));
 
 export const saveClinic = async (clinic, id) => {
   const result = await superAdminRequest(id ? `${SUPER_ADMIN_API.clinics}/${id}` : SUPER_ADMIN_API.clinics, {
     method: id ? "PUT" : "POST",
     body: clinic,
   });
+  const normalizedResult = rememberClinicForVisibility({ ...clinic, ...(result && typeof result === "object" ? result : {}), id });
   recordSuperAdminActivity(
     id ? "Updated clinic" : "Created clinic",
     "Clinics",
     pick(clinic, ["ClinicName", "name"], id || "Clinic record")
   );
-  return result;
+  return result || normalizedResult;
 };
 
 export const deleteClinic = async (id) => {
   const result = await superAdminRequest(`${SUPER_ADMIN_API.clinics}/${id}`, { method: "DELETE" });
+  forgetClinicForVisibility(id);
   recordSuperAdminActivity("Deleted clinic", "Clinics", `Clinic ID ${id}`);
   return result;
 };
@@ -2176,6 +2222,7 @@ export const updateClinicStatus = async (id, status) => {
     method: "PATCH",
     body: { status },
   });
+  rememberClinicForVisibility({ ...(result && typeof result === "object" ? result : {}), id, status, isActive: status === "Active" });
   recordSuperAdminActivity("Updated clinic status", "Clinics", `Clinic ID ${id} marked ${status}`);
   return result;
 };
