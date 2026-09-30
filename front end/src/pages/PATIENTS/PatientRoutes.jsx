@@ -1749,6 +1749,97 @@ function PatientAppointmentsPage({ visits = [], onRefresh }) {
   );
 }
 
+
+const MEDICAL_REASON_TERMS = [
+  "fever", "high fever", "low fever", "viral fever", "cold", "common cold", "cough", "dry cough", "wet cough",
+  "sore throat", "throat pain", "tonsil pain", "running nose", "runny nose", "blocked nose", "sneezing", "sinus", "sinus pain",
+  "headache", "head ache", "head pain", "headace", "migraine", "dizziness", "giddiness", "vertigo", "fainting",
+  "chest pain", "chest tightness", "palpitation", "shortness of breath", "breathlessness", "breathing problem", "wheezing", "asthma",
+  "stomach pain", "abdominal pain", "belly pain", "gastric pain", "acidity", "heartburn", "nausea", "vomiting", "loose motions",
+  "diarrhea", "constipation", "indigestion", "gas", "bloating", "food poisoning", "loss of appetite", "dehydration",
+  "body pain", "body pains", "body ache", "body aches", "muscle pain", "joint pain", "bone pain", "back pain", "lower back pain",
+  "neck pain", "shoulder pain", "arm pain", "elbow pain", "wrist pain", "hand pain", "finger pain", "hip pain", "leg pain",
+  "knee pain", "ankle pain", "foot pain", "heel pain", "calf pain", "thigh pain", "cramp", "cramps", "sprain", "strain",
+  "swelling", "inflammation", "stiffness", "numbness", "tingling", "weakness", "fatigue", "tiredness",
+  "skin rash", "rash", "itching", "itch", "allergy", "hives", "redness", "pimples", "acne", "boil", "fungal infection",
+  "skin infection", "eczema", "psoriasis", "burn", "wound", "cut", "injury", "bleeding", "bruising",
+  "eye pain", "red eye", "eye redness", "eye itching", "eye watering", "blurred vision", "vision problem", "ear pain", "ear discharge",
+  "hearing problem", "tooth pain", "toothache", "gum pain", "mouth ulcer", "mouth pain", "jaw pain",
+  "urine infection", "urinary infection", "burning urination", "frequent urination", "urine pain", "kidney pain", "blood in urine",
+  "period pain", "menstrual pain", "irregular periods", "heavy bleeding", "pregnancy", "white discharge", "pelvic pain",
+  "diabetes", "high sugar", "low sugar", "blood pressure", "high bp", "low bp", "hypertension", "thyroid", "cholesterol",
+  "anxiety", "depression", "stress", "insomnia", "sleep problem", "seizure", "fits", "memory problem",
+  "followup", "follow up", "follow-up", "review", "checkup", "check up", "consultation",
+  "pain", "ache", "aches", "sore", "soreness", "infection", "infections", "disease", "diseases", "illness",
+  "malaria", "dengue", "typhoid", "jaundice", "hepatitis", "tb", "tuberculosis", "pneumonia", "bronchitis",
+  "covid", "flu", "influenza", "chickenpox", "measles", "mumps", "cholera", "ulcer", "ulcers", "hernia",
+  "appendicitis", "arthritis", "sciatica", "spondylitis", "anemia", "anaemia", "obesity", "stroke",
+  "paralysis", "epilepsy", "sinusitis", "tonsillitis", "gastritis"
+];
+
+const MEDICAL_REASON_BODY_WORDS = new Set([
+  "head", "hair", "face", "forehead", "eye", "eyes", "ear", "ears", "nose", "mouth", "tooth", "teeth", "gum", "gums",
+  "jaw", "neck", "throat", "chest", "heart", "lung", "lungs", "stomach", "abdomen", "belly", "back", "spine", "waist",
+  "shoulder", "arm", "arms", "elbow", "wrist", "hand", "hands", "finger", "fingers", "hip", "leg", "legs", "knee",
+  "knees", "ankle", "foot", "feet", "heel", "calf", "thigh", "skin", "body", "muscle", "muscles", "joint", "joints",
+  "bone", "bones", "blood", "urine", "kidney", "kidneys", "pelvis", "pelvic", "period", "periods", "brain",
+  "scalp", "temple", "eyelid", "eyelids", "eyebrow", "eyebrows", "tongue", "lip", "lips", "cheek", "cheeks",
+  "chin", "tonsil", "tonsils", "windpipe", "rib", "ribs", "breast", "breasts", "liver", "pancreas", "spleen",
+  "gallbladder", "intestine", "intestines", "colon", "rectum", "anus", "bladder", "urethra", "uterus", "ovary",
+  "ovaries", "vagina", "penis", "testicle", "testicles", "groin", "buttock", "buttocks", "nerve", "nerves",
+  "vein", "veins", "artery", "arteries", "nail", "nails", "toe", "toes"
+]);
+
+const MEDICAL_REASON_STOP_WORDS = new Set([
+  "i", "am", "have", "having", "has", "with", "and", "or", "the", "a", "an", "for", "from", "since", "to", "of",
+  "in", "on", "at", "my", "me", "is", "are", "feel", "feeling", "very", "too", "more", "less", "little", "some",
+  "severe", "mild", "moderate", "high", "low", "acute", "chronic", "left", "right", "upper", "lower", "front", "side",
+  "morning", "night", "today", "yesterday", "days", "day", "week", "weeks", "month", "months", "problem", "issue",
+  "visit", "doctor", "please", "need", "want", "consult", "consulting", "appointment", "again", "near", "inside",
+  "outside", "behind", "below", "above", "around"
+]);
+
+const normalizeMedicalReasonWord = (word = "") => String(word).toLowerCase().replace(/[^a-z]/g, "");
+const normalizeMedicalPhrase = (value = "") => String(value).toLowerCase().replace(/[^a-z0-9]+/g, "");
+const stripCommonPlural = (word = "") => {
+  if (word.endsWith("ies") && word.length > 5) return `${word.slice(0, -3)}y`;
+  return word.endsWith("s") && word.length > 4 ? word.slice(0, -1) : word;
+};
+
+const MEDICAL_REASON_ALLOWED_WORDS = new Set([
+  ...MEDICAL_REASON_BODY_WORDS,
+  ...MEDICAL_REASON_TERMS.flatMap((term) => term.split(/[\s-]+/).map(normalizeMedicalReasonWord)),
+].filter(Boolean));
+
+const isMedicalReasonWord = (word = "") => {
+  const normalized = stripCommonPlural(normalizeMedicalReasonWord(word));
+  return Boolean(normalized) && MEDICAL_REASON_ALLOWED_WORDS.has(normalized);
+};
+
+const validateMedicalVisitReason = (value = "") => {
+  const reason = String(value || "").trim();
+  if (!reason) return "Please enter symptoms or disease for the visit.";
+
+  const normalizedReason = reason.toLowerCase().replace(/[^a-z0-9\s-]/g, " ").replace(/\s+/g, " ").trim();
+  const compactReason = normalizeMedicalPhrase(normalizedReason);
+  const hasMedicalPhrase = MEDICAL_REASON_TERMS.some((term) => {
+    const normalizedTerm = term.toLowerCase();
+    return normalizedReason.includes(normalizedTerm) || compactReason.includes(normalizeMedicalPhrase(normalizedTerm));
+  });
+  const reasonWords = normalizedReason
+    .split(/\s+/)
+    .map(normalizeMedicalReasonWord)
+    .map(stripCommonPlural)
+    .filter(Boolean);
+  const hasMedicalWord = reasonWords.some(isMedicalReasonWord);
+  if (!hasMedicalPhrase && !hasMedicalWord) return "Reason for visit must contain body part, symptom, or disease only.";
+
+  const invalidWords = reasonWords
+    .filter((word) => word.length > 2 && !isMedicalReasonWord(word) && !MEDICAL_REASON_STOP_WORDS.has(word));
+
+  if (invalidWords.length) return "Reason for visit must contain body part, symptom, or disease only.";
+  return "";
+};
 function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -2181,12 +2272,13 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
   );
 
   const stepItems = ['Branch', 'Department', 'Doctor', 'Date & time', 'Confirm'];
+  const reasonForVisitError = validateMedicalVisitReason(reasonForVisit);
   const canConfirm =
     selectedBranch &&
     selectedDoctor &&
     selectedDate &&
     selectedTime &&
-    reasonForVisit.trim();
+    !reasonForVisitError;
   const canContinue =
     (step === 1 && selectedBranch) ||
     (step === 2 && selectedDepartment) ||
@@ -2469,6 +2561,13 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
 
   const handleConfirmBooking = async () => {
     if (bookingRequestRef.current) return;
+
+    const visitReasonError = validateMedicalVisitReason(reasonForVisit);
+    if (visitReasonError) {
+      setBookingError(visitReasonError);
+      setBookingState("error");
+      return;
+    }
 
     const conflict = findPatientBookingConflict(visits, selectedDate, selectedTime);
     if (conflict) {
@@ -2914,9 +3013,14 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
                   id="reason-for-visit"
                   rows={4}
                   value={reasonForVisit}
-                  onChange={(event) => setReasonForVisit(event.target.value)}
-                  placeholder="Fever, follow-up consultation, knee pain..."
+                  onChange={(event) => {
+                    setReasonForVisit(event.target.value);
+                    if (bookingError) setBookingError("");
+                  }}
+                  placeholder="Fever, cough, knee pain, skin rash..."
+                  className={reasonForVisit && reasonForVisitError ? "is-invalid" : ""}
                 />
+                {reasonForVisit && reasonForVisitError ? <span className="booking-error">{reasonForVisitError}</span> : null}
               </div>
               <div className="booking-payment-panel">
                 <div>
@@ -6753,6 +6857,7 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
 }
 
 export default PatientRoutes;
+
 
 
 

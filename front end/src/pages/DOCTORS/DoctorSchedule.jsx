@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./DoctorSchedule.css";
 import { apiUrl } from "../../config/api";
+import { useToast } from "../../components/ToastProvider";
 import {
   fetchBranchesForHospital,
   buildBranchOptions,
@@ -80,6 +81,7 @@ const overrideTypeOf = (o) => o?.overrideType ?? o?.OverrideType ?? o?.type ?? o
 const fieldOf = (item, camel, pascal) => item?.[camel] ?? item?.[pascal];
 
 function DoctorSchedule({ selfMode = false }) {
+  const toast = useToast();
   const loggedDoctor = getLoggedInDoctor();
   const doctorRoleProfile = getRoleProfile("doctor");
   const permissionProfile = selfMode
@@ -249,6 +251,12 @@ function DoctorSchedule({ selfMode = false }) {
   const saveOverride = async () => {
     if (editingOverrideId ? !canEditSchedule : !canCreateSchedule) return setError("You do not have permission to save schedule changes.");
     if (!doctorId || !overrideDate) return setError("Select doctor and override date.");
+    if (overrideType === "Leave" && !reason.trim()) {
+      const text = "Please give the reason for leave.";
+      setError(text);
+      toast.error(text);
+      return;
+    }
     const isShift = overrideType === "BranchShift";
     const branch = isShift ? targetBranchId : branchId;
     const payload = {
@@ -261,7 +269,7 @@ function DoctorSchedule({ selfMode = false }) {
       workEnd: overrideType === "Leave" ? null : overrideEnd,
       breakStart: overrideType === "Leave" ? null : (overrideBreakStart || null),
       breakEnd: overrideType === "Leave" ? null : (overrideBreakEnd || null),
-      reason,
+      reason: reason.trim(),
     };
     setSaving(true); setError(""); setMessage("");
     try {

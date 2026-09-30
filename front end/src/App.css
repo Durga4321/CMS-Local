@@ -3931,3 +3931,88 @@
     transform: none;
   }
 }
+
+/* Patient appointment booking click feedback */
+@keyframes bookingSelectionBlink {
+  0% {
+    box-shadow: 0 0 0 0 rgba(15, 157, 157, 0.42), inset 0 0 0 999px rgba(255, 255, 255, 0);
+    filter: brightness(1);
+  }
+  36% {
+    box-shadow: 0 0 0 8px rgba(15, 157, 157, 0.18), inset 0 0 0 999px rgba(15, 157, 157, 0.14);
+    filter: brightness(1.06);
+  }
+  72% {
+    box-shadow: 0 0 0 3px rgba(15, 157, 157, 0.1), inset 0 0 0 999px rgba(255, 255, 255, 0);
+    filter: brightness(1.02);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(15, 157, 157, 0);
+    filter: brightness(1);
+  }
+}
+
+@keyframes bookingStepBlink {
+  0%, 100% { filter: brightness(1); }
+  35% { filter: brightness(1.12); box-shadow: 0 0 0 7px rgba(2, 132, 199, 0.14); }
+  70% { filter: brightness(1.04); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.08); }
+}
+
+.patient-portal .booking-card,
+.patient-portal .booking-step,
+.patient-portal .booking-slot,
+.patient-portal .booking-button,
+.pp-shell .booking-card,
+.pp-shell .booking-step,
+.pp-shell .booking-slot,
+.pp-shell .booking-button {
+  position: relative;
+  overflow: hidden;
+  will-change: transform, box-shadow, filter;
+}
+
+.patient-portal .booking-card:active,
+.patient-portal .booking-slot:active,
+.patient-portal .booking-button:active,
+.pp-shell .booking-card:active,
+.pp-shell .booking-slot:active,
+.pp-shell .booking-button:active {
+  transform: translateY(1px) scale(0.985);
+  filter: brightness(1.08);
+}
+
+.patient-portal .booking-card.selected,
+.patient-portal .booking-slot.selected,
+.pp-shell .booking-card.selected,
+.pp-shell .booking-slot.selected {
+  animation: bookingSelectionBlink 0.62s ease-out;
+}
+
+.patient-portal .booking-step:active,
+.pp-shell .booking-step:active,
+.patient-portal .booking-step.active,
+.pp-shell .booking-step.active {
+  animation: bookingStepBlink 0.58s ease-out;
+}
+
+.patient-portal .booking-card::after,
+.patient-portal .booking-slot::after,
+.pp-shell .booking-card::after,
+.pp-shell .booking-slot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.68) 45%, transparent 72%);
+  transform: translateX(-120%);
+}
+
+.patient-portal .booking-card:active::after,
+.patient-portal .booking-slot:active::after,
+.pp-shell .booking-card:active::after,
+.pp-shell .booking-slot:active::after {
+  opacity: 1;
+  transform: translateX(120%);
+  transition: transform 0.42s ease, opacity 0.18s ease;
+}
