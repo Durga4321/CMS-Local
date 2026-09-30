@@ -382,7 +382,7 @@ const getInitialEditForm = (doctor = {}) => ({
     : doctor.branchId || doctor.BranchId || doctor.branchID || doctor.BranchID
       ? [String(doctor.branchId ?? doctor.BranchId ?? doctor.branchID ?? doctor.BranchID)]
       : [],
-  name: cleanFormValue(doctor.name),
+  name: formatTitleCase(cleanFormValue(doctor.name)),
   specialization: cleanFormValue(doctor.specialization),
   areaofExpertise: cleanFormValue(getDoctorAreaOfExpertise(doctor)),
   experience:
@@ -490,7 +490,7 @@ const buildDoctorUpdateBody = ({
       : [];
 
   const body = {
-    name: cleanFormValue(form.name ?? doctor.name),
+    name: formatTitleCase(cleanFormValue(form.name ?? doctor.name)),
     specialization: cleanFormValue(form.specialization ?? doctor.specialization),
     areaofExpertise: cleanFormValue(
       form.areaofExpertise ?? getDoctorAreaOfExpertise(doctor)

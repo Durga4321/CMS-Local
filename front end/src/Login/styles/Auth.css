@@ -142,6 +142,33 @@ body.auth-page-no-scroll {
   overflow: visible;
 }
 
+.auth-login-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(15, 118, 110, 0.08);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.auth-login-close:hover {
+  background: rgba(15, 118, 110, 0.16);
+  color: var(--primary-deep);
+}
+
+.auth-login-close:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .auth-logo {
   width: 46px;
   height: 46px;

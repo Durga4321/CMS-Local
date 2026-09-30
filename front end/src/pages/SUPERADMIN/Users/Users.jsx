@@ -104,15 +104,16 @@ function Users() {
 
     setEditingUserId(user.id);
     setSelectedUser(null);
-    setForm({ ...emptyUser, ...user });
+    setForm({ ...emptyUser, ...user, name: formatTitleCase(user.name || "") });
     setFieldErrors({});
     setShowForm(true);
     setError("");
 
     try {
-      setForm({ ...emptyUser, ...(await fetchUser(user.id)) });
+      const fetchedUser = await fetchUser(user.id);
+      setForm({ ...emptyUser, ...fetchedUser, name: formatTitleCase(fetchedUser.name || "") });
     } catch {
-      setForm({ ...emptyUser, ...user });
+      setForm({ ...emptyUser, ...user, name: formatTitleCase(user.name || "") });
     }
   };
 
@@ -199,7 +200,7 @@ function Users() {
         return;
       }
 
-      await saveUser(form, editingUserId || undefined);
+      await saveUser({ ...form, name: formatTitleCase(form.name.trim()) }, editingUserId || undefined);
       closeForm();
       await loadUsers();
     } catch (requestError) {

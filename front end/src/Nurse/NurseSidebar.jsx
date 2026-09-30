@@ -53,7 +53,6 @@ const items = [
         label: "Online Bookings",
         icon: Activity,
         tone: "cyan",
-        badge: "Online",
       },
       {
         to: "/nurse/appointments/offline",

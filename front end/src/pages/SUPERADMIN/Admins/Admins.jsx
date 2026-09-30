@@ -266,7 +266,7 @@ function Admins() {
     setEditingAdminId(admin.id);
     const secrets = getAdminSecret(admin.email) || {};
     setForm({
-      fullName: admin.name || "",
+      fullName: formatTitleCase(admin.name || ""),
       email: admin.email || "",
         phone:
         admin.phone ||
@@ -360,7 +360,7 @@ function Admins() {
         originalAdminClinic.name ||
         getAdminClinicName(previousAdmin, clinics) ||
         (isCurrentAdmin(previousAdmin) ? localStorage.getItem("clinicName") : "");
-      const adminName = form.fullName.trim();
+      const adminName = formatTitleCase(form.fullName.trim());
       const adminEmail = form.email.trim();
       const adminPhone = form.phone.trim();
       const duplicateMobileMessage = await validateUniqueMobileNumber(adminPhone, {

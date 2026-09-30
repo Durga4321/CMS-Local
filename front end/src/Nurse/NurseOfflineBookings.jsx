@@ -37,16 +37,18 @@ function NurseOfflineBookings() {
   }, [refreshKey]);
 
   return (
-    <ReceptionAppointmentList
-      title="Offline Bookings"
-      subtitle="Appointments created manually by the receptionist."
-      fetchAppointments={fetchAppointments}
-      bookingType="Offline"
-      emptyState="No offline bookings found for the current filters."
-      apiRequest={nurseRequestJson}
-      getScope={getNurseScope}
-      scopeRecords={scopeNurseRecords}
-    />
+    <div className="nurse-offline-bookings">
+      <ReceptionAppointmentList
+        title="Offline Bookings"
+        subtitle="Appointments created manually by the receptionist."
+        fetchAppointments={fetchAppointments}
+        bookingType="Offline"
+        emptyState="No offline bookings found for the current filters."
+        apiRequest={nurseRequestJson}
+        getScope={getNurseScope}
+        scopeRecords={scopeNurseRecords}
+      />
+    </div>
   );
 }
 

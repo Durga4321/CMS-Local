@@ -570,3 +570,182 @@
     font-size: 15px;
   }
 }
+
+/* Add Doctor page-specific layout overrides */
+.add-doctor-page {
+  padding: 24px !important;
+  background: rgba(15, 23, 42, 0.58) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+.add-doctor-page .add-doctor-card {
+  width: min(1000px, calc(100vw - 48px)) !important;
+  max-width: 1000px !important;
+  max-height: min(88vh, calc(100vh - 48px)) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 24px 28px 0 !important;
+  border: 1px solid #dce6ee !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.3) !important;
+}
+
+.add-doctor-page .add-doctor-header {
+  flex: 0 0 auto !important;
+  margin-bottom: 16px !important;
+  padding: 0 56px 0 0 !important;
+  text-align: left !important;
+}
+
+.add-doctor-page .add-doctor-header h2 {
+  color: #172b3a;
+  font-size: 26px !important;
+}
+
+.add-doctor-page .add-doctor-header p {
+  margin-top: 5px;
+  color: #64748b;
+}
+
+.add-doctor-page .add-doctor-close-button {
+  top: 22px;
+  right: 24px;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+.add-doctor-page .add-doctor-clinic-banner {
+  flex: 0 0 auto;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-color: #d8e7ea;
+  background: #f4fafb;
+}
+
+.add-doctor-page .add-doctor-form {
+  position: relative;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding: 0 10px 0 0;
+}
+
+.add-doctor-page .doctor-image-upload-area {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  z-index: 1;
+  width: 92px;
+  height: 88px;
+  margin: 0;
+}
+
+.add-doctor-page .doctor-image-circle {
+  width: 76px !important;
+  height: 76px !important;
+  font-size: 28px !important;
+}
+
+.add-doctor-page .doctor-image-picker-btn {
+  right: 0;
+  bottom: 2px;
+  width: 30px;
+  height: 30px;
+}
+
+.add-doctor-page .add-doctor-grid {
+  column-gap: 24px;
+  row-gap: 12px;
+}
+
+.add-doctor-page .add-doctor-input-group-full {
+  min-height: 96px;
+  padding-right: 112px;
+  box-sizing: border-box;
+}
+
+.add-doctor-page .add-doctor-input-group {
+  gap: 6px;
+}
+
+.add-doctor-page .add-doctor-input-group label {
+  color: #334155;
+  font-size: 13px;
+}
+
+.add-doctor-page .add-doctor-input-group input,
+.add-doctor-page .add-doctor-input-group select {
+  height: 42px;
+  border-radius: 7px;
+}
+
+.add-doctor-page .branch-checkbox-item {
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: #f7fafc;
+}
+
+.add-doctor-page .add-doctor-actions {
+  justify-content: flex-end;
+  margin: 8px -10px 0 0;
+  padding: 10px 10px 14px 0;
+  border-top: 1px solid #e8eef2;
+  background: #ffffff;
+}
+
+.add-doctor-page .add-doctor-primary {
+  min-width: 142px;
+  height: 42px;
+  border: 1px solid #0b8991;
+  border-radius: 8px;
+  background: #0f9299;
+  box-shadow: 0 3px 10px rgba(15, 146, 153, 0.2);
+}
+
+@media (max-width: 760px) {
+  .add-doctor-page {
+    padding: 12px !important;
+  }
+
+  .add-doctor-page .add-doctor-card {
+    width: 100% !important;
+    max-height: calc(100vh - 24px) !important;
+    padding: 20px 18px 0 !important;
+    border-radius: 12px !important;
+  }
+
+  .add-doctor-page .add-doctor-header h2 {
+    font-size: 23px !important;
+  }
+
+  .add-doctor-page .doctor-image-upload-area {
+    position: static;
+    width: 100%;
+    height: auto;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+
+  .add-doctor-page .add-doctor-input-group-full {
+    min-height: 0;
+    padding-right: 0;
+  }
+
+  .add-doctor-page .add-doctor-grid {
+    grid-template-columns: 1fr;
+    row-gap: 12px;
+  }
+
+  .add-doctor-page .add-doctor-actions {
+    justify-content: stretch;
+  }
+
+  .add-doctor-page .add-doctor-primary {
+    width: 100%;
+  }
+}

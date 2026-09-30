@@ -412,13 +412,13 @@ const isDeletedPatient = (patient = {}) => {
 const toPatientPayload = (patient = {}, overrides = {}) => {
   const addressParts = getPatientAddressParts(patient);
   return {
-    name: String(patient.name || "").trim(),
+    name: formatTitleCase(String(patient.name || "").trim()),
     email: String(patient.email || "").trim(),
     phone: String(patient.phone || "").trim(),
     age: Number(patient.age) || 0,
     dateOfBirth: getPatientDateOfBirth(patient),
     bloodGroup: String(patient.bloodGroup || "").trim(),
-    emergencyContactName: String(patient.emergencyContactName || "").trim(),
+    emergencyContactName: formatTitleCase(String(patient.emergencyContactName || "").trim()),
     emergencyContactPhone: String(patient.emergencyContactPhone || "").trim(),
     gender: patient.gender || "",
     address: String(patient.address || "").trim(),

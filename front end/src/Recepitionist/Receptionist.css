@@ -7105,6 +7105,57 @@
   color: #047857 !important;
 }
 
+.rc-billing-form--diagnostic .rc-billing-head-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.rc-billing-form--diagnostic .rc-billing-head-title-wrap > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left !important;
+}
+
+.rc-billing-form--diagnostic .rc-billing-head-title-wrap h3,
+.rc-billing-form--diagnostic .rc-billing-head-title-wrap p {
+  text-align: left !important;
+}
+
+.rc-billing-form--diagnostic .rc-billing-head-icon-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.12);
+}
+
+.rc-billing-form--diagnostic .rc-billing-card-head {
+  align-items: center;
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #dce4ec;
+}
+
+.rc-billing-form--diagnostic .rc-billing-card-head h3 {
+  margin: 0 !important;
+  font-size: 22px;
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.rc-billing-form--diagnostic .rc-billing-card-head p {
+  margin: 0 !important;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 .rc-billing-head-icon-tag.rc-billing-head-icon-tag--diagnostic {
   background: #f3e8ff !important;
   color: #7c3aed !important;
@@ -7342,6 +7393,80 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+@media (min-width: 901px) {
+  .rc-latest-bills--consultation .rc-latest-bills-table-head,
+  .rc-latest-bills--consultation .rc-latest-bill-row {
+    grid-template-columns: 80px minmax(220px, 1fr) 140px 140px 220px;
+  }
+
+  .rc-latest-bills--consultation .rc-latest-bills-table-head > .text-right,
+  .rc-latest-bills--consultation .rc-bill-amount-cell,
+  .rc-latest-bills--consultation .rc-latest-bill-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .rc-latest-bills--consultation .rc-latest-bill-actions {
+    min-width: 0;
+    gap: 8px;
+    padding-left: 0;
+    white-space: nowrap;
+  }
+
+  .rc-latest-bills--consultation .rc-latest-bill-actions > .actions-group {
+    flex: 0 0 auto;
+    width: auto !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+.rc-latest-bills--diagnostic .rc-latest-bills-table-head,
+.rc-latest-bills--diagnostic .rc-latest-bill-row {
+  grid-template-columns: 88px minmax(220px, 1fr) 140px 150px 180px;
+  gap: 12px;
+}
+
+.rc-latest-bills--diagnostic .rc-latest-bills-table-head .th-instrument {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.rc-latest-bills--diagnostic .rc-latest-bills-table-head > span:last-child {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+}
+
+.rc-latest-bills--diagnostic .rc-latest-bill-pdf {
+  justify-self: center;
+}
+
+.rc-latest-bills--diagnostic .rc-bill-amount-cell,
+.rc-latest-bills--diagnostic .rc-bill-amount-text {
+  min-width: 0;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.rc-latest-bills--diagnostic .rc-latest-bill-actions {
+  min-width: 0;
+  justify-content: center;
+  gap: 6px;
+  padding-left: 0;
+}
+
+.rc-latest-bills--diagnostic .rc-latest-bill-actions > .actions-group {
+  flex: 0 0 auto;
+  width: auto !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* Empty State */

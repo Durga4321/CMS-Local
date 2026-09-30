@@ -13,6 +13,7 @@ import {
   recordBelongsToClinicScope,
 } from "../../utils/branchApi";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
+import { formatTitleCase } from "../../utils/format";
 import { useAdminModulePermissions } from "../../utils/rolePermissions";
 import {
   onlyAlpha,
@@ -146,6 +147,7 @@ function Nurses() {
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [saving, setSaving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState(emptyForm);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -206,7 +208,11 @@ function Nurses() {
   }, [branchNameById, nurses, search, hospitalId, clinicName, scopedBranchIds]);
 
   const updateField = (field, value) => {
-    const nextValue = field === "name" ? onlyAlpha(value) : field === "phone" ? onlyIndianMobileValue(value) : value;
+    const nextValue = field === "name"
+      ? formatTitleCase(onlyAlpha(value))
+      : field === "phone"
+        ? onlyIndianMobileValue(value)
+        : value;
     setForm((current) => ({ ...current, [field]: nextValue }));
     setFieldErrors((current) => ({ ...current, [field]: "", form: "" }));
     setMessage("");
@@ -239,6 +245,7 @@ function Nurses() {
     setFieldErrors({});
     setMessage("");
     setModalOpen(true);
+    setShowPassword(false);
   };
 
   const openEditModal = (nurse) => {
@@ -248,7 +255,7 @@ function Nurses() {
     }
     setEditingNurse(nurse);
     setForm({
-      name: getNurseName(nurse) || "",
+      name: formatTitleCase(onlyAlpha(getNurseName(nurse) || "")),
       email: getNurseEmail(nurse) || "",
       phone: getNursePhone(nurse) || "",
       password: "",
@@ -277,12 +284,12 @@ function Nurses() {
     setSaving(true);
     try {
       const payload = {
-        name: form.name.trim(),
-        Name: form.name.trim(),
-        nurseName: form.name.trim(),
-        NurseName: form.name.trim(),
-        fullName: form.name.trim(),
-        FullName: form.name.trim(),
+        name: formatTitleCase(form.name.trim()),
+        Name: formatTitleCase(form.name.trim()),
+        nurseName: formatTitleCase(form.name.trim()),
+        NurseName: formatTitleCase(form.name.trim()),
+        fullName: formatTitleCase(form.name.trim()),
+        FullName: formatTitleCase(form.name.trim()),
         email: form.email.trim(),
         Email: form.email.trim(),
         emailAddress: form.email.trim(),
@@ -593,11 +600,43 @@ function Nurses() {
                 <input id="nurse-phone" value={form.phone} onChange={(event) => updateField("phone", event.target.value)} inputMode="numeric" maxLength={10} className={fieldErrors.phone ? "is-invalid" : ""} disabled={saving} />
                 {fieldErrors.phone ? <span className="nurses-field-error">{fieldErrors.phone}</span> : null}
               </div>
-              <div className="nurses-field">
+              {/* <div className="nurses-field">
                 <label htmlFor="nurse-password">Password</label>
                 <input id="nurse-password" type="password" value={form.password} onChange={(event) => updateField("password", event.target.value)} className={fieldErrors.password ? "is-invalid" : ""} disabled={saving} />
                 {fieldErrors.password ? <span className="nurses-field-error">{fieldErrors.password}</span> : null}
-              </div>
+              </div> */}
+              <div className="nurses-field">
+  <label htmlFor="nurse-password">Password</label>
+
+  <div className="nurse-password-wrapper">
+    <input
+      id="nurse-password"
+      type={showPassword ? "text" : "password"}
+      value={form.password}
+      onChange={(event) => updateField("password", event.target.value)}
+      className={fieldErrors.password ? "is-invalid" : ""}
+      disabled={saving}
+    />
+
+    <button
+      type="button"
+      className="nurse-password-toggle"
+      onClick={() => setShowPassword((prev) => !prev)}
+      disabled={saving}
+      aria-label={showPassword ? "Hide password" : "Show password"}
+    >
+      <Eye size={21} strokeWidth={2.2} />
+    </button>
+  </div>
+
+  {fieldErrors.password ? (
+    <span className="nurses-field-error">
+      {fieldErrors.password}
+    </span>
+  ) : null}
+</div>
+
+
               <div className="nurses-field">
                 <label htmlFor="nurse-branch">Branch</label>
                 <select id="nurse-branch" value={form.branchId} onChange={(event) => updateField("branchId", event.target.value)} className={fieldErrors.branchId ? "is-invalid" : ""} disabled={loadingBranches || saving}>
