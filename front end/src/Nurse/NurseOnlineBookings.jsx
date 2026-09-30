@@ -14,16 +14,18 @@ const getAllAppointments = async () => {
 
 function NurseOnlineBookings() {
   return (
-    <ReceptionAppointmentList
-      title="Online Bookings"
-      subtitle="Appointments booked through the patient portal or app."
-      fetchAppointments={getAllAppointments}
-      bookingType="Online"
-      emptyState="No online bookings found for the current filters."
-      apiRequest={nurseRequestJson}
-      getScope={getNurseScope}
-      scopeRecords={scopeNurseRecords}
-    />
+    <div className="nurse-online-bookings">
+      <ReceptionAppointmentList
+        title="Online Bookings"
+        subtitle="Appointments booked through the patient portal or app."
+        fetchAppointments={getAllAppointments}
+        bookingType="Online"
+        emptyState="No online bookings found for the current filters."
+        apiRequest={nurseRequestJson}
+        getScope={getNurseScope}
+        scopeRecords={scopeNurseRecords}
+      />
+    </div>
   );
 }
 

@@ -1083,7 +1083,7 @@ function AdminRolesPermissions() {
             <span className="admin-roles-role-head">Role</span>
             <span className="admin-roles-module-head">Module</span>
             <span className="admin-roles-staff-head">Assigned Staff</span>
-            <span className="admin-roles-permissions-head">Permissions</span>
+            <span className="admin-roles-permissions-head" aria-hidden="true" />
             <span className="admin-roles-actions-head" style={{ textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>Actions</span>
           </div>
 

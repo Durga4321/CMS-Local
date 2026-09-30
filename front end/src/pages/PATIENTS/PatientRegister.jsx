@@ -7,7 +7,7 @@ import { buildAddress, emptyAddressParts, onlyPincodeValue } from "../../utils/a
 import { INDIA_COUNTRY } from "../../utils/indianLocations";
 import { fetchPincodeLocation } from "../../utils/pincodeLocation";
 import { formatTitleCase } from "../../utils/format";
-import { validateStrongPassword, validateEmail, validateName, validateText } from "../../utils/validation";
+import { validateStrongPassword, validateEmail, validateMobile, validateName, validateText } from "../../utils/validation";
 import { validateUniqueMobileNumber } from "../../utils/mobileUniqueness";
 import { ChevronRight, ChevronLeft, Check, Heart } from "lucide-react";
 import clinicBg from '../../assests/clinic-bg.jpg';
@@ -316,8 +316,9 @@ function PatientRegister() {
         }
       }
 
-      if (name === "mobile" && value && !/^\d{10}$/.test(value)) {
-        next.mobile = "Enter a valid 10 digit mobile number.";
+      if (name === "mobile" && value) {
+        const mobileError = validateMobile(value, "Mobile number");
+        if (mobileError) next.mobile = mobileError;
       }
 
       if (name === "streetVillage" && value.trim()) {
@@ -398,16 +399,14 @@ function PatientRegister() {
     }
 
     if (step === 2) {
-      if (!form.mobile) nextErrors.mobile = "Mobile number is required.";
+      const mobileError = validateMobile(form.mobile, "Mobile number");
+      if (mobileError) nextErrors.mobile = mobileError;
       if (!form.email.trim()) nextErrors.email = "Email is required.";
       if (!form.addressParts?.streetVillage?.trim()) nextErrors.streetVillage = "Street/Village is required.";
       if (!form.addressParts?.area) nextErrors.area = "Area is required.";
       if (!form.addressParts?.pincode) nextErrors.pincode = "Pincode is required.";
       if (!form.address.trim()) nextErrors.address = "Full address is required.";
 
-      if (form.mobile && !/^\d{10}$/.test(form.mobile)) {
-        nextErrors.mobile = "Enter a valid 10 digit mobile number.";
-      }
       if (form.addressParts?.pincode && !/^\d{6}$/.test(form.addressParts.pincode)) {
         nextErrors.pincode = "Pincode must be exactly 6 digits.";
       }

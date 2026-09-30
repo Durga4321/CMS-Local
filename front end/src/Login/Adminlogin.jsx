@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { X } from 'lucide-react';
 import clinicBg from '../assests/clinic-bg.jpg';
 import './styles/Auth.css';
 import { apiUrl } from '../config/api';
@@ -610,7 +611,16 @@ const AdminLogin = () => {
       />
       <div className="auth-veil" aria-hidden="true" />
 
-      <div className="auth-card">
+      <div className="auth-card auth-card--login">
+        <button
+          type="button"
+          className="auth-login-close"
+          onClick={() => navigate('/')}
+          aria-label="Go to landing page"
+          title="Go to landing page"
+        >
+          <X size={20} />
+        </button>
         <div className="auth-logo" aria-hidden="true">
           <LogoIcon />
         </div>

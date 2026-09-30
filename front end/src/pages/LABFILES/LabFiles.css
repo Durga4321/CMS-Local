@@ -188,7 +188,23 @@
 .lab-files-form {
   max-height: min(62vh, 620px);
   overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
+  gap: 16px 24px;
+  padding: 20px 28px;
+}
+
+.lab-files-form .receptionists-field {
+  width: 100%;
+  min-width: 0;
+}
+
+.lab-files-form .receptionists-field input,
+.lab-files-form .receptionists-field select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .lab-files-wide-field {
@@ -220,6 +236,12 @@
 }
 
 @media (max-width: 900px) {
+  .lab-files-form {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px 18px;
+  }
+
   .lab-files-table {
     overflow-x: auto !important;
   }

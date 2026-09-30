@@ -592,7 +592,6 @@ function RolesPermissions() {
           <span>Role</span>
           <span>Module</span>
           <span>Assigned Users</span>
-          <span>Permissions</span>
         </div>
 
         {loading ? <div className="sa-state">Loading roles...</div> : null}
@@ -638,9 +637,15 @@ function RolesPermissions() {
             <span className="sa-table-cell">
               <span className="sa-role-permissions">
                 {getModulePermissionSummary(role).map(({ module, permissions }) => (
-                  <span key={module} title={`${module}: ${permissions.join(", ") || "No permissions"}`}>
-                    <Check size={11} />
-                    {module}: {permissions.length ? permissions.join(", ") : "None"}
+                  <span
+                    className="sa-role-permission-chip"
+                    key={module}
+                    title={`${module}: ${permissions.join(", ") || "No permissions"}`}
+                  >
+                    <b>{module}</b>
+                    <span className="sa-role-permission-count">
+                      {permissions.length ? `${permissions.length}/${PERMISSIONS.length}` : "None"}
+                    </span>
                   </span>
                 ))}
               </span>

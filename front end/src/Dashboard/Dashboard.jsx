@@ -15,9 +15,8 @@ import icon3dShield from "../assets/3d_medical_shield.jpg";
 import hospitalDomeImg from "../assets/hospital_dome_building.png";
 
 import {
-  BarChart,
   Bar,
-  AreaChart,
+  ComposedChart,
   Area,
   CartesianGrid,
   XAxis,
@@ -69,6 +68,7 @@ import {
   formatIndianCurrency,
 } from "../utils/format";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
+import { getRoleProfile } from "../profile/sessionProfile";
 import {
   fetchRevenueBillingRows,
   getRevenueAmount,
@@ -356,6 +356,8 @@ const getClinicStatusText = (clinic = {}, dashboardData = {}) => {
 function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
+  const adminProfile = getRoleProfile("admin");
+  const adminName = adminProfile?.name || "Admin";
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [clinicCardFlipped, setClinicCardFlipped] = useState(false);
@@ -766,7 +768,11 @@ function Dashboard() {
       <div className="db-header">
         <div>
           <h1 className="db-title">Admin Dashboard</h1>
-          <p className="db-subtitle">Welcome back, Ravi! Here's what's happening at the clinic today.</p>
+          {/* <p className="db-subtitle">Welcome back, Ravi! Here's what's happening at the clinic today.</p>
+           */}
+           <p className="db-subtitle">
+  Welcome back, {adminName}! Here's what's happening at the clinic today.
+</p>
         </div>
       </div>
 
@@ -885,7 +891,8 @@ function Dashboard() {
               </div>
               <div className="db-kpi-num">
                 {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.todayAppointments ?? 0)}
-              </div>
+              </div>
+
             </div>
           </div>
 
@@ -905,7 +912,8 @@ function Dashboard() {
               </div>
               <div className="db-kpi-num">
                 {loading ? <Skeleton width={80} height={32} /> : formatCurrency(totalRevenue)}
-              </div>
+              </div>
+
             </div>
           </div>
 
@@ -925,7 +933,8 @@ function Dashboard() {
               </div>
               <div className="db-kpi-num">
                 {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.totalDoctors ?? 0)}
-              </div>
+              </div>
+
             </div>
           </div>
 
@@ -945,7 +954,8 @@ function Dashboard() {
               </div>
               <div className="db-kpi-num">
                 {loading ? <Skeleton width={50} height={32} /> : formatNumber(nurseCount)}
-              </div>
+              </div>
+
             </div>
           </div>
 
@@ -965,7 +975,8 @@ function Dashboard() {
               </div>
               <div className="db-kpi-num">
                 {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.totalPatients ?? 0)}
-              </div>
+              </div>
+
             </div>
           </div>
 
@@ -985,7 +996,8 @@ function Dashboard() {
               </div>
               <div className="db-kpi-num">
                 {loading ? <Skeleton width={50} height={32} /> : formatNumber(labTechnicianCount)}
-              </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -1100,29 +1112,54 @@ function Dashboard() {
 
           <div className="db-chart-container">
             <ResponsiveContainer width="100%" height={140}>
-              <AreaChart data={chartPoints} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <ComposedChart
+                data={chartPoints}
+                layout="horizontal"
+                margin={{ top: 10, right: 16, left: -20, bottom: 0 }}
+              >
                 <defs>
                   <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                   </linearGradient>
+                  <linearGradient id="clinicBarFill" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#047857" />
+                    <stop offset="100%" stopColor="#10b981" />
+                  </linearGradient>
                 </defs>
-                <CartesianGrid stroke="#f1f5f9" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11 }} />
+                <CartesianGrid
+                  stroke="#94a3b8"
+                  strokeWidth={1.25}
+                  strokeDasharray="4 3"
+                  vertical={false}
+                  horizontal
+                />
+                <XAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11 }} />
+                <YAxis type="number" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11 }} />
                 <Tooltip
                   contentStyle={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 12 }}
                 />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#10b981"
-                  strokeWidth={3}
-                  fillOpacity={1}
-                  fill="url(#colorGreen)"
-                  dot={{ r: 4, fill: "#10b981", strokeWidth: 2, stroke: "#ffffff" }}
-                />
-              </AreaChart>
+                {chartPoints.length === 1 ? (
+                  <Bar
+                    dataKey="value"
+                    name="Appointments"
+                    fill="url(#clinicBarFill)"
+                    barSize={30}
+                    radius={[8, 8, 0, 0]}
+                  />
+                ) : null}
+                {chartPoints.length > 1 ? (
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#047857"
+                    strokeWidth={4.5}
+                    fillOpacity={1}
+                    fill="url(#colorGreen)"
+                    dot={{ r: 6, fill: "#047857", strokeWidth: 2.5, stroke: "#ffffff" }}
+                  />
+                ) : null}
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
 

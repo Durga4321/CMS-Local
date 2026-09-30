@@ -47,7 +47,6 @@ const items = [
         modules: ["Book Appointment", "Appointments"],
         icon: Stethoscope,
         tone: "indigo",
-        badge: "Book",
       },
     ],
   },

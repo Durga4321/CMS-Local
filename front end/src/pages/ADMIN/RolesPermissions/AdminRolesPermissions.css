@@ -1334,33 +1334,72 @@
 
 .admin-roles-page .admin-roles-table-card .sa-table .sa-table-head,
 .admin-roles-page .admin-roles-table-card .sa-table .sa-table-row {
-  grid-template-columns: 42px minmax(130px, 0.75fr) minmax(185px, 1.05fr) minmax(185px, 1fr) minmax(370px, 1.7fr) 108px !important;
+  grid-template-columns: 42px minmax(130px, 0.75fr) minmax(185px, 1.05fr) minmax(185px, 1fr) minmax(370px, 1.7fr) 152px !important;
   column-gap: 8px !important;
   align-items: center !important;
   box-sizing: border-box !important;
 }
 
+.admin-roles-page .admin-roles-table-card .sa-table-head > .admin-roles-permissions-head {
+  grid-column: 5;
+}
+
+.admin-roles-page .admin-roles-table-card .sa-table-head > .admin-roles-actions-head {
+  grid-column: 6;
+}
+
+.admin-roles-page .admin-roles-table-card .sa-table-row > .admin-roles-permission-list {
+  grid-column: 2 / 6;
+  grid-row: 2;
+  align-self: start;
+}
+
+.admin-roles-page .admin-roles-table-card .sa-table-row > .sa-actions {
+  grid-column: 6;
+  grid-row: 2;
+  align-self: center;
+}
+
 .admin-roles-permission-list {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: start !important;
+  gap: 8px !important;
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
 }
 
 .admin-roles-permission-item {
+  width: 100% !important;
   max-width: 100% !important;
+  grid-template-columns: minmax(100px, 0.42fr) minmax(0, 1fr) !important;
+}
+
+.admin-roles-permission-item > span {
+  flex-wrap: wrap !important;
+  width: auto !important;
 }
 
 .admin-roles-actions-head,
 .admin-roles-page .sa-actions {
   display: flex !important;
-  width: 108px !important;
-  max-width: 108px !important;
-  min-width: 108px !important;
+  width: 152px !important;
+  max-width: 152px !important;
+  min-width: 152px !important;
   justify-content: center !important;
   justify-self: center !important;
   transform: none !important;
   visibility: visible !important;
   opacity: 1 !important;
+}
+
+.admin-roles-page .sa-actions > .actions-group {
+  flex: 0 0 auto !important;
+  width: max-content !important;
+  gap: 6px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
 }
 
 .admin-roles-page .sa-actions .actions-group,
@@ -1371,15 +1410,15 @@
 @media (max-width: 1280px) {
   .admin-roles-page .admin-roles-table-card .sa-table .sa-table-head,
   .admin-roles-page .admin-roles-table-card .sa-table .sa-table-row {
-    grid-template-columns: 34px 116px 158px 150px minmax(300px, 1fr) 100px !important;
+    grid-template-columns: 34px 116px 158px 150px minmax(300px, 1fr) 152px !important;
     column-gap: 5px !important;
   }
 
   .admin-roles-actions-head,
   .admin-roles-page .sa-actions {
-    width: 100px !important;
-    max-width: 100px !important;
-    min-width: 100px !important;
+    width: 152px !important;
+    max-width: 152px !important;
+    min-width: 152px !important;
   }
 }
 

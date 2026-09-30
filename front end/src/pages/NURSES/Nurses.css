@@ -11,7 +11,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  overflow-x: hidden;
+  overflow-x: hidden !important;
 }
 
 /* Hide Floating 3D Nurse Particles */
@@ -24,7 +24,11 @@
   right: 1.5%;
   width: 58px;
   height: 58px;
-  background: radial-gradient(circle at 30% 30%, rgba(236, 72, 153, 0.28), rgba(6, 182, 212, 0.12));
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(236, 72, 153, 0.28),
+    rgba(6, 182, 212, 0.12)
+  );
   color: #ec4899;
   animation-duration: 5.5s;
 }
@@ -34,7 +38,11 @@
   right: 3.5%;
   width: 54px;
   height: 54px;
-  background: radial-gradient(circle at 30% 30%, rgba(6, 182, 212, 0.28), rgba(14, 165, 233, 0.12));
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(6, 182, 212, 0.28),
+    rgba(14, 165, 233, 0.12)
+  );
   color: #06b6d4;
   animation-duration: 7s;
   animation-delay: -1.5s;
@@ -45,7 +53,11 @@
   left: 3%;
   width: 58px;
   height: 58px;
-  background: radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.28), rgba(6, 182, 212, 0.12));
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(16, 185, 129, 0.28),
+    rgba(6, 182, 212, 0.12)
+  );
   color: #10b981;
   animation-duration: 6.5s;
   animation-delay: -3s;
@@ -56,7 +68,11 @@
   left: 2%;
   width: 52px;
   height: 52px;
-  background: radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.28), rgba(236, 72, 153, 0.12));
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(99, 102, 241, 0.28),
+    rgba(236, 72, 153, 0.12)
+  );
   color: #6366f1;
   animation-duration: 6s;
   animation-delay: -2s;
@@ -66,9 +82,11 @@
   0% {
     transform: translateY(0px) rotate(0deg) scale(1);
   }
+
   50% {
     transform: translateY(-16px) rotate(6deg) scale(1.05);
   }
+
   100% {
     transform: translateY(12px) rotate(-5deg) scale(0.96);
   }
@@ -94,12 +112,13 @@
   0% {
     stroke-dashoffset: 1400;
   }
+
   100% {
     stroke-dashoffset: 0;
   }
 }
 
-/* Header Container (Background Removed as Requested) */
+/* Header Container */
 .nurses-header {
   position: relative;
   z-index: 2;
@@ -123,7 +142,12 @@
   font-size: 1.8rem;
   font-weight: 900;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #0f172a 0%, #0891b2 60%, #06b6d4 100%);
+  background: linear-gradient(
+    135deg,
+    #0f172a 0%,
+    #0891b2 60%,
+    #06b6d4 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 2px 10px rgba(6, 182, 212, 0.15);
@@ -221,11 +245,12 @@
   backdrop-filter: blur(12px);
 }
 
-/* Nurse Table Main Card Container (Moved Upward) */
+/* Nurse Table Main Card Container */
 .nurses-table-card {
   position: relative;
   z-index: 2;
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
   margin-top: -6px;
   background: rgba(255, 255, 255, 0.55);
@@ -233,8 +258,10 @@
   -webkit-backdrop-filter: blur(18px);
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  overflow: hidden !important;
+  box-shadow:
+    0 10px 30px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   display: flex;
   flex-direction: column;
 }
@@ -285,72 +312,101 @@
   color: #475569;
 }
 
-/* Table Section inside Main Card */
+/* =========================================================
+   TABLE SECTION
+   ========================================================= */
+
 .nurses-table {
-  width: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
 }
 
+/* =========================================================
+   TABLE HEADER
+   ========================================================= */
+
 .nurses-thead {
-  display: grid;
-  grid-template-columns: 80px 1.8fr 1.4fr 2.2fr 1.4fr 120px 172px;
-  align-items: center;
-  padding: 16px 24px;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+
+  display: grid !important;
+
+  /*
+    S.NO   NAME   BRANCH   EMAIL   PHONE   STATUS   ACTIONS
+
+    Actions = 19%
+    Email   = 25%
+    This gives the email enough space while keeping
+    all four 48px action buttons inside the card.
+  */
+  grid-template-columns:
+    5%
+    13%
+    10%
+    25%
+    11%
+    13%
+    23% !important;
+
+  align-items: center !important;
+
+  padding: 16px 20px !important;
+
   background: rgba(255, 255, 255, 0.5);
   border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #1e293b;
+
+  overflow: hidden !important;
 }
 
-.nurses-thead > :nth-child(1),
-.nurses-sno {
-  text-align: center !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.nurses-thead > :nth-child(2) {
-  text-align: center !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 100% !important;
-}
-
-.nurses-status-head,
-.nurses-status-cell {
-  text-align: center !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 100% !important;
-}
-
-.nurses-thead span:last-child,
-.nurses-actions-head {
-  text-align: center !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 100% !important;
-  margin: 0 auto !important;
-}
+/* =========================================================
+   TABLE ROW
+   ========================================================= */
 
 .nurses-row {
-  display: grid;
-  grid-template-columns: 80px 1.8fr 1.4fr 2.2fr 1.4fr 120px 172px;
-  align-items: center;
-  padding: 16px 24px;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+
+  display: grid !important;
+
+  /*
+    MUST MATCH THE HEADER EXACTLY
+  */
+  grid-template-columns:
+    5%
+    13%
+    10%
+    25%
+    11%
+    13%
+    23% !important;
+
+  align-items: center !important;
+
+  padding: 16px 20px !important;
+
   border-bottom: 1px solid rgba(255, 255, 255, 0.4);
   transition: all 0.2s ease;
+
   font-size: 0.92rem;
   color: #0f172a;
   background: rgba(255, 255, 255, 0.2);
+
+  overflow: hidden !important;
 }
 
 .nurses-row:last-child {
@@ -362,17 +418,66 @@
   box-shadow: 0 4px 14px rgba(6, 182, 212, 0.1);
 }
 
+/* =========================================================
+   GENERAL GRID CHILD PROTECTION
+   ========================================================= */
+
+.nurses-thead > *,
+.nurses-row > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* =========================================================
+   SERIAL NUMBER
+   ========================================================= */
+
+.nurses-thead > :nth-child(1),
+.nurses-row > :nth-child(1),
+.nurses-sno {
+  width: 100% !important;
+  min-width: 0 !important;
+
+  text-align: center !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  box-sizing: border-box !important;
+}
+
 .nurses-sno {
   font-weight: 700;
   color: #334155;
 }
 
+/* =========================================================
+   NAME
+   ========================================================= */
+
+.nurses-thead > :nth-child(2),
+.nurses-row > :nth-child(2) {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.nurses-thead > :nth-child(2) {
+  text-align: center !important;
+}
+
 .nurses-name-cell {
   display: flex !important;
   align-items: center !important;
-  justify-content: center !important;
-  gap: 14px !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+
   width: 100% !important;
+  min-width: 0 !important;
+
+  box-sizing: border-box !important;
 }
 
 .nurses-avatar {
@@ -381,13 +486,17 @@
   border-radius: 50%;
   background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
   color: #ffffff;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   font-weight: 800;
   font-size: 0.92rem;
+
   border: 2px solid #ffffff;
   box-shadow: 0 2px 8px rgba(6, 182, 212, 0.25);
+
   flex-shrink: 0;
 }
 
@@ -396,11 +505,19 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+
   padding: 4px 14px;
+
   border-radius: 10px;
+
   background: rgba(6, 182, 212, 0.18);
   border: 1px solid rgba(6, 182, 212, 0.35);
+
   box-shadow: 0 2px 8px rgba(6, 182, 212, 0.12);
+
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .nurses-name-highlight b {
@@ -408,52 +525,167 @@
   font-weight: 900;
   font-size: 0.95rem;
   letter-spacing: -0.01em;
-}
 
-.nurses-cell {
-  font-weight: 700;
-  color: #1e293b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.nurses-email-cell {
-  color: #0284c7;
-  font-weight: 800;
+/* =========================================================
+   GENERAL CELL
+   ========================================================= */
+
+.nurses-cell {
+  min-width: 0 !important;
+  max-width: 100% !important;
+
+  font-weight: 700;
+  color: #1e293b;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  box-sizing: border-box !important;
 }
 
+/* =========================================================
+   BRANCH
+   ========================================================= */
+
+.nurses-row > :nth-child(3),
+.nurses-thead > :nth-child(3) {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.nurses-row > :nth-child(3) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================================
+   EMAIL
+   ========================================================= */
+
+.nurses-row > :nth-child(4),
+.nurses-thead > :nth-child(4) {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.nurses-email-cell {
+  display: block !important;
+
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+
+  color: #0284c7 !important;
+  font-weight: 800 !important;
+
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+
+  text-align: left !important;
+
+  box-sizing: border-box !important;
+}
+
+/* =========================================================
+   PHONE
+   ========================================================= */
+
+.nurses-row > :nth-child(5),
+.nurses-thead > :nth-child(5) {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.nurses-phone-cell {
+  display: block !important;
+
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+
+  text-align: left !important;
+
+  box-sizing: border-box !important;
+}
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+.nurses-thead > :nth-child(6),
+.nurses-row > :nth-child(6),
+.nurses-status-head,
 .nurses-status-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  box-sizing: border-box !important;
 }
 
 .nurses-status {
   position: relative !important;
+
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+
   gap: 6px !important;
+
   min-width: 98px !important;
   height: 30px !important;
+
   padding: 0 30px 0 12px !important;
+
   border-radius: 999px !important;
+
   font-size: 12px !important;
   font-weight: 850 !important;
+
   letter-spacing: 0.025em !important;
   text-transform: capitalize !important;
   white-space: nowrap !important;
+
   margin: 0 auto !important;
+
   box-sizing: border-box !important;
+
   overflow: hidden !important;
+
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .nurses-status-active {
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%) !important;
+  background: linear-gradient(
+    135deg,
+    #ecfdf5 0%,
+    #d1fae5 50%,
+    #a7f3d0 100%
+  ) !important;
+
   color: #065f46 !important;
+
   border: 1.5px solid #10b981 !important;
+
   box-shadow:
     0 2px 8px rgba(16, 185, 129, 0.24),
     inset 0 1px 1px rgba(255, 255, 255, 0.9),
@@ -462,23 +694,43 @@
 
 .nurses-status-active::before {
   content: "" !important;
+
   display: inline-block !important;
+
   width: 8px !important;
   height: 8px !important;
+
   border-radius: 50% !important;
+
   background: #10b981 !important;
+
   border: 1.5px solid #ffffff !important;
+
   box-shadow:
     0 0 0 1px rgba(16, 185, 129, 0.5),
     0 0 7px #10b981 !important;
+
   flex-shrink: 0 !important;
-  animation: medicalVitalPulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+
+  animation:
+    medicalVitalPulse
+    1.8s
+    cubic-bezier(0.4, 0, 0.6, 1)
+    infinite !important;
 }
 
 .nurses-status-inactive {
-  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 50%, #fecaca 100%) !important;
+  background: linear-gradient(
+    135deg,
+    #fef2f2 0%,
+    #fee2e2 50%,
+    #fecaca 100%
+  ) !important;
+
   color: #991b1b !important;
+
   border: 1.5px solid #ef4444 !important;
+
   box-shadow:
     0 2px 8px rgba(239, 68, 68, 0.24),
     inset 0 1px 1px rgba(255, 255, 255, 0.9),
@@ -487,27 +739,103 @@
 
 .nurses-status-inactive::before {
   content: "" !important;
+
   display: inline-block !important;
+
   width: 8px !important;
   height: 8px !important;
+
   border-radius: 50% !important;
+
   background: #ef4444 !important;
+
   border: 1.5px solid #ffffff !important;
+
   box-shadow:
     0 0 0 1px rgba(239, 68, 68, 0.5),
     0 0 7px #ef4444 !important;
+
   flex-shrink: 0 !important;
-  animation: medicalStandbyAlert 2.2s ease-in-out infinite !important;
+
+  animation:
+    medicalStandbyAlert
+    2.2s
+    ease-in-out
+    infinite !important;
+}
+
+/* =========================================================
+   ACTIONS
+   ========================================================= */
+
+.nurses-thead > :nth-child(7),
+.nurses-row > :nth-child(7) {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+
+  box-sizing: border-box !important;
 }
 
 .nurses-actions {
   display: flex !important;
+
   align-items: center !important;
   justify-content: center !important;
+
+  gap: 8px !important;
+
   width: 100% !important;
-  margin: 0 auto !important;
-  gap: 6px;
+  min-width: 0 !important;
+  max-width: 100% !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  box-sizing: border-box !important;
+
+  overflow: hidden !important;
 }
+
+.nurses-actions .actions-group {
+  flex-wrap: nowrap !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.nurses-actions .action-btn {
+  flex: 0 0 38px !important;
+  width: 38px !important;
+  min-width: 38px !important;
+  max-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  box-sizing: border-box !important;
+}
+
+/* Actions heading */
+.nurses-actions-head,
+.nurses-thead span:last-child {
+  width: 100% !important;
+  min-width: 0 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  margin: 0 !important;
+
+  box-sizing: border-box !important;
+}
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
 
 .nurses-empty {
   padding: 48px;
@@ -517,20 +845,30 @@
   font-size: 0.96rem;
 }
 
-/* Glassmorphic Modal with Medical Theme & Perfect Viewport Alignment */
+/* =========================================================
+   GLASSMORPHIC MODAL
+   ========================================================= */
+
 .nurses-modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 3500;
+
   background: rgba(15, 23, 42, 0.65);
+
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   padding: 16px;
+
   overflow-y: auto;
+
   box-sizing: border-box;
+
   animation: nurseFadeIn 0.2s ease-out;
 }
 
@@ -538,6 +876,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -547,19 +886,31 @@
   width: 100%;
   max-width: 500px;
   max-height: min(92vh, calc(100vh - 32px));
+
   margin: auto;
+
   display: flex;
   flex-direction: column;
+
   background: rgba(255, 255, 255, 0.98);
+
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
+
   border: 1.5px solid rgba(226, 232, 240, 0.95);
+
   border-radius: 22px;
+
   box-shadow:
     0 24px 60px -10px rgba(15, 23, 42, 0.35),
     0 0 0 1px rgba(255, 255, 255, 0.85);
+
   overflow: hidden;
-  animation: nursePopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+  animation:
+    nursePopIn
+    0.25s
+    cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes nursePopIn {
@@ -567,6 +918,7 @@
     opacity: 0;
     transform: scale(0.95) translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -575,11 +927,19 @@
 
 .nurses-modal-header {
   flex-shrink: 0;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   padding: 14px 22px;
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%);
+
+  background: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.08) 0%,
+    rgba(59, 130, 246, 0.05) 100%
+  );
+
   border-bottom: 1.5px solid rgba(226, 232, 240, 0.85);
 }
 
@@ -592,12 +952,21 @@
 .nurses-modal-icon {
   width: 40px;
   height: 40px;
+
   border-radius: 12px;
-  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+
+  background: linear-gradient(
+    135deg,
+    #0891b2 0%,
+    #06b6d4 100%
+  );
+
   color: #ffffff;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   box-shadow: 0 4px 12px rgba(6, 182, 212, 0.32);
 }
 
@@ -619,13 +988,18 @@
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   color: #64748b;
+
   width: 36px;
   height: 36px;
+
   border-radius: 10px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   cursor: pointer;
+
   transition: all 0.2s ease;
 }
 
@@ -638,8 +1012,11 @@
 .nurses-form {
   flex: 1 1 auto;
   min-height: 0;
+
   overflow-y: auto;
+
   padding: 16px 22px 14px;
+
   display: flex;
   flex-direction: column;
   gap: 11px;
@@ -673,36 +1050,60 @@
 
 .nurses-image-circle {
   position: relative;
+
   width: 58px;
   height: 58px;
+
   border-radius: 50%;
-  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+
+  background: linear-gradient(
+    135deg,
+    #0891b2 0%,
+    #06b6d4 100%
+  );
+
   border: 3px solid #ffffff;
+
   box-shadow: 0 4px 14px rgba(6, 182, 212, 0.35);
+
   color: #ffffff;
+
   font-size: 1.35rem;
   font-weight: 800;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .nurses-image-circle:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 18px rgba(6, 182, 212, 0.45);
+
+  box-shadow:
+    0 6px 18px rgba(6, 182, 212, 0.45);
 }
 
 .nurses-image-button {
   position: absolute;
+
   bottom: -2px;
   right: -2px;
+
   background: #0e7490;
   color: #ffffff;
+
   padding: 3px;
+
   border-radius: 50%;
+
   border: 2px solid #ffffff;
+
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
 }
 
@@ -728,21 +1129,33 @@
 .nurses-field input,
 .nurses-field select {
   height: 38px;
+
   padding: 0 12px;
+
   border-radius: 10px;
+
   border: 1.5px solid #cbd5e1;
+
   background: #ffffff;
+
   font-size: 0.88rem;
   font-weight: 550;
+
   color: #0f172a;
+
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .nurses-field input:focus,
 .nurses-field select:focus {
   border-color: #06b6d4;
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.22);
+
+  box-shadow:
+    0 0 0 3px rgba(6, 182, 212, 0.22);
 }
 
 .nurses-field input.is-invalid,
@@ -759,75 +1172,335 @@
 
 .nurses-modal-actions {
   flex-shrink: 0;
+
   position: sticky;
   bottom: 0;
+
   z-index: 5;
+
   background: rgba(255, 255, 255, 0.96);
+
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+
   display: flex;
   align-items: center;
   justify-content: flex-end;
+
   gap: 12px;
+
   margin-top: 4px;
+
   padding-top: 14px;
   padding-bottom: 2px;
+
   border-top: 1.5px solid #e2e8f0;
 }
 
 .nurses-secondary-button {
   height: 40px;
+
   padding: 0 20px;
+
   border-radius: 10px;
+
   border: 1.5px solid #fca5a5;
-  background: linear-gradient(135deg, #fff1f2 0%, #fee2e2 100%);
+
+  background: linear-gradient(
+    135deg,
+    #fff1f2 0%,
+    #fee2e2 100%
+  );
+
   color: #dc2626;
+
   font-weight: 750;
   font-size: 0.88rem;
+
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.08);
+
+  box-shadow:
+    0 2px 6px rgba(220, 38, 38, 0.08);
+
   transition: all 0.2s ease;
 }
 
 .nurses-secondary-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(
+    135deg,
+    #ef4444 0%,
+    #dc2626 100%
+  );
+
   border-color: #dc2626;
+
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+
+  box-shadow:
+    0 4px 12px rgba(220, 38, 38, 0.25);
+
   transform: translateY(-1px);
 }
 
 .nurses-save-button {
   height: 40px;
+
   padding: 0 22px;
+
   border-radius: 10px;
+
   border: none;
-  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+
+  background: linear-gradient(
+    135deg,
+    #0891b2 0%,
+    #06b6d4 100%
+  );
+
   color: #ffffff;
+
   font-weight: 750;
   font-size: 0.88rem;
+
   display: flex;
   align-items: center;
+
   gap: 8px;
+
   cursor: pointer;
+
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.35);
+
+  box-shadow:
+    0 4px 14px rgba(6, 182, 212, 0.35);
 }
 
 .nurses-save-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0e7490 0%, #0891b2 100%);
-  box-shadow: 0 6px 18px rgba(6, 182, 212, 0.45);
+  background: linear-gradient(
+    135deg,
+    #0e7490 0%,
+    #0891b2 100%
+  );
+
+  box-shadow:
+    0 6px 18px rgba(6, 182, 212, 0.45);
+
   transform: translateY(-1px);
+}
+
+/* =========================================================
+   PASSWORD EYE BUTTON
+   ========================================================= */
+
+.nurse-password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.nurse-password-wrapper input {
+  width: 100%;
+  padding-right: 50px;
+  box-sizing: border-box;
+}
+
+.nurse-password-toggle {
+  position: absolute !important;
+
+  top: 50% !important;
+  right: 12px !important;
+
+  transform: translateY(-50%) !important;
+
+  width: 32px !important;
+  height: 32px !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+
+  border: none !important;
+  outline: none !important;
+
+  background: transparent !important;
+
+  box-shadow: none !important;
+
+  color: #64748b !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  cursor: pointer !important;
+}
+
+.nurse-password-toggle:hover {
+  background: transparent !important;
+  border: none !important;
+  color: #64748b !important;
+}
+
+.nurse-password-toggle:focus {
+  outline: none !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.nurse-password-toggle:active {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.nurse-password-toggle:disabled {
+  background: transparent !important;
+  border: none !important;
+  opacity: 0.6;
+  cursor: not-allowed !important;
+}
+
+/* =========================================================
+   FINAL TABLE ALIGNMENT
+   ========================================================= */
+
+/*
+  IMPORTANT:
+  .nurses-table is a FLEX container, not a real HTML table.
+  Therefore table-layout: fixed does not control the layout.
+*/
+
+.nurses-table {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+
+  box-sizing: border-box !important;
+
+  overflow: hidden !important;
+}
+
+/* Remove old fake table width rules */
+.nurses-table th:first-child,
+.nurses-table td:first-child,
+.nurses-table th:nth-child(2),
+.nurses-table td:nth-child(2),
+.nurses-table th:nth-child(3),
+.nurses-table td:nth-child(3),
+.nurses-table th:nth-child(4),
+.nurses-table td:nth-child(4),
+.nurses-table th:nth-child(5),
+.nurses-table td:nth-child(5),
+.nurses-table th:nth-child(6),
+.nurses-table td:nth-child(6),
+.nurses-table th:nth-child(7),
+.nurses-table td:nth-child(7) {
+  width: auto;
+}
+
+/* Email remains on one line */
+.nurses-table td:nth-child(4) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Keep table cells vertically aligned */
+.nurses-table th,
+.nurses-table td {
+  vertical-align: middle;
+}
+
+/* =========================================================
+   FINAL NO-SCROLL PROTECTION
+   ========================================================= */
+
+.nurses-page,
+.nurses-table-card,
+.nurses-table,
+.nurses-thead,
+.nurses-row {
+  max-width: 100% !important;
+}
+
+.nurses-page {
+  overflow-x: hidden !important;
+}
+
+.nurses-table-card {
+  overflow-x: hidden !important;
+}
+
+.nurses-table {
+  overflow-x: hidden !important;
+}
+
+.nurses-thead,
+.nurses-row {
+  overflow-x: hidden !important;
+}
+
+/* Every grid item must be allowed to shrink */
+.nurses-thead > *,
+.nurses-row > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1200px) {
+  .nurses-thead,
+  .nurses-row {
+    grid-template-columns:
+      5%
+      13%
+      10%
+      23%
+      11%
+      14%
+      24% !important;
+  }
+
+  .nurses-actions {
+    gap: 6px !important;
+  }
+
+  .nurses-actions .action-btn {
+    flex: 0 0 34px !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+  }
 }
 
 @media (max-width: 992px) {
   .nurses-thead,
   .nurses-row {
-    grid-template-columns: 60px 1.5fr 1fr 1.4fr 110px 130px;
+    grid-template-columns:
+      60px
+      1.5fr
+      1fr
+      1.4fr
+      110px
+      220px !important;
   }
+
   .nurses-thead span:nth-child(4),
   .nurses-row span:nth-child(4) {
     display: none;
+  }
+
+  .nurses-email-cell {
+    display: none !important;
   }
 }
 
@@ -835,16 +1508,41 @@
   .nurses-page {
     padding: 16px;
   }
+
   .nurses-header {
     flex-direction: column;
     align-items: flex-start;
   }
+
   .nurses-thead,
   .nurses-row {
-    grid-template-columns: 50px 1.5fr 1fr 90px 110px;
+    grid-template-columns:
+      50px
+      1.5fr
+      1fr
+      90px
+      150px !important;
   }
+
+  .nurses-actions .actions-group {
+    gap: 4px !important;
+    padding: 2px !important;
+  }
+
+  .nurses-actions .action-btn {
+    flex: 0 0 32px !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+  }
+
   .nurses-thead span:nth-child(5),
   .nurses-row span:nth-child(5) {
     display: none;
+  }
+
+  .nurses-phone-cell {
+    display: none !important;
   }
 }

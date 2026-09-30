@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import PatientDashboard from "./PatientDashboard";
 import { apiUrl, assetUrl, patientApiUrl, PATIENT_API } from "../../config/api";
-import { validateStrongPassword } from "../../utils/validation";
+import { validateMobile, validateName, validateStrongPassword } from "../../utils/validation";
 import { formatIndianCurrency, formatTitleCase } from "../../utils/format";
 import {
   PATIENT_PORTAL_OP_BILLS_KEY,
@@ -1027,12 +1027,10 @@ function PatientShell({ notifications, children, patient }) {
           <div className="pp-brand-mark">
             <Heart size={22} />
           </div>
-          {!collapsed && (
-            <div className="pp-brand-text">
-              <strong>CMS</strong>
-              <span>Patient Portal</span>
-            </div>
-          )}
+          <div className="pp-brand-text">
+            <strong>CMS</strong>
+            <span>Patient Portal</span>
+          </div>
         </div>
 
         <nav className="pp-nav" onClick={() => setSidebarOpen(false)}>
@@ -2812,7 +2810,7 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
                     <button
                       key={branch.id || branch.name}
                       type="button"
-                      className={`booking-card ${selectedBranch?.id === branch.id ? 'selected' : ''}`}
+                      className={`booking-card booking-card--branch ${selectedBranch?.id === branch.id ? 'selected' : ''}`}
                       onClick={() => {
                         setSelectedBranch(branch);
                         setSelectedDepartment(null);
@@ -2887,7 +2885,7 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
                         key={doctor.id || doctor.name}
                         role="button"
                         tabIndex={0}
-                        className={`booking-card ${selectedDoctor?.id === doctor.id ? 'selected' : ''}`}
+                        className={`booking-card booking-card--doctor ${selectedDoctor?.id === doctor.id ? 'selected' : ''}`}
                         onClick={() => {
                           setSelectedDoctor(doctor);
                           setSelectedDate('');
@@ -6671,18 +6669,37 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
   };
 
   const handleFieldChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    const nextValue = ["mobile", "emergencyContactPhone"].includes(field)
+      ? String(value).replace(/\D/g, "").slice(0, 10)
+      : value;
+    setForm((prev) => ({ ...prev, [field]: nextValue }));
     setMessage("");
     setMessageType("");
   };
 
   const saveProfile = async () => {
+    const nameError = validateName(form.name, "Name");
+    const mobileError = validateMobile(form.mobile, "Mobile number");
+    const emergencyNameError = form.emergencyContactName.trim()
+      ? validateName(form.emergencyContactName, "Emergency contact name")
+      : "";
+    const emergencyPhoneError = form.emergencyContactPhone.trim()
+      ? validateMobile(form.emergencyContactPhone, "Emergency contact phone")
+      : "";
+    const validationError = nameError || mobileError || emergencyNameError || emergencyPhoneError;
+
+    if (validationError) {
+      setMessage(validationError);
+      setMessageType("error");
+      return;
+    }
+
     setSaving(true);
     setMessage("");
     setMessageType("");
     try {
       const profileUrl = patientApiUrl(PATIENT_API.profile);
-      const nameParts = splitProfileName(form.name || profileName);
+      const nameParts = splitProfileName(formatTitleCase(form.name || profileName));
       const payload = {
         firstName: nameParts.firstName,
         lastName: nameParts.lastName,
@@ -6692,7 +6709,7 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
         mobileNumber: form.mobile.trim(),
         email: form.email.trim(),
         address: form.address.trim(),
-        emergencyContactName: form.emergencyContactName.trim(),
+        emergencyContactName: formatTitleCase(form.emergencyContactName.trim()),
         emergencyContactRelationship: form.emergencyContactRelationship.trim(),
         emergencyContactPhone: form.emergencyContactPhone.trim(),
         allergies: profileAllergies === "Not recorded" ? "" : profileAllergies,
@@ -6740,6 +6757,8 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
         type={type}
         value={value}
         disabled={!editMode || disabled}
+        inputMode={type === "tel" ? "numeric" : undefined}
+        maxLength={type === "tel" ? 10 : undefined}
         onChange={(e) => handleFieldChange(field, e.target.value)}
       />
     </label>
@@ -6825,7 +6844,7 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
               <section className="pd-profile-section">
                 <h3>Contact</h3>
                 <div className="pd-profile-strip pd-profile-strip--expanded">
-                  {renderField("Mobile", form.mobile, "mobile", "text")}
+                  {renderField("Mobile", form.mobile, "mobile", "tel")}
                   <div><span>Email</span><strong>{profileEmail}</strong></div>
                   {renderField("Address", form.address, "address")}
                 </div>
@@ -6836,7 +6855,7 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
                 <div className="pd-profile-strip pd-profile-strip--expanded">
                   {renderField("Name", form.emergencyContactName, "emergencyContactName")}
                   {renderField("Relationship", form.emergencyContactRelationship, "emergencyContactRelationship")}
-                  {renderField("Phone", form.emergencyContactPhone, "emergencyContactPhone")}
+                  {renderField("Phone", form.emergencyContactPhone, "emergencyContactPhone", "tel")}
                 </div>
               </section>
 

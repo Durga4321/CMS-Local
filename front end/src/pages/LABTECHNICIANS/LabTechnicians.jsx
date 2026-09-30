@@ -13,6 +13,7 @@ import {
   recordBelongsToClinicScope,
 } from "../../utils/branchApi";
 import { getClinicDisplayName } from "../../utils/clinicDisplay";
+import { formatTitleCase } from "../../utils/format";
 import { useAdminModulePermissions } from "../../utils/rolePermissions";
 import { onlyAlpha, onlyIndianMobileValue, validateAlpha, validateGmail, validateMobile, validateSelected, validateStrongPassword } from "../../utils/validation";
 
@@ -117,6 +118,7 @@ function LabTechnicians() {
   const [loading, setLoading] = useState(true);
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [editingTech, setEditingTech] = useState(null);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
@@ -184,7 +186,11 @@ function LabTechnicians() {
   }, [branchNameById, search, technicians, hospitalId, clinicName, scopedBranchIds]);
 
   const updateField = (field, value) => {
-    const nextValue = field === "name" ? onlyAlpha(value) : field === "phone" ? onlyIndianMobileValue(value) : value;
+    const nextValue = field === "name"
+      ? formatTitleCase(onlyAlpha(value))
+      : field === "phone"
+        ? onlyIndianMobileValue(value)
+        : value;
     setForm((current) => ({ ...current, [field]: nextValue }));
     setFieldErrors((current) => ({ ...current, [field]: "", form: "" }));
   };
@@ -210,7 +216,7 @@ function LabTechnicians() {
     }
     setEditingTech(tech);
     setForm(tech ? {
-      name: getLabTechName(tech),
+      name: formatTitleCase(onlyAlpha(getLabTechName(tech))),
       email: getLabTechEmail(tech),
       phone: getLabTechPhone(tech),
       password: "",
@@ -218,6 +224,7 @@ function LabTechnicians() {
       isActive: !String(getLabTechStatus(tech)).toLowerCase().includes("inactive"),
     } : emptyForm);
     setFieldErrors({});
+    setShowPassword(false);
     setModalOpen(true);
   };
 
@@ -235,7 +242,7 @@ function LabTechnicians() {
     setSaving(true);
     try {
       const payload = {
-        Name: form.name.trim(),
+        Name: formatTitleCase(form.name.trim()),
         Email: form.email.trim(),
         Phone: form.phone.trim(),
         Password: form.password || undefined,
@@ -394,7 +401,38 @@ function LabTechnicians() {
               <div className="receptionists-field"><label htmlFor="lab-name">Name</label><input id="lab-name" value={form.name} onChange={(event) => updateField("name", event.target.value)} className={fieldErrors.name ? "is-invalid" : ""} disabled={saving} autoFocus />{fieldErrors.name ? <span className="receptionists-field-error">{fieldErrors.name}</span> : null}</div>
               <div className="receptionists-field"><label htmlFor="lab-email">Email</label><input id="lab-email" type="email" value={form.email} onChange={(event) => updateField("email", event.target.value)} className={fieldErrors.email ? "is-invalid" : ""} disabled={saving} />{fieldErrors.email ? <span className="receptionists-field-error">{fieldErrors.email}</span> : null}</div>
               <div className="receptionists-field"><label htmlFor="lab-phone">Phone</label><input id="lab-phone" value={form.phone} onChange={(event) => updateField("phone", event.target.value)} inputMode="numeric" maxLength={10} className={fieldErrors.phone ? "is-invalid" : ""} disabled={saving} />{fieldErrors.phone ? <span className="receptionists-field-error">{fieldErrors.phone}</span> : null}</div>
-              <div className="receptionists-field"><label htmlFor="lab-password">Password</label><input id="lab-password" type="password" value={form.password} onChange={(event) => updateField("password", event.target.value)} className={fieldErrors.password ? "is-invalid" : ""} disabled={saving} />{fieldErrors.password ? <span className="receptionists-field-error">{fieldErrors.password}</span> : null}</div>
+              {/* <div className="receptionists-field"><label htmlFor="lab-password">Password</label><input id="lab-password" type="password" value={form.password} onChange={(event) => updateField("password", event.target.value)} className={fieldErrors.password ? "is-invalid" : ""} disabled={saving} />{fieldErrors.password ? <span className="receptionists-field-error">{fieldErrors.password}</span> : null}</div> 
+              */}
+              <div className="receptionists-field">
+  <label htmlFor="lab-password">Password</label>
+
+  <div className="password-input-wrapper">
+    <input
+      id="lab-password"
+      type={showPassword ? "text" : "password"}
+      value={form.password}
+      onChange={(event) => updateField("password", event.target.value)}
+      className={fieldErrors.password ? "is-invalid" : ""}
+      disabled={saving}
+    />
+
+    <button
+      type="button"
+      className="password-toggle-button"
+      onClick={() => setShowPassword((prev) => !prev)}
+      disabled={saving}
+      aria-label={showPassword ? "Hide password" : "Show password"}
+    >
+      <Eye size={18} />
+    </button>
+  </div>
+
+  {fieldErrors.password ? (
+    <span className="receptionists-field-error">
+      {fieldErrors.password}
+    </span>
+  ) : null}
+</div>
               <div className="receptionists-field"><label htmlFor="lab-branch">Branch</label><select id="lab-branch" value={form.branchId} onChange={(event) => updateField("branchId", event.target.value)} className={fieldErrors.branchId ? "is-invalid" : ""} disabled={loadingBranches || saving}><option value="">{loadingBranches ? "Loading branches..." : "Select branch"}</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select>{fieldErrors.branchId ? <span className="receptionists-field-error">{fieldErrors.branchId}</span> : null}</div>
               <div className="receptionists-field"><label htmlFor="lab-is-active">Is Active</label><select id="lab-is-active" value={form.isActive ? "Active" : "Inactive"} onChange={(event) => updateField("isActive", event.target.value === "Active")} disabled={saving}><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
               {fieldErrors.form ? <div className="receptionists-error receptionists-form-message">{fieldErrors.form}</div> : null}
