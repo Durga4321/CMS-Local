@@ -120,25 +120,7 @@ const normalizeSlotStart = (value) => {
 
 const getSlotStatus = (slot) => String(slot?.status || "").trim().toLowerCase();
 
-const isTimeOutSlot = (slot, date) => {
-  const slotDate = normalizeAppointmentDate(date);
-  if (!slotDate) return false;
-
-  const today = new Date();
-  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-  if (slotDate !== todayKey) return false;
-
-  const slotLabel = parseSlotLabel(slot);
-  const slotStart = normalizeSlotStart(slotLabel);
-  if (!slotStart) return false;
-
-  const [hour, minute] = slotStart.split(":").map(Number);
-  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return false;
-
-  const nowMinutes = today.getHours() * 60 + today.getMinutes();
-  return hour * 60 + minute <= nowMinutes;
-};
-
+const isTimeOutSlot = () => false;
 const generateDoctorDailySlots = (fetchedSlots = [], doctor = {}, dateStr = "") => {
   const startStr = doctor?.workStart || doctor?.startTime || doctor?.work_start || "09:00 AM";
   const endStr = doctor?.workEnd || doctor?.endTime || doctor?.work_end || "06:00 PM";
@@ -946,14 +928,21 @@ function ReceptionAppointments({ hideActions = false }) {
     return String(slot).trim();
   };
 
-  const getSlotBranchId = (slot) =>
-    String(
-      slot?.branchId ??
-        slot?.BranchId ??
-        slot?.clinicBranchId ??
-        slot?.ClinicBranchId ??
-        ""
-    ).trim();
+  const getSlotScopeIds = (slot) =>
+    [
+      slot?.branchId,
+      slot?.BranchId,
+      slot?.clinicBranchId,
+      slot?.ClinicBranchId,
+      slot?.clinicId,
+      slot?.ClinicId,
+      slot?.hospitalId,
+      slot?.HospitalId,
+    ]
+      .map((value) => String(value ?? "").trim())
+      .filter(Boolean);
+
+  const getSlotBranchId = (slot) => String(slot?.branchId ?? slot?.BranchId ?? slot?.clinicBranchId ?? slot?.ClinicBranchId ?? "").trim();
 
   const bookedSlots = useMemo(() => {
     return new Set(
@@ -1021,19 +1010,38 @@ function ReceptionAppointments({ hideActions = false }) {
     });
     if (receptionistBranchId) query.set("branchId", receptionistBranchId);
 
-    requestJson(`Schedule/day-slots?${query.toString()}`)
-      .then((data) => {
-        const slots = parseSlots(data).filter((slot) => {
-          const slotBranchId = getSlotBranchId(slot);
-          return !receptionistBranchId || slotBranchId === receptionistBranchId;
-        });
-        const fullSlots = generateDoctorDailySlots(slots, selectedDoctor, form.date);
-        setAvailableSlots(fullSlots);
+    const loadDoctorSlots = async () => {
+      const doctorId = encodeURIComponent(String(form.doctorId));
+      const slotPaths = [
+        `patient-portal/doctors/${doctorId}/slots?${query.toString()}`,
+        `Schedule/day-slots?${query.toString()}`,
+        `Doctor/${doctorId}/slots?${query.toString()}`,
+        `DoctorSchedule/${doctorId}/slots?${query.toString()}`,
+      ];
+
+      for (const path of slotPaths) {
+        try {
+          const data = await requestJson(path);
+          const slots = parseSlots(data).filter((slot) => {
+            const slotScopeIds = getSlotScopeIds(slot);
+          return !slotScopeIds.length || slotScopeIds.includes(receptionistBranchId) || slotScopeIds.includes(receptionistHospitalId);
+          });
+          if (slots.length) return slots;
+        } catch {
+          // Try the next compatible slot endpoint.
+        }
+      }
+
+      return [];
+    };
+
+    loadDoctorSlots()
+      .then((slots) => {
+        setAvailableSlots(slots);
         setSelectedSlot("");
       })
       .catch(() => {
-        const fallbackSlots = generateDoctorDailySlots([], selectedDoctor, form.date);
-        setAvailableSlots(fallbackSlots);
+        setAvailableSlots([]);
         setSelectedSlot("");
       })
       .finally(() => setSlotLoading(false));
@@ -1723,4 +1731,11 @@ function ReceptionAppointments({ hideActions = false }) {
 }
 
 export default ReceptionAppointments;
+
+
+
+
+
+
+
 

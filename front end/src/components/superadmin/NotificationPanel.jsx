@@ -2,12 +2,13 @@ import React, { useMemo, useState } from "react";
 import { BellRing, CalendarDays, CheckCircle2, CreditCard, FileText, Receipt, Megaphone, Send, Trash2 } from "lucide-react";
 import { markNotificationRead } from "../../pages/SUPERADMIN/superAdminApi";
 
-function NotificationPanel({ items = [], onDelete = () => {}, onRead = () => {} }) {
+function NotificationPanel({ items = [], onDelete = () => {}, onRead = () => {}, sentOnlyManual = false }) {
   const [activeNotification, setActiveNotification] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
 
   const isRead = (item = {}) => String(item.status || "").toLowerCase() === "read";
   const isSent = (item = {}) => String(item.status || "").toLowerCase() === "sent";
+  const isManualSent = (item = {}) => isSent(item) && (!sentOnlyManual || Boolean(item.sentBySuperAdmin));
   const getNotificationKey = (item = {}) =>
     item.id || [item.title, item.message, item.targetUsers].join("|");
   const getNotificationTone = (item = {}, index = 0) => {
@@ -47,11 +48,11 @@ function NotificationPanel({ items = [], onDelete = () => {}, onRead = () => {} 
   const filteredItems = useMemo(() => {
     if (statusFilter === "Unread") return items.filter((item) => !isRead(item) && !isSent(item));
     if (statusFilter === "Read") return items.filter((item) => isRead(item) && !isSent(item));
-    if (statusFilter === "Sent") return items.filter(isSent);
+    if (statusFilter === "Sent") return items.filter(isManualSent);
     return items;
-  }, [items, statusFilter]);
+  }, [items, statusFilter, sentOnlyManual]);
   const unreadCount = items.filter((item) => !isRead(item) && !isSent(item)).length;
-  const sentCount = items.filter(isSent).length;
+  const sentCount = items.filter(isManualSent).length;
   const tabs = [
     { label: "All", tone: "all", icon: BellRing },
     { label: "Unread", count: unreadCount, tone: "unread", icon: BellRing },
@@ -157,4 +158,6 @@ function NotificationPanel({ items = [], onDelete = () => {}, onRead = () => {} 
 }
 
 export default NotificationPanel;
+
+
 

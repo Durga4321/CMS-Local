@@ -352,8 +352,10 @@ function NotificationPopup({ isSuperAdmin = false }) {
                             : n
                         )
                       );
-                      setOpen(false);
-                      navigate(resolveNotificationPath(item, { isSuperAdmin }));
+                      if (!isSuperAdmin) {
+                        setOpen(false);
+                        navigate(resolveNotificationPath(item, { isSuperAdmin }));
+                      }
                     }}
                   >
                     <div>
@@ -424,6 +426,9 @@ function NotificationPopup({ isSuperAdmin = false }) {
 }
 
 export default NotificationPopup;
+
+
+
 
 
 

@@ -1020,6 +1020,7 @@ export const normalizeNotification = (notification = {}) => ({
   createdAt: pick(notification, ["createdAt", "createdOn", "date", "timestamp"], ""),
   type: pick(notification, ["type", "notificationType", "category"], ""),
   redirectUrl: pick(notification, ["redirectUrl", "redirectPath", "targetUrl", "targetPath", "actionUrl", "actionPath", "link", "url", "route", "path", "deepLink"], ""),
+  sentBySuperAdmin: Boolean(pick(notification, ["sentBySuperAdmin", "isManualSend", "manualSend", "fromSuperAdmin"], false)),
 });
 
 const getNotificationAudienceCode = (target = "") =>
@@ -2486,6 +2487,7 @@ export const createNotification = async (notification) => {
     id: pick(resultObject, ["id", "notificationId", "_id"], `local-notification-${Date.now()}`),
     status,
     createdAt,
+    sentBySuperAdmin: isSendAction,
   });
 
   prependLocalItem(LOCAL_NOTIFICATIONS_KEY, savedNotification);
@@ -3736,6 +3738,8 @@ export const countActiveUsers = async () => {
     return 0;
   }
 };
+
+
 
 
 
