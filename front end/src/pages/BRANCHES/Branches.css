@@ -272,16 +272,16 @@
 .branches-row {
   display: grid !important;
   grid-template-columns:
-    52px
-    minmax(130px, 1.2fr)
-    minmax(150px, 1.15fr)
-    minmax(170px, 1.5fr)
-    108px
-    220px !important;
-  column-gap: 14px;
+    48px
+    minmax(115px, 1fr)
+    minmax(190px, 1.5fr)
+    minmax(230px, 1.8fr)
+    100px
+    160px !important;
+  column-gap: 10px;
   align-items: center;
   width: 100%;
-  min-width: 960px;
+  min-width: 920px;
   box-sizing: border-box;
 }
 
@@ -386,9 +386,9 @@
   font-size: 12.5px !important;
   font-weight: 500 !important;
   line-height: 1.3 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
   max-width: 100% !important;
 }
 
@@ -405,9 +405,11 @@
 .branches-location-cell {
   text-align: left !important;
   display: block !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
   color: #334155 !important;
   font-size: 13.5px !important;
   font-weight: 600 !important;
@@ -579,7 +581,24 @@
   justify-content: center !important;
   width: 100% !important;
   margin: 0 auto !important;
-  gap: 8px;
+  gap: 4px !important;
+}
+
+.branches-actions .actions-group {
+  width: 100% !important;
+  min-width: 0 !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 0 !important;
+}
+
+.branches-actions .action-btn.medical-instrument-btn,
+.branches-actions .action-btn {
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  flex: 0 0 32px !important;
 }
 
 .branches-empty {
@@ -704,6 +723,44 @@
   background: rgba(239, 68, 68, 0.12);
   border-color: #fca5a5;
   color: #ef4444;
+}
+
+.branches-view-modal {
+  max-width: 640px;
+}
+
+.branches-view-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 22px;
+}
+
+.branches-view-grid > div {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.branches-view-grid span {
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.branches-view-grid strong {
+  color: #0f172a;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.branches-view-grid-full {
+  grid-column: 1 / -1;
 }
 
 .branches-form {
@@ -889,6 +946,15 @@
   .branches-form {
     grid-template-columns: 1fr;
     padding: 16px;
+  }
+
+  .branches-view-grid {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .branches-view-grid-full {
+    grid-column: auto;
   }
 
   .branches-modal-actions {

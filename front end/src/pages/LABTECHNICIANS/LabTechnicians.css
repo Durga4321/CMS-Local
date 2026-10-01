@@ -14,6 +14,47 @@
   display: none !important;
 }
 
+.lab-technician-view-modal {
+  max-width: 620px;
+}
+
+.lab-technician-view-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 22px;
+}
+
+.lab-technician-view-grid > div {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.lab-technician-view-grid span {
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.lab-technician-view-grid strong {
+  color: #0f172a;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  .lab-technician-view-grid {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+}
+
 .lab-part-1 {
   top: 10%;
   right: 6%;
@@ -229,7 +270,7 @@
   width: 100%;
   box-sizing: border-box;
   display: grid !important;
-  grid-template-columns: 45px minmax(120px, 1.2fr) minmax(95px, 0.9fr) minmax(130px, 1.2fr) minmax(95px, 0.85fr) 100px 200px !important;
+  grid-template-columns: 45px minmax(120px, 1.2fr) minmax(95px, 0.9fr) minmax(190px, 1.6fr) minmax(95px, 0.85fr) 108px 200px !important;
   align-items: center !important;
   gap: 12px !important;
   padding: 12px 18px !important;
@@ -265,6 +306,22 @@
   justify-content: center !important;
 }
 
+.lab-tech-table-card .receptionists-status {
+  min-width: 80px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 26px !important;
+  gap: 5px !important;
+  padding: 0 8px !important;
+  font-size: 11px !important;
+  box-sizing: border-box !important;
+}
+
+.lab-tech-table-card .receptionists-status::before {
+  width: 6px !important;
+  height: 6px !important;
+}
+
 .receptionists-thead span:last-child,
 .receptionists-actions-head,
 .lab-tech-table-card .receptionists-thead span:last-child,
@@ -290,16 +347,31 @@
   box-sizing: border-box;
 }
 
-.lab-tech-table-card .actions-group {
-  gap: 6px !important;
-  padding: 4px 0 !important;
+.lab-technicians-page.receptionists-page .lab-tech-table-card .receptionists-actions {
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+  padding: 0 !important;
+  overflow: visible !important;
 }
 
-.lab-tech-table-card .actions-group .action-btn {
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
-  min-height: 38px;
+.lab-technicians-page.receptionists-page .lab-tech-table-card .receptionists-actions .actions-group {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 0 !important;
+  transform: translateX(-10px);
+}
+
+.lab-technicians-page.receptionists-page .lab-tech-table-card .receptionists-actions .action-btn.medical-instrument-btn,
+.lab-technicians-page.receptionists-page .lab-tech-table-card .receptionists-actions .action-btn {
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  flex: 0 0 32px !important;
 }
 
 .receptionists-action-button {
@@ -387,6 +459,15 @@
   color: #0284c7 !important;
   font-weight: 800 !important;
 }
+
+.lab-technicians-page.receptionists-page .receptionists-email {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+}
+
 .password-input-wrapper {
   position: relative;
   width: 100%;

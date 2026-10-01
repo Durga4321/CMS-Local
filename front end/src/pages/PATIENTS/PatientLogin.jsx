@@ -147,6 +147,13 @@ function PatientLogin() {
     if (location.state?.email)   setEmail(location.state.email);
   }, [location.state]);
 
+  useEffect(() => {
+    if (!successMessage) return undefined;
+
+    const timeoutId = window.setTimeout(() => setSuccessMessage(""), 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [successMessage]);
+
   const validate = () => {
     const newErrors = {};
     const emailError = validateGmail(email, "Email ID", { strict: false });

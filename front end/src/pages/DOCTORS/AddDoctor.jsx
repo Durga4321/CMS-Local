@@ -636,7 +636,7 @@ function AddDoctor() {
     let value = event.target.value;
 
     if (name === "name") {
-      value = formatTitleCase(onlyAlpha(value));
+      value = onlyAlpha(value);
     }
 
     if (name === "qualification") {
@@ -777,13 +777,36 @@ const validateBranchSelection = (values = form) => {
     return "";
   };
 
+  const validateQualification = (value) => {
+    const text = String(value ?? "").trim();
+    const textError = validateText(text, "Qualification");
+    if (textError) return textError;
+
+    if (/\d/.test(text)) {
+      return "Qualification should not contain numbers.";
+    }
+
+    if (!/^[A-Za-z][A-Za-z\s.,'/&()-]*$/.test(text) || !/[A-Za-z]{2}/.test(text)) {
+      return "Qualification must contain at least two letters and valid characters.";
+    }
+
+    const normalizedQualification = text.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (["bcom", "bachelorofcommerce", "btech", "bacheloroftechnology"].some(
+      (invalidDegree) => normalizedQualification.includes(invalidDegree)
+    )) {
+      return "Enter a medical qualification.";
+    }
+
+    return "";
+  };
+
   const validateForm = (values = form) => {
     const nextErrors = {
       branchIds: validateBranchSelection(values),
     name: validateAlpha(values.name, "Doctor Name"),
     specialization: validateText(values.specialization, "Specialization"),
     areaofExpertise: validateText(values.areaofExpertise, "Area of Expertise"),
-    qualification: validateText(values.qualification, "Qualification"),
+    qualification: validateQualification(values.qualification),
     experience: validateNumeric(values.experience, "Experience", {
       integer: true,
       max: 99,
@@ -1061,6 +1084,10 @@ const validateBranchSelection = (values = form) => {
                 name="name"
                 value={form.name}
                 onChange={handleChange}
+                onBlur={(event) => {
+                  const name = formatTitleCase(event.target.value);
+                  setForm((previous) => ({ ...previous, name }));
+                }}
                 className={fieldErrors.name ? "is-invalid" : ""}
                 required
               />

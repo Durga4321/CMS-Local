@@ -345,7 +345,7 @@
    ──────────────────────── */
 .dr-sidebar-profile {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   margin: 12px;
   padding: 12px 14px;
@@ -368,6 +368,7 @@
 .dr-sidebar-avatar {
   width: 40px;
   height: 40px;
+  margin-top: 2px;
   background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
   color: #ffffff;
   border-radius: 12px;
@@ -384,7 +385,8 @@
   display: flex;
   flex-direction: column;
   gap: 1.5px;
-  overflow: hidden;
+  min-width: 0;
+  overflow: visible;
 }
 
 .dr-sidebar-profile-name {

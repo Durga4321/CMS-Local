@@ -145,6 +145,7 @@ function Branches() {
   const clinicBranding = getClinicInvoiceBranding({ clinicId: hospitalId, clinicName });
 
   const [branches, setBranches] = useState([]);
+  const [viewingBranch, setViewingBranch] = useState(null);
   const [activeActionState, setActiveActionState] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(true);
@@ -653,7 +654,10 @@ function Branches() {
           <button
             type="button"
             className="branches-icon-button"
-            onClick={fetchBranches}
+            onClick={() => {
+              clearBranchCache(hospitalId);
+              fetchBranches();
+            }}
             disabled={loading || saving}
             title="Refresh branches"
           >
@@ -752,7 +756,7 @@ function Branches() {
                   statusChecked={isActive}
                   statusDisabled={saving || isUpdating || isDeleting}
                   statusTitle={isActive ? "Disable branch" : "Activate branch"}
-                  onView={() => window.alert(`Branch: ${getBranchName(branch) || "-"}\nID: ${branchId || "-"}\nPhone: ${readBranchField(branch, "phone", "Phone") || "-"}\nEmail: ${readBranchField(branch, "email", "Email") || "-"}\nLocation: ${formatBranchAddress(branch) || "-"}\nStatus: ${isActive ? "Active" : "Inactive"}`)}
+                  onView={() => setViewingBranch(branch)}
                   onEdit={() => openEditModal(branch)}
                   onStatus={() => toggleBranchStatus(branch)}
                   onDelete={() => handleDeleteBranch(branch)}
@@ -984,6 +988,47 @@ function Branches() {
               </div>
             </form>
           </div>
+        </div>
+      ) : null}
+
+      {viewingBranch ? (
+        <div className="branches-modal-overlay" onClick={() => setViewingBranch(null)}>
+          <section
+            className="branches-modal branches-view-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="branch-details-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="branches-modal-header">
+              <div className="branches-modal-title">
+                <div className="branches-modal-icon">
+                  <Building2 size={20} />
+                </div>
+                <div>
+                  <h3 id="branch-details-title">Branch Details</h3>
+                  <p>{clinicName}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="branches-modal-close"
+                onClick={() => setViewingBranch(null)}
+                aria-label="Close branch details"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="branches-view-grid">
+              <div><span>Branch</span><strong>{getBranchName(viewingBranch) || "-"}</strong></div>
+              <div><span>Branch ID</span><strong>{getBranchId(viewingBranch) || "-"}</strong></div>
+              <div><span>Phone</span><strong>{readBranchField(viewingBranch, "phone", "Phone") || "-"}</strong></div>
+              <div><span>Email</span><strong>{readBranchField(viewingBranch, "email", "Email") || "-"}</strong></div>
+              <div className="branches-view-grid-full"><span>Location</span><strong>{formatBranchAddress(viewingBranch) || "-"}</strong></div>
+              <div><span>Status</span><strong>{getBranchIsActive(viewingBranch) ? "Active" : "Inactive"}</strong></div>
+            </div>
+          </section>
         </div>
       ) : null}
     </div>

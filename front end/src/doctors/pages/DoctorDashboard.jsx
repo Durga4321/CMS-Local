@@ -13,7 +13,6 @@ import {
   RefreshCw,
   Search,
   Sparkles,
-  Stethoscope,
   Timer,
   X,
 } from "lucide-react";
@@ -634,10 +633,6 @@ function DoctorDashboard() {
             ))
           ) : (
             <div className="dd-empty-telemetry">
-              <div className="dd-empty-icon-wrap">
-                <Stethoscope size={36} className="dd-empty-stetho" />
-                <span className="dd-empty-radar-ring" />
-              </div>
               <h4>No Patients in Selected Queue</h4>
               <p>
                 {search

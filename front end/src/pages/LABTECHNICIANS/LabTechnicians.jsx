@@ -118,6 +118,7 @@ function LabTechnicians() {
   const [loading, setLoading] = useState(true);
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewingTech, setViewingTech] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [editingTech, setEditingTech] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -379,7 +380,7 @@ function LabTechnicians() {
                     canDelete={canDelete}
                     statusChecked={!String(status).toLowerCase().includes("inactive")}
                     statusTitle={String(status).toLowerCase().includes("inactive") ? "Activate lab technician" : "Deactivate lab technician"}
-                    onView={() => window.alert(`Lab Technician: ${name || "-"}\nBranch: ${getLabTechBranchName(tech, branchNameById) || "-"}\nEmail: ${getLabTechEmail(tech) || "-"}\nPhone: ${getLabTechPhone(tech) || "-"}\nStatus: ${status || "-"}`)}
+                    onView={() => setViewingTech(tech)}
                     onEdit={() => openModal(tech)}
                     onStatus={() => toggleTechnicianStatus(tech)}
                     onDelete={() => deleteTechnician(tech)}
@@ -439,6 +440,44 @@ function LabTechnicians() {
               <div className="receptionists-modal-actions"><button type="button" className="receptionists-secondary-button" onClick={closeModal} disabled={saving}>Cancel</button><button type="submit" className="receptionists-save-button" disabled={saving || (editingTech ? !canEdit : !canCreate)}><CheckCircle size={16} />{saving ? "Saving..." : editingTech ? "Update Lab Technician" : "Create Lab Technician"}</button></div>
             </form>
           </div>
+        </div>
+      ) : null}
+
+      {viewingTech ? (
+        <div className="receptionists-modal-overlay" onClick={() => setViewingTech(null)}>
+          <section
+            className="receptionists-modal lab-technician-view-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="lab-technician-details-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="receptionists-modal-header">
+              <div className="receptionists-modal-title">
+                <div className="receptionists-modal-icon"><Microscope size={20} /></div>
+                <div>
+                  <h3 id="lab-technician-details-title">Lab Technician Details</h3>
+                  <p>{clinicName}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="receptionists-modal-close"
+                onClick={() => setViewingTech(null)}
+                aria-label="Close lab technician details"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="lab-technician-view-grid">
+              <div><span>Name</span><strong>{getLabTechName(viewingTech) || "-"}</strong></div>
+              <div><span>Branch</span><strong>{getLabTechBranchName(viewingTech, branchNameById) || "-"}</strong></div>
+              <div><span>Email</span><strong>{getLabTechEmail(viewingTech) || "-"}</strong></div>
+              <div><span>Phone</span><strong>{getLabTechPhone(viewingTech) || "-"}</strong></div>
+              <div><span>Status</span><strong>{getLabTechStatus(viewingTech) || "-"}</strong></div>
+            </div>
+          </section>
         </div>
       ) : null}
     </div>

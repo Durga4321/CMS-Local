@@ -297,7 +297,11 @@
   letter-spacing: 0.04em;
   margin-top: 2px;
   text-align: center;
-  white-space: nowrap;
+  width: 100%;
+  max-width: 74px;
+  line-height: 1.15;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* COLLAPSED SIDEBAR CAPSULE ITEMS */
@@ -350,7 +354,7 @@
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(15, 23, 42, 0.12);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
@@ -364,15 +368,11 @@
 
 @media (max-width: 768px) {
   .sidebar {
-    width: 240px;
-    transform: translateX(-240px);
+    width: 256px;
+    transform: none;
     position: fixed;
     height: 100vh;
-    transition: transform 0.28s ease;
-  }
-
-  .sidebar.open {
-    transform: translateX(0);
+    transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1), padding 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 

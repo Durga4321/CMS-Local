@@ -77,6 +77,17 @@ function UserProfilePage({ roleType = "admin" }) {
     setActiveTab(params.get("tab") === "password" ? "password" : "profile");
   }, [location.search]);
 
+  useEffect(() => {
+    if (!message || messageType !== "success") return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setMessage("");
+      setMessageType("");
+    }, roleType === "receptionist" ? 2000 : 3000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [message, messageType, roleType]);
+
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
   };
@@ -338,7 +349,19 @@ function UserProfilePage({ roleType = "admin" }) {
                   </div>
                   <div className="profile-card-content">
                     <span className="profile-card-label">Official Email</span>
-                    <strong className="profile-card-value">{profile.email}</strong>
+                    <strong
+                      className="profile-card-value"
+                      style={{
+                        textAlign: "left",
+                        alignSelf: "flex-start",
+                        justifySelf: "flex-start",
+                        marginLeft: 0,
+                        paddingLeft: 0,
+                        width: "100%"
+                      }}
+                    >
+                      {profile.email}
+                    </strong>
                     <em className="profile-card-subtag">Primary Communication Channel</em>
                   </div>
                 </div>

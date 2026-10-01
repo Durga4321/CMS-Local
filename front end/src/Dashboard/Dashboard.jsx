@@ -1017,9 +1017,10 @@ function Dashboard() {
             <button
               type="button"
               className="db-view-all-btn"
+              style={{ flexShrink: 0, marginLeft: "auto", whiteSpace: "nowrap" }}
               onClick={() => navigate("/appointments")}
             >
-              <span>View All</span>
+              <span style={{ whiteSpace: "nowrap" }}>View All</span>
               <ArrowRight size={13} />
             </button>
           </div>

@@ -575,6 +575,53 @@ aside.rc-sidebar.lab-sidebar {
   margin-bottom: 12px !important;
 }
 
+.lab-sidebar.collapsed .rc-brand,
+.lab-shell .rc-sidebar.collapsed .rc-brand {
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  margin: 0 0 8px !important;
+  padding: 4px 2px 10px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(148, 190, 220, 0.42) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.lab-sidebar.collapsed .rc-brand-icon,
+.lab-shell .rc-sidebar.collapsed .rc-brand-icon {
+  width: 36px !important;
+  height: 36px !important;
+  margin: 0 auto !important;
+}
+
+.lab-sidebar.collapsed .rc-brand::before,
+.lab-shell .rc-sidebar.collapsed .rc-brand::before {
+  content: "Diagnostic Lab";
+  order: 1;
+  color: #64748b;
+  font-size: 7.5px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.lab-sidebar.collapsed .rc-brand::after,
+.lab-shell .rc-sidebar.collapsed .rc-brand::after {
+  order: 2;
+  max-width: 72px;
+  color: #0f172a;
+  font-size: 8.5px;
+  font-weight: 750;
+  line-height: 1.15;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
 /* Section Label & ECG Pulse Wave */
 .lab-sidebar .rc-section-label,
 .lab-shell .rc-sidebar .rc-section-label {
