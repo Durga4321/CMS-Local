@@ -78,8 +78,8 @@
 /* Collapsed Sidebar */
 .pp-sidebar.collapsed,
 .pp-shell.pp-sidebar-collapsed .pp-sidebar {
-  width: 190px !important;
-  min-width: 190px !important;
+  width: 130px !important;
+  min-width: 130px !important;
   padding: 18px 12px 14px !important;
 }
 
@@ -441,22 +441,23 @@
 
 .pp-main.collapsed,
 .pp-shell.pp-sidebar-collapsed .pp-main {
-  margin-left: 190px !important;
-  width: calc(100% - 190px) !important;
+  margin-left: 130px !important;
+  width: calc(100% - 130px) !important;
 }
 
 @media (min-width: 901px) {
   .pp-sidebar.collapsed,
   .pp-shell.pp-sidebar-collapsed .pp-sidebar {
-    width: 190px !important;
-    min-width: 190px !important;
+    width: 130px !important;
+    min-width: 130px !important;
     padding: 18px 12px 14px !important;
   }
 
   .pp-sidebar.collapsed .pp-brand {
-    flex-direction: row;
+    flex-direction: column;
+    align-items: flex-start;
     justify-content: flex-start;
-    gap: 12px;
+    gap: 8px;
     padding: 4px 8px 16px;
   }
 
@@ -465,22 +466,36 @@
   }
 
   .pp-sidebar.collapsed .pp-brand-text {
-    width: auto;
+    display: block !important;
+    width: 100%;
+    min-width: 0;
     text-align: left;
   }
 
-  .pp-sidebar.collapsed .pp-brand-text strong {
-    font-size: 16px;
+  .pp-sidebar.collapsed .pp-nav {
+    align-items: flex-start;
+    padding-left: 8px;
   }
 
-  .pp-sidebar.collapsed .pp-brand-text span {
-    font-size: 12px;
+  .pp-sidebar.collapsed .pp-nav-item {
+    align-self: flex-start;
+    margin-left: 0;
+  }
+
+  .pp-sidebar.collapsed .pp-sidebar-footer {
+    align-items: flex-start;
+    padding-left: 8px;
+  }
+
+  .pp-sidebar.collapsed .pp-patient-chip {
+    margin-left: 0;
+    margin-right: 0;
   }
 
   .pp-main.collapsed,
   .pp-shell.pp-sidebar-collapsed .pp-main {
-    margin-left: 190px !important;
-    width: calc(100% - 190px) !important;
+    margin-left: 130px !important;
+    width: calc(100% - 130px) !important;
   }
 }
 
@@ -3119,6 +3134,15 @@
   gap: 16px;
 }
 
+.booking-panel:has(.booking-card--department) {
+  row-gap: 12px;
+}
+
+.booking-panel:has(.booking-card--department) > .booking-panel-header,
+.booking-panel:has(.booking-card--department) > .booking-grid {
+  margin-inline: 16px;
+}
+
 .booking-card {
   display: flex;
   flex-direction: column;
@@ -3216,9 +3240,13 @@
   letter-spacing: 0;
 }
 
+.booking-card--doctor {
+  justify-content: center;
+}
+
 .booking-doctor-card-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   color: inherit !important;
@@ -3260,7 +3288,7 @@
 .booking-doctor-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  z-index: 1100;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3609,6 +3637,12 @@
   flex-wrap: wrap;
   gap: 12px;
   justify-content: flex-end;
+}
+
+.patient-portal .booking-footer .booking-button--ghost {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: #b91c1c;
 }
 
 .booking-button {

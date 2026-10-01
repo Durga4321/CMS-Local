@@ -1547,6 +1547,10 @@ function Doctors() {
                       <b>{getSpecializationDisplayName(doc.specialization) || "-"}</b>
                     </div>
                     <div>
+                      <span>Qualification</span>
+                      <b>{cleanDisplayText(doc.qualification ?? doc.Qualification)}</b>
+                    </div>
+                    <div>
                       <span>Area of Expertise</span>
                       <b>{cleanDisplayText(getDoctorAreaOfExpertise(doc))}</b>
                     </div>

@@ -363,11 +363,22 @@ function Admins() {
       const adminName = formatTitleCase(form.fullName.trim());
       const adminEmail = form.email.trim();
       const adminPhone = form.phone.trim();
-      const duplicateMobileMessage = await validateUniqueMobileNumber(adminPhone, {
-        current: editingAdminId ? { id: editingAdminId, source: "admins" } : {},
-        localRecords: admins,
-        localSource: "admins",
-      });
+      const previousPhone = String(
+        previousAdmin?.phone ||
+        previousAdmin?.mobileNumber ||
+        previousAdmin?.raw?.phone ||
+        previousAdmin?.raw?.mobileNumber ||
+        getAdminSecret(previousAdmin?.email)?.phone ||
+        ""
+      ).replace(/\D/g, "");
+      const phoneChanged = !editingAdminId || previousPhone !== adminPhone.replace(/\D/g, "");
+      const duplicateMobileMessage = phoneChanged
+        ? await validateUniqueMobileNumber(adminPhone, {
+            current: editingAdminId ? { id: editingAdminId, source: "admins" } : {},
+            localRecords: admins,
+            localSource: "admins",
+          })
+        : "";
       if (duplicateMobileMessage) {
         setFieldErrors((current) => ({ ...current, phone: duplicateMobileMessage }));
         setError(duplicateMobileMessage);
@@ -521,7 +532,7 @@ function Admins() {
     {
       key: "name",
       label: "Name",
-      width: "minmax(125px, 1.1fr)",
+      width: "minmax(230px, 1.1fr)",
       render: (admin) => (
         <span className="sa-admin-name-cell">
           <span className={`sa-admin-avatar sa-admin-avatar--${getInitials(admin.name || admin.email).charCodeAt(0) % 4}`}>
@@ -536,8 +547,7 @@ function Admins() {
     {
       key: "email",
       label: "Email",
-      width: "minmax(145px, 1.25fr)",
-      cellClassName: "sa-table-cell--nowrap",
+      width: "minmax(220px, 1.25fr)",
       render: (admin) => (
         <span title={admin.email || ""} className="sa-table-text-overflow sa-admin-email">
           {admin.email || "-"}
@@ -547,7 +557,7 @@ function Admins() {
     {
       key: "assignedClinic",
       label: "Assigned Clinic",
-      width: "minmax(115px, 0.95fr)",
+      width: "minmax(160px, 0.95fr)",
       render: (admin) => {
         const clinicId = getAdminClinicId(admin, clinics);
         const clinicName = getAdminClinicName(admin, clinics);
@@ -575,7 +585,7 @@ function Admins() {
     {
       key: "status",
       label: "Status",
-      width: "80px",
+      width: "76px",
       align: "center",
       render: (admin) => (
         <span className={`sa-badge ${admin.status === "Active" ? "is-active" : "is-danger"}`}>
@@ -586,7 +596,7 @@ function Admins() {
     {
       key: "actions",
       label: "Actions",
-      width: "135px",
+      width: "120px",
       align: "center",
       cellClassName: "sa-table-cell--actions",
       render: (admin) => {
@@ -743,6 +753,7 @@ function Admins() {
                 name="sendWelcomeEmail"
                 checked={form.sendWelcomeEmail}
                 onChange={handleChange}
+                style={{ width: 20, height: 20, flex: "0 0 20px" }}
               />
             </label>
           </div>
@@ -768,9 +779,9 @@ function Admins() {
             }
           />
           <div className="sa-form-grid">
-            {["name", "email", "assignedClinic", "role", "status"].map((key) => (
+            { ["name", "email", "assignedClinic", "phone", "role", "status"].map((key) => (
               <div className="sa-form-field" key={key}>
-                <label>{key === "assignedClinic" ? "Assigned Clinic" : key.replace(/^\w/, (letter) => letter.toUpperCase())}</label>
+                <label>{key === "assignedClinic" ? "Assigned Clinic" : key === "phone" ? "Mobile Number" : key.replace(/^\w/, (letter) => letter.toUpperCase())}</label>
                 <input value={selectedAdmin?.[key] || ""} readOnly />
               </div>
             ))}

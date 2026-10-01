@@ -106,9 +106,11 @@
 }
 
 @media (max-width: 768px) {
-  .main,
-  .main.collapsed,
+  .main {
+    margin-left: 256px;
+  }
+
   .layout.sidebar-collapsed .main {
-    margin-left: 0;
+    margin-left: 84px;
   }
 }

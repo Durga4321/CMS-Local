@@ -268,9 +268,6 @@ function ReceptionSidebar({
                           </span>
 
                           <span className="rc-nav-label rc-blood-drop-text">{child.label}</span>
-                          {child.badge ? (
-                            <span className="rc-med-nav-pill rc-blood-drop-pill">{child.badge}</span>
-                          ) : null}
                         </NavLink>
                       );
                     })}
@@ -291,7 +288,6 @@ function ReceptionSidebar({
                 <Icon size={18} />
               </span>
               {!collapsed && <span className="rc-nav-label">{item.label}</span>}
-              {!collapsed && item.badge ? <span className="rc-med-nav-pill">{item.badge}</span> : null}
             </NavLink>
           );
         })}

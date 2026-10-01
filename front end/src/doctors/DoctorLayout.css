@@ -41,11 +41,87 @@
   background: transparent;
 }
 
-/* Collapsed sidebar – hide it */
+/* Collapsed sidebar – keep a compact icon rail on desktop */
 .dr-layout--collapsed .dr-sidebar {
-  width: 0;
-  min-width: 0;
+  width: 144px;
+  min-width: 144px;
   overflow: hidden;
+}
+
+.dr-layout--collapsed .dr-sidebar .dr-brand {
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  margin: 14px 8px 0;
+  padding: 8px 4px 12px;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.dr-layout--collapsed .dr-sidebar .dr-brand > div:not(.dr-brand-icon) {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+}
+
+.dr-layout--collapsed .dr-sidebar .dr-brand-sub,
+.dr-layout--collapsed .dr-sidebar .dr-brand-name,
+.dr-layout--collapsed .dr-sidebar .dr-brand-branch {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.dr-layout--collapsed .dr-sidebar .dr-nav-label,
+.dr-layout--collapsed .dr-sidebar .dr-nav-tag {
+  display: none;
+}
+
+.dr-layout--collapsed .dr-sidebar .dr-nav {
+  align-items: center;
+  padding-right: 8px;
+  padding-left: 8px;
+  transform: translateX(-8px);
+}
+
+.dr-layout--collapsed .dr-sidebar .dr-nav-link {
+  width: 48px;
+  min-width: 48px;
+  justify-content: center;
+  gap: 0;
+  padding-right: 4px;
+  padding-left: 4px;
+  transform: none;
+}
+
+.dr-layout--collapsed .dr-sidebar .dr-sidebar-profile {
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  margin: 8px 0 0;
+  padding: 10px 8px;
+  transform: translateX(-8px);
+}
+
+.dr-layout--collapsed .dr-sidebar .dr-sidebar-profile-info {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+  overflow: visible;
+}
+
+.dr-layout--collapsed .dr-sidebar .dr-sidebar-profile-info > p {
+  max-width: 100%;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.dr-layout--collapsed .dr-sidebar .dr-sidebar-profile-status {
+  justify-content: center;
 }
 
 .dr-sidebar-overlay {

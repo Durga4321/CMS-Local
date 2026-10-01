@@ -149,7 +149,7 @@ function Dashboard() {
               </div>
             </div>
 
-            <Charts data={revenueData} dataKey="revenue" />
+            <Charts data={revenueData} dataKey="revenue" metrics={cards} />
           </div>
 
           <div className="sa-panel sa-panel--activity">

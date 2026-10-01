@@ -73,12 +73,8 @@ const getProfileClinicId = (profile = {}) =>
   localStorage.getItem("clinicId") ||
   "";
 
-function Sidebar({
-  open = false,
-  onClose = () => {},
-}) {
+function Sidebar({ collapsed = false }) {
   const location = useLocation();
-  const collapsed = false;
 
   const sessionRole = String(
     localStorage.getItem("adminRole") || sessionStorage.getItem("adminRole") || ""
@@ -124,7 +120,7 @@ function Sidebar({
 
   return (
     <>
-      <div className={`sidebar ${open ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`}>
+      <div className={`sidebar ${collapsed ? "collapsed" : ""}`}>
 
       {/* BRAND LOGO HEADER (NO CROSS SYMBOL) */}
       <div className="sidebar-header" title={brandName}>
@@ -168,7 +164,6 @@ function Sidebar({
       </div>
 
       </div>
-      <div className={`sidebar-overlay ${open ? 'visible' : ''}`} onClick={onClose} />
     </>
   );
 }

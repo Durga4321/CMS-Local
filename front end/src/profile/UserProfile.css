@@ -137,17 +137,34 @@
   border-radius: 999px;
   background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
   color: #0f766e;
-  display: inline-flex;
+  display: inline-grid;
+  grid-template-columns: 16px auto;
+  grid-template-rows: 1fr;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  column-gap: 8px;
   padding: 0 16px;
   font: inherit;
   font-size: 13.5px;
   font-weight: 750;
+  line-height: 1;
   cursor: pointer;
   flex: 0 0 auto;
   box-shadow: 0 2px 8px rgba(13, 148, 136, 0.12);
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.profile-back-btn > svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.profile-back-btn .profile-btn-label {
+  display: block;
+  line-height: 16px;
+  white-space: nowrap;
+  transform: translateY(6px);
 }
 
 .profile-back-btn:hover {
@@ -528,7 +545,7 @@
 /* 3D Medical Credential Info Cards Grid */
 .profile-info-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -544,7 +561,29 @@
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
   transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+}
+
+.card--email {
+  min-width: 0;
+  width: 100%;
+  min-height: 240px;
+  overflow: visible;
+}
+
+.card--email .profile-card-content,
+.card--email .profile-card-value {
+  min-width: 0;
+  width: 100%;
+}
+
+.card--email .profile-card-value {
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  letter-spacing: -0.02em;
 }
 
 .profile-info-card:hover {
@@ -586,6 +625,29 @@
   border: 1.5px solid #5eead4;
   color: #0f766e;
   box-shadow: 0 4px 12px rgba(15, 118, 110, 0.2);
+}
+
+.card--email .profile-card-content {
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+  text-align: left !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: visible !important;
+}
+
+.card--email .profile-card-value {
+  display: block !important;
+  width: 100% !important;
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  align-self: flex-start !important;
+  justify-self: flex-start !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .profile-card-content {

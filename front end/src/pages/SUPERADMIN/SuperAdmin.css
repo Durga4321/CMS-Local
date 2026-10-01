@@ -421,6 +421,12 @@
   margin-top: 16px;
 }
 
+.sa-chart-summary-grid--dashboard {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 4px;
+}
+
 .sa-chart-summary-card {
   min-height: 72px;
   padding: 12px;
@@ -465,6 +471,67 @@
 .sa-chart-summary-card--rose {
   border-color: #ffe4e6;
   background: linear-gradient(180deg, #fff1f2 0%, #ffffff 100%);
+}
+
+.sa-chart-summary-card--compact {
+  min-width: 0;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+}
+
+.sa-chart-summary-card--teal {
+  border-color: #b9eee2;
+  background: linear-gradient(135deg, #effcf8 0%, #ffffff 100%);
+}
+
+.sa-chart-summary-card--amber {
+  border-color: #fde4c7;
+  background: linear-gradient(135deg, #fff8ed 0%, #ffffff 100%);
+}
+
+.sa-chart-summary-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid !important;
+  place-items: center;
+  border-radius: 11px;
+  color: #0f766e !important;
+  background: #dff8f1;
+}
+
+.sa-chart-summary-card--blue .sa-chart-summary-icon {
+  color: #2563eb !important;
+  background: #e2efff;
+}
+
+.sa-chart-summary-card--amber .sa-chart-summary-icon {
+  color: #c26a06 !important;
+  background: #fff0d7;
+}
+
+.sa-chart-summary-copy {
+  min-width: 0;
+}
+
+.sa-chart-summary-card--compact .sa-chart-summary-copy > span {
+  overflow: hidden;
+  color: #64748b;
+  font-size: 11px;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.sa-chart-summary-card--compact .sa-chart-summary-copy > strong {
+  margin-top: 4px;
+  font-size: 18px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .sa-activity-panel-header {
@@ -585,10 +652,19 @@
 
 .sa-chart {
   flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   width: 100%;
-  min-height: 260px;
-  height: clamp(260px, 32vh, 330px);
+  min-height: 0;
+  height: auto;
   overflow: visible;
+}
+
+.sa-chart-plot {
+  width: 100%;
+  min-height: 280px;
+  height: clamp(280px, 34vh, 350px);
 }
 
 .sa-chart--empty {
@@ -1508,7 +1584,7 @@
 .sa-table--audit .sa-table-row {
   min-width: 880px;
   width: 100%;
-  grid-template-columns: 40px minmax(96px, 0.75fr) minmax(128px, 1.15fr) minmax(72px, 0.55fr) minmax(112px, 0.75fr) 54px minmax(125px, 1fr) minmax(88px, 0.72fr) !important;
+  grid-template-columns: 40px minmax(160px, 1fr) minmax(128px, 1.15fr) minmax(72px, 0.55fr) minmax(112px, 0.75fr) 54px minmax(125px, 1fr) minmax(88px, 0.72fr) !important;
   column-gap: 12px !important;
   padding: 8px 12px;
   box-sizing: border-box;
@@ -1516,7 +1592,8 @@
 
 .sa-table--audit .sa-table-head > :nth-child(2),
 .sa-table--audit .sa-table-row > :nth-child(2) {
-  justify-content: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
 }
 
 .sa-table--audit .sa-table-head {
@@ -1567,11 +1644,14 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  width: 100%;
   min-width: 0;
   max-width: 100%;
+  justify-content: flex-start;
 }
 
 .sa-audit-user b {
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   color: #263142;
@@ -1887,9 +1967,12 @@
 }
 
 .sa-role-module b {
+  flex-shrink: 0;
+  padding-left: 3px;
   color: #0f172a;
   font-size: 14px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .sa-role-module span {
@@ -2527,7 +2610,7 @@
 }
 
 .sa-table--admins {
-  overflow-x: hidden;
+  overflow-x: auto;
   max-width: 100%;
   width: 100%;
 }
@@ -2540,10 +2623,10 @@
 
 .sa-table--admins .sa-table-head,
 .sa-table--admins .sa-table-row {
-  min-width: 0 !important;
-  width: 100% !important;
-  column-gap: 8px !important;
-  padding: 8px 12px !important;
+  min-width: 1080px !important;
+  width: max(100%, 1080px) !important;
+  column-gap: 5px !important;
+  padding: 8px 0 8px 10px !important;
 }
 
 .sa-table--admins .sa-table-head > :nth-child(1),
@@ -2571,7 +2654,7 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 5px !important;
+  gap: 3px !important;
   padding: 0 !important;
   width: auto !important;
   max-width: 100% !important;
@@ -2580,10 +2663,10 @@
 
 .sa-table .actions-group .action-btn,
 .sa-table-cell--actions .action-btn {
-  width: 28px !important;
-  height: 28px !important;
-  min-width: 28px !important;
-  min-height: 28px !important;
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  min-height: 26px !important;
   border-radius: 7px !important;
 }
 
@@ -2658,8 +2741,8 @@
   font-weight: 900;
   font-size: 0.92rem;
   letter-spacing: -0.01em;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
@@ -2701,8 +2784,8 @@
 
 .sa-admin-clinic-cell > span:last-child {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
@@ -2744,18 +2827,20 @@
 }
 
 .sa-table--admins .sa-badge {
-  min-width: 82px;
-  min-height: 28px;
+  min-width: 72px;
+  min-height: 26px;
+  padding: 2px 8px;
+  font-size: 12px;
 }
 
 .sa-table--admins .sa-actions {
-  gap: 6px;
+  gap: 4px;
   justify-content: flex-start;
 }
 
 .sa-table--admins .sa-icon-btn {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
 }
 
@@ -2964,6 +3049,13 @@
   overflow-wrap: normal;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.sa-table--admins .sa-admin-email {
+  height: auto;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 
 .sa-table-text-overflow {
@@ -3773,9 +3865,15 @@
     min-height: 0;
   }
 
-  .sa-chart {
-    height: clamp(220px, 30vh, 320px);
-    min-height: 220px;
+  .sa-chart-plot {
+    height: clamp(260px, 32vh, 330px);
+    min-height: 260px;
+  }
+}
+
+@media (max-width: 680px) {
+  .sa-chart-summary-grid--dashboard {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -278,6 +278,7 @@ function Receptionists() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewingReceptionist, setViewingReceptionist] = useState(null);
   const [editingReceptionist, setEditingReceptionist] = useState(null);
   const [form, setForm] = useState(getEmptyForm());
   const [fieldErrors, setFieldErrors] = useState({});
@@ -867,7 +868,7 @@ function Receptionists() {
                   statusChecked={isActive}
                   statusDisabled={isDeleting || isStatusUpdating}
                   statusTitle={isActive ? "Deactivate receptionist" : "Activate receptionist"}
-                  onView={() => window.alert(`Receptionist: ${receptionist.name || "-"}\nBranch: ${getReceptionistBranchName(receptionist, branchNameById) || "-"}\nEmail: ${receptionist.email || "-"}\nPhone: ${receptionist.phone || "-"}\nStatus: ${isActive ? "Active" : "Inactive"}`)}
+                  onView={() => setViewingReceptionist(receptionist)}
                   onEdit={() => openEditModal(receptionist)}
                   onStatus={() => toggleReceptionistStatus(receptionist)}
                   onDelete={() => handleDelete(receptionist)}
@@ -1085,6 +1086,46 @@ function Receptionists() {
               </div>
             </form>
           </div>
+        </div>
+      ) : null}
+
+      {viewingReceptionist ? (
+        <div className="receptionists-modal-overlay" onClick={() => setViewingReceptionist(null)}>
+          <section
+            className="receptionists-modal receptionists-view-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="receptionist-details-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="receptionists-modal-header">
+              <div className="receptionists-modal-title">
+                <div className="receptionists-modal-icon">
+                  <UserCheck size={20} />
+                </div>
+                <div>
+                  <h3 id="receptionist-details-title">Receptionist Details</h3>
+                  <p>{clinicDisplayName}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="receptionists-modal-close"
+                onClick={() => setViewingReceptionist(null)}
+                aria-label="Close receptionist details"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="receptionists-view-grid">
+              <div><span>Name</span><strong>{viewingReceptionist.name || "-"}</strong></div>
+              <div><span>Branch</span><strong>{getReceptionistBranchName(viewingReceptionist, branchNameById) || "-"}</strong></div>
+              <div><span>Email</span><strong>{viewingReceptionist.email || "-"}</strong></div>
+              <div><span>Phone</span><strong>{viewingReceptionist.phone || "-"}</strong></div>
+              <div><span>Status</span><strong>{viewingReceptionist.isActive !== false ? "Active" : "Inactive"}</strong></div>
+            </div>
+          </section>
         </div>
       ) : null}
     </div>

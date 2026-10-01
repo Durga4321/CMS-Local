@@ -44,17 +44,49 @@
 }
 
 .rc-sidebar.collapsed .rc-brand {
-  padding: 8px 4px !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  padding: 4px 2px 10px !important;
   justify-content: center !important;
-  gap: 0 !important;
-  border-radius: 12px !important;
-  margin-bottom: 12px !important;
-  background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 45%, #ccfbf1 100%) !important;
-  border: 1.5px solid #7dd3fc !important;
+  gap: 4px !important;
+  border-radius: 0 !important;
+  margin: 0 0 8px !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(148, 190, 220, 0.42) !important;
+  box-shadow: none !important;
+}
+
+.rc-sidebar.collapsed .rc-brand::before {
+  content: "Clinic Center";
+  order: 1;
+  color: #64748b;
+  font-size: 7px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.rc-sidebar.collapsed .rc-brand::after {
+  content: attr(title);
+  order: 2;
+  max-width: 72px;
+  color: #0f172a;
+  font-size: 9px;
+  font-weight: 750;
+  line-height: 1.15;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .rc-sidebar.collapsed .rc-brand-icon {
+  order: 0;
+  width: 38px;
+  height: 38px;
   margin: 0 auto;
+  border-radius: 10px;
 }
 
 .rc-sidebar.collapsed .rc-brand-text {

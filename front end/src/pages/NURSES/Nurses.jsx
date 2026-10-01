@@ -147,6 +147,7 @@ function Nurses() {
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [saving, setSaving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewingNurse, setViewingNurse] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState(emptyForm);
@@ -534,7 +535,7 @@ function Nurses() {
                       String(statusUpdatingId) === String(getNurseId(nurse))
                     }
                     statusTitle={isActive ? "Deactivate nurse" : "Activate nurse"}
-                    onView={() => window.alert(`Nurse: ${name || "-"}\nBranch: ${getNurseBranchName(nurse, branchNameById) || "-"}\nEmail: ${getNurseEmail(nurse) || "-"}\nPhone: ${getNursePhone(nurse) || "-"}\nStatus: ${status || "-"}`)}
+                    onView={() => setViewingNurse(nurse)}
                     onEdit={() => openEditModal(nurse)}
                     onStatus={() => toggleNurseStatus(nurse)}
                     onDelete={() => handleDeleteNurse(nurse)}
@@ -669,6 +670,46 @@ function Nurses() {
               </div>
             </form>
           </div>
+        </div>
+      ) : null}
+
+      {viewingNurse ? (
+        <div className="nurses-modal-overlay" onClick={() => setViewingNurse(null)}>
+          <section
+            className="nurses-modal nurses-view-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="nurse-details-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="nurses-modal-header">
+              <div className="nurses-modal-title">
+                <div className="nurses-modal-icon">
+                  <ShieldPlus size={20} />
+                </div>
+                <div>
+                  <h3 id="nurse-details-title">Nurse Details</h3>
+                  <p>{clinicName}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="nurses-modal-close"
+                onClick={() => setViewingNurse(null)}
+                aria-label="Close nurse details"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="nurses-view-grid">
+              <div><span>Name</span><strong>{getNurseName(viewingNurse) || "-"}</strong></div>
+              <div><span>Branch</span><strong>{getNurseBranchName(viewingNurse, branchNameById) || "-"}</strong></div>
+              <div><span>Email</span><strong>{getNurseEmail(viewingNurse) || "-"}</strong></div>
+              <div><span>Phone</span><strong>{getNursePhone(viewingNurse) || "-"}</strong></div>
+              <div><span>Status</span><strong>{getNurseStatus(viewingNurse) || "-"}</strong></div>
+            </div>
+          </section>
         </div>
       ) : null}
     </div>
