@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import DatePickerField from "../../components/DatePickerField";
 import { Check, ChevronDown, Download, Plus, Printer, Search, Syringe, Trash2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Prescription.css";
@@ -420,9 +421,7 @@ function Prescription() {
   const [appointment, setAppointment] = useState(null);
   const [consultation, setConsultation] = useState(routeState.consultation || null);
   const [diagnosis, setDiagnosis] = useState("");
-  const [instructions, setInstructions] = useState(
-    "Take medicines after food and complete the full course."
-  );
+  const [instructions, setInstructions] = useState("");
   const [followUp, setFollowUp] = useState("");
   const [medicines, setMedicines] = useState([createMedicine()]);
   const [loading, setLoading] = useState(true);
@@ -1312,6 +1311,7 @@ function Prescription() {
               value={instructions}
               onChange={(event) => setInstructions(event.target.value)}
             >
+              <option value="">Select Instructions</option>
               {INSTRUCTION_OPTIONS.map((option) => (
                 <option value={option} key={option}>
                   {option}
@@ -1325,15 +1325,14 @@ function Prescription() {
 
           <div className="rx-field rx-field--half">
             <label className="rx-label">Follow Up Date</label>
-            <input
-              className="rx-input"
-              type="date"
+            <DatePickerField
               value={followUp}
-              onChange={(event) => {
-                setFollowUp(event.target.value);
+              onChange={(nextValue) => {
+                setFollowUp(nextValue);
                 setFieldErrors((prev) => ({ ...prev, followUp: "" }));
                 setError("");
               }}
+              inputClassName="rx-input"
             />
             {fieldErrors.followUp ? (
               <small className="rx-field-error">{fieldErrors.followUp}</small>
@@ -1493,3 +1492,7 @@ function Prescription() {
 }
 
 export default Prescription;
+
+
+
+

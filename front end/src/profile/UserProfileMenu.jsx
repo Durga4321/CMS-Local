@@ -234,6 +234,7 @@ export function UserProfileMenu({ roleType = "admin" }) {
                 onChange={handleBranchChange}
                 className="hc-branch-select-input"
               >
+                <option value="">Select Branch</option>
                 {branchOptions.map((branch) => (
                   <option key={branch.id} value={branch.id}>
                     {branch.name}
@@ -290,4 +291,5 @@ export function UserProfileMenu({ roleType = "admin" }) {
 }
 
 export default UserProfileMenu;
+
 

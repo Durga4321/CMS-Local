@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   Calendar,
   CalendarDays,
@@ -13,6 +13,63 @@ import { formatIndianCurrency } from "../utils/format";
 import "./OpBillingUi.css";
 
 const formatCurrency = (val) => formatIndianCurrency(val);
+
+const formatDisplayDate = (value) => {
+  const raw = String(value || "").slice(0, 10);
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : raw;
+};
+
+const parseDisplayDate = (value) => {
+  const raw = String(value || "").trim();
+  const match = raw.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : raw;
+};
+
+const OpDatePickerField = ({ value, onChange }) => {
+  const pickerRef = useRef(null);
+  const openPicker = () => {
+    const picker = pickerRef.current;
+    if (!picker) return;
+    if (typeof picker.showPicker === "function") {
+      picker.showPicker();
+    } else {
+      picker.click();
+    }
+  };
+
+  return (
+    <span className="op-date-field">
+      <input
+        type="text"
+        inputMode="numeric"
+        placeholder="DD-MM-YYYY"
+        value={formatDisplayDate(value)}
+        onChange={(e) => onChange && onChange(parseDisplayDate(e.target.value))}
+        className="op-form-input"
+      />
+      <button
+        type="button"
+        className="op-date-trigger"
+        onClick={openPicker}
+        title="Select date"
+        aria-label="Select date"
+      >
+        <Calendar size={16} />
+      </button>
+      <input
+        ref={pickerRef}
+        className="op-native-date"
+        type="date"
+        value={value || ""}
+        onChange={(e) => onChange && onChange(e.target.value)}
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+    </span>
+  );
+};
+
 
 export const OpBillingHeader = () => null;
 
@@ -95,11 +152,9 @@ export const MiddleToolbarRow = ({
       <div className="op-date-clear-group">
         <div className="op-form-field">
           <label>Appointment Date</label>
-          <input
-            type="date"
+          <OpDatePickerField
             value={appointmentDateFilter}
-            onChange={(e) => onDateFilterChange && onDateFilterChange(e.target.value)}
-            className="op-form-input"
+            onChange={onDateFilterChange}
           />
         </div>
         <button
@@ -246,3 +301,4 @@ export const PaymentActionButton = (props) => null;
 export const BottomInfoCards = (props) => null;
 export const VisitInfoRow = (props) => null;
 export const PatientDoctorCard = (props) => null;
+

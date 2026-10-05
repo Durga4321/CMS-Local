@@ -504,7 +504,7 @@ function LabReportCreate() {
       .filter((row) => belongsToLabScope(row, labProfile))
       .map((row) => ({ ...row, __labTestNames: getPatientTestNames(row) }));
     setRows(nextRows);
-    if (!selectedPatientKey && nextRows.length) setSelectedPatientKey(getPatientKey(nextRows[0]));
+    
   }, [labProfile, selectedPatientKey]);
 
   useEffect(() => {
@@ -611,8 +611,8 @@ function LabReportCreate() {
       setSelectedReportKey("");
       return;
     }
-    if (!reportOptions.some((option) => option.key === selectedReportKey)) {
-      setSelectedReportKey(reportOptions[0].key);
+    if (selectedReportKey && !reportOptions.some((option) => option.key === selectedReportKey)) {
+      setSelectedReportKey("");
     }
   }, [reportOptions, selectedReportKey]);
 
@@ -969,6 +969,7 @@ function LabReportCreate() {
                   value={selectedPatientKey}
                   onChange={(event) => setSelectedPatientKey(event.target.value)}
                 >
+                  <option value="">Select Patient</option>
                   {patientOptions.map((patient) => (
                     <option value={patient.key} key={patient.key}>
                       {patient.name} {patient.visitDate ? `- ${patient.visitDate}` : ""} {patient.phone && patient.phone !== "-" ? `- ${patient.phone}` : ""} ({patient.count} tests)
@@ -987,6 +988,7 @@ function LabReportCreate() {
                   onChange={(event) => setSelectedReportKey(event.target.value)}
                   disabled={!selectedPatientKey}
                 >
+                  <option value="">Select Report</option>
                   {reportOptions.map((report) => (
                     <option value={report.key} key={report.key}>
                       {report.testName} {report.reported ? "(reported)" : ""}
@@ -1089,6 +1091,7 @@ function LabReportCreate() {
                         value={form[field.key] || ""}
                         onChange={(event) => setForm((prev) => ({ ...prev, [field.key]: event.target.value }))}
                       >
+                        <option value="">Select Option</option>
                         {field.options.map((option) => (
                           <option key={option} value={option}>{option}</option>
                         ))}
@@ -1248,4 +1251,5 @@ function LabReportCreate() {
 }
 
 export default LabReportCreate;
+
 

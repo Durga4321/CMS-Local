@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import DatePickerField from "../../components/DatePickerField";
 import {
   Activity,
   ArrowLeft,
@@ -577,7 +578,7 @@ function ReceptionAppointmentList({
             <span className="booking-filter-label">
               <Calendar size={13} /> Appointment Date
             </span>
-            <input type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} />
+            <DatePickerField value={dateFilter} onChange={setDateFilter} />
           </label>
         </div>
 
@@ -823,5 +824,7 @@ function ReceptionAppointmentList({
 }
 
 export default ReceptionAppointmentList;
+
+
 
 

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import DatePickerField from "../../components/DatePickerField";
 import {
   Activity,
   ArrowLeft,
@@ -1559,7 +1560,7 @@ function ReceptionAppointments({ hideActions = false }) {
               <Calendar size={13} className="rc-field-icon" />
               <span>Date</span>
             </span>
-            <input type="date" value={form.date} onChange={(e) => setField("date", e.target.value)} />
+            <DatePickerField value={form.date} onChange={(nextValue) => setField("date", nextValue)} />
           </label>
 
           <label>
@@ -1731,6 +1732,8 @@ function ReceptionAppointments({ hideActions = false }) {
 }
 
 export default ReceptionAppointments;
+
+
 
 
 

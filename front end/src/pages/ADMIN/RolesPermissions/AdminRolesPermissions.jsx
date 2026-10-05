@@ -972,6 +972,7 @@ function AdminRolesPermissions() {
               <div className="sa-form-field">
                 <label>Role</label>
                 <select value={form.role} onChange={(event) => updateForm("role", event.target.value)} disabled={isViewMode}>
+                  <option value="">Select Role</option>
                   {STAFF_ROLES.map((role) => (
                     <option value={role} key={role}>
                       {formatRoleLabel(role)}
@@ -1247,5 +1248,6 @@ function AdminRolesPermissions() {
 }
 
 export default AdminRolesPermissions;
+
 
 

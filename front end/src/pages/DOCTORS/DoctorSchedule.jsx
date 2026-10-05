@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./DoctorSchedule.css";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
@@ -34,6 +34,63 @@ const formatLocalDateInput = (date) => {
   return localDate.toISOString().slice(0, 10);
 };
 const todayKey = () => formatLocalDateInput(new Date());
+const formatDisplayDate = (value) => {
+  const raw = String(value || "").slice(0, 10);
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : raw;
+};
+const parseDisplayDate = (value) => {
+  const raw = String(value || "").trim();
+  const match = raw.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : raw;
+};
+const DatePickerField = ({ value, onChange, min, disabled = false }) => {
+  const pickerRef = useRef(null);
+  const openPicker = () => {
+    if (disabled) return;
+    const picker = pickerRef.current;
+    if (!picker) return;
+    if (typeof picker.showPicker === "function") {
+      picker.showPicker();
+    } else {
+      picker.click();
+    }
+  };
+
+  return (
+    <span className="ds-date-field">
+      <input
+        type="text"
+        inputMode="numeric"
+        placeholder="DD-MM-YYYY"
+        value={formatDisplayDate(value)}
+        onChange={(e) => onChange(parseDisplayDate(e.target.value))}
+        disabled={disabled}
+      />
+      <button
+        type="button"
+        className="ds-date-trigger"
+        onClick={openPicker}
+        disabled={disabled}
+        title="Select date"
+        aria-label="Select date"
+      >
+        <Calendar size={17} />
+      </button>
+      <input
+        ref={pickerRef}
+        className="ds-native-date"
+        type="date"
+        min={min}
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+    </span>
+  );
+};
 const plusDays = (days) => {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -108,15 +165,15 @@ function DoctorSchedule({ selfMode = false }) {
   const [saving, setSaving] = useState(false);
 
   const [days, setDays] = useState(DAYS.slice(0, 5));
-  const [startDate, setStartDate] = useState(todayKey());
-  const [endDate, setEndDate] = useState(plusDays(30));
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [workStart, setWorkStart] = useState("09:00 AM");
   const [workEnd, setWorkEnd] = useState("06:00 PM");
   const [breakStart, setBreakStart] = useState("01:00 PM");
   const [breakEnd, setBreakEnd] = useState("02:00 PM");
 
-  const [overrideType, setOverrideType] = useState("Leave");
-  const [overrideDate, setOverrideDate] = useState(todayKey());
+  const [overrideType, setOverrideType] = useState("");
+  const [overrideDate, setOverrideDate] = useState("");
   const [sourceBranchId, setSourceBranchId] = useState("");
   const [targetBranchId, setTargetBranchId] = useState("");
   const [overrideStart, setOverrideStart] = useState("02:00 PM");
@@ -127,7 +184,7 @@ function DoctorSchedule({ selfMode = false }) {
   const [overrides, setOverrides] = useState([]);
   const [editingOverrideId, setEditingOverrideId] = useState("");
 
-  const [previewDate, setPreviewDate] = useState(todayKey());
+  const [previewDate, setPreviewDate] = useState("");
   const [previewBranchId, setPreviewBranchId] = useState("");
   const [slots, setSlots] = useState([]);
   const [slotMessage, setSlotMessage] = useState("");
@@ -234,6 +291,7 @@ function DoctorSchedule({ selfMode = false }) {
   const saveBaseSchedule = async () => {
     if (scheduleId ? !canEditSchedule : !canCreateSchedule) return setError("You do not have permission to save this schedule.");
     if (!doctorId || !branchId || !days.length) return setError("Select doctor, branch and at least one working day.");
+    if (!startDate || !endDate) return setError("Enter start date and end date in DD-MM-YYYY format.");
     setSaving(true); setError(""); setMessage("");
     const payload = { doctorId: Number(doctorId), branchId: Number(branchId), days, startDate, endDate, workStart, workEnd, breakStart, breakEnd };
     try {
@@ -250,7 +308,7 @@ function DoctorSchedule({ selfMode = false }) {
 
   const saveOverride = async () => {
     if (editingOverrideId ? !canEditSchedule : !canCreateSchedule) return setError("You do not have permission to save schedule changes.");
-    if (!doctorId || !overrideDate) return setError("Select doctor and override date.");
+    if (!doctorId || !overrideType || !overrideDate) return setError("Select doctor, change type and override date.");
     if (overrideType === "Leave" && !reason.trim()) {
       const text = "Please give the reason for leave.";
       setError(text);
@@ -408,8 +466,6 @@ function DoctorSchedule({ selfMode = false }) {
               onChange={(e) => {
                 setBranchId(e.target.value);
                 if (!selfMode) setDoctorId("");
-                setSourceBranchId(e.target.value);
-                setPreviewBranchId(e.target.value);
               }}
             >
               <option value="">Select Branch</option>
@@ -456,21 +512,19 @@ function DoctorSchedule({ selfMode = false }) {
           <div className="ds-two">
             <label>
               Start date
-              <input
-                type="date"
-                min={todayKey()}
+              <DatePickerField
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={setStartDate}
+                min={todayKey()}
                 disabled={scheduleId ? !canEditSchedule : !canCreateSchedule}
               />
             </label>
             <label>
               End date
-              <input
-                type="date"
-                min={startDate}
+              <DatePickerField
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={setEndDate}
+                min={startDate || todayKey()}
                 disabled={scheduleId ? !canEditSchedule : !canCreateSchedule}
               />
             </label>
@@ -547,6 +601,7 @@ function DoctorSchedule({ selfMode = false }) {
           <label>
             Change type
             <select value={overrideType} onChange={(e) => setOverrideType(e.target.value)}>
+              <option value="">Select Change Type</option>
               <option value="Leave">Leave</option>
               <option value="TimeChange">Change hours</option>
               <option value="BranchShift">Shift to another branch</option>
@@ -555,11 +610,10 @@ function DoctorSchedule({ selfMode = false }) {
 
           <label>
             Date
-            <input
-              type="date"
-              min={todayKey()}
+            <DatePickerField
               value={overrideDate}
-              onChange={(e) => setOverrideDate(e.target.value)}
+              onChange={setOverrideDate}
+              min={todayKey()}
             />
           </label>
 
@@ -568,6 +622,7 @@ function DoctorSchedule({ selfMode = false }) {
               <label>
                 From branch
                 <select value={sourceBranchId} onChange={(e) => setSourceBranchId(e.target.value)}>
+                  <option value="">Select Branch</option>
                   {branches.map((b) => (
                     <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
@@ -576,6 +631,7 @@ function DoctorSchedule({ selfMode = false }) {
               <label>
                 To branch
                 <select value={targetBranchId} onChange={(e) => setTargetBranchId(e.target.value)}>
+                  <option value="">Select Branch</option>
                   {branches.map((b) => (
                     <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
@@ -664,16 +720,16 @@ function DoctorSchedule({ selfMode = false }) {
           <div className="ds-two">
             <label>
               Date
-              <input
-                type="date"
-                min={todayKey()}
+              <DatePickerField
                 value={previewDate}
-                onChange={(e) => setPreviewDate(e.target.value)}
+                onChange={setPreviewDate}
+                min={todayKey()}
               />
             </label>
             <label>
               Branch
               <select value={previewBranchId} onChange={(e) => setPreviewBranchId(e.target.value)}>
+                <option value="">Select Branch</option>
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
@@ -752,7 +808,7 @@ function DoctorSchedule({ selfMode = false }) {
                   const end = fieldOf(o, "workEnd", "WorkEnd");
                   return (
                     <tr key={id}>
-                      <td className="ds-cell-date">{String(date).slice(0, 10)}</td>
+                      <td className="ds-cell-date">{formatDisplayDate(date)}</td>
                       <td>
                         <span className={`ds-type-badge ds-type--${String(type).toLowerCase()}`}>
                           {type}
@@ -803,4 +859,9 @@ function DoctorSchedule({ selfMode = false }) {
 }
 
 export default DoctorSchedule;
+
+
+
+
+
 

@@ -4,6 +4,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import DatePickerField from "../../components/DatePickerField";
 
 import { ActionsGroup } from "../../components/ActionsGroup";
 import "./Appointments.css";
@@ -583,14 +584,9 @@ function Appointments() {
 
             <label>Date</label>
 
-            <input
-              type="date"
+            <DatePickerField
               value={dateFilter}
-              onChange={(e) =>
-                setDateFilter(
-                  e.target.value
-                )
-              }
+              onChange={setDateFilter}
             />
 
           </div>
@@ -849,4 +845,6 @@ function Appointments() {
 }
 
 export default Appointments;
+
+
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import DatePickerField from "../../components/DatePickerField";
 import { useNavigate, Link } from "react-router-dom";
 import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
@@ -604,7 +605,7 @@ function PatientRegister() {
                 </div>
                 <div className="form-group">
                   <label htmlFor="reg-dob">DOB</label>
-                  <input id="reg-dob" type="date" name="dob" value={form.dob} onChange={handleChange} placeholder="dd-mm-yyyy" />
+                  <DatePickerField id="reg-dob" name="dob" value={form.dob} onChange={(nextValue) => handleChange({ target: { name: "dob", value: nextValue } })} />
                   {errors.dob && <span className="error-message">{errors.dob}</span>}
                 </div>
               </div>
@@ -700,3 +701,5 @@ function PatientRegister() {
 }
 
 export default PatientRegister;
+
+

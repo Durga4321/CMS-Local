@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import DatePickerField from "../../components/DatePickerField";
 
 import "./ReportsTheme.css";
 import "./DoctorWiseReport.css";
@@ -498,20 +499,18 @@ function DoctorWiseReport() {
         {/* FROM */}
         <div>
           <label>From</label>
-          <input
-            type="date"
+          <DatePickerField
             value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
+            onChange={setFromDate}
           />
         </div>
 
         {/* TO */}
         <div>
           <label>To</label>
-          <input
-            type="date"
+          <DatePickerField
             value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
+            onChange={setToDate}
           />
         </div>
 
@@ -732,3 +731,5 @@ function DoctorWiseReport() {
 }
 
 export default DoctorWiseReport;
+
+
