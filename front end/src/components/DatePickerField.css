@@ -1,0 +1,52 @@
+.date-picker-field {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.date-picker-field > input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 46px !important;
+}
+
+.date-picker-trigger {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.date-picker-trigger:hover:not(:disabled) {
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f9d9d;
+}
+
+.date-picker-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.date-picker-native {
+  position: absolute;
+  right: 8px;
+  bottom: 0;
+  width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+}

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import DatePickerField from "../../components/DatePickerField";
 import { Activity, ArrowLeft, CalendarDays, CheckCircle, CreditCard, Edit3, Eye, FileText, FlaskConical, History, Minus, Pill, Plus, Printer, Receipt, RefreshCw, ShieldCheck, Sparkles, Stethoscope, Thermometer, Trash2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { PaymentStatusBadge, PaidStamp, formatPaidDateTime } from "../../components/PaymentStatus";
@@ -341,29 +342,55 @@ const collectServiceItems = (source, seen = new Set()) => {
   return [...directRows, ...nestedRows];
 };
 
-const getServiceLineItemName = (row = {}, billType = "diagnostic") =>
-  firstValue(
-    row.item,
-    row.Item,
-    row.label,
-    row.Label,
-    row.testName,
-    row.TestName,
-    row.test,
-    row.Test,
-    row.name,
-    row.Name,
-    row.serviceName,
-    row.ServiceName,
+const isGenericServiceChargeName = (value, billType = "diagnostic") => {
+  const normalized = String(value || "").trim().toLowerCase();
+  return billType === "pharmacy"
+    ? normalized === "pharmacy charges"
+    : normalized === "diagnostic charges" || normalized === "diagnostics charges" || normalized === "lab charges";
+};
+
+const firstSpecificName = (values = [], billType = "diagnostic") =>
+  values
+    .map((value) => String(value || "").trim())
+    .find((value) => value && !isGenericServiceChargeName(value, billType));
+
+const getServiceLineItemName = (row = {}, billType = "diagnostic") => {
+  if (billType === "diagnostic") {
+    return firstSpecificName([
+      row.testName,
+      row.TestName,
+      row.test,
+      row.Test,
+      row.name,
+      row.Name,
+      row.serviceName,
+      row.ServiceName,
+      row.label,
+      row.Label,
+      row.item,
+      row.Item,
+      row.description,
+      row.Description,
+    ], billType) || "Diagnostic Charges";
+  }
+
+  return firstSpecificName([
     row.medicineName,
     row.MedicineName,
     row.productName,
     row.ProductName,
+    row.name,
+    row.Name,
+    row.serviceName,
+    row.ServiceName,
+    row.label,
+    row.Label,
+    row.item,
+    row.Item,
     row.description,
     row.Description,
-    billType === "pharmacy" ? "Pharmacy Charges" : "Diagnostic Charges"
-  );
-
+  ], billType) || "Pharmacy Charges";
+};
 const normalizeServiceBillRows = (bill = {}, billType = "diagnostic") =>
   collectServiceItems(bill)
     .map((row, index) => {
@@ -478,6 +505,68 @@ const readDiscountPercent = (bill = {}, baseAmount = 0) => {
   return amount > 0 ? normalizeDiscountPercent((discountAmount / amount) * 100) : 0;
 };
 
+
+const buildServiceLineItems = (rows = [], type = "diagnostic") =>
+  rows.map((row, index) => {
+    const itemName = getServiceLineItemName(row, type);
+    const quantity = type === "pharmacy" ? Math.max(1, Number(row.quantity) || 1) : 1;
+    const unitPrice = Number(row.unitPrice ?? row.price ?? row.Price ?? 0) || 0;
+    const amount = unitPrice * quantity;
+    return {
+      id: firstValue(row.id, row.Id, row.testId, row.TestId, row.labTestId, row.LabTestId, row.itemId, row.ItemId, `${type}-${index}`),
+      item: itemName,
+      Item: itemName,
+      label: itemName,
+      Label: itemName,
+      name: itemName,
+      Name: itemName,
+      serviceName: itemName,
+      ServiceName: itemName,
+      testName: type === "diagnostic" ? itemName : undefined,
+      TestName: type === "diagnostic" ? itemName : undefined,
+      medicineName: type === "pharmacy" ? itemName : undefined,
+      MedicineName: type === "pharmacy" ? itemName : undefined,
+      diagnosis: row.diagnosis || row.Diagnosis || (type === "pharmacy" ? "Pharmacy" : "Lab"),
+      Diagnosis: row.diagnosis || row.Diagnosis || (type === "pharmacy" ? "Pharmacy" : "Lab"),
+      quantity,
+      Quantity: quantity,
+      unitPrice,
+      UnitPrice: unitPrice,
+      price: unitPrice,
+      Price: unitPrice,
+      amount,
+      Amount: amount,
+      total: amount,
+      Total: amount,
+      totalAmount: amount,
+      TotalAmount: amount,
+    };
+  });
+
+const readServiceBillTestNames = (bill = {}, billType = "diagnostic") => {
+  const direct = firstValue(
+    bill.testName,
+    bill.TestName,
+    bill.testNames,
+    bill.TestNames,
+    bill.diagnosticTests,
+    bill.DiagnosticTests,
+    bill.labTests,
+    bill.LabTests,
+    bill.tests,
+    bill.Tests,
+    bill.item,
+    bill.Item,
+    bill.serviceName,
+    bill.ServiceName
+  );
+  const directNames = Array.isArray(direct) ? direct : splitDiagnosticTests(direct);
+  const itemNames = collectServiceItems(bill)
+    .map((row) => String(firstValue(row.item, row.Item, row.testName, row.TestName, row.name, row.Name, row.serviceName, row.ServiceName, "") || "").trim())
+    .filter(Boolean)
+    .filter((name) => !/^(diagnostic|pharmacy) charges$/i.test(name));
+  return Array.from(new Set([...directNames, ...itemNames])).filter(Boolean);
+};
 const getBillingTotals = (rows = [], discountPercent = 0) => {
   const subtotal = rows.reduce(
     (sum, row) => sum + (Number(row.unitPrice) || 0) * (Number(row.quantity) || 0),
@@ -1398,18 +1487,50 @@ const getServiceBillMergeKey = (bill = {}) => {
   return `${type}:draft:${bill.createdAt || bill.patientId || Math.random()}`;
 };
 
+const buildServiceLineItemAliases = (rows = [], billType = "diagnostic") => {
+  const lineItems = buildServiceLineItems(rows, billType);
+  const itemNames = lineItems.map((item) => item.item).filter(Boolean).join(", ");
+
+  if (!lineItems.length) return {};
+
+  return {
+    rows: lineItems,
+    Rows: lineItems,
+    lineItems,
+    LineItems: lineItems,
+    serviceItems: lineItems,
+    ServiceItems: lineItems,
+    billingItems: lineItems,
+    BillingItems: lineItems,
+    items: lineItems,
+    Items: lineItems,
+    diagnosticTests: billType === "diagnostic" ? lineItems : [],
+    DiagnosticTests: billType === "diagnostic" ? lineItems : [],
+    labTests: billType === "diagnostic" ? lineItems : [],
+    LabTests: billType === "diagnostic" ? lineItems : [],
+    medicines: billType === "pharmacy" ? lineItems : [],
+    Medicines: billType === "pharmacy" ? lineItems : [],
+    testName: billType === "diagnostic" ? itemNames : "",
+    TestName: billType === "diagnostic" ? itemNames : "",
+    testNames: billType === "diagnostic" ? itemNames : "",
+    TestNames: billType === "diagnostic" ? itemNames : "",
+  };
+};
+
 const mergeServiceBillPair = (existing = {}, incoming = {}) => {
   const incomingFromBackend = isBackendApiBill(incoming);
   const existingFromBackend = isBackendApiBill(existing);
-  const existingRows = Array.isArray(existing.rows) ? existing.rows : [];
-  const incomingRows = Array.isArray(incoming.rows) ? incoming.rows : [];
+  const billType = getServiceBillType(incoming) === "pharmacy" || getServiceBillType(existing) === "pharmacy" ? "pharmacy" : "diagnostic";
+  const existingRows = normalizeServiceBillRows(existing, billType);
+  const incomingRows = normalizeServiceBillRows(incoming, billType);
   const merged = incomingFromBackend
     ? { ...existing, ...incoming }
     : { ...incoming, ...existing };
+  const rows = incomingRows.length ? incomingRows : existingRows;
 
   return {
     ...merged,
-    rows: incomingRows.length ? incomingRows : existingRows,
+    ...buildServiceLineItemAliases(rows, billType),
     totals: incomingFromBackend
       ? incoming.totals || existing.totals
       : existingFromBackend
@@ -1417,7 +1538,6 @@ const mergeServiceBillPair = (existing = {}, incoming = {}) => {
         : incoming.totals || existing.totals,
   };
 };
-
 const mergeRecentServiceBills = (...billGroups) => {
   const byInvoice = new Map();
 
@@ -2063,10 +2183,15 @@ function ReceptionBilling() {
     const normalizedStatus = String(rawStatus || "Pending").trim();
     const isPaid = normalizedStatus.toLowerCase() === "paid";
     const paidDate = firstValue(payment.paidDate, payment.PaidDate, payment.completedAt, billData.paidDate, billData.PaidDate, isPaid ? new Date().toISOString() : "");
+    const billType = getServiceBillType(bill) === "pharmacy" || getServiceBillType(billData) === "pharmacy" ? "pharmacy" : "diagnostic";
+    const responseRows = normalizeServiceBillRows(billData, billType);
+    const originalRows = normalizeServiceBillRows(bill, billType);
+    const serviceLineItemAliases = buildServiceLineItemAliases(responseRows.length ? responseRows : originalRows, billType);
 
     return {
       ...bill,
       ...billData,
+      ...serviceLineItemAliases,
       payment,
       paymentMode,
       PaymentMode: paymentMode,
@@ -2139,6 +2264,8 @@ function ReceptionBilling() {
     const initialPaymentStatus = paymentMode.toLowerCase() === "cash" ? "Paid" : "Pending";
     const labCharge = isPharmacy ? 0 : subtotal;
     const medicineCharge = isPharmacy ? subtotal : 0;
+    const lineItems = buildServiceLineItems(details.rows, details.type);
+    const testNames = lineItems.map((item) => item.item).filter(Boolean).join(", ");
 
     return {
       appointmentId,
@@ -2155,6 +2282,26 @@ function ReceptionBilling() {
       LabCharge: labCharge,
       medicineCharge,
       MedicineCharge: medicineCharge,
+      lineItems,
+      LineItems: lineItems,
+      serviceItems: lineItems,
+      ServiceItems: lineItems,
+      billingItems: lineItems,
+      BillingItems: lineItems,
+      items: lineItems,
+      Items: lineItems,
+      rows: lineItems,
+      Rows: lineItems,
+      diagnosticTests: isPharmacy ? [] : lineItems,
+      DiagnosticTests: isPharmacy ? [] : lineItems,
+      labTests: isPharmacy ? [] : lineItems,
+      LabTests: isPharmacy ? [] : lineItems,
+      medicines: isPharmacy ? lineItems : [],
+      Medicines: isPharmacy ? lineItems : [],
+      testName: isPharmacy ? "" : testNames,
+      TestName: isPharmacy ? "" : testNames,
+      testNames: isPharmacy ? "" : testNames,
+      TestNames: isPharmacy ? "" : testNames,
       discount,
       Discount: discount,
       discountPercentage,
@@ -2246,7 +2393,24 @@ function ReceptionBilling() {
         billNumber: savedInvoice.billNumber || savedInvoice.invoiceNumber || editingBill?.billNumber || editingBill?.invoiceNumber || editingBill?.invoiceNo || details.invoiceNo,
         createdAt: savedInvoice.createdAt || savedInvoice.billDate || details.createdAt,
         type: details.type,
-        rows: details.rows,
+        rows: buildServiceLineItems(details.rows, details.type),
+        Rows: buildServiceLineItems(details.rows, details.type),
+        lineItems: buildServiceLineItems(details.rows, details.type),
+        LineItems: buildServiceLineItems(details.rows, details.type),
+        serviceItems: buildServiceLineItems(details.rows, details.type),
+        ServiceItems: buildServiceLineItems(details.rows, details.type),
+        billingItems: buildServiceLineItems(details.rows, details.type),
+        BillingItems: buildServiceLineItems(details.rows, details.type),
+        items: buildServiceLineItems(details.rows, details.type),
+        Items: buildServiceLineItems(details.rows, details.type),
+        diagnosticTests: details.type === "diagnostic" ? buildServiceLineItems(details.rows, details.type) : [],
+        DiagnosticTests: details.type === "diagnostic" ? buildServiceLineItems(details.rows, details.type) : [],
+        labTests: details.type === "diagnostic" ? buildServiceLineItems(details.rows, details.type) : [],
+        LabTests: details.type === "diagnostic" ? buildServiceLineItems(details.rows, details.type) : [],
+        medicines: details.type === "pharmacy" ? buildServiceLineItems(details.rows, details.type) : [],
+        Medicines: details.type === "pharmacy" ? buildServiceLineItems(details.rows, details.type) : [],
+        testName: details.type === "diagnostic" ? buildServiceLineItems(details.rows, details.type).map((item) => item.item).join(", ") : "",
+        TestName: details.type === "diagnostic" ? buildServiceLineItems(details.rows, details.type).map((item) => item.item).join(", ") : "",
         totals: details.totals,
         patientName: details.patientName,
         patientId: details.patientId,
@@ -2597,6 +2761,57 @@ function ReceptionBilling() {
     );
   };
 
+  const recoverDiagnosticRowsForBill = (bill, rows = []) => {
+    if (getServiceBillType(bill) !== "diagnostic") return rows;
+    const appointmentId = getBillAppointmentId(bill);
+    const billAppointment = appointments.find((appointment) => String(getAppointmentId(appointment)) === String(appointmentId));
+    const requestedNames = splitDiagnosticTests(readAppointmentDiagnosticTests(billAppointment || {}));
+    const appointmentCandidates = requestedNames
+      .map((testName) => {
+        const matched = labMasterPriceList.find(
+          (test) => getPriceListItemName(test).toLowerCase() === String(testName).trim().toLowerCase()
+        );
+        return matched ? createBillingRow([{ ...matched, diagnosis: matched.diagnosis || readAppointmentDiagnosis(billAppointment) || "Lab" }]) : null;
+      })
+      .filter(Boolean);
+    const candidateRows = [...diagnosticRows, ...appointmentCandidates, ...labMasterPriceList.map((item) => createBillingRow([item]))];
+    const usedIndexes = new Set();
+
+    return rows.map((row) => {
+      if (!isGenericServiceChargeName(row.item, "diagnostic")) return row;
+      const amount = Number(row.unitPrice ?? row.price ?? 0) || 0;
+      const matchIndex = candidateRows.findIndex((candidate, index) => {
+        if (usedIndexes.has(index)) return false;
+        const candidateAmount = Number(candidate.unitPrice ?? candidate.price ?? 0) || 0;
+        return amount > 0 && Math.abs(candidateAmount - amount) < 0.01;
+      });
+      if (matchIndex < 0) return row;
+
+      usedIndexes.add(matchIndex);
+      const match = candidateRows[matchIndex];
+      const itemName = getServiceLineItemName(match, "diagnostic");
+      return {
+        ...row,
+        ...match,
+        id: row.id || match.id,
+        item: itemName,
+        Item: itemName,
+        name: itemName,
+        Name: itemName,
+        label: itemName,
+        Label: itemName,
+        serviceName: itemName,
+        ServiceName: itemName,
+        testName: itemName,
+        TestName: itemName,
+        unitPrice: amount,
+        price: amount,
+        quantity: 1,
+        diagnosis: match.diagnosis || row.diagnosis || "Lab",
+      };
+    });
+  };
+
   const viewRecentServiceBill = (bill) => {
     const billType = getServiceBillType(bill);
     const savedBillAmount = getSavedBillAmount(bill, readAmount(bill, AMOUNT_KEYS.total, 0));
@@ -2617,12 +2832,13 @@ function ReceptionBilling() {
         normalizedRows = [{
           id: `${billType}-fallback-${getInvoiceId(bill) || Date.now()}`,
           diagnosis: billType === "pharmacy" ? "Pharmacy" : "Lab",
-          item: billType === "pharmacy" ? "Pharmacy Charges" : "Diagnostic Charges",
+          item: billType === "pharmacy" ? "Pharmacy Charges" : (readServiceBillTestNames(bill, billType)[0] || "Diagnostic Charges"),
           unitPrice: getTaxableFromGstTotal(fallbackAmount),
           quantity: 1,
         }];
       }
     }
+    normalizedRows = recoverDiagnosticRowsForBill(bill, normalizedRows);
     const rowTotals = getBillingTotals(
       normalizedRows.map((row) => ({
         ...row,
@@ -3701,10 +3917,9 @@ function ReceptionBilling() {
                 </div>
                 <label className="rc-filter-field">
                   <span>Appointment Date</span>
-                  <input
-                    type="date"
+                  <DatePickerField
                     value={appointmentDateFilter}
-                    onChange={(event) => setAppointmentDateFilter(event.target.value)}
+                    onChange={setAppointmentDateFilter}
                   />
                 </label>
                 <button type="button" className="rc-btn ghost" onClick={() => setAppointmentDateFilter("")}>
@@ -3921,4 +4136,5 @@ function ReceptionBilling() {
 }
 
 export default ReceptionBilling;
+
 

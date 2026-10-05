@@ -27,8 +27,8 @@ const emptyUser = {
   clinic: "",
   hospitalId: "",
   clinicId: "",
-  type: "Patient",
-  role: "Patient",
+  type: "",
+  role: "",
   status: "Active",
   phone: "",
   mobileNumber: "",
@@ -505,6 +505,7 @@ function Users() {
                       }))
                     }
                   >
+                    <option value="">Select Type</option>
                     <option>Patient</option>
                     <option>Doctor</option>
                     <option>Admin</option>
@@ -613,3 +614,4 @@ function Users() {
 }
 
 export default Users;
+

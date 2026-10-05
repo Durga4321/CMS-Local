@@ -65,7 +65,7 @@ const isDeletedNotification = (notification = {}) => {
 
 const emptyNotification = {
   title: "",
-  targetUsers: "Active Admins",
+  targetUsers: "",
   message: "",
 };
 
@@ -297,6 +297,7 @@ function Notifications() {
                 onChange={handleChange}
                 className={fieldErrors.targetUsers ? "is-invalid" : ""}
               >
+                <option value="">Select Target Users</option>
                 {targetOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.count !== undefined
@@ -366,5 +367,6 @@ function Notifications() {
 }
 
 export default Notifications;
+
 
 

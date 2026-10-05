@@ -3,6 +3,7 @@
 //   useState,
 // } from "react";
 
+
 // import "./docschedule.css";
 
 // import {
@@ -537,6 +538,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import DatePickerField from "../../components/DatePickerField";
 
 import "./docschedule.css";
 
@@ -1024,6 +1026,8 @@ function ScheduleSettingsPage() {
             }
           >
 
+            <option value="">Select Slot Duration</option>
+
             <option value={5}>
               5 minutes
             </option>
@@ -1237,19 +1241,14 @@ function ScheduleSettingsPage() {
 
           <div className="holiday-form">
 
-            <input
-              type="date"
+            <DatePickerField
               min={getTodayInputValue()}
               disabled={editingId ? !canEditScheduleSettings : !canCreateScheduleSettings}
-              value={
-                newHoliday.date
-              }
-              onChange={(e) =>
+              value={newHoliday.date}
+              onChange={(nextValue) =>
                 setNewHoliday({
                   ...newHoliday,
-                  date:
-                    e.target
-                      .value,
+                  date: nextValue,
                 })
               }
             />
@@ -1295,3 +1294,8 @@ function ScheduleSettingsPage() {
 }
 
 export default ScheduleSettingsPage;
+
+
+
+
+

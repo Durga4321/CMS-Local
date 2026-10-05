@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import DatePickerField from "../../components/DatePickerField";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity, ArrowLeftToLine, Bell, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, ClipboardList,
@@ -1685,13 +1686,12 @@ function PatientAppointmentsPage({ visits = [], onRefresh }) {
                 <h3>Reschedule Appointment</h3>
                 <div className="pd-form-group">
                   <label htmlFor="reschedule-date">Select new date</label>
-                  <input
+                  <DatePickerField
                     id="reschedule-date"
-                    type="date"
                     min={new Date().toISOString().split("T")[0]}
                     value={rescheduleDate}
-                    onChange={(e) => {
-                      setRescheduleDate(e.target.value);
+                    onChange={(nextValue) => {
+                      setRescheduleDate(nextValue);
                       setRescheduleTime("");
                     }}
                   />
@@ -2943,13 +2943,12 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
               </div>
               <div className="booking-field-group">
                 <label htmlFor="appointment-date">Appointment date</label>
-                <input
+                <DatePickerField
                   id="appointment-date"
-                  type="date"
                   value={selectedDate}
-                  onChange={(event) => {
-                    setSelectedDate(event.target.value);
-                    setSelectedTime('');
+                  onChange={(nextValue) => {
+                    setSelectedDate(nextValue);
+                    setSelectedTime("");
                   }}
                 />
               </div>
@@ -6876,6 +6875,9 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
 }
 
 export default PatientRoutes;
+
+
+
 
 
 

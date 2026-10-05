@@ -4,6 +4,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import DatePickerField from "../../components/DatePickerField";
 
 import "./ReportsTheme.css";
 import "./DailyReport.css";
@@ -488,20 +489,18 @@ function DailyReport() {
         {/* FROM */}
         <div>
           <label>From</label>
-          <input
-            type="date"
+          <DatePickerField
             value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
+            onChange={setFromDate}
           />
         </div>
 
         {/* TO */}
         <div>
           <label>To</label>
-          <input
-            type="date"
+          <DatePickerField
             value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
+            onChange={setToDate}
           />
         </div>
 
@@ -706,3 +705,5 @@ function DailyReport() {
 }
 
 export default DailyReport;
+
+

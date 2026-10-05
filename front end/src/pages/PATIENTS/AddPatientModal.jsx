@@ -37,7 +37,7 @@ function AddPatientModal({ onClose, onAdd }) {
     email: "",
     phone: "",
     age: "",
-    gender: "Male",
+    gender: "",
     emergencyContactName: "",
     emergencyContactPhone: "",
     address: "",
@@ -347,6 +347,7 @@ function AddPatientModal({ onClose, onAdd }) {
                 onChange={handleChange}
                 className={fieldErrors.gender ? "is-invalid" : ""}
               >
+                <option value="">Select Gender</option>
                 <option>Male</option>
                 <option>Female</option>
               </select>
@@ -501,3 +502,4 @@ function AddPatientModal({ onClose, onAdd }) {
 }
 
 export default AddPatientModal;
+

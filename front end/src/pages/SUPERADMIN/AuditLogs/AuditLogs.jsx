@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import DatePickerField from "../../../components/DatePickerField";
 import {
   FileText,
   LogIn,
@@ -812,20 +813,18 @@ function AuditLogs() {
       <div className="sa-audit-scope-filter" aria-label="Audit clinic and branch filters">
         <label>
           <span>Start Date</span>
-          <input
-            type="date"
+          <DatePickerField
             value={startDate}
             max={endDate || undefined}
-            onChange={(event) => setStartDate(event.target.value)}
+            onChange={setStartDate}
           />
         </label>
         <label>
           <span>End Date</span>
-          <input
-            type="date"
+          <DatePickerField
             value={endDate}
             min={startDate || undefined}
-            onChange={(event) => setEndDate(event.target.value)}
+            onChange={setEndDate}
           />
         </label>
         <label>
@@ -922,4 +921,6 @@ function AuditLogs() {
 }
 
 export default AuditLogs;
+
+
 

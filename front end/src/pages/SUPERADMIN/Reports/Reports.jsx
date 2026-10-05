@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import DatePickerField from "../../../components/DatePickerField";
 import { Building2, Download, Eye, IndianRupee, Search, TrendingUp } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
@@ -589,11 +590,11 @@ function Reports() {
         <div className="sa-report-filters">
           <div className="sa-form-field">
             <label>Start Date</label>
-            <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
+            <DatePickerField value={startDate} onChange={setStartDate} />
           </div>
           <div className="sa-form-field">
             <label>End Date</label>
-            <input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
+            <DatePickerField value={endDate} onChange={setEndDate} />
           </div>
           <button className="sa-btn sa-btn-primary" type="button" onClick={handleFetchData} disabled={loading}>
             <Search size={16} />
@@ -682,4 +683,6 @@ function Reports() {
 }
 
 export default Reports;
+
+
 

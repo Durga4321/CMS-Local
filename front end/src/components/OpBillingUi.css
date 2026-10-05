@@ -115,6 +115,51 @@ select.op-form-select {
   box-shadow: 0 0 0 3px rgba(15, 157, 157, 0.12) !important;
 }
 
+
+.op-date-field {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.op-date-field .op-form-input {
+  padding-right: 46px !important;
+}
+
+.op-date-trigger {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.op-date-trigger:hover {
+  background: rgba(15, 157, 157, 0.08);
+  color: #0f9d9d;
+}
+
+.op-native-date {
+  position: absolute;
+  right: 8px;
+  bottom: 0;
+  width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+}
 /* Middle Toolbar: Pill Tabs & Date Selector */
 .op-middle-toolbar {
   display: grid;
@@ -383,3 +428,4 @@ select.op-form-select {
     font-size: 12px;
   }
 }
+

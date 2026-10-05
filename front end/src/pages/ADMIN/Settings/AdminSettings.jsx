@@ -840,6 +840,7 @@ function AdminSettings() {
               onChange={(event) => selectTemplate(event.target.value)}
               className="admin-settings-select"
             >
+              <option value="">Select Template</option>
               {BUILT_IN_TEMPLATES.map((template) => (
                 <option key={template.value} value={template.value}>
                   {template.label}
@@ -1453,5 +1454,6 @@ function AdminSettings() {
 }
 
 export default AdminSettings;
+
 
 
