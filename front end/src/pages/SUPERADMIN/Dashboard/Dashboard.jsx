@@ -101,11 +101,11 @@ function Dashboard() {
 
     return [
       {
-        label: "Total Clinics",
+        label: "Customer Clinics",
         value: getDashboardMetric(metrics, ["totalClinics", "clinics", "clinicCount"]),
         icon: Building2,
         tone: "teal",
-        onClick: () => navigate("/superadmin/clinics"),
+        onClick: () => navigate("/superadmin/admins"),
       },
       {
         label: "Total Admins",
@@ -115,8 +115,8 @@ function Dashboard() {
         onClick: () => navigate("/superadmin/admins"),
       },
       {
-        label: "Revenue Summary",
-        value: formatCurrency(getDashboardMetric(metrics, ["totalRevenue", "revenue", "revenueSummary"])),
+        label: "Subscription Revenue",
+        value: formatCurrency(getDashboardMetric(metrics, ["subscriptionRevenue", "totalRevenue", "revenue", "revenueSummary"])), 
         icon: IndianRupee,
         tone: "amber",
         onClick: () => navigate("/superadmin/reports"),
@@ -132,7 +132,7 @@ function Dashboard() {
     <div className="sa-dashboard-page" ref={pageRef}>
       <Header
         title="Super Admin Dashboard"
-        subtitle="Platform-wide clinics, revenue, and operational activity."
+        subtitle="Platform customers, subscriptions, and Super Admin activity."
       />
 
       {error ? <div className="sa-state sa-state--error">{error}</div> : null}
@@ -145,7 +145,7 @@ function Dashboard() {
             <div className="sa-panel__header">
               <div>
                 <h3>Charts & Statistics</h3>
-                <p>Revenue growth across all clinics.</p>
+                <p>Subscription revenue trend and platform statistics.</p>
               </div>
             </div>
 

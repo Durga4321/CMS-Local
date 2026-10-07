@@ -1,4 +1,5 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { fetchMySubscription, isLabModule } from "../utils/subscriptionFlow";
 import { Navigate } from "react-router-dom";
 import { getRoleProfile } from "../profile/sessionProfile";
 import { getLabProfile } from "../Lab/labSession";
@@ -93,6 +94,18 @@ const getFallbackPath = (roleType = "admin", profile = {}, currentModule = "") =
 function PermissionRoute({ roleType, module, children }) {
   const profile = useMemo(() => getPermissionProfile(roleType), [roleType]);
   const { loading: permissionsLoading } = useRolePermissionsSync(profile);
+  const needsLab = roleType === "admin" && isLabModule(module);
+  const [labAccess, setLabAccess] = useState(null);
+  useEffect(() => {
+    let active = true;
+    setLabAccess(null);
+    if (needsLab) fetchMySubscription().then((subscription) => {
+      if (active) setLabAccess(subscription?.includesLab === true && String(subscription.status).toLowerCase() === "active");
+    }).catch(() => { if (active) setLabAccess(false); });
+    return () => { active = false; };
+  }, [needsLab, module]);
+  if (needsLab && labAccess === null) return <div className="app-route-loading">Loading...</div>;
+  if (needsLab && !labAccess) return <Navigate to="/subscription" replace />;
 
   const hasSavedPermissions = hasAnySavedModulePermissions(profile);
   if (roleType === "admin" && (module === "Dashboard" || !hasSavedPermissions)) return children;

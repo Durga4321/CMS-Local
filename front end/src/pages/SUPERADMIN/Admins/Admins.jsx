@@ -326,8 +326,7 @@ function Admins() {
       email: validateGmail(form.email),
       phone: validateMobile(form.phone, "Phone"),
       role: validateAlpha(form.role, "Role"),
-      assignedClinicId: form.assignedClinicId ? "" : "Assigned clinic is required.",
-    };
+          };
 
     Object.keys(nextErrors).forEach((key) => {
       if (!nextErrors[key]) delete nextErrors[key];
@@ -350,7 +349,7 @@ function Admins() {
 
     try {
       const selectedClinic = clinics.find((clinic) => String(clinic.id) === String(form.assignedClinicId));
-      const clinicId = Number(form.assignedClinicId) || form.assignedClinicId;
+      const clinicId = form.assignedClinicId ? Number(form.assignedClinicId) || form.assignedClinicId : null;
       const previousAdmin = admins.find((admin) => String(admin.id) === String(editingAdminId));
       const previousClinicId =
         originalAdminClinic.id ||
@@ -441,7 +440,7 @@ function Admins() {
     const query = search.trim().toLowerCase();
     return admins.map((admin) => ({
       ...admin,
-      assignedClinic: getAdminClinicName(admin, clinics),
+      assignedClinic: getAdminClinicName(admin, clinics) || "Clinic pending",
       phone:
         admin.phone || admin.mobileNumber || admin.raw?.phone || admin.raw?.mobileNumber || "",
     }))
@@ -652,7 +651,7 @@ function Admins() {
       {showForm ? (
         <form className="sa-form-card sa-admin-form" style={{ marginBottom: 16 }} onSubmit={handleCreateAdmin} noValidate>
           <h3>{editingAdminId ? "Edit admin" : "Create new admin"}</h3>
-          <p className="sa-form-subtitle">Manage administrator access for a clinic.</p>
+          <p className="sa-form-subtitle">Create an Admin first. The Admin can create and own the clinic after login.</p>
           {error ? <div className="sa-state sa-state--error">{error}</div> : null}
           <div className="sa-form-grid">
             <div className="sa-form-field">
@@ -721,16 +720,15 @@ function Admins() {
               ) : null}
             </div>
             <div className="sa-form-field sa-form-field-full">
-              <label htmlFor="admin-assigned-clinic">Assigned clinic</label>
+              <label htmlFor="admin-assigned-clinic">Assigned clinic <small>(optional)</small></label>
               <select
                 id="admin-assigned-clinic"
                 name="assignedClinicId"
                 value={form.assignedClinicId}
                 onChange={handleChange}
                 className={fieldErrors.assignedClinicId ? "is-invalid" : ""}
-                required
               >
-                <option value="">Select clinic</option>
+                <option value="">No clinic yet - Admin will create after login</option>
                 {clinics.map((clinic) => (
                   <option key={clinic.id || clinic.name} value={clinic.id || ""}>
                     {clinic.name}

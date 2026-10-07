@@ -1085,3 +1085,50 @@
     grid-template-columns: 1fr;
   }
 }
+
+.db-no-clinic-dashboard {
+  min-height: calc(100vh - 110px);
+  display: grid;
+  place-items: center;
+}
+
+.db-no-clinic-card {
+  position: relative;
+  z-index: 1;
+  width: min(680px, 100%);
+  padding: 32px;
+  border-radius: 24px;
+  border: 1.5px solid rgba(37, 99, 235, 0.2);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.14);
+  display: grid;
+  gap: 18px;
+}
+
+.db-no-clinic-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  color: #2563eb;
+  background: linear-gradient(135deg, #dbeafe 0%, #ecfeff 100%);
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.18);
+}
+
+.db-no-clinic-button {
+  justify-self: flex-start;
+  border: none;
+  height: 46px;
+  padding: 0 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #2563eb 0%, #0891b2 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.28);
+}

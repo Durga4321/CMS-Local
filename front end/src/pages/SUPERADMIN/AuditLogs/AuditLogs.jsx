@@ -69,6 +69,9 @@ const roleIcons = {
 };
 
 const normalizeKey = (value = "") => String(value || "").trim().toLowerCase();
+const normalizeRoleKey = (value = "") => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+const getAuditRoleKey = (row = {}) => normalizeRoleKey(firstValue(row.role, row.userRole, row.raw?.role, row.raw?.Role, row.raw?.userRole, row.raw?.UserRole));
+const isSuperAdminAuditLog = (row = {}) => getAuditRoleKey(row) === "superadmin";
 const UNASSIGNED_BRANCH_KEYS = new Set(["unassigned", "unassigned branch", "no branch", "n/a", "na", "-"]);
 
 const firstValue = (...values) => {
@@ -550,6 +553,7 @@ function AuditLogs() {
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
     return auditLogs.filter((log) => {
+      if (!isSuperAdminAuditLog(log)) return false;
       const matchesSearch = [
         log.userName,
         log.user,
@@ -584,6 +588,7 @@ function AuditLogs() {
     const rows = allAuditLogs.length ? allAuditLogs : auditLogs;
     return rows.filter(
       (row) =>
+        isSuperAdminAuditLog(row) &&
         isWithinDateRange(row, startDate, endDate) &&
         matchesClinic(row, selectedClinic) &&
         matchesBranch(row, selectedBranch)
@@ -594,6 +599,7 @@ function AuditLogs() {
     const rows = loginHistory.length ? loginHistory : auditLogs.filter((row) => row.isLoginActivity);
     return rows.filter(
       (row) =>
+        isSuperAdminAuditLog(row) &&
         isWithinDateRange(row, startDate, endDate) &&
         matchesClinic(row, selectedClinic) &&
         matchesBranch(row, selectedBranch)
@@ -921,6 +927,3 @@ function AuditLogs() {
 }
 
 export default AuditLogs;
-
-
-

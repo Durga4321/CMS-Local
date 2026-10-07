@@ -25,12 +25,20 @@ export const formatClinicName = (value, fallback = "") => {
     .join(" ");
 };
 
-export const getStoredClinicName = () =>
-  formatClinicName(
+export const getStoredClinicName = () => {
+  const storedClinicId =
+    cleanText(localStorage.getItem("hospitalId")) ||
+    cleanText(localStorage.getItem("clinicId")) ||
+    cleanText(localStorage.getItem("assignedClinicId"));
+
+  if (!storedClinicId) return "";
+
+  return formatClinicName(
     cleanText(localStorage.getItem("hospitalName")) ||
       cleanText(localStorage.getItem("clinicName")) ||
       cleanText(localStorage.getItem("assignedClinic"))
   );
+};
 
 export const getClinicNameFromRecord = (record = {}) =>
   formatClinicName(

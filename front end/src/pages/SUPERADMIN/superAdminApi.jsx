@@ -865,17 +865,12 @@ const buildAdminPayload = (admin = {}, { includeBlankPassword = true } = {}) => 
   const payload = {
     name: String(pick(admin, ["name", "fullName", "AdminName", "adminName"], fullName)).trim(),
     fullName,
-    phone: String(
-      pick(
-        admin,
-        ["phone", "phoneNumber", "mobile", "MobileNumber", "AdminMobileNumber", "adminMobileNumber"],
-        ""
-      )
-    ).trim(),
+    mobileNumber: String(pick(admin, ["mobileNumber", "phone", "phoneNumber", "mobile", "MobileNumber", "AdminMobileNumber", "adminMobileNumber"], "")).trim(),
+    phone: String(pick(admin, ["phone", "mobileNumber", "phoneNumber", "mobile", "MobileNumber", "AdminMobileNumber", "adminMobileNumber"], "")).trim(),
     email: String(pick(admin, ["email", "AdminEmail", "adminEmail"], "")).trim(),
     password,
     role: pick(admin, ["role", "Role", "AdminRole"], "Admin"),
-    hospitalId: Number(pick(admin, ["hospitalId", "clinicId", "assignedClinicId", "HospitalId", "ClinicId"], 0)) || 0,
+    hospitalId: hasValue(pick(admin, ["hospitalId", "clinicId", "assignedClinicId", "HospitalId", "ClinicId"], "")) ? Number(pick(admin, ["hospitalId", "clinicId", "assignedClinicId", "HospitalId", "ClinicId"], 0)) || pick(admin, ["hospitalId", "clinicId", "assignedClinicId", "HospitalId", "ClinicId"], null) : null,
     sendWelcomeEmail: pick(admin, ["sendWelcomeEmail"], true) !== false,
   };
 
@@ -3738,11 +3733,3 @@ export const countActiveUsers = async () => {
     return 0;
   }
 };
-
-
-
-
-
-
-
-
