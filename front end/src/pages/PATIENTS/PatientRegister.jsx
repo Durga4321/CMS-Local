@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import DatePickerField from "../../components/DatePickerField";
 import { useNavigate, Link } from "react-router-dom";
-import { apiUrl, patientApiUrl, PATIENT_API } from "../../config/api";
+import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
 import PasswordField from "../../components/PasswordField";
 import { buildAddress, emptyAddressParts, onlyPincodeValue } from "../../utils/address";
@@ -178,24 +178,16 @@ function PatientRegister() {
     let mounted = true;
     const loadClinics = async () => {
       setLoadingClinics(true);
-      const token = localStorage.getItem("patientToken") || localStorage.getItem("token") || "";
       const headers = { "ngrok-skip-browser-warning": "true" };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
       try {
-        const primaryUrl = patientApiUrl(PATIENT_API.clinics);
-        let list = await fetchClinicList(primaryUrl, headers, controller.signal);
-
-        if (list === null || list.length === 0) {
-          const fallbackUrl = apiUrl("Clinics");
-          console.debug("loadClinics: primary endpoint returned no data, trying fallback", fallbackUrl);
-          const fallbackList = await fetchClinicList(fallbackUrl, headers, controller.signal);
-          if (Array.isArray(fallbackList) && fallbackList.length > 0) {
-            list = fallbackList;
-          }
-        }
+        const list = await fetchClinicList(
+          apiUrl("public/clinics"),
+          headers,
+          controller.signal
+        );
 
         if (!mounted) return;
 
