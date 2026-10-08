@@ -16,6 +16,8 @@ const LabApp = lazy(() => import("./Lab/LabApp"));
 const PatientRoutes = lazy(() => import("./pages/PATIENTS/PatientRoutes"));
 const UserProfilePage = lazy(() => import("./profile/UserProfilePage"));
 const LandingPage = lazy(() => import("./Landing/LandingPage"));
+const PlansPage = lazy(() => import("./Landing/PlansPage"));
+const SubscriptionCheckoutPage = lazy(() => import("./Landing/SubscriptionCheckoutPage"));
 const SuperAdminDashboard = lazy(() => import("./pages/SUPERADMIN/Dashboard/Dashboard"));
 const SuperAdminClinics = lazy(() => import("./pages/SUPERADMIN/Clinics/Clinics"));
 const SuperAdminClinicForm = lazy(() => import("./pages/SUPERADMIN/Clinics/ClinicForm"));
@@ -111,6 +113,8 @@ function App() {
 
         {/* DEFAULT */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/plans" element={<PlansPage />} />
+        <Route path="/subscribe/:planId" element={<SubscriptionCheckoutPage />} />
 
         {/* LOGIN */}
         <Route path="/login" element={<AdminLogin />} />

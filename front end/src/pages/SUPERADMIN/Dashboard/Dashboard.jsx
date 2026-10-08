@@ -5,6 +5,7 @@ import Header from "../../../components/superadmin/Header";
 import DashboardCards from "../../../components/superadmin/DashboardCards";
 import Charts from "../../../components/superadmin/Charts";
 import { fetchDashboardData, getDashboardMetric } from "../superAdminApi";
+import { readLandingSubscriptionRequests } from "../../../utils/subscriptionFlow";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("en-IN", {
@@ -98,6 +99,7 @@ function Dashboard() {
 
   const cards = useMemo(() => {
     const metrics = { ...dashboard, ...summary };
+    const landingRequests = readLandingSubscriptionRequests();
 
     return [
       {
