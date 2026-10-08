@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Bell,
@@ -19,6 +19,7 @@ import {
   X,
   ChevronRight,
   Activity,
+  ReceiptIndianRupee,
 } from "lucide-react";
 
 import "./Sidebar.css";
@@ -26,6 +27,7 @@ import { getInitials, getRoleProfile } from "../profile/sessionProfile";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { getDefaultClinicLogo, useClinicInvoiceBranding } from "../utils/clinicBranding";
 import { filterItemsByViewPermission, hasAnySavedModulePermissions, useRolePermissionsSync } from "../utils/rolePermissions";
+import { fetchMySubscription } from "../utils/subscriptionFlow";
 
 const items = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, tone: "blue" },
@@ -41,6 +43,8 @@ const items = [
   { to: "/roles", label: "Roles & Permissions", icon: ShieldCheck, tone: "amber" },
   { to: "/users", label: "User Management", icon: Users, tone: "teal" },
   { to: "/settings", label: "Settings", icon: Settings2, tone: "blue" },
+  { to: "/subscription", label: "Subscription", icon: ReceiptIndianRupee, tone: "green", alwaysVisible: true },
+  { to: "/audit-logs", label: "Audit Logs", icon: ListChecks, tone: "emerald", alwaysVisible: true },
   { to: "/reports", label: "Reports", icon: FileBarChart2, tone: "violet" },
 ];
 
@@ -56,8 +60,8 @@ const patientItems = [
 
 const superAdminItems = [
   { to: "/superadmin/dashboard", label: "Dashboard", icon: LayoutDashboard, tone: "blue" },
-  { to: "/superadmin/clinics", label: "Clinics", icon: Building2, tone: "pink" },
   { to: "/superadmin/admins", label: "Admins", icon: UserCog, tone: "orange" },
+  { to: "/superadmin/subscriptions", label: "Subscriptions", icon: ReceiptIndianRupee, tone: "green" },
   { to: "/superadmin/roles", label: "Roles & Permissions", icon: ShieldCheck, tone: "amber" },
   { to: "/superadmin/settings", label: "Settings", icon: Settings2, tone: "blue" },
   { to: "/superadmin/reports", label: "Reports", icon: FileBarChart2, tone: "violet" },
@@ -94,16 +98,40 @@ function Sidebar({ collapsed = false }) {
   else if (isPatient) profile = getRoleProfile("patient");
   else profile = getRoleProfile("admin");
   const { loading: permissionsLoading } = useRolePermissionsSync(profile);
-  const baseNavItems = isSuperAdmin ? superAdminItems : isPatient ? patientItems : items;
-  const navItems =
-    isSuperAdmin || isPatient
-      ? baseNavItems
-      : permissionsLoading && !hasAnySavedModulePermissions(profile)
-        ? []
-        : filterItemsByViewPermission(baseNavItems, profile);
+  const [subscription, setSubscription] = useState(null);
+  useEffect(() => {
+    let active = true;
+    setSubscription(null);
+    if (!isSuperAdmin && !isPatient) {
+      fetchMySubscription().then((value) => { if (active) setSubscription(value); }).catch(() => { if (active) setSubscription(null); });
+    }
+    return () => { active = false; };
+  }, [isSuperAdmin, isPatient]);
+  const labEntitled = subscription?.includesLab === true && String(subscription.status).toLowerCase() === "active";
+  const moduleScopedItems = labEntitled ? items : items.filter((item) => !["Lab Technicians", "Lab Files"].includes(item.label));
+  const baseNavItems = isSuperAdmin ? superAdminItems : isPatient ? patientItems : moduleScopedItems;
+  const navItems = useMemo(() => {
+    if (isSuperAdmin || isPatient) return baseNavItems;
 
-  const brandName = isSuperAdmin ? "Super Admin" : isPatient ? "Patient Portal" : getClinicDisplayName(profile, "Hp Clinic");
+    const alwaysVisibleItems = baseNavItems.filter((item) => item.alwaysVisible);
+    if (permissionsLoading && !hasAnySavedModulePermissions(profile)) return alwaysVisibleItems;
+
+    const permittedItems = filterItemsByViewPermission(baseNavItems, profile);
+    const permittedPaths = new Set(permittedItems.map((item) => item.to));
+    return [
+      ...permittedItems,
+      ...alwaysVisibleItems.filter((item) => !permittedPaths.has(item.to)),
+    ];
+  }, [baseNavItems, isPatient, isSuperAdmin, permissionsLoading, profile]);
+
   const clinicId = getProfileClinicId(profile);
+  const brandName = isSuperAdmin
+    ? "Super Admin"
+    : isPatient
+      ? "Patient Portal"
+      : clinicId
+        ? getClinicDisplayName(profile, "Clinic")
+        : "Clinic Setup Pending";
   const clinicBrandingScope = useMemo(
     () => ({
       clinicId,
@@ -169,5 +197,3 @@ function Sidebar({ collapsed = false }) {
 }
 
 export default Sidebar;
-
-

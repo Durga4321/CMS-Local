@@ -25,6 +25,7 @@ const SuperAdminReports = lazy(() => import("./pages/SUPERADMIN/Reports/Reports"
 const SuperAdminAuditLogs = lazy(() => import("./pages/SUPERADMIN/AuditLogs/AuditLogs"));
 const SuperAdminNotifications = lazy(() => import("./pages/SUPERADMIN/Notifications/Notifications"));
 const SuperAdminRolesPermissions = lazy(() => import("./pages/SUPERADMIN/RolesPermissions/RolesPermissions"));
+const SuperAdminSubscriptions = lazy(() => import("./pages/SUPERADMIN/Subscriptions/Subscriptions"));
 const AdminLogin = lazy(() => import("./Login/Adminlogin"));
 const ForgotPassword = lazy(() => import("./Login/Forgotpassword"));
 const VerifyOTP = lazy(() => import("./Login/Verifyopt"));
@@ -41,6 +42,9 @@ const DoctorSchedule = lazy(() => import("./pages/DOCTORS/DoctorSchedule"));
 const AdminRolesPermissions = lazy(() => import("./pages/ADMIN/RolesPermissions/AdminRolesPermissions"));
 const AdminUserManagement = lazy(() => import("./pages/ADMIN/UserManagement/AdminUserManagement"));
 const AdminSettings = lazy(() => import("./pages/ADMIN/Settings/AdminSettings"));
+const AdminSubscription = lazy(() => import("./pages/ADMIN/Subscription/AdminSubscription"));
+const AdminAuditLogs = lazy(() => import("./pages/ADMIN/AuditLogs/AdminAuditLogs"));
+const AdminClinicSetup = lazy(() => import("./pages/ADMIN/ClinicSetup/AdminClinicSetup"));
 const Patients = lazy(() => import("./pages/PATIENTS/Patients"));
 const PatientDetails = lazy(() => import("./pages/PATIENTS/PatientDetails"));
 const PatientDashboard = lazy(() => import("./pages/PATIENTS/PatientDashboard"));
@@ -131,6 +135,7 @@ function App() {
           <Route path="change-password" element={<Navigate to="/profile?tab=password" replace />} />
 
           {/* MODULES */}
+          <Route path="clinic/setup" element={<AdminClinicSetup />} />
           <Route path="branches" element={<PermissionRoute roleType="admin" module="Branches"><Branches /></PermissionRoute>} />
           <Route path="doctors" element={<PermissionRoute roleType="admin" module="Doctors"><Doctors /></PermissionRoute>} />
           <Route path="doctors/add" element={<PermissionRoute roleType="admin" module="Doctors"><AddDoctor /></PermissionRoute>} />
@@ -145,10 +150,12 @@ function App() {
           <Route path="roles-permissions" element={<Navigate to="/roles" replace />} />
           <Route path="users" element={<PermissionRoute roleType="admin" module="User Management"><AdminUserManagement /></PermissionRoute>} />
           <Route path="settings" element={<PermissionRoute roleType="admin" module="Settings"><AdminSettings /></PermissionRoute>} />
+          <Route path="subscription" element={<AdminSubscription />} />
+          <Route path="audit-logs" element={<AdminAuditLogs />} />
 
           <Route path="patients" element={<PermissionRoute roleType="admin" module="Patients"><Patients /></PermissionRoute>} />
           <Route path="patients/dashboard" element={<PermissionRoute roleType="admin" module="Patients"><PatientDashboard /></PermissionRoute>} />
-            <Route path="patients/:id" element={<PermissionRoute roleType="admin" module="Patients"><PatientDetails /></PermissionRoute>} /> {/* ✅ IMPORTANT */}
+            <Route path="patients/:id" element={<PermissionRoute roleType="admin" module="Patients"><PatientDetails /></PermissionRoute>} />
 
           <Route path="appointments" element={<PermissionRoute roleType="admin" module="Appointments"><Appointments /></PermissionRoute>} />
           <Route path="appointments/new" element={<PermissionRoute roleType="admin" module="Appointments"><NewAppointment /></PermissionRoute>} />
@@ -160,13 +167,14 @@ function App() {
 
           <Route path="superadmin" element={<Navigate to="/superadmin/dashboard" replace />} />
           <Route path="superadmin/dashboard" element={<SuperAdminRoute><SuperAdminDashboard /></SuperAdminRoute>} />
-          <Route path="superadmin/clinics" element={<SuperAdminRoute><SuperAdminClinics /></SuperAdminRoute>} />
-          <Route path="superadmin/clinics/add" element={<SuperAdminRoute><SuperAdminClinicForm mode="add" /></SuperAdminRoute>} />
-          <Route path="superadmin/clinics/edit/:id" element={<SuperAdminRoute><SuperAdminClinicForm mode="edit" /></SuperAdminRoute>} />
+          <Route path="superadmin/clinics" element={<Navigate to="/superadmin/admins" replace />} />
+          <Route path="superadmin/clinics/add" element={<Navigate to="/superadmin/admins" replace />} />
+          <Route path="superadmin/clinics/edit/:id" element={<Navigate to="/superadmin/admins" replace />} />
           <Route path="superadmin/admins" element={<SuperAdminRoute><SuperAdminAdmins /></SuperAdminRoute>} />
           <Route path="superadmin/users" element={<Navigate to="/superadmin/dashboard" replace />} />
           <Route path="superadmin/settings" element={<SuperAdminRoute><SuperAdminSettings /></SuperAdminRoute>} />
           <Route path="superadmin/roles" element={<SuperAdminRoute><SuperAdminRolesPermissions /></SuperAdminRoute>} />
+          <Route path="superadmin/subscriptions" element={<SuperAdminRoute><SuperAdminSubscriptions /></SuperAdminRoute>} />
           <Route path="superadmin/roles-permissions" element={<Navigate to="/superadmin/roles" replace />} />
           <Route path="superadmin/reports" element={<SuperAdminRoute><SuperAdminReports /></SuperAdminRoute>} />
           <Route path="superadmin/audit-logs" element={<SuperAdminRoute><SuperAdminAuditLogs /></SuperAdminRoute>} />
@@ -174,7 +182,7 @@ function App() {
 
         </Route>
 
-        {/* ── SEPARATE DOCTOR DASHBOARD ── */}
+        {/* SEPARATE DOCTOR DASHBOARD */}
         <Route path="/doctor/*" element={<DoctorApp />} />
         <Route path="/reception/*" element={<ReceptionistApp />} />
         <Route path="/nurse/*" element={<NurseApp />} />

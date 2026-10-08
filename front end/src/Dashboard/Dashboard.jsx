@@ -358,6 +358,10 @@ function Dashboard() {
   const location = useLocation();
   const adminProfile = getRoleProfile("admin");
   const adminName = adminProfile?.name || "Admin";
+  const storedHospitalId = getStoredHospitalId();
+  const storedClinicId = localStorage.getItem("hospitalId") || localStorage.getItem("clinicId") || "";
+  const storedClinicName = localStorage.getItem("hospitalName") || localStorage.getItem("clinicName") || "";
+  const hasClinic = Boolean(storedClinicId && storedClinicName);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [clinicCardFlipped, setClinicCardFlipped] = useState(false);
@@ -399,7 +403,6 @@ function Dashboard() {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
 
-      const storedHospitalId = getStoredHospitalId();
       const urlParams = new URLSearchParams();
       if (storedHospitalId) {
         urlParams.set("hospitalId", String(storedHospitalId));
@@ -648,26 +651,26 @@ function Dashboard() {
           ...dashboardData,
           ...clinicRecord,
         },
-        "Hp Clinic"
+        "Clinic"
       ),
     contactNumber:
       pickValue(
         dashboardData?.clinic || clinicRecord,
         ["contactNumber", "phoneNumber", "phone", "mobile", "contact"],
-        pickValue(dashboardData, ["clinicContactNumber", "contactNumber", "phone"], "7869054321")
+        pickValue(dashboardData, ["clinicContactNumber", "contactNumber", "phone"], "-")
       ),
     email:
       pickValue(
         dashboardData?.clinic || clinicRecord,
         ["email", "clinicEmail", "hospitalEmail"],
-        pickValue(dashboardData, ["clinicEmail", "email"], "hpclinic@gmail.com")
+        pickValue(dashboardData, ["clinicEmail", "email"], "-")
       ),
     status: getClinicStatusText(dashboardData?.clinic || clinicRecord, dashboardData),
     address:
       pickValue(
         dashboardData?.clinic || clinicRecord,
         ["fullAddress", "address", "clinicAddress", "hospitalAddress"],
-        pickValue(dashboardData, ["clinicFullAddress", "fullAddress", "address"], "Hyderabad, Telangana")
+        pickValue(dashboardData, ["clinicFullAddress", "fullAddress", "address"], "-")
       ),
   };
 
@@ -742,6 +745,29 @@ function Dashboard() {
   const Skeleton = ({ width = "100%", height = 16, style = {} }) => (
     <div className="skeleton" style={{ width, height, borderRadius: 6, ...style }} />
   );
+
+  if (!hasClinic) {
+    return (
+      <div className="db-dashboard db-no-clinic-dashboard">
+        <div className="db-3d-bg-overlay" />
+        <section className="db-no-clinic-card">
+          <div className="db-no-clinic-icon">
+            <Building2 size={30} />
+          </div>
+          <div>
+            <h1 className="db-title">Clinic Setup Required</h1>
+            <p className="db-subtitle">
+              Welcome back, {adminName}. Create your clinic first, then dashboard counts and clinic modules will load from that clinic.
+            </p>
+          </div>
+          <button type="button" className="db-no-clinic-button" onClick={() => navigate("/clinic/setup")}>
+            <Plus size={18} />
+            Create Clinic
+          </button>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="db-dashboard">

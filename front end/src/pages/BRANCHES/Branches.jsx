@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { ActionsGroup } from "../../components/ActionsGroup";
+import { apiUrl } from "../../config/api";
 import "./Branches.css";
 import { useToast } from "../../components/ToastProvider";
 import { formatTitleCase } from "../../utils/format";
@@ -141,8 +142,11 @@ function Branches() {
   const toast = useToast();
   const { canCreate, canEdit, canDelete } = useAdminModulePermissions("Branches");
   const hospitalId = getStoredHospitalId();
-  const clinicName = getStoredClinicName() || localStorage.getItem("hospitalName") || "Clinic";
-  const clinicBranding = getClinicInvoiceBranding({ clinicId: hospitalId, clinicName });
+  const clinicName = getStoredClinicName() || "Clinic";
+  const clinicBranding = getClinicInvoiceBranding({ clinicId: hospitalId, clinicName });
+  const [clinicSetupSaving, setClinicSetupSaving] = useState(false);
+  const [clinicSetupError, setClinicSetupError] = useState("");
+  const [clinicSetupSuccess, setClinicSetupSuccess] = useState("");
 
   const [branches, setBranches] = useState([]);
   const [viewingBranch, setViewingBranch] = useState(null);
@@ -173,7 +177,7 @@ function Branches() {
   const [editingBranch, setEditingBranch] = useState(null);
   const [form, setForm] = useState(getEmptyForm(hospitalId));
   const [fieldErrors, setFieldErrors] = useState({});
-  const [areaOptions, setAreaOptions] = useState([]);
+  const [areaOptions, setAreaOptions] = useState([]);
 
   const selectedDistricts = useMemo(
     () =>
@@ -284,6 +288,7 @@ function Branches() {
       active = false;
     };
   }, [form.addressParts?.pincode]);
+
 
   const filteredBranches = useMemo(() => {
     const value = searchText.trim().toLowerCase();

@@ -3986,3 +3986,250 @@
   }
 }
 
+
+.sa-module-price-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.sa-module-price-tile {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 18px 1fr 18px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.sa-module-price-tile input {
+  width: 16px;
+  height: 16px;
+}
+
+.sa-module-price-tile span {
+  display: grid;
+  gap: 2px;
+}
+
+.sa-module-price-tile small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.sa-subscriptions-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 28px;
+}
+
+.sa-subscription-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sa-subscription-kpi {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.07);
+}
+
+.sa-subscription-kpi svg {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  padding: 9px;
+  border-radius: 10px;
+}
+
+.sa-subscription-kpi b {
+  display: block;
+  font-size: 21px;
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.sa-subscription-kpi span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.sa-subscription-kpi.is-green svg { background: #dcfce7; color: #15803d; }
+.sa-subscription-kpi.is-blue svg { background: #dbeafe; color: #2563eb; }
+.sa-subscription-kpi.is-amber svg { background: #fef3c7; color: #b45309; }
+
+.sa-subscription-designer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 14px;
+  align-items: start;
+}
+
+.sa-subscription-panel,
+.sa-subscription-summary,
+.sa-subscription-table-section {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+}
+
+.sa-subscription-panel,
+.sa-subscription-summary {
+  padding: 16px;
+}
+
+.sa-subscription-panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sa-subscription-panel-head h3,
+.sa-subscription-summary h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.sa-subscription-panel-head span {
+  font-size: 20px;
+  font-weight: 800;
+  color: #047857;
+}
+
+.sa-subscription-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sa-module-price-grid--compact {
+  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+  gap: 8px;
+}
+
+.sa-module-price-grid--compact .sa-module-price-tile {
+  min-height: 50px;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.sa-module-price-tile.is-selected {
+  border-color: #7dd3fc;
+  background: #f0f9ff;
+}
+
+.sa-module-price-grid--compact .sa-module-price-tile b {
+  font-size: 14px;
+  line-height: 1.15;
+}
+
+.sa-module-price-grid--compact .sa-module-price-tile small {
+  font-size: 12px;
+}
+
+.sa-subscription-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.sa-subscription-admin-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.sa-subscription-admin-card b,
+.sa-subscription-admin-card span,
+.sa-subscription-admin-card small {
+  display: block;
+}
+
+.sa-subscription-admin-card b { color: #0f172a; }
+.sa-subscription-admin-card span { color: #334155; font-size: 13px; }
+.sa-subscription-admin-card small { color: #64748b; font-size: 12px; }
+
+.sa-subscription-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.sa-subscription-summary-grid span {
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.sa-subscription-summary-grid b,
+.sa-subscription-summary-grid small {
+  display: block;
+}
+
+.sa-subscription-summary-grid small { color: #64748b; font-size: 12px; }
+
+.sa-subscription-summary h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 14px 0 8px;
+  font-size: 14px;
+}
+
+.sa-subscription-module-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 164px;
+  overflow: auto;
+}
+
+.sa-subscription-module-list span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #ecfeff;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sa-subscription-table-section {
+  padding: 12px;
+  overflow: visible;
+}
+
+.sa-subscription-table-section .sa-search-filter {
+  margin-bottom: 12px;
+}
+
+@media (max-width: 1100px) {
+  .sa-subscription-designer,
+  .sa-subscription-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .sa-subscription-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
