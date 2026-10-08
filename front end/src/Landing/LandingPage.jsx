@@ -158,10 +158,7 @@ function LandingPage() {
             <Link to="/login/patient" className="landing-nav-link">
               Patient Portal
             </Link>
-            <Link to="/login" className="landing-nav-button">
-              <span>Staff Login</span>
-              <ChevronRight size={16} />
-            </Link>
+            <div className="landing-staff-actions"><Link to="/login" className="landing-nav-button"><span>Staff Login</span><ChevronRight size={16} /></Link><Link to="/plans" className="landing-nav-subscribe">View Plans & Subscribe</Link></div>
           </div>
         </header>
 
@@ -185,10 +182,7 @@ function LandingPage() {
           </p>
 
           <div className="landing-hero-actions">
-            <Link to="/login" className="landing-cta landing-cta-primary">
-              <span>Access Staff Portal</span>
-              <ArrowRight size={18} />
-            </Link>
+            <Link to="/login" className="landing-cta landing-cta-primary"><span>Access Staff Portal</span><ArrowRight size={18} /></Link>
             <Link to="/register/patient" className="landing-cta landing-cta-secondary">
               <span>Register New Patient</span>
             </Link>
@@ -229,6 +223,7 @@ function LandingPage() {
           </button>
         </div>
       </section>
+
 
       {/* CLINICAL WORKFLOW STEPPER STRIP */}
       <section className="landing-strip-container" aria-label="Clinical Workflow Steps">

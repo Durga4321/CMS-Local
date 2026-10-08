@@ -1,0 +1,12 @@
+import React,{useEffect,useMemo,useState} from "react";
+import {ArrowRight} from "lucide-react";
+import {useNavigate} from "react-router-dom";
+import {SUBSCRIPTION_PLAN_TYPES,fetchSubscriptionPlans,readSubscriptionPlans} from "../utils/subscriptionFlow";
+import {formatIndianCurrency} from "../utils/format";
+export default function SubscriptionPlans(){
+ const navigate=useNavigate(),[plans,setPlans]=useState([]),[loading,setLoading]=useState(true),[notice,setNotice]=useState("");
+ useEffect(()=>{let active=true;fetchSubscriptionPlans().then(items=>{if(active)setPlans(items.filter(plan=>plan.isActive))}).catch(()=>{if(!active)return;const cached=readSubscriptionPlans().filter(plan=>plan.isActive);setPlans(cached);if(!cached.length)setNotice("Plan prices will appear after the Super Admin publishes them.")}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[]);
+ const grouped=useMemo(()=>SUBSCRIPTION_PLAN_TYPES.map(type=>({type,plans:plans.filter(plan=>plan.planType===type).sort((a,b)=>a.durationMonths-b.durationMonths)})),[plans]);
+ const choosePlan=plan=>{sessionStorage.setItem("cmsSelectedSubscriptionPlan",JSON.stringify(plan));navigate("/subscribe/"+encodeURIComponent(plan.id))};
+ return <section className="landing-pricing-section"><div className="landing-pricing-head"><span>Flexible clinic subscriptions</span><h2>Choose the plan that fits your clinic</h2><p>Plan types, durations, and prices are maintained by the Super Admin.</p></div>{loading&&<div className="landing-plan-state">Loading current plans...</div>}{notice&&<div className="landing-plan-state">{notice}</div>}{!loading&&<div className="landing-plan-grid">{grouped.map(({type,plans:options})=><article className={"landing-plan-card is-"+type.toLowerCase()} key={type}><div className="landing-plan-card-head"><span>{type==="Basic"?"For growing clinics":type==="Super"?"Most popular":"Complete care suite"}</span><h3>{type}</h3></div><div className="landing-plan-options">{options.length?options.map(plan=><button type="button" key={plan.id} onClick={()=>choosePlan(plan)}><span><b>{plan.durationMonths}</b> {plan.durationMonths===1?"month":"months"}</span><strong>{formatIndianCurrency(plan.price)}</strong><small>Choose plan <ArrowRight size={13}/></small></button>):<p>No {type} prices published yet.</p>}</div></article>)}</div>}</section>
+}

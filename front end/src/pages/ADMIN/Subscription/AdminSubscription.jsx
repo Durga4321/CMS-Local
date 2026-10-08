@@ -45,6 +45,10 @@ export default function AdminSubscription() {
     ["Clinic ID", subscription.hospitalId],
     ["Admin", subscription.adminName],
     ["Email", subscription.adminEmail],
+    ["Phone", subscription.phone],
+    ["Address", subscription.address],
+    ["Payment option", subscription.paymentMethod],
+    ["Record source", subscription.source],
   ] : [];
   return <>
     <Header title="Subscription Details" action={<button type="button" className="sa-btn" title="Refresh subscription" aria-label="Refresh subscription" disabled={loading} onClick={() => setRefresh((value) => value + 1)}><RefreshCw size={16} /></button>} />

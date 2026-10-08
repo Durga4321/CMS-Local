@@ -12,6 +12,7 @@ import {
   fetchAllSubscriptions,
   fetchSubscriptionPlans,
   BILLING_CYCLES,
+  SUBSCRIPTION_PLAN_TYPES,
   getBillingCycle,
 } from "../../../utils/subscriptionFlow";
 
@@ -42,7 +43,7 @@ function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [selectedEmail, setSelectedEmail] = useState("");
   const [form, setForm] = useState({ planId: "", months: "1", includesLab: "true" });
-  const [pricing, setPricing] = useState({ includesLab: "true", months: "1", price: "" });
+  const [pricing, setPricing] = useState({ planType: "Basic", includesLab: "false", months: "1", price: "" });
   const [savingPlan, setSavingPlan] = useState(false);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
@@ -50,10 +51,10 @@ function Subscriptions() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const notifyError = (value) => { setError(value); toast.error(value); };
-  const pricingPlan = [...plans].reverse().find((plan) => plan.includesLab === (pricing.includesLab === "true") && plan.durationMonths === Number(pricing.months));
+  const pricingPlan = [...plans].reverse().find((plan) => plan.planType === pricing.planType && plan.includesLab === (pricing.includesLab === "true") && plan.durationMonths === Number(pricing.months));
   useEffect(() => {
     setPricing((current) => ({ ...current, price: pricingPlan ? String(pricingPlan.price) : "" }));
-  }, [pricingPlan, pricing.includesLab, pricing.months]);
+  }, [pricingPlan, pricing.planType, pricing.includesLab, pricing.months]);
 
   useEffect(() => {
     let active = true;
@@ -109,13 +110,15 @@ function Subscriptions() {
       const includesLab = pricing.includesLab === "true";
       const durationMonths = Number(pricing.months);
       const cycle = getBillingCycle(durationMonths);
-      const saved = await saveSubscriptionPlan({ name: (includesLab ? "With Lab" : "Without Lab") + " - " + cycle, durationMonths, includesLab, price: Number(pricing.price), isActive: true }, pricingPlan?.id);
+      const labLabel = includesLab ? "With Lab" : "Without Lab";
+      const planName = pricing.planType + " - " + labLabel + " - " + cycle;
+      const saved = await saveSubscriptionPlan({ name: planName, planType: pricing.planType, durationMonths, includesLab, price: Number(pricing.price), isActive: true }, pricingPlan?.id);
       const refreshed = await fetchSubscriptionPlans();
       setPlans(refreshed);
-      const persisted = [...refreshed].reverse().find((plan) => plan.includesLab === includesLab && plan.durationMonths === durationMonths && Number(plan.price) === Number(pricing.price) && (!saved?.id || String(plan.id) === String(saved.id)));
+      const persisted = [...refreshed].reverse().find((plan) => plan.planType === pricing.planType && plan.includesLab === includesLab && plan.durationMonths === durationMonths && Number(plan.price) === Number(pricing.price) && (!saved?.id || String(plan.id) === String(saved.id)));
       if (!persisted) throw new Error("The plan was submitted, but the saved price was not returned by the backend.");
       setForm({ planId: persisted.id, months: String(durationMonths), includesLab: String(includesLab) });
-      toast.success(cycle + " " + (includesLab ? "With Lab" : "Without Lab") + " plan saved.");
+      toast.success(planName + " plan saved.");
       try { setSubscriptions(await fetchAllSubscriptions()); }
       catch (failure) { notifyError("Plan saved, but subscriptions could not be refreshed: " + failure.message); }
     } catch (failure) { notifyError(failure.message || "Unable to save plan."); }
@@ -192,7 +195,8 @@ function Subscriptions() {
       <form className="sa-subscription-panel" onSubmit={savePricing} onInvalid={() => toast.error("Enter a valid plan price.")}>
         <h3>Plan Pricing</h3>
         <div className="sa-subscription-form-grid">
-          <div className="sa-form-field"><label htmlFor="pricing-type">Subscription type</label><select id="pricing-type" disabled={savingPlan} value={pricing.includesLab} onChange={(event) => setPricing({ ...pricing, includesLab: event.target.value })}><option value="true">With Lab</option><option value="false">Without Lab</option></select></div>
+          <div className="sa-form-field"><label htmlFor="pricing-type">Plan type</label><select id="pricing-type" disabled={savingPlan} value={pricing.planType} onChange={(event) => setPricing({ ...pricing, planType: event.target.value })}>{SUBSCRIPTION_PLAN_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}</select></div>
+          <div className="sa-form-field"><label htmlFor="pricing-lab">Lab access</label><select id="pricing-lab" disabled={savingPlan} value={pricing.includesLab} onChange={(event) => setPricing({ ...pricing, includesLab: event.target.value })}><option value="false">Without Lab</option><option value="true">With Lab</option></select></div>
           <div className="sa-form-field"><label htmlFor="pricing-cycle">Billing cycle</label><select id="pricing-cycle" disabled={savingPlan} value={pricing.months} onChange={(event) => setPricing({ ...pricing, months: event.target.value })}>{BILLING_CYCLES.map((cycle) => <option key={cycle.months} value={cycle.months}>{cycle.label}</option>)}</select></div>
           <div className="sa-form-field"><label htmlFor="pricing-amount">Price</label><input id="pricing-amount" disabled={savingPlan} type="number" required min="0" step="0.01" value={pricing.price} onChange={(event) => setPricing({ ...pricing, price: event.target.value })} /></div>
         </div>
@@ -202,7 +206,8 @@ function Subscriptions() {
         <h3>Saved Plans</h3>
         <DataTable columns={[
           { key: "name", label: "Plan", width: "minmax(220px, 1fr)" },
-          { key: "includesLab", label: "Type", width: "150px", render: (plan) => plan.includesLab ? "With Lab" : "Without Lab" },
+          { key: "planType", label: "Type", width: "150px" },
+          { key: "includesLab", label: "Lab Access", width: "140px", render: (plan) => plan.includesLab ? "With Lab" : "Without Lab" },
           { key: "billingCycle", label: "Billing Cycle", width: "130px" },
           { key: "price", label: "Price", width: "130px", render: (plan) => formatIndianCurrency(plan.price) },
           { key: "isActive", label: "Status", width: "100px", render: (plan) => plan.isActive ? "Active" : "Inactive" },

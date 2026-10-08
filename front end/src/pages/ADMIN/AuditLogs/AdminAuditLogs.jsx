@@ -76,19 +76,29 @@ const roleIcons = {
 const getRowDateValue = (row = {}) =>
   row.timestampRaw || row.createdAt || row.loginTime || row.logoutTime || row.timestamp || row.raw?.timestamp || row.raw?.createdAt || "";
 
+const parseAuditDate = (value) => {
+  if (!value) return new Date(NaN);
+  if (value instanceof Date) return value;
+  const text = String(value).trim();
+  const isIsoDateTime = /^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}/.test(text);
+  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(text);
+  return new Date(isIsoDateTime && !hasTimezone ? text + "Z" : text);
+};
+
 const formatDateTime = (value) => {
-  const date = new Date(value);
+  const date = parseAuditDate(value);
   if (Number.isNaN(date.getTime())) return String(value || "-");
   return date.toLocaleString("en-IN", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "Asia/Kolkata",
   });
 };
 
 const isWithinDateRange = (row, startDate, endDate) => {
   const value = getRowDateValue(row);
   if (!value) return true;
-  const date = new Date(value);
+  const date = parseAuditDate(value);
   if (Number.isNaN(date.getTime())) return true;
   const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
   const end = endDate ? new Date(`${endDate}T23:59:59`) : null;
