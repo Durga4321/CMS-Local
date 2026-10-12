@@ -531,6 +531,13 @@ function AdminRolesPermissions() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    if (!success) return undefined;
+
+    const timeoutId = setTimeout(() => setSuccess(""), 4000);
+    return () => clearTimeout(timeoutId);
+  }, [success]);
+
   const updateForm = (field, value) => {
     const nextSelectedRole =
       field === "userId"
@@ -1248,6 +1255,5 @@ function AdminRolesPermissions() {
 }
 
 export default AdminRolesPermissions;
-
 
 

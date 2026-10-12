@@ -133,6 +133,13 @@ export const API_ENDPOINTS = {
   subscriptions: {
     plans: "subscriptions/plans",
     planById: "subscriptions/plans/{id}",
+    publicPlans: "subscriptions/public/plans",
+    requests: "subscription-requests",
+    requestById: "subscription-requests/{id}",
+    requestPayment: "subscription-requests/{id}/payment",
+    approveRequest: "subscription-requests/{id}/approve",
+    rejectRequest: "subscription-requests/{id}/reject",
+    clinicByHospitalId: "clinic-subscriptions/{hospitalId}",
     assign: "subscriptions/assign",
     all: "subscriptions/all",
     my: "subscriptions/my",

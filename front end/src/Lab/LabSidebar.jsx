@@ -19,12 +19,12 @@ import { getLabProfile } from "./labSession";
 import { filterItemsByViewPermission, hasAnySavedModulePermissions, useRolePermissionsSync } from "../utils/rolePermissions";
 
 const items = [
-  { to: "/lab/dashboard", label: "Lab Dashboard", icon: Gauge, tone: "cyan", badge: "Live" },
-  { to: "/lab/patients", label: "Patients", icon: UserRound, tone: "emerald", badge: "Desk" },
-  { to: "/lab/diagnosis-tests", label: "Diagnosis Tests", icon: FlaskConical, tone: "purple", badge: "Tests" },
-  { to: "/lab/sample-collection", label: "Sample Collection", icon: TestTube2, tone: "amber", badge: "Samples" },
-  { to: "/lab/report-create", label: "Create Report", icon: FileBarChart2, tone: "indigo", badge: "Entry" },
-  { to: "/lab/reports", label: "Reports", icon: FileBarChart2, tone: "rose", badge: "Archive" },
+  { to: "/lab/dashboard", label: "Lab Dashboard", icon: Gauge, tone: "cyan" },
+  { to: "/lab/patients", label: "Patients", icon: UserRound, tone: "emerald" },
+  { to: "/lab/diagnosis-tests", label: "Diagnosis Tests", icon: FlaskConical, tone: "purple" },
+  { to: "/lab/sample-collection", label: "Sample Collection", icon: TestTube2, tone: "amber" },
+  { to: "/lab/report-create", label: "Create Report", icon: FileBarChart2, tone: "indigo" },
+  { to: "/lab/reports", label: "Reports", icon: FileBarChart2, tone: "rose" },
 ];
 
 function LabSidebar({ onClose = () => {}, collapsed = false }) {
@@ -128,7 +128,6 @@ function LabSidebar({ onClose = () => {}, collapsed = false }) {
                 <Icon size={18} />
               </span>
               {!collapsed && <span className="rc-nav-label">{item.label}</span>}
-              {!collapsed && item.badge ? <span className="rc-med-nav-pill">{item.badge}</span> : null}
             </NavLink>
           );
         })}

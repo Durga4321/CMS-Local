@@ -251,7 +251,7 @@
   width: 100%;
   min-width: 0 !important;
   column-gap: 10px !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   padding: 12px 16px !important;
   box-sizing: border-box !important;
 }
@@ -452,10 +452,28 @@
   font-weight: 800;
 }
 
-.admin-roles-page .sa-actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.admin-roles-page .admin-roles-table-card .sa-table .sa-table-head,
+.admin-roles-page .admin-roles-table-card .sa-table .sa-table-row {
+  align-items: flex-start !important;
+}
+
+.admin-roles-page .admin-roles-table-card .sa-table .sa-table-row > * {
+  align-self: flex-start !important;
+}
+
+.admin-roles-page .admin-roles-table-card .sa-table .sa-table-row > .sa-actions {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  align-self: flex-start !important;
+  margin-top: -4px !important;
+  padding-top: 0 !important;
+}
+
+.admin-roles-page .admin-roles-table-card .sa-table .sa-table-row > .sa-actions .actions-group {
+  align-items: flex-start !important;
+  justify-content: center !important;
+  margin-top: 0 !important;
 }
 
 /* Assign Permissions Matrix Card */
@@ -1356,8 +1374,10 @@
 
 .admin-roles-page .admin-roles-table-card .sa-table-row > .sa-actions {
   grid-column: 6;
-  grid-row: 2;
-  align-self: center;
+  grid-row: 1;
+  align-self: start !important;
+  justify-self: end !important;
+  justify-content: flex-end !important;
 }
 
 .admin-roles-permission-list {

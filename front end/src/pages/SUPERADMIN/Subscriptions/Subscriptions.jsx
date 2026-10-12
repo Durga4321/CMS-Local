@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Building2, IndianRupee, RefreshCw, ShieldCheck } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Building2, CheckCircle2, Eye, IndianRupee, RefreshCw, ShieldCheck, X, XCircle } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
@@ -11,6 +11,11 @@ import {
   assignSubscriptionToClinic,
   fetchAllSubscriptions,
   fetchSubscriptionPlans,
+  fetchSubscriptionRequest,
+  fetchSubscriptionRequests,
+  recordSubscriptionRequestPayment,
+  approveSubscriptionRequest,
+  rejectSubscriptionRequest,
   BILLING_CYCLES,
   SUBSCRIPTION_PLAN_TYPES,
   getBillingCycle,
@@ -41,6 +46,14 @@ function Subscriptions() {
   const [admins, setAdmins] = useState([]);
   const [plans, setPlans] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
+  const [subscriptionRequests, setSubscriptionRequests] = useState([]);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [requestDetails, setRequestDetails] = useState(null);
+  const [requestDetailsLoading, setRequestDetailsLoading] = useState(false);
+  const [requestDetailsError, setRequestDetailsError] = useState("");
+  const [requestAction, setRequestAction] = useState("");
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
+  const [paymentRecordedRequestId, setPaymentRecordedRequestId] = useState("");
   const [selectedEmail, setSelectedEmail] = useState("");
   const [form, setForm] = useState({ planId: "", months: "1", includesLab: "true" });
   const [pricing, setPricing] = useState({ planType: "Basic", includesLab: "false", months: "1", price: "" });
@@ -48,9 +61,92 @@ function Subscriptions() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
   const [loading, setLoading] = useState(true);
+  const [requestsLoading, setRequestsLoading] = useState(true);
+  const [requestsError, setRequestsError] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const notifyError = (value) => { setError(value); toast.error(value); };
+  const loadSubscriptionRequests = useCallback(async () => {
+    setRequestsLoading(true);
+    setRequestsError("");
+    try {
+      setSubscriptionRequests(await fetchSubscriptionRequests());
+    } catch (requestError) {
+      setSubscriptionRequests([]);
+      setRequestsError(requestError.message || "Unable to load subscription requests.");
+    } finally {
+      setRequestsLoading(false);
+    }
+  }, []);
+  const openRequestDetails = async (request) => {
+    setSelectedRequest(request);
+    setRequestDetails(null);
+    setRequestDetailsError("");
+    setPaymentDate(new Date().toISOString().slice(0, 10));
+    setPaymentRecordedRequestId("");
+    setRequestDetailsLoading(true);
+    try {
+      const details = await fetchSubscriptionRequest(request.id);
+      setRequestDetails(details);
+      const recordedStatus = String(details?.paymentStatus ?? details?.PaymentStatus ?? details?.payment?.status ?? details?.Payment?.Status ?? "").toLowerCase();
+      if (["success", "successful", "paid", "completed", "verified"].includes(recordedStatus)) {
+        setPaymentRecordedRequestId(String(request.id));
+      }
+    } catch (requestError) {
+      setRequestDetailsError(requestError.message || "Unable to load subscription request details.");
+    } finally {
+      setRequestDetailsLoading(false);
+    }
+  };
+  const closeRequestDetails = () => {
+    setSelectedRequest(null);
+    setRequestDetails(null);
+    setRequestDetailsError("");
+    setPaymentRecordedRequestId("");
+  };
+  const confirmPaymentAndApprove = async () => {
+    if (!selectedRequest?.id || requestAction) return;
+    const alreadyRecorded = String(paymentRecordedRequestId) === String(selectedRequest.id);
+    setRequestAction("payment");
+    setRequestDetailsError("");
+    let paymentRecorded = alreadyRecorded;
+    try {
+      if (!paymentRecorded) {
+        await recordSubscriptionRequestPayment(selectedRequest.id, { paymentStatus: "Success", paymentDate });
+        paymentRecorded = true;
+        setPaymentRecordedRequestId(String(selectedRequest.id));
+      }
+      await approveSubscriptionRequest(selectedRequest.id);
+      toast.success("Payment recorded and subscription request approved.");
+      await loadSubscriptionRequests();
+      closeRequestDetails();
+    } catch (actionError) {
+      setRequestDetailsError(paymentRecorded
+        ? `Payment was recorded, but approval failed: ${actionError.message || "Please retry approval."}`
+        : actionError.message || "Unable to record payment.");
+    } finally {
+      setRequestAction("");
+    }
+  };
+  const rejectRequest = async () => {
+    if (!selectedRequest?.id || requestAction || String(paymentRecordedRequestId) === String(selectedRequest.id)) return;
+    if (!window.confirm(`Reject subscription request ${selectedRequest.id}?`)) return;
+    setRequestAction("reject");
+    setRequestDetailsError("");
+    try {
+      await rejectSubscriptionRequest(selectedRequest.id);
+      toast.success("Subscription request rejected.");
+      await loadSubscriptionRequests();
+      closeRequestDetails();
+    } catch (actionError) {
+      setRequestDetailsError(actionError.message || "Unable to reject subscription request.");
+    } finally {
+      setRequestAction("");
+    }
+  };
+  useEffect(() => {
+    loadSubscriptionRequests();
+  }, [loadSubscriptionRequests]);
   const pricingPlan = [...plans].reverse().find((plan) => plan.planType === pricing.planType && plan.includesLab === (pricing.includesLab === "true") && plan.durationMonths === Number(pricing.months));
   useEffect(() => {
     setPricing((current) => ({ ...current, price: pricingPlan ? String(pricingPlan.price) : "" }));
@@ -136,6 +232,8 @@ function Subscriptions() {
   }, [subscriptions, search, status]);
 
   const totalRevenue = filteredRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+  const requestStatus = String(requestDetails?.status ?? requestDetails?.Status ?? "").toLowerCase();
+  const requestFinalized = ["approved", "rejected"].includes(requestStatus);
 
   const saveSubscription = async (event) => {
     event.preventDefault();
@@ -192,6 +290,80 @@ function Subscriptions() {
     <div className="sa-subscriptions-page">
       <Header title="Subscriptions & Renewals" />
       {error ? <div className="sa-state sa-state--error" role="alert">{error}</div> : null}
+      <div className="sa-subscription-kpis">
+        <div className="sa-subscription-kpi is-green"><IndianRupee size={20} /><div><b>{formatIndianCurrency(totalRevenue)}</b><span>Subscription value</span></div></div>
+        <div className="sa-subscription-kpi is-blue"><ShieldCheck size={20} /><div><b>{subscriptions.length}</b><span>Assigned subscriptions</span></div></div>
+        <div className="sa-subscription-kpi is-amber"><RefreshCw size={20} /><div><b>{filteredRows.filter((row) => row.status === "Active").length}</b><span>Active renewals</span></div></div>
+      </div>
+      <section className="sa-subscription-table-section">
+        <div className="sa-subscription-panel-head">
+          <h3>Subscription Requests</h3>
+          <button className="sa-btn" type="button" onClick={loadSubscriptionRequests} disabled={requestsLoading}>
+            <RefreshCw size={16} />{requestsLoading ? "Loading..." : "Refresh"}
+          </button>
+        </div>
+        {requestsError ? <div className="sa-state sa-state--error" role="alert">{requestsError}</div> : null}
+        <div className="sa-subscription-table-scroll">
+          <DataTable columns={[
+            { key: "customerName", label: "Customer", width: "minmax(150px, 1fr)", render: (request) => request.customerName || "-" },
+            { key: "email", label: "Email", width: "minmax(190px, 1fr)", render: (request) => request.email || "-" },
+            { key: "clinicName", label: "Clinic", width: "minmax(150px, 1fr)", render: (request) => request.clinicName || "Clinic pending" },
+            { key: "planName", label: "Plan", width: "minmax(180px, 1fr)", render: (request) => request.planName || "-" },
+            { key: "amount", label: "Amount", width: "120px", render: (request) => request.amount == null ? "-" : formatIndianCurrency(request.amount) },
+            { key: "paymentStatus", label: "Payment", width: "140px", render: (request) => request.paymentStatus || "-" },
+            { key: "status", label: "Status", width: "140px", render: (request) => request.status || "-" },
+            { key: "actions", label: "Action", width: "110px", render: (request) => (
+              <button className="sa-btn" type="button" onClick={() => openRequestDetails(request)} disabled={!request.id || requestDetailsLoading} aria-label={`View request ${request.id}`}>
+                <Eye size={15} />View
+              </button>
+            ) },
+          ]} rows={subscriptionRequests} loading={requestsLoading} emptyMessage="No subscription requests found." className="sa-table--subscription-requests" />
+        </div>
+      </section>
+      {selectedRequest ? (
+        <div className="sa-modal-backdrop" role="presentation" onMouseDown={closeRequestDetails}>
+          <section className="sa-modal" role="dialog" aria-modal="true" aria-labelledby="sa-subscription-request-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="sa-form-card sa-modal-card">
+              <div className="sa-modal-header">
+                <div>
+                  <h3 id="sa-subscription-request-title">Subscription Request Details</h3>
+                  <p>Request ID: {selectedRequest.id}</p>
+                </div>
+                <button type="button" className="sa-icon-btn" onClick={closeRequestDetails} title="Close" aria-label="Close request details" disabled={Boolean(requestAction)}>
+                  <X size={16} />
+                </button>
+              </div>
+              {requestDetailsLoading ? <div className="sa-state">Loading request details...</div> : null}
+              {requestDetailsError ? <div className="sa-state sa-state--error" role="alert">{requestDetailsError}</div> : null}
+              {requestDetails && typeof requestDetails === "object" ? (
+                <div className="sa-form-grid">
+                  {Object.entries(requestDetails).filter(([, value]) => value != null && typeof value !== "function").map(([key, value]) => (
+                    <div className="sa-form-field" key={key}>
+                      <label>{key.replace(/([A-Z])/g, " $1").replace(/^./, (character) => character.toUpperCase())}</label>
+                      <div>{typeof value === "object" ? JSON.stringify(value) : String(value)}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {requestDetails && typeof requestDetails === "object" ? (
+                <div className="sa-subscription-actions">
+                  <label className="sa-form-field" htmlFor="subscription-payment-date">
+                    Payment date
+                    <input id="subscription-payment-date" type="date" max={new Date().toISOString().slice(0, 10)} value={paymentDate} onChange={(event) => setPaymentDate(event.target.value)} disabled={requestFinalized || requestAction === "payment" || String(paymentRecordedRequestId) === String(selectedRequest.id)} />
+                  </label>
+                  <button className="sa-btn sa-btn-primary" type="button" onClick={confirmPaymentAndApprove} disabled={requestFinalized || Boolean(requestAction) || requestDetailsLoading || !paymentDate}>
+                    <CheckCircle2 size={16} />
+                    {requestAction === "payment" ? "Processing..." : String(paymentRecordedRequestId) === String(selectedRequest.id) ? "Retry approval" : "Payment successful & approve"}
+                  </button>
+                  <button className="sa-btn" type="button" onClick={rejectRequest} disabled={requestFinalized || Boolean(requestAction) || requestDetailsLoading || String(paymentRecordedRequestId) === String(selectedRequest.id)}>
+                    <XCircle size={16} />{requestAction === "reject" ? "Rejecting..." : "Reject request"}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </section>
+        </div>
+      ) : null}
       <form className="sa-subscription-panel" onSubmit={savePricing} onInvalid={() => toast.error("Enter a valid plan price.")}>
         <h3>Plan Pricing</h3>
         <div className="sa-subscription-form-grid">
@@ -204,21 +376,17 @@ function Subscriptions() {
       </form>
       <section className="sa-subscription-table-section">
         <h3>Saved Plans</h3>
-        <DataTable columns={[
-          { key: "name", label: "Plan", width: "minmax(220px, 1fr)" },
-          { key: "planType", label: "Type", width: "150px" },
-          { key: "includesLab", label: "Lab Access", width: "140px", render: (plan) => plan.includesLab ? "With Lab" : "Without Lab" },
-          { key: "billingCycle", label: "Billing Cycle", width: "130px" },
-          { key: "price", label: "Price", width: "130px", render: (plan) => formatIndianCurrency(plan.price) },
-          { key: "isActive", label: "Status", width: "100px", render: (plan) => plan.isActive ? "Active" : "Inactive" },
-        ]} rows={plans} loading={loading} emptyMessage="No plans saved." />
+        <div className="sa-subscription-table-scroll">
+          <DataTable columns={[
+            { key: "name", label: "Plan", width: "minmax(220px, 1fr)" },
+            { key: "planType", label: "Type", width: "150px" },
+            { key: "includesLab", label: "Lab Access", width: "140px", render: (plan) => plan.includesLab ? "With Lab" : "Without Lab" },
+            { key: "billingCycle", label: "Billing Cycle", width: "130px" },
+            { key: "price", label: "Price", width: "130px", render: (plan) => formatIndianCurrency(plan.price) },
+            { key: "isActive", label: "Status", width: "100px", render: (plan) => plan.isActive ? "Active" : "Inactive" },
+          ]} rows={plans} loading={loading} emptyMessage="No plans saved." className="sa-table--subscription-plans" />
+        </div>
       </section>
-
-      <div className="sa-subscription-kpis">
-        <div className="sa-subscription-kpi is-green"><IndianRupee size={20} /><div><b>{formatIndianCurrency(totalRevenue)}</b><span>Subscription value</span></div></div>
-        <div className="sa-subscription-kpi is-blue"><ShieldCheck size={20} /><div><b>{subscriptions.length}</b><span>Assigned subscriptions</span></div></div>
-        <div className="sa-subscription-kpi is-amber"><RefreshCw size={20} /><div><b>{filteredRows.filter((row) => row.status === "Active").length}</b><span>Active renewals</span></div></div>
-      </div>
 
       <form className="sa-subscription-designer" onSubmit={saveSubscription} onInvalid={() => toast.error("Enter valid payment details.")}>
         <section className="sa-subscription-panel">
@@ -251,7 +419,9 @@ function Subscriptions() {
 
       <section className="sa-subscription-table-section">
         <SearchFilter value={search} onChange={setSearch} placeholder="Search subscriptions..." filters={["All", ...new Set(subscriptions.map((row) => row.status).filter(Boolean))]} selectedFilter={status} onFilterChange={setStatus} />
-        <div style={{ overflowX: "auto" }}><div style={{ minWidth: 1580 }}><DataTable columns={columns} rows={filteredRows} loading={loading} emptyMessage="No subscriptions found." preserveColumnFractions /></div></div>
+        <div className="sa-subscription-table-scroll sa-subscription-table-scroll--assigned">
+          <DataTable columns={columns} rows={filteredRows} loading={loading} emptyMessage="No subscriptions found." preserveColumnFractions className="sa-table--assigned-subscriptions" />
+        </div>
       </section>
     </div>
   );

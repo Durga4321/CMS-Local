@@ -1,4 +1,5 @@
 import { API_ENDPOINTS, apiUrl } from "../config/api";
+import { getStoredHospitalId } from "./branchApi.jsx";
 export const CMS_MODULES=["Dashboard","Branches","Doctors","Receptionists","Nurses","Lab Technicians","Lab Files","Patients","Appointments","Schedule Settings","Roles & Permissions","User Management","Reports","Settings"].map((key)=>({key,label:key==="Branches"?"Branches / Clinics":key,monthlyPrice:{Dashboard:0,Branches:400,Doctors:700,Receptionists:450,Nurses:450,"Lab Technicians":500,"Lab Files":350,Patients:650,Appointments:600,"Schedule Settings":300,"Roles & Permissions":300,"User Management":450,Reports:800,Settings:250}[key]||0}));
 export const LAB_MODULE_KEYS=["Lab Technicians","Lab Files"];
 export const NON_LAB_MODULE_KEYS=CMS_MODULES.map((m)=>m.key).filter((key)=>!LAB_MODULE_KEYS.includes(key));
@@ -20,7 +21,7 @@ const getAuthToken = () => {
   return "";
 };
 const requestJson=async(path,options={})=>{const{body,headers,skipAuth=false,...rest}=options;const token=skipAuth?"":getAuthToken();const response=await fetch(apiUrl(path),{cache:"no-store",...rest,headers:{"Content-Type":"application/json","ngrok-skip-browser-warning":"true",...(token?{Authorization:"Bearer "+token}:{}),...headers},body:body!==undefined?JSON.stringify(body):undefined});const text=await response.text();let payload=null;if(text){try{payload=JSON.parse(text)}catch{payload=text}}if(!response.ok){const detail=payload?.message||payload?.title||payload?.error;const error=new Error(detail|| (response.status===403?"Access denied for /api/"+path+" (403). Sign in with the required account role.":"Request to /api/"+path+" failed with status "+response.status));error.status=response.status;error.endpoint=path;throw error;}return payload};
-const parseList=(value)=>Array.isArray(value)?value:Array.isArray(value?.data)?value.data:Array.isArray(value?.items)?value.items:Array.isArray(value?.results)?value.results:Array.isArray(value?.records)?value.records:Array.isArray(value?.subscriptions)?value.subscriptions:Array.isArray(value?.plans)?value.plans:[];
+const parseList=(value)=>Array.isArray(value)?value:Array.isArray(value?.data)?value.data:Array.isArray(value?.items)?value.items:Array.isArray(value?.results)?value.results:Array.isArray(value?.records)?value.records:Array.isArray(value?.subscriptions)?value.subscriptions:Array.isArray(value?.subscriptionRequests)?value.subscriptionRequests:Array.isArray(value?.requests)?value.requests:Array.isArray(value?.plans)?value.plans:[];
 export const addMonths=(dateValue,months)=>{const date=new Date((dateValue||todayIso())+"T00:00:00");date.setMonth(date.getMonth()+Number(months||1));return date.toISOString().slice(0,10)};
 export const readStoredJson=(key,fallback)=>{try{const value=JSON.parse(localStorage.getItem(key)||"null");return value==null?fallback:value}catch{return fallback}};
 export const writeStoredJson=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
@@ -38,9 +39,16 @@ const optionalNumber = (value) => value == null || value === "" ? null : Number(
 export const normalizeSubscriptionPlan = (plan = {}) => {
   const id = plan.id ?? plan.subscriptionPlanId ?? plan.planId ?? plan.SubscriptionPlanId ?? plan.Id ?? "";
   const durationMonths = Number(plan.durationMonths ?? plan.DurationMonths ?? plan.months ?? 1);
-  const includesLab = asBoolean(plan.includesLab ?? plan.IncludesLab ?? plan.labIncluded ?? plan.hasLab ?? false);
-  const price = Number(plan.price ?? plan.Price ?? plan.amount ?? plan.basePrice ?? 0);
   const name = plan.name ?? plan.Name ?? "";
+  const labAccess = plan.includesLab ?? plan.IncludesLab ?? plan.labIncluded ?? plan.hasLab;
+  const namedLabAccess = /\bwithout\s+lab\b/i.test(name)
+    ? false
+    : /\bwith\s+lab\b/i.test(name)
+      ? true
+      : null;
+  const includesLab =
+    namedLabAccess == null ? asBoolean(labAccess) : namedLabAccess;
+  const price = Number(plan.price ?? plan.Price ?? plan.amount ?? plan.basePrice ?? 0);
   const explicitType = plan.planType ?? plan.PlanType ?? plan.tier ?? plan.Tier;
   const planType = SUBSCRIPTION_PLAN_TYPES.find((type) => type.toLowerCase() === String(explicitType || name).trim().split(/[\s-]/)[0]?.toLowerCase()) || "Basic";
   return {
@@ -75,7 +83,7 @@ export const normalizeClinicSubscription = (subscription = {}, plans = []) => {
     status: subscription.status ?? subscription.Status ?? "",
     billingCycle: subscription.billingCycle ?? subscription.BillingCycle ?? getBillingCycle(durationMonths),
     startDate,
-    renewalDate: dateOnly(subscription.endDate ?? subscription.EndDate ?? subscription.renewalDate),
+    renewalDate: dateOnly(subscription.expiryDate ?? subscription.ExpiryDate ?? subscription.endDate ?? subscription.EndDate ?? subscription.renewalDate ?? subscription.RenewalDate ?? subscription.subscriptionEndDate ?? subscription.SubscriptionEndDate),
     months: durationMonths, durationMonths, includesLab,
     subscriptionType: includesLab == null ? "-" : includesLab ? "With Lab" : "Without Lab",
     modules: includesLab == null ? [] : sanitizeModulesForLabAccess(CMS_MODULES.map((item) => item.key), includesLab),
@@ -99,7 +107,57 @@ export const calculateSubscriptionAmount = (planId, moduleKeys = [], months = 1,
   const plan = plans.find((item) => String(item.id) === String(planId) || String(item.subscriptionPlanId) === String(planId));
   return plan ? Number(plan.price ?? plan.basePrice ?? 0) : 0;
 };
-export const fetchSubscriptionPlans=async()=>{let response;try{response=await requestJson(API_ENDPOINTS.subscriptions.plans,{skipAuth:true})}catch(publicError){response=await requestJson(API_ENDPOINTS.subscriptions.plans)}const plans=parseList(response).map(normalizeSubscriptionPlan);saveSubscriptionPlans(plans);return plans};
+export const fetchSubscriptionPlans=async()=>{let response;try{response=await requestJson(API_ENDPOINTS.subscriptions.publicPlans,{skipAuth:true})}catch(publicError){response=await requestJson(API_ENDPOINTS.subscriptions.publicPlans)}const plans=parseList(response).map(normalizeSubscriptionPlan);saveSubscriptionPlans(plans);return plans};
+export const createSubscriptionRequest=async({name,email,mobileNumber,subscriptionPlanId})=>{
+  const payload={
+    name:String(name||"").trim(),
+    email:String(email||"").trim(),
+    mobileNumber:String(mobileNumber||"").trim(),
+    subscriptionPlanId:Number(subscriptionPlanId),
+  };
+  if(!payload.name||!payload.email||!payload.mobileNumber||!Number.isInteger(payload.subscriptionPlanId)||payload.subscriptionPlanId<1){
+    throw new Error("Enter valid customer details and select a subscription plan.");
+  }
+  return unwrap(await requestJson(API_ENDPOINTS.subscriptions.requests,{method:"POST",body:payload}));
+};
+export const fetchSubscriptionRequests=async()=>{
+  const response=unwrap(await requestJson(API_ENDPOINTS.subscriptions.requests));
+  return parseList(response).map((request)=>({
+    id:request.subscriptionRequestId??request.SubscriptionRequestId??request.id??request.Id??request.requestId??"",
+    customerName:request.name??request.Name??request.customerName??request.CustomerName??request.adminName??request.AdminName??request.fullName??"",
+    email:request.email??request.Email??request.customerEmail??request.CustomerEmail??request.adminEmail??request.AdminEmail??"",
+    clinicName:request.clinicName??request.ClinicName??request.hospitalName??request.HospitalName??request.clinic?.name??request.Clinic?.Name??"",
+    planName:request.planName??request.PlanName??request.plan?.name??request.Plan?.Name??"",
+    amount:optionalNumber(request.amount??request.Amount??request.price??request.Price),
+    paymentStatus:request.paymentStatus??request.PaymentStatus??request.payment?.status??request.Payment?.Status??"",
+    status:request.status??request.Status??"",
+    raw:request,
+  }));
+};
+export const fetchSubscriptionRequest=async(id)=>{
+  if(id==null||String(id).trim()==="")throw new Error("A subscription request ID is required.");
+  const path=API_ENDPOINTS.subscriptions.requestById.replace("{id}",encodeURIComponent(id));
+  return unwrap(await requestJson(path));
+};
+const subscriptionRequestActionPath=(template,id)=>{
+  if(id==null||String(id).trim()==="")throw new Error("A subscription request ID is required.");
+  return template.replace("{id}",encodeURIComponent(id));
+};
+export const recordSubscriptionRequestPayment=async(id,{paymentStatus,paymentDate})=>{
+  const status=String(paymentStatus||"").trim();
+  const date=String(paymentDate||"").trim();
+  if(!status||!date)throw new Error("Payment status and payment date are required.");
+  const path=subscriptionRequestActionPath(API_ENDPOINTS.subscriptions.requestPayment,id);
+  return unwrap(await requestJson(path,{method:"PUT",body:{paymentStatus:status,paymentDate:date}}));
+};
+export const approveSubscriptionRequest=async(id)=>{
+  const path=subscriptionRequestActionPath(API_ENDPOINTS.subscriptions.approveRequest,id);
+  return unwrap(await requestJson(path,{method:"POST"}));
+};
+export const rejectSubscriptionRequest=async(id)=>{
+  const path=subscriptionRequestActionPath(API_ENDPOINTS.subscriptions.rejectRequest,id);
+  return unwrap(await requestJson(path,{method:"POST"}));
+};
 export const saveSubscriptionPlan = async (plan, id) => {
   const durationMonths = Number(plan.durationMonths || plan.months);
   const price = Number(plan.price);
@@ -124,6 +182,22 @@ export const fetchMySubscription = async () => {
     if (pending) return pending;
     throw error;
   }
+  if (!response || typeof response !== "object" || Array.isArray(response) || !Object.keys(response).length) return null;
+  const subscription = normalizeClinicSubscription(response);
+  const hasDetails = subscription.durationMonths != null && subscription.includesLab != null && subscription.amount != null && subscription.planName;
+  if (hasDetails || response.plan || response.subscriptionPlan || response.SubscriptionPlan) return subscription;
+  // Older APIs may return only a plan ID. Catalogue access must not block clinic details.
+  try { return normalizeClinicSubscription(response, await fetchSubscriptionPlans()); }
+  catch (error) {
+    if (error.status === 403) return subscription;
+    throw error;
+  }
+};
+export const fetchClinicSubscription = async (hospitalId = getStoredHospitalId()) => {
+  if (!hospitalId) throw new Error("Clinic ID is missing. Set up or sign in to the clinic before loading its subscription.");
+  const path = API_ENDPOINTS.subscriptions.clinicByHospitalId.replace("{hospitalId}", encodeURIComponent(hospitalId));
+  let response = unwrap(await requestJson(path));
+  response = response?.clinicSubscription ?? response?.ClinicSubscription ?? response?.subscription ?? response?.Subscription ?? response;
   if (!response || typeof response !== "object" || Array.isArray(response) || !Object.keys(response).length) return null;
   const subscription = normalizeClinicSubscription(response);
   const hasDetails = subscription.durationMonths != null && subscription.includesLab != null && subscription.amount != null && subscription.planName;

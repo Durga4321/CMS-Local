@@ -2614,6 +2614,25 @@ const auditLogToDashboardActivity = (log, index = 0) => ({
   sortTime: log.sortTime || 0,
 });
 
+const shouldIncludeDashboardActivity = (activity = {}) => {
+  const actionText = [
+    activity.action,
+    activity.title,
+    activity.systemAction,
+    activity.module,
+    activity.detail,
+    activity.description,
+  ].join(" ").toLowerCase();
+  const isAuthenticationActivity =
+    activity.isLoginActivity ||
+    activity.isLogoutActivity ||
+    /\b(login|logged in|signed in|logout|logged out|signed out)\b/.test(actionText);
+
+  if (!isAuthenticationActivity) return true;
+
+  return normalizeString(getAuditRole(activity)).replace(/[^a-z0-9]/g, "") === "superadmin";
+};
+
 const buildDashboardActivities = (...activityGroups) => {
   const seen = new Set();
 
@@ -3411,12 +3430,22 @@ export const fetchDashboardData = async () => {
   const clinicRevenueRows = clinicRevenue.status === "fulfilled" ? asArray(clinicRevenue.value) : [];
   const topClinicRows = topClinics.status === "fulfilled" ? asArray(topClinics.value) : [];
   const revenueData = revenueTrend.status === "fulfilled" ? revenueTrend.value : [];
-  const reportActivityRows = userActivity.status === "fulfilled" ? asArray(userActivity.value).map(normalizeActivity) : [];
+  const reportActivityRows =
+    userActivity.status === "fulfilled"
+      ? asArray(userActivity.value).filter(shouldIncludeDashboardActivity).map(normalizeActivity)
+      : [];
   const auditActivityRows =
-    auditLogs.status === "fulfilled" ? asArray(auditLogs.value).map(normalizeAuditLog).map(auditLogToDashboardActivity) : [];
+    auditLogs.status === "fulfilled"
+      ? asArray(auditLogs.value).filter(shouldIncludeDashboardActivity).map(normalizeAuditLog).map(auditLogToDashboardActivity)
+      : [];
   const loginActivityRows =
-    loginHistory.status === "fulfilled" ? asArray(loginHistory.value).map(normalizeLoginLog).map(auditLogToDashboardActivity) : [];
-  const localActivityRows = readLocalList(LOCAL_AUDIT_LOGS_KEY).map(normalizeAuditLog).map(auditLogToDashboardActivity);
+    loginHistory.status === "fulfilled"
+      ? asArray(loginHistory.value).filter(shouldIncludeDashboardActivity).map(normalizeLoginLog).map(auditLogToDashboardActivity)
+      : [];
+  const localActivityRows = readLocalList(LOCAL_AUDIT_LOGS_KEY)
+    .filter(shouldIncludeDashboardActivity)
+    .map(normalizeAuditLog)
+    .map(auditLogToDashboardActivity);
   
   // Get actual counts from fetched data for consistency with lists
   const clinicRows = clinicsResult.status === "fulfilled" ? asArray(clinicsResult.value) : [];

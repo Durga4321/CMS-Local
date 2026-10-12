@@ -3,7 +3,7 @@ import { RefreshCw } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import { useToast } from "../../../components/ToastProvider";
 import { formatIndianCurrency } from "../../../utils/format";
-import { fetchMySubscription } from "../../../utils/subscriptionFlow";
+import { fetchClinicSubscription } from "../../../utils/subscriptionFlow";
 
 export default function AdminSubscription() {
   const toast = useToast();
@@ -14,7 +14,7 @@ export default function AdminSubscription() {
   useEffect(() => {
     let active = true;
     setLoading(true); setError("");
-    fetchMySubscription().then((value) => {
+    fetchClinicSubscription().then((value) => {
       if (!active) return;
       setSubscription(value);
       if (refresh) toast.success("Subscription refreshed.");
@@ -59,4 +59,3 @@ export default function AdminSubscription() {
     </section> : !error && <div className="sa-state">No subscription assigned.</div>}
   </>;
 }
-

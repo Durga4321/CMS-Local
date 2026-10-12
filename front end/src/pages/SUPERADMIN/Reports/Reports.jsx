@@ -6,13 +6,13 @@ import SearchFilter from "../../../components/superadmin/SearchFilter";
 import { useToast } from "../../../components/ToastProvider";
 import { formatIndianCurrency } from "../../../utils/format";
 import { fetchAllSubscriptions } from "../../../utils/subscriptionFlow";
+import { fetchAdmins } from "../superAdminApi";
 
 const currency = (value) => value == null ? "-" : formatIndianCurrency(value);
 const fields = [
   { key: "adminName", label: "Admin", width: "170px" },
   { key: "adminEmail", label: "Email", width: "240px" },
   { key: "phone", label: "Phone", width: "140px" },
-  { key: "address", label: "Address", width: "220px" },
   { key: "clinicName", label: "Clinic", width: "170px" },
   { key: "hospitalId", label: "Clinic ID", width: "100px" },
   { key: "planName", label: "Plan", width: "230px" },
@@ -32,6 +32,35 @@ const fields = [
   { key: "status", label: "Status", width: "110px" },
 ];
 const escapeHtml = (value) => String(value ?? "-").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const getAdminForSubscription = (row, admins) => {
+  const raw = row.raw || {};
+  const adminId = String(row.adminId || raw.adminId || raw.AdminId || "").trim();
+  const adminEmail = String(row.adminEmail || raw.adminEmail || raw.AdminEmail || raw.email || "").trim().toLowerCase();
+  const clinicId = String(row.hospitalId || raw.hospitalId || raw.HospitalId || raw.clinicId || raw.ClinicId || "").trim();
+  const clinicName = String(row.clinicName || raw.clinicName || raw.ClinicName || raw.hospitalName || raw.HospitalName || "").trim().toLowerCase();
+  return admins.find((admin) => {
+    const rawAdmin = admin.raw || {};
+    const ids = [admin.id, admin.adminUserId, rawAdmin.adminId, rawAdmin.AdminId, rawAdmin.userId, rawAdmin.UserId]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+    const emails = [admin.email, rawAdmin.email, rawAdmin.Email, rawAdmin.adminEmail, rawAdmin.AdminEmail]
+      .map((value) => String(value || "").trim().toLowerCase())
+      .filter(Boolean);
+    const clinicIds = [admin.hospitalId, admin.assignedClinicId, rawAdmin.hospitalId, rawAdmin.HospitalId, rawAdmin.clinicId, rawAdmin.ClinicId, rawAdmin.assignedClinicId, rawAdmin.AssignedClinicId]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+    const clinicNames = [admin.assignedClinic, rawAdmin.clinicName, rawAdmin.ClinicName, rawAdmin.hospitalName, rawAdmin.HospitalName, rawAdmin.assignedClinic, rawAdmin.AssignedClinic]
+      .map((value) => String(value || "").trim().toLowerCase())
+      .filter(Boolean);
+    return (
+      (adminId && ids.includes(adminId)) ||
+      (adminEmail && emails.includes(adminEmail)) ||
+      (clinicId && clinicIds.includes(clinicId)) ||
+      (clinicName && clinicNames.includes(clinicName))
+    );
+  });
+};
+
 export default function Reports() {
   const toast = useToast();
   const [subscriptions, setSubscriptions] = useState([]);
@@ -43,9 +72,19 @@ export default function Reports() {
   useEffect(() => {
     let active = true;
     setLoading(true); setError("");
-    fetchAllSubscriptions().then((rows) => {
+    Promise.all([fetchAllSubscriptions(), fetchAdmins()]).then(([rows, admins]) => {
       if (!active) return;
-      setSubscriptions(rows);
+      setSubscriptions(rows.map((row) => {
+        const admin = getAdminForSubscription(row, admins);
+        if (!admin) return row;
+        return {
+          ...row,
+          adminName: row.adminName || admin.name,
+          adminEmail: row.adminEmail || admin.email,
+          phone: row.phone || admin.phone,
+          clinicName: row.clinicName || admin.assignedClinic,
+        };
+      }));
       if (refresh) toast.success("Subscription reports refreshed.");
     }).catch((failure) => {
       if (!active) return;
