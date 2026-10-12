@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Activity,
@@ -12,9 +12,6 @@ import {
   FlaskConical,
   HeartPulse,
   Layers,
-  MonitorPlay,
-  Pause,
-  Play,
   ReceiptText,
   ShieldCheck,
   Sparkles,
@@ -85,37 +82,11 @@ const flow = [
 
 function LandingPage() {
   const videoRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(true);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => setIsPlaying(true))
-          .catch(() => {
-            setIsPlaying(false);
-          });
-      }
-    }
-  }, []);
-
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
-      }
-    }
-  };
 
   return (
     <main className="landing-page">
-      {/* HERO SECTION WITH ULTRA HD VIDEO BACKGROUND */}
+      {/* HERO SECTION WITH VIDEO BACKGROUND */}
       <section className="landing-hero">
         <div className="landing-video-container">
           <video
@@ -142,7 +113,7 @@ function LandingPage() {
               <HeartPulse size={24} strokeWidth={2.5} />
             </span>
             <span className="landing-brand-text">
-              <strong>CMS <span className="landing-brand-badge">PRO HD</span></strong>
+              <strong>CMS</strong>
               <small>Clinical Intelligence System</small>
             </span>
           </Link>
@@ -164,13 +135,6 @@ function LandingPage() {
 
         {/* HERO CONTENT */}
         <div className="landing-hero-content">
-          <div className="landing-eyebrow-wrapper">
-            <div className="landing-eyebrow">
-              <Sparkles size={14} className="sparkle-icon" />
-              <span>4K Ultra HD • Intelligent Healthcare Platform</span>
-            </div>
-          </div>
-
           <h1 className="landing-hero-title">
             Connected Care, <br />
             <span className="landing-gradient-text">Unified Intelligence.</span>
@@ -204,24 +168,6 @@ function LandingPage() {
           </div>
         </div>
 
-        {/* HD VIDEO CONTROLLER BADGE */}
-        <div className="landing-video-badge-wrapper">
-          <button
-            type="button"
-            className="landing-video-control-pill"
-            onClick={togglePlay}
-            title={isPlaying ? "Pause HD Background Video" : "Play HD Background Video"}
-            aria-label={isPlaying ? "Pause Background Video" : "Play Background Video"}
-          >
-            <span className="landing-video-indicator-icon">
-              {isPlaying ? <Pause size={13} /> : <Play size={13} />}
-            </span>
-            <span className="landing-video-text">
-              {isPlaying ? "HD Ambient Video Playing" : "HD Video Paused"}
-            </span>
-            <span className="landing-hd-tag">HD 1080p</span>
-          </button>
-        </div>
       </section>
 
 

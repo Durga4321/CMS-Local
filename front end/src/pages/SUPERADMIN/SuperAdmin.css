@@ -4221,6 +4221,60 @@
   margin-bottom: 12px;
 }
 
+.sa-subscription-table-scroll {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: auto !important;
+  -ms-overflow-style: auto !important;
+  touch-action: pan-x;
+}
+
+.sa-subscription-table-scroll::-webkit-scrollbar {
+  display: block !important;
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.sa-subscription-table-scroll::-webkit-scrollbar-track {
+  display: block !important;
+  background: #e2e8f0 !important;
+  border-radius: 8px;
+}
+
+.sa-subscription-table-scroll::-webkit-scrollbar-thumb {
+  display: block !important;
+  background: #0f9d9d !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 8px;
+}
+
+.sa-subscription-table-scroll > .sa-table {
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.sa-subscription-table-scroll .sa-table--subscription-requests {
+  width: 1320px;
+  min-width: 1320px;
+}
+
+.sa-subscription-table-scroll .sa-table--subscription-plans {
+  width: 900px;
+  min-width: 900px;
+}
+
+.sa-subscription-table-scroll .sa-table--assigned-subscriptions {
+  width: 1580px;
+  min-width: 1580px;
+}
+
 @media (max-width: 1100px) {
   .sa-subscription-designer,
   .sa-subscription-kpis {

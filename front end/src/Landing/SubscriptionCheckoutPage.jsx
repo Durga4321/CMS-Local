@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  createSubscriptionRequest,
   fetchSubscriptionPlans,
   readSubscriptionPlans,
   saveLandingSubscriptionRequest,
@@ -29,6 +30,8 @@ export default function SubscriptionCheckoutPage() {
   });
   const [paymentMethod, setPaymentMethod] = useState("UPI");
   const [confirmed, setConfirmed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -88,8 +91,11 @@ export default function SubscriptionCheckoutPage() {
     );
   };
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+    setSubmitError("");
     const request = {
       plan,
       includesLab: Boolean(plan.includesLab),
@@ -97,22 +103,36 @@ export default function SubscriptionCheckoutPage() {
       paymentMethod,
       paymentConfirmed: confirmed,
     };
-    sessionStorage.setItem(
-      "cmsSelectedSubscriptionPlan",
-      JSON.stringify(plan)
-    );
-    sessionStorage.setItem(
-      "cmsSubscriptionRequest",
-      JSON.stringify(request)
-    );
-    saveLandingSubscriptionRequest(request);
-    const query = new URLSearchParams({
-      subscriptionPlanId: String(plan.id),
-      plan: plan.planType,
-      months: String(plan.durationMonths),
-      lab: plan.includesLab ? "with-lab" : "without-lab",
-    });
-    navigate("/login?" + query.toString());
+    try {
+      await createSubscriptionRequest({
+        name: details.name,
+        email: details.email,
+        mobileNumber: details.phone,
+        subscriptionPlanId: plan.id,
+      });
+      sessionStorage.setItem(
+        "cmsSelectedSubscriptionPlan",
+        JSON.stringify(plan)
+      );
+      sessionStorage.setItem(
+        "cmsSubscriptionRequest",
+        JSON.stringify(request)
+      );
+      saveLandingSubscriptionRequest(request);
+      const query = new URLSearchParams({
+        subscriptionPlanId: String(plan.id),
+        plan: plan.planType,
+        months: String(plan.durationMonths),
+        lab: plan.includesLab ? "with-lab" : "without-lab",
+      });
+      navigate("/login?" + query.toString());
+    } catch (failure) {
+      setSubmitError(
+        failure.message || "Unable to submit the subscription request."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -282,12 +302,21 @@ export default function SubscriptionCheckoutPage() {
                 </span>
               </label>
 
+              {submitError && (
+                <div className="landing-payment-error" role="alert">
+                  {submitError}
+                </div>
+              )}
+
               <button
                 className="landing-pay-button"
                 type="submit"
-                disabled={!confirmed}
+                disabled={!confirmed || submitting}
               >
-                Confirm & Continue to Login <ArrowRight size={17} />
+                {submitting
+                  ? "Submitting request..."
+                  : "Confirm & Continue to Login"}{" "}
+                <ArrowRight size={17} />
               </button>
               <small className="landing-payment-note">
                 <ShieldCheck size={14} /> Your selection will continue through
