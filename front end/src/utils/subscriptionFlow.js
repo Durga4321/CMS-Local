@@ -20,8 +20,8 @@ const getAuthToken = () => {
   }
   return "";
 };
-const requestJson=async(path,options={})=>{const{body,headers,skipAuth=false,...rest}=options;const token=skipAuth?"":getAuthToken();const response=await fetch(apiUrl(path),{cache:"no-store",...rest,headers:{"Content-Type":"application/json","ngrok-skip-browser-warning":"true",...(token?{Authorization:"Bearer "+token}:{}),...headers},body:body!==undefined?JSON.stringify(body):undefined});const text=await response.text();let payload=null;if(text){try{payload=JSON.parse(text)}catch{payload=text}}if(!response.ok){const detail=payload?.message||payload?.title||payload?.error;const error=new Error(detail|| (response.status===403?"Access denied for /api/"+path+" (403). Sign in with the required account role.":"Request to /api/"+path+" failed with status "+response.status));error.status=response.status;error.endpoint=path;throw error;}return payload};
-const parseList=(value)=>Array.isArray(value)?value:Array.isArray(value?.data)?value.data:Array.isArray(value?.items)?value.items:Array.isArray(value?.results)?value.results:Array.isArray(value?.records)?value.records:Array.isArray(value?.subscriptions)?value.subscriptions:Array.isArray(value?.subscriptionRequests)?value.subscriptionRequests:Array.isArray(value?.requests)?value.requests:Array.isArray(value?.plans)?value.plans:[];
+const requestJson=async(path,options={})=>{const{body,headers,skipAuth=false,...rest}=options;const token=skipAuth?"":getAuthToken();const response=await fetch(apiUrl(path),{cache:"no-store",...rest,headers:{"Content-Type":"application/json","ngrok-skip-browser-warning":"true",...(token?{Authorization:"Bearer "+token}:{}),...headers},body:body!==undefined?JSON.stringify(body):undefined});const text=await response.text();let payload=null;if(text){try{payload=JSON.parse(text)}catch{payload=text}}if(!response.ok){const detail=payload?.message||payload?.title||payload?.error;const error=new Error(detail|| (response.status===403?"Access denied for /api/"+path+" (403). Sign in with the required account role.":"Request to /api/"+path+" failed with status "+response.status));error.status=response.status;error.endpoint=path;error.payload=payload;throw error;}return payload};
+const parseList=(value)=>Array.isArray(value)?value:Array.isArray(value?.data)?value.data:Array.isArray(value?.items)?value.items:Array.isArray(value?.results)?value.results:Array.isArray(value?.records)?value.records:Array.isArray(value?.subscriptions)?value.subscriptions:Array.isArray(value?.subscriptionRequests)?value.subscriptionRequests:Array.isArray(value?.requests)?value.requests:Array.isArray(value?.plans)?value.plans:Array.isArray(value?.paymentMethods)?value.paymentMethods:Array.isArray(value?.renewals)?value.renewals:Array.isArray(value?.renewalPurchases)?value.renewalPurchases:Array.isArray(value?.purchases)?value.purchases:Array.isArray(value?.history)?value.history:[];
 export const addMonths=(dateValue,months)=>{const date=new Date((dateValue||todayIso())+"T00:00:00");date.setMonth(date.getMonth()+Number(months||1));return date.toISOString().slice(0,10)};
 export const readStoredJson=(key,fallback)=>{try{const value=JSON.parse(localStorage.getItem(key)||"null");return value==null?fallback:value}catch{return fallback}};
 export const writeStoredJson=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
@@ -41,25 +41,50 @@ export const normalizeSubscriptionPlan = (plan = {}) => {
   const durationMonths = Number(plan.durationMonths ?? plan.DurationMonths ?? plan.months ?? 1);
   const name = plan.name ?? plan.Name ?? "";
   const labAccess = plan.includesLab ?? plan.IncludesLab ?? plan.labIncluded ?? plan.hasLab;
+  const pharmacyAccess = plan.includesPharmacy ?? plan.IncludesPharmacy ?? plan.pharmacyIncluded ?? plan.hasPharmacy;
+  const cmsAccess = plan.includesCms ?? plan.IncludesCms ?? plan.cmsIncluded ?? plan.hasCms;
   const namedLabAccess = /\bwithout\s+lab\b/i.test(name)
     ? false
     : /\bwith\s+lab\b/i.test(name)
       ? true
       : null;
-  const includesLab =
-    namedLabAccess == null ? asBoolean(labAccess) : namedLabAccess;
+  const namedPharmacyAccess = /\bwithout\s+pharmacy\b/i.test(name)
+    ? false
+    : /\bwith\s+pharmacy\b/i.test(name)
+      ? true
+      : null;
+  const includesLab = labAccess == null
+    ? namedLabAccess ?? false
+    : asBoolean(labAccess);
+  const includesPharmacy = pharmacyAccess == null
+    ? namedPharmacyAccess ?? false
+    : asBoolean(pharmacyAccess);
   const price = Number(plan.price ?? plan.Price ?? plan.amount ?? plan.basePrice ?? 0);
   const explicitType = plan.planType ?? plan.PlanType ?? plan.tier ?? plan.Tier;
   const planType = SUBSCRIPTION_PLAN_TYPES.find((type) => type.toLowerCase() === String(explicitType || name).trim().split(/[\s-]/)[0]?.toLowerCase()) || "Basic";
+  const planTypeKnown = SUBSCRIPTION_PLAN_TYPES.some((type) => type.toLowerCase() === String(explicitType || name).trim().split(/[\s-]/)[0]?.toLowerCase());
   return {
-    id, subscriptionPlanId: id, name, planType,
-    durationMonths, includesLab, price, basePrice: price,
+    id, subscriptionPlanId: id, name, planType, planTypeKnown,
+    durationMonths, includesCms: cmsAccess == null ? true : asBoolean(cmsAccess),
+    includesLab, includesPharmacy, price, basePrice: price,
     isActive: asBoolean(plan.isActive ?? plan.IsActive ?? true),
     billingCycle: plan.billingCycle ?? plan.BillingCycle ?? getBillingCycle(durationMonths),
     modules: sanitizeModulesForLabAccess(CMS_MODULES.map((module) => module.key), includesLab),
     raw: plan,
   };
 };
+export const readPurchasedEntitlements = (record = {}, plan = {}) => {
+  const flags = {};
+  for (const key of ["includesCms", "includesLab", "includesPharmacy"]) {
+    const pascal = key[0].toUpperCase() + key.slice(1);
+    const value = record[key] ?? record[pascal] ?? plan[key] ?? plan[pascal];
+    flags[key] = value == null ? null : asBoolean(value);
+  }
+  return flags;
+};
+export const formatPurchasedModules = (record) =>
+  [["CMS", record.includesCms], ["Lab", record.includesLab], ["Pharmacy", record.includesPharmacy]]
+    .map(([label, enabled]) => label + ": " + (enabled == null ? "Unknown" : enabled ? "Yes" : "No")).join(" / ");
 export const normalizeClinicSubscription = (subscription = {}, plans = []) => {
   const planId = subscription.subscriptionPlanId ?? subscription.SubscriptionPlanId ?? subscription.planId;
   const catalogPlan = (Array.isArray(plans) ? plans : []).find((item) => String(item.id) === String(planId));
@@ -84,7 +109,9 @@ export const normalizeClinicSubscription = (subscription = {}, plans = []) => {
     billingCycle: subscription.billingCycle ?? subscription.BillingCycle ?? getBillingCycle(durationMonths),
     startDate,
     renewalDate: dateOnly(subscription.expiryDate ?? subscription.ExpiryDate ?? subscription.endDate ?? subscription.EndDate ?? subscription.renewalDate ?? subscription.RenewalDate ?? subscription.subscriptionEndDate ?? subscription.SubscriptionEndDate),
-    months: durationMonths, durationMonths, includesLab,
+    months: durationMonths, durationMonths,
+    ...readPurchasedEntitlements(subscription, embeddedPlan || catalogPlan?.raw || {}),
+    includesLab,
     subscriptionType: includesLab == null ? "-" : includesLab ? "With Lab" : "Without Lab",
     modules: includesLab == null ? [] : sanitizeModulesForLabAccess(CMS_MODULES.map((item) => item.key), includesLab),
     amount,
@@ -108,6 +135,73 @@ export const calculateSubscriptionAmount = (planId, moduleKeys = [], months = 1,
   return plan ? Number(plan.price ?? plan.basePrice ?? 0) : 0;
 };
 export const fetchSubscriptionPlans=async()=>{let response;try{response=await requestJson(API_ENDPOINTS.subscriptions.publicPlans,{skipAuth:true})}catch(publicError){response=await requestJson(API_ENDPOINTS.subscriptions.publicPlans)}const plans=parseList(response).map(normalizeSubscriptionPlan);saveSubscriptionPlans(plans);return plans};
+export const fetchSubscriptionPaymentMethods=async()=>{
+  const response=unwrap(await requestJson(API_ENDPOINTS.subscriptions.paymentMethods,{skipAuth:true}));
+  const methods=parseList(response).map((method)=>({
+    code:String(method.code??method.Code??method.id??method.Id??"").trim(),
+    name:String(method.name??method.Name??method.label??method.Label??method.code??method.Code??"").trim(),
+    enabled:asBoolean(method.enabled??method.Enabled??true),
+    liveProcessingAvailable:asBoolean(method.liveProcessingAvailable??method.LiveProcessingAvailable??false),
+  })).filter((method)=>method.code&&method.enabled);
+  return {
+    gatewayConfigured:asBoolean(response?.gatewayConfigured??response?.GatewayConfigured??false),
+    methods,
+  };
+};
+export const fetchAdminSubscriptionPlans=async()=>{
+  const response=unwrap(await requestJson(API_ENDPOINTS.subscriptions.adminPlans));
+  return parseList(response).map(normalizeSubscriptionPlan);
+};
+export const createAdminSubscriptionPlan=async(plan)=>{
+  const durationMonths=Number(plan.durationMonths||plan.months);
+  const price=Number(plan.price);
+  if(!BILLING_CYCLES.some((cycle)=>cycle.months===durationMonths)||!Number.isFinite(price)||price<0){
+    throw new Error("Enter a valid cycle and price.");
+  }
+  const payload={
+    name:String(plan.name||"").trim(),
+    durationMonths,
+    includesCms:true,
+    includesLab:asBoolean(plan.includesLab),
+    includesPharmacy:asBoolean(plan.includesPharmacy),
+    price,
+    isActive:plan.isActive!==false,
+  };
+  if(!payload.name)throw new Error("Enter a plan name.");
+  const result=unwrap(await requestJson(API_ENDPOINTS.subscriptions.adminPlans,{method:"POST",body:payload}));
+  return result&&typeof result==="object"?normalizeSubscriptionPlan(result):normalizeSubscriptionPlan(payload);
+};
+export const updateAdminSubscriptionPlanPrice=async(id,{price,isActive}={})=>{
+  if(id==null||String(id).trim()==="")throw new Error("A subscription plan ID is required.");
+  const numericPrice=Number(price);
+  if(!Number.isFinite(numericPrice)||numericPrice<0)throw new Error("Enter a valid plan price.");
+  const path=API_ENDPOINTS.subscriptions.adminPlanPrice.replace("{id}",encodeURIComponent(id));
+  const body={price:numericPrice};
+  if(typeof isActive==="boolean")body.isActive=isActive;
+  const result=unwrap(await requestJson(path,{method:"PUT",body}));
+  return result&&typeof result==="object"?normalizeSubscriptionPlan(result):{id:String(id),price:numericPrice};
+};
+export const updateAdminSubscriptionPlan=async(id,plan)=>{
+  if(id==null||String(id).trim()==="")throw new Error("A subscription plan ID is required.");
+  const durationMonths=Number(plan.durationMonths||plan.months);
+  const price=Number(plan.price);
+  if(!BILLING_CYCLES.some((cycle)=>cycle.months===durationMonths)||!Number.isFinite(price)||price<0){
+    throw new Error("Enter a valid cycle and price.");
+  }
+  const payload={
+    name:String(plan.name||"").trim(),
+    durationMonths,
+    includesCms:true,
+    includesLab:asBoolean(plan.includesLab),
+    includesPharmacy:asBoolean(plan.includesPharmacy),
+    price,
+    isActive:plan.isActive!==false,
+  };
+  if(!payload.name)throw new Error("Enter a plan name.");
+  const path=API_ENDPOINTS.subscriptions.adminPlanById.replace("{id}",encodeURIComponent(id));
+  const result=unwrap(await requestJson(path,{method:"PUT",body:payload}));
+  return result&&typeof result==="object"?normalizeSubscriptionPlan(result):normalizeSubscriptionPlan({...payload,id});
+};
 export const createSubscriptionRequest=async({name,email,mobileNumber,subscriptionPlanId})=>{
   const payload={
     name:String(name||"").trim(),
@@ -120,6 +214,44 @@ export const createSubscriptionRequest=async({name,email,mobileNumber,subscripti
   }
   return unwrap(await requestJson(API_ENDPOINTS.subscriptions.requests,{method:"POST",body:payload}));
 };
+export const createSubscriptionCheckout=async({name,email,mobileNumber,subscriptionPlanId,paymentMethod})=>{
+  const payload={
+    name:String(name||"").trim(),
+    email:String(email||"").trim(),
+    mobileNumber:String(mobileNumber||"").trim(),
+    subscriptionPlanId:Number(subscriptionPlanId),
+    paymentMethod:String(paymentMethod||"").trim(),
+  };
+  if(!payload.name||!payload.email||!payload.mobileNumber||!Number.isInteger(payload.subscriptionPlanId)||payload.subscriptionPlanId<1||!payload.paymentMethod){
+    throw new Error("Enter valid customer details, select a plan, and choose a payment method.");
+  }
+  return unwrap(await requestJson(API_ENDPOINTS.subscriptions.checkout,{method:"POST",body:payload,skipAuth:true}));
+};
+export const getSubscriptionPurchaseId=(purchase)=>{
+  const value=purchase?.purchaseId??purchase?.PurchaseId??purchase?.subscriptionPurchaseId??purchase?.SubscriptionPurchaseId??purchase?.purchase?.purchaseId??purchase?.purchase?.id??purchase?.Purchase?.PurchaseId??purchase?.Purchase?.Id??purchase?.id??purchase?.Id??purchase?.data?.purchaseId??purchase?.data?.PurchaseId??purchase?.data?.subscriptionPurchaseId??purchase?.data?.id??purchase?.data?.Id;
+  return value==null||String(value).trim()===""?"":String(value);
+};
+export const initiateSubscriptionPayment=async(purchaseId,paymentMethod,{authenticated=false}={})=>{
+  if(!Number.isInteger(Number(purchaseId))||Number(purchaseId)<1)throw new Error("The checkout response did not include a valid purchase ID.");
+  const method=String(paymentMethod||"").trim();
+  if(!method)throw new Error("Select a payment method.");
+  return unwrap(await requestJson(API_ENDPOINTS.subscriptions.initiatePayment,{method:"POST",body:{purchaseId:Number(purchaseId),paymentMethod:method},skipAuth:!authenticated}));
+};
+export const createRenewalCheckout=async({subscriptionPlanId,paymentMethod})=>{
+  const planId=Number(subscriptionPlanId);
+  const method=String(paymentMethod||"").trim();
+  if(!Number.isInteger(planId)||planId<1||!method)throw new Error("Select a plan and payment method for renewal.");
+  return unwrap(await requestJson(API_ENDPOINTS.subscriptions.renewalCheckout,{method:"POST",body:{subscriptionPlanId:planId,paymentMethod:method}}));
+};
+export const fetchRenewalHistory=async()=>{
+  const response=unwrap(await requestJson(API_ENDPOINTS.subscriptions.renewalHistory));
+  return parseList(response);
+};
+export const activateSubscriptionRenewal=async(purchaseId)=>{
+  if(purchaseId==null||String(purchaseId).trim()==="")throw new Error("A renewal purchase ID is required.");
+  const path=API_ENDPOINTS.subscriptions.activateRenewal.replace("{purchaseId}",encodeURIComponent(purchaseId));
+  return unwrap(await requestJson(path,{method:"POST"}));
+};
 export const fetchSubscriptionRequests=async()=>{
   const response=unwrap(await requestJson(API_ENDPOINTS.subscriptions.requests));
   return parseList(response).map((request)=>({
@@ -131,8 +263,24 @@ export const fetchSubscriptionRequests=async()=>{
     amount:optionalNumber(request.amount??request.Amount??request.price??request.Price),
     paymentStatus:request.paymentStatus??request.PaymentStatus??request.payment?.status??request.Payment?.Status??"",
     status:request.status??request.Status??"",
+    ...readPurchasedEntitlements(request, request.purchasedPlan ?? request.subscriptionPlan ?? request.plan ?? {}),
+    durationMonths:optionalNumber(request.durationMonths??request.DurationMonths),
     raw:request,
   }));
+};
+export const fetchPendingAdminCreations = async () => {
+  const response = unwrap(await requestJson(API_ENDPOINTS.superAdmin.pendingAdminCreations));
+  const rows = Array.isArray(response?.pendingAdminCreations) ? response.pendingAdminCreations : parseList(response);
+  return rows.map((row) => ({ ...row, id: row.id ?? row.Id ?? row.purchaseId ?? row.PurchaseId,
+    ...readPurchasedEntitlements(row, row.purchasedPlan ?? row.subscriptionPlan ?? row.plan ?? {}) }));
+};
+export const fetchPendingAdminCreation = async (id) => {
+  const path = subscriptionRequestActionPath(API_ENDPOINTS.superAdmin.pendingAdminCreation, id);
+  return unwrap(await requestJson(path));
+};
+export const createAdminFromPurchase = async (id) => {
+  const path = subscriptionRequestActionPath(API_ENDPOINTS.superAdmin.createAdminFromPurchase, id);
+  return unwrap(await requestJson(path, { method: "POST" }));
 };
 export const fetchSubscriptionRequest=async(id)=>{
   if(id==null||String(id).trim()==="")throw new Error("A subscription request ID is required.");
@@ -173,6 +321,13 @@ export const saveSubscriptionPlan = async (plan, id) => {
 export const fetchAllSubscriptions = async () => {
   const [response, plans] = await Promise.all([requestJson(API_ENDPOINTS.subscriptions.all), fetchSubscriptionPlans()]);
   return [...parseList(response).map((item) => normalizeClinicSubscription(item, plans)), ...readLandingSubscriptionRequests()];
+};
+export const fetchAdminSubscriptions = async () => {
+  const [response, plans] = await Promise.all([
+    requestJson(API_ENDPOINTS.subscriptions.all),
+    fetchAdminSubscriptionPlans(),
+  ]);
+  return parseList(response).map((item) => normalizeClinicSubscription(item, plans));
 };
 export const fetchMySubscription = async () => {
   let response;

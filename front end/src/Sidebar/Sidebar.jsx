@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Activity,
   ReceiptIndianRupee,
+  Pill,
 } from "lucide-react";
 
 import "./Sidebar.css";
@@ -42,6 +43,7 @@ const items = [
   { to: "/DoctorSchedule/schedule", label: "Schedule Settings", icon: Settings2, tone: "red" },
   { to: "/roles", label: "Roles & Permissions", icon: ShieldCheck, tone: "amber" },
   { to: "/users", label: "User Management", icon: Users, tone: "teal" },
+  { to: "/pharmacists", label: "Pharmacists", icon: Pill, tone: "cyan", alwaysVisible: true },
   { to: "/settings", label: "Settings", icon: Settings2, tone: "blue" },
   { to: "/subscription", label: "Subscription", icon: ReceiptIndianRupee, tone: "green", alwaysVisible: true },
   { to: "/audit-logs", label: "Audit Logs", icon: ListChecks, tone: "emerald", alwaysVisible: true },

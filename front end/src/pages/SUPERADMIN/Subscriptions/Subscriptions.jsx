@@ -7,10 +7,13 @@ import { useToast } from "../../../components/ToastProvider";
 import { formatIndianCurrency } from "../../../utils/format";
 import { fetchAdmins, fetchUsers } from "../superAdminApi";
 import {
-  saveSubscriptionPlan,
+  formatPurchasedModules,
+  createAdminSubscriptionPlan,
+  updateAdminSubscriptionPlanPrice,
+  updateAdminSubscriptionPlan,
   assignSubscriptionToClinic,
-  fetchAllSubscriptions,
-  fetchSubscriptionPlans,
+  fetchAdminSubscriptions,
+  fetchAdminSubscriptionPlans,
   fetchSubscriptionRequest,
   fetchSubscriptionRequests,
   recordSubscriptionRequestPayment,
@@ -56,7 +59,7 @@ function Subscriptions() {
   const [paymentRecordedRequestId, setPaymentRecordedRequestId] = useState("");
   const [selectedEmail, setSelectedEmail] = useState("");
   const [form, setForm] = useState({ planId: "", months: "1", includesLab: "true" });
-  const [pricing, setPricing] = useState({ planType: "Basic", includesLab: "false", months: "1", price: "" });
+  const [pricing, setPricing] = useState({ planType: "Basic", includesLab: "false", includesPharmacy: "false", months: "1", price: "" });
   const [savingPlan, setSavingPlan] = useState(false);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
@@ -147,10 +150,14 @@ function Subscriptions() {
   useEffect(() => {
     loadSubscriptionRequests();
   }, [loadSubscriptionRequests]);
-  const pricingPlan = [...plans].reverse().find((plan) => plan.planType === pricing.planType && plan.includesLab === (pricing.includesLab === "true") && plan.durationMonths === Number(pricing.months));
+  const matchesSelectedCombination = (plan) =>
+    plan.includesLab === (pricing.includesLab === "true") &&
+    plan.includesPharmacy === (pricing.includesPharmacy === "true") &&
+    plan.durationMonths === Number(pricing.months);
+  const pricingPlan = [...plans].reverse().find(matchesSelectedCombination);
   useEffect(() => {
     setPricing((current) => ({ ...current, price: pricingPlan ? String(pricingPlan.price) : "" }));
-  }, [pricingPlan, pricing.planType, pricing.includesLab, pricing.months]);
+  }, [pricingPlan, pricing.planType, pricing.includesLab, pricing.includesPharmacy, pricing.months]);
 
   useEffect(() => {
     let active = true;
@@ -160,8 +167,8 @@ function Subscriptions() {
       const [adminsResult, usersResult, plansResult, subscriptionsResult] = await Promise.allSettled([
         fetchAdmins(),
         fetchUsers(),
-        fetchSubscriptionPlans(),
-        fetchAllSubscriptions(),
+        fetchAdminSubscriptionPlans(),
+        fetchAdminSubscriptions(),
       ]);
       if (!active) return;
 
@@ -207,15 +214,40 @@ function Subscriptions() {
       const durationMonths = Number(pricing.months);
       const cycle = getBillingCycle(durationMonths);
       const labLabel = includesLab ? "With Lab" : "Without Lab";
-      const planName = pricing.planType + " - " + labLabel + " - " + cycle;
-      const saved = await saveSubscriptionPlan({ name: planName, planType: pricing.planType, durationMonths, includesLab, price: Number(pricing.price), isActive: true }, pricingPlan?.id);
-      const refreshed = await fetchSubscriptionPlans();
+      const pharmacyLabel = pricing.includesPharmacy === "true" ? "With Pharmacy" : "Without Pharmacy";
+      const planName = pricing.planType + " - " + labLabel + " - " + pharmacyLabel + " - " + cycle;
+      const plan = { name: planName, planType: pricing.planType, durationMonths, includesLab, includesPharmacy: pricing.includesPharmacy === "true", price: Number(pricing.price), isActive: true };
+      let saved;
+      let existingPlan = pricingPlan;
+      if (existingPlan?.id) {
+        saved = existingPlan.name !== planName
+          ? await updateAdminSubscriptionPlan(existingPlan.id, { ...plan, isActive: existingPlan.isActive })
+          : await updateAdminSubscriptionPlanPrice(existingPlan.id, { price: plan.price });
+      } else {
+        try {
+          saved = await createAdminSubscriptionPlan(plan);
+        } catch (createError) {
+          if (createError.status !== 409) throw createError;
+          const refreshedPlans = await fetchAdminSubscriptionPlans();
+          setPlans(refreshedPlans);
+          existingPlan = [...refreshedPlans].reverse().find(matchesSelectedCombination);
+          if (!existingPlan?.id) throw createError;
+          saved = await updateAdminSubscriptionPlanPrice(existingPlan.id, { price: plan.price });
+        }
+      }
+      const refreshed = await fetchAdminSubscriptionPlans();
       setPlans(refreshed);
-      const persisted = [...refreshed].reverse().find((plan) => plan.planType === pricing.planType && plan.includesLab === includesLab && plan.durationMonths === durationMonths && Number(plan.price) === Number(pricing.price) && (!saved?.id || String(plan.id) === String(saved.id)));
+      const persisted = [...refreshed].reverse().find((item) =>
+        item.includesLab === includesLab &&
+        item.includesPharmacy === (pricing.includesPharmacy === "true") &&
+        item.durationMonths === durationMonths &&
+        Number(item.price) === Number(pricing.price) &&
+        (!saved?.id || String(item.id) === String(saved.id))
+      );
       if (!persisted) throw new Error("The plan was submitted, but the saved price was not returned by the backend.");
       setForm({ planId: persisted.id, months: String(durationMonths), includesLab: String(includesLab) });
-      toast.success(planName + " plan saved.");
-      try { setSubscriptions(await fetchAllSubscriptions()); }
+      toast.success((existingPlan ? persisted.name || planName : planName) + (existingPlan ? " price updated." : " plan saved."));
+      try { setSubscriptions(await fetchAdminSubscriptions()); }
       catch (failure) { notifyError("Plan saved, but subscriptions could not be refreshed: " + failure.message); }
     } catch (failure) { notifyError(failure.message || "Unable to save plan."); }
     finally { setSavingPlan(false); }
@@ -263,7 +295,7 @@ function Subscriptions() {
         paymentReference: paidAmount > 0 ? form.paymentReference : "",
         paymentDate: paidAmount > 0 ? form.paymentDate : "",
       });
-      setSubscriptions(await fetchAllSubscriptions());
+      setSubscriptions(await fetchAdminSubscriptions());
       toast.success(selectedPlan.name + " assigned to " + selectedAdmin.name + ". Amount " + formatIndianCurrency(amount) + ".");
     } catch (requestError) {
       notifyError(requestError.message || "Unable to assign subscription.");
@@ -310,6 +342,8 @@ function Subscriptions() {
             { key: "clinicName", label: "Clinic", width: "minmax(150px, 1fr)", render: (request) => request.clinicName || "Clinic pending" },
             { key: "planName", label: "Plan", width: "minmax(180px, 1fr)", render: (request) => request.planName || "-" },
             { key: "amount", label: "Amount", width: "120px", render: (request) => request.amount == null ? "-" : formatIndianCurrency(request.amount) },
+            { key: "modules", label: "Purchased modules", width: "260px", render: formatPurchasedModules },
+            { key: "durationMonths", label: "Months", width: "90px", render: request => request.durationMonths ?? "-" },
             { key: "paymentStatus", label: "Payment", width: "140px", render: (request) => request.paymentStatus || "-" },
             { key: "status", label: "Status", width: "140px", render: (request) => request.status || "-" },
             { key: "actions", label: "Action", width: "110px", render: (request) => (
@@ -369,6 +403,7 @@ function Subscriptions() {
         <div className="sa-subscription-form-grid">
           <div className="sa-form-field"><label htmlFor="pricing-type">Plan type</label><select id="pricing-type" disabled={savingPlan} value={pricing.planType} onChange={(event) => setPricing({ ...pricing, planType: event.target.value })}>{SUBSCRIPTION_PLAN_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}</select></div>
           <div className="sa-form-field"><label htmlFor="pricing-lab">Lab access</label><select id="pricing-lab" disabled={savingPlan} value={pricing.includesLab} onChange={(event) => setPricing({ ...pricing, includesLab: event.target.value })}><option value="false">Without Lab</option><option value="true">With Lab</option></select></div>
+          <div className="sa-form-field"><label htmlFor="pricing-pharmacy">Pharmacy access</label><select id="pricing-pharmacy" disabled={savingPlan} value={pricing.includesPharmacy} onChange={(event) => setPricing({ ...pricing, includesPharmacy: event.target.value })}><option value="false">Without Pharmacy</option><option value="true">With Pharmacy</option></select></div>
           <div className="sa-form-field"><label htmlFor="pricing-cycle">Billing cycle</label><select id="pricing-cycle" disabled={savingPlan} value={pricing.months} onChange={(event) => setPricing({ ...pricing, months: event.target.value })}>{BILLING_CYCLES.map((cycle) => <option key={cycle.months} value={cycle.months}>{cycle.label}</option>)}</select></div>
           <div className="sa-form-field"><label htmlFor="pricing-amount">Price</label><input id="pricing-amount" disabled={savingPlan} type="number" required min="0" step="0.01" value={pricing.price} onChange={(event) => setPricing({ ...pricing, price: event.target.value })} /></div>
         </div>
@@ -381,6 +416,7 @@ function Subscriptions() {
             { key: "name", label: "Plan", width: "minmax(220px, 1fr)" },
             { key: "planType", label: "Type", width: "150px" },
             { key: "includesLab", label: "Lab Access", width: "140px", render: (plan) => plan.includesLab ? "With Lab" : "Without Lab" },
+            { key: "includesPharmacy", label: "Pharmacy Access", width: "160px", render: (plan) => plan.includesPharmacy ? "With Pharmacy" : "Without Pharmacy" },
             { key: "billingCycle", label: "Billing Cycle", width: "130px" },
             { key: "price", label: "Price", width: "130px", render: (plan) => formatIndianCurrency(plan.price) },
             { key: "isActive", label: "Status", width: "100px", render: (plan) => plan.isActive ? "Active" : "Inactive" },

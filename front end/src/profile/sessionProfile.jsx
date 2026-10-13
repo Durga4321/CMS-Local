@@ -11,12 +11,14 @@ export const clearAllSessions = () => {
     "receptionistToken",
     "nurseToken",
     "labToken",
+    "pharmacistToken",
     "adminEmail",
     "adminName",
     "doctorEmail",
     "receptionistEmail",
     "nurseEmail",
     "labEmail",
+    "pharmacistEmail",
     "adminRole",
     "adminId",
     "adminUserId",
@@ -24,6 +26,7 @@ export const clearAllSessions = () => {
     "receptionistRole",
     "nurseRole",
     "labRole",
+    "pharmacistRole",
     "userRole",
     "doctorId",
     "doctorName",
@@ -32,6 +35,8 @@ export const clearAllSessions = () => {
     "nurseId",
     "labName",
     "labId",
+    "pharmacistName",
+    "pharmacistId",
     "hospitalId",
     "hospitalName",
     "clinicName",
@@ -52,19 +57,21 @@ export const clearAllSessions = () => {
 };
 
 export const logoutAndClearSessions = async (roleType = "admin") => {
-  const role = String(getSessionValue("adminRole") || getSessionValue("doctorRole") || getSessionValue("receptionistRole") || getSessionValue("nurseRole") || getSessionValue("labRole") || getSessionValue("patientRole") || getSessionValue("userRole") || "").trim();
+  const role = String(getSessionValue("adminRole") || getSessionValue("doctorRole") || getSessionValue("receptionistRole") || getSessionValue("nurseRole") || getSessionValue("labRole") || getSessionValue("pharmacistRole") || getSessionValue("patientRole") || getSessionValue("userRole") || "").trim();
   const name = String(
     getSessionValue("adminName") ||
       getSessionValue("doctorName") ||
       getSessionValue("receptionistName") ||
       getSessionValue("nurseName") ||
       getSessionValue("labName") ||
+      getSessionValue("pharmacistName") ||
       getSessionValue("patientName") ||
       getSessionValue("adminEmail") ||
       getSessionValue("doctorEmail") ||
       getSessionValue("receptionistEmail") ||
       getSessionValue("nurseEmail") ||
       getSessionValue("labEmail") ||
+      getSessionValue("pharmacistEmail") ||
       getSessionValue("patientEmail") ||
       "User"
   ).trim();
@@ -116,7 +123,9 @@ const getSessionClaims = (roleType) => {
           ? getSessionValue("nurseToken")
           : roleType === "lab"
             ? getSessionValue("labToken")
-        : getSessionValue("adminToken");
+            : roleType === "pharmacist"
+              ? getSessionValue("pharmacistToken")
+              : getSessionValue("adminToken");
 
   return decodeJwtPayload(roleToken || getSessionValue("token"));
 };
@@ -259,6 +268,29 @@ export const getRoleProfile = (roleType = "admin") => {
     };
   }
 
+  if (roleType === "pharmacist") {
+    const claims = getSessionClaims(roleType);
+    const email = getProfileEmail("pharmacistEmail", claims, "pharmacist account");
+    const id =
+      getSessionValue("userId") ||
+      getSessionValue("pharmacistId") ||
+      getClaim(claims, "pharmacistId", "PharmacistId", "userId", "UserId", "sub", "nameid", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+    return {
+      roleType,
+      roleLabel: "Pharmacist",
+      id,
+      userId: id,
+      pharmacistId: getSessionValue("pharmacistId") || getClaim(claims, "pharmacistId", "PharmacistId"),
+      name: getProfileName("pharmacistName", email, claims, "Pharmacist"),
+      email,
+      hospitalId: getProfileHospitalId(claims),
+      clinicId: getProfileHospitalId(claims),
+      branchName: getProfileBranchName(claims),
+      profilePath: "/pharmacy/profile",
+      passwordPath: "/pharmacy/profile?tab=password",
+    };
+  }
+
   const claims = getSessionClaims(roleType);
   const email = getProfileEmail("adminEmail", claims, "admin account");
   const role = getSessionValue("adminRole") || "Admin";
@@ -315,4 +347,3 @@ export const getInitials = (value) =>
     .join("")
     .slice(0, 2)
     .toUpperCase() || "U";
-
