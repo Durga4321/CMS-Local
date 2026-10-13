@@ -1,0 +1,674 @@
+.pharmacy-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.pharmacy-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  display: flex;
+  width: 260px;
+  flex-direction: column;
+  padding: 22px 16px;
+  border-right: 1px solid #e2e8f0;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.pharmacy-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 8px 24px;
+}
+
+.pharmacy-brand-icon,
+.pharmacy-module-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 13px;
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.pharmacy-brand > div,
+.pharmacy-sidebar-user > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pharmacy-brand strong,
+.pharmacy-sidebar-user strong {
+  overflow: hidden;
+  color: #0f172a;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pharmacy-brand span:not(.pharmacy-brand-icon),
+.pharmacy-sidebar-user span:not(.pharmacy-avatar) {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.pharmacy-section-label {
+  padding: 16px 10px 10px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+}
+
+.pharmacy-nav {
+  display: grid;
+  gap: 6px;
+}
+
+.pharmacy-nav-link {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.pharmacy-nav-link:hover,
+.pharmacy-nav-link.is-active {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.pharmacy-sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding: 14px 8px 4px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.pharmacy-avatar {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: #d1fae5;
+  color: #047857;
+  font-weight: 800;
+}
+
+.pharmacy-main {
+  display: flex;
+  min-width: 0;
+  min-height: 100vh;
+  flex: 1;
+  flex-direction: column;
+  margin-left: 260px;
+}
+
+.pharmacy-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 28px;
+  border-bottom: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.96);
+  box-sizing: border-box;
+}
+
+.pharmacy-menu-button {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #334155;
+  font-size: 20px;
+}
+
+.pharmacy-topbar-title {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pharmacy-topbar-title h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 19px;
+}
+
+.pharmacy-topbar-title span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.pharmacy-content {
+  width: 100%;
+  max-width: 1440px;
+  flex: 1;
+  margin: 0 auto;
+  padding: 30px;
+  box-sizing: border-box;
+}
+
+.pharmacy-dashboard {
+  display: grid;
+  gap: 24px;
+}
+
+.pharmacy-welcome {
+  padding: 28px;
+  border: 1px solid #bbf7d0;
+  border-radius: 18px;
+  background: linear-gradient(115deg, #ecfdf5, #f0fdfa);
+}
+
+.pharmacy-eyebrow {
+  color: #047857;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.pharmacy-welcome h2 {
+  margin: 10px 0 6px;
+  color: #0f172a;
+  font-size: 28px;
+}
+
+.pharmacy-welcome p,
+.pharmacy-module-description {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.pharmacy-module-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.pharmacy-module-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 4px 14px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 15px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.pharmacy-module-card:hover {
+  transform: translateY(-2px);
+  border-color: #86efac;
+  box-shadow: 0 12px 25px rgba(15, 23, 42, 0.07);
+}
+
+.pharmacy-module-card .pharmacy-module-icon {
+  grid-row: span 3;
+}
+
+.pharmacy-module-title {
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.pharmacy-module-description {
+  font-size: 13px;
+}
+
+.pharmacy-module-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: #047857;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.pharmacy-module-placeholder {
+  display: flex;
+  min-height: 280px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  text-align: center;
+}
+
+.pharmacy-module-placeholder h2 {
+  margin: 16px 0 7px;
+}
+
+.pharmacy-module-placeholder p {
+  max-width: 520px;
+  margin: 0;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.pharmacy-coming-soon {
+  margin-top: 16px;
+  color: #047857;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pharmacy-import-page {
+  display: grid;
+  gap: 18px;
+}
+
+.pharmacy-import-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pharmacy-import-heading h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 22px;
+}
+
+.pharmacy-import-heading p {
+  margin: 5px 0 0;
+  color: #64748b;
+}
+
+.pharmacy-import-card {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+}
+
+.pharmacy-file-drop {
+  display: flex;
+  min-height: 190px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 20px;
+  border: 2px dashed #a7f3d0;
+  border-radius: 14px;
+  background: #f0fdf4;
+  color: #047857;
+  text-align: center;
+  cursor: pointer;
+}
+
+.pharmacy-file-drop strong {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: #0f172a;
+}
+
+.pharmacy-file-drop span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.pharmacy-file-drop input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.pharmacy-import-columns {
+  padding: 16px;
+  border-radius: 11px;
+  background: #f8fafc;
+}
+
+.pharmacy-import-columns strong {
+  color: #334155;
+  font-size: 13px;
+}
+
+.pharmacy-import-columns p {
+  margin: 7px 0;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.pharmacy-import-columns span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.pharmacy-import-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pharmacy-import-button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 17px;
+  border: 1px solid #047857;
+  border-radius: 9px;
+  background: #059669;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pharmacy-import-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pharmacy-import-message {
+  padding: 12px 15px;
+  border-radius: 10px;
+  font-weight: 650;
+}
+
+.pharmacy-import-message.is-error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.pharmacy-import-message.is-success {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.pharmacy-catalogue-card {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+}
+
+.pharmacy-catalogue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.pharmacy-catalogue-header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 19px;
+}
+
+.pharmacy-catalogue-header p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.pharmacy-catalogue-refresh {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #a5f3fc;
+  border-radius: 10px;
+  background: #ecfeff;
+  color: #0e7490;
+  cursor: pointer;
+}
+
+.pharmacy-catalogue-refresh:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.pharmacy-catalogue-search {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 13px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.pharmacy-catalogue-search:focus-within {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.12);
+}
+
+.pharmacy-catalogue-search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #0f172a;
+  font: inherit;
+}
+
+.pharmacy-catalogue-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.pharmacy-catalogue-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.pharmacy-catalogue-table th,
+.pharmacy-catalogue-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.pharmacy-catalogue-table th {
+  background: #f8fafc;
+  color: #1e3a8a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pharmacy-catalogue-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.pharmacy-catalogue-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.pharmacy-catalogue-table td strong,
+.pharmacy-catalogue-table td small {
+  display: block;
+}
+
+.pharmacy-catalogue-table td strong {
+  color: #0f172a;
+}
+
+.pharmacy-catalogue-table td small {
+  margin-top: 3px;
+  color: #64748b;
+}
+
+.pharmacy-prescriptions-page {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.pharmacy-prescriptions-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 13px;
+}
+
+.pharmacy-prescriptions-heading h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 19px;
+}
+
+.pharmacy-prescriptions-heading p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.pharmacy-prescriptions-table {
+  min-width: 760px;
+}
+
+.pharmacy-prescriptions-table td strong,
+.pharmacy-prescriptions-table td small {
+  display: block;
+}
+
+.pharmacy-prescriptions-table td small {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.pharmacy-prescription-status {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 750;
+  font-size: 11px;
+}
+
+.pharmacy-overlay {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .pharmacy-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+
+  .pharmacy-shell--open .pharmacy-sidebar {
+    transform: translateX(0);
+  }
+
+  .pharmacy-main {
+    margin-left: 0;
+  }
+
+  .pharmacy-menu-button {
+    display: grid;
+    place-items: center;
+  }
+
+  .pharmacy-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: block;
+    border: 0;
+    background: rgba(15, 23, 42, 0.4);
+  }
+}
+
+@media (max-width: 620px) {
+  .pharmacy-content {
+    padding: 18px 14px;
+  }
+
+  .pharmacy-topbar {
+    min-height: 66px;
+    gap: 10px;
+    padding: 10px 14px;
+  }
+
+  .pharmacy-module-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pharmacy-catalogue-card {
+    padding: 15px;
+  }
+
+  .pharmacy-prescriptions-page {
+    padding: 15px;
+  }
+
+  .pharmacy-welcome {
+    padding: 21px;
+  }
+
+  .pharmacy-welcome h2 {
+    font-size: 23px;
+  }
+}

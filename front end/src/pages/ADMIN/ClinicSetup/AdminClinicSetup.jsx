@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import { Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { apiUrl } from "../../../config/api";
+import { API_ENDPOINTS, apiUrl } from "../../../config/api";
 import { useToast } from "../../../components/ToastProvider";
 import {
   buildAddress,
@@ -216,7 +216,7 @@ function AdminClinicSetup() {
 
     try {
       const payload = buildClinicPayload(form);
-      const response = await fetch(apiUrl("Clinics"), {
+      const response = await fetch(apiUrl(API_ENDPOINTS.clinics.list), {
         method: "POST",
         headers: getJsonHeaders(),
         body: JSON.stringify(payload),

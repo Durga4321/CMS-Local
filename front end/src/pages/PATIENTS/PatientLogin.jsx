@@ -5,7 +5,7 @@ import { validateGmail } from "../../utils/validation";
 import { formatTitleCase } from "../../utils/format";
 import {
   Heart, Eye, EyeOff, Stethoscope, Plus, Pill, Activity,
-  Building2, Thermometer,
+  Building2, Thermometer, X,
 } from "lucide-react";
 import { apiUrl } from "../../config/api";
 import clinicBg from '../../assests/clinic-bg.jpg';
@@ -255,6 +255,15 @@ function PatientLogin() {
       <div className="auth-veil" aria-hidden="true" />
 
       <div className="auth-card auth-card--login-compact">
+        <button
+          type="button"
+          className="auth-login-close"
+          onClick={() => navigate('/')}
+          aria-label="Go to landing page"
+          title="Go to landing page"
+        >
+          <X size={20} />
+        </button>
         <div className="auth-logo" aria-hidden="true">
           <Heart size={20} />
         </div>

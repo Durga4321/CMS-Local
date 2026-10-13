@@ -13,6 +13,7 @@ const DoctorApp = lazy(() => import("./doctors/DoctorApp"));
 const ReceptionistApp = lazy(() => import("./Recepitionist/ReceptionistApp"));
 const NurseApp = lazy(() => import("./Nurse/NurseApp"));
 const LabApp = lazy(() => import("./Lab/LabApp"));
+const PharmacyApp = lazy(() => import("./Pharmacy/PharmacyApp"));
 const PatientRoutes = lazy(() => import("./pages/PATIENTS/PatientRoutes"));
 const UserProfilePage = lazy(() => import("./profile/UserProfilePage"));
 const LandingPage = lazy(() => import("./Landing/LandingPage"));
@@ -43,6 +44,7 @@ const AddDoctor = lazy(() => import("./pages/DOCTORS/AddDoctor"));
 const DoctorSchedule = lazy(() => import("./pages/DOCTORS/DoctorSchedule"));
 const AdminRolesPermissions = lazy(() => import("./pages/ADMIN/RolesPermissions/AdminRolesPermissions"));
 const AdminUserManagement = lazy(() => import("./pages/ADMIN/UserManagement/AdminUserManagement"));
+const AdminPharmacists = lazy(() => import("./pages/PHARMACISTS/Pharmacists"));
 const AdminSettings = lazy(() => import("./pages/ADMIN/Settings/AdminSettings"));
 const AdminSubscription = lazy(() => import("./pages/ADMIN/Subscription/AdminSubscription"));
 const AdminAuditLogs = lazy(() => import("./pages/ADMIN/AuditLogs/AdminAuditLogs"));
@@ -153,6 +155,7 @@ function App() {
           <Route path="roles" element={<PermissionRoute roleType="admin" module="Roles & Permissions"><AdminRolesPermissions /></PermissionRoute>} />
           <Route path="roles-permissions" element={<Navigate to="/roles" replace />} />
           <Route path="users" element={<PermissionRoute roleType="admin" module="User Management"><AdminUserManagement /></PermissionRoute>} />
+          <Route path="pharmacists" element={<PermissionRoute roleType="admin" module="User Management"><AdminPharmacists /></PermissionRoute>} />
           <Route path="settings" element={<PermissionRoute roleType="admin" module="Settings"><AdminSettings /></PermissionRoute>} />
           <Route path="subscription" element={<AdminSubscription />} />
           <Route path="audit-logs" element={<AdminAuditLogs />} />
@@ -191,6 +194,7 @@ function App() {
         <Route path="/reception/*" element={<ReceptionistApp />} />
         <Route path="/nurse/*" element={<NurseApp />} />
         <Route path="/lab/*" element={<LabApp />} />
+        <Route path="/pharmacy/*" element={<PharmacyApp />} />
         <Route path="/patient/*" element={<PatientRoute><PatientRoutes /></PatientRoute>} />
 
         {/* FALLBACK */}

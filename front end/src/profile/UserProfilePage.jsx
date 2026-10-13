@@ -41,6 +41,8 @@ const PROFILE_BACK_FALLBACKS = {
   receptionist: "/reception/dashboard",
   nurse: "/nurse/dashboard",
   lab: "/lab/dashboard",
+  pharmacist: "/pharmacy/dashboard",
+  pharmacist: "/pharmacy/dashboard",
 };
 
 function UserProfilePage({ roleType = "admin" }) {
@@ -571,4 +573,3 @@ function UserProfilePage({ roleType = "admin" }) {
 }
 
 export default UserProfilePage;
-

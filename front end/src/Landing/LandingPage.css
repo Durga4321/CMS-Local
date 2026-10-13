@@ -1003,6 +1003,15 @@
 .landing-payment-note { display: flex; align-items: center; justify-content: center; gap: 6px; color: #64748b; margin-top: 12px; }
 .landing-payment-success { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 30px; background: #f5fafe; color: var(--hd-text-main); border-radius: 16px; }
 .landing-payment-success p { color: var(--hd-text-muted); }
+.landing-payment-result { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; min-height: 320px; padding: 30px; border-radius: 16px; text-align: center; }
+.landing-payment-result h2, .landing-payment-result p { margin: 0; }
+.landing-payment-result p { color: var(--hd-text-muted); line-height: 1.6; }
+.landing-payment-result.is-approved { background: #f0fdf4; color: #15803d; }
+.landing-payment-result.is-rejected { background: #fef2f2; color: #b91c1c; }
+.landing-payment-result.is-pending, .landing-payment-result.is-unknown { background: #fffbeb; color: #a16207; }
+.landing-payment-result button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; border: 0; border-radius: 10px; padding: 13px 20px; background: #0f766e; color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+.landing-payment-result.is-rejected button { background: #b91c1c; }
+.landing-payment-result-note { max-width: 460px; font-size: 13px; }
 @media (max-width: 900px) {
   .landing-plan-duration-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .landing-checkout { grid-template-columns: 1fr; }

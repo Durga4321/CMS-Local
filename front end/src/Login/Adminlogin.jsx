@@ -102,6 +102,7 @@ const getDisplayName = (authData, claims, email, role) => {
     authData.doctorName,
     authData.receptionistName,
     authData.labName,
+    authData.pharmacistName,
     getClaim(
       claims,
       'name',
@@ -121,6 +122,7 @@ const getDisplayName = (authData, claims, email, role) => {
   if (normalizedRole === 'receptionist') return 'Receptionist';
   if (normalizedRole === 'nurse') return 'Nurse';
   if (normalizedRole === 'labtechnician' || normalizedRole === 'lab') return 'Lab Technician';
+  if (normalizedRole === 'pharmacist') return 'Pharmacist';
   if (normalizedRole === 'superadmin') return 'Super Admin';
   return 'Admin';
 };
@@ -206,12 +208,14 @@ const clearStoredSession = () => {
     'receptionistToken',
     'nurseToken',
     'labToken',
+    'pharmacistToken',
     'adminRole',
     'superAdminRole',
     'doctorRole',
     'receptionistRole',
     'nurseRole',
     'labRole',
+    'pharmacistRole',
     'userRole',
     'adminEmail',
     'adminName',
@@ -222,12 +226,15 @@ const clearStoredSession = () => {
     'receptionistEmail',
     'nurseEmail',
     'labEmail',
+    'pharmacistEmail',
     'receptionistName',
     'nurseName',
     'labName',
+    'pharmacistName',
     'doctorId',
     'nurseId',
     'labId',
+    'pharmacistId',
     'doctorName',
     'hospitalId',
     'hospitalName',
@@ -378,7 +385,7 @@ const AdminLogin = () => {
         );
       const normalizedRole = normalizeRole(role);
 
-      if (!['superadmin', 'admin', 'clinicadmin', 'doctor', 'receptionist', 'nurse', 'labtechnician', 'lab', 'patient'].includes(normalizedRole)) {
+      if (!['superadmin', 'admin', 'clinicadmin', 'doctor', 'receptionist', 'nurse', 'labtechnician', 'lab', 'pharmacist', 'patient'].includes(normalizedRole)) {
         setErrors({
           api: 'Access denied. This account does not have Super Admin, Admin, Doctor, or Receptionist role.',
         });
@@ -557,6 +564,17 @@ const AdminLogin = () => {
         setSessionItem('labId', String(authData.labId || authData.labTechnicianId || getClaim(claims, 'LabId', 'LabTechnicianId') || ''));
         toast.success({ title: 'Login successful', description: 'Welcome back, Lab Technician!' });
         navigate('/lab/dashboard', { replace: true });
+        return;
+      }
+
+      if (normalizedRole === 'pharmacist') {
+        setSessionItem('pharmacistToken', token);
+        setSessionItem('pharmacistRole', role);
+        setSessionItem('pharmacistEmail', loginEmail);
+        setSessionItem('pharmacistName', displayName);
+        setSessionItem('pharmacistId', String(authData.pharmacistId || authData.PharmacistId || getClaim(claims, 'PharmacistId', 'pharmacistId', 'UserId', 'userId') || ''));
+        toast.success({ title: 'Login successful', description: 'Welcome to the pharmacy!' });
+        navigate('/pharmacy/dashboard', { replace: true });
         return;
       }
 
@@ -742,4 +760,3 @@ export default AdminLogin;
 // select * from Appointments;
 
 // delete Schedules where id=1;
-

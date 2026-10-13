@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Eye, Pencil, Phone, Plus, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
+import PendingAdminCreations from "./PendingAdminCreations";
 import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
@@ -638,6 +639,7 @@ function Admins() {
         }
       />
 
+      <PendingAdminCreations onCreated={loadAdmins} />
       <SearchFilter
         className="sa-admin-search-filter"
         value={search}
