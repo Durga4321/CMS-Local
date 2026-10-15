@@ -639,7 +639,6 @@ function Admins() {
         }
       />
 
-      <PendingAdminCreations onCreated={loadAdmins} />
       <SearchFilter
         className="sa-admin-search-filter"
         value={search}
@@ -799,6 +798,8 @@ function Admins() {
         emptyMessage="No admins match your filters."
         preserveColumnFractions
       />
+
+      <PendingAdminCreations onCreated={loadAdmins} />
 
       <div className="sa-table-footer">
         <div className="sa-table-summary">

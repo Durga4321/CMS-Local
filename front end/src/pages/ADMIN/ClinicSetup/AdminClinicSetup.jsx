@@ -5,7 +5,6 @@ import { API_ENDPOINTS, apiUrl } from "../../../config/api";
 import { useToast } from "../../../components/ToastProvider";
 import {
   buildAddress,
-  buildAddressPayload,
   emptyAddressParts,
   onlyPincodeValue,
   validateAddressParts,
@@ -41,37 +40,19 @@ const buildClinicPayload = (form) => {
   const email = form.email.trim();
   const addressParts = form.addressParts || emptyAddressParts;
   const address = buildAddress(addressParts);
-  const addressPayload = buildAddressPayload(addressParts);
   const isActive = form.status === "Active";
 
   return {
-    ClinicName: clinicName,
-    Name: clinicName,
-    name: clinicName,
     clinicName,
-    HospitalName: clinicName,
-    hospitalName: clinicName,
-    PhoneNumber: phoneNumber,
-    ContactNumber: phoneNumber,
-    contactNumber: phoneNumber,
     phoneNumber,
-    phone: phoneNumber,
-    Email: email,
-    ClinicEmail: email,
     email,
-    Address: address,
-    ClinicAddress: address,
     address,
-    location: address,
+    location: addressParts.area || address,
     city: addressParts.city || "",
     district: addressParts.city || "",
     state: addressParts.state || "",
     country: INDIA_COUNTRY,
     postalCode: addressParts.pincode || "",
-    ...addressPayload,
-    Status: form.status,
-    status: form.status,
-    IsActive: isActive,
     isActive,
   };
 };

@@ -4,7 +4,8 @@ const DEFAULT_API_ASSET_BASE_URL = DEFAULT_API_BASE_URL;
 export const CMS_GLOBAL_SETTINGS_KEY = "cms_global_settings";
 
 export const API_BASE_URL = (
-  process.env.REACT_APP_API_BASE_URL || DEFAULT_API_BASE_URL
+  process.env.REACT_APP_API_BASE_URL ||
+  (process.env.NODE_ENV === "development" ? "" : DEFAULT_API_BASE_URL)
 ).trim().replace(/\/+$/, "");
 
 export const API_ASSET_BASE_URL = (
@@ -142,15 +143,16 @@ export const API_ENDPOINTS = {
     adminPlanPrice: "subscriptions/admin/plans/{id}/price",
     checkout: "subscriptions/checkout",
     paymentMethods: "subscriptions/payment-methods",
+    adminDemoPurchases: "subscriptions/admin/demo-purchases",
     initiatePayment: "subscriptions/payments/initiate",
+    confirmDemoPayment: "subscriptions/demo/payments/confirm",
+    pendingPayments: "subscriptions/payments/pending",
+    paymentStatus: "subscriptions/payments/{purchaseId}/status",
     renewalCheckout: "subscriptions/renewals/checkout",
     renewalHistory: "subscriptions/renewals/history",
     activateRenewal: "subscriptions/renewals/{purchaseId}/activate",
     requests: "subscription-requests",
     requestById: "subscription-requests/{id}",
-    requestPayment: "subscription-requests/{id}/payment",
-    approveRequest: "subscription-requests/{id}/approve",
-    rejectRequest: "subscription-requests/{id}/reject",
     clinicByHospitalId: "clinic-subscriptions/{hospitalId}",
     assign: "subscriptions/assign",
     all: "subscriptions/all",

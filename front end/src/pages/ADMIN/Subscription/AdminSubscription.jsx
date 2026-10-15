@@ -10,6 +10,7 @@ import {
   fetchClinicSubscription,
   fetchRenewalHistory,
   fetchSubscriptionPaymentMethods,
+  fetchSubscriptionPaymentStatus,
   fetchSubscriptionPlans,
   getSubscriptionPurchaseId,
   initiateSubscriptionPayment,
@@ -42,6 +43,9 @@ const isPaidRenewal = (renewal) =>
 const isActivatedRenewal = (renewal) =>
   ["active", "activated"].includes(String(renewal.status).trim().toLowerCase());
 
+const readPaymentStatus = (value) =>
+  readRenewalValue(value, "paymentStatus", "PaymentStatus", "purchaseStatus", "PurchaseStatus", "payment.status", "Payment.Status", "status", "Status", "data.paymentStatus", "data.PaymentStatus", "data.status", "data.Status");
+
 export default function AdminSubscription() {
   const toast = useToast();
   const [subscription, setSubscription] = useState(null);
@@ -54,6 +58,7 @@ export default function AdminSubscription() {
   const [renewals, setRenewals] = useState([]);
   const [renewalLoading, setRenewalLoading] = useState(true);
   const [renewalError, setRenewalError] = useState("");
+  const [renewalNotice, setRenewalNotice] = useState("");
   const [renewalPlanId, setRenewalPlanId] = useState("");
   const [renewalPaymentMethod, setRenewalPaymentMethod] = useState("");
   const [renewalAction, setRenewalAction] = useState("");
@@ -123,6 +128,7 @@ export default function AdminSubscription() {
     if (renewalAction) return;
     setRenewalAction("checkout");
     setRenewalError("");
+    setRenewalNotice("");
     try {
       const purchase = await createRenewalCheckout({
         subscriptionPlanId: renewalPlanId,
@@ -132,12 +138,49 @@ export default function AdminSubscription() {
       if (!purchaseId) {
         throw new Error("The renewal checkout was created, but the API response did not include a purchase ID. Contact support before retrying.");
       }
-      await initiateSubscriptionPayment(purchaseId, renewalPaymentMethod, { authenticated: true });
-      toast.success("Renewal checkout and payment initiation completed.");
+      const initiated = await initiateSubscriptionPayment(purchaseId, renewalPaymentMethod, { authenticated: true });
+      let paymentStatus;
+      let statusCheckMessage = "";
+      try {
+        const currentStatus = await fetchSubscriptionPaymentStatus(purchaseId);
+        paymentStatus = readPaymentStatus(currentStatus) || readPaymentStatus(initiated);
+      } catch (statusFailure) {
+        paymentStatus = readPaymentStatus(initiated);
+        statusCheckMessage = statusFailure.message || "Status check failed.";
+      }
+      const normalizedStatus = String(paymentStatus || "").trim().toLowerCase();
+      if (statusCheckMessage) {
+        setRenewalNotice(`Renewal purchase ${purchaseId} was initiated, but its payment status could not be confirmed: ${statusCheckMessage}`);
+      } else if (["paid", "success", "successful", "succeeded", "completed", "verified", "approved"].includes(normalizedStatus)) {
+        toast.success("Renewal payment confirmed. Activate it from payment history when ready.");
+      } else if (["failed", "failure", "rejected", "declined", "cancelled", "canceled"].includes(normalizedStatus)) {
+        setRenewalNotice(`Payment for renewal purchase ${purchaseId} was ${paymentStatus}.`);
+      } else {
+        setRenewalNotice(`Renewal purchase ${purchaseId} payment status: ${paymentStatus || "Unconfirmed"}. Refresh or check the status before activating.`);
+      }
       await loadRenewals();
       setRefresh((value) => value + 1);
     } catch (failure) {
       setRenewalError(failure.message || "Unable to create the renewal checkout.");
+    } finally {
+      setRenewalAction("");
+    }
+  };
+  const checkRenewalPaymentStatus = async (renewal) => {
+    if (!renewal.id || renewalAction) return;
+    setRenewalAction(String(renewal.id));
+    setRenewalError("");
+    setRenewalNotice("");
+    try {
+      const result = await fetchSubscriptionPaymentStatus(renewal.id);
+      const paymentStatus = readPaymentStatus(result);
+      if (!paymentStatus) throw new Error("The payment status response did not include a status.");
+      setRenewals((current) => current.map((row) =>
+        String(row.id) === String(renewal.id) ? { ...row, paymentStatus, rawPaymentStatus: result } : row
+      ));
+      setRenewalNotice(`Renewal purchase ${renewal.id} payment status: ${paymentStatus}.`);
+    } catch (failure) {
+      setRenewalError(failure.message || `Unable to check payment status for renewal ${renewal.id}.`);
     } finally {
       setRenewalAction("");
     }
@@ -193,6 +236,7 @@ export default function AdminSubscription() {
     <section className="sa-form-card" style={{ marginTop: 16 }}>
       <h3>Renew subscription</h3>
       {renewalError ? <div className="sa-state sa-state--error" role="alert">{renewalError}</div> : null}
+      {renewalNotice ? <div className="sa-state" role="status">{renewalNotice}</div> : null}
       {renewalLoading ? <div className="sa-state">Loading renewal options...</div> : (
         <form onSubmit={checkoutRenewal}>
           <div className="sa-form-grid">
@@ -235,11 +279,14 @@ export default function AdminSubscription() {
         { key: "paymentStatus", label: "Payment", width: "120px", render: (row) => row.paymentStatus || "-" },
         { key: "status", label: "Status", width: "120px", render: (row) => row.status || "-" },
         { key: "createdAt", label: "Date", width: "150px", render: (row) => row.createdAt ? String(row.createdAt).slice(0, 10) : "-" },
-        { key: "actions", label: "Action", width: "130px", render: (row) => isPaidRenewal(row) && !isActivatedRenewal(row) ? (
-          <button type="button" className="sa-btn sa-btn-primary" onClick={() => activateRenewal(row)} disabled={!row.id || Boolean(renewalAction)}>
-            <CheckCircle2 size={15} />{renewalAction === String(row.id) ? "Activating..." : "Activate"}
-          </button>
-        ) : isActivatedRenewal(row) ? "Activated" : "-" },
+        { key: "actions", label: "Action", width: "200px", render: (row) => isActivatedRenewal(row) ? "Activated" : (
+          <>
+            {!isPaidRenewal(row) ? <button type="button" className="sa-btn" onClick={() => checkRenewalPaymentStatus(row)} disabled={!row.id || Boolean(renewalAction)}>{renewalAction === String(row.id) ? "Checking..." : "Check status"}</button> : null}
+            {isPaidRenewal(row) ? <button type="button" className="sa-btn sa-btn-primary" onClick={() => activateRenewal(row)} disabled={!row.id || Boolean(renewalAction)}>
+              <CheckCircle2 size={15} />{renewalAction === String(row.id) ? "Activating..." : "Activate"}
+            </button> : null}
+          </>
+        ) },
       ]} rows={renewals} loading={renewalLoading} emptyMessage="No renewal history found." />
     </section>
   </>;

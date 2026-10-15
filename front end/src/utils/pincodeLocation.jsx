@@ -79,6 +79,43 @@ const getPostOffices = (payload) => {
   return records.map(normalizePostOffice).filter(Boolean);
 };
 
+const buildLocationFromAreas = (record, pincode) => {
+  const areaOptions = asArray(
+    record.areas ||
+    record.Areas ||
+    record.areaOptions ||
+    record.AreaOptions
+  )
+    .map((area) =>
+      typeof area === "string"
+        ? area.trim()
+        : pickValue(area, ["Name", "name", "Area", "area", "AreaName", "areaName"])
+    )
+    .filter(Boolean);
+  const state = pickValue(record, ["state", "State", "stateName", "StateName"]);
+  const city = pickValue(record, [
+    "district",
+    "District",
+    "districtName",
+    "DistrictName",
+    "city",
+    "City",
+    "cityName",
+    "CityName",
+  ]);
+
+  return {
+    pincode,
+    state,
+    city,
+    country: pickValue(record, ["country", "Country"]) || INDIA_COUNTRY,
+    village: areaOptions[0] || "",
+    area: areaOptions[0] || "",
+    areaOptions,
+    postOffices: areaOptions.map((Name) => ({ Name, District: city, State: state })),
+  };
+};
+
 const buildLocationFromPostOffices = (postOffices, pincode) => {
   if (!postOffices.length) {
     throw new Error("No location found for this pincode.");
@@ -155,6 +192,24 @@ export const fetchPincodeLocation = async (pincode) => {
   }
 
   const payload = await fetchJson(apiUrl(`Location/pincode/${cleanPincode}`));
+  const locationRecord = Array.isArray(payload)
+    ? payload.find((record) => record && typeof record === "object" && !Array.isArray(record))
+    : payload?.data && typeof payload.data === "object"
+      ? payload.data
+      : payload;
+
+  if (
+    locationRecord &&
+    typeof locationRecord === "object" &&
+    !Array.isArray(locationRecord) &&
+    ["areas", "Areas", "areaOptions", "AreaOptions"].some((key) =>
+      Array.isArray(locationRecord[key])
+    )
+  ) {
+    const location = buildLocationFromAreas(locationRecord, cleanPincode);
+    if (location.areaOptions.length || location.city || location.state) return location;
+  }
+
   const postOffices = getPostOffices(payload);
 
   if (postOffices.length) {
