@@ -21,7 +21,7 @@ const getAuthToken = () => {
   return "";
 };
 const requestJson=async(path,options={})=>{const{body,headers,skipAuth=false,...rest}=options;const token=skipAuth?"":getAuthToken();const response=await fetch(apiUrl(path),{cache:"no-store",...rest,headers:{"Content-Type":"application/json","ngrok-skip-browser-warning":"true",...(token?{Authorization:"Bearer "+token}:{}),...headers},body:body!==undefined?JSON.stringify(body):undefined});const text=await response.text();let payload=null;if(text){try{payload=JSON.parse(text)}catch{payload=text}}if(!response.ok){const detail=payload?.message||payload?.title||payload?.error;const error=new Error(detail|| (response.status===403?"Access denied for /api/"+path+" (403). Sign in with the required account role.":"Request to /api/"+path+" failed with status "+response.status));error.status=response.status;error.endpoint=path;error.payload=payload;throw error;}return payload};
-const parseList=(value)=>Array.isArray(value)?value:Array.isArray(value?.data)?value.data:Array.isArray(value?.items)?value.items:Array.isArray(value?.results)?value.results:Array.isArray(value?.records)?value.records:Array.isArray(value?.subscriptions)?value.subscriptions:Array.isArray(value?.subscriptionRequests)?value.subscriptionRequests:Array.isArray(value?.requests)?value.requests:Array.isArray(value?.plans)?value.plans:Array.isArray(value?.paymentMethods)?value.paymentMethods:Array.isArray(value?.renewals)?value.renewals:Array.isArray(value?.renewalPurchases)?value.renewalPurchases:Array.isArray(value?.purchases)?value.purchases:Array.isArray(value?.history)?value.history:[];
+const parseList=(value)=>Array.isArray(value)?value:Array.isArray(value?.data)?value.data:Array.isArray(value?.items)?value.items:Array.isArray(value?.results)?value.results:Array.isArray(value?.records)?value.records:Array.isArray(value?.subscriptions)?value.subscriptions:Array.isArray(value?.subscriptionRequests)?value.subscriptionRequests:Array.isArray(value?.requests)?value.requests:Array.isArray(value?.plans)?value.plans:Array.isArray(value?.methods)?value.methods:Array.isArray(value?.paymentMethods)?value.paymentMethods:Array.isArray(value?.renewals)?value.renewals:Array.isArray(value?.renewalPurchases)?value.renewalPurchases:Array.isArray(value?.pendingPayments)?value.pendingPayments:Array.isArray(value?.pendingPurchases)?value.pendingPurchases:Array.isArray(value?.payments)?value.payments:Array.isArray(value?.purchases)?value.purchases:Array.isArray(value?.history)?value.history:[];
 export const addMonths=(dateValue,months)=>{const date=new Date((dateValue||todayIso())+"T00:00:00");date.setMonth(date.getMonth()+Number(months||1));return date.toISOString().slice(0,10)};
 export const readStoredJson=(key,fallback)=>{try{const value=JSON.parse(localStorage.getItem(key)||"null");return value==null?fallback:value}catch{return fallback}};
 export const writeStoredJson=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
@@ -160,6 +160,7 @@ export const createAdminSubscriptionPlan=async(plan)=>{
   }
   const payload={
     name:String(plan.name||"").trim(),
+    planType:SUBSCRIPTION_PLAN_TYPES.includes(plan.planType)?plan.planType:"Basic",
     durationMonths,
     includesCms:true,
     includesLab:asBoolean(plan.includesLab),
@@ -190,6 +191,7 @@ export const updateAdminSubscriptionPlan=async(id,plan)=>{
   }
   const payload={
     name:String(plan.name||"").trim(),
+    planType:SUBSCRIPTION_PLAN_TYPES.includes(plan.planType)?plan.planType:"Basic",
     durationMonths,
     includesCms:true,
     includesLab:asBoolean(plan.includesLab),
@@ -201,18 +203,6 @@ export const updateAdminSubscriptionPlan=async(id,plan)=>{
   const path=API_ENDPOINTS.subscriptions.adminPlanById.replace("{id}",encodeURIComponent(id));
   const result=unwrap(await requestJson(path,{method:"PUT",body:payload}));
   return result&&typeof result==="object"?normalizeSubscriptionPlan(result):normalizeSubscriptionPlan({...payload,id});
-};
-export const createSubscriptionRequest=async({name,email,mobileNumber,subscriptionPlanId})=>{
-  const payload={
-    name:String(name||"").trim(),
-    email:String(email||"").trim(),
-    mobileNumber:String(mobileNumber||"").trim(),
-    subscriptionPlanId:Number(subscriptionPlanId),
-  };
-  if(!payload.name||!payload.email||!payload.mobileNumber||!Number.isInteger(payload.subscriptionPlanId)||payload.subscriptionPlanId<1){
-    throw new Error("Enter valid customer details and select a subscription plan.");
-  }
-  return unwrap(await requestJson(API_ENDPOINTS.subscriptions.requests,{method:"POST",body:payload}));
 };
 export const createSubscriptionCheckout=async({name,email,mobileNumber,subscriptionPlanId,paymentMethod})=>{
   const payload={
@@ -228,14 +218,72 @@ export const createSubscriptionCheckout=async({name,email,mobileNumber,subscript
   return unwrap(await requestJson(API_ENDPOINTS.subscriptions.checkout,{method:"POST",body:payload,skipAuth:true}));
 };
 export const getSubscriptionPurchaseId=(purchase)=>{
-  const value=purchase?.purchaseId??purchase?.PurchaseId??purchase?.subscriptionPurchaseId??purchase?.SubscriptionPurchaseId??purchase?.purchase?.purchaseId??purchase?.purchase?.id??purchase?.Purchase?.PurchaseId??purchase?.Purchase?.Id??purchase?.id??purchase?.Id??purchase?.data?.purchaseId??purchase?.data?.PurchaseId??purchase?.data?.subscriptionPurchaseId??purchase?.data?.id??purchase?.data?.Id;
+  const value=purchase?.purchaseId??purchase?.PurchaseId??purchase?.purchaseID??purchase?.PurchaseID??purchase?.subscriptionPurchaseId??purchase?.SubscriptionPurchaseId??purchase?.purchase?.purchaseId??purchase?.purchase?.id??purchase?.Purchase?.PurchaseId??purchase?.Purchase?.Id??purchase?.id??purchase?.Id??purchase?.data?.purchaseId??purchase?.data?.PurchaseId??purchase?.data?.subscriptionPurchaseId??purchase?.data?.id??purchase?.data?.Id;
   return value==null||String(value).trim()===""?"":String(value);
+};
+export const getDemoCheckoutToken=(purchase)=>{
+  const value=purchase?.demoToken??purchase?.DemoToken??purchase?.signedCheckoutToken??purchase?.SignedCheckoutToken??purchase?.signedToken??purchase?.SignedToken??purchase?.checkoutToken??purchase?.CheckoutToken??purchase?.simulationToken??purchase?.SimulationToken??purchase?.paymentSimulationToken??purchase?.PaymentSimulationToken??purchase?.purchase?.demoToken??purchase?.purchase?.DemoToken??purchase?.purchase?.signedCheckoutToken??purchase?.purchase?.SignedCheckoutToken??purchase?.data?.demoToken??purchase?.data?.DemoToken??purchase?.data?.signedCheckoutToken??purchase?.data?.SignedCheckoutToken??purchase?.data?.signedToken??purchase?.data?.SignedToken??purchase?.data?.purchase?.demoToken;
+  return value==null||String(value).trim()===""?"":String(value).trim();
 };
 export const initiateSubscriptionPayment=async(purchaseId,paymentMethod,{authenticated=false}={})=>{
   if(!Number.isInteger(Number(purchaseId))||Number(purchaseId)<1)throw new Error("The checkout response did not include a valid purchase ID.");
   const method=String(paymentMethod||"").trim();
   if(!method)throw new Error("Select a payment method.");
   return unwrap(await requestJson(API_ENDPOINTS.subscriptions.initiatePayment,{method:"POST",body:{purchaseId:Number(purchaseId),paymentMethod:method},skipAuth:!authenticated}));
+};
+export const confirmDemoSubscriptionPayment=async(purchaseId,paymentMethod,simulateResult,demoToken)=>{
+  if(!Number.isInteger(Number(purchaseId))||Number(purchaseId)<1)throw new Error("The checkout response did not include a valid purchase ID.");
+  const method=String(paymentMethod||"").trim();
+  const result=String(simulateResult||"").trim();
+  const token=String(demoToken||"").trim();
+  if(!method)throw new Error("Select a payment method.");
+  if(!["Success","Failed"].includes(result))throw new Error("Select Success or Failed for the demo payment result.");
+  if(!token)throw new Error("The checkout did not return a signed demo payment token. No payment confirmation was sent.");
+  return unwrap(await requestJson(API_ENDPOINTS.subscriptions.confirmDemoPayment,{
+    method:"POST",
+    body:{purchaseId:Number(purchaseId),paymentMethod:method,simulateResult:result,demoToken:token},
+    skipAuth:true,
+  }));
+};
+export const fetchPendingSubscriptionPayments=async()=>{
+  const response=unwrap(await requestJson(API_ENDPOINTS.subscriptions.pendingPayments));
+  const rows=Array.isArray(response?.pendingPayments)?response.pendingPayments:Array.isArray(response?.pendingPurchases)?response.pendingPurchases:parseList(response);
+  return rows.map((row)=>({
+    ...row,
+    id:getSubscriptionPurchaseId(row),
+    customerName:row.name??row.Name??row.customerName??row.CustomerName??"",
+    email:row.email??row.Email??row.customerEmail??row.CustomerEmail??"",
+    planName:row.planName??row.PlanName??row.subscriptionPlan?.name??row.SubscriptionPlan?.Name??row.plan?.name??row.Plan?.Name??"",
+    amount:optionalNumber(row.amount??row.Amount??row.price??row.Price),
+    paymentMethod:row.paymentMethod??row.PaymentMethod??"",
+    paymentStatus:row.paymentStatus??row.PaymentStatus??row.payment?.status??row.Payment?.Status??row.status??row.Status??"",
+    paymentAttempts:row.paymentAttempts??row.PaymentAttempts??row.attempts??row.Attempts??row.attemptCount??row.AttemptCount??[],
+    ...readPurchasedEntitlements(row,row.purchasedPlan??row.subscriptionPlan??row.plan??{}),
+  }));
+};
+export const fetchAdminDemoPurchases=async()=>{
+  const response=unwrap(await requestJson(API_ENDPOINTS.subscriptions.adminDemoPurchases));
+  const rows=Array.isArray(response?.demoPurchases)?response.demoPurchases:parseList(response);
+  return rows.map((row)=>({
+    ...row,
+    id:getSubscriptionPurchaseId(row),
+    customerName:row.name??row.Name??row.customerName??row.CustomerName??"",
+    email:row.email??row.Email??row.customerEmail??row.CustomerEmail??"",
+    planName:row.planName??row.PlanName??row.subscriptionPlan?.name??row.SubscriptionPlan?.Name??row.plan?.name??row.Plan?.Name??"",
+    amount:optionalNumber(row.amount??row.Amount??row.price??row.Price),
+    paymentMethod:row.paymentMethod??row.PaymentMethod??"",
+    paymentStatus:row.paymentStatus??row.PaymentStatus??row.payment?.status??row.Payment?.Status??row.status??row.Status??"",
+    purchaseType:row.purchaseType??row.PurchaseType??"",
+    adminCreationStatus:row.adminCreationStatus??row.AdminCreationStatus??"",
+    eligibleForAdminCreation:row.eligibleForAdminCreation??row.EligibleForAdminCreation??null,
+    createdAt:row.createdAt??row.CreatedAt??"",
+    ...readPurchasedEntitlements(row,row.purchasedPlan??row.subscriptionPlan??row.plan??{}),
+  }));
+};
+export const fetchSubscriptionPaymentStatus=async(purchaseId)=>{
+  if(!Number.isInteger(Number(purchaseId))||Number(purchaseId)<1)throw new Error("A valid purchase ID is required to check payment status.");
+  const path=API_ENDPOINTS.subscriptions.paymentStatus.replace("{purchaseId}",encodeURIComponent(String(purchaseId)));
+  return unwrap(await requestJson(path));
 };
 export const createRenewalCheckout=async({subscriptionPlanId,paymentMethod})=>{
   const planId=Number(subscriptionPlanId);
@@ -271,7 +319,8 @@ export const fetchSubscriptionRequests=async()=>{
 export const fetchPendingAdminCreations = async () => {
   const response = unwrap(await requestJson(API_ENDPOINTS.superAdmin.pendingAdminCreations));
   const rows = Array.isArray(response?.pendingAdminCreations) ? response.pendingAdminCreations : parseList(response);
-  return rows.map((row) => ({ ...row, id: row.id ?? row.Id ?? row.purchaseId ?? row.PurchaseId,
+  return rows.map((row) => ({ ...row, id: getSubscriptionPurchaseId(row),
+    eligibleForAdminCreation: row.eligibleForAdminCreation ?? row.EligibleForAdminCreation ?? true,
     ...readPurchasedEntitlements(row, row.purchasedPlan ?? row.subscriptionPlan ?? row.plan ?? {}) }));
 };
 export const fetchPendingAdminCreation = async (id) => {
@@ -291,27 +340,14 @@ const subscriptionRequestActionPath=(template,id)=>{
   if(id==null||String(id).trim()==="")throw new Error("A subscription request ID is required.");
   return template.replace("{id}",encodeURIComponent(id));
 };
-export const recordSubscriptionRequestPayment=async(id,{paymentStatus,paymentDate})=>{
-  const status=String(paymentStatus||"").trim();
-  const date=String(paymentDate||"").trim();
-  if(!status||!date)throw new Error("Payment status and payment date are required.");
-  const path=subscriptionRequestActionPath(API_ENDPOINTS.subscriptions.requestPayment,id);
-  return unwrap(await requestJson(path,{method:"PUT",body:{paymentStatus:status,paymentDate:date}}));
-};
-export const approveSubscriptionRequest=async(id)=>{
-  const path=subscriptionRequestActionPath(API_ENDPOINTS.subscriptions.approveRequest,id);
-  return unwrap(await requestJson(path,{method:"POST"}));
-};
-export const rejectSubscriptionRequest=async(id)=>{
-  const path=subscriptionRequestActionPath(API_ENDPOINTS.subscriptions.rejectRequest,id);
-  return unwrap(await requestJson(path,{method:"POST"}));
-};
 export const saveSubscriptionPlan = async (plan, id) => {
   const durationMonths = Number(plan.durationMonths || plan.months);
   const price = Number(plan.price);
   if (!BILLING_CYCLES.some((cycle) => cycle.months === durationMonths) || !Number.isFinite(price) || price < 0) throw new Error("Enter a valid cycle and price.");
   const planType = SUBSCRIPTION_PLAN_TYPES.includes(plan.planType) ? plan.planType : "Basic";
-  const payload = { name: plan.name, planType, durationMonths, billingCycle: getBillingCycle(durationMonths), includesLab: asBoolean(plan.includesLab), price, isActive: plan.isActive !== false };
+  const name = String(plan.name || "").trim();
+  if (!name) throw new Error("Enter a plan name.");
+  const payload = { name, planType, durationMonths, billingCycle: getBillingCycle(durationMonths), includesCms: true, includesLab: asBoolean(plan.includesLab), includesPharmacy: asBoolean(plan.includesPharmacy), price, isActive: plan.isActive !== false };
   const path = id ? API_ENDPOINTS.subscriptions.planById.replace("{id}", encodeURIComponent(id)) : API_ENDPOINTS.subscriptions.plans;
   const result = unwrap(await requestJson(path, { method: id ? "PUT" : "POST", body: payload }));
   const saved = result && typeof result === "object" ? normalizeSubscriptionPlan(result) : normalizeSubscriptionPlan({ ...payload, id });

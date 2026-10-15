@@ -1245,6 +1245,12 @@
   box-sizing: border-box;
 }
 
+.content.superadmin-content .sa-admin-search-filter {
+  position: relative;
+  z-index: 2;
+  margin: 8px 0 28px !important;
+}
+
 .sa-admin-search-filter .sa-search-box {
   flex: 1 1 auto;
   min-width: 0;
@@ -3264,6 +3270,178 @@
   padding: 18px;
 }
 
+.sa-pending-admin-creations {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  flex: 0 0 auto !important;
+  min-width: 0;
+  margin: 24px 0 18px;
+  padding: 20px;
+  border: 1px solid #dbe3ed;
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: visible;
+}
+
+.sa-pending-admin-header {
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.sa-pending-admin-header h3 {
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.sa-pending-admin-table {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 12px;
+  max-height: 320px;
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  overscroll-behavior: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  scrollbar-width: thin !important;
+  -ms-overflow-style: auto !important;
+}
+
+.sa-pending-admin-table::-webkit-scrollbar {
+  display: block !important;
+  width: 10px !important;
+  height: 10px !important;
+}
+
+.sa-pending-admin-table::-webkit-scrollbar-track {
+  display: block !important;
+  border-radius: 8px;
+  background: #e2e8f0 !important;
+}
+
+.sa-pending-admin-table::-webkit-scrollbar-thumb {
+  display: block !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 8px;
+  background: #0f9d9d !important;
+}
+
+.content.superadmin-content .sa-table--admins {
+  display: block !important;
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: max-content !important;
+  margin: 0 0 12px;
+  max-height: min(52vh, 440px);
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  overscroll-behavior: auto;
+  border: 1px solid #dbe3ed;
+  border-radius: 14px;
+  background: #ffffff;
+  scrollbar-width: thin !important;
+  -ms-overflow-style: auto !important;
+}
+
+.content.superadmin-content .sa-table--admins + .sa-pending-admin-creations {
+  clear: both;
+}
+
+.content.superadmin-content .sa-table-footer {
+  clear: both;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.content.superadmin-content .sa-table--admins::-webkit-scrollbar {
+  display: block !important;
+  width: 10px !important;
+  height: 10px !important;
+}
+
+.content.superadmin-content .sa-table--admins::-webkit-scrollbar-track {
+  display: block !important;
+  border-radius: 8px;
+  background: #e2e8f0 !important;
+}
+
+.content.superadmin-content .sa-table--admins::-webkit-scrollbar-thumb {
+  display: block !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 8px;
+  background: #0f9d9d !important;
+}
+
+.content.superadmin-content .sa-table--admins .sa-table-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.sa-pending-admin-details {
+  height: auto !important;
+  min-height: 0 !important;
+  flex: 0 0 auto !important;
+  min-width: 0;
+  margin-top: 16px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  box-shadow: none;
+}
+
+.sa-pending-admin-details > h3 {
+  margin: 0 0 16px;
+  color: #0f172a;
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.sa-pending-admin-details > .sa-pending-admin-detail-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 12px;
+}
+
+.sa-pending-admin-detail {
+  min-width: 0;
+  min-height: 76px;
+  padding: 12px 14px;
+  gap: 7px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.sa-pending-admin-detail > label {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.sa-pending-admin-detail > div {
+  min-width: 0;
+  color: #0f172a;
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.sa-pending-admin-actions {
+  margin-top: 16px;
+}
+
 .sa-admin-form > .sa-state--error,
 .sa-clinic-form > .sa-state--error {
   margin: 0 0 14px;
@@ -3895,6 +4073,14 @@
 }
 
 @media (max-width: 720px) {
+  .sa-pending-admin-details {
+    padding: 16px;
+  }
+
+  .sa-pending-admin-details > .sa-pending-admin-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .sa-page-header,
   .sa-search-filter {
     flex-direction: column;
@@ -3904,6 +4090,10 @@
   .sa-card-grid,
   .sa-form-grid,
   .sa-profile-card {
+    grid-template-columns: 1fr;
+  }
+
+  .sa-pending-admin-details > .sa-pending-admin-detail-grid {
     grid-template-columns: 1fr;
   }
 
@@ -4234,6 +4424,14 @@
   touch-action: pan-x;
 }
 
+.sa-subscription-table-scroll--plans {
+  max-height: 360px;
+  overflow-x: auto !important;
+  overflow-y: auto;
+  overscroll-behavior: auto;
+  touch-action: pan-x pan-y;
+}
+
 .sa-subscription-table-scroll::-webkit-scrollbar {
   display: block !important;
   width: 12px !important;
@@ -4266,8 +4464,8 @@
 }
 
 .sa-subscription-table-scroll .sa-table--subscription-plans {
-  width: 900px;
-  min-width: 900px;
+  width: 1160px;
+  min-width: 1160px;
 }
 
 .sa-subscription-table-scroll .sa-table--assigned-subscriptions {

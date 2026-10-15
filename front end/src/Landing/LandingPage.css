@@ -1001,6 +1001,10 @@
 .landing-pay-button, .landing-payment-success button { width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; border: 0; border-radius: 10px; padding: 14px; background: #0f766e; color: #ffffff; font-weight: 800; cursor: pointer; }
 .landing-pay-button:disabled { opacity: .6; }
 .landing-payment-note { display: flex; align-items: center; justify-content: center; gap: 6px; color: #64748b; margin-top: 12px; }
+.landing-demo-payment-settings { display: grid; gap: 12px; margin: 8px 0 16px; padding: 16px; border: 1px solid #cbd5e1; border-radius: 12px; background: #fff; }
+.landing-demo-payment-note { display: block; margin: 0; text-align: center; line-height: 1.5; }
+.landing-demo-payment-select { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 260px); align-items: center; gap: 14px; color: var(--hd-text-main); font-size: 13px; font-weight: 700; }
+.landing-demo-payment-select select { width: 100%; min-width: 0; min-height: 44px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 9px; background: #fff; color: inherit; font: inherit; }
 .landing-payment-success { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 30px; background: #f5fafe; color: var(--hd-text-main); border-radius: 16px; }
 .landing-payment-success p { color: var(--hd-text-muted); }
 .landing-payment-result { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; min-height: 320px; padding: 30px; border-radius: 16px; text-align: center; }
@@ -1027,6 +1031,7 @@
   .landing-checkout-fields { grid-template-columns: 1fr; }
   .landing-checkout-fields label:last-child { grid-column: auto; }
   .landing-payment-methods { flex-direction: column; }
+  .landing-demo-payment-select { grid-template-columns: 1fr; gap: 8px; }
 }
 
 .landing-staff-actions{display:flex;flex-direction:column;align-items:center;gap:5px}.landing-nav-subscribe{color:#155e75;font-size:11px;font-weight:800;text-decoration:none;letter-spacing:.02em}.landing-nav-subscribe:hover{text-decoration:underline}.landing-change-plan{margin-top:18px;border:1px solid #94a3b8;border-radius:9px;padding:9px 14px;background:#fff;color:#155e75;cursor:pointer}.landing-payment-confirm{display:flex;align-items:flex-start;gap:10px;margin:4px 0 16px;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font-size:13px;font-weight:700}.landing-payment-confirm span{display:flex;align-items:center;gap:7px}.landing-plan-options small{display:flex;align-items:center;gap:5px}
@@ -1034,11 +1039,13 @@
 .subscription-page{min-height:100vh;background:var(--hd-page-bg);color:var(--hd-text-main)}.subscription-page-nav{display:flex;align-items:center;justify-content:space-between;padding:20px max(24px,calc((100% - 1240px)/2));border-bottom:1px solid #d5e5ef;background:rgba(255,255,255,.86)}.subscription-page-brand{display:flex;align-items:center;gap:10px;color:var(--hd-text-main);text-decoration:none}.subscription-page-brand span{display:grid}.subscription-page-brand small{color:var(--hd-text-muted)}.subscription-back{display:flex;align-items:center;gap:7px;color:#155e75;text-decoration:none;font-weight:750}.subscription-form-page{padding:40px max(24px,calc((100% - 1100px)/2))}.subscription-form-page .landing-checkout{margin-top:0}.subscription-missing{text-align:center;padding:100px 20px}.subscription-missing a{color:#0f766e}
 
  .landing-lab-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;border:0;padding:0 0 20px;margin:0 0 20px;border-bottom:1px solid #e2e8f0}
-.landing-lab-options legend{grid-column:1/-1;font-size:12px;font-weight:800;margin-bottom:8px}
+ .landing-lab-options legend{grid-column:1/-1;width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:12px;font-weight:800;margin-bottom:8px}
+ .landing-access-module-select{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700}
+ .landing-access-module-select select{min-width:132px;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;background:#fff;color:#0f172a;font:inherit}
 .landing-lab-options label{display:flex;align-items:center;gap:10px;border:1px solid #cbd5e1;border-radius:10px;padding:12px;cursor:pointer}
 .landing-lab-options label.is-selected{border-color:#0f766e;background:#ecfdf5;box-shadow:0 0 0 1px #0f766e}
 .landing-lab-options label:has(input:disabled){opacity:.55;cursor:not-allowed}
 .landing-lab-options span{display:grid;gap:3px}
 .landing-lab-options small{color:#64748b}
 .landing-lab-summary{display:inline-flex;border:1px solid #475569;border-radius:999px;padding:6px 10px;color:#e2e8f0!important;font-weight:700}
-@media(max-width:600px){.landing-lab-options{grid-template-columns:1fr}}
+@media(max-width:600px){.landing-lab-options{grid-template-columns:1fr}.landing-lab-options legend{align-items:flex-start;flex-direction:column}.landing-access-module-select{width:100%;justify-content:space-between}.landing-access-module-select select{flex:0 1 160px}}

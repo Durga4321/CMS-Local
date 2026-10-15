@@ -75,7 +75,7 @@
   height: auto !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
-  overscroll-behavior: contain;
+  overscroll-behavior: auto;
   scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: auto !important;

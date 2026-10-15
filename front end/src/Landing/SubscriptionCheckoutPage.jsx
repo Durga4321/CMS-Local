@@ -11,8 +11,11 @@ import {
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   createSubscriptionCheckout,
+  confirmDemoSubscriptionPayment,
   fetchSubscriptionPaymentMethods,
+  fetchSubscriptionPaymentStatus,
   fetchSubscriptionPlans,
+  getDemoCheckoutToken,
   getSubscriptionPurchaseId,
   initiateSubscriptionPayment,
 } from "../utils/subscriptionFlow";
@@ -23,14 +26,26 @@ const getPaymentOutcome = (response) => {
   const statuses = [
     response?.paymentStatus,
     response?.PaymentStatus,
+    response?.purchaseStatus,
+    response?.PurchaseStatus,
     response?.status,
     response?.Status,
     response?.result,
     response?.Result,
     response?.payment?.status,
     response?.Payment?.Status,
+    response?.purchase?.paymentStatus,
+    response?.Purchase?.PaymentStatus,
+    response?.purchase?.status,
+    response?.Purchase?.Status,
+    response?.payment?.paymentStatus,
+    response?.Payment?.PaymentStatus,
     response?.data?.paymentStatus,
     response?.data?.PaymentStatus,
+    response?.data?.purchaseStatus,
+    response?.data?.PurchaseStatus,
+    response?.data?.purchase?.paymentStatus,
+    response?.data?.purchase?.status,
     response?.data?.status,
     response?.data?.Status,
     response?.data?.result,
@@ -74,6 +89,7 @@ export default function SubscriptionCheckoutPage() {
   const navigate = useNavigate();
   const [plan, setPlan] = useState(null);
   const [plans, setPlans] = useState([]);
+  const [accessModule, setAccessModule] = useState("lab");
   const [loading, setLoading] = useState(true);
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [gatewayConfigured, setGatewayConfigured] = useState(false);
@@ -82,14 +98,16 @@ export default function SubscriptionCheckoutPage() {
     name: "",
     email: "",
     phone: "",
-    address: "",
   });
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [demoPaymentResult, setDemoPaymentResult] = useState("Success");
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [purchaseId, setPurchaseId] = useState("");
+  const [demoToken, setDemoToken] = useState("");
   const [paymentOutcome, setPaymentOutcome] = useState(null);
+  const [checkingPaymentStatus, setCheckingPaymentStatus] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -124,21 +142,27 @@ export default function SubscriptionCheckoutPage() {
     };
   }, [planId]);
 
-  const labVariants = useMemo(() => {
-    if (!plan) return { withoutLab: null, withLab: null };
+  const accessVariants = useMemo(() => {
+    if (!plan) return { without: null, with: null };
     const matching = plans.filter(
       (item) =>
         item.planType === plan.planType &&
         Number(item.durationMonths) === Number(plan.durationMonths)
     );
+    const accessKey = accessModule === "lab" ? "includesLab" : "includesPharmacy";
+    const otherAccessKey = accessModule === "lab" ? "includesPharmacy" : "includesLab";
+    const findVariant = (includesAccess) =>
+      matching.find((item) => item[accessKey] === includesAccess && item[otherAccessKey] === plan[otherAccessKey]) ||
+      matching.find((item) => item[accessKey] === includesAccess) ||
+      null;
     return {
-      withoutLab: matching.find((item) => !item.includesLab) || null,
-      withLab: matching.find((item) => item.includesLab) || null,
+      without: findVariant(false),
+      with: findVariant(true),
     };
-  }, [plan, plans]);
+  }, [accessModule, plan, plans]);
 
-  const selectLabOption = (includesLab) => {
-    const selected = includesLab ? labVariants.withLab : labVariants.withoutLab;
+  const selectAccessOption = (includesAccess) => {
+    const selected = includesAccess ? accessVariants.with : accessVariants.without;
     if (!selected) return;
     setPlan(selected);
     setConfirmed(false);
@@ -161,6 +185,7 @@ export default function SubscriptionCheckoutPage() {
       paymentConfirmed: confirmed,
     };
     let activePurchaseId = purchaseId;
+    let activeDemoToken = demoToken;
     try {
       if (!activePurchaseId) {
         const purchase = await createSubscriptionCheckout({
@@ -175,12 +200,30 @@ export default function SubscriptionCheckoutPage() {
           throw new Error("The checkout was created, but the API response did not include a purchase ID. Contact support before retrying to avoid creating a duplicate purchase.");
         }
         setPurchaseId(activePurchaseId);
+        activeDemoToken = getDemoCheckoutToken(purchase);
+        setDemoToken(activeDemoToken);
       }
-      const payment = await initiateSubscriptionPayment(activePurchaseId, paymentMethod);
-      setPaymentOutcome({
+      const payment = gatewayConfigured
+        ? await initiateSubscriptionPayment(activePurchaseId, paymentMethod)
+        : await confirmDemoSubscriptionPayment(activePurchaseId, paymentMethod, demoPaymentResult, activeDemoToken);
+      const initiatedOutcome = {
         status: getPaymentOutcome(payment),
         message: getPaymentMessage(payment, "The payment service returned no status details."),
-      });
+      };
+      setPaymentOutcome(initiatedOutcome);
+      try {
+        const status = await fetchSubscriptionPaymentStatus(activePurchaseId);
+        const statusOutcome = getPaymentOutcome(status);
+        setPaymentOutcome({
+          status: statusOutcome === "unknown" ? initiatedOutcome.status : statusOutcome,
+          message: getPaymentMessage(status, initiatedOutcome.message),
+        });
+      } catch (statusFailure) {
+        setPaymentOutcome({
+          ...initiatedOutcome,
+          statusCheckError: statusFailure.message || "Unable to confirm the payment status.",
+        });
+      }
       sessionStorage.setItem(
         "cmsSelectedSubscriptionPlan",
         JSON.stringify(plan)
@@ -203,15 +246,26 @@ export default function SubscriptionCheckoutPage() {
       setSubmitting(false);
     }
   };
+  const checkPaymentStatus = async () => {
+    if (!purchaseId || checkingPaymentStatus) return;
+    setCheckingPaymentStatus(true);
+    try {
+      const status = await fetchSubscriptionPaymentStatus(purchaseId);
+      setPaymentOutcome({
+        status: getPaymentOutcome(status),
+        message: getPaymentMessage(status, "The payment service returned no status details."),
+      });
+    } catch (failure) {
+      setPaymentOutcome((current) => ({
+        ...current,
+        statusCheckError: failure.message || "Unable to confirm the payment status.",
+      }));
+    } finally {
+      setCheckingPaymentStatus(false);
+    }
+  };
   const continueAfterApproval = () => {
-    const query = new URLSearchParams({
-      subscriptionPlanId: String(plan.id),
-      purchaseId,
-      plan: plan.planType,
-      months: String(plan.durationMonths),
-      lab: plan.includesLab ? "with-lab" : "without-lab",
-    });
-    navigate("/login?" + query.toString());
+    navigate("/");
   };
 
   return (
@@ -272,34 +326,50 @@ export default function SubscriptionCheckoutPage() {
                         : "Payment Status Unconfirmed"}
                 </h2>
                 <p>{paymentOutcome.message}</p>
+                {paymentOutcome.statusCheckError ? <p className="landing-payment-error" role="alert">Payment initiation was recorded, but the payment status could not be confirmed: {paymentOutcome.statusCheckError}</p> : null}
                 {paymentOutcome.status === "approved" ? (
-                  <button type="button" onClick={continueAfterApproval}>
-                    Continue to Login <ArrowRight size={17} />
-                  </button>
+                  <>
+                    <p className="landing-payment-result-note">Purchase ID: {purchaseId}. Your paid purchase is awaiting Admin account creation. The Super Admin will create the account and initiate password setup; you can sign in after receiving those setup instructions.</p>
+                    <button type="button" onClick={continueAfterApproval}>
+                      Return to Home <ArrowRight size={17} />
+                    </button>
+                  </>
                 ) : paymentOutcome.status === "rejected" ? (
                   <button type="button" onClick={() => setPaymentOutcome(null)}>
                     Try payment again
                   </button>
                 ) : (
-                  <p className="landing-payment-result-note">
-                    Do not submit another checkout. Check the payment status with support before retrying.
-                  </p>
+                  <>
+                    <p className="landing-payment-result-note">Purchase ID: {purchaseId}. Do not create another checkout; check this purchase status before retrying.</p>
+                    <button type="button" onClick={checkPaymentStatus} disabled={checkingPaymentStatus}>
+                      {checkingPaymentStatus ? "Checking status..." : "Check payment status"}
+                    </button>
+                  </>
                 )}
               </section>
             ) : (
             <form className="landing-checkout-form" onSubmit={submit}>
               <fieldset className="landing-lab-options">
-                <legend>Choose lab access</legend>
+                <legend>
+                  <span>Choose {accessModule === "lab" ? "lab" : "pharmacy"} access</span>
+                  <label className="landing-access-module-select">
+                    <span>Choose module</span>
+                    <select value={accessModule} onChange={(event) => setAccessModule(event.target.value)}>
+                      <option value="lab">Lab</option>
+                      <option value="pharmacy">Pharmacy</option>
+                    </select>
+                  </label>
+                </legend>
                 {[
                   {
-                    label: "Without Lab",
-                    includesLab: false,
-                    variant: labVariants.withoutLab,
+                    label: accessModule === "lab" ? "Without Lab" : "Without Pharmacy",
+                    includesAccess: false,
+                    variant: accessVariants.without,
                   },
                   {
-                    label: "With Lab",
-                    includesLab: true,
-                    variant: labVariants.withLab,
+                    label: accessModule === "lab" ? "With Lab" : "With Pharmacy",
+                    includesAccess: true,
+                    variant: accessVariants.with,
                   },
                 ].map((option) => (
                   <label
@@ -313,12 +383,10 @@ export default function SubscriptionCheckoutPage() {
                   >
                     <input
                       type="radio"
-                      name="labAccess"
-                      checked={
-                        Boolean(plan.includesLab) === option.includesLab
-                      }
+                      name="subscriptionAccess"
+                      checked={Boolean(option.variant && String(option.variant.id) === String(plan.id))}
                       disabled={!option.variant}
-                      onChange={() => selectLabOption(option.includesLab)}
+                      onChange={() => selectAccessOption(option.includesAccess)}
                     />
                     <span>
                       <b>{option.label}</b>
@@ -351,6 +419,7 @@ export default function SubscriptionCheckoutPage() {
                     required
                     type="email"
                     autoComplete="email"
+                    maxLength={254}
                     value={details.email}
                     onChange={(event) =>
                       setDetails({ ...details, email: event.target.value })
@@ -363,23 +432,13 @@ export default function SubscriptionCheckoutPage() {
                     required
                     type="tel"
                     inputMode="numeric"
-                    pattern="[0-9+ -]{7,15}"
+                    pattern="^(?!([0-9])\\1{9})[6-9][0-9]{9}$"
                     autoComplete="tel"
+                    maxLength={10}
+                    title="Enter a valid 10-digit Indian mobile number starting with 6-9."
                     value={details.phone}
                     onChange={(event) =>
                       setDetails({ ...details, phone: event.target.value })
-                    }
-                  />
-                </label>
-                <label>
-                  Address
-                  <textarea
-                    required
-                    rows="3"
-                    autoComplete="street-address"
-                    value={details.address}
-                    onChange={(event) =>
-                      setDetails({ ...details, address: event.target.value })
                     }
                   />
                 </label>
@@ -403,9 +462,22 @@ export default function SubscriptionCheckoutPage() {
                 ))}
               </fieldset>
               {!gatewayConfigured && paymentMethods.length ? (
-                <small className="landing-payment-note">
-                  Payment gateway is not configured. The server may process this as a development simulation.
-                </small>
+                <div className="landing-demo-payment-settings">
+                  <small className="landing-payment-note landing-demo-payment-note">
+                    Payment gateway is not configured. This is a development payment simulation.
+                  </small>
+                  <label className="landing-demo-payment-select">
+                    Demo payment result
+                    <select
+                      value={demoPaymentResult}
+                      onChange={(event) => setDemoPaymentResult(event.target.value)}
+                      disabled={submitting}
+                    >
+                      <option value="Success">Simulate success</option>
+                      <option value="Failed">Simulate failure</option>
+                    </select>
+                  </label>
+                </div>
               ) : null}
               {paymentMethodsError ? <div className="landing-payment-error" role="alert">{paymentMethodsError}</div> : null}
 

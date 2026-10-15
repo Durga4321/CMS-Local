@@ -17,7 +17,6 @@ const fields = [
   { key: "hospitalId", label: "Clinic ID", width: "100px" },
   { key: "planName", label: "Plan", width: "230px" },
   { key: "subscriptionPlanId", label: "Plan ID", width: "100px" },
-  { key: "subscriptionType", label: "Subscription Type", width: "150px" },
   { key: "billingCycle", label: "Billing Cycle", width: "120px" },
   { key: "durationMonths", label: "Months", width: "90px" },
   { key: "amount", label: "Plan Amount", width: "130px", render: (row) => currency(row.amount) },
@@ -25,11 +24,9 @@ const fields = [
   { key: "paymentStatus", label: "Payment Status", width: "160px" },
   { key: "paymentMethod", label: "Payment Option", width: "140px" },
   { key: "source", label: "Source", width: "120px" },
-  { key: "paymentReference", label: "Payment Reference", width: "180px" },
   { key: "lastPaymentDate", label: "Payment Date", width: "130px" },
   { key: "startDate", label: "Start Date", width: "130px" },
   { key: "renewalDate", label: "Renewal Date", width: "130px" },
-  { key: "status", label: "Status", width: "110px" },
 ];
 const escapeHtml = (value) => String(value ?? "-").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const getAdminForSubscription = (row, admins) => {
@@ -38,7 +35,7 @@ const getAdminForSubscription = (row, admins) => {
   const adminEmail = String(row.adminEmail || raw.adminEmail || raw.AdminEmail || raw.email || "").trim().toLowerCase();
   const clinicId = String(row.hospitalId || raw.hospitalId || raw.HospitalId || raw.clinicId || raw.ClinicId || "").trim();
   const clinicName = String(row.clinicName || raw.clinicName || raw.ClinicName || raw.hospitalName || raw.HospitalName || "").trim().toLowerCase();
-  return admins.find((admin) => {
+  const matchingAdmin = admins.find((admin) => {
     const rawAdmin = admin.raw || {};
     const ids = [admin.id, admin.adminUserId, rawAdmin.adminId, rawAdmin.AdminId, rawAdmin.userId, rawAdmin.UserId]
       .map((value) => String(value || "").trim())
@@ -59,6 +56,14 @@ const getAdminForSubscription = (row, admins) => {
       (clinicName && clinicNames.includes(clinicName))
     );
   });
+  if (matchingAdmin) return matchingAdmin;
+
+  const adminName = String(row.adminName || raw.adminName || raw.AdminName || raw.name || "").trim().toLowerCase();
+  if (!adminName) return null;
+  const sameNameAdmins = admins.filter((admin) =>
+    String(admin.name || admin.fullName || "").trim().toLowerCase() === adminName
+  );
+  return sameNameAdmins.length === 1 ? sameNameAdmins[0] : null;
 };
 
 export default function Reports() {
@@ -74,13 +79,16 @@ export default function Reports() {
     setLoading(true); setError("");
     Promise.all([fetchAllSubscriptions(), fetchAdmins()]).then(([rows, admins]) => {
       if (!active) return;
-      setSubscriptions(rows.map((row) => {
+      const backendRows = rows.filter((row) => !String(row.id || "").startsWith("landing-"));
+      const newestLandingRequest = rows.find((row) => String(row.id || "").startsWith("landing-"));
+      const reportRows = newestLandingRequest ? [...backendRows, newestLandingRequest] : backendRows;
+      setSubscriptions(reportRows.map((row) => {
         const admin = getAdminForSubscription(row, admins);
         if (!admin) return row;
         return {
           ...row,
           adminName: row.adminName || admin.name,
-          adminEmail: row.adminEmail || admin.email,
+          adminEmail: admin.email || row.adminEmail,
           phone: row.phone || admin.phone,
           clinicName: row.clinicName || admin.assignedClinic,
         };

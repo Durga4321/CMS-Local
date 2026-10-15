@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Building2, CheckCircle2, Eye, IndianRupee, RefreshCw, ShieldCheck, X, XCircle } from "lucide-react";
+import { Building2, Eye, IndianRupee, RefreshCw, ShieldCheck, X } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
 import SearchFilter from "../../../components/superadmin/SearchFilter";
@@ -14,15 +14,18 @@ import {
   assignSubscriptionToClinic,
   fetchAdminSubscriptions,
   fetchAdminSubscriptionPlans,
+  fetchAdminDemoPurchases,
+  fetchPendingSubscriptionPayments,
+  fetchSubscriptionPaymentStatus,
   fetchSubscriptionRequest,
   fetchSubscriptionRequests,
-  recordSubscriptionRequestPayment,
-  approveSubscriptionRequest,
-  rejectSubscriptionRequest,
   BILLING_CYCLES,
   SUBSCRIPTION_PLAN_TYPES,
   getBillingCycle,
 } from "../../../utils/subscriptionFlow";
+
+const readAttemptField = (attempt, ...keys) =>
+  keys.map((key) => attempt?.[key]).find((value) => value !== undefined && value !== null && value !== "") || "";
 
 const getAdminRows = (admins = [], users = []) => {
   const rows = new Map();
@@ -49,14 +52,14 @@ function Subscriptions() {
   const [admins, setAdmins] = useState([]);
   const [plans, setPlans] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
+  const [demoPurchases, setDemoPurchases] = useState([]);
+  const [pendingPayments, setPendingPayments] = useState([]);
   const [subscriptionRequests, setSubscriptionRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [requestDetails, setRequestDetails] = useState(null);
   const [requestDetailsLoading, setRequestDetailsLoading] = useState(false);
   const [requestDetailsError, setRequestDetailsError] = useState("");
-  const [requestAction, setRequestAction] = useState("");
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
-  const [paymentRecordedRequestId, setPaymentRecordedRequestId] = useState("");
+  const [checkingPaymentId, setCheckingPaymentId] = useState("");
   const [selectedEmail, setSelectedEmail] = useState("");
   const [form, setForm] = useState({ planId: "", months: "1", includesLab: "true" });
   const [pricing, setPricing] = useState({ planType: "Basic", includesLab: "false", includesPharmacy: "false", months: "1", price: "" });
@@ -66,6 +69,10 @@ function Subscriptions() {
   const [loading, setLoading] = useState(true);
   const [requestsLoading, setRequestsLoading] = useState(true);
   const [requestsError, setRequestsError] = useState("");
+  const [paymentsLoading, setPaymentsLoading] = useState(true);
+  const [paymentsError, setPaymentsError] = useState("");
+  const [demoPurchasesLoading, setDemoPurchasesLoading] = useState(true);
+  const [demoPurchasesError, setDemoPurchasesError] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const notifyError = (value) => { setError(value); toast.error(value); };
@@ -81,20 +88,38 @@ function Subscriptions() {
       setRequestsLoading(false);
     }
   }, []);
+  const loadPendingPayments = useCallback(async () => {
+    setPaymentsLoading(true);
+    setPaymentsError("");
+    try {
+      setPendingPayments(await fetchPendingSubscriptionPayments());
+    } catch (requestError) {
+      setPendingPayments([]);
+      setPaymentsError(requestError.message || "Unable to load pending subscription payments.");
+    } finally {
+      setPaymentsLoading(false);
+    }
+  }, []);
+  const loadDemoPurchases = useCallback(async () => {
+    setDemoPurchasesLoading(true);
+    setDemoPurchasesError("");
+    try {
+      setDemoPurchases(await fetchAdminDemoPurchases());
+    } catch (requestError) {
+      setDemoPurchases([]);
+      setDemoPurchasesError(requestError.message || "Unable to load demo purchase records.");
+    } finally {
+      setDemoPurchasesLoading(false);
+    }
+  }, []);
   const openRequestDetails = async (request) => {
     setSelectedRequest(request);
     setRequestDetails(null);
     setRequestDetailsError("");
-    setPaymentDate(new Date().toISOString().slice(0, 10));
-    setPaymentRecordedRequestId("");
     setRequestDetailsLoading(true);
     try {
       const details = await fetchSubscriptionRequest(request.id);
       setRequestDetails(details);
-      const recordedStatus = String(details?.paymentStatus ?? details?.PaymentStatus ?? details?.payment?.status ?? details?.Payment?.Status ?? "").toLowerCase();
-      if (["success", "successful", "paid", "completed", "verified"].includes(recordedStatus)) {
-        setPaymentRecordedRequestId(String(request.id));
-      }
     } catch (requestError) {
       setRequestDetailsError(requestError.message || "Unable to load subscription request details.");
     } finally {
@@ -105,52 +130,33 @@ function Subscriptions() {
     setSelectedRequest(null);
     setRequestDetails(null);
     setRequestDetailsError("");
-    setPaymentRecordedRequestId("");
   };
-  const confirmPaymentAndApprove = async () => {
-    if (!selectedRequest?.id || requestAction) return;
-    const alreadyRecorded = String(paymentRecordedRequestId) === String(selectedRequest.id);
-    setRequestAction("payment");
-    setRequestDetailsError("");
-    let paymentRecorded = alreadyRecorded;
+  const checkPendingPayment = async (payment) => {
+    if (!payment.id || checkingPaymentId) return;
+    setCheckingPaymentId(String(payment.id));
+    setPaymentsError("");
     try {
-      if (!paymentRecorded) {
-        await recordSubscriptionRequestPayment(selectedRequest.id, { paymentStatus: "Success", paymentDate });
-        paymentRecorded = true;
-        setPaymentRecordedRequestId(String(selectedRequest.id));
-      }
-      await approveSubscriptionRequest(selectedRequest.id);
-      toast.success("Payment recorded and subscription request approved.");
-      await loadSubscriptionRequests();
-      closeRequestDetails();
-    } catch (actionError) {
-      setRequestDetailsError(paymentRecorded
-        ? `Payment was recorded, but approval failed: ${actionError.message || "Please retry approval."}`
-        : actionError.message || "Unable to record payment.");
+      const result = await fetchSubscriptionPaymentStatus(payment.id);
+      const status = result?.paymentStatus ?? result?.PaymentStatus ?? result?.purchaseStatus ?? result?.PurchaseStatus ?? result?.purchase?.paymentStatus ?? result?.Purchase?.PaymentStatus ?? result?.purchase?.status ?? result?.Purchase?.Status ?? result?.payment?.status ?? result?.Payment?.Status ?? result?.status ?? result?.Status ?? result?.data?.paymentStatus ?? result?.data?.PaymentStatus ?? result?.data?.status ?? result?.data?.Status ?? payment.paymentStatus;
+      setPendingPayments((current) => current.map((row) => String(row.id) === String(payment.id) ? { ...row, paymentStatus: status, status, paymentStatusResponse: result } : row));
+    } catch (requestError) {
+      setPaymentsError(requestError.message || `Unable to check payment status for purchase ${payment.id}.`);
     } finally {
-      setRequestAction("");
-    }
-  };
-  const rejectRequest = async () => {
-    if (!selectedRequest?.id || requestAction || String(paymentRecordedRequestId) === String(selectedRequest.id)) return;
-    if (!window.confirm(`Reject subscription request ${selectedRequest.id}?`)) return;
-    setRequestAction("reject");
-    setRequestDetailsError("");
-    try {
-      await rejectSubscriptionRequest(selectedRequest.id);
-      toast.success("Subscription request rejected.");
-      await loadSubscriptionRequests();
-      closeRequestDetails();
-    } catch (actionError) {
-      setRequestDetailsError(actionError.message || "Unable to reject subscription request.");
-    } finally {
-      setRequestAction("");
+      setCheckingPaymentId("");
     }
   };
   useEffect(() => {
     loadSubscriptionRequests();
   }, [loadSubscriptionRequests]);
+  useEffect(() => {
+    loadPendingPayments();
+  }, [loadPendingPayments]);
+  useEffect(() => {
+    loadDemoPurchases();
+  }, [loadDemoPurchases]);
   const matchesSelectedCombination = (plan) =>
+    plan.planType === pricing.planType &&
+    plan.includesCms === true &&
     plan.includesLab === (pricing.includesLab === "true") &&
     plan.includesPharmacy === (pricing.includesPharmacy === "true") &&
     plan.durationMonths === Number(pricing.months);
@@ -224,20 +230,13 @@ function Subscriptions() {
           ? await updateAdminSubscriptionPlan(existingPlan.id, { ...plan, isActive: existingPlan.isActive })
           : await updateAdminSubscriptionPlanPrice(existingPlan.id, { price: plan.price });
       } else {
-        try {
-          saved = await createAdminSubscriptionPlan(plan);
-        } catch (createError) {
-          if (createError.status !== 409) throw createError;
-          const refreshedPlans = await fetchAdminSubscriptionPlans();
-          setPlans(refreshedPlans);
-          existingPlan = [...refreshedPlans].reverse().find(matchesSelectedCombination);
-          if (!existingPlan?.id) throw createError;
-          saved = await updateAdminSubscriptionPlanPrice(existingPlan.id, { price: plan.price });
-        }
+        saved = await createAdminSubscriptionPlan(plan);
       }
       const refreshed = await fetchAdminSubscriptionPlans();
       setPlans(refreshed);
       const persisted = [...refreshed].reverse().find((item) =>
+        item.planType === pricing.planType &&
+        item.includesCms === true &&
         item.includesLab === includesLab &&
         item.includesPharmacy === (pricing.includesPharmacy === "true") &&
         item.durationMonths === durationMonths &&
@@ -264,9 +263,6 @@ function Subscriptions() {
   }, [subscriptions, search, status]);
 
   const totalRevenue = filteredRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
-  const requestStatus = String(requestDetails?.status ?? requestDetails?.Status ?? "").toLowerCase();
-  const requestFinalized = ["approved", "rejected"].includes(requestStatus);
-
   const saveSubscription = async (event) => {
     event.preventDefault();
     setError("");
@@ -327,77 +323,6 @@ function Subscriptions() {
         <div className="sa-subscription-kpi is-blue"><ShieldCheck size={20} /><div><b>{subscriptions.length}</b><span>Assigned subscriptions</span></div></div>
         <div className="sa-subscription-kpi is-amber"><RefreshCw size={20} /><div><b>{filteredRows.filter((row) => row.status === "Active").length}</b><span>Active renewals</span></div></div>
       </div>
-      <section className="sa-subscription-table-section">
-        <div className="sa-subscription-panel-head">
-          <h3>Subscription Requests</h3>
-          <button className="sa-btn" type="button" onClick={loadSubscriptionRequests} disabled={requestsLoading}>
-            <RefreshCw size={16} />{requestsLoading ? "Loading..." : "Refresh"}
-          </button>
-        </div>
-        {requestsError ? <div className="sa-state sa-state--error" role="alert">{requestsError}</div> : null}
-        <div className="sa-subscription-table-scroll">
-          <DataTable columns={[
-            { key: "customerName", label: "Customer", width: "minmax(150px, 1fr)", render: (request) => request.customerName || "-" },
-            { key: "email", label: "Email", width: "minmax(190px, 1fr)", render: (request) => request.email || "-" },
-            { key: "clinicName", label: "Clinic", width: "minmax(150px, 1fr)", render: (request) => request.clinicName || "Clinic pending" },
-            { key: "planName", label: "Plan", width: "minmax(180px, 1fr)", render: (request) => request.planName || "-" },
-            { key: "amount", label: "Amount", width: "120px", render: (request) => request.amount == null ? "-" : formatIndianCurrency(request.amount) },
-            { key: "modules", label: "Purchased modules", width: "260px", render: formatPurchasedModules },
-            { key: "durationMonths", label: "Months", width: "90px", render: request => request.durationMonths ?? "-" },
-            { key: "paymentStatus", label: "Payment", width: "140px", render: (request) => request.paymentStatus || "-" },
-            { key: "status", label: "Status", width: "140px", render: (request) => request.status || "-" },
-            { key: "actions", label: "Action", width: "110px", render: (request) => (
-              <button className="sa-btn" type="button" onClick={() => openRequestDetails(request)} disabled={!request.id || requestDetailsLoading} aria-label={`View request ${request.id}`}>
-                <Eye size={15} />View
-              </button>
-            ) },
-          ]} rows={subscriptionRequests} loading={requestsLoading} emptyMessage="No subscription requests found." className="sa-table--subscription-requests" />
-        </div>
-      </section>
-      {selectedRequest ? (
-        <div className="sa-modal-backdrop" role="presentation" onMouseDown={closeRequestDetails}>
-          <section className="sa-modal" role="dialog" aria-modal="true" aria-labelledby="sa-subscription-request-title" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="sa-form-card sa-modal-card">
-              <div className="sa-modal-header">
-                <div>
-                  <h3 id="sa-subscription-request-title">Subscription Request Details</h3>
-                  <p>Request ID: {selectedRequest.id}</p>
-                </div>
-                <button type="button" className="sa-icon-btn" onClick={closeRequestDetails} title="Close" aria-label="Close request details" disabled={Boolean(requestAction)}>
-                  <X size={16} />
-                </button>
-              </div>
-              {requestDetailsLoading ? <div className="sa-state">Loading request details...</div> : null}
-              {requestDetailsError ? <div className="sa-state sa-state--error" role="alert">{requestDetailsError}</div> : null}
-              {requestDetails && typeof requestDetails === "object" ? (
-                <div className="sa-form-grid">
-                  {Object.entries(requestDetails).filter(([, value]) => value != null && typeof value !== "function").map(([key, value]) => (
-                    <div className="sa-form-field" key={key}>
-                      <label>{key.replace(/([A-Z])/g, " $1").replace(/^./, (character) => character.toUpperCase())}</label>
-                      <div>{typeof value === "object" ? JSON.stringify(value) : String(value)}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-              {requestDetails && typeof requestDetails === "object" ? (
-                <div className="sa-subscription-actions">
-                  <label className="sa-form-field" htmlFor="subscription-payment-date">
-                    Payment date
-                    <input id="subscription-payment-date" type="date" max={new Date().toISOString().slice(0, 10)} value={paymentDate} onChange={(event) => setPaymentDate(event.target.value)} disabled={requestFinalized || requestAction === "payment" || String(paymentRecordedRequestId) === String(selectedRequest.id)} />
-                  </label>
-                  <button className="sa-btn sa-btn-primary" type="button" onClick={confirmPaymentAndApprove} disabled={requestFinalized || Boolean(requestAction) || requestDetailsLoading || !paymentDate}>
-                    <CheckCircle2 size={16} />
-                    {requestAction === "payment" ? "Processing..." : String(paymentRecordedRequestId) === String(selectedRequest.id) ? "Retry approval" : "Payment successful & approve"}
-                  </button>
-                  <button className="sa-btn" type="button" onClick={rejectRequest} disabled={requestFinalized || Boolean(requestAction) || requestDetailsLoading || String(paymentRecordedRequestId) === String(selectedRequest.id)}>
-                    <XCircle size={16} />{requestAction === "reject" ? "Rejecting..." : "Reject request"}
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          </section>
-        </div>
-      ) : null}
       <form className="sa-subscription-panel" onSubmit={savePricing} onInvalid={() => toast.error("Enter a valid plan price.")}>
         <h3>Plan Pricing</h3>
         <div className="sa-subscription-form-grid">
@@ -411,7 +336,7 @@ function Subscriptions() {
       </form>
       <section className="sa-subscription-table-section">
         <h3>Saved Plans</h3>
-        <div className="sa-subscription-table-scroll">
+        <div className="sa-subscription-table-scroll sa-subscription-table-scroll--plans">
           <DataTable columns={[
             { key: "name", label: "Plan", width: "minmax(220px, 1fr)" },
             { key: "planType", label: "Type", width: "150px" },
@@ -453,12 +378,6 @@ function Subscriptions() {
         </aside>
       </form>
 
-      <section className="sa-subscription-table-section">
-        <SearchFilter value={search} onChange={setSearch} placeholder="Search subscriptions..." filters={["All", ...new Set(subscriptions.map((row) => row.status).filter(Boolean))]} selectedFilter={status} onFilterChange={setStatus} />
-        <div className="sa-subscription-table-scroll sa-subscription-table-scroll--assigned">
-          <DataTable columns={columns} rows={filteredRows} loading={loading} emptyMessage="No subscriptions found." preserveColumnFractions className="sa-table--assigned-subscriptions" />
-        </div>
-      </section>
     </div>
   );
 }
