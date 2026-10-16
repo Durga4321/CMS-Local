@@ -176,6 +176,8 @@ export const API_ENDPOINTS = {
     medicinesImport: "pharmacy/medicines/import",
     medicines: "pharmacy/medicines",
     pendingPrescriptions: "pharmacy/prescriptions/pending",
+    prescriptionById: "pharmacy/prescriptions/{id}",
+    dispensePrescription: "pharmacy/prescriptions/{id}/dispense",
   },
   roles: {
     admins: "roles/admins",
@@ -298,6 +300,7 @@ export const API_ENDPOINTS = {
     list: "Billing",
     byId: "Billing/{id}",
     payment: "Billing/{billId}/payment",
+    paymentHistory: "Billing/{billId}/payments",
   },
   payment: {
     create: "payment/create",

@@ -581,7 +581,59 @@
 }
 
 .pharmacy-prescriptions-table {
-  min-width: 760px;
+  min-width: 880px;
+}
+
+.pharmacy-prescription-view {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: #047857;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pharmacy-prescription-view:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.pharmacy-prescription-details {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.pharmacy-prescription-details h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.pharmacy-prescription-details p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.pharmacy-prescription-medicines {
+  min-width: 700px;
+}
+
+.pharmacy-prescription-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .pharmacy-prescriptions-table td strong,
