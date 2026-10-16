@@ -4,20 +4,28 @@ import { API_ENDPOINTS, apiUrl } from "../config/api";
 import { useToast } from "../components/ToastProvider";
 import { getPharmacistToken } from "./pharmacySession";
 
+import { medicineColumns, normalizeMedicine, normalizeMedicineWorkbook } from "./medicineColumns";
+
 const allowedExtensions = [".xlsx", ".xls"];
 
 const getResponseMessage = (payload, fallback) => {
   const validation = payload?.errors && typeof payload.errors === "object"
     ? Object.values(payload.errors).flat().filter(Boolean).join(" ")
     : "";
-  return payload?.message || validation || payload?.title || payload?.error ||
+  const missing = payload?.missingColumns || payload?.missing;
+  return [payload?.message, validation, payload?.detail,
+    Array.isArray(missing) ? `Missing columns: ${missing.join(", ")}` : ""]
+    .filter(Boolean).join(" ") || payload?.title || payload?.error ||
     (typeof payload === "string" ? payload : "") || fallback;
 };
 
-const parseMedicineList = (payload) => {
+const parseMedicineList = (payload, depth = 0) => {
   if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object" || depth > 4) return null;
   for (const key of ["data", "items", "results", "records", "medicines", "catalogue", "catalog"]) {
-    if (Array.isArray(payload?.[key])) return payload[key];
+    const actualKey = Object.keys(payload).find((candidate) => candidate.toLowerCase() === key);
+    const items = actualKey && parseMedicineList(payload[actualKey], depth + 1);
+    if (items) return items;
   }
   return null;
 };
@@ -79,7 +87,7 @@ function PharmacyMedicineImport() {
       if (!items) {
         throw new Error("The medicine catalogue response was not in the expected list format.");
       }
-      setMedicines(items);
+      setMedicines(items.map(normalizeMedicine));
     } catch (requestError) {
       setMedicines([]);
       setMedicinesError(requestError.message || "Unable to load the medicine catalogue.");
@@ -96,14 +104,7 @@ function PharmacyMedicineImport() {
     const term = search.trim().toLowerCase();
     if (!term) return medicines;
     return medicines.filter((medicine) =>
-      [
-        getMedicineValue(medicine, "medicineCode", "MedicineCode", "code", "Code"),
-        getMedicineValue(medicine, "name", "Name", "medicineName", "MedicineName"),
-        getMedicineValue(medicine, "genericName", "GenericName"),
-        getMedicineValue(medicine, "brandName", "BrandName"),
-        getMedicineValue(medicine, "category", "Category"),
-        getMedicineValue(medicine, "batchNumber", "BatchNumber"),
-      ].join(" ").toLowerCase().includes(term)
+      Object.values(medicine).some((value) => value != null && String(value).toLowerCase().includes(term))
     );
   }, [medicines, search]);
 
@@ -136,13 +137,14 @@ function PharmacyMedicineImport() {
       return;
     }
 
-    const body = new FormData();
-    body.append("file", file);
     setIsUploading(true);
     setError("");
     setResultMessage("");
 
     try {
+      const normalizedFile = await normalizeMedicineWorkbook(file);
+      const body = new FormData();
+      body.append("file", normalizedFile);
       const response = await fetch(apiUrl(API_ENDPOINTS.pharmacy.medicinesImport), {
         method: "POST",
         headers: {
@@ -202,7 +204,7 @@ function PharmacyMedicineImport() {
         <div className="pharmacy-import-columns">
           <strong>Workbook columns</strong>
           <p>MedicineCode, Name, GenericName, BrandName, Category, DosageForm, Strength, Manufacturer, PackSize, SupplierCode, SupplierName, BatchNumber, ManufactureDate, ExpiryDate, Quantity, PurchasePrice, SellingPrice, GST, MinimumStock, MaximumStock, ReorderLevel, StorageLocation.</p>
-          <span>These headings are based on the uploaded sample workbook.</span>
+          <span>Headers are matched regardless of capitalization, spaces, underscores, or punctuation. Common aliases such as Medicine Name, Batch No, and Qty are accepted. All workbook data columns are preserved.</span>
         </div>
         <div className="pharmacy-import-actions">
           <button type="submit" className="pharmacy-import-button" disabled={isUploading || !file}>
@@ -240,36 +242,21 @@ function PharmacyMedicineImport() {
           <table className="pharmacy-catalogue-table">
             <thead>
               <tr>
-                <th>Medicine</th>
-                <th>Generic / Brand</th>
-                <th>Category</th>
-                <th>Dosage</th>
-                <th>Batch</th>
-                <th>Expiry</th>
-                <th>Quantity</th>
-                <th>Selling price</th>
+                {medicineColumns.map(([key, label]) => <th key={key}>{label}</th>)}
               </tr>
             </thead>
             <tbody>
               {isLoadingMedicines ? (
-                <tr><td colSpan="8">Loading medicines...</td></tr>
+                <tr><td colSpan={medicineColumns.length}>Loading medicines...</td></tr>
               ) : medicinesError ? (
-                <tr><td colSpan="8">Unable to display the catalogue. See the error above.</td></tr>
+                <tr><td colSpan={medicineColumns.length}>Unable to display the catalogue. See the error above.</td></tr>
               ) : filteredMedicines.length === 0 ? (
-                <tr><td colSpan="8">{search ? "No medicines match your search." : "No medicines found in the catalogue."}</td></tr>
+                <tr><td colSpan={medicineColumns.length}>{search ? "No medicines match your search." : "No medicines found in the catalogue."}</td></tr>
               ) : filteredMedicines.map((medicine, index) => (
-                <tr key={getMedicineValue(medicine, "id", "Id", "medicineId", "MedicineId", "medicineCode", "MedicineCode") !== "-" ? getMedicineValue(medicine, "id", "Id", "medicineId", "MedicineId", "medicineCode", "MedicineCode") : index}>
-                  <td>
-                    <strong>{getMedicineValue(medicine, "name", "Name", "medicineName", "MedicineName")}</strong>
-                    <small>{getMedicineValue(medicine, "medicineCode", "MedicineCode", "code", "Code")}</small>
-                  </td>
-                  <td>{getMedicineValue(medicine, "genericName", "GenericName")} / {getMedicineValue(medicine, "brandName", "BrandName")}</td>
-                  <td>{getMedicineValue(medicine, "category", "Category")}</td>
-                  <td>{getMedicineValue(medicine, "dosageForm", "DosageForm")} {getMedicineValue(medicine, "strength", "Strength") !== "-" ? ` · ${getMedicineValue(medicine, "strength", "Strength")}` : ""}</td>
-                  <td>{getMedicineValue(medicine, "batchNumber", "BatchNumber")}</td>
-                  <td>{getMedicineValue(medicine, "expiryDate", "ExpiryDate")}</td>
-                  <td>{getMedicineValue(medicine, "quantity", "Quantity", "stock", "Stock", "availableQuantity", "AvailableQuantity")}</td>
-                  <td>{getMedicineValue(medicine, "sellingPrice", "SellingPrice")}</td>
+                <tr key={index}>
+                  {medicineColumns.map(([key]) => (
+                    <td key={key}>{getMedicineValue(medicine, key)}</td>
+                  ))}
                 </tr>
               ))}
             </tbody>
