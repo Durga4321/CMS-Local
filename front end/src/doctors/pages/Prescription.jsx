@@ -3,7 +3,7 @@ import DatePickerField from "../../components/DatePickerField";
 import { Check, ChevronDown, Download, Plus, Printer, Search, Syringe, Trash2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Prescription.css";
-import { apiUrl } from "../../config/api";
+import { API_ENDPOINTS, apiUrl } from "../../config/api";
 import {
   filterByLoggedInDoctor,
   getAuthToken,
@@ -270,6 +270,7 @@ const normalizeAppointment = (item, fallback = {}) => {
 const normalizeMedicines = (medicines) =>
   (Array.isArray(medicines) ? medicines : []).map((medicine) => ({
     id: medicine.id || Date.now() + Math.random(),
+    medicineId: medicine.medicineId ?? medicine.MedicineId ?? medicine.catalogueMedicineId ?? medicine.CatalogueMedicineId ?? null,
     medicineName: medicine.medicineName || medicine.medicine || "",
     brandName: medicine.brandName || medicine.brand || medicine.brand_name || "",
     dosage: medicine.dosage || "",
@@ -278,6 +279,15 @@ const normalizeMedicines = (medicines) =>
     duration: medicine.duration || "",
     notes: medicine.notes || "",
   }));
+
+const parseMedicineCatalogue = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  for (const key of ["data", "items", "results", "records", "medicines", "Medicines"]) {
+    if (Array.isArray(payload?.[key])) return payload[key];
+    if (Array.isArray(payload?.data?.[key])) return payload.data[key];
+  }
+  return [];
+};
 
 const getMedicineLabel = (medicine = {}) => {
   const name = medicine.medicineName || medicine.medicine || medicine.name || "";
@@ -431,6 +441,8 @@ function Prescription() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [medicineSearch, setMedicineSearch] = useState("");
   const [medicineOptions, setMedicineOptions] = useState([]);
+  const [catalogueMedicineOptions, setCatalogueMedicineOptions] = useState([]);
+  const [medicineCatalogueError, setMedicineCatalogueError] = useState("");
   const [typedMedicineNames, setTypedMedicineNames] = useState([]);
   const [isMedicineSearchFocused, setIsMedicineSearchFocused] = useState(false);
 
@@ -450,6 +462,50 @@ function Prescription() {
     } catch {
       // ignore invalid persisted data
     }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const token = getAuthToken();
+    fetch(apiUrl(API_ENDPOINTS.prescription.medicines), {
+      headers: {
+        Accept: "application/json",
+        "ngrok-skip-browser-warning": "true",
+        ...(token ? { Authorization: `******` } : {}),
+      },
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        const text = await response.text();
+        let payload = null;
+        if (text) {
+          try {
+            payload = JSON.parse(text);
+          } catch {
+            payload = text;
+          }
+        }
+        if (!response.ok) {
+          const message = payload?.message || payload?.title || payload?.error;
+          throw new Error(message || `Unable to load medicine catalogue (HTTP ${response.status}).`);
+        }
+        return parseMedicineCatalogue(payload);
+      })
+      .then((items) => {
+        if (!active) return;
+        setCatalogueMedicineOptions(items.map((item) => ({
+          ...item,
+          medicineId: item.medicineId ?? item.MedicineId ?? item.id ?? item.Id ?? null,
+          medicineName: item.medicineName ?? item.MedicineName ?? item.name ?? item.Name ?? "",
+          label: item.medicineName ?? item.MedicineName ?? item.name ?? item.Name ?? "",
+        })).filter((item) => item.medicineName));
+      })
+      .catch((failure) => {
+        if (active) setMedicineCatalogueError(failure.message || "Unable to load medicine catalogue.");
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -632,6 +688,7 @@ function Prescription() {
     () =>
       medicines
         .map((medicine) => ({
+          medicineId: medicine.medicineId ?? null,
           medicineName: medicine.medicineName.trim(),
           dosage: medicine.dosage.trim(),
           quantity: String(medicine.quantity || "").trim(),
@@ -646,12 +703,20 @@ function Prescription() {
   const combinedMedicineOptions = useMemo(() => {
     const unique = new Map();
 
+    catalogueMedicineOptions
+      .filter(Boolean)
+      .forEach((item) => {
+        const label = (item.medicineName || item.label || "").trim();
+        const key = label.toLowerCase();
+        if (key) unique.set(key, item);
+      });
+
     typedMedicineNames
       .filter(Boolean)
       .map((name) => ({ medicineName: name, label: name }))
       .forEach((item) => {
         const key = item.label.trim().toLowerCase();
-        if (key) unique.set(key, item);
+        if (key && !unique.has(key)) unique.set(key, item);
       });
 
     medicineOptions.forEach((item) => {
@@ -660,7 +725,7 @@ function Prescription() {
     });
 
     return Array.from(unique.values());
-  }, [medicineOptions, typedMedicineNames]);
+  }, [catalogueMedicineOptions, medicineOptions, typedMedicineNames]);
 
   const medicineSelectOptions = useMemo(() => {
     const options = new Set(DEFAULT_MEDICINE_OPTIONS);
@@ -786,6 +851,7 @@ function Prescription() {
   const selectMedicine = (medicine) => {
     const nextMedicine = {
       ...createMedicine(),
+      medicineId: medicine.medicineId ?? medicine.MedicineId ?? null,
       medicineName: medicine.medicineName || medicine.label || "",
       dosage: medicine.dosage || "",
       quantity: medicine.quantity || "",
@@ -1216,7 +1282,17 @@ function Prescription() {
                   value={medicine.medicineName}
                   onChange={(event) => {
                     const value = event.target.value;
+                    const matchedMedicine = combinedMedicineOptions.find(
+                      (option) =>
+                        String(option.medicineName || option.label || "").trim().toLowerCase() ===
+                        value.trim().toLowerCase()
+                    );
                     updateMedicine(medicine.id, "medicineName", value);
+                    updateMedicine(
+                      medicine.id,
+                      "medicineId",
+                      matchedMedicine?.medicineId ?? null
+                    );
                   }}
                   onBlur={(event) => registerTypedMedicine(event.target.value)}
                   placeholder="Medicine name"
@@ -1287,6 +1363,11 @@ function Prescription() {
               <option value={option} key={option} />
             ))}
           </datalist>
+          {medicineCatalogueError ? (
+            <p className="rx-field-error" role="alert">
+              {medicineCatalogueError} Medicine names can still be entered manually.
+            </p>
+          ) : null}
 
           <datalist id="prescription-dosage-options">
             {DOSAGE_OPTIONS.map((option) => (
@@ -1492,7 +1573,3 @@ function Prescription() {
 }
 
 export default Prescription;
-
-
-
-

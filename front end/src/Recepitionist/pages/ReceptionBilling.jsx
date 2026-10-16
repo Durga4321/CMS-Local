@@ -34,7 +34,7 @@ import { getClinicInvoiceBranding } from "../../utils/clinicBranding";
 import { getCachedLabMasterTests, normalizeLabTests } from "../../utils/labMaster";
 import { clearPendingDiagnosticRequest, getPendingDiagnosticRequest } from "../../utils/diagnosticRequests";
 import { RECEPTION_RECENT_SERVICE_BILLS_KEY as RECENT_SERVICE_BILLS_STORAGE_KEY } from "../../utils/billingRevenue";
-import { BILLING_API_PATHS, getBillingApiPath } from "../../config/api";
+import { API_ENDPOINTS, BILLING_API_PATHS, getBillingApiPath } from "../../config/api";
 
 const escapeHtml = (value) =>
   String(value ?? "")
@@ -882,18 +882,23 @@ const getBillingPaymentBillId = (bill) =>
 const getBillingPaymentStatus = async (bill) => {
   const billId = getBillingPaymentBillId(bill);
   if (!billId) throw new Error("Bill id is not available for payment status.");
-  return requestJson(`BillingPayment/${encodeURIComponent(String(billId))}/status`);
+  return requestJson(API_ENDPOINTS.billing.byId.replace("{id}", encodeURIComponent(String(billId))));
 };
 
 const startBillingPayment = async (bill, paymentMode) => {
   const billId = getBillingPaymentBillId(bill);
   if (!billId) throw new Error("Bill id is not available for payment.");
 
-  const method = String(paymentMode || "Cash").trim().toLowerCase();
-  const endpoint = method === "card" ? "card" : method === "upi" ? "upi" : "cash";
-  return requestJson(`BillingPayment/${encodeURIComponent(String(billId))}/${endpoint}`, {
-    method: "POST",
+  return requestJson(API_ENDPOINTS.billing.payment.replace("{billId}", encodeURIComponent(String(billId))), {
+    method: "PATCH",
+    body: JSON.stringify({ paymentMethod: String(paymentMode || "Cash").trim() }),
   });
+};
+
+const fetchBillingPaymentHistory = async (bill) => {
+  const billId = getBillingPaymentBillId(bill);
+  if (!billId) throw new Error("Bill id is not available for payment history.");
+  return requestJson(API_ENDPOINTS.billing.paymentHistory.replace("{billId}", encodeURIComponent(String(billId))));
 };
 const getInvoiceStatus = (invoice) =>
   firstValue(invoice?.paymentStatus, invoice?.invoiceStatus, invoice?.billingStatus, invoice?.status) ||
@@ -1660,6 +1665,9 @@ function ReceptionBilling() {
   const [pharmacyRows, setPharmacyRows] = useState([]);
   const [pharmacyPrescriptionLoading, setPharmacyPrescriptionLoading] = useState(false);
   const [recentServiceBills, setRecentServiceBills] = useState(() => readScopedRecentServiceBills(receptionistScope));
+  const [paymentHistoryByBill, setPaymentHistoryByBill] = useState({});
+  const [paymentHistoryLoadingId, setPaymentHistoryLoadingId] = useState("");
+  const [paymentHistoryErrorByBill, setPaymentHistoryErrorByBill] = useState({});
   const [editingBill, setEditingBill] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [serviceSearch, setServiceSearch] = useState("");
@@ -2055,7 +2063,7 @@ function ReceptionBilling() {
               frequency: medicine.frequency ?? medicine.Frequency ?? "",
               duration: medicine.duration ?? medicine.Duration ?? "",
               notes: medicine.notes ?? medicine.Notes ?? "",
-              quantity: 1,
+              quantity: Math.max(1, Number(medicine.quantity ?? medicine.Quantity ?? medicine.qty ?? medicine.Qty ?? 1) || 1),
               unitPrice: 0,
               price: 0,
               source: "Prescription"
@@ -2215,7 +2223,7 @@ function ReceptionBilling() {
       setRecentServiceBills((prev) => mergeRecentServiceBills([nextBill], nextStoredBills, prev));
       return nextBill;
     } catch (error) {
-      const fallbackStatus = String(paymentMode || "").toLowerCase() === "cash" ? "Paid" : "Pending";
+      const fallbackStatus = "Pending";
       const fallbackBill = {
         ...bill,
         paymentStatus: bill.paymentStatus || fallbackStatus,
@@ -2251,6 +2259,37 @@ function ReceptionBilling() {
     }
   };
 
+  const loadBillPaymentHistory = async (bill) => {
+    const billId = getBillingPaymentBillId(bill);
+    if (!billId) {
+      showMessage("Bill id is not available for payment history.", "error");
+      return;
+    }
+    const key = String(billId);
+    if (paymentHistoryByBill[key] !== undefined) {
+      setPaymentHistoryByBill((current) => {
+        const next = { ...current };
+        delete next[key];
+        return next;
+      });
+      return;
+    }
+
+    setPaymentHistoryLoadingId(key);
+    setPaymentHistoryErrorByBill((current) => ({ ...current, [key]: "" }));
+    try {
+      const response = await fetchBillingPaymentHistory(bill);
+      setPaymentHistoryByBill((current) => ({ ...current, [key]: parseList(response) }));
+    } catch (error) {
+      setPaymentHistoryErrorByBill((current) => ({
+        ...current,
+        [key]: error.message || "Unable to load payment history.",
+      }));
+    } finally {
+      setPaymentHistoryLoadingId("");
+    }
+  };
+
   const buildServiceBillingPayload = (details) => {
     const isPharmacy = details.type === "pharmacy";
     const subtotal = Number(details.totals.subtotal || 0);
@@ -2261,7 +2300,7 @@ function ReceptionBilling() {
     const branchId = Number(details.branchId || receptionistScope.branchId || 0);
     const totalAmount = Number(details.totals.total || 0);
     const paymentMode = String(details.paymentMode || "Cash");
-    const initialPaymentStatus = paymentMode.toLowerCase() === "cash" ? "Paid" : "Pending";
+    const initialPaymentStatus = "Pending";
     const labCharge = isPharmacy ? 0 : subtotal;
     const medicineCharge = isPharmacy ? subtotal : 0;
     const lineItems = buildServiceLineItems(details.rows, details.type);
@@ -2584,7 +2623,7 @@ function ReceptionBilling() {
       )
     ) || 0;
     const paymentMode = String(form.paymentMode || "Cash");
-    const initialPaymentStatus = paymentMode.toLowerCase() === "cash" ? "Paid" : "Pending";
+    const initialPaymentStatus = "Pending";
 
     const body = {
       appointmentId,
@@ -2812,7 +2851,23 @@ function ReceptionBilling() {
     });
   };
 
-  const viewRecentServiceBill = (bill) => {
+  const viewRecentServiceBill = async (sourceBill) => {
+    let bill = sourceBill;
+    const billId = getInvoiceId(sourceBill);
+    if (billId) {
+      try {
+        const response = await requestJson(
+          API_ENDPOINTS.billing.byId.replace("{id}", encodeURIComponent(String(billId)))
+        );
+        const details = response?.data?.bill || response?.data || response?.bill || response?.result || response;
+        bill = { ...sourceBill, ...(details && typeof details === "object" ? details : {}) };
+      } catch (error) {
+        showMessage(error.message || "Unable to load bill details.", "error");
+        toast.error(error.message || "Unable to load bill details.");
+        return;
+      }
+    }
+
     const billType = getServiceBillType(bill);
     const savedBillAmount = getSavedBillAmount(bill, readAmount(bill, AMOUNT_KEYS.total, 0));
     if (billType === "consultation") {
@@ -3724,6 +3779,7 @@ function ReceptionBilling() {
                 const amount = getSavedBillAmount(bill, 0);
                 const createdAt = bill.createdAt || bill.invoiceDate || bill.billDate;
                 const canManageBill = hasBackendBillingId(bill);
+                const paymentHistoryKey = String(getBillingPaymentBillId(bill) || "");
                 const rawStatus = String(bill.paymentStatus || bill.PaymentStatus || bill.status || bill.Status || "Paid").trim();
                 const isCleared = rawStatus.toLowerCase() === "paid";
                 return (
@@ -3777,6 +3833,17 @@ function ReceptionBilling() {
                       >
                         <RefreshCw size={14} />
                       </button>
+                      <button
+                        type="button"
+                        className="rc-payment-history-btn"
+                        onClick={() => loadBillPaymentHistory(bill)}
+                        disabled={!paymentHistoryKey || paymentHistoryLoadingId === paymentHistoryKey}
+                        title="View payment history"
+                        aria-label="View payment history"
+                        aria-expanded={paymentHistoryByBill[paymentHistoryKey] !== undefined}
+                      >
+                        <History size={14} />
+                      </button>
                       <ActionsGroup
                         rowId={invoiceNo}
                         activeActionState={activeActionState}
@@ -3789,6 +3856,35 @@ function ReceptionBilling() {
                         onDelete={() => deleteRecentServiceBill(bill)}
                       />
                     </div>
+                    {paymentHistoryErrorByBill[paymentHistoryKey] ? (
+                      <div className="rc-payment-history-panel is-error" role="alert">
+                        {paymentHistoryErrorByBill[paymentHistoryKey]}
+                      </div>
+                    ) : null}
+                    {paymentHistoryByBill[paymentHistoryKey] !== undefined ? (
+                      <div className="rc-payment-history-panel">
+                        <strong>Payment history</strong>
+                        {paymentHistoryLoadingId === paymentHistoryKey ? (
+                          <p>Loading payment transactions...</p>
+                        ) : paymentHistoryByBill[paymentHistoryKey].length ? (
+                          <div className="rc-payment-history-list">
+                            {paymentHistoryByBill[paymentHistoryKey].map((payment, paymentIndex) => (
+                              <div className="rc-payment-history-item" key={payment.id ?? payment.Id ?? payment.transactionId ?? payment.TransactionId ?? paymentIndex}>
+                                <span>{payment.paymentMethod || payment.PaymentMethod || payment.method || payment.Method || "Payment"}</span>
+                                <span>{String(payment.paymentStatus || payment.PaymentStatus || payment.status || payment.Status || "-")}</span>
+                                <span>{formatCurrency(readAmount(payment, ["amount", "Amount", "paidAmount", "PaidAmount", "paymentAmount", "PaymentAmount"], 0))}</span>
+                                <span>{payment.paidDate || payment.PaidDate || payment.createdAt || payment.CreatedAt || payment.paymentDate || payment.PaymentDate || "-"}</span>
+                                <span>{payment.transactionId || payment.TransactionId || payment.reference || payment.Reference || "-"}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p>No payment transactions recorded for this bill.</p>
+                        )}
+                      </div>
+                    ) : paymentHistoryLoadingId === paymentHistoryKey ? (
+                      <div className="rc-payment-history-panel">Loading payment transactions...</div>
+                    ) : null}
                   </article>
                 );
               })}
@@ -4136,5 +4232,3 @@ function ReceptionBilling() {
 }
 
 export default ReceptionBilling;
-
-
