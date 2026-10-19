@@ -1117,3 +1117,7 @@
     grid-template-columns: 1fr;
   }
 }
+
+.rx-catalogue-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 10px 0 16px; color: #64748b; font-size: 12px; flex-wrap: wrap; }
+.rx-catalogue-status button { padding: 7px 12px; border: 1px solid #c4b5fd; border-radius: 8px; background: #f5f3ff; color: #6d28d9; cursor: pointer; font: inherit; font-weight: 600; }
+.rx-catalogue-status button:disabled, .rx-custom-select-trigger:disabled { opacity: .6; cursor: not-allowed; }

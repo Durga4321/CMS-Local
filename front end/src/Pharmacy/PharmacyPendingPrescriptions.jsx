@@ -130,7 +130,7 @@ function PharmacyPendingPrescriptions() {
         apiUrl(API_ENDPOINTS.pharmacy.prescriptionById.replace("{id}", encodeURIComponent(String(id)))),
         {
           headers: {
-            Authorization: `******`,
+            Authorization: `Bearer ${token}`,
             Accept: "application/json",
             "ngrok-skip-browser-warning": "true",
           },
@@ -177,7 +177,7 @@ function PharmacyPendingPrescriptions() {
         {
           method: "POST",
           headers: {
-            Authorization: `******`,
+            Authorization: `Bearer ${token}`,
             Accept: "application/json",
             "ngrok-skip-browser-warning": "true",
           },
@@ -338,7 +338,7 @@ function PharmacyPendingPrescriptions() {
                 {getPrescriptionMedicines(selectedPrescription.details).length ? (
                   getPrescriptionMedicines(selectedPrescription.details).map((medicine, index) => {
                     const name = getPrescriptionValue(medicine, "medicineName", "MedicineName", "name", "Name", "medicine.name", "Medicine.Name");
-                    const quantity = getPrescriptionValue(medicine, "quantity", "Quantity", "qty", "Qty", "prescribedQuantity", "PrescribedQuantity");
+                    const quantity = getPrescriptionValue(medicine, "prescribedQuantity", "PrescribedQuantity", "quantity", "Quantity", "qty", "Qty");
                     const stock = getPrescriptionValue(medicine, "availableQuantity", "AvailableQuantity", "availableStock", "AvailableStock", "stockQuantity", "StockQuantity", "quantityAvailable", "QuantityAvailable");
                     const availability = getPrescriptionValue(medicine, "availability", "Availability", "stockStatus", "StockStatus", "status", "Status");
                     return (

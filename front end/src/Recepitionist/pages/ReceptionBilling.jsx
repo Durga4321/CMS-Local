@@ -2024,10 +2024,7 @@ function ReceptionBilling() {
     };
   }, [billingMode, labMasterPriceList, selectedAppointment]);
 
-  // Load medicines from the doctor's saved prescription.
-  // The backend PrescriptionItem model does not currently store selling price,
-  // so the receptionist enters the unit price only for medicines that were
-  // actually prescribed by the doctor.
+  // Pharmacy quantities and prices come from backend dispensing records.
   useEffect(() => {
     if (billingMode !== "pharmacy") {
       setPharmacyPrescriptionLoading(false);
@@ -2063,9 +2060,9 @@ function ReceptionBilling() {
               frequency: medicine.frequency ?? medicine.Frequency ?? "",
               duration: medicine.duration ?? medicine.Duration ?? "",
               notes: medicine.notes ?? medicine.Notes ?? "",
-              quantity: Math.max(1, Number(medicine.quantity ?? medicine.Quantity ?? medicine.qty ?? medicine.Qty ?? 1) || 1),
-              unitPrice: 0,
-              price: 0,
+              quantity: Math.max(1, Number(medicine.dispensedQuantity ?? medicine.DispensedQuantity ?? medicine.quantity ?? medicine.Quantity ?? medicine.prescribedQuantity ?? medicine.PrescribedQuantity ?? medicine.qty ?? medicine.Qty ?? 1) || 1),
+              unitPrice: Number(medicine.sellingPrice ?? medicine.SellingPrice ?? medicine.unitPrice ?? medicine.UnitPrice ?? 0),
+              price: Number(medicine.sellingPrice ?? medicine.SellingPrice ?? medicine.unitPrice ?? medicine.UnitPrice ?? 0),
               source: "Prescription"
             }))
         );
@@ -2306,6 +2303,8 @@ function ReceptionBilling() {
     const lineItems = buildServiceLineItems(details.rows, details.type);
     const testNames = lineItems.map((item) => item.item).filter(Boolean).join(", ");
 
+    if (isPharmacy) return { appointmentId, patientId, branchId, discount, paymentMethod: paymentMode };
+
     return {
       appointmentId,
       AppointmentId: appointmentId,
@@ -2387,12 +2386,6 @@ function ReceptionBilling() {
       return false;
     }
 
-    if (details.type === "pharmacy" && Number(details.totals.subtotal || 0) <= 0) {
-      const text = "Enter a valid unit price for at least one prescribed medicine.";
-      showMessage(text, "error");
-      toast.error(text);
-      return false;
-    }
 
     const discount = Number(form.discount || 0);
     if (discount < 0 || discount > 100) {
@@ -2421,7 +2414,19 @@ function ReceptionBilling() {
       const response = canUpdate
         ? await updateBillingBill(editingBill, payload)
         : await createServiceBill(details, payload);
-      savedInvoice = Array.isArray(response) ? response[0] || {} : response || {};
+      savedInvoice = Array.isArray(response) ? response[0] || {} : response?.data || response || {};
+      if (details.type === "pharmacy") {
+        const backendRows = normalizeServiceBillRows(savedInvoice, "pharmacy");
+        if (backendRows.length) details.rows = backendRows;
+        const backendTotal = readAmount(savedInvoice, AMOUNT_KEYS.total, NaN);
+        if (!Number.isFinite(backendTotal)) throw new Error("The pharmacy bill was saved, but the response did not include its total. Refresh the bill list to view it before recording payment.");
+        details.totals = {
+          ...details.totals,
+          subtotal: readAmount(savedInvoice, ["subtotal", "Subtotal", "medicineCharge", "MedicineCharge"], backendTotal),
+          total: backendTotal,
+          grossTotal: readAmount(savedInvoice, ["grossTotal", "GrossTotal"], backendTotal),
+        };
+      }
 
       const invoiceShape = {
         ...payload,
@@ -3778,7 +3783,7 @@ function ReceptionBilling() {
                 const invoiceNo = bill.invoiceNo || bill.invoiceNumber || bill.billNumber || `BILL-${index + 1}`;
                 const amount = getSavedBillAmount(bill, 0);
                 const createdAt = bill.createdAt || bill.invoiceDate || bill.billDate;
-                const canManageBill = hasBackendBillingId(bill);
+                const canManageBill = hasBackendBillingId(bill) && billType !== "pharmacy" && String(bill.paymentStatus || bill.PaymentStatus || bill.status || bill.Status || "").toLowerCase() !== "paid";
                 const paymentHistoryKey = String(getBillingPaymentBillId(bill) || "");
                 const rawStatus = String(bill.paymentStatus || bill.PaymentStatus || bill.status || bill.Status || "Paid").trim();
                 const isCleared = rawStatus.toLowerCase() === "paid";
@@ -3849,7 +3854,8 @@ function ReceptionBilling() {
                         activeActionState={activeActionState}
                         setActiveActionState={setActiveActionState}
                         canView={true}
-                        canEdit={false}
+                        canEdit={canManageBill && canEditBill}
+                        onEdit={() => editRecentServiceBill(bill)}
                         canStatus={false}
                         canDelete={canManageBill && canDeleteBill}
                         onView={() => viewRecentServiceBill(bill)}
@@ -4096,7 +4102,7 @@ function ReceptionBilling() {
                         ? "Loading prescribed medicines..."
                         : selectedAppointment
                           ? pharmacyRows.length
-                            ? `${pharmacyRows.length} prescribed medicine(s) loaded. Enter unit price and quantity.`
+                            ? `${pharmacyRows.length} prescribed medicine(s) loaded. Billing uses backend dispensing amounts.`
                             : "No prescribed medicines found for this appointment."
                           : "Select a booked appointment to load prescribed medicines."}
                     </strong>
@@ -4139,6 +4145,7 @@ function ReceptionBilling() {
                             type="number"
                             min="1"
                             value={rowQuantity}
+                            readOnly
                             onChange={(event) => updatePharmacyQuantity(row.id, event.target.value)}
                             aria-label={`Quantity for ${row.item}`}
                           />
@@ -4149,6 +4156,7 @@ function ReceptionBilling() {
                           min="0"
                           step="0.01"
                           value={Number(row.unitPrice) || 0}
+                          readOnly={billingMode === "pharmacy"}
                           onChange={(event) => updateServiceUnitPrice(row.id, event.target.value)}
                           aria-label={`Amount for ${row.item}`}
                         />
@@ -4158,6 +4166,7 @@ function ReceptionBilling() {
                         <button
                           type="button"
                           className="rc-service-remove-btn"
+                          disabled={billingMode === "pharmacy"}
                           onClick={() => removeServiceRow(row.id)}
                           aria-label="Remove item"
                         >
