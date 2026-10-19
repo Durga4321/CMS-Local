@@ -6,6 +6,7 @@ import {
   CreditCard, Download, Droplet, Eye, EyeOff, FileText, Heart, KeyRound, LogOut, Mail, MapPin, Pill,
   Menu, Phone, Printer, Search, Share2, Star, Stethoscope, Syringe, Trash2, UserRound, X,
 } from "lucide-react";
+import { useToast } from "../../components/ToastProvider";
 import PatientDashboard from "./PatientDashboard";
 import { apiUrl, assetUrl, patientApiUrl, PATIENT_API } from "../../config/api";
 import { validateMobile, validateName, validateStrongPassword } from "../../utils/validation";
@@ -21,6 +22,17 @@ import {
   DUPLICATE_APPOINTMENT_MESSAGE,
   hasDuplicateAppointmentForPatientDoctorDate,
 } from "../../utils/appointmentDuplicateValidation";
+
+// Keep state needed by the page while delivering action feedback as toasts.
+function usePatientToastState(type = "error") {
+  const toast = useToast();
+  const [message, setMessage] = useState("");
+  const updateMessage = useCallback((value) => {
+    setMessage(value);
+    if (value && value !== "Processing payment...") toast[type](value);
+  }, [toast, type]);
+  return [message, updateMessage];
+}
 
 const getNestedValue = (record, path) => {
   if (record == null) return undefined;
@@ -169,8 +181,8 @@ const selectBestBillRecord = (existing, incoming) => {
   if (incomingDate > existingDate) return incoming;
   if (incomingDate < existingDate) return existing;
 
-  const existingStatus = String(readFirst(existing, ['status', 'paymentStatus', 'billStatus', 'state']) || '').toLowerCase();
-  const incomingStatus = String(readFirst(incoming, ['status', 'paymentStatus', 'billStatus', 'state']) || '').toLowerCase();
+  const existingStatus = String(readFirst(existing, ['paymentStatus', 'PaymentStatus', 'status', 'Status', 'billStatus', 'state']) || '').toLowerCase();
+  const incomingStatus = String(readFirst(incoming, ['paymentStatus', 'PaymentStatus', 'status', 'Status', 'billStatus', 'state']) || '').toLowerCase();
   if (incomingStatus === 'paid' && existingStatus !== 'paid') return incoming;
   if (existingStatus === 'paid' && incomingStatus !== 'paid') return existing;
 
@@ -252,14 +264,36 @@ const withQueryParams = (path, params = {}) => {
   return `${path}${String(path).includes("?") ? "&" : "?"}${query}`;
 };
 
+const parsePatientBillRows = (payload, depth = 0) => {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object" || depth > 6) return null;
+  for (const key of ["bills", "billings", "invoices", "data", "items", "records", "results", "result", "$values"]) {
+    const actual = Object.keys(payload).find((candidate) => candidate.toLowerCase() === key);
+    if (!actual) continue;
+    const rows = parsePatientBillRows(payload[actual], depth + 1);
+    if (rows) return rows;
+  }
+  return null;
+};
+
 const fetchPatientPortalBillingRows = async ({ headers = {}, cache = "no-store", billingType = "" } = {}) => {
   const type = billingType ? normalizePortalBillingType(billingType) : "";
   const path = withQueryParams(PATIENT_API.bills, type ? { billingType: type } : {});
   const response = await fetch(patientApiUrl(path), { headers, cache }).catch(() => null);
   if (!response?.ok) return [];
   const data = await response.json().catch(() => []);
-  return parseApiList(data).map((bill) => ({
+  return (parsePatientBillRows(data) || []).map((bill) => ({
     ...bill,
+    id: bill.id ?? bill.Id ?? bill.billId ?? bill.BillId ?? bill.billingId ?? bill.BillingId,
+    patientId: bill.patientId ?? bill.PatientId ?? bill.patient?.id ?? bill.Patient?.Id,
+    appointmentId: bill.appointmentId ?? bill.AppointmentId,
+    patientName: bill.patientName ?? bill.PatientName ?? bill.patient?.name ?? bill.Patient?.Name,
+    invoiceNo: bill.invoiceNo ?? bill.InvoiceNo ?? bill.invoiceNumber ?? bill.InvoiceNumber ?? bill.billNumber ?? bill.BillNumber,
+    totalAmount: bill.totalAmount ?? bill.TotalAmount ?? bill.netAmount ?? bill.NetAmount ?? bill.grandTotal ?? bill.GrandTotal,
+    paymentStatus: bill.paymentStatus ?? bill.PaymentStatus ?? bill.status ?? bill.Status,
+    paymentMethod: bill.paymentMethod ?? bill.PaymentMethod ?? bill.paymentMode ?? bill.PaymentMode,
+    createdAt: bill.createdAt ?? bill.CreatedAt ?? bill.billDate ?? bill.BillDate,
+    medicines: bill.medicines ?? bill.Medicines ?? bill.lineItems ?? bill.LineItems ?? [],
     billingType: bill.billingType || bill.BillingType || type || "",
     BillingType: bill.BillingType || bill.billingType || type || "",
     invoiceType: bill.invoiceType || bill.InvoiceType || type || "",
@@ -1361,6 +1395,7 @@ function PatientPageShell({ title, subtitle, action, children }) {
 }
 
 function PatientAppointmentsPage({ visits = [], onRefresh }) {
+  const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const rows = visits || [];
@@ -1371,7 +1406,7 @@ function PatientAppointmentsPage({ visits = [], onRefresh }) {
   const [selectedAppointment, setSelectedAppointment] = useState(rows[0] || null);
 
   const [cancelling, setCancelling] = useState(false);
-  const [cancelError, setCancelError] = useState("");
+  const [, setCancelError] = usePatientToastState();
   const [cancelLoading, setCancelLoading] = useState(false);
 
   const [rescheduling, setRescheduling] = useState(false);
@@ -1379,7 +1414,7 @@ function PatientAppointmentsPage({ visits = [], onRefresh }) {
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [rescheduleSlots, setRescheduleSlots] = useState([]);
   const [rescheduleLoadingSlots, setRescheduleLoadingSlots] = useState(false);
-  const [rescheduleError, setRescheduleError] = useState("");
+  const [, setRescheduleError] = usePatientToastState();
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
 
   const getAppointmentKeys = (visit) =>
@@ -1449,6 +1484,7 @@ function PatientAppointmentsPage({ visits = [], onRefresh }) {
         throw new Error(errorText || "Unable to cancel appointment.");
       }
       setCancelling(false);
+      toast.success("Appointment cancelled successfully.");
       if (onRefresh) await onRefresh();
     } catch (err) {
       setCancelError(err.message || "Failed to cancel appointment.");
@@ -1521,6 +1557,7 @@ function PatientAppointmentsPage({ visits = [], onRefresh }) {
         throw new Error(errorText || "Unable to reschedule appointment.");
       }
       setRescheduling(false);
+      toast.success("Appointment rescheduled successfully.");
       setRescheduleDate("");
       setRescheduleTime("");
       if (onRefresh) await onRefresh();
@@ -1659,7 +1696,6 @@ function PatientAppointmentsPage({ visits = [], onRefresh }) {
               <div className="pd-action-form">
                 <h3>Cancel Appointment</h3>
                 <p>Are you sure you want to cancel appointment {getAppointmentNumber(selectedAppointment)}?</p>
-                {cancelError && <p className="pd-error-text">{cancelError}</p>}
                 <div className="pd-form-actions">
                   <button
                     type="button"
@@ -1719,7 +1755,6 @@ function PatientAppointmentsPage({ visits = [], onRefresh }) {
                     )}
                   </div>
                 )}
-                {rescheduleError && <p className="pd-error-text">{rescheduleError}</p>}
                 <div className="pd-form-actions">
                   <button
                     type="button"
@@ -1839,6 +1874,7 @@ const validateMedicalVisitReason = (value = "") => {
   return "";
 };
 function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
+  const toast = useToast();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [branches, setBranches] = useState([]);
@@ -1854,7 +1890,7 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
   const [selectedTime, setSelectedTime] = useState("");
   const [reasonForVisit, setReasonForVisit] = useState("");
   const [bookingState, setBookingState] = useState("idle");
-  const [bookingError, setBookingError] = useState("");
+  const [bookingError, setBookingError] = usePatientToastState();
   const [paymentMode, setPaymentMode] = useState("UPI");
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -2757,6 +2793,7 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
         paymentMode,
         bill: generatedBill,
       });
+      toast.success("Payment completed and consultation bill generated" + (transactionId ? ` - ${transactionId}` : "") + ".");
       setBookingState('success');
       setStep(5);
       if (onRefresh) await onRefresh();
@@ -3033,14 +3070,10 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
                   </select>
                 </label>
               </div>
-              {bookingError ? <p className="booking-error">{bookingError}</p> : null}
               {bookingState === 'success' && (
-                <div className="booking-success">
-                  <p>Payment completed and consultation bill generated{paymentDetails?.transactionId ? ` - ${paymentDetails.transactionId}` : ""}.</p>
-                  <div className="booking-success-actions">
+                <div className="booking-success-actions">
                     <button type="button" className="booking-button booking-button--ghost" onClick={() => handlePrintBill(false)}>View Bill</button>
                     <button type="button" className="booking-button booking-button--secondary" onClick={handlePrintBill}>Print Bill</button>
-                  </div>
                 </div>
               )}
             </section>
@@ -3205,7 +3238,7 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
 function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] }) {
   const [history, setHistory] = useState(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [historyError, setHistoryError] = useState("");
+  const [historyError, setHistoryError] = usePatientToastState();
   const [reportsExpanded, setReportsExpanded] = useState(false);
   const [patientLabReports, setPatientLabReports] = useState([]);
 
@@ -4025,7 +4058,6 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
         <span>This section is for your reference only. For any medical concerns, please consult your doctor.</span>
       </div>
 
-      {historyError ? <div className="mh-error">{historyError}</div> : null}
       {!historyError && loadingHistory ? <div className="mh-loading">Loading medical history...</div> : null}
       {!historyError && !loadingHistory && !hasAnyHistory ? (
         <div className="mh-empty">
@@ -4241,6 +4273,7 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
 }
 
 function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits = [] }) {
+  const toast = useToast();
   const [apiPrescriptions, setApiPrescriptions] = useState([]);
   const prescriptionRecords = useMemo(
     () => {
@@ -4550,12 +4583,12 @@ function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits =
       try {
         if (latestUrl) {
           await navigator.clipboard.writeText(latestUrl);
-          window.alert('Prescription link copied to clipboard.');
+          toast.success('Prescription link copied to clipboard.');
           return;
         }
         if (latestPrescription) {
           await navigator.clipboard.writeText(formatShareText(latestPrescription));
-          window.alert('Prescription text copied to clipboard.');
+          toast.success('Prescription text copied to clipboard.');
           return;
         }
       } catch (err) {
@@ -4902,8 +4935,8 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   const [apiBills, setApiBills] = useState([]);
   const [loadingBills, setLoadingBills] = useState(false);
   const [portalRefreshTick, setPortalRefreshTick] = useState(0);
-  const [downloadStatus, setDownloadStatus] = useState("");
-  const [downloadError, setDownloadError] = useState("");
+  const [, setDownloadStatus] = usePatientToastState("success");
+  const [, setDownloadError] = usePatientToastState();
   const authenticatedPatientId = normalizeComparable(
     localStorage.getItem("patientId") || readFirst(patient || {}, ["patientId", "PatientId", "id", "Id"])
   );
@@ -4976,10 +5009,12 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     const refresh = () => {
       if (document.visibilityState === "visible") loadSubmittedBills();
     };
+    const billRefreshTimer = window.setInterval(refresh, 30000);
     window.addEventListener("focus", loadSubmittedBills);
     document.addEventListener("visibilitychange", refresh);
     return () => {
       isCurrent = false;
+      window.clearInterval(billRefreshTimer);
       window.removeEventListener("focus", loadSubmittedBills);
       document.removeEventListener("visibilitychange", refresh);
     };
@@ -5069,7 +5104,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   };
 
   const paymentStatus = (record) =>
-    String(readFirst(record, ['status', 'paymentStatus', 'billStatus']) || 'Pending').toLowerCase();
+    String(readFirst(record, ['paymentStatus', 'PaymentStatus', 'status', 'Status', 'billStatus']) || 'Pending').toLowerCase();
 
   const totalAmount = (record) => Number(readFirst(record, ['total', 'totalAmount', 'amount', 'invoiceAmount', 'grandTotal', 'payableAmount', 'paymentAmount', 'paidAmount', 'netAmount', 'dueAmount', 'totals.total']) || 0);
   const dueAmount = (record) => Number(readFirst(record, ['dueAmount', 'balance', 'outstandingAmount']) || 0);
@@ -5107,7 +5142,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
       return serviceItems.map((row) => ({
         label: readFirst(row, ['item', 'Item', 'label', 'Label', 'testName', 'TestName', 'test', 'Test', 'name', 'Name', 'serviceName', 'ServiceName', 'medicineName', 'MedicineName', 'productName', 'ProductName', 'diagnosis', 'Diagnosis']) || 'Service item',
         diagnosis: readFirst(row, ['diagnosis', 'Diagnosis', 'category', 'Category', 'department', 'Department']) || '',
-        quantity: Number(readFirst(row, ['quantity', 'Quantity', 'qty', 'Qty']) || 1) || 1,
+        quantity: Number(readFirst(row, ['quantity', 'Quantity', 'dispensedQuantity', 'DispensedQuantity', 'prescribedQuantity', 'PrescribedQuantity', 'qty', 'Qty']) || 1) || 1,
         amount: Number(readFirst(row, ['amount', 'Amount', 'total', 'Total', 'totalAmount', 'TotalAmount', 'netAmount', 'NetAmount', 'lineTotal', 'LineTotal']) || 0) || ((Number(readFirst(row, ['unitPrice', 'UnitPrice', 'price', 'Price', 'rate', 'Rate']) || 0) || 0) * (Number(readFirst(row, ['quantity', 'Quantity', 'qty', 'Qty']) || 1) || 1)),
       }));
     }
@@ -5646,8 +5681,6 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
       title="Billing"
       subtitle="Latest OP, diagnostic, and pharmacy invoices."
     >
-      {downloadStatus ? <div className="pb-invoice-status pb-invoice-status--success">{downloadStatus}</div> : null}
-      {downloadError ? <div className="pb-invoice-status pb-invoice-status--error">{downloadError}</div> : null}
       {loadingBills ? <div className="pd-selected-notification">Loading latest bills...</div> : null}
       {latestBillSections.map((section) => (
         <section className="pd-card" key={section.key}>
@@ -5719,6 +5752,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
 }
 
 function PatientNotificationsPage({ notifications = [], prescriptions = [], bills = [], patient = null, visits = [] }) {
+  const toast = useToast();
   const navigate = useNavigate();
   const [apiNotifications, setApiNotifications] = useState([]);
   const [pendingNotificationActions, setPendingNotificationActions] = useState({});
@@ -6145,7 +6179,7 @@ function PatientNotificationsPage({ notifications = [], prescriptions = [], bill
       if (!response.ok) throw new Error(`Unable to ${action} notification.`);
     } catch (error) {
       setNotificationRows(previousRows);
-      window.alert(error.message || "Unable to update notification.");
+      toast.error(error.message || "Unable to update notification.");
     } finally {
       setPendingNotificationActions((actions) => {
         const next = { ...actions };
@@ -6396,6 +6430,7 @@ function PatientAccountLayout({ active = "profile", children }) {
 }
 
 function PatientChangePasswordPage() {
+  const toast = useToast();
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -6406,8 +6441,6 @@ function PatientChangePasswordPage() {
     newPassword: false,
     confirmPassword: false,
   });
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
   const [saving, setSaving] = useState(false);
 
   const passwordRequirements = useMemo(
@@ -6421,8 +6454,6 @@ function PatientChangePasswordPage() {
 
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    setMessage("");
-    setMessageType("");
   };
 
   const togglePasswordVisibility = (field) => {
@@ -6431,38 +6462,31 @@ function PatientChangePasswordPage() {
 
   const changePassword = async (event) => {
     event.preventDefault();
-    setMessage("");
-    setMessageType("");
 
     if (!form.currentPassword || !form.newPassword || !form.confirmPassword) {
-      setMessage("Please fill all password fields.");
-      setMessageType("error");
+      toast.error("Please fill all password fields.");
       return;
     }
 
     const currentPasswordError = validateStrongPassword(form.currentPassword, "Current Password");
     if (currentPasswordError) {
-      setMessage(currentPasswordError);
-      setMessageType("error");
+      toast.error(currentPasswordError);
       return;
     }
 
     const newPasswordError = validateStrongPassword(form.newPassword, "New Password");
     if (newPasswordError) {
-      setMessage(newPasswordError);
-      setMessageType("error");
+      toast.error(newPasswordError);
       return;
     }
 
     if (form.currentPassword === form.newPassword) {
-      setMessage("New password must be different from current password.");
-      setMessageType("error");
+      toast.error("New password must be different from current password.");
       return;
     }
 
     if (form.newPassword !== form.confirmPassword) {
-      setMessage("New password and confirm password must match.");
-      setMessageType("error");
+      toast.error("New password and confirm password must match.");
       return;
     }
 
@@ -6483,13 +6507,11 @@ function PatientChangePasswordPage() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.message || `Request failed with status ${response.status}`);
-      setMessage(data.message || "Password changed successfully.");
-      setMessageType("success");
+      toast.success(data.message || "Password changed successfully.");
       setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setVisiblePasswords({ currentPassword: false, newPassword: false, confirmPassword: false });
     } catch (error) {
-      setMessage(error.message || "Unable to change password right now.");
-      setMessageType("error");
+      toast.error(error.message || "Unable to change password right now.");
     } finally {
       setSaving(false);
     }
@@ -6536,7 +6558,6 @@ function PatientChangePasswordPage() {
             ))}
           </ul>
           {renderPasswordField("confirmPassword", "Confirm Password", "new-password")}
-          {message ? <p className={`pp-password-message pp-password-message--${messageType}`}>{message}</p> : null}
           <button type="submit" className="pp-password-submit" disabled={saving}>
             {saving ? "Updating..." : "Update Password"}
           </button>
@@ -6547,11 +6568,10 @@ function PatientChangePasswordPage() {
 }
 
 function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = [], notifications = [], onProfileUpdated = () => {} }) {
+  const toast = useToast();
   const navigate = useNavigate();
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
   const [form, setForm] = useState({
     name: "",
     gender: "",
@@ -6672,8 +6692,6 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
       ? String(value).replace(/\D/g, "").slice(0, 10)
       : value;
     setForm((prev) => ({ ...prev, [field]: nextValue }));
-    setMessage("");
-    setMessageType("");
   };
 
   const saveProfile = async () => {
@@ -6688,14 +6706,11 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
     const validationError = nameError || mobileError || emergencyNameError || emergencyPhoneError;
 
     if (validationError) {
-      setMessage(validationError);
-      setMessageType("error");
+      toast.error(validationError);
       return;
     }
 
     setSaving(true);
-    setMessage("");
-    setMessageType("");
     try {
       const profileUrl = patientApiUrl(PATIENT_API.profile);
       const nameParts = splitProfileName(formatTitleCase(form.name || profileName));
@@ -6733,12 +6748,10 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
         ...payload,
         ...(returnedProfile && typeof returnedProfile === "object" && !Array.isArray(returnedProfile) ? returnedProfile : {}),
       });
-      setMessage(data.message || "Profile updated successfully.");
-      setMessageType("success");
+      toast.success(data.message || "Profile updated successfully.");
       setEditMode(false);
     } catch (error) {
-      setMessage(error.message || "Unable to update profile.");
-      setMessageType("error");
+      toast.error(error.message || "Unable to update profile.");
     } finally {
       setSaving(false);
     }
@@ -6803,7 +6816,6 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
                 )}
               </div>
             </div>
-            {message ? <p className={`pd-message pd-message--${messageType}`}>{message}</p> : null}
             <div className="pd-profile-card">
               <div className="pd-profile-avatar">{profileInitials}</div>
               <div className="pd-profile-copy">

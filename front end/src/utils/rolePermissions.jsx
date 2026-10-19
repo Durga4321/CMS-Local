@@ -75,7 +75,9 @@ const getAuthToken = (profile = {}) => {
           ? getSessionValue("nurseToken")
           : roleKey.includes("lab")
             ? getSessionValue("labToken")
-            : getSessionValue("adminToken");
+            : roleKey.includes("pharmac")
+              ? getSessionValue("pharmacistToken")
+              : getSessionValue("adminToken");
 
   return (
     roleToken ||
@@ -85,6 +87,7 @@ const getAuthToken = (profile = {}) => {
     getSessionValue("receptionistToken") ||
     getSessionValue("nurseToken") ||
     getSessionValue("labToken") ||
+    getSessionValue("pharmacistToken") ||
     ""
   );
 };
@@ -118,6 +121,8 @@ const parseList = (data) => {
     ...(Array.isArray(source?.labTechnicians) ? source.labTechnicians.map((user) => ({ role: "LabTechnician", ...user })) : []),
     ...(Array.isArray(source?.LabTechnicians) ? source.LabTechnicians.map((user) => ({ role: "LabTechnician", ...user })) : []),
     ...(Array.isArray(source?.labtechnicians) ? source.labtechnicians.map((user) => ({ role: "LabTechnician", ...user })) : []),
+    ...(Array.isArray(source?.pharmacists) ? source.pharmacists.map((user) => ({ role: "Pharmacist", ...user })) : []),
+    ...(Array.isArray(source?.Pharmacists) ? source.Pharmacists.map((user) => ({ role: "Pharmacist", ...user })) : []),
     ...(Array.isArray(source?.staff) ? source.staff : []),
     ...(Array.isArray(source?.Staff) ? source.Staff : []),
   ];
@@ -173,6 +178,7 @@ const normalizeRole = (role = "") => {
   if (key === "doctor") return "Doctor";
   if (key === "receptionist" || key === "reception") return "Receptionist";
   if (key === "nurse") return "Nurse";
+  if (key === "pharmacist" || key === "pharmacy") return "Pharmacist";
   if (key === "labtechnician" || key === "labtech" || key === "lab" || key === "laboratory") return "LabTechnician";
   return String(role || "").trim();
 };
@@ -197,6 +203,7 @@ const isAdminAppPath = () => {
       !path.startsWith("/reception") &&
       !path.startsWith("/nurse") &&
       !path.startsWith("/lab") &&
+      !path.startsWith("/pharmacy") &&
       !path.startsWith("/patient")
   );
 };
@@ -400,6 +407,7 @@ const assignmentMatchesProfile = (assignment = {}, profile = {}) => {
     doctorId: assignment.doctorId || assignment.DoctorId,
     receptionistId: assignment.receptionistId || assignment.ReceptionistId,
     nurseId: assignment.nurseId || assignment.NurseId,
+    pharmacistId: assignment.pharmacistId || assignment.PharmacistId,
     labTechnicianId: assignment.labTechnicianId || assignment.LabTechnicianId,
     labId: assignment.labId || assignment.LabId,
     email: assignment.email || assignment.Email,
@@ -428,6 +436,8 @@ export const permissionIdentityKeys = (user = {}) =>
     user.DoctorId,
     user.receptionistId,
     user.ReceptionistId,
+    user.pharmacistId,
+    user.PharmacistId,
     user.nurseId,
     user.NurseId,
     user.labTechnicianId,

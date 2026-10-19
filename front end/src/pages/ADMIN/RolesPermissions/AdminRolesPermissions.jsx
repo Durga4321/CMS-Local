@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./AdminRolesPermissions.css";
 import { Check, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, X, Lock, KeyRound, UserCheck, Search } from "lucide-react";
-import { apiUrl } from "../../../config/api";
+import { API_ENDPOINTS, apiUrl } from "../../../config/api";
 import {
   removeRoleModulePermissions,
   saveRoleModulePermissions,
@@ -11,19 +11,21 @@ import { useAdminModulePermissions } from "../../../utils/rolePermissions";
 
 const PERMISSIONS = ["View", "Create", "Edit", "Delete"];
 const GENERAL_MODULE = "General";
-const STAFF_ROLES = ["Doctor", "Receptionist", "Nurse", "LabTechnician"];
-const STAFF_ROLE_KEYS = new Set(["doctor", "receptionist", "nurse", "labtechnician"]);
+const STAFF_ROLES = ["Doctor", "Receptionist", "Nurse", "LabTechnician", "Pharmacist"];
+const STAFF_ROLE_KEYS = new Set(["doctor", "receptionist", "nurse", "labtechnician", "pharmacist"]);
 const formatRoleLabel = (role = "") => (normalizeKey(role) === "labtechnician" ? "Lab Technician" : role);
 const canonicalStaffRole = (role = "") => {
   const key = normalizeKey(role);
   if (key === "doctor") return "Doctor";
   if (key === "receptionist" || key === "reception") return "Receptionist";
   if (key === "nurse") return "Nurse";
+  if (key === "pharmacist" || key === "pharmacy") return "Pharmacist";
   if (key === "labtechnician" || key === "labtech" || key === "lab" || key === "laboratory") return "LabTechnician";
   return String(role || "").trim();
 };
 
 const ROLE_SIDEBAR_MODULES = {
+  Pharmacist: ["Dashboard", "Medicines", "Stock", "Billing", "Prescriptions"],
   Doctor: ["Dashboard", "Consultation", "Prescription", "Appointments", "My Schedule"],
   Receptionist: ["Reception Dashboard", "Patients", "Appointments", "Book Appointment", "Billing"],
   Nurse: ["Nurse Dashboard", "Patients", "Medical History", "Appointments", "Book Appointment", "Online Bookings", "Offline Bookings"],
@@ -31,7 +33,7 @@ const ROLE_SIDEBAR_MODULES = {
 };
 
 const getRoleModules = (role = "Doctor") =>
-  ROLE_SIDEBAR_MODULES[normalizeKey(role) === "labtechnician" ? "LabTechnician" : role] || ROLE_SIDEBAR_MODULES.Doctor;
+  ROLE_SIDEBAR_MODULES[canonicalStaffRole(role)] || ROLE_SIDEBAR_MODULES.Doctor;
 
 // A staff role always has the same set of sidebar modules.  Keep this separate
 // from the saved permission map so the table does not collapse the module
@@ -39,8 +41,8 @@ const getRoleModules = (role = "Doctor") =>
 const getDisplayModules = (role = "Doctor") => getRoleModules(role);
 
 const getToken = () =>
-  localStorage.getItem("token") ||
   localStorage.getItem("adminToken") ||
+  localStorage.getItem("token") ||
   localStorage.getItem("receptionistToken") ||
   "";
 
@@ -50,6 +52,7 @@ const parseList = (data) => {
   if (Array.isArray(data?.items)) return data.items;
   if (Array.isArray(data?.result)) return data.result;
   if (Array.isArray(data?.users)) return data.users;
+  if (data?.data && typeof data.data === "object") return parseList(data.data);
   if (Array.isArray(data?.modules)) return data.modules;
   return [];
 };
@@ -60,6 +63,8 @@ const parseEligibleUsers = (data) => {
 
   const source = data?.data && typeof data.data === "object" ? data.data : data;
   return [
+    ...(Array.isArray(source?.pharmacists) ? source.pharmacists.map((user) => ({ role: "Pharmacist", ...user })) : []),
+    ...(Array.isArray(source?.Pharmacists) ? source.Pharmacists.map((user) => ({ role: "Pharmacist", ...user })) : []),
     ...(Array.isArray(source?.doctors) ? source.doctors.map((user) => ({ role: "Doctor", ...user })) : []),
     ...(Array.isArray(source?.Doctors) ? source.Doctors.map((user) => ({ role: "Doctor", ...user })) : []),
     ...(Array.isArray(source?.receptionists) ? source.receptionists.map((user) => ({ role: "Receptionist", ...user })) : []),
@@ -282,6 +287,8 @@ const normalizeUser = (user = {}) => {
       "UserId",
       "id",
       "Id",
+      "pharmacistId",
+      "PharmacistId",
       "doctorId",
       "DoctorId",
       "receptionistId",
@@ -330,6 +337,7 @@ const emptyRoleMatrix = {
   Receptionist: emptyModulePermissionsForRole("Receptionist"),
   Nurse: emptyModulePermissionsForRole("Nurse"),
   LabTechnician: emptyModulePermissionsForRole("LabTechnician"),
+  Pharmacist: emptyModulePermissionsForRole("Pharmacist"),
 };
 
 const buildPermissionPayload = (form) => {
@@ -351,10 +359,17 @@ const buildPermissionPayload = (form) => {
 
 const saveUserPermissions = async (userId, form) => {
   const path = `user-permissions/users/${encodeURIComponent(userId)}`;
-  return requestJson(path, {
-    method: "PUT",
-    body: JSON.stringify(buildPermissionPayload(form)),
-  });
+  try {
+    return await requestJson(path, {
+      method: "PUT",
+      body: JSON.stringify(buildPermissionPayload(form)),
+    });
+  } catch (error) {
+    if (canonicalStaffRole(form.role) === "Pharmacist" && /not found in your hospital/i.test(error.message)) {
+      throw new Error("Pharmacist permissions were not saved. The server could not find this pharmacist in your hospital. The backend permission API must support Pharmacist accounts and use the pharmacist's user ID. Server response: " + error.message);
+    }
+    throw error;
+  }
 };
 
 function AdminRolesPermissions() {
@@ -418,9 +433,10 @@ function AdminRolesPermissions() {
     setError("");
 
     try {
-      const [userResult, labTechnicianResult] = await Promise.allSettled([
+      const [userResult, labTechnicianResult, pharmacistResult] = await Promise.allSettled([
         requestJson("user-permissions/eligible-users"),
         requestJson("Staff/lab-technicians"),
+        requestJson(API_ENDPOINTS.pharmacists.list),
       ]);
 
       if (userResult.status !== "fulfilled") {
@@ -435,6 +451,10 @@ function AdminRolesPermissions() {
               role: getValue(user, ["role", "Role", "roleName", "RoleName"], "LabTechnician"),
             }))
           : [];
+      const pharmacistRows = pharmacistResult.status === "fulfilled"
+        ? parseEligibleUsers(pharmacistResult.value).map((user) => ({ ...user, role: "Pharmacist" }))
+        : [];
+      if (pharmacistResult.status === "rejected") setError("Unable to load pharmacists: " + pharmacistResult.reason.message);
       const userById = new Map();
       const userByIdentity = new Map();
       const getIdentityKey = (user) => {
@@ -462,6 +482,7 @@ function AdminRolesPermissions() {
 
       eligibleRows.map(normalizeUser).forEach((user) => addUser(user));
       labTechnicianRows.map(normalizeUser).forEach((user) => addUser(user, { preferExistingIdentity: true }));
+      pharmacistRows.map(normalizeUser).forEach((user) => addUser(user, { preferExistingIdentity: true }));
       const baseUsers = Array.from(userById.values());
       const permissionResults = await Promise.allSettled(
         baseUsers.map((user) => requestJson(`user-permissions/users/${encodeURIComponent(user.id)}`))
@@ -929,7 +950,7 @@ function AdminRolesPermissions() {
       <div className="sa-page-header">
         <div>
           <h1>Roles & Permissions</h1>
-          <p>Create roles for doctors, receptionists, nurses, and lab technicians, then assign View, Create, Edit, and Delete permissions.</p>
+          <p>Create roles for doctors, receptionists, nurses, lab technicians, and pharmacists, then assign View, Create, Edit, and Delete permissions.</p>
         </div>
         <div className="sa-page-actions">
           <button className="sa-btn" type="button" onClick={loadData} disabled={loading}>

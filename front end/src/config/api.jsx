@@ -277,6 +277,7 @@ export const API_ENDPOINTS = {
     frequencies: "Prescription/frequencies",
     medicines: "Prescription/medicineDropdown",
     instructions: "Prescription/Instructiondropdown",
+    medicineNotes: "Prescription/medicine-notes",
   },
   lab: {
     dashboard: "Lab/dashboard",

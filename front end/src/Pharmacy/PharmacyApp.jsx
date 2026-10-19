@@ -4,7 +4,7 @@ import UserProfilePage from "../profile/UserProfilePage";
 import PharmacyDashboard from "./PharmacyDashboard";
 import PharmacyLayout from "./PharmacyLayout";
 import PharmacyMedicineImport from "./PharmacyMedicineImport";
-import PharmacyModulePlaceholder from "./PharmacyModulePlaceholder";
+import PharmacyBilling from "./PharmacyBilling";
 import PharmacyPendingPrescriptions from "./PharmacyPendingPrescriptions";
 
 function PharmacyApp() {
@@ -14,8 +14,8 @@ function PharmacyApp() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<PharmacyDashboard />} />
         <Route path="medicines" element={<PharmacyMedicineImport />} />
-        <Route path="stock" element={<PharmacyModulePlaceholder title="Stock" description="Stock visibility will be connected to the medicine catalogue in a later pharmacy API step." />} />
-        <Route path="billing" element={<PharmacyModulePlaceholder title="Billing" description="Pharmacy billing will be connected after the medicine and prescription workflow." />} />
+        <Route path="stock" element={<PharmacyMedicineImport stockOnly />} />
+        <Route path="billing" element={<PharmacyBilling />} />
         <Route path="prescriptions" element={<PharmacyPendingPrescriptions />} />
         <Route path="profile" element={<UserProfilePage roleType="pharmacist" />} />
         <Route path="change-password" element={<Navigate to="/pharmacy/profile?tab=password" replace />} />
