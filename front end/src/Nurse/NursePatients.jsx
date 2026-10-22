@@ -1,11 +1,12 @@
 import React from "react";
 import ReceptionPatients from "../Recepitionist/pages/ReceptionPatients";
 import {
+  getNurseAppointments,
   getOfflineAppointments,
   getOnlineAppointments,
   parseList,
   requestJson as nurseRequestJson,
-} from "../Recepitionist/receptionApi";
+} from "./nurseApi";
 import { getNurseScope, scopeNurseRecords } from "./nurseScope";
 
 const firstText = (...values) =>
@@ -172,33 +173,20 @@ export const nursePatientsRequestJson = async (path, options = {}) => {
   }
 
   if (method === "GET" && /^Appointment$/i.test(raw)) {
-    const [onlineAppointments, offlineAppointments] = await Promise.all([
-      getOnlineAppointments().catch(() => []),
-      getOfflineAppointments().catch(() => []),
-    ]);
-    return scopeNurseRecords([...onlineAppointments, ...offlineAppointments]);
+    return scopeNurseRecords(await getNurseAppointments());
   }
 
-  if (method === "GET" && /^Patient$/i.test(raw)) {
-    const [patients, onlineAppointments, offlineAppointments] = await Promise.all([
-      nurseRequestJson("Patient", options).catch(() => nurseRequestJson("Nurse/patients", options).catch(() => [])),
-      getOnlineAppointments().catch(() => []),
-      getOfflineAppointments().catch(() => []),
+  if (method === "GET" && /^(Patient|Nurse\/patients)$/i.test(raw)) {
+    const results = await Promise.allSettled([
+      nurseRequestJson("Nurse/patients", options), getNurseAppointments(),
     ]);
-
-    return scopeNurseRecords(
-      mergePatientsFromAppointments(patients, [...parseList(onlineAppointments), ...parseList(offlineAppointments)])
-    );
-  }
-
-  if (method === "GET" && /^Nurse\/patients$/i.test(raw)) {
-    try {
-      return scopeNurseRecords(await nurseRequestJson("Nurse/patients", options), getNurseScope(), {
-        allowMissingBranch: false,
-      });
-    } catch {
-      return [];
-    }
+    if (results.every((result) => result.status === "rejected")) throw new Error(results.map((result) => result.reason.message).join(" "));
+    const patients = results[0].status === "fulfilled" ? parseList(results[0].value) : [];
+    const appointments = results[1].status === "fulfilled" ? results[1].value : [];
+    const records = mergePatientsFromAppointments(patients, scopeNurseRecords(appointments));
+    const scoped = scopeNurseRecords(records);
+    if (records.length && !scoped.length) throw new Error("Patient records could not be matched to your assigned nurse branch. Check the backend branchId fields and your nurse assignment.");
+    return scoped;
   }
 
   return nurseRequestJson(path, options);

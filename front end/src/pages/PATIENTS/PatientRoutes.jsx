@@ -669,10 +669,11 @@ const isSlotHiddenByCurrentTime = (slot, selectedDate) => {
   return hour * 60 + minute <= nowMinutes;
 };
 
-const isActiveAppointmentBooking = (appointment = {}) =>
-  !["cancelled", "canceled", "rejected"].includes(
-    String(readFirst(appointment, ["status", "appointmentStatus", "state"]) || "").trim().toLowerCase()
-  );
+const isActiveAppointmentBooking = (appointment = {}) => {
+  const status = String(readFirst(appointment, ["status", "Status", "appointmentStatus", "AppointmentStatus", "state", "State"]) || "")
+    .trim().toLowerCase().replace(/[\s_-]+/g, "");
+  return !["completed", "complete", "closed", "cancelled", "canceled", "rejected"].includes(status);
+};
 
 export const findPatientBookingConflict = (visits = [], date, time) => {
   const selectedDate = normalizeAppointmentBookingDate(date);
@@ -2603,14 +2604,6 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
       return;
     }
 
-    const conflict = findPatientBookingConflict(visits, selectedDate, selectedTime);
-    if (conflict) {
-      const message = "You already have an active appointment. Please complete or cancel the current appointment before booking another one.";
-      setBookingError(message);
-      setBookingState("error");
-      return;
-    }
-
     bookingRequestRef.current = true;
     setBookingState('payment');
     setBookingError('');
@@ -2636,16 +2629,26 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
         "mobileNumber",
         "MobileNumber",
       ]);
-      const duplicateAppointments = [...visits];
       const headers = getApiHeaders();
-      const allAppointmentsResponse = await fetch(apiUrl("Appointment"), { headers }).catch(() => null);
+      // Re-read current status so a consultation completed in another session no longer blocks booking.
+      let currentVisits = visits;
+      const latestResponse = await fetch(patientApiUrl(PATIENT_API.appointments), { headers, cache: "no-store" }).catch(() => null);
+      if (latestResponse?.ok) {
+        const latestData = await latestResponse.json().catch(() => null);
+        if (latestData !== null) currentVisits = parseApiList(latestData).filter((visit) => appointmentBelongsToPatient(visit, patient || {}));
+      }
+      if (findPatientBookingConflict(currentVisits, selectedDate, selectedTime)) {
+        throw new Error("You already have an active appointment. Please complete or cancel the current appointment before booking another one.");
+      }
+      const duplicateAppointments = [...currentVisits];
+      const allAppointmentsResponse = await fetch(apiUrl("Appointment"), { headers, cache: "no-store" }).catch(() => null);
       if (allAppointmentsResponse?.ok) {
         const allAppointmentsData = await allAppointmentsResponse.json().catch(() => []);
         duplicateAppointments.push(...parseApiList(allAppointmentsData));
       }
 
       if (
-        hasDuplicateAppointmentForPatientDoctorDate(duplicateAppointments, {
+        hasDuplicateAppointmentForPatientDoctorDate(duplicateAppointments.filter(isActiveAppointmentBooking), {
           patientId,
           patientName,
           phone: patientPhone,

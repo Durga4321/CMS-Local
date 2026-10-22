@@ -12,7 +12,7 @@ import {
   Stethoscope,
   Users,
 } from "lucide-react";
-import { parseList, requestJson } from "./nurseApi";
+import { getNurseAppointments } from "./nurseApi";
 import { getNurseScope, scopeNurseRecords } from "./nurseScope";
 import "./Nurse.css";
 
@@ -130,16 +130,12 @@ function NurseDashboard() {
       setLoading(true);
       setError("");
       try {
-        const results = await Promise.allSettled([
-          requestJson("Appointment"),
-        ]);
-        const rows = dedupeAppointments(
-          results.flatMap((result) => (result.status === "fulfilled" ? parseList(result.value) : []))
-        );
+        const rows = dedupeAppointments(await getNurseAppointments());
         const scopedRows = scopeNurseRecords(rows, nurseScope, {
           allowMissingClinic: false,
           allowMissingBranch: false,
         });
+        if (rows.length && !scopedRows.length) throw new Error("The backend returned appointments, but none could be matched to your assigned hospital and branch. Check the nurse assignment and the hospitalId/branchId fields returned by the appointment API.");
         const todayRows = scopedRows
           .filter((appointment) => isTodayAppointment(appointment))
           .sort((a, b) => String(getAppointmentTime(a)).localeCompare(String(getAppointmentTime(b))));

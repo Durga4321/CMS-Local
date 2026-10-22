@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ReceptionAppointmentList from "../Recepitionist/pages/ReceptionAppointmentList";
-import { getOfflineAppointments, getOnlineAppointments, requestJson as nurseRequestJson } from "../Recepitionist/receptionApi";
+import { getNurseAppointments, requestJson as nurseRequestJson } from "./nurseApi";
 import { getNurseScope, scopeNurseRecords } from "./nurseScope";
 
 function NurseOfflineBookings() {
@@ -27,12 +27,7 @@ function NurseOfflineBookings() {
     // create a new function instance whenever refreshKey changes so the
     // ReceptionAppointmentList effect re-runs and reloads data
     return async () => {
-      const [onlineAppointments, offlineAppointments] = await Promise.all([
-        getOnlineAppointments(),
-        getOfflineAppointments(),
-      ]);
-
-      return scopeNurseRecords([...onlineAppointments, ...offlineAppointments]);
+      return scopeNurseRecords(await getNurseAppointments());
     };
   }, [refreshKey]);
 

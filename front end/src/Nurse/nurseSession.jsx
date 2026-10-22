@@ -2,40 +2,44 @@ import { decodeJwtPayload, getClaim } from "../Recepitionist/receptionSession";
 
 export const NURSE_ROLE = "nurse";
 
-export const getNurseToken = () =>
-  localStorage.getItem("nurseToken") || localStorage.getItem("token") || "";
+const sessionValue = (key) => sessionStorage.getItem(key) || localStorage.getItem(key) || "";
+
+export const getNurseToken = () => sessionValue("nurseToken") || sessionValue("token");
 
 export const getNurseProfile = () => {
   const token = getNurseToken();
   const claims = decodeJwtPayload(token);
-  const email = localStorage.getItem("nurseEmail") || getClaim(claims, "email") || "";
+  const email = sessionValue("nurseEmail") || getClaim(claims, "email") || "";
   const name =
-    localStorage.getItem("nurseName") ||
+    sessionValue("nurseName") ||
     getClaim(claims, "name", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name") ||
     email ||
     "Nurse";
   const hospitalName =
-    localStorage.getItem("hospitalName") ||
-    localStorage.getItem("clinicName") ||
+    sessionValue("hospitalName") ||
+    sessionValue("clinicName") ||
     getClaim(claims, "HospitalName", "hospitalName", "ClinicName", "clinicName") ||
     "";
   const hospitalId =
-    localStorage.getItem("hospitalId") ||
-    localStorage.getItem("clinicId") ||
     getClaim(claims, "HospitalId", "hospitalId", "ClinicId", "clinicId") ||
+    sessionValue("nurseHospitalId") ||
+    sessionValue("hospitalId") ||
+    sessionValue("clinicId") ||
     "";
   const branchName =
-    localStorage.getItem("branchName") ||
-    localStorage.getItem("BranchName") ||
     getClaim(claims, "BranchName", "branchName", "Branch", "branch") ||
+    sessionValue("nurseBranchName") ||
+    sessionValue("branchName") ||
+    sessionValue("BranchName") ||
     "";
   const branchId =
-    localStorage.getItem("branchId") ||
     getClaim(claims, "BranchId", "branchId", "BranchID", "branchID") ||
+    sessionValue("nurseBranchId") ||
+    sessionValue("branchId") ||
     "";
   const id =
-    localStorage.getItem("nurseId") ||
-    localStorage.getItem("userId") ||
+    sessionValue("nurseId") ||
+    sessionValue("userId") ||
     getClaim(claims, "NurseId", "nurseId", "UserId", "userId", "sub") ||
     "";
 
@@ -45,7 +49,7 @@ export const getNurseProfile = () => {
     userId: String(id),
     email,
     name,
-    role: localStorage.getItem("nurseRole") || "Nurse",
+    role: sessionValue("nurseRole") || "Nurse",
     hospitalId: String(hospitalId),
     hospitalName,
     branchName,
@@ -57,8 +61,8 @@ export const isNurseSession = () => {
   const token = getNurseToken();
   const claims = decodeJwtPayload(token);
   const role =
-    localStorage.getItem("nurseRole") ||
-    localStorage.getItem("userRole") ||
+    sessionValue("nurseRole") ||
+    sessionValue("userRole") ||
     getClaim(claims, "role", "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
 
   return String(role || "").toLowerCase() === NURSE_ROLE;
