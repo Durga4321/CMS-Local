@@ -571,6 +571,7 @@ function Consultation() {
   };
 
   const saveConsultation = async () => {
+    if (saving) return null;
     if (!canCreateConsultation) {
       setError("You do not have permission to create consultations.");
       return null;
@@ -592,6 +593,7 @@ function Consultation() {
       setMessage("");
 
       const token = getAuthToken();
+      if (!token) throw new Error("Your doctor session is missing. Sign in again before saving the consultation.");
       const headers = {
         "Content-Type": "application/json",
         "ngrok-skip-browser-warning": "true",
@@ -600,6 +602,9 @@ function Consultation() {
 
       const appointmentId = Number(appointment.appointmentId);
       const patientId = Number(appointment.patientId);
+      if (!Number.isInteger(appointmentId) || appointmentId <= 0 || !Number.isInteger(patientId) || patientId <= 0) {
+        throw new Error("The selected appointment has an invalid appointment or patient ID. Reload it from Appointments before saving.");
+      }
       const chiefComplaints = String(form.complaintsChoice || "").trim();
       const diagnosis = String(form.diagnosis || "").trim();
       const diagnosisTests = joinDiagnosisTests(form.diagnosisTests);
@@ -617,32 +622,33 @@ function Consultation() {
 
       const requestBody = {
         appointmentId,
-        AppointmentId: appointmentId,
         patientId,
-        PatientId: patientId,
         diagnosis,
-        Diagnosis: diagnosis,
         // Backend CreateConsultationDto expects List<string>.
         diagnosisTests: diagnosisTestList,
-        DiagnosisTests: diagnosisTestList,
         clinicalNotes,
-        ClinicalNotes: clinicalNotes,
       };
 
-      let response = await fetch(CONSULTATION_API, {
+      const response = await fetch(CONSULTATION_API, {
         method: "POST",
         headers,
         body: JSON.stringify(requestBody),
       });
 
-      let data = await response.json().catch(() => ({}));
-
+      const responseText = await response.text();
+      let payload = null;
+      try { payload = responseText ? JSON.parse(responseText) : null; } catch { payload = responseText; }
+      const data = payload && typeof payload === "object" ? payload.data || payload : {};
       if (!response.ok) {
-        const validationMessage =
-          data?.errors && typeof data.errors === "object"
-            ? Object.values(data.errors).flat().filter(Boolean).join(" ")
-            : "";
-        throw new Error(data.message || validationMessage || data.title || "Unable to save consultation.");
+        const validationMessage = data.errors && typeof data.errors === "object"
+          ? Object.values(data.errors).flat().filter(Boolean).join(" ") : "";
+        const plainMessage = typeof payload === "string" && !/^\s*</.test(payload) ? payload.trim().slice(0, 600) : "";
+        const fallback = response.status === 401 ? "Your doctor session expired. Sign in again."
+          : response.status === 403 ? "Your doctor account is not permitted to save this consultation."
+          : response.status === 404 ? "The consultation endpoint or selected appointment was not found for this doctor."
+          : response.status >= 500 ? "The backend failed while saving the consultation. Check the backend logs for this request."
+          : "The backend rejected the consultation. Check the appointment and required fields.";
+        throw new Error(`Consultation save failed (HTTP ${response.status}): ${data.message || data.Message || validationMessage || data.detail || data.title || plainMessage || fallback}`);
       }
 
       const updatedStatus = "Prescription Added";

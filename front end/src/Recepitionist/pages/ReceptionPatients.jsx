@@ -457,12 +457,9 @@ function ReceptionPatients({
         setPatients(
           parseList(data)
             .filter((patient) => !isDeletedPatient(patient))
-            .filter((patient) => patientBelongsToReceptionistPatientList(
-              patient,
-              new Set(),
-              new Set(),
-              receptionistScope
-            ))
+            .filter((patient) => scopeRecords !== scopeReceptionistRecords
+              ? scopeRecords([patient], receptionistScope).length > 0
+              : patientBelongsToReceptionistPatientList(patient, new Set(), new Set(), receptionistScope))
         );
         setMessage("");
       })
@@ -471,7 +468,7 @@ function ReceptionPatients({
         setMessage(error.message);
         toast.error(error.message || "Unable to load patients.");
       }),
-  [receptionistScope, toast, apiRequest]);
+  [receptionistScope, toast, apiRequest, scopeRecords]);
 
   useEffect(() => {
     fetchPatients();

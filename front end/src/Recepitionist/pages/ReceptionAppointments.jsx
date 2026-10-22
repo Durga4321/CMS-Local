@@ -653,7 +653,7 @@ const printConsultationReceipt = ({
   return true;
 };
 
-function ReceptionAppointments({ hideActions = false }) {
+function ReceptionAppointments({ hideActions = false, apiRequest = requestJson, scopeRecords = scopeReceptionistRecords }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const toast = useToast();
@@ -701,10 +701,10 @@ function ReceptionAppointments({ hideActions = false }) {
     setDoctorLoadMessage("");
 
     const doctorRequest = receptionistBranchId
-      ? requestJson(`Doctor/branch/${encodeURIComponent(receptionistBranchId)}`)
+      ? apiRequest(`Doctor/branch/${encodeURIComponent(receptionistBranchId)}`)
           .then((data) => ({ data, error: "", source: "branch" }))
           .catch((error) =>
-            requestJson("Doctor")
+            apiRequest("Doctor")
               .then((data) => ({
                 data,
                 error:
@@ -721,7 +721,7 @@ function ReceptionAppointments({ hideActions = false }) {
                 source: "fallback",
               }))
           )
-      : requestJson("Doctor")
+      : apiRequest("Doctor")
           .then((data) => ({ data, error: "", source: "all" }))
           .catch((error) => ({
             data: [],
@@ -730,12 +730,12 @@ function ReceptionAppointments({ hideActions = false }) {
           }));
 
     Promise.all([
-      requestJson("Patient").catch(() => []),
+      apiRequest("Patient").catch(() => []),
       doctorRequest,
-      requestJson("Doctor").catch(() => []),
-      requestJson("Appointment").catch(() => []),
-      requestJson("Appointment/offline").catch(() => []),
-      requestJson("Appointment/online").catch(() => []),
+      apiRequest("Doctor").catch(() => []),
+      apiRequest("Appointment").catch(() => []),
+      apiRequest("Appointment/offline").catch(() => []),
+      apiRequest("Appointment/online").catch(() => []),
     ]).then(([patientData, doctorResult, allDoctorData, appointmentData, offlineAppointmentData, onlineAppointmentData]) => {
       const scope = {
         clinicId: receptionistHospitalId,
@@ -747,7 +747,7 @@ function ReceptionAppointments({ hideActions = false }) {
         ...parseList(offlineAppointmentData),
         ...parseList(onlineAppointmentData),
       ];
-      const scopedAppointments = scopeReceptionistRecords(appointmentRecords, scope);
+      const scopedAppointments = scopeRecords(appointmentRecords, scope);
       const branchPatientIds = new Set(
         scopedAppointments
           .map(getAppointmentPatientId)
@@ -824,7 +824,7 @@ function ReceptionAppointments({ hideActions = false }) {
           : String(getDoctorId(nextDoctors[0]) || ""),
       }));
     });
-  }, [receptionistBranchId, receptionistBranchName, receptionistHospitalId, requestedPatientId]);
+  }, [receptionistBranchId, receptionistBranchName, receptionistHospitalId, requestedPatientId, apiRequest, scopeRecords]);
 
   useEffect(() => {
     refresh();
@@ -1022,7 +1022,7 @@ function ReceptionAppointments({ hideActions = false }) {
 
       for (const path of slotPaths) {
         try {
-          const data = await requestJson(path);
+          const data = await apiRequest(path);
           const slots = parseSlots(data).filter((slot) => {
             const slotScopeIds = getSlotScopeIds(slot);
           return !slotScopeIds.length || slotScopeIds.includes(receptionistBranchId) || slotScopeIds.includes(receptionistHospitalId);
@@ -1046,7 +1046,7 @@ function ReceptionAppointments({ hideActions = false }) {
         setSelectedSlot("");
       })
       .finally(() => setSlotLoading(false));
-  }, [form.doctorId, form.date, receptionistBranchId, selectedDoctor, scheduleSettingsVersion]);
+  }, [form.doctorId, form.date, receptionistBranchId, selectedDoctor, scheduleSettingsVersion, apiRequest]);
 
   const validateBookingForm = () => {
     if (!form.patientId || !form.doctorId || !selectedSlot) {
@@ -1157,7 +1157,7 @@ function ReceptionAppointments({ hideActions = false }) {
     try {
       setBookingLoading(true);
       console.debug("Booking payload", { selectedDoctor, branchIdForAppointment, body });
-      const savedAppointment = await requestJson("Appointment", { method: "POST", body: JSON.stringify(body) });
+      const savedAppointment = await apiRequest("Appointment", { method: "POST", body: JSON.stringify(body) });
       const receiptData = {
         appointment: { ...body, ...(savedAppointment || {}) },
         patient: selectedPatient,
