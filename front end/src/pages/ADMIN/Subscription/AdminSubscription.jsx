@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "./AdminSubscription.css";
 import { CheckCircle2, RefreshCw } from "lucide-react";
 import Header from "../../../components/superadmin/Header";
 import DataTable from "../../../components/superadmin/DataTable";
@@ -226,7 +227,7 @@ export default function AdminSubscription() {
     ["Payment option", subscription.paymentMethod],
     ["Record source", subscription.source],
   ] : [];
-  return <>
+  return <div className="admin-subscription-page">
     <Header title="Subscription Details" action={<button type="button" className="sa-btn" title="Refresh subscription" aria-label="Refresh subscription" disabled={loading} onClick={() => setRefresh((value) => value + 1)}><RefreshCw size={16} /></button>} />
     {error && <div className="sa-state sa-state--error" role="alert">{error}</div>}
     {loading ? <div className="sa-state">Loading...</div> : subscription ? <section className="sa-form-card">
@@ -289,5 +290,5 @@ export default function AdminSubscription() {
         ) },
       ]} rows={renewals} loading={renewalLoading} emptyMessage="No renewal history found." />
     </section>
-  </>;
+  </div>;
 }

@@ -80,3 +80,39 @@
 .phb-items .phb-prescribed-name { display: block; white-space: normal; line-height: 1.5; color: #1e3a5f; }
 
 .phb-bill-notice { padding: 16px 18px; border: 1px solid #bae6fd; border-radius: 12px; background: #f0f9ff; color: #075985; font-size: 13px; line-height: 1.6; }
+
+.phb-row-history { padding: 16px 20px; border: 1px solid #dbe7f3; border-radius: 14px; background: #f7f9fc; }
+
+.phb-row-history h4 { text-align: left; }
+
+/* Keep the expanded history visually attached to its patient bill. */
+.phb-ledger .phb-table .phb-history-owner > td {
+  background: #f0fdfa;
+  border-top: 2px solid #14b8a6;
+  border-bottom: 0;
+}
+.phb-ledger .phb-table .phb-history-owner > td:first-child {
+  border-left: 2px solid #14b8a6;
+}
+.phb-ledger .phb-table .phb-history-owner > td:last-child {
+  border-right: 2px solid #14b8a6;
+}
+.phb-ledger .phb-table .phb-history-expansion > td {
+  padding: 0 16px 16px;
+  text-align: left;
+  background: #f0fdfa;
+  border: 2px solid #14b8a6;
+  border-top: 0;
+}
+.phb-ledger .phb-row-history h4 { margin: 0 0 12px; text-align: left; }
+.phb-ledger .phb-table .phb-bill-expansion > td {
+  padding: 0 16px 16px;
+  text-align: left;
+  background: #f0fdfa;
+  border: 2px solid #14b8a6;
+  border-top: 0;
+}
+.phb-bill-expansion .phb-saved-detail { margin: 0; }
+.phb-ledger-actions { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.phb-ledger-actions .phb-button { min-height: 32px; padding: 6px 9px; gap: 5px; border-radius: 7px; font-size: 11px; }
+.phb-ledger-actions .phb-button svg { width: 14px; height: 14px; }

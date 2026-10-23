@@ -697,6 +697,13 @@ function ReceptionAppointments({ hideActions = false, apiRequest = requestJson, 
     chiefComplaints: "",
   });
 
+  useEffect(() => {
+    if (message !== "Payment received. Appointment booked successfully.") return undefined;
+
+    const timeoutId = window.setTimeout(() => setMessage(""), 4000);
+    return () => window.clearTimeout(timeoutId);
+  }, [message]);
+
   const refresh = useCallback(() => {
     setDoctorLoadMessage("");
 
@@ -1732,7 +1739,6 @@ function ReceptionAppointments({ hideActions = false, apiRequest = requestJson, 
 }
 
 export default ReceptionAppointments;
-
 
 
 
