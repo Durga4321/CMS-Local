@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { Boxes, ClipboardList, LayoutDashboard, Package, ReceiptText, X } from "lucide-react";
+import { Boxes, ClipboardList, LayoutDashboard, Package, ReceiptText } from "lucide-react";
 import { getClinicDisplayName } from "../utils/clinicDisplay";
 import { getDefaultClinicLogo, useClinicInvoiceBranding } from "../utils/clinicBranding";
 import { getPharmacistProfile } from "./pharmacySession";
@@ -26,7 +26,6 @@ function PharmacySidebar({ onNavigate }) {
       <div className="pharmacy-brand">
         <span className="pharmacy-brand-icon"><img src={branding.logoUrl || fallbackLogo} alt={clinicName + " logo"} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallbackLogo; }} /></span>
         <div><strong title={clinicName}>{clinicName}</strong><span>Pharmacy Console</span></div>
-        <button type="button" className="pharmacy-sidebar-close" aria-label="Close navigation" onClick={onNavigate}><X size={18} /></button>
       </div>
       <div className="pharmacy-section-label">PHARMACY WORKSPACE</div>
       <nav className="pharmacy-nav" aria-label="Pharmacy navigation">

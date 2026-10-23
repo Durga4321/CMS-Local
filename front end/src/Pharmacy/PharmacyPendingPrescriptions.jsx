@@ -331,7 +331,6 @@ function PharmacyPendingPrescriptions() {
                   <th>Dosage</th>
                   <th>Prescribed quantity</th>
                   <th>Available stock</th>
-                  <th>Availability</th>
                 </tr>
               </thead>
               <tbody>
@@ -340,19 +339,17 @@ function PharmacyPendingPrescriptions() {
                     const name = getPrescriptionValue(medicine, "medicineName", "MedicineName", "name", "Name", "medicine.name", "Medicine.Name");
                     const quantity = getPrescriptionValue(medicine, "prescribedQuantity", "PrescribedQuantity", "quantity", "Quantity", "qty", "Qty");
                     const stock = getPrescriptionValue(medicine, "availableQuantity", "AvailableQuantity", "availableStock", "AvailableStock", "stockQuantity", "StockQuantity", "quantityAvailable", "QuantityAvailable");
-                    const availability = getPrescriptionValue(medicine, "availability", "Availability", "stockStatus", "StockStatus", "status", "Status");
                     return (
                       <tr key={medicine.id ?? medicine.Id ?? index}>
                         <td><strong>{name}</strong></td>
                         <td>{getPrescriptionValue(medicine, "dosage", "Dosage", "frequency", "Frequency")}</td>
                         <td>{quantity}</td>
                         <td>{stock}</td>
-                        <td>{availability}</td>
                       </tr>
                     );
                   })
                 ) : (
-                  <tr><td colSpan="5">No medicine availability details were returned for this prescription.</td></tr>
+                  <tr><td colSpan="4">No medicine availability details were returned for this prescription.</td></tr>
                 )}
               </tbody>
             </table>

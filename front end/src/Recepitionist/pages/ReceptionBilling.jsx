@@ -14,6 +14,7 @@ import {
   ThreeButtonActionBar,
 } from "../../components/OpBillingUi";
 import { parseList, requestJson } from "../receptionApi";
+import { unwrapBillingResponse, billingPaymentStatus } from "../../utils/billingPayment.mjs";
 import { getReceptionistProfile } from "../receptionSession";
 import { getNurseProfile } from "../../Nurse/nurseSession";
 import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
@@ -891,7 +892,7 @@ const startBillingPayment = async (bill, paymentMode) => {
 
   return requestJson(API_ENDPOINTS.billing.payment.replace("{billId}", encodeURIComponent(String(billId))), {
     method: "PATCH",
-    body: JSON.stringify({ paymentMethod: String(paymentMode || "Cash").trim() }),
+    body: JSON.stringify({ paymentMode: String(paymentMode || "Cash").trim() }),
   });
 };
 
@@ -1665,6 +1666,8 @@ function ReceptionBilling() {
   const [pharmacyRows, setPharmacyRows] = useState([]);
   const [pharmacyPrescriptionLoading, setPharmacyPrescriptionLoading] = useState(false);
   const [recentServiceBills, setRecentServiceBills] = useState(() => readScopedRecentServiceBills(receptionistScope));
+  const paymentInFlight = useRef(false);
+  const [recordingPaymentId, setRecordingPaymentId] = useState("");
   const [paymentHistoryByBill, setPaymentHistoryByBill] = useState({});
   const [paymentHistoryLoadingId, setPaymentHistoryLoadingId] = useState("");
   const [paymentHistoryErrorByBill, setPaymentHistoryErrorByBill] = useState({});
@@ -1690,11 +1693,12 @@ function ReceptionBilling() {
 
     const loadBillingData = async () => {
       try {
-        const [appointmentsResult, invoicesResult] = await Promise.allSettled([
+        const [appointmentsResult, invoicesResult, patientsResult] = await Promise.allSettled([
           fetchBillingAppointments(),
           Promise.allSettled(BILLING_API_PATHS.map((path) => requestJson(path))),
+          requestJson("Patient"),
         ]);
-        const patientsData = await requestJson("Patient").catch(() => []);
+        const patientsData = patientsResult.status === "fulfilled" ? patientsResult.value : [];
 
         const appointmentsResultData =
           appointmentsResult.status === "fulfilled" ? appointmentsResult.value : [];
@@ -1752,7 +1756,7 @@ function ReceptionBilling() {
         }));
         setInvoice(latestInvoice);
         const syncedRecentBills = await syncRecentServiceBillsToBackend(receptionistScope);
-        setRecentServiceBills(mergeRecentServiceBills(scopedInvoices, syncedRecentBills));
+        setRecentServiceBills(mergeRecentServiceBills(syncedRecentBills, scopedInvoices));
       } catch (error) {
         setMessage(error.message);
         setMessageType("error");
@@ -2172,19 +2176,9 @@ function ReceptionBilling() {
     const data = responseData.data && typeof responseData.data === "object" ? responseData.data : {};
     const result = responseData.result && typeof responseData.result === "object" ? responseData.result : {};
     const payment = firstValue(responseData.payment, data.payment, result.payment, responseData.Payment, data.Payment, result.Payment) || {};
-    const billData = firstValue(responseData.bill, data.bill, result.bill, responseData.Bill, data.Bill, result.Bill, data, result, responseData) || {};
-    const paymentMode = firstValue(payment.paymentMode, payment.PaymentMode, payment.method, payment.Method, billData.paymentMode, billData.PaymentMode, fallbackMode, bill.paymentMode, bill.PaymentMode);
-    const rawStatus = firstValue(
-      payment.paymentStatus,
-      payment.PaymentStatus,
-      payment.status,
-      payment.Status,
-      billData.paymentStatus,
-      billData.PaymentStatus,
-      billData.status,
-      billData.Status,
-      String(paymentMode || "").toLowerCase() === "cash" ? "Paid" : "Pending"
-    );
+    const billData = unwrapBillingResponse(response);
+    const paymentMode = firstValue(billData.paymentMethod, billData.PaymentMethod, billData.paymentMode, billData.PaymentMode, payment.paymentMethod, payment.PaymentMethod, payment.paymentMode, payment.PaymentMode, payment.method, payment.Method, fallbackMode, bill.paymentMode, bill.PaymentMode);
+    const rawStatus = billingPaymentStatus(response) || billingPaymentStatus(bill) || "Pending";
     const normalizedStatus = String(rawStatus || "Pending").trim();
     const isPaid = normalizedStatus.toLowerCase() === "paid";
     const paidDate = firstValue(payment.paidDate, payment.PaidDate, payment.completedAt, billData.paidDate, billData.PaidDate, isPaid ? new Date().toISOString() : "");
@@ -2215,9 +2209,16 @@ function ReceptionBilling() {
   const applyBillPayment = async (bill, paymentMode) => {
     try {
       const paymentResponse = await startBillingPayment(bill, paymentMode);
-      const nextBill = mergePaymentResponse(bill, paymentResponse, paymentMode);
+      // PATCH records the collected payment without a gateway; GET confirms persisted status.
+      const confirmedResponse = await getBillingPaymentStatus(bill);
+      const nextBill = mergePaymentResponse(
+        mergePaymentResponse(bill, paymentResponse, paymentMode), confirmedResponse, paymentMode
+      );
+      if (billingPaymentStatus(confirmedResponse).toLowerCase() !== "paid") {
+        throw new Error("Bill saved, but the API has not confirmed Paid status. Refresh the saved bill before retrying payment.");
+      }
       const nextStoredBills = storeRecentServiceBill(nextBill);
-      setRecentServiceBills((prev) => mergeRecentServiceBills([nextBill], nextStoredBills, prev));
+      setRecentServiceBills((prev) => mergeRecentServiceBills(prev, nextStoredBills, [nextBill]));
       return nextBill;
     } catch (error) {
       const fallbackStatus = "Pending";
@@ -2229,10 +2230,48 @@ function ReceptionBilling() {
         Status: bill.Status || fallbackStatus,
       };
       const nextStoredBills = storeRecentServiceBill(fallbackBill);
-      setRecentServiceBills((prev) => mergeRecentServiceBills([fallbackBill], nextStoredBills, prev));
-      showMessage(error.message || "Bill saved, but payment confirmation could not be started.", "error");
+      setRecentServiceBills((prev) => mergeRecentServiceBills(prev, nextStoredBills, [fallbackBill]));
+      setForm((prev) => ({ ...prev, appointmentId: "" }));
+      setEditingBill(null);
+      setInvoice(fallbackBill);
+      storeLatestInvoice(fallbackBill);
+      showMessage(error.message || "Bill saved, but payment could not be confirmed. Refresh the saved bill before retrying.", "error");
       toast.error(error.message || "Bill saved, but payment confirmation could not be started.");
-      return fallbackBill;
+      return null;
+    }
+  };
+
+  const recordExistingBillPayment = async (bill) => {
+    if (paymentInFlight.current || !canCreateBill) return;
+    const billId = getBillingPaymentBillId(bill);
+    if (!billId) return;
+    const mode = bill.paymentMode || bill.PaymentMode || bill.paymentMethod || "Cash";
+    if (!window.confirm(`Confirm you have received ${formatCurrency(getSavedBillAmount(bill, 0))} via ${mode} for ${bill.billNumber || bill.invoiceNo || billId}?`)) return;
+    paymentInFlight.current = true;
+    setRecordingPaymentId(String(billId));
+    try {
+      const response = await getBillingPaymentStatus(bill);
+      const freshBill = mergePaymentResponse(bill, response, mode);
+      const paidBill = billingPaymentStatus(response).toLowerCase() === "paid"
+        ? freshBill : await applyBillPayment(freshBill, mode);
+      if (!paidBill) return;
+      const storedBills = storeRecentServiceBill(paidBill);
+      setRecentServiceBills((prev) => mergeRecentServiceBills(prev, storedBills, [paidBill]));
+      setInvoice(paidBill);
+      storeLatestInvoice(paidBill);
+      setPaymentHistoryByBill((current) => {
+        const next = { ...current };
+        delete next[String(billId)];
+        return next;
+      });
+      showMessage("Payment recorded. The bill is Paid.", "success", { autoHide: true });
+      toast.success("Payment recorded. The bill is Paid.");
+    } catch (error) {
+      showMessage(error.message || "Unable to record payment.", "error");
+      toast.error(error.message || "Unable to record payment.");
+    } finally {
+      paymentInFlight.current = false;
+      setRecordingPaymentId("");
     }
   };
 
@@ -2241,7 +2280,7 @@ function ReceptionBilling() {
       const response = await getBillingPaymentStatus(bill);
       const nextBill = mergePaymentResponse(bill, response, bill.paymentMode || bill.PaymentMode);
       const nextStoredBills = storeRecentServiceBill(nextBill);
-      setRecentServiceBills((prev) => mergeRecentServiceBills([nextBill], nextStoredBills, prev));
+      setRecentServiceBills((prev) => mergeRecentServiceBills(prev, nextStoredBills, [nextBill]));
       if (String(getInvoiceId(invoice)) === String(getInvoiceId(nextBill))) {
         setInvoice(nextBill);
         storeLatestInvoice(nextBill);
@@ -2414,7 +2453,7 @@ function ReceptionBilling() {
       const response = canUpdate
         ? await updateBillingBill(editingBill, payload)
         : await createServiceBill(details, payload);
-      savedInvoice = Array.isArray(response) ? response[0] || {} : response?.data || response || {};
+      savedInvoice = unwrapBillingResponse(Array.isArray(response) ? response[0] : response);
       if (details.type === "pharmacy") {
         const backendRows = normalizeServiceBillRows(savedInvoice, "pharmacy");
         if (backendRows.length) details.rows = backendRows;
@@ -2480,6 +2519,7 @@ function ReceptionBilling() {
         backendSynced: true,
       };
       const paymentInvoiceShape = await applyBillPayment(invoiceShape, details.paymentMode);
+      if (!paymentInvoiceShape) return false;
       setInvoice(paymentInvoiceShape);
       storeLatestInvoice(paymentInvoiceShape);
       if (details.type === "diagnostic") {
@@ -2674,7 +2714,7 @@ function ReceptionBilling() {
             body: JSON.stringify(body),
           });
 
-      const invoiceData = Array.isArray(data) ? data[0] : data;
+      const invoiceData = unwrapBillingResponse(Array.isArray(data) ? data[0] : data);
       const fallbackOpInvoiceNo = createInvoiceNo("OP");
       const opInvoiceNo =
         invoiceData?.invoiceNo ||
@@ -2733,6 +2773,10 @@ function ReceptionBilling() {
         backendSynced: true,
       };
       const paidNextInvoice = await applyBillPayment(nextInvoice, paymentMode);
+      if (!paidNextInvoice) {
+        if (invoiceWindow) invoiceWindow.close();
+        return;
+      }
       setInvoice(paidNextInvoice);
       storeLatestInvoice(paidNextInvoice);
       setEditingBill(null);
@@ -3828,6 +3872,19 @@ function ReceptionBilling() {
                       <b className="rc-bill-amount-text">{formatCurrency(amount)}</b>
                     </div>
                     <div className="rc-latest-bill-actions">
+                      {rawStatus.toLowerCase() === "pending" && canCreateBill && paymentHistoryKey && (
+                        <button
+                          type="button"
+                          className="rc-payment-refresh-btn"
+                          onClick={() => recordExistingBillPayment(bill)}
+                          disabled={Boolean(recordingPaymentId)}
+                          title="Record collected payment"
+                          aria-label="Record collected payment"
+                        >
+                          <CreditCard size={14} />
+                          {recordingPaymentId === paymentHistoryKey ? "Recording..." : "Record payment"}
+                        </button>
+                      )}
                       <button
                         type="button"
                         className="rc-payment-refresh-btn"
