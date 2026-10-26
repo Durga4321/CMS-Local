@@ -1,4 +1,4 @@
-﻿.pharmacy-billing-page { display: grid; gap: 22px; color: #17243b; }
+.pharmacy-billing-page { display: grid; gap: 22px; color: #17243b; }
 .phb-page-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .phb-page-head > div > span { color: #0f766e; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
 .phb-page-head h2 { margin: 7px 0; font-size: 25px; font-weight: 800; letter-spacing: -.5px; }
@@ -104,7 +104,7 @@
   border: 2px solid #14b8a6;
   border-top: 0;
 }
-.phb-ledger .phb-row-history h4 { margin: 0 0 12px; text-align: left; }
+.phb-ledger .phb-row-history h4 { margin: 0 0 12px; text-align: left !important; }
 .phb-ledger .phb-table .phb-bill-expansion > td {
   padding: 0 16px 16px;
   text-align: left;
@@ -114,5 +114,5 @@
 }
 .phb-bill-expansion .phb-saved-detail { margin: 0; }
 .phb-ledger-actions { display: flex; align-items: center; justify-content: center; gap: 6px; }
-.phb-ledger-actions .phb-button { min-height: 32px; padding: 6px 9px; gap: 5px; border-radius: 7px; font-size: 11px; }
+.phb-ledger .phb-ledger-actions .phb-button { min-height: 32px !important; height: 32px !important; padding: 6px 9px !important; gap: 5px; border-radius: 7px; font-size: 11px !important; line-height: 18px; }
 .phb-ledger-actions .phb-button svg { width: 14px; height: 14px; }
