@@ -178,6 +178,11 @@ export const API_ENDPOINTS = {
     pendingPrescriptions: "pharmacy/prescriptions/pending",
     prescriptionById: "pharmacy/prescriptions/{id}",
     dispensePrescription: "pharmacy/prescriptions/{id}/dispense",
+    updateDispensingQuantities: "pharmacy/prescriptions/{id}/dispense/quantities",
+    appointmentDispensedMedicines: "Billing/appointments/{appointmentId}/dispensed-medicines",
+    createOtcSaleDraft: "pharmacy/otc-sales/draft",
+    otcSaleById: "pharmacy/otc-sales/{id}",
+    confirmOtcSale: "pharmacy/otc-sales/{id}/confirm",
   },
   roles: {
     admins: "roles/admins",
