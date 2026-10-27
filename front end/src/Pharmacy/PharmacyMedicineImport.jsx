@@ -42,6 +42,8 @@ const getMedicineValue = (medicine, ...keys) => {
 function PharmacyMedicineImport({ stockOnly = false }) {
   const toast = useToast();
   const fileInput = useRef(null);
+  const catalogueScrollRef = useRef(null);
+  const catalogueScrollbarRef = useRef(null);
   const [showAdd, setShowAdd] = useState(false);
   const [draft, setDraft] = useState({});
   const [isExporting, setIsExporting] = useState(false);
@@ -120,6 +122,7 @@ function PharmacyMedicineImport({ stockOnly = false }) {
     const extra = [...new Set(medicines.flatMap(Object.keys))].filter((key) => !known.has(key));
     return [...medicineColumns, ...extra.map((key) => [key, key.replace(/([a-z])([A-Z])/g, "$1 $2")])];
   }, [medicines]);
+  const tableColumns = displayColumns.filter(([key]) => key.toLowerCase() !== "id");
 
   const handleFileChange = (event) => {
     const selected = event.target.files?.[0] || null;
@@ -232,23 +235,42 @@ function PharmacyMedicineImport({ stockOnly = false }) {
           />
         </label>
 
-        <div className="pharmacy-catalogue-scroll">
+        <div
+          ref={catalogueScrollbarRef}
+          className="pharmacy-catalogue-horizontal-scroll"
+          role="region"
+          aria-label="Horizontal scroll for medicine table"
+          tabIndex={0}
+          onScroll={(event) => {
+            if (catalogueScrollRef.current) catalogueScrollRef.current.scrollLeft = event.currentTarget.scrollLeft;
+          }}
+        >
+          <div className="pharmacy-catalogue-horizontal-scroll-content" aria-hidden="true" />
+        </div>
+
+        <div
+          ref={catalogueScrollRef}
+          className="pharmacy-catalogue-scroll"
+          onScroll={(event) => {
+            if (catalogueScrollbarRef.current) catalogueScrollbarRef.current.scrollLeft = event.currentTarget.scrollLeft;
+          }}
+        >
           <table className="pharmacy-catalogue-table">
             <thead>
               <tr>
-                {displayColumns.map(([key, label]) => <th key={key}>{label}</th>)}
+                {tableColumns.map(([key, label]) => <th key={key}>{label}</th>)}
               </tr>
             </thead>
             <tbody>
               {isLoadingMedicines ? (
-                <tr><td colSpan={displayColumns.length}>Loading medicines...</td></tr>
+                <tr><td colSpan={tableColumns.length}>Loading medicines...</td></tr>
               ) : medicinesError ? (
-                <tr><td colSpan={displayColumns.length}>Unable to display the catalogue. See the error above.</td></tr>
+                <tr><td colSpan={tableColumns.length}>Unable to display the catalogue. See the error above.</td></tr>
               ) : filteredMedicines.length === 0 ? (
-                <tr><td colSpan={displayColumns.length}>{search ? "No medicines match your search." : "No medicines found in the catalogue."}</td></tr>
+                <tr><td colSpan={tableColumns.length}>{search ? "No medicines match your search." : "No medicines found in the catalogue."}</td></tr>
               ) : filteredMedicines.map((medicine, index) => (
                 <tr key={index}>
-                  {displayColumns.map(([key]) => (
+                  {tableColumns.map(([key]) => (
                     <td key={key}>{getMedicineValue(medicine, key)}</td>
                   ))}
                 </tr>
