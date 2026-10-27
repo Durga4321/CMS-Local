@@ -4487,61 +4487,121 @@ function PatientPrescriptionsPage({ prescriptions = [], patient = null, visits =
   const downloadPrescription = async (url, prescription = null) => {
     const latestPrescription = prescription ? await fetchPrescriptionById(prescription) : null;
     const latestUrl = getDownloadUrl(latestPrescription) || url;
-    // Primary: download existing URL
+    // Display existing PDF documents in the current tab.
     if (latestUrl) {
       try {
         const response = await fetch(latestUrl, { headers: getApiHeaders(), mode: 'cors' });
         if (!response.ok) throw new Error('Unable to download prescription.');
         const blob = await response.blob();
-        const filename = getFileNameFromUrl(latestUrl);
-        const objectUrl = URL.createObjectURL(blob);
-        const anchor = document.createElement('a');
-        anchor.href = objectUrl;
-        anchor.download = filename;
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-        URL.revokeObjectURL(objectUrl);
+        const objectUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+        window.location.assign(objectUrl);
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
         return;
-      } catch (error) {
-        // fallback to opening in new tab
-        try { window.open(latestUrl, '_blank', 'noopener,noreferrer'); return; } catch (e) {}
+      } catch {
+        try {
+          window.location.assign(latestUrl);
+          return;
+        } catch {
+          toast.error('Unable to open the prescription PDF.');
+          return;
+        }
       }
     }
 
-    // Fallback: generate printable HTML and open print dialog so user can save as PDF
+    // Fallback: print the prescription in the current tab without replacing the app page.
     if (latestPrescription) {
       try {
+        const diagnosis = readFirst(latestPrescription, ['diagnosis', 'condition', 'title']) || '';
+        const doctor = readFirst(latestPrescription, ['doctorName', 'doctor.name', 'prescribedBy']) || '';
         const html = `
-          <html>
+          <!doctype html>
+          <html lang="en">
             <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
               <title>Prescription</title>
-              <style>body{font-family: Arial, sans-serif; padding:20px;}</style>
+              <style>
+                *{box-sizing:border-box}
+                body{margin:0;padding:32px;background:#f1f5f9;color:#17243b;font:15px/1.55 Arial,sans-serif}
+                .page{max-width:820px;margin:0 auto;padding:40px;border:1px solid #e2e8f0;border-radius:20px;background:#fff;box-shadow:0 18px 48px rgba(15,23,42,.1)}
+                .header{display:flex;align-items:center;gap:14px;padding-bottom:22px;border-bottom:1px solid #e2e8f0}
+                .mark{display:grid;width:44px;height:44px;place-items:center;border-radius:14px;background:#0f766e;color:#fff;font-size:20px;font-weight:800}
+                .brand{color:#0f766e;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+                .header h1{margin:3px 0 0;font-size:20px}
+                .tag{margin-left:auto;padding:7px 12px;border:1px solid #99f6e4;border-radius:999px;background:#f0fdfa;color:#0f766e;font-size:12px;font-weight:700}
+                .intro{padding:28px 0 20px}
+                .eyebrow{margin:0 0 5px;color:#64748b;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+                .intro h2{margin:0;color:#17243b;font-size:28px;line-height:1.2}
+                .intro p{margin:8px 0 0;color:#64748b}
+                .details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:28px}
+                .detail{min-width:0;padding:16px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}
+                .detail span{display:block;margin-bottom:6px;color:#64748b;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+                .detail strong{display:block;overflow-wrap:anywhere;color:#17243b;font-size:15px}
+                .section-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px}
+                .section-heading h3{margin:0;font-size:17px}
+                .section-heading span{color:#64748b;font-size:12px}
+                .medicines{overflow:hidden;border:1px solid #dbe4ed;border-radius:14px}
+                .medicine{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,.7fr) minmax(180px,1fr);gap:16px;padding:14px 16px}
+                .medicine + .medicine{border-top:1px solid #e8edf3}
+                .medicine:nth-child(even){background:#f8fafc}
+                .medicine span{overflow-wrap:anywhere;color:#475569}
+                .medicine strong{overflow-wrap:anywhere;color:#17243b}
+                .table-head{background:#f1f5f9;color:#64748b;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+                .footer{margin-top:24px;padding-top:14px;border-top:1px solid #e2e8f0;color:#64748b;font-size:11px}
+                @media(max-width:600px){body{padding:12px}.page{padding:22px 18px;border-radius:14px}.details{grid-template-columns:1fr}.medicine{grid-template-columns:1fr;gap:5px}.tag{font-size:10px}}
+                @media print{body{padding:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{max-width:none;padding:0;border:0;border-radius:0;box-shadow:none}.medicine{break-inside:avoid}}
+              </style>
             </head>
             <body>
-              <h2>Prescription</h2>
-              <p><strong>Diagnosis:</strong> ${escapeHtml(readFirst(latestPrescription, ['diagnosis', 'condition', 'title']) || '')}</p>
-              <p><strong>Doctor:</strong> ${escapeHtml(readFirst(latestPrescription, ['doctorName','doctor.name','prescribedBy']) || '')}</p>
-              <h3>Medicines</h3>
-              <ul>
-                ${getMedicineList(latestPrescription)
-                  .map(m => `<li><strong>${escapeHtml(m.name)}</strong> - ${escapeHtml(m.dosage)} - ${escapeHtml(m.instructions)}</li>`)
-                  .join('')}
-              </ul>
+              <main class="page">
+                <header class="header">
+                  <div class="mark" aria-hidden="true">+</div>
+                  <div><div class="brand">Patient care</div><h1>Prescription</h1></div>
+                  <span class="tag">Medical record</span>
+                </header>
+                <section class="intro">
+                  <p class="eyebrow">Treatment details</p>
+                  <h2>${escapeHtml(diagnosis || 'Prescription details')}</h2>
+                  <p>Keep this record for reference and follow your doctor's instructions.</p>
+                </section>
+                <section class="details" aria-label="Prescription details">
+                  <div class="detail"><span>Diagnosis</span><strong>${escapeHtml(diagnosis || '—')}</strong></div>
+                  <div class="detail"><span>Doctor</span><strong>${escapeHtml(doctor || '—')}</strong></div>
+                </section>
+                <section>
+                  <div class="section-heading"><h3>Medicines</h3><span>Prescribed instructions</span></div>
+                  <div class="medicines">
+                    <div class="medicine table-head"><span>Medicine</span><span>Dosage</span><span>Instructions</span></div>
+                    ${getMedicineList(latestPrescription)
+                      .map(m => `<div class="medicine"><strong>${escapeHtml(m.name)}</strong><span>${escapeHtml(m.dosage || '—')}</span><span>${escapeHtml(m.instructions || '—')}</span></div>`)
+                      .join('')}
+                  </div>
+                </section>
+                <footer class="footer">This prescription is provided for your personal medical reference.</footer>
+              </main>
             </body>
           </html>`;
 
-        const win = window.open('', '_blank');
-        if (!win) return;
-        win.document.open();
-        win.document.write(html);
-        win.document.close();
-        // Ask user to print/save as PDF
-        win.focus();
-        setTimeout(() => { try { win.print(); } catch (e) {} }, 500);
+        const frame = window.document.createElement('iframe');
+        frame.title = 'Prescription print preview';
+        frame.setAttribute('aria-hidden', 'true');
+        frame.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+        frame.onload = () => {
+          const printWindow = frame.contentWindow;
+          if (!printWindow) {
+            frame.remove();
+            toast.error('Unable to prepare the prescription PDF.');
+            return;
+          }
+          printWindow.addEventListener('afterprint', () => frame.remove(), { once: true });
+          printWindow.focus();
+          printWindow.print();
+        };
+        frame.srcdoc = html;
+        window.document.body.appendChild(frame);
         return;
-      } catch (e) {
-        // ignore and fall through
+      } catch {
+        toast.error('Unable to prepare the prescription PDF.');
       }
     }
   };
@@ -5487,13 +5547,35 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
 
   const viewInvoice = async (record, directUrl = '') => {
     const detailedRecord = directUrl ? record : await fetchPatientBillDetails(record);
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      setDownloadError('Please allow popups to view the invoice.');
+    const preview = document.createElement('dialog');
+    preview.setAttribute('aria-label', 'Invoice preview');
+    preview.style.cssText = 'width:min(1100px,calc(100vw - 32px));height:min(900px,calc(100vh - 32px));max-width:none;max-height:none;padding:0;border:0;border-radius:12px;overflow:hidden;box-shadow:0 24px 80px rgba(15,23,42,.35)';
+
+    const toolbar = document.createElement('div');
+    toolbar.style.cssText = 'height:52px;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff;border-bottom:1px solid #e2e8f0;font:600 14px Arial,sans-serif;color:#17243b';
+    const label = document.createElement('span');
+    label.textContent = 'Invoice preview';
+    const closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.textContent = 'Close';
+    closeButton.setAttribute('aria-label', 'Close invoice preview');
+    closeButton.style.cssText = 'padding:8px 14px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#17243b;font:600 14px Arial,sans-serif;cursor:pointer';
+    closeButton.addEventListener('click', () => preview.close());
+    toolbar.append(label, closeButton);
+
+    const frame = document.createElement('iframe');
+    frame.title = 'Invoice';
+    frame.style.cssText = 'display:block;width:100%;height:calc(100% - 52px);border:0;background:#eef2f7';
+    frame.srcdoc = getPrintableInvoiceHtml(detailedRecord, { autoPrint: false });
+    preview.append(toolbar, frame);
+    preview.addEventListener('close', () => preview.remove(), { once: true });
+
+    if (typeof preview.showModal !== 'function') {
+      setDownloadError('Invoice preview is not supported in this browser.');
       return;
     }
-    printWindow.document.write(getPrintableInvoiceHtml(detailedRecord, { autoPrint: false }));
-    printWindow.document.close();
+    document.body.appendChild(preview);
+    preview.showModal();
   };
 
   const printInvoice = async (record) => {
@@ -5512,15 +5594,27 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     const detailedRecord = directUrl ? record : await fetchPatientBillDetails(record);
     setDownloadStatus('Invoice is being prepared for PDF download.');
     setDownloadError('');
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      setDownloadStatus('');
-      setDownloadError('Please allow popups to download the invoice PDF.');
-      return;
-    }
-    printWindow.document.write(getPrintableInvoiceHtml(detailedRecord, { autoPrint: true }));
-    printWindow.document.close();
-    window.setTimeout(() => setDownloadStatus(''), 1200);
+    const frame = document.createElement('iframe');
+    frame.title = 'Invoice PDF print preview';
+    frame.setAttribute('aria-hidden', 'true');
+    frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:800px;height:1px;border:0;pointer-events:none';
+    frame.onload = () => {
+      const printWindow = frame.contentWindow;
+      if (!printWindow) {
+        frame.remove();
+        setDownloadStatus('');
+        setDownloadError('Unable to prepare the invoice PDF.');
+        return;
+      }
+      printWindow.addEventListener('afterprint', () => {
+        frame.remove();
+        setDownloadStatus('');
+      }, { once: true });
+      printWindow.focus();
+      printWindow.print();
+    };
+    frame.srcdoc = getPrintableInvoiceHtml(detailedRecord, { autoPrint: false });
+    document.body.appendChild(frame);
   };
 
   const isBillPaid = (record) => {
@@ -6890,10 +6984,6 @@ function PatientProfilePage({ patient, visits = [], prescriptions = [], bills = 
 }
 
 export default PatientRoutes;
-
-
-
-
 
 
 
