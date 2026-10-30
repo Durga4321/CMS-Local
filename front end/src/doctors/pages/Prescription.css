@@ -373,7 +373,7 @@
   background: linear-gradient(135deg, #f8fafc 0%, #ede9fe 100%);
   font-size: 12px;
   font-weight: 800;
-  color: #6b21a8;
+  color: #000000;
   border-bottom: 1px solid #ddd6fe;
   letter-spacing: 0.3px;
 }
@@ -787,8 +787,8 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #4c1d95 100%);
-  border: 1px solid #a855f7;
+  background: linear-gradient(135deg, #4b9da3 0%, #367f82 100%);
+  border: 1px solid #367f82;
   color: #ffffff;
   padding: 12px 24px;
   border-radius: 12px;
@@ -801,8 +801,8 @@
 }
 
 .rx-add-med-btn:hover {
-  background: linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #6d28d9 100%);
-  box-shadow: 0 6px 20px rgba(147, 51, 234, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  background: linear-gradient(135deg, #5aaeb2 0%, #4b9da3 50%, #367f82 100%);
+  box-shadow: 0 6px 20px rgba(54, 127, 130, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.65);
   transform: translateY(-1.5px);
 }
 
@@ -854,6 +854,23 @@
   color: #ffffff;
   box-shadow: 0 6px 18px rgba(2, 132, 199, 0.35);
   transform: translateY(-1.5px);
+}
+
+.rx-actions-right .rx-btn-icon--print,
+.rx-actions-right .rx-btn-submit,
+.rx-actions-right .rx-btn-icon--download {
+  background: linear-gradient(135deg, #4b9da3 0%, #367f82 100%);
+}
+
+.rx-actions-right .rx-btn-icon--print span,
+.rx-actions-right .rx-btn-icon--download span {
+  color: #ffffff;
+}
+
+.rx-actions-right .rx-btn-icon--print:hover,
+.rx-actions-right .rx-btn-submit:hover:not(:disabled),
+.rx-actions-right .rx-btn-icon--download:hover {
+  background: linear-gradient(135deg, #5aaeb2 0%, #4b9da3 50%, #367f82 100%);
 }
 
 /* 5. Delete row button */

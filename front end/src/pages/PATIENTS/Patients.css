@@ -161,6 +161,10 @@
   overflow: hidden;
 }
 
+.patients-page .patients-table {
+  display: contents;
+}
+
 .patients-table-scroll {
   overflow-x: auto;
   /* All matching patients are rendered in one continuous, vertically scrollable page. */
@@ -173,6 +177,13 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.patients-page .patients-table-scroll {
+  background: #ffffff !important;
+  border: 1px solid #dfe8ea !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05) !important;
+}
+
 .patients-search-wrap {
   padding: 18px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.5);
@@ -181,6 +192,13 @@
   gap: 12px;
   flex-wrap: wrap;
   background: rgba(255, 255, 255, 0.3);
+}
+
+.patients-page .patients-search-wrap {
+  padding: 0;
+  margin: 0 0 12px;
+  border: 0;
+  background: transparent;
 }
 
 .patients-search-bar {
@@ -297,16 +315,16 @@
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #0284c7, #0ea5e9);
-  color: #ffffff;
+  background: #e2f2f1;
+  color: #367f82;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
   font-weight: 800;
   flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+  border: 1px solid #b9d8d6;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.16);
 }
 
 .patients-name-stack {
@@ -414,9 +432,9 @@
 }
 
 .patients-view-btn {
-  border: 1px solid #bae6fd;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  color: #0284c7;
+  border: 1px solid #b9d8d6;
+  background: #e2f2f1;
+  color: #367f82;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -427,16 +445,16 @@
   margin: 0 auto;
   padding: 7px 14px;
   border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(2, 132, 199, 0.12);
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.12);
   transition: all 0.2s ease;
 }
 
 .patients-view-btn:hover {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  border-color: #0284c7;
+  background: #4b9da3;
+  border-color: #82b8b5;
   color: #ffffff;
   transform: translateY(-1.5px);
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.2);
 }
 
 .patients-empty {

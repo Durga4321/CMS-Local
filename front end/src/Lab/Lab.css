@@ -1022,9 +1022,69 @@ aside.rc-sidebar.lab-sidebar {
 
 .lab-dashboard-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
-  gap: 20px !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 12px !important;
   margin-bottom: 24px !important;
+}
+
+.lab-dashboard-grid .rc-dash-kpi-card {
+  height: 116px !important;
+  min-height: 116px !important;
+  padding: 8px 10px !important;
+}
+
+.lab-dashboard-grid .db-kpi-header {
+  gap: 6px !important;
+}
+
+.lab-dashboard-grid .db-kpi-icon-box {
+  width: 32px !important;
+  height: 32px !important;
+  flex-basis: 32px !important;
+}
+
+.lab-dashboard-grid .db-kpi-title {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+}
+
+.lab-dashboard-grid .rc-stat-period-pill {
+  display: none !important;
+}
+
+.lab-dashboard-grid .db-kpi-num {
+  font-size: 22px !important;
+  margin: 3px 0 1px !important;
+}
+
+.lab-dashboard-grid .db-kpi-trend {
+  font-size: 10px !important;
+}
+
+@media (max-width: 1200px) {
+  .lab-dashboard-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .lab-dashboard-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .lab-dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .lab-dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* 7 Multi-Colored Themes for KPI Stat Cards */
@@ -1114,6 +1174,21 @@ aside.rc-sidebar.lab-sidebar {
   box-shadow: 0 4px 14px rgba(245, 158, 11, 0.45) !important;
 }
 
+.lab-dashboard-grid .rc-dash-kpi-card:not(.card-blue-theme) {
+  border-color: #91c6c4 !important;
+  box-shadow: 0 8px 26px rgba(54, 127, 130, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.lab-dashboard-grid .rc-dash-kpi-card:not(.card-blue-theme):hover {
+  box-shadow: 0 16px 36px rgba(54, 127, 130, 0.28), inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+.lab-dashboard-grid .rc-dash-kpi-card:not(.card-blue-theme) .db-kpi-icon-box {
+  color: #367f82 !important;
+  background: #e0f2f1 !important;
+  box-shadow: 0 4px 14px rgba(54, 127, 130, 0.18) !important;
+}
+
 /* Quick Action Tiles in Lab */
 .lab-dash-action-grid {
   margin-bottom: 24px !important;
@@ -1167,8 +1242,8 @@ aside.rc-sidebar.lab-sidebar {
 /* 3. Sample Collection Screen (Amber Theme) */
 .lab-screen-samples .lab-data-card,
 .lab-card--samples {
-  border: 1.5px solid #fde68a !important;
-  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.07) !important;
+  border: 1.5px solid #dbe5ed !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06) !important;
 }
 .lab-screen-samples .lab-search:focus-within {
   border-color: #f59e0b !important;
@@ -1223,25 +1298,25 @@ aside.rc-sidebar.lab-sidebar {
 
 /* Module Badge Color Pairs */
 .badge-tests {
-  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%) !important;
-  border: 1.5px solid #d8b4fe !important;
-  color: #6b21a8 !important;
+  background: #e0f2f1 !important;
+  border: 1.5px solid #b9d8d6 !important;
+  color: #367f82 !important;
 }
 .badge-tests-sub {
-  background: #f5f3ff !important;
-  border: 1px solid #c084fc !important;
-  color: #7c3aed !important;
+  background: #e0f2f1 !important;
+  border: 1px solid #b9d8d6 !important;
+  color: #367f82 !important;
 }
 
 .badge-patients {
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
-  border: 1.5px solid #6ee7b7 !important;
-  color: #047857 !important;
+  background: #e0f2f1 !important;
+  border: 1.5px solid #b9d8d6 !important;
+  color: #367f82 !important;
 }
 .badge-patients-sub {
-  background: #f0fdf4 !important;
-  border: 1px solid #86efac !important;
-  color: #15803d !important;
+  background: #e0f2f1 !important;
+  border: 1px solid #b9d8d6 !important;
+  color: #367f82 !important;
 }
 
 .badge-samples {
@@ -1256,14 +1331,14 @@ aside.rc-sidebar.lab-sidebar {
 }
 
 .badge-reports {
-  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%) !important;
-  border: 1.5px solid #fda4af !important;
-  color: #be123c !important;
+  background: #e0f2f1 !important;
+  border: 1.5px solid #b9d8d6 !important;
+  color: #367f82 !important;
 }
 .badge-reports-sub {
-  background: #fff5f5 !important;
-  border: 1px solid #fca5a5 !important;
-  color: #dc2626 !important;
+  background: #e0f2f1 !important;
+  border: 1px solid #b9d8d6 !important;
+  color: #367f82 !important;
 }
 
 /* ============================================================
@@ -1498,6 +1573,69 @@ aside.rc-sidebar.lab-sidebar {
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+}
+
+.lab-dash-table-card .rc-dash-patient-avatar {
+  background: linear-gradient(135deg, #367f82 0%, #0f766e 100%) !important;
+}
+
+.lab-dash-table-card .lab-patient-name {
+  color: #0f766e !important;
+}
+
+.lab-dash-table-card .rc-lab-date-pill {
+  color: #0f766e !important;
+}
+
+.lab-screen-patients .lab-patient-avatar {
+  background: linear-gradient(135deg, #367f82 0%, #0f766e 100%) !important;
+}
+
+.lab-screen-patients .lab-patient-name {
+  color: #0f766e !important;
+}
+
+.lab-screen-patients .rc-lab-date-pill {
+  color: #0f766e !important;
+}
+
+.lab-screen-patients .rc-lab-phone-pill,
+.lab-screen-patients .rc-lab-test-tag {
+  background: #f0f9ff !important;
+  color: #0f766e !important;
+}
+
+.lab-screen-reports .lab-patient-avatar {
+  background: linear-gradient(135deg, #367f82 0%, #0f766e 100%) !important;
+}
+
+.lab-screen-reports .lab-patient-name {
+  color: #0f766e !important;
+}
+
+.lab-screen-reports .rc-lab-date-pill {
+  color: #0f766e !important;
+}
+
+.lab-screen-patients .rc-lab-test-tag,
+.lab-screen-patients .rc-lab-test-tag.tone-cyan,
+.lab-screen-patients .rc-lab-test-tag.tone-purple,
+.lab-screen-patients .rc-lab-test-tag.tone-emerald,
+.lab-screen-patients .rc-lab-test-tag.tone-amber,
+.lab-screen-patients .rc-lab-test-tag.tone-rose,
+.lab-screen-patients .rc-lab-test-tag.tone-indigo {
+  background: #f0f9ff !important;
+  border-color: #bae6fd !important;
+  color: #0f766e !important;
+}
+
+.lab-screen-patients .lab-table-head .rc-th-capsule {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #000000 !important;
 }
 
 /* 7. Patient Test Tags Wrap (Vibrant Multi-Color) */
@@ -1914,6 +2052,37 @@ aside.rc-sidebar.lab-sidebar {
   box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important;
 }
 
+.lab-report-create-page .lab-page-actions .lab-btn-save,
+.lab-report-create-page .lab-page-actions .lab-btn-print,
+.lab-report-create-page .lab-page-actions .rc-btn.ghost {
+  background: #0f766e !important;
+  border-color: #0f766e !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(15, 118, 110, 0.24) !important;
+}
+
+.lab-report-create-page .lab-page-actions .lab-btn-save:hover,
+.lab-report-create-page .lab-page-actions .lab-btn-print:hover,
+.lab-report-create-page .lab-page-actions .rc-btn.ghost:hover {
+  background: #115e59 !important;
+  border-color: #115e59 !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(15, 118, 110, 0.32) !important;
+}
+
+.lab-report-create-page .lab-head-badge,
+.lab-report-create-page .lab-head-sub-badge,
+.lab-report-create-page .lab-step-pill,
+.lab-report-create-page .lab-field-ref-pill,
+.lab-report-create-page .lab-dossier-val.tag-dept,
+.lab-report-create-page .lab-dossier-val.tag-blood,
+.lab-report-create-page .lab-history-patient-badge {
+  background: #e0f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: none !important;
+}
+
 /* History Card */
 .lab-latest-reports-head {
   display: flex !important;
@@ -1990,4 +2159,39 @@ aside.rc-sidebar.lab-sidebar {
   .lab-screen-samples .lab-patient-select {
     flex: 1 1 300px !important;
   }
+}
+
+.lab-screen-samples .badge-samples,
+.lab-screen-samples .badge-samples-sub {
+  background: #f0f9ff !important;
+  color: #0f766e !important;
+}
+
+.lab-screen-samples .lab-table-head .rc-th-capsule {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #0f766e !important;
+}
+
+.lab-screen-samples .lab-patient-avatar {
+  background: linear-gradient(135deg, #367f82 0%, #0f766e 100%) !important;
+}
+
+.lab-screen-samples .rc-lab-date-pill,
+.lab-screen-samples .rc-lab-phone-pill {
+  background: #f0f9ff !important;
+  color: #0f766e !important;
+}
+
+.lab-screen-samples .lab-table-head .rc-th-capsule {
+  color: #0f766e !important;
+  font-weight: 800 !important;
+}
+
+.lab-screen-samples .lab-test-names-cell {
+  font-size: 11px !important;
+  line-height: 1.25 !important;
 }

@@ -440,28 +440,28 @@
 
 /* Submit */
 .cn-btn-submit {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: linear-gradient(135deg, #4b9da3 0%, #367f82 100%);
   border: 1px solid #10b981;
   color: #ffffff;
   box-shadow: 0 3px 10px rgba(5, 150, 105, 0.3);
 }
 
 .cn-btn-submit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #5aaeb2 0%, #4b9da3 100%);
   box-shadow: 0 6px 18px rgba(5, 150, 105, 0.45);
   transform: translateY(-1.5px);
 }
 
 /* Print */
 .cn-btn-print {
-  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  background: linear-gradient(135deg, #e2f2f1 0%, #d2e9e7 100%);
   border: 1px solid #c084fc;
   color: #7c3aed;
   box-shadow: 0 2px 8px rgba(124, 58, 237, 0.12);
 }
 
 .cn-btn-print:hover:not(:disabled) {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  background: linear-gradient(135deg, #d2e9e7 0%, #c3e1df 100%);
   border-color: #6d28d9;
   color: #ffffff;
   box-shadow: 0 4px 14px rgba(124, 58, 237, 0.32);
@@ -470,14 +470,14 @@
 
 /* Add Prescription */
 .cn-btn-primary {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, #4b9da3 0%, #367f82 100%);
   border: 1px solid #3b82f6;
   color: #ffffff;
   box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3);
 }
 
 .cn-btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #5aaeb2 0%, #4b9da3 100%);
   box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
   transform: translateY(-1.5px);
 }

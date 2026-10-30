@@ -144,12 +144,63 @@ const normalizeAppointment = (item, fallback = {}) => {
   };
 };
 
-const normalizeOverview = (data) => ({
-  allergies: data?.allergies || emptyValue,
-  chronicDiseases: data?.chronicDiseases || emptyValue,
-  currentMedications: data?.currentMedications || emptyValue,
-  lastVisit: data?.lastVisit || emptyValue,
-  bloodGroup: data?.bloodGroup || emptyValue,
+const readHistoryField = (record, ...keys) => {
+  const entries = Object.entries(record || {});
+  for (const key of keys) {
+    const entry = entries.find(([name]) => name.toLowerCase() === key.toLowerCase());
+    if (entry?.[1] !== null && entry?.[1] !== undefined && String(entry[1]).trim()) return entry[1];
+  }
+  return "";
+};
+
+const unwrapMedicalHistory = (payload) => {
+  if (Array.isArray(payload)) return payload.filter(Boolean);
+  if (!payload || typeof payload !== "object") return [];
+
+  for (const key of ["data", "result", "medicalHistory", "history", "records", "items"]) {
+    const wrapped = readHistoryField(payload, key);
+    if (Array.isArray(wrapped)) return wrapped.filter(Boolean);
+    if (wrapped && typeof wrapped === "object" && wrapped !== payload) {
+      const nested = unwrapMedicalHistory(wrapped);
+      if (nested.length) return nested;
+    }
+  }
+
+  return [payload];
+};
+
+const fetchPatientMedicalHistory = async (patientId, headers) => {
+  const id = String(patientId || "").trim();
+  if (!id) return null;
+
+  const response = await fetch(apiUrl(`MedicalHistory/${encodeURIComponent(id)}`), {
+    headers,
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new Error(`Unable to load patient medical history (HTTP ${response.status}).`);
+  }
+
+  const records = unwrapMedicalHistory(await response.json());
+  const timestamp = (record) => {
+    const value = readHistoryField(record, "updatedAt", "createdAt", "modifiedAt");
+    const parsed = value ? new Date(value).getTime() : 0;
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  return records.sort((left, right) => timestamp(right) - timestamp(left))[0] || null;
+};
+
+const normalizeOverview = (history, appointment) => ({
+  allergies: readHistoryField(history, "allergies", "allergyList") ||
+    readHistoryField(appointment, "allergies", "allergyList") || emptyValue,
+  chronicDiseases: readHistoryField(history, "chronicDiseases", "chronicConditions", "medicalConditions") ||
+    readHistoryField(appointment, "chronicDiseases", "chronicConditions") || emptyValue,
+  currentMedications: readHistoryField(history, "currentMedications", "currentMedication", "medications") ||
+    readHistoryField(appointment, "currentMedications", "currentMedication", "medications") || emptyValue,
+  lastVisit: readHistoryField(history, "lastVisit") ||
+    readHistoryField(appointment, "lastVisit") || emptyValue,
+  bloodGroup: readHistoryField(history, "bloodGroup") ||
+    readHistoryField(appointment, "bloodGroup") || emptyValue,
 });
 
 const updateAppointmentStatusAPI = async (appointmentId, newStatus, headers = {}) => {
@@ -390,11 +441,18 @@ function Consultation() {
           ...(backendVitals || {}),
           patientId: detailedAppointment.patientId || savedConsultation?.patientId,
         });
+        let medicalHistory = null;
+        try {
+          medicalHistory = await fetchPatientMedicalHistory(hydratedAppointment.patientId, headers);
+        } catch (historyError) {
+          console.warn("Unable to load patient medical history for consultation.", historyError);
+          setError(historyError.message || "Unable to load patient medical history.");
+        }
 
         const appointmentComplaint = hydratedAppointment.chiefComplaints || "";
 
         setAppointment(hydratedAppointment);
-        setOverview(normalizeOverview(hydratedAppointment));
+        setOverview(normalizeOverview(medicalHistory, hydratedAppointment));
         setStep(getStepFromStatus(hydratedAppointment.status));
 
         setForm({

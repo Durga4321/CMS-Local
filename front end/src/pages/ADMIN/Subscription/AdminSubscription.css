@@ -61,6 +61,18 @@
 .admin-subscription-page .sa-table-cell { min-width: 0; overflow-wrap: anywhere; }
 .admin-subscription-page .sa-state { margin: 0; }
 .admin-subscription-page .sa-form-card > .sa-state { margin-bottom: 16px; }
+.admin-subscription-page .sa-subscription-actions .sa-btn-primary {
+  border-color: #367f82;
+  background: linear-gradient(135deg, #4b9da3 0%, #367f82 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(54, 127, 130, 0.22);
+}
+.admin-subscription-page .sa-subscription-actions .sa-btn-primary:hover:not(:disabled) {
+  border-color: #2f7073;
+  background: linear-gradient(135deg, #438d92 0%, #2f7073 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(54, 127, 130, 0.3);
+}
 @media (max-width: 900px) {
   .admin-subscription-page { padding: 20px 16px; }
   .admin-subscription-page .sa-form-card,
@@ -83,6 +95,13 @@
   top: 0;
   z-index: 1;
   background: #f8fafc;
+  color: #367f82;
+}
+.admin-subscription-page .sa-subscription-table-section .sa-table-row {
+  color: #33464c;
+}
+.admin-subscription-page .sa-subscription-table-section .sa-table-cell {
+  color: #33464c;
 }
 .admin-subscription-page .sa-subscription-table-section .sa-table::-webkit-scrollbar { width: 8px; height: 8px; }
 .admin-subscription-page .sa-subscription-table-section .sa-table::-webkit-scrollbar-track { background: #f1f5f9; }

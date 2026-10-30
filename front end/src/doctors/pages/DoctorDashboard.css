@@ -133,8 +133,8 @@
    ──────────────────────────────────────────────────────────── */
 .dd-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .dd-stat-card {
@@ -143,7 +143,8 @@
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   border: 1px solid rgba(226, 232, 240, 0.85);
   border-radius: 20px;
-  padding: 20px 22px 20px;
+  min-width: 0;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -169,13 +170,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 /* 3D Medical Instrument Icon Bezel */
 .dd-stat-icon-bezel {
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   border-radius: 14px;
   display: flex;
   align-items: center;
@@ -230,8 +231,8 @@
 
 .dd-stat-label {
   margin: 0;
-  font-size: 13px;
-  color: #64748b;
+  font-size: 12px;
+  color: #000000;
   font-weight: 600;
 }
 
@@ -244,7 +245,7 @@
 
 .dd-stat-value {
   margin: 0;
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 900;
   color: #0f172a;
   line-height: 1;
@@ -265,8 +266,8 @@
 
 .dd-stat-sub {
   margin: 0;
-  font-size: 11.5px;
-  color: #94a3b8;
+  font-size: 11px;
+  color: #000000;
   font-weight: 500;
 }
 
@@ -885,6 +886,10 @@
   padding: 20px;
 }
 
+.dd-page:has(.dd-notes-backdrop) {
+  z-index: 1001;
+}
+
 .dd-notes-modal {
   width: min(580px, 100%);
   background: #ffffff;
@@ -1077,7 +1082,12 @@
   box-shadow: 0 7px 15px rgba(2, 132, 199, 0.2);
 }
 
+@media (max-width: 1100px) {
+  .dd-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 @media (max-width: 560px) {
+  .dd-stats { grid-template-columns: 1fr; }
   .dd-patient-modal .dd-notes-grid { grid-template-columns: 1fr; }
   .dd-patient-modal .dd-notes-grid .dd-notes-wide { grid-column: auto; }
   .dd-patient-modal .dd-modal-actions { flex-direction: column; }
@@ -1093,4 +1103,39 @@
   .dd-row > span:nth-child(5) {
     display: none !important;
   }
+}
+
+.dd-stat-card .dd-stat-icon-bezel {
+  background: #e0f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: none !important;
+}
+
+.dd-stat-card .dd-stat-badge,
+.dd-stat-card .dd-stat-trend {
+  background: #e0f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: none !important;
+}
+
+.dd-row .dd-status {
+  background: #e0f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+}
+
+.dd-row .dd-status-dot-indicator {
+  background: #367f82 !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+.dd-row .dd-act-btn,
+.dd-row .dd-act-btn:hover:not(:disabled) {
+  background: #e0f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: none !important;
 }

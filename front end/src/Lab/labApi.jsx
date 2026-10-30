@@ -14,7 +14,9 @@ export const parseList = (data) => {
 
 const formatErrorData = (data, fallback) => {
   if (!data) return fallback;
-  if (typeof data === "string") return data;
+  if (typeof data === "string") {
+    return /<!doctype\s+html|<html[\s>]/i.test(data) ? fallback : data;
+  }
   if (Array.isArray(data)) return data.map((item) => formatErrorData(item, "")).filter(Boolean).join(", ") || fallback;
 
   const directMessage =

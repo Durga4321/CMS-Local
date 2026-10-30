@@ -1,8 +1,7 @@
 .rc-shell {
   min-height: 100vh;
   display: flex;
-  background: var(--app-gradient-bg) !important;
-  background-attachment: fixed !important;
+  background: #f4f6f8 !important;
   color: #071120;
   font-family: "Inter", "Segoe UI", Arial, sans-serif;
   position: relative;
@@ -22,9 +21,9 @@
   align-self: flex-start;
   overflow-y: auto;
   overflow-x: hidden;
-  background: linear-gradient(180deg, #e6f2fd 0%, #edf6fe 100%) !important;
-  border-right: 1px solid #d4e7f8 !important;
-  box-shadow: 2px 0 16px rgba(186, 215, 243, 0.25) !important;
+  background: #f4f6f8 !important;
+  border-right: 1px solid #e2e8ee !important;
+  box-shadow: 2px 0 16px rgba(15, 23, 42, 0.04) !important;
   display: flex !important;
   flex-direction: column;
   justify-content: space-between;
@@ -7743,5 +7742,607 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.rc-shell {
+  background: #f4f6f8 !important;
+}
+
+.rc-sidebar {
+  background: #f4f6f8 !important;
+  border-right-color: #e2e8ee !important;
+  box-shadow: 2px 0 16px rgba(15, 23, 42, 0.04) !important;
+}
+
+.rc-sidebar .rc-brand-tag,
+.rc-sidebar .rc-brand-text strong,
+.rc-sidebar .rc-nav-link .rc-nav-label,
+.rc-sidebar .rc-nav-group-title .rc-nav-label {
+  color: #27343a !important;
+}
+
+.rc-sidebar .rc-brand-branch,
+.rc-sidebar .rc-section-label > span:first-child {
+  color: #367f82 !important;
+}
+
+.rc-sidebar .rc-nav-link .rc-nav-icon-wrap,
+.rc-sidebar .rc-nav-group-title .rc-nav-icon-wrap {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: none !important;
+}
+
+.rc-sidebar .rc-nav-link.active {
+  background: #4b9da3 !important;
+  border-color: #4b9da3 !important;
+  box-shadow: 0 4px 14px rgba(54, 127, 130, 0.18) !important;
+}
+
+.rc-sidebar .rc-nav-link.active .rc-nav-label {
+  color: #ffffff !important;
+}
+
+.rc-sidebar .rc-nav-link.active .rc-nav-icon-wrap {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+}
+
+.rc-sidebar .rc-med-nav-pill,
+.rc-sidebar .rc-sec-badge {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+}
+
+.rc-sidebar .rc-sidebar-footer {
+  border-top-color: #e2e8ee !important;
+}
+
+.rc-dashboard-page .db-3d-bg-overlay {
+  background: transparent !important;
+  animation: none !important;
+}
+
+.rc-dashboard-page .db-3d-floating-particle {
+  opacity: 0 !important;
+  animation: none !important;
+}
+
+.rc-dashboard-page .db-3d-ecg-wave {
+  opacity: 0 !important;
+}
+
+.rc-dashboard-page .db-kpi-icon-box,
+.rc-dashboard-page .rc-dash-action-icon-wrap,
+.rc-dashboard-page .rc-dash-panel-icon {
+  background: #e2f2f1 !important;
+  border: 1px solid #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 3px 10px rgba(54, 127, 130, 0.12) !important;
+}
+
+.rc-dashboard-page .rc-stat-period-pill,
+.rc-dashboard-page .rc-dash-action-tag,
+.rc-dashboard-page .rc-dash-date-pill,
+.rc-dashboard-page .rc-dash-count-pill {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+}
+
+.rc-dashboard-page .rc-head-action-btn.btn-primary {
+  background: #4b9da3 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.2) !important;
+}
+
+.rc-dashboard-page .rc-head-action-btn.btn-primary:hover {
+  background: #367f82 !important;
+}
+
+.rc-dashboard-page .rc-dash-table-header .rc-th-capsule {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 2px 5px rgba(54, 127, 130, 0.1) !important;
+}
+
+.rc-dashboard-page .rc-dash-table-header .rc-th-capsule:hover {
+  background: #d6ebea !important;
+}
+
+.rc-sidebar .rc-nav-child.rc-blood-drop-item,
+.rc-sidebar .rc-nav-child.rc-blood-drop-item:hover,
+.rc-sidebar .rc-nav-child.rc-blood-drop-item.active,
+.rc-sidebar .rc-nav-child.rc-blood-drop-item.active:hover {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 3px 10px rgba(54, 127, 130, 0.1) !important;
+}
+
+.rc-sidebar .rc-nav-child.rc-blood-drop-item .rc-blood-drop-text,
+.rc-sidebar .rc-nav-child.rc-blood-drop-item.active .rc-blood-drop-text {
+  color: #367f82 !important;
+  text-shadow: none !important;
+}
+
+.rc-dashboard-page .rc-dash-empty-btn,
+.rc-dashboard-page .rc-dash-empty-btn:hover {
+  background: #4b9da3 !important;
+  border-color: #367f82 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(54, 127, 130, 0.2) !important;
+}
+
+.rc-dashboard-page .rc-wave-hand,
+.rc-sidebar .rc-section-label,
+.rc-sidebar .rc-sidebar-ecg-wave {
+  display: none !important;
+}
+
+.rc-shell .rc-topbar .user-profile-chip,
+.rc-shell .rc-topbar .user-profile-chip:hover,
+.rc-shell .rc-topbar .user-profile-chip.is-open {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  box-shadow: 0 0 0 3px rgba(75, 157, 163, 0.14) !important;
+}
+
+.rc-patients-page .rc-head-action-btn.btn-primary,
+.rc-patients-page .rc-head-action-btn.btn-primary:hover {
+  background: #4b9da3 !important;
+  border-color: #367f82 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.2) !important;
+}
+
+.rc-patients-page .rc-pkpi-icon-box,
+.rc-patients-page .rc-dash-panel-icon {
+  background: #e2f2f1 !important;
+  border: 1px solid #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 3px 10px rgba(54, 127, 130, 0.12) !important;
+}
+
+.rc-patients-page .rc-pkpi-label {
+  color: #526e70 !important;
+}
+
+.rc-patients-page .rc-patient-kpi-grid {
+  gap: 12px !important;
+  margin-bottom: 18px !important;
+}
+
+.rc-patients-page .rc-patient-kpi-card {
+  min-width: 0 !important;
+  gap: 10px !important;
+  padding: 12px 14px !important;
+  border-radius: 16px !important;
+}
+
+.rc-patients-page .rc-pkpi-content {
+  flex: 1 1 auto !important;
+}
+
+.rc-patients-page .rc-pkpi-label {
+  font-size: 11.5px !important;
+  line-height: 1.2 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.rc-patients-page .rc-pkpi-val {
+  font-size: 20px !important;
+  line-height: 1.1 !important;
+  margin-top: 2px !important;
+}
+
+.rc-patients-page .rc-pkpi-badge {
+  flex-shrink: 0 !important;
+  font-size: 10px !important;
+  padding: 3px 8px !important;
+}
+
+.rc-patients-page .rc-pkpi-badge,
+.rc-patients-page .rc-dash-date-pill,
+.rc-patients-page .rc-dash-count-pill {
+  background: #e2f2f1 !important;
+  border: 1px solid #b9d8d6 !important;
+  color: #367f82 !important;
+}
+
+.rc-patients-page .rc-patient-table-header {
+  background: #e2f2f1 !important;
+  border-bottom-color: #b9d8d6 !important;
+  color: #263f54 !important;
+}
+
+.rc-patients-page .rc-th-capsule,
+.rc-patients-page .rc-th-capsule:hover {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #263f54 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.rc-patients-page .rc-dash-sno-badge,
+.rc-patients-page .rc-patient-pid-badge,
+.rc-patients-page .rc-patient-phone-cell,
+.rc-patients-page .rc-patient-age-badge,
+.rc-patients-page .rc-dash-patient-avatar {
+  background: #e2f2f1 !important;
+  border: 1px solid #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.1) !important;
+}
+
+.rc-patients-page .rc-patient-phone-cell:hover {
+  background: #d6ebea !important;
+  border-color: #a7cecb !important;
+}
+
+.rc-patients-page .rc-patient-phone-icon,
+.rc-patients-page .rc-dash-patient-name {
+  color: #367f82 !important;
+}
+
+.rc-patients-page .rc-dash-sno-badge,
+.rc-patients-page .rc-patient-pid-badge,
+.rc-patients-page .rc-dash-patient-avatar,
+.rc-patients-page .rc-dash-patient-name,
+.rc-patients-page .rc-patient-phone-cell span,
+.rc-patients-page .rc-patient-age-badge {
+  color: #245b63 !important;
+}
+
+.rc-patients-page .rc-patient-table-row:hover {
+  background: transparent !important;
+}
+
+.rc-patients-page .rc-patient-table-row,
+.rc-patients-page .rc-patient-table-row:nth-child(even) {
+  background: transparent !important;
+}
+
+.rc-patients-page .actions-group .action-btn.medical-instrument-btn,
+.rc-patients-page .actions-group .action-btn.medical-instrument-btn:hover:not(:disabled) {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.12) !important;
+}
+
+.rc-appointments-page .rc-pkpi-icon-box {
+  background: #e2f2f1 !important;
+  border: 1px solid #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 3px 10px rgba(54, 127, 130, 0.12) !important;
+}
+
+.rc-appointments-page .rc-pkpi-label {
+  color: #526e70 !important;
+}
+
+.rc-appointments-page .rc-pkpi-badge,
+.rc-appointments-page .rc-heading-capsule,
+.rc-appointments-page .rc-field-label,
+.rc-appointments-page .rc-legend-pill,
+.rc-appointments-page .rc-slot-status-pill,
+.rc-appointments-page .rc-doc-preview-fee,
+.rc-appointments-page .rc-doctor-option-fee {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.1) !important;
+}
+
+.rc-appointments-page .rc-booking-fields .rc-heading-capsule,
+.rc-appointments-page .rc-slot-head .rc-heading-capsule,
+.rc-appointments-page .rc-field-label {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+}
+
+.rc-appointments-page .rc-doc-selector-btn,
+.rc-appointments-page .rc-doc-selector-btn:hover,
+.rc-appointments-page .rc-doc-selector-btn.rc-selector-open {
+  background: #f4f9f8 !important;
+  border-color: #b9d8d6 !important;
+}
+
+.rc-appointments-page .rc-doc-selected-content .rc-doc-preview-avatar {
+  background: #e2f2f1 !important;
+  color: #367f82 !important;
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.12) !important;
+}
+
+.rc-appointments-page .rc-slots button.rc-med-slot-btn.available,
+.rc-appointments-page .rc-slots button.rc-med-slot-btn.available .pill-available,
+.rc-appointments-page .rc-slots button.rc-med-slot-btn.booked,
+.rc-appointments-page .rc-slots button.rc-med-slot-btn.booked .pill-booked,
+.rc-appointments-page .rc-slots button.rc-med-slot-btn.completed,
+.rc-appointments-page .rc-slots button.rc-med-slot-btn.completed .pill-timeout {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.08) !important;
+}
+
+.rc-appointments-page .rc-slots button.rc-med-slot-btn.available:hover:not(:disabled) {
+  background: #d6ebea !important;
+  border-color: #a7cecb !important;
+}
+
+.rc-appointments-page .rc-slots button.rc-med-slot-btn.selected,
+.rc-appointments-page .rc-slots button.rc-med-slot-btn.selected .pill-selected {
+  background: #4b9da3 !important;
+  border-color: #367f82 !important;
+  color: #ffffff !important;
+}
+
+.rc-appointments-page .rc-booking-submit-btn,
+.rc-appointments-page .rc-booking-submit-btn:hover:not(:disabled) {
+  background: #4b9da3 !important;
+  border-color: #367f82 !important;
+  color: #ffffff !important;
+  box-shadow: 0 5px 16px rgba(54, 127, 130, 0.22) !important;
+}
+
+.rc-shell .rc-topbar .user-profile-avatar {
+  background: #4b9da3 !important;
+}
+
+.rc-shell .rc-topbar .user-profile-copy strong {
+  color: #27343a !important;
+}
+
+.rc-shell .rc-topbar .user-profile-copy em,
+.rc-shell .rc-topbar .user-profile-dropdown-arrow {
+  color: #367f82 !important;
+}
+
+.rc-dashboard-page .rc-dash-subtitle {
+  display: none !important;
+}
+
+.rc-dashboard-page .rc-dash-kpi-card.card-blue-theme,
+.rc-dashboard-page .rc-dash-kpi-card.card-orange-theme,
+.rc-dashboard-page .rc-dash-kpi-card.card-green-theme {
+  background: #f3f8f8 !important;
+  border-color: #b9d8d6 !important;
+  box-shadow: 0 8px 22px rgba(54, 127, 130, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+.rc-dashboard-page .rc-dash-kpi-card.card-blue-theme:hover,
+.rc-dashboard-page .rc-dash-kpi-card.card-orange-theme:hover,
+.rc-dashboard-page .rc-dash-kpi-card.card-green-theme:hover {
+  border-color: #8bbfbd !important;
+  box-shadow: 0 12px 28px rgba(54, 127, 130, 0.16), inset 0 1px 0 #ffffff !important;
+}
+
+.rc-dashboard-page .rc-dash-kpi-card {
+  box-sizing: border-box !important;
+  height: 128px !important;
+  min-height: 128px !important;
+  padding: 8px 10px !important;
+  border-radius: 14px !important;
+}
+
+.rc-dashboard-page .rc-dash-kpi-card .db-kpi-title {
+  color: #000000 !important;
+}
+
+.rc-dashboard-page .rc-dash-kpi-card .db-kpi-num {
+  color: #000000 !important;
+  font-size: 24px !important;
+  margin: 3px 0 1px !important;
+}
+
+.rc-dashboard-page .rc-dash-kpi-card .db-kpi-content-wrap {
+  min-height: 0 !important;
+}
+
+.rc-appointments-page .rc-pkpi-badge,
+.rc-appointments-page .rc-heading-capsule,
+.rc-appointments-page .rc-field-label,
+.rc-appointments-page .rc-legend-pill,
+.rc-appointments-page .rc-slot-status-pill,
+.rc-appointments-page .rc-slot-time-text,
+.rc-appointments-page .rc-doc-preview-fee,
+.rc-appointments-page .rc-doctor-option-fee {
+  color: #5b6870 !important;
+}
+
+.rc-appointments-page .rc-slots button.rc-med-slot-btn.selected,
+.rc-appointments-page .rc-slots button.rc-med-slot-btn.selected .rc-slot-time-text,
+.rc-appointments-page .rc-slots button.rc-med-slot-btn.selected .rc-slot-status-pill {
+  color: #ffffff !important;
+}
+
+.rc-appointments-page .rc-appt-kpi-grid {
+  width: 100% !important;
+  max-width: 1100px !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.rc-appointments-page .rc-appt-kpi-grid .rc-patient-kpi-card {
+  min-width: 0 !important;
+  min-height: 104px !important;
+  padding: 10px 12px !important;
+  gap: 10px !important;
+  border-radius: 16px !important;
+}
+
+.rc-appointments-page .rc-appt-kpi-grid .rc-pkpi-content {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+}
+
+.rc-appointments-page .rc-appt-kpi-grid .rc-pkpi-label {
+  color: #000000 !important;
+  font-size: 11.5px !important;
+  line-height: 1.2 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.rc-appointments-page .rc-appt-kpi-grid .rc-pkpi-val,
+.rc-appointments-page .rc-appt-kpi-grid .rc-pkpi-badge {
+  color: #000000 !important;
+}
+
+.rc-appointments-page .rc-appt-kpi-grid .rc-pkpi-badge {
+  flex: 0 0 auto !important;
+  font-size: 10px !important;
+  padding: 3px 7px !important;
+}
+
+.rc-appointments-page .rc-appt-kpi-grid .rc-pkpi-badge svg {
+  color: #367f82 !important;
+}
+
+@media (max-width: 1024px) {
+  .rc-appointments-page .rc-appt-kpi-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+.rc-appointments-page .rc-dash-title,
+.rc-appointments-page .rc-dash-subtitle,
+.rc-appointments-page .rc-pkpi-label,
+.rc-appointments-page .rc-pkpi-val,
+.rc-appointments-page .rc-pkpi-badge,
+.rc-appointments-page .rc-booking-section-subtitle,
+.rc-appointments-page .rc-heading-capsule span,
+.rc-appointments-page .rc-field-label span:not(.rc-field-icon),
+.rc-appointments-page .rc-doc-name,
+.rc-appointments-page .rc-doc-spec,
+.rc-appointments-page .rc-doc-preview-fee,
+.rc-appointments-page .rc-doc-placeholder span,
+.rc-appointments-page .rc-doctor-option-name,
+.rc-appointments-page .rc-doctor-option-spec,
+.rc-appointments-page .rc-doctor-option-fee,
+.rc-appointments-page .rc-legend-pill,
+.rc-appointments-page .rc-slot-time-text,
+.rc-appointments-page .rc-slot-status-pill,
+.rc-appointments-page .rc-slot-loading,
+.rc-appointments-page .rc-slot-empty,
+.rc-appointments-page .rc-field-message,
+.rc-appointments-page .rc-field-error,
+.rc-appointments-page .rc-head-action-btn span,
+.rc-appointments-page .rc-booking-submit-btn {
+  color: #000000 !important;
+}
+
+.rc-appointments-page .rc-booking-fields input,
+.rc-appointments-page .rc-booking-fields select,
+.rc-appointments-page .rc-booking-fields textarea,
+.rc-appointments-page .rc-booking-fields input::placeholder,
+.rc-appointments-page .rc-booking-fields textarea::placeholder {
+  color: #000000 !important;
+}
+
+.rc-appointments-page .rc-booking-submit-btn svg {
+  color: #ffffff !important;
+}
+
+.rc-billing-page .billing-kpi-card {
+  background: #f3f8f8 !important;
+  border-color: #b9d8d6 !important;
+  box-shadow: 0 6px 18px rgba(54, 127, 130, 0.1) !important;
+}
+
+.rc-billing-page .billing-kpi-icon-wrap {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+}
+
+.rc-billing-page .billing-kpi-label,
+.rc-billing-page .billing-kpi-sub {
+  color: #367f82 !important;
+}
+
+.rc-billing-page .rc-med-billing-tab:not(.active) {
+  background: #f3f8f8 !important;
+  border-color: #b9d8d6 !important;
+}
+
+.rc-billing-page .rc-med-billing-tab:not(.active) .tab-title,
+.rc-billing-page .rc-med-billing-tab:not(.active) .tab-subtitle {
+  color: #367f82 !important;
+}
+
+.rc-billing-page .rc-med-billing-tab:not(.active) .tab-icon-wrap,
+.rc-billing-page .rc-med-billing-tab:not(.active) .tab-count-pill {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+}
+
+.rc-billing-page .rc-med-billing-tab.active {
+  background: #4b9da3 !important;
+  border-color: #367f82 !important;
+}
+
+.rc-billing-page .rc-med-billing-tab.active .tab-title,
+.rc-billing-page .rc-med-billing-tab.active .tab-subtitle {
+  color: #ffffff !important;
+}
+
+.rc-billing-page .rc-med-billing-tab.active .tab-icon-wrap,
+.rc-billing-page .rc-med-billing-tab.active .tab-count-pill {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+.rc-billing-page .rc-latest-bills-icon-capsule {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  box-shadow: 0 3px 10px rgba(54, 127, 130, 0.12) !important;
+}
+
+.rc-billing-page .rc-billing-header-compact p {
+  display: none !important;
+}
+
+@media (min-width: 901px) {
+  .rc-latest-bills--pharmacy .rc-latest-bills-table-head,
+  .rc-latest-bills--pharmacy .rc-latest-bill-row {
+    grid-template-columns: 52px minmax(200px, 1fr) 140px 150px 250px !important;
+    gap: 12px !important;
+  }
+
+  .rc-latest-bills--pharmacy .rc-bill-amount-cell,
+  .rc-latest-bills--pharmacy .rc-bill-amount-text {
+    min-width: 0 !important;
+    white-space: nowrap !important;
+    text-align: right !important;
+  }
+
+  .rc-latest-bills--pharmacy .rc-latest-bill-actions {
+    min-width: 0 !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    padding-left: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  .rc-latest-bills--pharmacy .rc-latest-bill-actions > .actions-group {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    gap: 6px !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 }

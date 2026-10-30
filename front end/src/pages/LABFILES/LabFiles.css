@@ -260,3 +260,52 @@
   }
 }
 
+.lab-files-page .lab-files-head > span {
+  color: #33464c !important;
+}
+
+.lab-files-page .lab-files-row > span:not(.lab-files-price-cell):not(.lab-files-status-cell):not(.lab-files-actions) {
+  color: #1e293b !important;
+}
+
+.lab-files-page .lab-files-actions .action-btn:not(.delete-instrument-btn):not(.delete-btn) {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.12) !important;
+}
+
+.lab-files-page .lab-files-actions .action-btn:not(.delete-instrument-btn):not(.delete-btn):hover:not(:disabled) {
+  background: #4b9da3 !important;
+  border-color: #82b8b5 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.2) !important;
+}
+
+.lab-files-page .receptionists-header-actions .receptionists-primary-button:not(.lab-files-export):not(.lab-files-add) {
+  background: #4b9da3 !important;
+  border: 1.5px solid #4b9da3 !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 20px rgba(75, 157, 163, 0.24) !important;
+}
+
+.lab-files-page .receptionists-header-actions .lab-files-export {
+  background: #367f82 !important;
+  border: 1.5px solid #367f82 !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 20px rgba(54, 127, 130, 0.22) !important;
+}
+
+.lab-files-page .receptionists-header-actions .lab-files-add {
+  background: #4b9da3 !important;
+  border: 1.5px solid #4b9da3 !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 20px rgba(75, 157, 163, 0.24) !important;
+}
+
+.lab-files-page .receptionists-header-actions .receptionists-primary-button:hover:not(:disabled) {
+  background: #367f82 !important;
+  border-color: #367f82 !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(54, 127, 130, 0.28) !important;
+}
