@@ -41,22 +41,11 @@ export default function SubscriptionPlans() {
   const grouped = useMemo(
     () =>
       SUBSCRIPTION_PLAN_TYPES.map((type) => {
-        const durations = plans
-          .filter((plan) => plan.planType === type)
-          .reduce((result, plan) => {
-            const duration = Number(plan.durationMonths);
-            let entry = result.find((item) => item.durationMonths === duration);
-            if (!entry) {
-              entry = { durationMonths: duration, withoutLab: null, withLab: null };
-              result.push(entry);
-            }
-            if (plan.includesLab) entry.withLab = plan;
-            else entry.withoutLab = plan;
-            return result;
-          }, [])
-          .sort((a, b) => a.durationMonths - b.durationMonths);
-
-        return { type, durations };
+        const typePlans = plans.filter(plan => plan.planType === type);
+        const durations = [...new Set(typePlans.map(plan => Number(plan.durationMonths)))].sort((a, b) => a - b).map(durationMonths => ({ durationMonths, variants: typePlans.filter(plan => Number(plan.durationMonths) === durationMonths) }));
+        const limits = [...new Set(typePlans.map(plan => plan.dailyAppointmentLimit).filter(value => value != null))].sort((a, b) => a - b);
+        const appointmentBenefit = limits.length === 1 && typePlans.every(plan => plan.dailyAppointmentLimit === limits[0]) ? limits[0] + " appointments per day" : "Appointment limit to be confirmed";
+        return { type, durations, appointmentBenefit };
       }),
     [plans]
   );
@@ -79,7 +68,7 @@ export default function SubscriptionPlans() {
       {!loading && (
         <>
           <div className="landing-plan-type-grid">
-          {grouped.map(({ type, durations }) => (
+          {grouped.map(({ type, durations, appointmentBenefit }) => (
             <button
               type="button"
               className={`landing-plan-type-card is-${type.toLowerCase()}${selectedType === type ? " is-selected" : ""}`}
@@ -94,7 +83,7 @@ export default function SubscriptionPlans() {
                     ? "Most popular"
                     : "Complete care suite"}
               </span>
-              <span className="landing-plan-type-name">{type}</span>
+              <span className="landing-plan-type-name">{type}</span><span style={{ display: "block", margin: "12px 0" }}>{appointmentBenefit}</span>
               <span className="landing-plan-type-action">
                 {selectedType === type ? "Hide options" : "Explore plan"}
                 <ArrowRight size={16} />
@@ -109,33 +98,24 @@ export default function SubscriptionPlans() {
                   <span>Available durations</span>
                   <h3>{selectedGroup.type} plans</h3>
                 </div>
-                <p>Select a duration to continue. You can choose lab access and see its price next.</p>
+                <p>Select a billing duration and module option.</p>
               </div>
               {selectedGroup.durations.length ? (
                 <div className="landing-plan-duration-grid">
-                  {selectedGroup.durations.map(({ durationMonths, withoutLab, withLab }) => {
-                    const defaultPlan = withoutLab || withLab;
-                    const prices = [withoutLab?.price, withLab?.price].filter(
-                      (price) => price != null
-                    );
-                    const lowestPrice = Math.min(...prices);
-                    return (
-                      <button
-                        type="button"
-                        className="landing-plan-duration-option"
-                        key={durationMonths}
-                        onClick={() => choosePlan(defaultPlan)}
-                      >
-                        <span className="landing-plan-duration">
-                          {durationMonths} {durationMonths === 1 ? "month" : "months"}
-                        </span>
-                        <strong>From {formatIndianCurrency(lowestPrice)}</strong>
-                        <span className="landing-plan-duration-cta">
-                          Choose duration <ArrowRight size={15} />
-                        </span>
-                      </button>
-                    );
-                  })}
+                  {selectedGroup.durations.flatMap(({ durationMonths, variants }) => variants.map(plan => (
+                    <button type="button" className="landing-plan-duration-option" key={plan.id} onClick={() => choosePlan(plan)}>
+                      <span className="landing-plan-duration">{plan.name}</span>
+                      <span>{durationMonths} {durationMonths === 1 ? "month" : "months"}</span>
+                      <strong>{formatIndianCurrency(plan.price)}</strong>
+                      <span style={{ display: "block", textAlign: "left", margin: "12px 0" }}>
+                        <span style={{ display: "block" }}>{plan.maxBranches == null ? "Branch allowance not specified" : "Up to " + plan.maxBranches + " branches"}</span>
+                        <span style={{ display: "block" }}>{plan.includesLab ? "Lab included" : "Without Lab"} / {plan.includesPharmacy ? "Pharmacy included" : "Without Pharmacy"}</span>
+                        {plan.benefits.map(benefit => <span key={benefit} style={{ display: "block" }}>{benefit}</span>)}
+                      </span>
+                      <span className="landing-plan-duration-cta">Choose this plan <ArrowRight size={15} /></span>
+                    </button>
+                  )))}
+
                 </div>
               ) : (
                 <p className="landing-plan-empty">No {selectedGroup.type} prices published yet.</p>

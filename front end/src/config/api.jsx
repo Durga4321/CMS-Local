@@ -1,5 +1,4 @@
-//const DEFAULT_API_BASE_URL = "https://theater-outreach-unable.ngrok-free.dev";
-const DEFAULT_API_BASE_URL = "https://irritant-kilobyte-until.ngrok-free.dev";
+const DEFAULT_API_BASE_URL = "https://countable-ligament-shorty.ngrok-free.dev";
 const DEFAULT_API_ASSET_BASE_URL = DEFAULT_API_BASE_URL;
 export const CMS_GLOBAL_SETTINGS_KEY = "cms_global_settings";
 
@@ -148,6 +147,8 @@ export const API_ENDPOINTS = {
     confirmDemoPayment: "subscriptions/demo/payments/confirm",
     pendingPayments: "subscriptions/payments/pending",
     paymentStatus: "subscriptions/payments/{purchaseId}/status",
+    upgradeCheckout: "subscriptions/upgrades/checkout",
+    activateUpgrade: "subscriptions/upgrades/{purchaseId}/activate",
     renewalCheckout: "subscriptions/renewals/checkout",
     renewalHistory: "subscriptions/renewals/history",
     activateRenewal: "subscriptions/renewals/{purchaseId}/activate",

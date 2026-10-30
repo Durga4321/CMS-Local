@@ -62,7 +62,9 @@ function Subscriptions() {
   const [checkingPaymentId, setCheckingPaymentId] = useState("");
   const [selectedEmail, setSelectedEmail] = useState("");
   const [form, setForm] = useState({ planId: "", months: "1", includesLab: "true" });
-  const [pricing, setPricing] = useState({ planType: "Basic", includesLab: "false", includesPharmacy: "false", months: "1", price: "" });
+  const [pricing, setPricing] = useState({ planType: "Basic", includesLab: "false", includesPharmacy: "false", months: "1", price: "", maxBranches: "", dailyAppointmentLimit: "", benefits: "" });
+  const [typeLimits, setTypeLimits] = useState({});
+  const [savingType, setSavingType] = useState("");
   const [savingPlan, setSavingPlan] = useState(false);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
@@ -154,6 +156,31 @@ function Subscriptions() {
   useEffect(() => {
     loadDemoPurchases();
   }, [loadDemoPurchases]);
+  useEffect(() => {
+    setTypeLimits(Object.fromEntries(SUBSCRIPTION_PLAN_TYPES.map(type => {
+      const values = [...new Set(plans.filter(plan => plan.planType === type).map(plan => plan.dailyAppointmentLimit))];
+      return [type, values.length === 1 && values[0] != null ? String(values[0]) : ""];
+    })));
+  }, [plans]);
+  const saveTypeLimit = async (event, type) => {
+    event.preventDefault();
+    if (savingType || savingPlan) return;
+    const limit = Number(typeLimits[type]);
+    if (!Number.isSafeInteger(limit) || limit < 1) { notifyError("Enter a positive whole number for the appointment limit."); return; }
+    const matching = plans.filter(plan => plan.planType === type);
+    if (!matching.length) { notifyError("Create a " + type + " pricing plan first, then save its appointment limit."); return; }
+    setSavingType(type); setError("");
+    try {
+      const results = await Promise.allSettled(matching.map(plan => updateAdminSubscriptionPlan(plan.id, { ...plan, dailyAppointmentLimit: limit })));
+      const refreshed = await fetchAdminSubscriptionPlans();
+      setPlans(refreshed);
+      const failed = results.find(result => result.status === "rejected");
+      if (failed) throw new Error("Some plan options could not be updated: " + failed.reason.message + ". Review the table and retry.");
+      if (refreshed.filter(plan => plan.planType === type).some(plan => plan.dailyAppointmentLimit !== limit)) throw new Error("The backend did not save the appointment limit for every " + type + " option.");
+      toast.success(type + " appointment limit saved for all billing cycles and module options.");
+    } catch (failure) { notifyError(failure.message || "Unable to save appointment limit."); }
+    finally { setSavingType(""); }
+  };
   const matchesSelectedCombination = (plan) =>
     plan.planType === pricing.planType &&
     plan.includesCms === true &&
@@ -162,7 +189,7 @@ function Subscriptions() {
     plan.durationMonths === Number(pricing.months);
   const pricingPlan = [...plans].reverse().find(matchesSelectedCombination);
   useEffect(() => {
-    setPricing((current) => ({ ...current, price: pricingPlan ? String(pricingPlan.price) : "" }));
+    setPricing((current) => ({ ...current, price: pricingPlan ? String(pricingPlan.price) : "", maxBranches: pricingPlan?.maxBranches ?? "", dailyAppointmentLimit: pricingPlan?.dailyAppointmentLimit ?? "", benefits: (pricingPlan?.benefits || []).join("\n") }));
   }, [pricingPlan, pricing.planType, pricing.includesLab, pricing.includesPharmacy, pricing.months]);
 
   useEffect(() => {
@@ -216,19 +243,21 @@ function Subscriptions() {
     event.preventDefault();
     setSavingPlan(true); setError("");
     try {
+      const typePlans = plans.filter(plan => plan.planType === pricing.planType);
+      const savedLimits = [...new Set(typePlans.map(plan => plan.dailyAppointmentLimit))];
+      const appointmentLimit = typePlans.length ? (savedLimits.length === 1 ? savedLimits[0] : null) : Number(typeLimits[pricing.planType]);
+      if (!Number.isSafeInteger(appointmentLimit) || appointmentLimit < 1) throw new Error("Set and save the appointment limit in Plan Type Benefits before editing this type's pricing.");
       const includesLab = pricing.includesLab === "true";
       const durationMonths = Number(pricing.months);
       const cycle = getBillingCycle(durationMonths);
       const labLabel = includesLab ? "With Lab" : "Without Lab";
       const pharmacyLabel = pricing.includesPharmacy === "true" ? "With Pharmacy" : "Without Pharmacy";
       const planName = pricing.planType + " - " + labLabel + " - " + pharmacyLabel + " - " + cycle;
-      const plan = { name: planName, planType: pricing.planType, durationMonths, includesLab, includesPharmacy: pricing.includesPharmacy === "true", price: Number(pricing.price), isActive: true };
+      const plan = { maxBranches: pricing.maxBranches, dailyAppointmentLimit: appointmentLimit, benefits: pricing.benefits, name: planName, planType: pricing.planType, durationMonths, includesLab, includesPharmacy: pricing.includesPharmacy === "true", price: Number(pricing.price), isActive: true };
       let saved;
       let existingPlan = pricingPlan;
       if (existingPlan?.id) {
-        saved = existingPlan.name !== planName
-          ? await updateAdminSubscriptionPlan(existingPlan.id, { ...plan, isActive: existingPlan.isActive })
-          : await updateAdminSubscriptionPlanPrice(existingPlan.id, { price: plan.price });
+        saved = await updateAdminSubscriptionPlan(existingPlan.id, { ...plan, isActive: existingPlan.isActive });
       } else {
         saved = await createAdminSubscriptionPlan(plan);
       }
@@ -243,9 +272,10 @@ function Subscriptions() {
         Number(item.price) === Number(pricing.price) &&
         (!saved?.id || String(item.id) === String(saved.id))
       );
+      if (persisted && (persisted.maxBranches !== Number(pricing.maxBranches) || persisted.dailyAppointmentLimit !== Number(plan.dailyAppointmentLimit) || JSON.stringify(persisted.benefits) !== JSON.stringify([...new Set(pricing.benefits.split(/\r?\n/).map(value => value.trim()).filter(Boolean))]))) throw new Error("The backend did not return the saved limits and benefits. Verify that the plan API supports these fields.");
       if (!persisted) throw new Error("The plan was submitted, but the saved price was not returned by the backend.");
       setForm({ planId: persisted.id, months: String(durationMonths), includesLab: String(includesLab) });
-      toast.success((existingPlan ? persisted.name || planName : planName) + (existingPlan ? " price updated." : " plan saved."));
+      toast.success((existingPlan ? persisted.name || planName : planName) + (existingPlan ? " plan updated." : " plan saved."));
       try { setSubscriptions(await fetchAdminSubscriptions()); }
       catch (failure) { notifyError("Plan saved, but subscriptions could not be refreshed: " + failure.message); }
     } catch (failure) { notifyError(failure.message || "Unable to save plan."); }
@@ -323,16 +353,30 @@ function Subscriptions() {
         <div className="sa-subscription-kpi is-blue"><ShieldCheck size={20} /><div><b>{subscriptions.length}</b><span>Assigned subscriptions</span></div></div>
         <div className="sa-subscription-kpi is-amber"><RefreshCw size={20} /><div><b>{filteredRows.filter((row) => row.status === "Active").length}</b><span>Active renewals</span></div></div>
       </div>
-      <form className="sa-subscription-panel" onSubmit={savePricing} onInvalid={() => toast.error("Enter a valid plan price.")}>
-        <h3>Plan Pricing</h3>
+      <section className="sa-subscription-panel">
+        <h3>Plan Type Benefits</h3>
+        <p>Set one daily appointment limit for each plan type. Saving updates all its billing cycles and lab/pharmacy options in the backend.</p>
+        <table className="sa-table" style={{ width: "100%" }}>
+          <thead><tr><th scope="col">Plan type</th><th scope="col">Appointments per day</th><th scope="col">Action</th></tr></thead>
+          <tbody>{SUBSCRIPTION_PLAN_TYPES.map(type => {
+            const matching = plans.filter(plan => plan.planType === type);
+            const limits = [...new Set(matching.map(plan => plan.dailyAppointmentLimit))];
+            return <tr key={type}><td>{type}</td><td><form id={"limit-" + type} onSubmit={event => saveTypeLimit(event, type)}><input aria-label={type + " daily appointment limit"} type="number" required min="1" step="1" value={typeLimits[type] ?? ""} disabled={loading || Boolean(savingType) || savingPlan} onChange={event => setTypeLimits(current => ({ ...current, [type]: event.target.value }))} />{limits.length > 1 ? <small> Existing options have different limits. Save to apply one limit.</small> : null}</form></td><td><button type="submit" form={"limit-" + type} className="sa-btn sa-btn-primary" disabled={loading || Boolean(savingType) || savingPlan || !matching.length}>{savingType === type ? "Saving..." : "Save limit"}</button></td></tr>;
+          })}</tbody>
+        </table>
+      </section>
+      <form className="sa-subscription-panel" onSubmit={savePricing} onInvalid={() => toast.error("Enter a valid price, branch limit, and daily appointment limit.")}>
+        <h3>Plan Pricing</h3><p>Configure prices and module options here. Appointment limits are managed separately in Plan Type Benefits and apply to every option of that type.</p>
         <div className="sa-subscription-form-grid">
           <div className="sa-form-field"><label htmlFor="pricing-type">Plan type</label><select id="pricing-type" disabled={savingPlan} value={pricing.planType} onChange={(event) => setPricing({ ...pricing, planType: event.target.value })}>{SUBSCRIPTION_PLAN_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}</select></div>
           <div className="sa-form-field"><label htmlFor="pricing-lab">Lab access</label><select id="pricing-lab" disabled={savingPlan} value={pricing.includesLab} onChange={(event) => setPricing({ ...pricing, includesLab: event.target.value })}><option value="false">Without Lab</option><option value="true">With Lab</option></select></div>
           <div className="sa-form-field"><label htmlFor="pricing-pharmacy">Pharmacy access</label><select id="pricing-pharmacy" disabled={savingPlan} value={pricing.includesPharmacy} onChange={(event) => setPricing({ ...pricing, includesPharmacy: event.target.value })}><option value="false">Without Pharmacy</option><option value="true">With Pharmacy</option></select></div>
           <div className="sa-form-field"><label htmlFor="pricing-cycle">Billing cycle</label><select id="pricing-cycle" disabled={savingPlan} value={pricing.months} onChange={(event) => setPricing({ ...pricing, months: event.target.value })}>{BILLING_CYCLES.map((cycle) => <option key={cycle.months} value={cycle.months}>{cycle.label}</option>)}</select></div>
+          {[["maxBranches", "Maximum branches"]].map(([key, label]) => <div className="sa-form-field" key={key}><label htmlFor={key}>{label}</label><input id={key} type="number" min="1" step="1" required disabled={savingPlan} value={pricing[key]} onChange={(event) => setPricing({ ...pricing, [key]: event.target.value })} /></div>)}
+          <div className="sa-form-field"><label htmlFor="plan-benefits">Plan benefits (one per line)</label><textarea id="plan-benefits" rows={5} disabled={savingPlan} value={pricing.benefits} onChange={(event) => setPricing({ ...pricing, benefits: event.target.value })} /></div>
           <div className="sa-form-field"><label htmlFor="pricing-amount">Price</label><input id="pricing-amount" disabled={savingPlan} type="number" required min="0" step="0.01" value={pricing.price} onChange={(event) => setPricing({ ...pricing, price: event.target.value })} /></div>
         </div>
-        <div className="sa-subscription-actions"><button className="sa-btn sa-btn-primary" disabled={loading || saving || savingPlan}>{savingPlan ? "Saving..." : pricingPlan ? "Update Plan" : "Save Plan"}</button></div>
+        <div className="sa-subscription-actions"><button className="sa-btn sa-btn-primary" disabled={loading || saving || savingPlan || Boolean(savingType)}>{savingPlan ? "Saving..." : pricingPlan ? "Update Plan" : "Save Plan"}</button></div>
       </form>
       <section className="sa-subscription-table-section">
         <h3>Saved Plans</h3>
@@ -344,6 +388,8 @@ function Subscriptions() {
             { key: "includesPharmacy", label: "Pharmacy Access", width: "160px", render: (plan) => plan.includesPharmacy ? "With Pharmacy" : "Without Pharmacy" },
             { key: "billingCycle", label: "Billing Cycle", width: "130px" },
             { key: "price", label: "Price", width: "130px", render: (plan) => formatIndianCurrency(plan.price) },
+            { key: "maxBranches", label: "Branches", width: "100px", render: plan => plan.maxBranches ?? "Not configured" },
+            { key: "benefits", label: "Benefits", width: "minmax(200px, 1fr)", render: plan => plan.benefits.length ? plan.benefits.join("; ") : "None" },
             { key: "isActive", label: "Status", width: "100px", render: (plan) => plan.isActive ? "Active" : "Inactive" },
           ]} rows={plans} loading={loading} emptyMessage="No plans saved." className="sa-table--subscription-plans" />
         </div>
