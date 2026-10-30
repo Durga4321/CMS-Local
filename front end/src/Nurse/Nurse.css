@@ -104,9 +104,9 @@
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.12) 0%, rgba(16, 185, 129, 0.12) 100%);
-  border: 1px solid rgba(14, 165, 233, 0.25);
-  color: #0369a1;
+  background: #e0f2f1;
+  border: 1px solid #b9d8d6;
+  color: #367f82;
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
@@ -119,9 +119,9 @@
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  color: #047857;
+  background: #e0f2f1;
+  border: 1px solid #b9d8d6;
+  color: #367f82;
   font-size: 11px;
   font-weight: 750;
 }
@@ -130,8 +130,8 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 8px #10b981;
+  background: #367f82;
+  box-shadow: 0 0 8px #367f82;
   animation: ndPulse 1.8s infinite;
 }
 
@@ -182,8 +182,9 @@
    ============================================================ */
 .nd-stat-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(4, minmax(0, 265px));
+  justify-content: space-between;
+  gap: 14px;
   margin-bottom: 26px;
   position: relative;
   z-index: 1;
@@ -253,27 +254,27 @@
 }
 
 .nd-stat-icon-box.cyan {
-  background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
-  color: #ffffff;
-  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+  background: #e0f2f1;
+  color: #367f82;
+  box-shadow: 0 4px 14px rgba(54, 127, 130, 0.18);
 }
 
 .nd-stat-icon-box.amber {
-  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
-  color: #ffffff;
-  box-shadow: 0 6px 16px rgba(217, 119, 6, 0.35);
+  background: #e0f2f1;
+  color: #367f82;
+  box-shadow: 0 4px 14px rgba(54, 127, 130, 0.18);
 }
 
 .nd-stat-icon-box.indigo {
-  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-  color: #ffffff;
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+  background: #e0f2f1;
+  color: #367f82;
+  box-shadow: 0 4px 14px rgba(54, 127, 130, 0.18);
 }
 
 .nd-stat-icon-box.emerald {
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-  color: #ffffff;
-  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.35);
+  background: #e0f2f1;
+  color: #367f82;
+  box-shadow: 0 4px 14px rgba(54, 127, 130, 0.18);
 }
 
 .nd-stat-pill {
@@ -320,51 +321,51 @@
 
 /* Color Themes for Stat Cards */
 .nd-card--cyan {
-  border-bottom: 3.5px solid #0284c7;
+  border-bottom: 3.5px solid #91c6c4;
 }
 .nd-card--cyan .nd-stat-card-glow {
   background: #38bdf8;
 }
 .nd-card--cyan .nd-stat-pill {
-  background: rgba(2, 132, 199, 0.12);
-  color: #0284c7;
-  border: 1px solid rgba(2, 132, 199, 0.25);
+  background: #e0f2f1;
+  color: #367f82;
+  border: 1px solid #b9d8d6;
 }
 
 .nd-card--amber {
-  border-bottom: 3.5px solid #f59e0b;
+  border-bottom: 3.5px solid #91c6c4;
 }
 .nd-card--amber .nd-stat-card-glow {
   background: #fcd34d;
 }
 .nd-card--amber .nd-stat-pill {
-  background: rgba(245, 158, 11, 0.12);
-  color: #d97706;
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: #e0f2f1;
+  color: #367f82;
+  border: 1px solid #b9d8d6;
 }
 
 .nd-card--indigo {
-  border-bottom: 3.5px solid #6366f1;
+  border-bottom: 3.5px solid #91c6c4;
 }
 .nd-card--indigo .nd-stat-card-glow {
   background: #a5b4fc;
 }
 .nd-card--indigo .nd-stat-pill {
-  background: rgba(99, 102, 241, 0.12);
-  color: #4f46e5;
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: #e0f2f1;
+  color: #367f82;
+  border: 1px solid #b9d8d6;
 }
 
 .nd-card--emerald {
-  border-bottom: 3.5px solid #10b981;
+  border-bottom: 3.5px solid #91c6c4;
 }
 .nd-card--emerald .nd-stat-card-glow {
   background: #6ee7b7;
 }
 .nd-card--emerald .nd-stat-pill {
-  background: rgba(16, 185, 129, 0.12);
-  color: #059669;
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: #e0f2f1;
+  color: #367f82;
+  border: 1px solid #b9d8d6;
 }
 
 /* ============================================================
@@ -450,24 +451,24 @@
 }
 
 .nd-action-icon-box.cyan {
-  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-  color: #0284c7;
-  border: 1px solid rgba(14, 165, 233, 0.3);
-  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.15);
+  background: #e0f2f1;
+  color: #367f82;
+  border: 1px solid #b9d8d6;
+  box-shadow: 0 4px 14px rgba(54, 127, 130, 0.18);
 }
 
 .nd-action-icon-box.rose {
-  background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
-  color: #e11d48;
-  border: 1px solid rgba(225, 29, 72, 0.3);
-  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.15);
+  background: #e0f2f1;
+  color: #367f82;
+  border: 1px solid #b9d8d6;
+  box-shadow: 0 4px 14px rgba(54, 127, 130, 0.18);
 }
 
 .nd-action-icon-box.indigo {
-  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-  color: #4338ca;
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.15);
+  background: #e0f2f1;
+  color: #367f82;
+  border: 1px solid #b9d8d6;
+  box-shadow: 0 4px 14px rgba(54, 127, 130, 0.18);
 }
 
 .nd-action-text {
@@ -3066,4 +3067,364 @@
   }
 }
 
+.nurse-online-bookings .rc-modal-backdrop .booking-vitals-modal,
+.nurse-offline-bookings .rc-modal-backdrop .booking-vitals-modal {
+  width: min(940px, calc(100vw - 32px)) !important;
+}
 
+.nurse-online-bookings .vitals-modal-body,
+.nurse-offline-bookings .vitals-modal-body {
+  flex: 0 1 auto;
+}
+
+.nurse-online-bookings .vitals-cards-grid,
+.nurse-offline-bookings .vitals-cards-grid {
+  grid-template-columns: repeat(3, minmax(0, 240px));
+  justify-content: center;
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: 14px;
+}
+
+.nurse-online-bookings .vital-detail-card,
+.nurse-offline-bookings .vital-detail-card {
+  align-self: start;
+  min-width: 0;
+  width: 100%;
+  padding: 10px;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.nurse-online-bookings .vital-card-top,
+.nurse-offline-bookings .vital-card-top {
+  gap: 6px;
+}
+
+.nurse-online-bookings .vital-card-header-left,
+.nurse-offline-bookings .vital-card-header-left {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.nurse-online-bookings .vital-card-meta,
+.nurse-offline-bookings .vital-card-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.nurse-online-bookings .vital-card-label,
+.nurse-offline-bookings .vital-card-label,
+.nurse-online-bookings .vital-instrument-name,
+.nurse-offline-bookings .vital-instrument-name {
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.nurse-online-bookings .vital-card-ref,
+.nurse-offline-bookings .vital-card-ref {
+  flex-shrink: 0;
+}
+
+@media (max-width: 800px) {
+  .nurse-online-bookings .vitals-cards-grid,
+  .nurse-offline-bookings .vitals-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .nurse-online-bookings .vitals-cards-grid,
+  .nurse-offline-bookings .vitals-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.nurse-online-bookings .booking-vitals-modal .vitals-modal-body .vitals-cards-grid,
+.nurse-offline-bookings .booking-vitals-modal .vitals-modal-body .vitals-cards-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-auto-rows: 136px !important;
+  align-content: start !important;
+  justify-content: center !important;
+  align-items: start !important;
+  gap: 12px !important;
+}
+
+.nurse-online-bookings .booking-vitals-modal .vitals-cards-grid .vital-detail-card,
+.nurse-offline-bookings .booking-vitals-modal .vitals-cards-grid .vital-detail-card {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr) auto 34px !important;
+  align-items: center !important;
+  justify-items: stretch !important;
+  width: 100% !important;
+  height: 136px !important;
+  min-width: 0 !important;
+  padding: 10px 12px !important;
+  box-sizing: border-box !important;
+  gap: 8px !important;
+  overflow: hidden !important;
+}
+
+.nurse-online-bookings .booking-vitals-modal .vital-card-top,
+.nurse-offline-bookings .booking-vitals-modal .vital-card-top {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  gap: 8px !important;
+}
+
+.nurse-online-bookings .booking-vitals-modal .vital-card-header-left,
+.nurse-offline-bookings .booking-vitals-modal .vital-card-header-left {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  align-items: center !important;
+  min-width: 0 !important;
+  gap: 8px !important;
+}
+
+.nurse-online-bookings .booking-vitals-modal .vital-card-meta,
+.nurse-offline-bookings .booking-vitals-modal .vital-card-meta {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  gap: 0 !important;
+}
+
+.nurse-online-bookings .booking-vitals-modal .vital-card-icon,
+.nurse-offline-bookings .booking-vitals-modal .vital-card-icon {
+  flex: 0 0 28px !important;
+}
+
+.nurse-online-bookings .booking-vitals-modal .vital-card-label,
+.nurse-offline-bookings .booking-vitals-modal .vital-card-label {
+  display: block !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  white-space: normal !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+.nurse-online-bookings .booking-vitals-modal .vital-instrument-name,
+.nurse-offline-bookings .booking-vitals-modal .vital-instrument-name {
+  display: none !important;
+}
+
+.nurse-online-bookings .booking-vitals-modal .vital-card-ref,
+.nurse-offline-bookings .booking-vitals-modal .vital-card-ref {
+  justify-self: start !important;
+  margin: 0 !important;
+  font-size: 9px !important;
+  padding: 2px 6px !important;
+  grid-row: 2 !important;
+}
+
+.nurse-online-bookings .booking-vitals-modal .vital-card-input-wrap,
+.nurse-offline-bookings .booking-vitals-modal .vital-card-input-wrap {
+  display: flex !important;
+  grid-row: 3 !important;
+  width: 100% !important;
+  height: 34px !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.nurse-online-bookings .booking-vitals-modal .vital-card-input,
+.nurse-offline-bookings .booking-vitals-modal .vital-card-input {
+  font-size: 11px !important;
+  padding: 0 7px !important;
+}
+
+.nurse-online-bookings .booking-vitals-modal .vital-card-unit,
+.nurse-offline-bookings .booking-vitals-modal .vital-card-unit {
+  padding: 0 7px !important;
+  font-size: 9px !important;
+}
+
+@media (max-width: 900px) {
+  .nurse-online-bookings .booking-vitals-modal .vitals-modal-body .vitals-cards-grid,
+  .nurse-offline-bookings .booking-vitals-modal .vitals-modal-body .vitals-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .nurse-online-bookings .booking-vitals-modal .vitals-modal-body .vitals-cards-grid,
+  .nurse-offline-bookings .booking-vitals-modal .vitals-modal-body .vitals-cards-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+.rc-sidebar .rc-med-nav-pill {
+  display: none !important;
+}
+
+.rc-shell:has(.rc-sidebar [title="Clinical Nursing Station"]) .rc-patients-page .rc-patient-table-header .rc-th-capsule {
+  color: #0f172a !important;
+}
+
+.rc-shell:has(.rc-sidebar [title="Clinical Nursing Station"]) .rc-patients-page .rc-patient-table-row .rc-dash-sno-badge,
+.rc-shell:has(.rc-sidebar [title="Clinical Nursing Station"]) .rc-patients-page .rc-patient-table-row .rc-patient-pid-badge,
+.rc-shell:has(.rc-sidebar [title="Clinical Nursing Station"]) .rc-patients-page .rc-patient-table-row .rc-dash-patient-name,
+.rc-shell:has(.rc-sidebar [title="Clinical Nursing Station"]) .rc-patients-page .rc-patient-table-row .rc-patient-phone-cell span,
+.rc-shell:has(.rc-sidebar [title="Clinical Nursing Station"]) .rc-patients-page .rc-patient-table-row .rc-patient-age-badge {
+  color: #245b63 !important;
+}
+
+.rc-shell:has(.rc-staff-med-badge[title="Clinical Nursing Station"]) .rc-patients-page .rc-patient-kpi-grid {
+  grid-template-columns: repeat(3, 280px) !important;
+  justify-content: center !important;
+  gap: 14px !important;
+}
+
+.rc-shell:has(.rc-staff-med-badge[title="Clinical Nursing Station"]) .rc-patients-page .rc-patient-kpi-card {
+  width: 280px !important;
+  max-width: 280px !important;
+}
+
+@media (max-width: 1024px) {
+  .rc-shell:has(.rc-staff-med-badge[title="Clinical Nursing Station"]) .rc-patients-page .rc-patient-kpi-grid {
+    grid-template-columns: repeat(2, 280px) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .rc-shell:has(.rc-staff-med-badge[title="Clinical Nursing Station"]) .rc-patients-page .rc-patient-kpi-grid {
+    grid-template-columns: 280px !important;
+  }
+}
+
+.nurse-dashboard-page .nd-stat-grid {
+  grid-template-columns: repeat(4, 220px) !important;
+  justify-content: space-between !important;
+}
+
+.nurse-dashboard-page .nd-stat-card {
+  width: 220px !important;
+  border-bottom-color: #91c6c4 !important;
+}
+
+.nurse-dashboard-page .nd-stat-icon-box,
+.nurse-dashboard-page .nd-stat-pill,
+.nurse-dashboard-page .nd-station-badge,
+.nurse-dashboard-page .nd-live-pulse-badge {
+  background: #e0f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+}
+
+.nurse-dashboard-page .nd-live-dot {
+  background: #367f82 !important;
+  box-shadow: 0 0 8px #367f82 !important;
+}
+
+.med-history-page .med-history-badge {
+  background: #e0f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+}
+
+.med-history-page .med-history-hero::before {
+  background: #367f82;
+}
+
+.med-history-page .med-history-hero > div:first-child > p {
+  display: none;
+}
+
+.med-history-page .med-history-table th {
+  color: #000000 !important;
+  font-size: 11px !important;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.med-history-page .med-badge--allergy,
+.med-history-page .med-badge--chronic,
+.med-history-page .med-badge--meds,
+.med-history-page .med-badge--surg {
+  background: #e0f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+}
+
+.med-history-page .med-btn--add {
+  background: #0f766e !important;
+  border-color: #0f766e !important;
+}
+
+.med-history-page .med-metrics-grid {
+  grid-template-columns: repeat(4, 230px) !important;
+  justify-content: space-between !important;
+}
+
+.med-history-page .med-metric-card {
+  width: 230px !important;
+  border-bottom-color: #91c6c4 !important;
+}
+
+.med-history-page .med-metric-icon,
+.med-history-page .med-card-icon {
+  background: #e0f2f1 !important;
+  color: #367f82 !important;
+}
+
+.nurse-online-bookings .booking-hero::before,
+.nurse-offline-bookings .booking-hero::before {
+  background: #367f82 !important;
+}
+
+.nurse-online-bookings .booking-badge,
+.nurse-offline-bookings .booking-badge {
+  background: #e0f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+}
+
+.nurse-online-bookings .booking-metric-card,
+.nurse-offline-bookings .booking-metric-card {
+  border-color: #b9d8d6 !important;
+  border-bottom: 3px solid #367f82 !important;
+}
+
+.nurse-online-bookings .booking-metric-card .booking-metric-icon,
+.nurse-offline-bookings .booking-metric-card .booking-metric-icon,
+.nurse-online-bookings .booking-card-icon,
+.nurse-offline-bookings .booking-card-icon {
+  background: #e0f2f1 !important;
+  color: #367f82 !important;
+}
+
+.nurse-online-bookings .booking-card,
+.nurse-offline-bookings .booking-card {
+  border-color: #b9d8d6 !important;
+}
+
+@media (max-width: 1200px) {
+  .nurse-dashboard-page .nd-stat-grid,
+  .med-history-page .med-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 230px)) !important;
+    justify-content: start !important;
+  }
+
+  .nurse-dashboard-page .nd-stat-card,
+  .med-history-page .med-metric-card {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .nurse-dashboard-page .nd-stat-grid,
+  .med-history-page .med-metrics-grid {
+    grid-template-columns: minmax(0, 230px) !important;
+  }
+}

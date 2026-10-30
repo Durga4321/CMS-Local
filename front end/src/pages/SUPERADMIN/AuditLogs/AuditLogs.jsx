@@ -760,7 +760,6 @@ function AuditLogs() {
     <div className="sa-audit-logs-page">
       <Header
         title="Audit Logs"
-        subtitle="Trace backend audit records, login activity, IP address, and timestamps."
         action={
           <button className="sa-btn" type="button" onClick={() => loadLogs()} disabled={loading}>
             Refresh

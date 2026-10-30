@@ -8,7 +8,7 @@
 .phb-button-light { color: #0284c7; background: #f0f9ff; border-color: #bae6fd; }
 .phb-button-primary { color: #fff; background: linear-gradient(115deg, #0d9488, #0284c7); box-shadow: 0 4px 12px #0891b225; }
 .pharmacy-billing-page button:disabled { opacity: .5; cursor: not-allowed; }
-.phb-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.phb-stats { display: grid; grid-template-columns: repeat(3, 280px); justify-content: start; gap: 12px; }
 .phb-stats > div { display: flex; align-items: center; gap: 14px; padding: 18px 20px; border: 1px solid #d8e8f5; border-radius: 15px; background: linear-gradient(120deg, #fff, #edf7ff); box-shadow: 0 4px 15px #94a3b80d; }
 .phb-stat-icon { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; color: #0284c7; background: #e0f2fe; border-radius: 13px; }
 .phb-stat-icon.phb-green { color: #059669; background: #d1fae5; }
@@ -85,6 +85,24 @@
 .phb-ledger-toolbar > select { width: 155px; }
 @media (max-width: 1200px) { .phb-composer { grid-template-columns: minmax(0, 1fr); } .phb-summary { max-width: none; } }
 @media (max-width: 620px) { .phb-stats { grid-template-columns: 1fr; gap: 10px; } .phb-page-head h2 { font-size: 20px; } .phb-page-head { align-items: flex-start; } .phb-form { grid-template-columns: 1fr; padding: 16px; } .phb-panel-title { padding: 16px; } .phb-panel-title small { display: none; } .phb-ledger-toolbar { flex-wrap: wrap; padding: 14px; } .phb-ledger-toolbar label { min-width: 180px; } .phb-detail-actions .phb-button { flex: 1 0 150px; } }
+
+.phb-stats > div { width: 280px; max-width: 100%; min-width: 0; box-sizing: border-box; }
+
+@media (max-width: 1000px) {
+  .phb-stats { grid-template-columns: repeat(2, minmax(0, 280px)); justify-content: start; }
+  .phb-stats > div { width: 100%; }
+}
+
+@media (max-width: 620px) {
+  .phb-stats { grid-template-columns: minmax(0, 1fr); }
+}
+
+.pharmacy-billing-page .phb-stat-icon,
+.pharmacy-billing-page .phb-stat-icon.phb-green,
+.pharmacy-billing-page .phb-stat-icon.phb-purple {
+  color: #367f82;
+  background: #e0f2f1;
+}
 @media (prefers-reduced-motion: reduce) { .phb-button { transition: none; } .phb-button:hover:not(:disabled) { transform: none; } }
 
 .phb-items .phb-prescribed-name { display: block; white-space: normal; line-height: 1.5; color: #1e3a5f; }

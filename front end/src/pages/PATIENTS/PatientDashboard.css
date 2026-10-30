@@ -2212,3 +2212,69 @@
 .pd-reference-dashboard .pd-notifications-panel::before {
   background: #f43f5e;
 }
+
+.pd-reference-dashboard .pd-overview-grid > .pd-card {
+  height: 340px;
+  min-height: 0;
+  border-color: #99f6e4;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.pd-reference-dashboard .pd-overview-grid > .pd-card::before {
+  display: none;
+}
+
+.pd-reference-dashboard .pd-dashboard-row > .pd-card {
+  border-color: #99f6e4;
+}
+
+.pd-reference-dashboard .pd-dashboard-row > .pd-card::before {
+  background: #14b8a6;
+}
+
+.pd-reference-dashboard .pd-token-panel {
+  gap: 8px;
+  padding: 12px;
+}
+
+.pd-reference-dashboard .pd-summary-card--billing .pd-summary-card-icon {
+  background: #e2fbf3;
+}
+
+@media (max-width: 760px) {
+  .pd-reference-dashboard .pd-overview-grid > .pd-card {
+    height: auto;
+  }
+}
+
+.patient-dashboard:has(.mh-grid) .mh-grid {
+  align-items: start;
+}
+
+.patient-dashboard:has(.mh-grid) .mh-grid > .mh-card {
+  height: 320px !important;
+  min-height: 0;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.patient-dashboard:has(.mh-grid) .mh-card-head {
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.patient-dashboard:has(.mh-grid) .mh-card-body,
+.patient-dashboard:has(.mh-grid) .mh-card-empty {
+  min-height: 88px;
+}
+
+@media (max-width: 760px) {
+  .patient-dashboard:has(.mh-grid) .mh-grid > .mh-card {
+    height: auto !important;
+  }
+}
+
+.pd-reference-dashboard .pd-greeting-title span,
+.pd-reference-dashboard .pd-greeting-subtitle {
+  display: none;
+}

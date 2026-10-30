@@ -249,7 +249,6 @@ function Notifications() {
     <div className="sa-notifications-page">
       <Header
         title="Notifications"
-        subtitle="Create and send platform notifications."
         action={
           <button
             className="sa-btn sa-btn-primary"
@@ -331,10 +330,6 @@ function Notifications() {
 
       <div className="sa-panel">
         <h3>Notification List</h3>
-        <p>
-          Recent messages and delivery status
-          {stats ? ` · ${Number(stats.total || stats.totalNotifications || notifications.length) || notifications.length} total` : ""}.
-        </p>
         {loading ? <div className="sa-state">Loading notifications...</div> : null}
         {!loading && error && !showForm ? <div className="sa-state sa-state--error">{error}</div> : null}
         {!loading && !error ? (
@@ -367,6 +362,5 @@ function Notifications() {
 }
 
 export default Notifications;
-
 
 

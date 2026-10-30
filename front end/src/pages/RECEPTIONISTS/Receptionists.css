@@ -1134,3 +1134,25 @@
   width: 17px !important;
   height: 17px !important;
 }
+
+.receptionists-page:not(.lab-technicians-page) .receptionists-thead {
+  color: #33464c !important;
+}
+
+.receptionists-page:not(.lab-technicians-page) .receptionists-email {
+  color: #1e293b !important;
+}
+
+.receptionists-page:not(.lab-technicians-page) .receptionists-actions .action-btn:not(.delete-instrument-btn):not(.delete-btn) {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.12) !important;
+}
+
+.receptionists-page:not(.lab-technicians-page) .receptionists-actions .action-btn:not(.delete-instrument-btn):not(.delete-btn):hover:not(:disabled) {
+  background: #4b9da3 !important;
+  border-color: #82b8b5 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.2) !important;
+}

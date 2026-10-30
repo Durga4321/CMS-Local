@@ -840,3 +840,99 @@
     padding: 0 9px;
   }
 }
+
+.admin-pharmacists-list-card {
+  display: contents;
+}
+
+.admin-pharmacists-search {
+  width: 100%;
+  margin: 0 0 10px;
+  padding: 0 18px;
+  border-color: #d5e0e2;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+.admin-pharmacists-search:focus-within {
+  border-color: #4b9da3;
+  box-shadow: 0 0 0 3px rgba(75, 157, 163, 0.16);
+  background: #ffffff;
+}
+
+.admin-pharmacists-search,
+.admin-pharmacists-search input {
+  color: #367f82;
+}
+
+.admin-pharmacists-table-scroll {
+  border-color: #dfe8ea;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.admin-pharmacists-thead {
+  background: #f8fafc;
+  border-bottom-color: #e2e8f0;
+  color: #33464c;
+  font-size: 11px;
+}
+
+.admin-pharmacists-row {
+  background: #ffffff;
+  border-bottom-color: #f1f5f9;
+  color: #33464c;
+  font-size: 13px;
+}
+
+.admin-pharmacists-row:hover {
+  background: #f8fbfc;
+}
+
+.admin-pharmacists-name b,
+.admin-pharmacists-cell {
+  font-size: 13px;
+}
+
+.admin-pharmacists-avatar {
+  background: #e2f2f1;
+  color: #367f82;
+  box-shadow: 0 3px 8px rgba(54, 127, 130, 0.14);
+}
+
+.admin-pharmacists-email {
+  color: #367f82;
+}
+
+.admin-pharmacists-status.is-active {
+  border-color: #b9d8d6;
+  background: #e2f2f1;
+  color: #367f82;
+  box-shadow: 0 3px 10px rgba(54, 127, 130, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.admin-pharmacists-action.is-view {
+  border-color: #a9dfe3;
+  background: #e2f2f1;
+  color: #367f82;
+}
+
+.admin-pharmacists-action.is-edit {
+  border-color: #c4b5fd;
+  background: #e2f2f1;
+  color: #7c3aed;
+}
+
+.admin-pharmacists-action.is-status {
+  border-color: #b9d8d6;
+  background: #e2f2f1;
+  color: #07805b;
+}
+
+.admin-pharmacists-action.is-delete {
+  border-color: #b9d8d6;
+  background: #e2f2f1;
+  color: #e11d48;
+}

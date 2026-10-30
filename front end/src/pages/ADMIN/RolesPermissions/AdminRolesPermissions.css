@@ -1511,6 +1511,96 @@
   }
 }
 
+.admin-roles-page .admin-roles-table-card {
+  display: contents;
+}
+
+.admin-roles-page .admin-roles-toolbar {
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.admin-roles-page .admin-roles-search {
+  background: #ffffff;
+  border-color: #d5e0e2;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.admin-roles-page .admin-roles-search:focus-within {
+  border-color: #4b9da3;
+  box-shadow: 0 0 0 3px rgba(75, 157, 163, 0.16);
+}
+
+.admin-roles-page .admin-roles-table-card .sa-table {
+  background: #ffffff;
+  border: 1px solid #dfe8ea;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.admin-roles-page .admin-roles-table-card .sa-table-head {
+  background: #f8fafc;
+  border-bottom-color: #e2e8f0;
+  color: #33464c;
+}
+
+.admin-roles-page .admin-roles-table-card .sa-table-row {
+  background: #ffffff;
+  border-bottom-color: #f1f5f9;
+  color: #1e293b;
+}
+
+.admin-roles-page .admin-roles-name-highlight {
+  background: #e2f2f1;
+  border-color: #b9d8d6;
+  box-shadow: 0 2px 8px rgba(54, 127, 130, 0.12);
+}
+
+.admin-roles-page .admin-roles-name-highlight b,
+.admin-roles-page .admin-roles-module-list .admin-roles-module-pill {
+  color: #367f82;
+}
+
+.admin-roles-page .admin-roles-module-list .admin-roles-module-pill {
+  background: #e2f2f1;
+  border-color: #b9d8d6;
+}
+
+.admin-roles-page .admin-roles-staff-cell .admin-roles-avatar {
+  background: #4b9da3;
+  color: #ffffff;
+}
+
+.admin-roles-page .admin-roles-staff-cell .sa-role-admin-list b {
+  color: #27343a;
+}
+
+.admin-roles-page .admin-roles-permission-item {
+  background: #f8fafc;
+  border-color: #dbe5e7;
+}
+
+.admin-roles-page .admin-roles-permission-item b {
+  color: #33464c;
+}
+
+.admin-roles-page .sa-actions .action-btn:not(.delete-instrument-btn):not(.delete-btn) {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.12) !important;
+}
+
+.admin-roles-page .sa-actions .action-btn:not(.delete-instrument-btn):not(.delete-btn):hover:not(:disabled) {
+  background: #4b9da3 !important;
+  border-color: #82b8b5 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.2) !important;
+}
+
 /* Polished compact view/edit modal: contained card, no footer needed in view mode. */
 .admin-roles-modal-backdrop {
   align-items: center !important;
@@ -1820,4 +1910,24 @@
     min-height: 52px !important;
     margin-top: 12px !important;
   }
+}
+
+.admin-roles-page .sa-form-card.sa-permission-card {
+  background: #ffffff !important;
+}
+
+.admin-roles-page .sa-permission-matrix {
+  background: #ffffff !important;
+}
+
+.admin-roles-page .sa-permission-row,
+.admin-roles-page .sa-permission-row--doctor,
+.admin-roles-page .sa-permission-row--receptionist,
+.admin-roles-page .sa-permission-row--nurse,
+.admin-roles-page .sa-permission-row--labtechnician {
+  background: #f4faff !important;
+}
+
+.admin-roles-page .sa-permission-row:hover {
+  background: #eaf5fb !important;
 }

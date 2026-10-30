@@ -3824,6 +3824,33 @@
   box-shadow: 0 12px 28px rgba(14, 116, 144, 0.09);
 }
 
+.patient-portal .patient-dashboard:not(.pd-reference-dashboard):has(.pd-header-actions > div > button:nth-child(2)) > .pd-header {
+  border-color: #99f6e4;
+  border-left-color: #14b8a6;
+}
+
+.patient-portal .patient-dashboard:not(.pd-reference-dashboard):has(.pd-header-actions > div > button:nth-child(2)) > .pd-card {
+  border-top-color: #14b8a6;
+}
+
+.patient-portal .patient-dashboard:not(.pd-reference-dashboard):has(.pd-prescription-empty-note, .pd-prescription-list) > .pd-header {
+  border-color: #99f6e4;
+  border-left-color: #14b8a6;
+}
+
+.patient-portal .patient-dashboard:not(.pd-reference-dashboard):has(.pd-prescription-empty-note, .pd-prescription-list) > .pd-card {
+  border-top-color: #14b8a6;
+}
+
+.patient-portal .patient-dashboard:not(.pd-reference-dashboard):has(> .pd-card:nth-of-type(3)) > .pd-header {
+  border-color: #99f6e4;
+  border-left-color: #14b8a6;
+}
+
+.patient-portal .patient-dashboard:not(.pd-reference-dashboard):has(> .pd-card:nth-of-type(3)) > .pd-card {
+  border-top-color: #14b8a6;
+}
+
 .patient-portal :where(
   .pd-card,
   .mh-card,
@@ -4198,4 +4225,123 @@
   opacity: 1;
   transform: translateX(120%);
   transition: transform 0.42s ease, opacity 0.18s ease;
+}
+
+/* Patient portal chrome colors matched to the Super Admin reference. */
+.pp-shell.patient-portal,
+.pp-shell.patient-portal .pp-main,
+.pp-shell.patient-portal .pp-content {
+  background: #f3f5f6 !important;
+}
+
+.pp-shell.patient-portal .pp-sidebar {
+  background: #f3f5f6 !important;
+  border-right-color: #e0e5e8 !important;
+  box-shadow: none !important;
+}
+
+.pp-shell.patient-portal .pp-sidebar-footer {
+  border-top-color: #dce4e7 !important;
+}
+
+.pp-shell.patient-portal .pp-patient-chip {
+  background: #ffffff !important;
+  border-color: #dce4e7 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+}
+
+.pp-shell.patient-portal .pp-sidebar-footer .pp-avatar {
+  background: #4d9fa1 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.pp-shell.patient-portal .pp-brand {
+  border-bottom-color: #dce4e7 !important;
+}
+
+.pp-shell.patient-portal .pp-brand-mark {
+  background: #e0f2f1 !important;
+  color: #367f82 !important;
+  box-shadow: none !important;
+}
+
+.pp-shell.patient-portal .pp-nav-item,
+.pp-shell.patient-portal .pp-nav-item[class*="tone-"] .pp-nav-text {
+  color: #263c43 !important;
+}
+
+.pp-shell.patient-portal .pp-nav-item[class*="tone-"]:not(.active) {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.pp-shell.patient-portal .pp-nav-item[class*="tone-"] .pp-nav-icon-box {
+  background: transparent !important;
+  color: #588184 !important;
+  box-shadow: none !important;
+}
+
+.pp-shell.patient-portal .pp-sidebar.collapsed .pp-nav-item[class*="tone-"] {
+  background: transparent !important;
+}
+
+.pp-shell.patient-portal .pp-nav-item:hover {
+  background: #e9eff0 !important;
+  border-color: #e9eff0 !important;
+  box-shadow: none !important;
+}
+
+.pp-shell.patient-portal .pp-nav-item.active,
+.pp-shell.patient-portal .pp-nav-item.active:hover {
+  background: #4d9fa1 !important;
+  border-color: #4d9fa1 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.18) !important;
+}
+
+.pp-shell.patient-portal .pp-nav-item.active .pp-nav-text,
+.pp-shell.patient-portal .pp-nav-item.active .pp-nav-icon-box,
+.pp-shell.patient-portal .pp-nav-item.active .pp-nav-pill {
+  color: #ffffff !important;
+}
+
+.pp-shell.patient-portal .pp-nav-item.active .pp-nav-icon-box {
+  background: transparent !important;
+}
+
+.pp-shell.patient-portal .pp-nav-item.active .pp-nav-pill {
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+
+.pp-shell.patient-portal .pp-nav-pill {
+  display: none !important;
+}
+
+.pp-shell.patient-portal .pp-account-toggle {
+  background: #e8f3f2 !important;
+  border: 2px solid #9dc9c7 !important;
+  box-shadow: 0 0 0 3px rgba(77, 159, 161, 0.2) !important;
+}
+
+.pp-shell.patient-portal .pp-account-toggle:hover,
+.pp-shell.patient-portal .pp-account-toggle.open {
+  background: #dceeed !important;
+  border-color: #78b5b4 !important;
+  box-shadow: 0 0 0 4px rgba(77, 159, 161, 0.25) !important;
+}
+
+.pp-shell.patient-portal .pp-account-toggle .pp-avatar {
+  background: #4d9fa1 !important;
+  color: #ffffff !important;
+}
+
+.pp-shell.patient-portal .pp-dropdown-arrow {
+  color: #367f82 !important;
+}
+
+.patient-portal .patient-dashboard:not(.pd-reference-dashboard):has(.mh-grid) .mh-card,
+.patient-portal .patient-dashboard:not(.pd-reference-dashboard):has(.mh-grid) .mh-panel {
+  border-top-color: #14b8a6 !important;
 }

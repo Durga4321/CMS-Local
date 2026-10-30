@@ -10,16 +10,15 @@
   width: 240px;
   min-width: 240px;
   height: 100vh;
-  /* Reference ice-blue background theme */
-  background: linear-gradient(180deg, #e6f2fd 0%, #edf6fe 100%) !important;
-  border-right: 1px solid #d4e7f8 !important;
+  background: #f4f6f8 !important;
+  border-right: 1px solid #e2e8ee !important;
   display: flex;
   flex-direction: column;
   position: sticky;
   top: 0;
   overflow: hidden;
   transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 2px 0 16px rgba(186, 215, 243, 0.25) !important;
+  box-shadow: 2px 0 16px rgba(15, 23, 42, 0.04) !important;
   z-index: 100;
   position: relative;
 }
@@ -216,9 +215,9 @@
 }
 
 .dr-nav-link.active {
-  background: rgba(255, 255, 255, 0.92) !important;
-  border: 1px solid rgba(255, 255, 255, 0.95) !important;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08) !important;
+  background: #4b9da3 !important;
+  border: 1px solid #4b9da3 !important;
+  box-shadow: 0 4px 14px rgba(54, 127, 130, 0.18) !important;
   transform: translateX(2px);
 }
 
@@ -227,6 +226,7 @@
   letter-spacing: -0.01em;
   font-size: 14.5px;
   font-weight: 700;
+  color: #27343a !important;
 }
 
 /* Clinical Capsule Tag */
@@ -239,6 +239,28 @@
   text-transform: uppercase;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  background: #e2f2f1 !important;
+  border: 1px solid #b9d8d6 !important;
+  color: #367f82 !important;
+}
+
+.dr-nav-link.active .dr-nav-label {
+  color: #ffffff !important;
+}
+
+.dr-nav-link.active .dr-nav-tag {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+}
+
+.dr-brand-sub,
+.dr-brand-branch {
+  color: #52616a !important;
+}
+
+.dr-nav-link:not(.active) .dr-nav-label {
+  color: #27343a !important;
 }
 
 /* Hide active bar pill */
@@ -485,4 +507,29 @@
   border-color: #bfdbfe;
   color: #0f172a;
   box-shadow: 0 2px 8px rgba(186, 215, 243, 0.4);
+}
+
+.dr-nav-link .dr-nav-icon-bezel {
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #5d8589 !important;
+}
+
+.dr-nav-link.active .dr-nav-icon-bezel {
+  color: #ffffff !important;
+}
+
+.dr-nav-link .dr-nav-tag {
+  display: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  color: #367f82 !important;
+}
+
+.dr-nav-link.active .dr-nav-tag {
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
 }

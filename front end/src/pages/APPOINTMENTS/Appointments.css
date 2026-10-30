@@ -128,6 +128,10 @@
   overflow: hidden;
 }
 
+.appointments-page .appointments-table-card {
+  display: contents;
+}
+
 /* Filter Controls */
 .appointments-filters {
   padding: 18px 22px;
@@ -137,6 +141,13 @@
   gap: 14px;
   background: rgba(255, 255, 255, 0.3);
   border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.appointments-page .appointments-filters {
+  margin-bottom: 12px;
+  padding: 0;
+  background: transparent;
+  border: 0;
 }
 
 .appointments-filter-group {
@@ -256,6 +267,13 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.appointments-page .appointments-table-scroll {
+  background: #ffffff;
+  border: 1px solid #dfe8ea;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
 .appointments-thead,
 .appointments-row {
   display: grid !important;
@@ -272,7 +290,7 @@
 .appointments-thead {
   background: rgba(255, 255, 255, 0.5);
   border-bottom: 1px solid rgba(255, 255, 255, 0.6);
-  color: #1e293b;
+  color: #33464c;
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -287,7 +305,7 @@
   align-items: center !important;
   justify-content: center !important;
   font-weight: 700;
-  color: #475569;
+  color: #33464c;
   width: 100% !important;
 }
 
@@ -439,8 +457,8 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #d9edf9;
-  color: #058fd7;
+  background: #e2f2f1;
+  color: #367f82;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -511,12 +529,31 @@
 }
 
 .appointments-status-badge.is-completed {
-  color: #1da967;
-  background: #def3e8;
+  color: #286d70;
+  background: #d9eeeb;
+  border: 1px solid #9dcac7;
 }
 
 .appointments-status-badge.is-completed .appointments-status-dot {
-  background: #1da967;
+  background: #4b9da3;
+}
+
+.appointments-page .appointments-status-badge.is-completed {
+  background: #4b9da3 !important;
+  border: 1.5px solid #4b9da3 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(75, 157, 163, 0.24), inset 0 1px 1px rgba(255, 255, 255, 0.18) !important;
+}
+
+.appointments-page .appointments-status-badge.is-completed::before {
+  background: #ffffff !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5), 0 0 7px rgba(255, 255, 255, 0.55) !important;
+}
+
+.appointments-page .appointments-status-badge.is-completed:hover {
+  background: #367f82 !important;
+  border-color: #367f82 !important;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.3) !important;
 }
 
 .appointments-status-badge.is-cancelled {
@@ -529,11 +566,11 @@
 }
 
 .appointments-view-btn {
-  border: 1px solid #bae6fd;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #b9d8d6;
+  background: #e2f2f1;
   padding: 6px 14px;
   border-radius: 8px;
-  color: #0284c7;
+  color: #367f82;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -541,16 +578,30 @@
   font-weight: 700;
   cursor: pointer;
   width: fit-content;
-  box-shadow: 0 2px 5px rgba(2, 132, 199, 0.12);
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.12);
   transition: all 0.2s ease;
 }
 
 .appointments-view-btn:hover {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  border-color: #0284c7;
+  background: #4b9da3;
+  border-color: #82b8b5;
   color: #ffffff;
   transform: translateY(-1.5px);
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.2);
+}
+
+.appointments-page .appointments-actions .action-btn.view-instrument-btn {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.12) !important;
+}
+
+.appointments-page .appointments-actions .action-btn.view-instrument-btn:hover {
+  background: #4b9da3 !important;
+  border-color: #82b8b5 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.2) !important;
 }
 
 .appointments-empty {

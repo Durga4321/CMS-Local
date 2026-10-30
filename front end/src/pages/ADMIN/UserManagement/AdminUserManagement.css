@@ -708,6 +708,135 @@
   animation: medicalVitalPulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
 }
 
+.admin-users-table-card {
+  display: contents;
+}
+
+.admin-users-toolbar {
+  margin: 0 0 14px;
+  padding: 0 20px;
+  border: 0;
+  background: transparent;
+}
+
+.admin-users-search {
+  background: #ffffff;
+  border-color: #d5e0e2;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.admin-users-search:focus-within {
+  border-color: #4b9da3;
+  box-shadow: 0 0 0 3px rgba(75, 157, 163, 0.16);
+}
+
+.admin-users-search svg {
+  color: #4b9da3;
+}
+
+.admin-users-toolbar select {
+  background: #ffffff;
+  border-color: #d5e0e2;
+}
+
+.admin-users-table {
+  background: #ffffff;
+  border: 1px solid #dfe8ea;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.admin-users-table-head {
+  background: #f8fafc;
+  border-bottom-color: #e2e8f0;
+  color: #33464c;
+}
+
+.admin-users-email-head {
+  color: #1d4f91;
+}
+
+.admin-users-row {
+  background: #ffffff;
+  border-bottom-color: #f1f5f9;
+  color: #27343a;
+}
+
+.admin-users-row:hover {
+  background: #f8fbfc;
+}
+
+.admin-users-sno,
+.admin-users-clinic-cell b,
+.admin-users-branch-cell {
+  color: #33464c;
+}
+
+.admin-users-email {
+  color: #367f82 !important;
+}
+
+.admin-users-name-highlight {
+  background: #d9f1f3 !important;
+  border-color: #a5dfe3 !important;
+  box-shadow: 0 2px 8px rgba(54, 127, 130, 0.12);
+}
+
+.admin-users-name-highlight b {
+  color: #18848c !important;
+}
+
+.admin-users-avatar--0 {
+  background: #e2f2f1 !important;
+  color: #367f82 !important;
+}
+
+.admin-users-avatar--1 {
+  background: #e2f2f1 !important;
+  color: #367f82 !important;
+}
+
+.admin-users-avatar--2 {
+  background: #e2f2f1 !important;
+  color: #367f82 !important;
+}
+
+.admin-users-avatar--3 {
+  background: #e2f2f1 !important;
+  color: #367f82 !important;
+}
+
+.admin-users-role--doctor {
+  background: #e2f2f1 !important;
+}
+
+.admin-users-role--receptionist {
+  background: #e2f2f1 !important;
+}
+
+.admin-users-role--patient {
+  background: #e2f2f1 !important;
+}
+
+.admin-users-role--nurse {
+  background: #e2f2f1 !important;
+}
+
+.admin-users-role--default {
+  background: #e2f2f1 !important;
+}
+
+.admin-users-page .admin-users-header > .admin-users-btn {
+  background: linear-gradient(135deg, #0c776d 0%, #09665f 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(12, 119, 109, 0.25);
+}
+
+.admin-users-page .admin-users-header > .admin-users-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0a6b63 0%, #08564f 100%);
+  box-shadow: 0 6px 16px rgba(12, 119, 109, 0.3);
+}
+
 .admin-users-status.is-offline {
   background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 50%, #fecaca 100%) !important;
   color: #991b1b !important;

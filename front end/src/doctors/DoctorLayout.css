@@ -14,7 +14,7 @@
   height: 100vh;
   min-height: 100vh;
   overflow: hidden;
-  background: var(--app-gradient-bg) !important;
+  background: #f4f6f8 !important;
   background-attachment: fixed !important;
   font-family: "Inter", "Segoe UI", sans-serif;
   position: relative;
@@ -39,6 +39,12 @@
   overflow-y: auto;
   padding: var(--space-4, 20px);
   background: transparent;
+}
+
+.dr-layout,
+.dr-layout-body,
+.dr-layout-content {
+  background-color: #f4f6f8 !important;
 }
 
 /* Collapsed sidebar – keep a compact icon rail on desktop */

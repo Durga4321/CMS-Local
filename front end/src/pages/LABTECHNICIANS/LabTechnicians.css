@@ -417,6 +417,31 @@
   flex-direction: column;
 }
 
+.lab-technicians-page .lab-tech-table-card {
+  display: contents;
+}
+
+.lab-technicians-page .lab-tech-table-card .receptionists-toolbar {
+  padding: 0;
+  margin: 0 0 10px;
+  background: transparent;
+  border: 0;
+}
+
+.lab-technicians-page .lab-tech-table-card .receptionists-search {
+  width: 100%;
+  min-width: 0;
+  background: #ffffff;
+  border: 1px solid #d5e0e2;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.lab-technicians-page .lab-tech-table-card .receptionists-search:focus-within {
+  border-color: #4b9da3;
+  box-shadow: 0 0 0 3px rgba(75, 157, 163, 0.16);
+}
+
 .lab-tech-table-card .receptionists-toolbar {
   padding: 14px 24px;
   background: rgba(255, 255, 255, 0.3);
@@ -458,6 +483,28 @@
 .lab-technicians-page .receptionists-email {
   color: #0284c7 !important;
   font-weight: 800 !important;
+}
+
+.lab-technicians-page .receptionists-thead {
+  color: #33464c !important;
+}
+
+.lab-technicians-page .receptionists-email {
+  color: #1e293b !important;
+}
+
+.lab-technicians-page .receptionists-actions .action-btn:not(.delete-instrument-btn):not(.delete-btn) {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.12) !important;
+}
+
+.lab-technicians-page .receptionists-actions .action-btn:not(.delete-instrument-btn):not(.delete-btn):hover:not(:disabled) {
+  background: #4b9da3 !important;
+  border-color: #82b8b5 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.2) !important;
 }
 
 .lab-technicians-page.receptionists-page .receptionists-email {
@@ -502,4 +549,12 @@
 .password-toggle-button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.lab-technicians-page .lab-tech-table-card .receptionists-table {
+  margin-top: 0;
+  background: #ffffff;
+  border: 1px solid #dfe8ea;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 }

@@ -1363,17 +1363,17 @@
 }
 
 .sa-audit-summary-icon--total {
-  background: #e8fbf5;
+  background: #e2f2f1;
   color: #0f9f8f;
 }
 
 .sa-audit-summary-icon--login {
-  background: #eafbea;
+  background: #e2f2f1;
   color: #16a34a;
 }
 
 .sa-audit-summary-icon--changes {
-  background: #fff7df;
+  background: #e2f2f1;
   color: #d97706;
 }
 
@@ -3565,6 +3565,17 @@
   color: #1d4ed8;
 }
 
+.sa-roles-permissions-page .sa-table--roles .sa-table-head > :nth-child(2),
+.sa-roles-permissions-page .sa-table--roles .sa-table-head > :nth-child(3),
+.sa-roles-permissions-page .sa-table--roles .sa-table-head > :nth-child(4) {
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.sa-roles-permissions-page .sa-table--roles .sa-table-head > :nth-child(2) {
+  padding-left: 82px;
+}
+
 .sa-roles-permissions-page .sa-permission-card {
   height: auto !important;
   min-height: 0 !important;
@@ -4225,6 +4236,10 @@
   gap: 12px;
 }
 
+.content.superadmin-content:has(> .sa-subscription-kpis) > .sa-subscription-kpis {
+  margin-bottom: 16px;
+}
+
 .sa-subscription-kpi {
   min-height: 76px;
   display: flex;
@@ -4484,4 +4499,895 @@
   .sa-subscription-form-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.layout:has(.superadmin-main) {
+  background: #f5f6f7 !important;
+}
+
+.layout:has(.superadmin-main) .sidebar {
+  background: #f5f6f7 !important;
+}
+
+.layout:has(.superadmin-main) .nav-label {
+  color: #27343a !important;
+}
+
+.layout:has(.superadmin-main) .nav-icon-box {
+  color: #4b7477 !important;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.layout:has(.superadmin-main) .sidebar .nav-item.active {
+  border-color: #4b9da3 !important;
+  background: #4b9da3 !important;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.18);
+}
+
+.layout:has(.superadmin-main) .sidebar .nav-item.active .nav-label,
+.layout:has(.superadmin-main) .sidebar .nav-item.active .nav-icon-box {
+  color: #ffffff !important;
+}
+
+.layout:has(.superadmin-main) .sidebar .nav-item.active .nav-icon-box {
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .content:has(.profile-page) {
+  background: #f5f6f7 !important;
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-page {
+  color: #27343a;
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-hero,
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-layout,
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-panel,
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-tabs {
+  border-color: #dbe5e7;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-hero,
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-layout {
+  border-left-color: #4b9da3;
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-back-btn,
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-back-btn:hover {
+  border-color: #9dcac7;
+  background: #e2f2f1;
+  color: #367f82;
+  box-shadow: 0 2px 8px rgba(54, 127, 130, 0.12);
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-hero-avatar {
+  border-color: #4b9da3;
+  background: #e2f2f1;
+  color: #367f82;
+  box-shadow: 0 6px 16px rgba(54, 127, 130, 0.14);
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-hero-role-badge {
+  background: #4b9da3;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.2);
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-med-cross-tag,
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-station-status,
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-verified-badge,
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-security-badge {
+  border-color: #b9d8d6;
+  background: #e2f2f1;
+  color: #367f82;
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-tabs-header,
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-tab-btn > svg,
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .field-label-icon {
+  color: #367f82;
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-panel-icon-badge,
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-panel-icon-badge.badge--security,
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-card-instrument-badge {
+  border-color: #b9d8d6;
+  background: #e2f2f1;
+  color: #367f82;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.12);
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .profile-card-label {
+  color: #46565c;
+}
+
+.sa-dashboard-page .sa-page-header,
+.sa-dashboard-page .sa-stat-card,
+.sa-dashboard-page .sa-panel,
+.sa-dashboard-page .sa-chart-summary-card {
+  background: #ffffff;
+}
+
+.sa-dashboard-page .sa-empty-state {
+  background: #f8f9fa;
+}
+
+.layout:has(.superadmin-main) .sidebar-brand-icon {
+  background: #e2f2f1 !important;
+  color: #0f766e !important;
+  box-shadow: none;
+}
+
+.sa-dashboard-page .sa-page-header {
+  border-color: #e2e8f0;
+  border-left-color: #0f9d9d;
+  background: #ffffff;
+}
+
+.sa-dashboard-page .sa-stat-card--teal,
+.sa-dashboard-page .sa-stat-card--blue,
+.sa-dashboard-page .sa-stat-card--amber {
+  color: #0f766e;
+  border-color: #d7e8e7;
+  background: #ffffff;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
+}
+
+.sa-dashboard-page .sa-stat-card::after {
+  background: #0f9d9d;
+}
+
+.sa-dashboard-page .sa-stat-icon {
+  background: #e2f2f1;
+  color: #0f766e;
+}
+
+.sa-dashboard-page .sa-stat-card--teal:not(:disabled):hover,
+.sa-dashboard-page .sa-stat-card--blue:not(:disabled):hover,
+.sa-dashboard-page .sa-stat-card--amber:not(:disabled):hover {
+  border-color: #9dcac7;
+  box-shadow: 0 22px 44px rgba(15, 118, 110, 0.12);
+}
+
+.sa-dashboard-page .sa-panel--highlighted,
+.sa-dashboard-page .sa-panel--activity {
+  border-top-color: #0f9d9d;
+  background: #ffffff;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+}
+
+.content.superadmin-content:has(.sa-settings-form) .sa-page-header h1 {
+  color: #27343a;
+}
+
+.content.superadmin-content:has(.sa-settings-form) .sa-page-header p {
+  color: #56666c;
+}
+
+.sa-settings-form {
+  border-color: #dbe5e7;
+  background: #f8fafb;
+}
+
+.sa-settings-form .sa-tab,
+.sa-settings-form .sa-tab:nth-child(2),
+.sa-settings-form .sa-tab:nth-child(3),
+.sa-settings-form .sa-tab:nth-child(4) {
+  border-color: #dbe5e7;
+  background: #ffffff;
+  color: #46565c;
+}
+
+.sa-settings-form .sa-tab.active {
+  border-color: #9dcac7;
+  background: #e2f2f1;
+  color: #367f82;
+}
+
+.sa-settings-form .sa-form-field label {
+  color: #46565c;
+}
+
+.sa-settings-form .sa-form-field input,
+.sa-settings-form .sa-form-field select,
+.sa-settings-form .sa-form-field textarea {
+  background: #ffffff !important;
+}
+
+.sa-settings-form .sa-form-field input:focus,
+.sa-settings-form .sa-form-field select:focus,
+.sa-settings-form .sa-form-field textarea:focus {
+  border-color: #82b8b5;
+  box-shadow: 0 0 0 3px rgba(75, 157, 163, 0.12);
+}
+
+.sa-subscriptions-page .sa-subscription-kpi svg {
+  background: #e2f2f1;
+  color: #367f82;
+}
+
+.content.superadmin-content:has(.sa-subscription-kpis) .sa-subscription-kpi svg {
+  background: #e2f2f1;
+  color: #367f82;
+}
+
+.content.superadmin-content:has(> .sa-subscription-kpis) > .sa-subscription-kpis {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.content.superadmin-content:has(> .sa-subscription-kpis) > .sa-subscription-kpis .sa-subscription-kpi {
+  min-width: 0;
+  min-height: 68px;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.content.superadmin-content:has(> .sa-subscription-kpis) > .sa-page-header .sa-page-actions > .sa-btn:nth-child(2) {
+  border-color: #b9d8d6;
+  background: #f3f8f8;
+  color: #367f82;
+}
+
+.content.superadmin-content:has(> .sa-subscription-kpis) > .sa-page-header .sa-page-actions > .sa-btn:nth-child(2):hover:not(:disabled) {
+  border-color: #82b8b5;
+  background: #e4f1f0;
+  color: #286d70;
+}
+
+.content.superadmin-content:has(> .sa-subscription-kpis) > .sa-page-header .sa-page-actions > .sa-btn:nth-child(3) {
+  border-color: #438e94;
+  background: #4b9da3;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(54, 127, 130, 0.18);
+}
+
+.content.superadmin-content:has(> .sa-subscription-kpis) > .sa-page-header .sa-page-actions > .sa-btn:nth-child(3):hover:not(:disabled) {
+  border-color: #367f85;
+  background: #367f85;
+  color: #ffffff;
+}
+
+.content.superadmin-content:has(.sa-subscription-kpis) .sa-subscription-table-section .sa-table-head > * {
+  color: #56666c !important;
+}
+
+.content.superadmin-content:has(> .sa-subscription-kpis) .sa-subscription-table-section .sa-table-head > * {
+  color: #27343a !important;
+}
+
+.content.superadmin-content:has(> .sa-subscription-kpis) .sa-subscription-table-section .sa-table-row > * {
+  color: #34464c;
+}
+
+.sa-subscriptions-page .sa-subscription-table-section .sa-table-head > * {
+  color: #56666c !important;
+}
+
+.sa-roles-permissions-page .sa-page-header h1 {
+  color: #27343a;
+}
+
+.sa-roles-permissions-page .sa-table--roles .sa-table-head > * {
+  color: #56666c !important;
+}
+
+.content.superadmin-content:has(.sa-table--admins) .sa-page-header h1,
+.content.superadmin-content:has(.sa-table--admins) .sa-pending-admin-header h3 {
+  color: #27343a;
+}
+
+.content.superadmin-content:has(.sa-table--admins) .sa-page-header p,
+.content.superadmin-content:has(.sa-table--admins) .sa-table-summary,
+.content.superadmin-content:has(.sa-table--admins) .sa-pagination-label,
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-row {
+  color: #56666c;
+}
+
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head > *,
+.content.superadmin-content:has(.sa-table--admins) .sa-pending-admin-table .sa-table-head > * {
+  color: #56666c !important;
+}
+
+.content.superadmin-content:has(.sa-table--admins) .sa-admin-name-highlight b,
+.content.superadmin-content:has(.sa-table--admins) .sa-admin-email {
+  color: #34464c !important;
+}
+
+.content.superadmin-content:has(.sa-table--admins) .sa-admin-icon-text,
+.content.superadmin-content:has(.sa-table--admins) .sa-admin-clinic-cell {
+  color: #46565c;
+}
+
+.content.superadmin-content:has(.sa-table--admins) .sa-btn:not(.sa-btn-primary) {
+  border-color: #b9d8d6;
+  background: #f3f8f8;
+  color: #367f82;
+}
+
+.content.superadmin-content:has(.sa-table--admins) .sa-btn:not(.sa-btn-primary):hover:not(:disabled) {
+  border-color: #82b8b5;
+  background: #e4f1f0;
+  color: #286d70;
+}
+
+.content.superadmin-content:has(.sa-table--admins) .sa-btn-primary {
+  border-color: #438e94;
+  background: #4b9da3;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(54, 127, 130, 0.18);
+}
+
+.content.superadmin-content:has(.sa-table--admins) .sa-btn-primary:hover:not(:disabled) {
+  border-color: #367f85;
+  background: #367f85;
+  color: #ffffff;
+}
+
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-icon-btn--view,
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-icon-btn--edit,
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-icon-btn--status,
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .action-btn {
+  border-color: #b9d8d6 !important;
+  background: #f3f8f8 !important;
+  color: #367f82 !important;
+  box-shadow: none;
+}
+
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-icon-btn--view:hover:not(:disabled),
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-icon-btn--edit:hover:not(:disabled),
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-icon-btn--status:hover:not(:disabled),
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .action-btn:hover:not(:disabled) {
+  border-color: #82b8b5 !important;
+  background: #e4f1f0 !important;
+  color: #286d70 !important;
+}
+
+@media (max-width: 900px) {
+  .content.superadmin-content:has(> .sa-subscription-kpis) > .sa-subscription-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .content.superadmin-content:has(> .sa-subscription-kpis) > .sa-subscription-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+  .sa-audit-logs-page .sa-audit-summary-card,
+  .sa-audit-logs-page .sa-audit-summary-card:nth-child(1),
+  .sa-audit-logs-page .sa-audit-summary-card:nth-child(2),
+  .sa-audit-logs-page .sa-audit-summary-card:nth-child(3) {
+    border-color: #dbe5e7;
+    background: #ffffff;
+  }
+
+  .sa-audit-logs-page .sa-audit-summary-card b {
+    color: #27343a;
+  }
+
+  .sa-audit-logs-page .sa-audit-summary-card small {
+    color: #56666c;
+  }
+
+  .sa-audit-logs-page .sa-audit-scope-filter {
+    border-color: #dbe5e7;
+    background: #f8fafb;
+  }
+
+  .sa-audit-logs-page .sa-audit-scope-filter label span,
+  .sa-audit-logs-page .sa-audit-scope-filter label:nth-child(1) span,
+  .sa-audit-logs-page .sa-audit-scope-filter label:nth-child(2) span,
+  .sa-audit-logs-page .sa-audit-scope-filter label:nth-child(3) span,
+  .sa-audit-logs-page .sa-audit-scope-filter label:nth-child(4) span {
+    color: #46565c;
+  }
+
+  .sa-audit-logs-page .sa-table .sa-table-head {
+    border-bottom-color: #dbe3ed;
+    background: #f8fafc;
+  }
+
+  .sa-audit-logs-page .sa-table .sa-table-head > * {
+    color: #33464c !important;
+  }
+
+.sa-audit-logs-page .sa-table .sa-table-head {
+  border-bottom-color: #dbe3ed;
+  background: #f1f5f9;
+}
+
+.sa-audit-logs-page .sa-table .sa-table-head > * {
+  color: #27343a !important;
+}
+
+.sa-audit-logs-page .sa-table--audit .sa-table-row,
+.sa-audit-logs-page .sa-table--audit .sa-table-row:nth-child(odd),
+.sa-audit-logs-page .sa-table--audit .sa-table-row:nth-child(even) {
+  background: #ffffff;
+  color: #334155;
+}
+
+.sa-audit-logs-page .sa-table--audit .sa-table-row:nth-child(even) {
+  background: #f8fafc;
+}
+
+.sa-audit-logs-page .sa-table--audit .sa-table-row:hover {
+  background: #f1f5f9;
+}
+
+.sa-audit-logs-page .sa-audit-pill--login,
+.sa-audit-logs-page .sa-audit-login.is-yes,
+.sa-audit-logs-page .sa-audit-role--superadmin {
+  background: #e2f2f1;
+  color: #367f82;
+}
+
+.layout:has(.sidebar a[href="/audit-logs"]) .sa-audit-logs-page .sa-audit-login.is-yes {
+  background: #e2f2f1 !important;
+  color: #367f82 !important;
+}
+
+.layout:has(.sidebar a[href="/audit-logs"]) .sa-audit-logs-page .sa-audit-login.is-no {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+}
+
+.layout:has(.sidebar a[href="/audit-logs"]) .sa-audit-logs-page .sa-audit-role--patient {
+  background: #f2ecff !important;
+  color: #7b47d8 !important;
+}
+
+.layout:has(.sidebar a[href="/audit-logs"]) .sa-audit-logs-page .sa-audit-role--receptionist {
+  background: #fff0f6 !important;
+  color: #c92c70 !important;
+}
+
+.layout:has(.sidebar a[href="/audit-logs"]) .sa-audit-logs-page .sa-audit-role--doctor {
+  background: #e8f1ff !important;
+  color: #2463cf !important;
+}
+
+.layout:has(.sidebar a[href="/audit-logs"]) .sa-audit-logs-page .sa-audit-role--admin {
+  background: #fff7ed !important;
+  color: #f59e0b !important;
+}
+
+.layout:has(.sidebar a[href="/audit-logs"]) .sa-audit-logs-page .sa-audit-role--superadmin {
+  background: #e2f2f1 !important;
+  color: #367f82 !important;
+}
+
+.content.superadmin-content:has(.sa-subscriptions-page) .sa-subscription-kpi svg {
+  background: #e2f2f1;
+  color: #438e94;
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .nav-label {
+  color: #27343a !important;
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .nav-icon-box {
+  background: transparent !important;
+  color: #4b7477 !important;
+  box-shadow: none;
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .sidebar {
+  background: #f5f6f7 !important;
+  border-right-color: #e2e8f0 !important;
+  box-shadow: none;
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .sidebar-brand-icon {
+  background: #e2f2f1 !important;
+  color: #0f766e !important;
+  box-shadow: none;
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .sidebar .nav-item.active {
+  border-color: #4b9da3 !important;
+  background: #4b9da3 !important;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.18);
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .sidebar .nav-item.active .nav-label,
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .sidebar .nav-item.active .nav-icon-box {
+  color: #ffffff !important;
+}
+
+.layout:has(.sidebar a[href="/superadmin/dashboard"]) .sidebar .nav-item.active .nav-icon-box {
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.layout:has(.superadmin-main) .user-profile-chip,
+.layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-chip {
+  background: #f3f8f8;
+}
+
+.layout:has(.superadmin-main) .user-profile-chip:hover,
+.layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-chip:hover {
+  background: #e4f1f0;
+}
+
+.layout:has(.superadmin-main) .user-profile-chip,
+.layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-chip {
+  border-color: #9dcac7;
+  box-shadow: 0 0 0 3px rgba(75, 157, 163, 0.16);
+}
+
+.layout:has(.superadmin-main) .user-profile-chip:hover,
+.layout:has(.superadmin-main) .user-profile-chip.is-open,
+.layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-chip:hover,
+.layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-chip.is-open {
+  border-color: #4b9da3;
+  box-shadow: 0 0 0 4px rgba(75, 157, 163, 0.2);
+}
+
+.layout:has(.superadmin-main) .user-profile-avatar,
+.layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-avatar {
+  background: #4b9da3;
+}
+
+.layout:has(.superadmin-main) .user-profile-chip .user-profile-dropdown-arrow,
+.layout:has(.superadmin-main) .user-profile-chip.is-open .user-profile-dropdown-arrow,
+.layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-chip .user-profile-dropdown-arrow,
+.layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-chip.is-open .user-profile-dropdown-arrow {
+  color: #367f82;
+}
+
+.layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-copy strong {
+  color: #27343a !important;
+}
+
+.layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-copy em {
+  color: #56666c !important;
+}
+
+.sa-notifications-page .sa-btn-primary {
+  border-color: #438e94;
+  background: #4b9da3;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(54, 127, 130, 0.18);
+}
+
+.sa-notifications-page .sa-btn-primary:hover:not(:disabled) {
+  border-color: #367f85;
+  background: #367f85;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.22);
+}
+
+.sa-notifications-page .sa-notification-tab,
+.sa-notifications-page .sa-notification-tab--all,
+.sa-notifications-page .sa-notification-tab--unread,
+.sa-notifications-page .sa-notification-tab--read,
+.sa-notifications-page .sa-notification-tab--sent {
+  border-color: #c9e0df;
+  background: #edf6f5;
+  color: #367f82;
+}
+
+.sa-notifications-page .sa-notification-tab.active {
+  border-color: #9dcac7;
+  background: #e2f2f1;
+  color: #286d70;
+  filter: none;
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.12);
+}
+
+.sa-notifications-page .sa-notification-tab span {
+  background: #ffffff;
+  color: #286d70;
+}
+
+.sa-notifications-page .sa-notification-icon,
+.sa-notifications-page .sa-notification-icon--1,
+.sa-notifications-page .sa-notification-icon--2,
+.sa-notifications-page .sa-notification-icon--3,
+.sa-notifications-page .sa-notification-icon--appointment-0,
+.sa-notifications-page .sa-notification-icon--appointment-1,
+.sa-notifications-page .sa-notification-icon--appointment-2,
+.sa-notifications-page .sa-notification-icon--appointment-3,
+.sa-notifications-page .sa-notification-icon--payment,
+.sa-notifications-page .sa-notification-icon--cancelled,
+.sa-notifications-page .sa-notification-icon--system,
+.sa-notifications-page .sa-notification-icon--default,
+.sa-notifications-page .sa-notification-icon--sent,
+.sa-notifications-page .sa-notification-icon--read {
+  background: #e2f2f1 !important;
+  color: #367f82 !important;
+}
+
+.sa-notifications-page .sa-notification-icon svg,
+.sa-notifications-page .sa-notification-icon--payment svg {
+  stroke: currentColor !important;
+}
+
+.sa-notifications-page .sa-notification-item,
+.sa-notifications-page .sa-notification-item:first-child,
+.sa-notifications-page .sa-notification-item--appointment-0,
+.sa-notifications-page .sa-notification-item--appointment-1,
+.sa-notifications-page .sa-notification-item--appointment-2,
+.sa-notifications-page .sa-notification-item--appointment-3,
+.sa-notifications-page .sa-notification-item--payment,
+.sa-notifications-page .sa-notification-item--cancelled,
+.sa-notifications-page .sa-notification-item--system,
+.sa-notifications-page .sa-notification-item--sent {
+  border-color: #d3e6e5;
+  background: #f5f9f9;
+}
+
+.sa-notifications-page .sa-notification-item:hover,
+.sa-notifications-page .sa-notification-item:focus-visible {
+  border-color: #9dcac7;
+  background: #edf6f5;
+}
+
+.sa-notifications-page .sa-notification-actions .sa-badge.is-active {
+  border-color: #9dcac7;
+  background: #d9eeeb;
+  color: #286d70;
+}
+
+.sa-dashboard-page .sa-card-grid {
+  width: 100%;
+  max-width: 864px;
+  grid-template-columns: repeat(3, minmax(0, 280px));
+  justify-content: center;
+  align-self: center;
+  gap: 12px;
+}
+
+.sa-dashboard-page .sa-stat-card {
+  box-sizing: border-box;
+  min-height: 88px;
+  padding: 12px 14px;
+}
+
+.sa-dashboard-page .sa-stat-icon {
+  width: 44px;
+  height: 44px;
+  flex-basis: 44px;
+}
+
+@media (max-width: 1024px) {
+  .sa-dashboard-page .sa-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 280px));
+  }
+}
+
+@media (max-width: 720px) {
+  .sa-dashboard-page .sa-card-grid {
+    grid-template-columns: minmax(0, 280px);
+  }
+}
+
+.layout:has(.sidebar a[href="/dashboard"]),
+.layout:has(.sidebar a[href="/dashboard"]) .main,
+.layout:has(.sidebar a[href="/dashboard"]) .content,
+.layout:has(.sidebar a[href="/dashboard"]) .sidebar {
+  background: #f5f6f7 !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .sidebar {
+  border-right-color: #e2e8f0 !important;
+  box-shadow: none;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .sidebar-header {
+  border-bottom-color: #dbe5e7;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .nav-label,
+.layout:has(.sidebar a[href="/dashboard"]) .sidebar-brand-text h3 {
+  color: #27343a !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .sidebar-brand-text span {
+  color: #56666c !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .nav-icon-box {
+  background: transparent !important;
+  color: #4b7477 !important;
+  box-shadow: none;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .sidebar .nav-item.active .nav-icon-box {
+  background: transparent !important;
+  color: #ffffff !important;
+  box-shadow: none;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .user-profile-chip {
+  border-color: #9dcac7;
+  background: #f3f8f8;
+  box-shadow: 0 0 0 3px rgba(75, 157, 163, 0.16);
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .user-profile-chip:hover,
+.layout:has(.sidebar a[href="/dashboard"]) .user-profile-chip.is-open {
+  border-color: #4b9da3;
+  background: #e4f1f0;
+  box-shadow: 0 0 0 4px rgba(75, 157, 163, 0.2);
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .user-profile-avatar {
+  background: #4b9da3;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .user-profile-copy strong {
+  color: #27343a !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .user-profile-copy em {
+  color: #56666c !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .user-profile-dropdown-arrow {
+  color: #367f82;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-kpi-icon-box,
+.layout:has(.sidebar a[href="/dashboard"]) .db-clinic-badge-icon,
+.layout:has(.sidebar a[href="/dashboard"]) .db-panel-icon,
+.layout:has(.sidebar a[href="/dashboard"]) .db-apt-avatar,
+.layout:has(.sidebar a[href="/dashboard"]) .db-sum-icon,
+.layout:has(.sidebar a[href="/dashboard"]) .db-mini-icon,
+.layout:has(.sidebar a[href="/dashboard"]) .db-noti-icon {
+  background: #e2f2f1 !important;
+  color: #367f82 !important;
+  box-shadow: none !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-info-label svg {
+  color: #367f82 !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-status-pill.active {
+  border-color: #9dcac7 !important;
+  background: #d9eeeb !important;
+  color: #286d70 !important;
+  box-shadow: none !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .sidebar .nav-item.active {
+  border-color: #4b9da3 !important;
+  background: #4b9da3 !important;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.18);
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .sidebar .nav-item.active .nav-label {
+  color: #ffffff !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .sidebar .nav-item.active .nav-icon-box {
+  background: transparent !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .content :is(h1, h2, h3, h4, h5, h6) {
+  color: #27343a !important;
+  text-shadow: none !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .content :is(p, small) {
+  color: #56666c !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .content :is(label, th) {
+  color: #46565c !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .content :is(td, [class*="value"], [class*="name"], [class*="title"]) {
+  color: #33464c;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .content :is(
+  [class*="card"]:not([class*="icon"]):not([class*="badge"]):not([class*="avatar"]),
+  [class*="panel"],
+  [class*="table"],
+  [class*="form-card"]
+) {
+  border-color: #dbe5e7 !important;
+  background: #ffffff !important;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .content .doctors-page .doctors-toolbar {
+  margin-bottom: 28px !important;
+  z-index: 3;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .content .doctors-page .doctors-card-grid {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-clinic-front,
+.layout:has(.sidebar a[href="/dashboard"]) .db-clinic-back {
+  border-color: #b9d8d6 !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-clinic-card:hover .db-clinic-front,
+.layout:has(.sidebar a[href="/dashboard"]) .db-clinic-card:hover .db-clinic-back {
+  border-color: #82b8b5 !important;
+  box-shadow: 0 12px 28px rgba(54, 127, 130, 0.12), inset 0 1px 0 #ffffff;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-clinic-badge-header {
+  color: #367f82;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-info-label {
+  color: #46565c;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-info-val {
+  color: #33464c;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-info-email {
+  color: #33464c;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-6-kpi-grid {
+  grid-auto-rows: 110px;
+  align-content: center;
+  gap: 12px;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-kpi-card {
+  min-height: 0;
+  padding: 12px 14px !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-kpi-num {
+  max-width: 100%;
+  font-size: 23px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-bar-rectangle path {
+  fill: #438e94 !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-area-curve {
+  stroke: #438e94 !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-area-area {
+  fill: #e2f2f1 !important;
+  fill-opacity: 0.8;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-area-dot {
+  fill: #438e94 !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-apt-badge.confirmed {
+  border-color: #9dcac7 !important;
+  background: #d9eeeb !important;
+  color: #286d70 !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-view-all-btn,
+.layout:has(.sidebar a[href="/dashboard"]) .db-view-all-btn:hover {
+  border-color: #b9d8d6;
+  background: #e2f2f1;
+  color: #367f82;
 }

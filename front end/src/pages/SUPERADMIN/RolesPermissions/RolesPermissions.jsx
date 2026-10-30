@@ -192,6 +192,13 @@ function RolesPermissions() {
   const [savedModulePermissionOverrides, setSavedModulePermissionOverrides] = useState({});
   const [admins, setAdmins] = useState([]);
 
+  useEffect(() => {
+    if (success !== "Module permissions saved successfully.") return undefined;
+
+    const timeoutId = window.setTimeout(() => setSuccess(""), 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [success]);
+
   const activeRoles = useMemo(
     () =>
       roles.filter(
@@ -656,7 +663,6 @@ function RolesPermissions() {
 
       <div className="sa-form-card sa-permission-card">
         <h3>Assign Permissions</h3>
-        <p className="sa-form-subtitle">Admin sidebar module permissions for the selected Admin role.</p>
         <div className="sa-form-grid">
           <div className="sa-form-field">
             <label>Admin Role / Admin ID</label>

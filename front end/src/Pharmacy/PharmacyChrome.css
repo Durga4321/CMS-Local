@@ -92,3 +92,66 @@
 .pharmacy-sidebar-user .pharmacy-profile-status { display: flex; align-items: center; gap: 6px; color: #10b981; font-weight: 700; margin-top: 2px; }
 .pharmacy-profile-status i { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; }
 @media (min-width: 901px) { .pharmacy-shell--collapsed .pharmacy-sidebar-user { padding: 12px 4px; } }
+
+.pharmacy-shell,
+.pharmacy-main {
+  background: #f4f6f8;
+}
+
+.pharmacy-sidebar {
+  background: #f4f6f8;
+  border-right-color: #e2e8ee;
+  box-shadow: none;
+}
+
+.pharmacy-nav-link {
+  color: #1e293b;
+}
+
+.pharmacy-nav-icon {
+  background: #e0f2f1;
+  color: #367f82;
+  box-shadow: none;
+}
+
+.pharmacy-nav-link:hover {
+  background: #eaf4f3;
+  border-color: #d3e8e6;
+  color: #1e293b;
+}
+
+.pharmacy-nav-link.is-active,
+.pharmacy-nav-link.is-active:hover {
+  background: #4d9fa1;
+  border-color: #4d9fa1;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.18);
+}
+
+.pharmacy-nav-link.is-active .pharmacy-nav-icon,
+.pharmacy-nav-link.is-active:hover .pharmacy-nav-icon {
+  background: transparent;
+  color: #ffffff;
+}
+
+.pharmacy-topbar .user-profile-avatar {
+  background: #4d9fa1;
+  color: #ffffff;
+}
+
+.pharmacy-topbar .user-profile-chip {
+  background: #f3f8f8;
+  border-color: #b9d8d6;
+  box-shadow: 0 0 0 3px rgba(145, 198, 196, 0.22);
+}
+
+.pharmacy-topbar .user-profile-chip:hover,
+.pharmacy-topbar .user-profile-chip.is-open {
+  background: #eaf4f3;
+  border-color: #91c6c4;
+  box-shadow: 0 0 0 4px rgba(145, 198, 196, 0.28);
+}
+
+.pharmacy-topbar .user-profile-chip .user-profile-dropdown-arrow {
+  color: #367f82;
+}

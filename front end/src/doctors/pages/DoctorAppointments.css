@@ -984,3 +984,38 @@
     width: 100%;
   }
 }
+
+.da-header-card::before {
+  background: linear-gradient(180deg, #5aaeb2 0%, #367f82 100%);
+}
+
+.da-header-badge {
+  background: #e0f2f1;
+  border-color: #b9d8d6;
+}
+
+.da-header-pulse-icon,
+.da-header-badge-text {
+  color: #367f82;
+}
+
+.da-refresh-btn,
+.da-refresh-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4b9da3 0%, #367f82 100%);
+  border-color: #367f82;
+  color: #ffffff;
+}
+
+.da-status.status--waiting,
+.da-status.status--completed,
+.da-status.status--prescription {
+  background: #e0f2f1;
+  color: #367f82;
+  border-color: #b9d8d6;
+}
+
+.da-status.status--inprogress {
+  background: #f3e8ff;
+  color: #7e22ce;
+  border-color: #e9d5ff;
+}

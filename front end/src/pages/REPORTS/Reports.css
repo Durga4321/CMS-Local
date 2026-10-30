@@ -424,6 +424,69 @@
 .report-card--emerald .rep-instrument-btn { background: linear-gradient(135deg, #059669, #10b981); border-color: #059669; }
 .report-card--purple .rep-instrument-btn { background: linear-gradient(135deg, #7c3aed, #a855f7); border-color: #7c3aed; }
 
+.reports-page .report-card--cyan .rep-card-pill {
+  background: #e2f2f1;
+  border-color: #b9d8d6;
+  color: #367f82;
+}
+
+.reports-page .report-card--cyan .rep-card-pill-icon {
+  color: #367f82;
+}
+
+.reports-page .report-card--emerald .rep-card-pill {
+  background: #e2f2f1;
+  border-color: #b9d8d6;
+  color: #367f82;
+}
+
+.reports-page .report-card--emerald .rep-card-pill-icon {
+  color: #367f82;
+}
+
+.reports-page .report-card--purple .rep-card-pill {
+  background: #e2f2f1;
+  border-color: #b9d8d6;
+  color: #367f82;
+}
+
+.reports-page .report-card--purple .rep-card-pill-icon {
+  color: #367f82;
+}
+
+.reports-page .rep-card-icon-chamber.cyan {
+  background: #e2f2f1;
+  border-color: #b9d8d6;
+  color: #367f82;
+}
+
+.reports-page .rep-card-icon-chamber.emerald {
+  background: #e2f2f1;
+  border-color: #b9d8d6;
+  color: #367f82;
+}
+
+.reports-page .rep-card-icon-chamber.purple {
+  background: #e2f2f1;
+  border-color: #b9d8d6;
+  color: #367f82;
+}
+
+.reports-page .report-card--cyan .rep-instrument-btn {
+  background: linear-gradient(110deg, #367f82 0%, #4b9da3 100%);
+  border-color: #367f82;
+}
+
+.reports-page .report-card--emerald .rep-instrument-btn {
+  background: linear-gradient(110deg, #367f82 0%, #4b9da3 100%);
+  border-color: #367f82;
+}
+
+.reports-page .report-card--purple .rep-instrument-btn {
+  background: linear-gradient(110deg, #367f82 0%, #4b9da3 100%);
+  border-color: #367f82;
+}
+
 @media (max-width: 1024px) {
   .report-grid {
     grid-template-columns: repeat(2, minmax(0, 310px));

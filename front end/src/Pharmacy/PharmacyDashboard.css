@@ -25,3 +25,60 @@
 @media (max-width: 620px) { .pharmacy-dashboard-heading { align-items: flex-start; flex-direction: column; } .pharmacy-dashboard-heading h2 { font-size: 18px; } .pharmacy-count-grid { gap: 12px; } .pharmacy-count-card { padding: 18px; border-radius: 16px; } }
 @media (max-width: 400px) { .pharmacy-count-grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .pharmacy-count-card, .pharmacy-count-arrow, .pharmacy-dashboard-refresh { transition: none; } .pharmacy-count-card:hover, .pharmacy-count-card:hover .pharmacy-count-arrow { transform: none; } }
+
+.pharmacy-count-card {
+  --count-color: #367f82;
+  --count-bg: #f3f8f8;
+  --count-border: #b9d8d6;
+  --count-icon: #e0f2f1;
+  height: auto;
+  min-height: 0;
+  padding: 18px 20px;
+  box-sizing: border-box;
+  background: #f3f8f8;
+  border-color: #b9d8d6;
+}
+
+.pharmacy-count-card-top {
+  margin-bottom: 12px;
+}
+
+.pharmacy-count-value {
+  margin: 4px 0;
+}
+
+.pharmacy-count-description {
+  line-height: 1.5;
+}
+
+.pharmacy-count-link {
+  margin-top: 12px;
+  padding-top: 10px;
+}
+
+.pharmacy-count-icon {
+  background: #e0f2f1;
+  color: #367f82;
+}
+
+.pharmacy-count-title {
+  color: #0f172a;
+}
+
+.pharmacy-count-value,
+.pharmacy-count-arrow,
+.pharmacy-count-link {
+  color: #367f82;
+}
+
+.pharmacy-count-link {
+  border-top-color: #b9d8d6;
+}
+
+@media (max-width: 620px) {
+  .pharmacy-count-card {
+    height: auto;
+    min-height: 0;
+    padding: 18px;
+  }
+}

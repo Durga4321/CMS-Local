@@ -833,6 +833,90 @@
   box-sizing: border-box !important;
 }
 
+.nurses-page .nurses-thead {
+  color: #33464c !important;
+}
+
+.nurses-page .nurses-email-cell {
+  color: #1e293b !important;
+}
+
+.nurses-page .nurses-search {
+  background: #ffffff !important;
+  border: 1px solid #d5e0e2 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+}
+
+.nurses-page .nurses-search:focus-within {
+  border-color: #4b9da3 !important;
+  box-shadow: 0 0 0 3px rgba(75, 157, 163, 0.16) !important;
+}
+
+.nurses-page .nurses-actions .action-btn:not(.delete-instrument-btn):not(.delete-btn) {
+  background: #e2f2f1 !important;
+  border-color: #b9d8d6 !important;
+  color: #367f82 !important;
+  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.12) !important;
+}
+
+.nurses-page .nurses-actions .action-btn:not(.delete-instrument-btn):not(.delete-btn):hover:not(:disabled) {
+  background: #4b9da3 !important;
+  border-color: #82b8b5 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.2) !important;
+}
+
+.nurses-page .nurses-table-card {
+  display: contents;
+}
+
+.nurses-page .nurses-toolbar {
+  padding: 0;
+  margin: 0 0 10px;
+  background: transparent;
+  border: 0;
+}
+
+.nurses-page .nurses-search {
+  height: 40px;
+}
+
+.nurses-page .nurses-table {
+  background: #ffffff;
+  border: 1px solid #dfe8ea;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.nurses-page .nurses-thead {
+  font-size: 0.7rem;
+}
+
+.nurses-page .nurses-row {
+  font-size: 0.82rem;
+}
+
+.nurses-page .nurses-cell,
+.nurses-page .nurses-email-cell {
+  font-size: 12px !important;
+}
+
+.nurses-page .nurses-name-highlight b {
+  font-size: 12px !important;
+}
+
+.nurses-page .nurses-actions .action-btn {
+  flex-basis: 32px !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  border-radius: 9px !important;
+}
+
 /* =========================================================
    EMPTY STATE
    ========================================================= */
