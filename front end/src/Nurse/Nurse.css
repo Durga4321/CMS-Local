@@ -3304,13 +3304,38 @@
 }
 
 .nurse-dashboard-page .nd-stat-grid {
-  grid-template-columns: repeat(4, 220px) !important;
+  width: 94% !important;
+  grid-template-columns: repeat(4, minmax(0, 210px)) !important;
   justify-content: space-between !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 .nurse-dashboard-page .nd-stat-card {
-  width: 220px !important;
-  border-bottom-color: #91c6c4 !important;
+  box-sizing: border-box !important;
+  width: 210px !important;
+  height: 174px !important;
+  min-height: 174px !important;
+  padding: 16px 16px 34px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0,
+    #ffffff calc(100% - 28px),
+    #e0f2f1 calc(100% - 28px),
+    #e0f2f1 calc(100% - 4px),
+    #50b6b2 calc(100% - 4px),
+    #50b6b2 100%
+  ) !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08) !important;
+}
+
+.nurse-dashboard-page .nd-stat-card .nd-stat-icon-box {
+  background: #164e55 !important;
+  border-color: #164e55 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(22, 78, 85, 0.16) !important;
 }
 
 .nurse-dashboard-page .nd-stat-icon-box,
@@ -3363,19 +3388,39 @@
 }
 
 .med-history-page .med-metrics-grid {
-  grid-template-columns: repeat(4, 230px) !important;
+  width: 94% !important;
+  grid-template-columns: repeat(4, minmax(0, 210px)) !important;
   justify-content: space-between !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 .med-history-page .med-metric-card {
-  width: 230px !important;
-  border-bottom-color: #91c6c4 !important;
+  box-sizing: border-box !important;
+  width: 210px !important;
+  height: 110px !important;
+  min-height: 110px !important;
+  padding: 14px 14px 30px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0,
+    #ffffff calc(100% - 24px),
+    #e0f2f1 calc(100% - 24px),
+    #e0f2f1 calc(100% - 4px),
+    #50b6b2 calc(100% - 4px),
+    #50b6b2 100%
+  ) !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08) !important;
 }
 
 .med-history-page .med-metric-icon,
 .med-history-page .med-card-icon {
-  background: #e0f2f1 !important;
-  color: #367f82 !important;
+  background: #164e55 !important;
+  border-color: #164e55 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(22, 78, 85, 0.16) !important;
 }
 
 .nurse-online-bookings .booking-hero::before,
@@ -3409,10 +3454,108 @@
   border-color: #b9d8d6 !important;
 }
 
+.nurse-online-bookings .booking-metrics-grid {
+  width: 94% !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  justify-content: space-between !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.nurse-online-bookings .booking-metric-card {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 150px !important;
+  min-height: 150px !important;
+  padding: 14px 14px 34px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0,
+    #ffffff calc(100% - 28px),
+    #e0f2f1 calc(100% - 28px),
+    #e0f2f1 calc(100% - 4px),
+    #50b6b2 calc(100% - 4px),
+    #50b6b2 100%
+  ) !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08) !important;
+}
+
+.nurse-online-bookings .booking-metric-card .booking-metric-icon {
+  background: #164e55 !important;
+  border-color: #164e55 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(22, 78, 85, 0.16) !important;
+}
+
+@media (max-width: 1100px) {
+  .nurse-online-bookings .booking-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .nurse-online-bookings .booking-metrics-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+.nurse-offline-bookings .booking-metrics-grid {
+  width: 94% !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  justify-content: space-between !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.nurse-offline-bookings .booking-metric-card {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 150px !important;
+  min-height: 150px !important;
+  padding: 14px 14px 34px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0,
+    #ffffff calc(100% - 28px),
+    #e0f2f1 calc(100% - 28px),
+    #e0f2f1 calc(100% - 4px),
+    #50b6b2 calc(100% - 4px),
+    #50b6b2 100%
+  ) !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08) !important;
+}
+
+.nurse-offline-bookings .booking-metric-card .booking-metric-icon {
+  background: #164e55 !important;
+  border-color: #164e55 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(22, 78, 85, 0.16) !important;
+}
+
+@media (max-width: 1100px) {
+  .nurse-offline-bookings .booking-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .nurse-offline-bookings .booking-metrics-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
 @media (max-width: 1200px) {
   .nurse-dashboard-page .nd-stat-grid,
   .med-history-page .med-metrics-grid {
-    grid-template-columns: repeat(2, minmax(0, 230px)) !important;
+    grid-template-columns: repeat(2, minmax(0, 210px)) !important;
     justify-content: start !important;
   }
 
@@ -3425,6 +3568,6 @@
 @media (max-width: 900px) {
   .nurse-dashboard-page .nd-stat-grid,
   .med-history-page .med-metrics-grid {
-    grid-template-columns: minmax(0, 230px) !important;
+    grid-template-columns: minmax(0, 210px) !important;
   }
 }

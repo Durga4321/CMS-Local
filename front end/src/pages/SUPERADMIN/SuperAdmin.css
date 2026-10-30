@@ -5391,3 +5391,62 @@
   background: #e2f2f1;
   color: #367f82;
 }
+
+.sa-dashboard-page .sa-card-grid .sa-stat-card {
+  position: relative;
+  height: 108px !important;
+  min-height: 108px;
+  align-items: flex-start;
+  padding: 14px 16px 38px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(to bottom, #ffffff 0, #ffffff calc(100% - 18px), #e0f2f1 calc(100% - 18px), #e0f2f1 100%);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  color: #315e63;
+}
+
+.sa-dashboard-page .sa-card-grid .sa-stat-card > div:last-child {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sa-dashboard-page .sa-card-grid .sa-stat-card h2 {
+  order: 2;
+  color: #315e63;
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.sa-dashboard-page .sa-card-grid .sa-stat-card p {
+  order: 1;
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.sa-dashboard-page .sa-card-grid .sa-stat-icon {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  flex-basis: 36px;
+  border-radius: 9px;
+  background: #164e55;
+  color: #ffffff;
+}
+
+.sa-dashboard-page .sa-card-grid .sa-stat-card::after {
+  height: 4px;
+  background: #50b6b2;
+  opacity: 1;
+}
+
+.sa-dashboard-page .sa-card-grid .sa-stat-card:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}

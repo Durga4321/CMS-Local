@@ -1132,3 +1132,74 @@
   cursor: pointer;
   box-shadow: 0 12px 26px rgba(37, 99, 235, 0.28);
 }
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-chart-container {
+  height: 220px;
+  margin-top: 8px;
+  padding: 0;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-chart-container > div {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-cartesian-grid line {
+  stroke: #dce7e9 !important;
+  stroke-dasharray: 3 4;
+  stroke-width: 1;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-cartesian-axis-tick-value {
+  fill: #73858b !important;
+  font-size: 11px;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-bar-rectangle path {
+  fill: #438e94 !important;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-area-curve {
+  stroke: #438e94 !important;
+  stroke-width: 3px;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-area-area {
+  fill: #d9eeeb !important;
+  fill-opacity: 0.78;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-area-dot {
+  fill: #438e94 !important;
+  stroke: #ffffff;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-stat-mini-pills {
+  border-top-color: #e5edef;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-mini-pill {
+  border-color: #e2ecee;
+  border-radius: 12px;
+  background: #f8fbfb;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-mini-pill:hover {
+  border-color: #b9d8d6;
+  background: #ffffff;
+}
+
+.layout:has(.sidebar a[href="/dashboard"]) .db-mini-icon {
+  background: #e2f2f1;
+  color: #438e94;
+}
+
+@media (max-width: 768px) {
+  .layout:has(.sidebar a[href="/dashboard"]) .db-chart-container {
+    height: 190px;
+  }
+}
