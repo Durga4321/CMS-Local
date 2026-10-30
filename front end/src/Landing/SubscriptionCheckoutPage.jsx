@@ -301,7 +301,7 @@ export default function SubscriptionCheckoutPage() {
                 {plan.durationMonths === 1 ? "month" : "months"}
               </h3>
               <strong>{formatIndianCurrency(plan.price)}</strong>
-              <p>{plan.name}</p>
+              <p>{plan.name}</p><p>Branches: {plan.maxBranches ?? "Not specified"} ? Appointments/day: {plan.dailyAppointmentLimit ?? "Not specified"}</p><ul>{plan.benefits.map(benefit => <li key={benefit}>{benefit}</li>)}</ul>
               <p className="landing-lab-summary">
                 {plan.includesLab ? "With Lab" : "Without Lab"}
               </p>

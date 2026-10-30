@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const apiProxyTarget =
-    env.REACT_APP_API_PROXY_TARGET || "https://irritant-kilobyte-until.ngrok-free.dev";
+    env.REACT_APP_API_PROXY_TARGET || env.REACT_APP_API_BASE_URL || "https://countable-ligament-shorty.ngrok-free.dev";
 
   return {
     plugins: [react()],

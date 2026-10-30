@@ -36,6 +36,16 @@ const asBoolean = (value) => value === true || value === 1 || String(value).toLo
 const dateOnly = (value) => value ? String(value).slice(0, 10) : "";
 const optionalNumber = (value) => value == null || value === "" ? null : Number(value);
 
+export const normalizePlanBenefits = (value) => [...new Set((Array.isArray(value) ? value : String(value || "").split(/\r?\n/)).map(String).map(item => item.trim()).filter(Boolean))];
+const planConfiguration = (plan) => {
+  const limits = {};
+  for (const key of ["maxBranches", "dailyAppointmentLimit"]) {
+    const value = Number(plan[key]);
+    if (plan[key] === "" || plan[key] == null || !Number.isSafeInteger(value) || value < 1) throw new Error("Enter positive whole numbers for branch and daily appointment limits.");
+    limits[key] = value;
+  }
+  return { ...limits, benefits: normalizePlanBenefits(plan.benefits) };
+};
 export const normalizeSubscriptionPlan = (plan = {}) => {
   const id = plan.id ?? plan.subscriptionPlanId ?? plan.planId ?? plan.SubscriptionPlanId ?? plan.Id ?? "";
   const durationMonths = Number(plan.durationMonths ?? plan.DurationMonths ?? plan.months ?? 1);
@@ -70,6 +80,9 @@ export const normalizeSubscriptionPlan = (plan = {}) => {
     isActive: asBoolean(plan.isActive ?? plan.IsActive ?? true),
     billingCycle: plan.billingCycle ?? plan.BillingCycle ?? getBillingCycle(durationMonths),
     modules: sanitizeModulesForLabAccess(CMS_MODULES.map((module) => module.key), includesLab),
+    maxBranches: optionalNumber(plan.maxBranches ?? plan.MaxBranches),
+    dailyAppointmentLimit: optionalNumber(plan.dailyAppointmentLimit ?? plan.DailyAppointmentLimit),
+    benefits: normalizePlanBenefits(plan.benefits ?? plan.Benefits),
     raw: plan,
   };
 };
@@ -79,6 +92,10 @@ export const readPurchasedEntitlements = (record = {}, plan = {}) => {
     const pascal = key[0].toUpperCase() + key.slice(1);
     const value = record[key] ?? record[pascal] ?? plan[key] ?? plan[pascal];
     flags[key] = value == null ? null : asBoolean(value);
+  }
+  for (const key of ["maxBranches", "dailyAppointmentLimit"]) {
+    const pascal = key[0].toUpperCase() + key.slice(1);
+    flags[key] = optionalNumber(record["purchased" + pascal] ?? record["Purchased" + pascal] ?? record[key] ?? record[pascal]);
   }
   return flags;
 };
@@ -159,6 +176,7 @@ export const createAdminSubscriptionPlan=async(plan)=>{
     throw new Error("Enter a valid cycle and price.");
   }
   const payload={
+    ...planConfiguration(plan),
     name:String(plan.name||"").trim(),
     planType:SUBSCRIPTION_PLAN_TYPES.includes(plan.planType)?plan.planType:"Basic",
     durationMonths,
@@ -190,6 +208,7 @@ export const updateAdminSubscriptionPlan=async(id,plan)=>{
     throw new Error("Enter a valid cycle and price.");
   }
   const payload={
+    ...planConfiguration(plan),
     name:String(plan.name||"").trim(),
     planType:SUBSCRIPTION_PLAN_TYPES.includes(plan.planType)?plan.planType:"Basic",
     durationMonths,
@@ -410,3 +429,13 @@ export const upsertSubscription=(subscription)=>{const current=readSubscriptions
 
 export const getSubscriptionForAdmin=()=>null;
 export const seedSubscriptionsForAdmins=()=>[];
+
+export const createUpgradeCheckout = async ({ subscriptionPlanId, paymentMethod }) => {
+  const planId = Number(subscriptionPlanId);
+  if (!Number.isSafeInteger(planId) || planId < 1 || !paymentMethod) throw new Error("Select a plan and payment method for upgrade.");
+  return unwrap(await requestJson(API_ENDPOINTS.subscriptions.upgradeCheckout, { method: "POST", body: { subscriptionPlanId: planId, paymentMethod } }));
+};
+export const activateSubscriptionUpgrade = async (purchaseId) => {
+  if (!purchaseId) throw new Error("An upgrade purchase ID is required.");
+  return unwrap(await requestJson(API_ENDPOINTS.subscriptions.activateUpgrade.replace("{purchaseId}", encodeURIComponent(purchaseId)), { method: "POST" }));
+};
