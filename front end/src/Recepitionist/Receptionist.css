@@ -7909,20 +7909,47 @@
   box-shadow: 0 3px 10px rgba(54, 127, 130, 0.12) !important;
 }
 
+.rc-patients-page .rc-patient-kpi-card .rc-pkpi-icon-box {
+  background: #164e55 !important;
+  border-color: #164e55 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(22, 78, 85, 0.16) !important;
+}
+
 .rc-patients-page .rc-pkpi-label {
   color: #526e70 !important;
 }
 
 .rc-patients-page .rc-patient-kpi-grid {
+  width: 94% !important;
   gap: 12px !important;
   margin-bottom: 18px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 .rc-patients-page .rc-patient-kpi-card {
   min-width: 0 !important;
+  height: 108px !important;
+  min-height: 108px !important;
   gap: 10px !important;
-  padding: 12px 14px !important;
-  border-radius: 16px !important;
+  padding: 14px !important;
+  border-radius: 12px !important;
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0,
+    #ffffff calc(100% - 24px),
+    #e0f2f1 calc(100% - 24px),
+    #e0f2f1 calc(100% - 4px),
+    #50b6b2 calc(100% - 4px),
+    #50b6b2 100%
+  ) !important;
+  border: 0 !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08) !important;
+}
+
+.rc-patients-page .rc-patient-kpi-card:hover {
+  box-shadow: 0 7px 18px rgba(15, 23, 42, 0.09) !important;
 }
 
 .rc-patients-page .rc-pkpi-content {
@@ -8116,16 +8143,31 @@
 .rc-dashboard-page .rc-dash-kpi-card.card-blue-theme,
 .rc-dashboard-page .rc-dash-kpi-card.card-orange-theme,
 .rc-dashboard-page .rc-dash-kpi-card.card-green-theme {
-  background: #f3f8f8 !important;
-  border-color: #b9d8d6 !important;
-  box-shadow: 0 8px 22px rgba(54, 127, 130, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0,
+    #ffffff calc(100% - 44px),
+    #e0f2f1 calc(100% - 44px),
+    #e0f2f1 calc(100% - 4px),
+    #50b6b2 calc(100% - 4px),
+    #50b6b2 100%
+  ) !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05) !important;
 }
 
 .rc-dashboard-page .rc-dash-kpi-card.card-blue-theme:hover,
 .rc-dashboard-page .rc-dash-kpi-card.card-orange-theme:hover,
 .rc-dashboard-page .rc-dash-kpi-card.card-green-theme:hover {
-  border-color: #8bbfbd !important;
-  box-shadow: 0 12px 28px rgba(54, 127, 130, 0.16), inset 0 1px 0 #ffffff !important;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08) !important;
+}
+
+.rc-dashboard-page .rc-dash-kpi-card .db-kpi-icon-box {
+  background: #164e55 !important;
+  border-color: #164e55 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(22, 78, 85, 0.16) !important;
 }
 
 .rc-dashboard-page .rc-dash-kpi-card {
@@ -8133,7 +8175,7 @@
   height: 128px !important;
   min-height: 128px !important;
   padding: 8px 10px !important;
-  border-radius: 14px !important;
+  border-radius: 12px !important;
 }
 
 .rc-dashboard-page .rc-dash-kpi-card .db-kpi-title {
@@ -8143,11 +8185,17 @@
 .rc-dashboard-page .rc-dash-kpi-card .db-kpi-num {
   color: #000000 !important;
   font-size: 24px !important;
-  margin: 3px 0 1px !important;
+  margin: 4px 0 0 !important;
+  transform: translateY(-18px);
 }
 
 .rc-dashboard-page .rc-dash-kpi-card .db-kpi-content-wrap {
   min-height: 0 !important;
+  justify-content: flex-start !important;
+}
+
+.rc-dashboard-page .rc-dash-kpi-card .db-kpi-trend {
+  margin-top: auto !important;
 }
 
 .rc-appointments-page .rc-pkpi-badge,
@@ -8168,7 +8216,7 @@
 }
 
 .rc-appointments-page .rc-appt-kpi-grid {
-  width: 100% !important;
+  width: 94% !important;
   max-width: 1100px !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 12px !important;
@@ -8178,10 +8226,29 @@
 
 .rc-appointments-page .rc-appt-kpi-grid .rc-patient-kpi-card {
   min-width: 0 !important;
-  min-height: 104px !important;
-  padding: 10px 12px !important;
+  height: 128px !important;
+  min-height: 128px !important;
+  padding: 14px !important;
   gap: 10px !important;
-  border-radius: 16px !important;
+  border-radius: 12px !important;
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0,
+    #ffffff calc(100% - 30px),
+    #e0f2f1 calc(100% - 30px),
+    #e0f2f1 calc(100% - 4px),
+    #50b6b2 calc(100% - 4px),
+    #50b6b2 100%
+  ) !important;
+  border: 0 !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08) !important;
+}
+
+.rc-appointments-page .rc-appt-kpi-grid .rc-pkpi-icon-box {
+  background: #164e55 !important;
+  border-color: #164e55 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(22, 78, 85, 0.16) !important;
 }
 
 .rc-appointments-page .rc-appt-kpi-grid .rc-pkpi-content {
@@ -8258,15 +8325,35 @@
   color: #ffffff !important;
 }
 
-.rc-billing-page .billing-kpi-card {
-  background: #f3f8f8 !important;
-  border-color: #b9d8d6 !important;
-  box-shadow: 0 6px 18px rgba(54, 127, 130, 0.1) !important;
+.rc-billing-page .billing-telemetry-kpi-grid.compact-strip {
+  width: 94% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
-.rc-billing-page .billing-kpi-icon-wrap {
-  background: #e2f2f1 !important;
-  border-color: #b9d8d6 !important;
+.rc-billing-page .billing-telemetry-kpi-grid.compact-strip .billing-kpi-card {
+  height: 164px !important;
+  min-height: 164px !important;
+  padding: 14px 14px 30px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0,
+    #ffffff calc(100% - 28px),
+    #e0f2f1 calc(100% - 28px),
+    #e0f2f1 calc(100% - 4px),
+    #50b6b2 calc(100% - 4px),
+    #50b6b2 100%
+  ) !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08) !important;
+}
+
+.rc-billing-page .billing-telemetry-kpi-grid.compact-strip .billing-kpi-icon-wrap {
+  background: #164e55 !important;
+  border-color: #164e55 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(22, 78, 85, 0.16) !important;
 }
 
 .rc-billing-page .billing-kpi-label,
