@@ -143,9 +143,42 @@ body.auth-page-no-scroll {
 }
 
 .auth-login-close {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(15, 118, 110, 0.08);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.auth-login-controls {
   position: absolute;
   top: 12px;
   right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 2;
+}
+
+.auth-login-controls .theme-picker-trigger {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+}
+
+.auth-login-controls .theme-picker-popover {
+  top: calc(100% + 12px);
+  right: 0;
+}
+
+/* Keep the close button beside the theme picker in the login card. */
+.auth-login-controls .auth-login-close {
   width: 34px;
   height: 34px;
   display: inline-flex;
@@ -1360,5 +1393,138 @@ body.auth-page-no-scroll {
   .auth-container::before,
   .auth-container::after {
     display: none;
+  }
+}
+
+/* Keep the login screen in sync with the selected application theme. */
+html[data-cms-theme] .auth-container {
+  --primary: var(--theme-primary);
+  --primary-hover: var(--theme-primary-dark);
+  --primary-deep: var(--theme-primary-dark);
+  --accent: var(--theme-primary);
+  --input-border: color-mix(in srgb, var(--theme-primary) 25%, #ffffff);
+  background: var(--app-gradient-bg);
+}
+
+html[data-cms-theme] .auth-container .auth-veil {
+  background: linear-gradient(-45deg,
+      color-mix(in srgb, var(--theme-primary-dark) 62%, transparent),
+      color-mix(in srgb, var(--theme-primary-dark) 58%, transparent),
+      color-mix(in srgb, var(--theme-primary) 50%, transparent),
+      color-mix(in srgb, var(--theme-primary-glow) 42%, transparent));
+}
+
+html[data-cms-theme] .auth-container::before {
+  background: color-mix(in srgb, var(--theme-primary-glow) 70%, transparent);
+}
+
+html[data-cms-theme] .auth-container::after {
+  background: color-mix(in srgb, var(--theme-primary) 55%, transparent);
+}
+
+html[data-cms-theme] .auth-card--login {
+  border-color: color-mix(in srgb, var(--theme-primary) 18%, #e2e8f0);
+}
+
+html[data-cms-theme] .auth-card--login .auth-login-close {
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary-dark);
+}
+
+html[data-cms-theme] .auth-card--login .auth-login-close:hover {
+  background: var(--theme-primary-glow);
+  color: var(--theme-primary-dark);
+}
+
+html[data-cms-theme] .auth-card--login .auth-logo {
+  background: transparent;
+  box-shadow: none;
+  color: var(--theme-primary);
+}
+
+html[data-cms-theme] .auth-card--login h2 {
+  color: var(--theme-primary-dark);
+}
+
+html[data-cms-theme] .auth-card--login .form-group input:focus,
+html[data-cms-theme] .auth-card--login .form-group select:focus,
+html[data-cms-theme] .auth-card--login .form-group textarea:focus {
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 14%, transparent);
+}
+
+html[data-cms-theme] .auth-card--login .submit-btn,
+html[data-cms-theme] .auth-card--login .submit-btn--block {
+  background: linear-gradient(90deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+  box-shadow: 0 14px 28px color-mix(in srgb, var(--theme-primary) 24%, transparent);
+}
+
+html[data-cms-theme] .auth-card--login .forgot-password-link,
+html[data-cms-theme] .auth-card--login .create-account-link,
+html[data-cms-theme] .auth-card--login .auth-footer a {
+  color: var(--theme-primary-dark);
+}
+
+html[data-cms-theme] .auth-card--login .create-account-btn,
+html[data-cms-theme] .auth-card--login .create-account-btn--outline {
+  border-color: var(--theme-primary);
+  color: var(--theme-primary-dark);
+}
+
+html[data-cms-theme] .auth-card--login .create-account-btn:hover {
+  background: var(--theme-primary-soft);
+}
+
+/* Open the login picker beside the card and keep its panel compact. */
+.auth-login-controls .theme-picker-popover {
+  top: 0;
+  right: auto;
+  left: calc(100% + 12px);
+  width: min(330px, calc(100vw - 24px));
+  max-height: calc(100vh - 32px);
+  padding: 12px;
+}
+
+.auth-login-controls .theme-picker-header {
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.auth-login-controls .theme-picker-header strong {
+  font-size: 14px;
+}
+
+.auth-login-controls .theme-picker-header span {
+  font-size: 10px;
+}
+
+.auth-login-controls .theme-picker-grid {
+  gap: 6px;
+}
+
+.auth-login-controls .theme-option {
+  min-height: 62px;
+  padding: 6px 3px 5px;
+  font-size: 8px;
+}
+
+.auth-login-controls .theme-option-swatch,
+.auth-login-controls .theme-option-custom {
+  width: 28px;
+  height: 28px;
+}
+
+.auth-login-controls .theme-picker-done {
+  margin-top: 10px;
+  padding: 6px 10px;
+}
+
+@media (max-width: 768px) {
+  .auth-login-controls .theme-picker-popover {
+    position: fixed;
+    top: 72px;
+    right: 12px;
+    left: auto;
+    width: min(330px, calc(100vw - 24px));
   }
 }

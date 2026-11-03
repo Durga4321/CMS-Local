@@ -8,6 +8,7 @@ import { recordAuditLog } from '../pages/SUPERADMIN/superAdminApi';
 import { useToast } from '../components/ToastProvider';
 import { validateGmail } from '../utils/validation';
 import { syncAdminRoleMatrixFromBackend } from '../utils/rolePermissions';
+import ThemePicker from '../components/ThemePicker';
 const EyeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
@@ -630,15 +631,18 @@ const AdminLogin = () => {
       <div className="auth-veil" aria-hidden="true" />
 
       <div className="auth-card auth-card--login">
-        <button
-          type="button"
-          className="auth-login-close"
-          onClick={() => navigate('/')}
-          aria-label="Go to landing page"
-          title="Go to landing page"
-        >
-          <X size={20} />
-        </button>
+        <div className="auth-login-controls">
+          <ThemePicker />
+          <button
+            type="button"
+            className="auth-login-close"
+            onClick={() => navigate('/')}
+            aria-label="Go to landing page"
+            title="Go to landing page"
+          >
+            <X size={20} />
+          </button>
+        </div>
         <div className="auth-logo" aria-hidden="true">
           <LogoIcon />
         </div>

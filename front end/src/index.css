@@ -15,6 +15,380 @@
   --app-title-size: 16px;
   --app-body-size: 14px;
   --app-caption-size: 12px;
+  --theme-primary: #0f9d9d;
+  --theme-primary-dark: #0f5a61;
+  --theme-primary-soft: #dff3f3;
+  --theme-primary-glow: #b8e8e5;
+}
+
+/* Shared palette hooks used by every authenticated dashboard shell. */
+[data-cms-theme] {
+  --app-accent: var(--theme-primary);
+  --app-accent-soft: var(--theme-primary-soft);
+}
+
+[data-cms-theme] body,
+[data-cms-theme] .layout,
+[data-cms-theme] .rc-shell,
+[data-cms-theme] .pp-shell,
+[data-cms-theme] .patient-portal,
+[data-cms-theme] .dr-layout {
+  --theme-shadow: color-mix(in srgb, var(--theme-primary) 16%, transparent);
+}
+
+[data-cms-theme] .topbar,
+[data-cms-theme] .topbar-profile,
+[data-cms-theme] .topbar-dropdown,
+[data-cms-theme] .sidebar,
+[data-cms-theme] .rc-sidebar,
+[data-cms-theme] .pp-sidebar,
+[data-cms-theme] .dr-sidebar {
+  border-color: color-mix(in srgb, var(--theme-primary) 22%, #dbe3ed) !important;
+}
+
+[data-cms-theme] .sidebar,
+[data-cms-theme] .rc-sidebar,
+[data-cms-theme] .pp-sidebar,
+[data-cms-theme] .dr-sidebar {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--theme-primary-soft) 74%, #ffffff) 0%, #ffffff 100%) !important;
+}
+
+[data-cms-theme] .sidebar-brand-icon,
+[data-cms-theme] .topbar-avatar,
+[data-cms-theme] .nav-item.active,
+[data-cms-theme] .theme-picker-trigger:hover,
+[data-cms-theme] .theme-picker-trigger:focus-visible {
+  background: var(--theme-primary) !important;
+  color: #ffffff !important;
+}
+
+[data-cms-theme] .topbar-search-box:focus-within,
+[data-cms-theme] input:focus,
+[data-cms-theme] select:focus,
+[data-cms-theme] textarea:focus {
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 20%, transparent) !important;
+}
+
+[data-cms-theme] button:not(.theme-option):not(.theme-picker-close):not(.theme-picker-done):not(.topbar-menu-btn):hover {
+  border-color: color-mix(in srgb, var(--theme-primary) 42%, #dbe3ed);
+}
+
+/* High-specificity shared overrides ensure palettes win over module-specific defaults. */
+html[data-cms-theme] .sidebar,
+html[data-cms-theme] .rc-sidebar,
+html[data-cms-theme] .pp-sidebar,
+html[data-cms-theme] .dr-sidebar {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--theme-primary-soft) 74%, #ffffff) 0%, #ffffff 100%) !important;
+  border-right-color: color-mix(in srgb, var(--theme-primary) 24%, #dbe3ed) !important;
+}
+
+html[data-cms-theme] .sidebar .sidebar-brand-icon,
+html[data-cms-theme] .topbar .topbar-avatar {
+  background: var(--theme-primary) !important;
+  color: #ffffff !important;
+}
+
+html[data-cms-theme] .sidebar .nav-item.active {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 28%, transparent) !important;
+}
+
+html[data-cms-theme] .sidebar .nav-item.active .nav-icon-box {
+  background: var(--theme-primary) !important;
+  color: #ffffff !important;
+}
+
+html[data-cms-theme] .topbar .topbar-profile {
+  background: var(--theme-primary-soft) !important;
+  border-color: color-mix(in srgb, var(--theme-primary) 36%, #dbe3ed) !important;
+}
+
+/* Apply the selected palette to KPI cards and their accent/icon surfaces. */
+html[data-cms-theme] :is(
+  .sa-stat-card,
+  .db-kpi-card,
+  .rc-dash-kpi-card,
+  .rc-patient-kpi-card,
+  .billing-kpi-card,
+  .sa-subscription-kpi,
+  .sa-audit-summary-card
+) {
+  border-color: var(--theme-primary-glow) !important;
+  box-shadow: 0 8px 26px color-mix(in srgb, var(--theme-primary) 16%, transparent) !important;
+}
+
+html[data-cms-theme] :is(
+  .sa-stat-icon,
+  .db-kpi-icon-box,
+  .rc-pkpi-icon-box,
+  .billing-kpi-icon-wrap,
+  .sa-subscription-kpi > svg,
+  .sa-audit-summary-icon
+) {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+  border-color: var(--theme-primary-glow) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 18%, transparent) !important;
+}
+
+html[data-cms-theme] .sa-audit-summary-card::after,
+html[data-cms-theme] .sa-subscription-kpi::after {
+  background: var(--theme-primary-soft) !important;
+  border-bottom-color: var(--theme-primary) !important;
+}
+
+html[data-cms-theme] :is(.sa-stat-card h2, .db-kpi-num, .rc-dash-kpi-card .db-kpi-num, .sa-subscription-kpi b) {
+  color: var(--theme-primary-dark) !important;
+}
+
+/* Super Admin dashboard card strips and section rules use the active palette too. */
+html[data-cms-theme] .sa-dashboard-page .sa-card-grid .sa-stat-card {
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0,
+    #ffffff calc(100% - 18px),
+    var(--theme-primary-soft) calc(100% - 18px),
+    var(--theme-primary-soft) 100%
+  ) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-dashboard-page .sa-card-grid .sa-stat-card::after {
+  background: var(--theme-primary) !important;
+}
+
+html[data-cms-theme] .sa-dashboard-page .sa-card-grid .sa-stat-icon {
+  background: var(--theme-primary) !important;
+  color: #ffffff !important;
+}
+
+html[data-cms-theme] .sa-dashboard-page :is(.sa-panel--highlighted, .sa-panel--activity) {
+  border-top-color: var(--theme-primary) !important;
+}
+
+html[data-cms-theme] :is(.sa-chart-card, .sa-chart-panel, .sa-panel) {
+  border-color: color-mix(in srgb, var(--theme-primary) 20%, #dbe3ed) !important;
+}
+
+/* Override the legacy Super Admin selectors that otherwise force teal accents. */
+html[data-cms-theme] .layout:has(.superadmin-main) .sidebar .nav-item.active,
+html[data-cms-theme] .layout:has(.sidebar a[href="/superadmin/dashboard"]) .sidebar .nav-item.active,
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .sidebar .nav-item.active {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary) 22%, transparent) !important;
+}
+
+html[data-cms-theme] .layout:has(.superadmin-main) .sidebar .nav-item.active .nav-label,
+html[data-cms-theme] .layout:has(.superadmin-main) .sidebar .nav-item.active .nav-icon-box,
+html[data-cms-theme] .layout:has(.sidebar a[href="/superadmin/dashboard"]) .sidebar .nav-item.active .nav-label,
+html[data-cms-theme] .layout:has(.sidebar a[href="/superadmin/dashboard"]) .sidebar .nav-item.active .nav-icon-box,
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .sidebar .nav-item.active .nav-label,
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .sidebar .nav-item.active .nav-icon-box {
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .layout:has(.superadmin-main) .sidebar .nav-item.active .nav-icon-box,
+html[data-cms-theme] .layout:has(.sidebar a[href="/superadmin/dashboard"]) .sidebar .nav-item.active .nav-icon-box,
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .sidebar .nav-item.active .nav-icon-box {
+  background: var(--theme-primary) !important;
+  color: #ffffff !important;
+}
+
+html[data-cms-theme] .layout:has(.superadmin-main) .user-profile-chip,
+html[data-cms-theme] .layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-chip,
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .user-profile-chip {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 16%, transparent) !important;
+}
+
+/* Roles & Permissions screen: keep the permission matrix on the selected palette. */
+html[data-cms-theme] .sa-roles-permissions-page .sa-page-header h1 {
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-permission-card {
+  border-top-color: var(--theme-primary) !important;
+  background: linear-gradient(135deg, #ffffff 0%, var(--theme-primary-soft) 100%) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-permission-matrix {
+  border-color: var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-permission-head {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-permission-row,
+html[data-cms-theme] .sa-roles-permissions-page .sa-permission-row:nth-child(odd),
+html[data-cms-theme] .sa-roles-permissions-page .sa-permission-row:nth-child(even) {
+  background: color-mix(in srgb, var(--theme-primary-soft) 44%, #ffffff) !important;
+  border-top-color: var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-permission-row:hover {
+  background: var(--theme-primary-soft) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-permission-matrix input[type="checkbox"] {
+  accent-color: var(--theme-primary) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-permission-matrix .sa-checkbox:has(input[type="checkbox"]:checked) {
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-permission-head .sa-btn.sa-btn-primary,
+html[data-cms-theme] .sa-roles-permissions-page .sa-form-actions .sa-btn.sa-btn-primary {
+  background: var(--theme-primary) !important;
+  border-color: var(--theme-primary) !important;
+  color: #ffffff !important;
+}
+
+html[data-cms-theme] .layout:has(.superadmin-main) .user-profile-avatar,
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .user-profile-avatar {
+  background: var(--theme-primary) !important;
+}
+
+/* Profile button details use the active theme as well. */
+html[data-cms-theme] .layout:has(.superadmin-main) .user-profile-chip:hover,
+html[data-cms-theme] .layout:has(.superadmin-main) .user-profile-chip.is-open,
+html[data-cms-theme] .layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-chip:hover,
+html[data-cms-theme] .layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-chip.is-open,
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .user-profile-chip:hover,
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .user-profile-chip.is-open {
+  background: #ffffff !important;
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-primary) 20%, transparent) !important;
+}
+
+html[data-cms-theme] .layout:has(.superadmin-main) .user-profile-online-dot,
+html[data-cms-theme] .layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-online-dot,
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .user-profile-online-dot {
+  background: var(--theme-primary) !important;
+  box-shadow: 0 0 4px var(--theme-primary) !important;
+}
+
+html[data-cms-theme] .layout:has(.superadmin-main) .user-profile-copy strong,
+html[data-cms-theme] .layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-copy strong,
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .user-profile-copy strong {
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .layout:has(.superadmin-main) .user-profile-copy em,
+html[data-cms-theme] .layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-copy em,
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .user-profile-copy em,
+html[data-cms-theme] .layout:has(.superadmin-main) .user-profile-dropdown-arrow,
+html[data-cms-theme] .layout:has(.profile-page):has(.sidebar h3[title="Super Admin"]) .user-profile-dropdown-arrow,
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .user-profile-dropdown-arrow {
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .layout:has(.superadmin-main) .sidebar .sidebar-brand-icon,
+html[data-cms-theme] .layout:has(.sidebar a[href="/superadmin/dashboard"]) .sidebar .sidebar-brand-icon {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+  border: 1px solid var(--theme-primary-glow) !important;
+  box-shadow: none !important;
+}
+
+html[data-cms-theme] .content.superadmin-content .sa-subscription-kpi::after,
+html[data-cms-theme] .content.superadmin-content .sa-subscription-kpi svg {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .content.superadmin-content .sa-subscription-kpi::after {
+  border-bottom-color: var(--theme-primary) !important;
+}
+
+/* Use the active theme for primary actions and reusable action-icon controls. */
+html[data-cms-theme] :is(
+  .sa-btn-primary,
+  .sa-btn--primary,
+  .rc-btn.primary,
+  .db-no-clinic-button,
+  .nd-btn-manage
+) {
+  background: var(--theme-primary) !important;
+  border-color: var(--theme-primary) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-primary) 22%, transparent) !important;
+}
+
+html[data-cms-theme] :is(
+  .sa-btn:not(.sa-btn-primary):not(.sa-btn--primary),
+  .sa-icon-btn:not(.sa-icon-btn--delete):not(.sa-icon-btn--danger),
+  .app-action-button:not(.app-action-button--danger),
+  .app-action-icon:not(.app-action-icon--danger),
+  .app-icon-button:not(.app-icon-button--danger),
+  .app-action-btn:not(.app-action-btn--danger),
+  .branches-action-button:not(.branches-action-danger),
+  .receptionists-action-button:not(.receptionists-action-danger),
+  .action-btn:not(.delete-btn):not(.delete-instrument-btn),
+  .lab-action-btn,
+  .da-act-btn
+) {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] :is(
+  .sa-icon-btn:not(.sa-icon-btn--delete):not(.sa-icon-btn--danger),
+  .app-action-button:not(.app-action-button--danger),
+  .app-action-icon:not(.app-action-icon--danger),
+  .app-icon-button:not(.app-icon-button--danger),
+  .app-action-btn:not(.app-action-btn--danger),
+  .branches-action-button:not(.branches-action-danger),
+  .receptionists-action-button:not(.receptionists-action-danger),
+  .action-btn:not(.delete-btn):not(.delete-instrument-btn),
+  .lab-action-btn,
+  .da-act-btn
+) svg {
+  color: var(--theme-primary-dark) !important;
+  stroke: currentColor;
+}
+
+html[data-cms-theme] :is(
+  .db-panel-icon,
+  .db-sum-icon,
+  .db-mini-icon,
+  .db-clinic-badge-icon,
+  .db-apt-avatar,
+  .db-noti-icon,
+  .nd-stat-icon-box,
+  .nd-action-icon-box,
+  .rc-dash-action-icon-wrap,
+  .rc-dash-panel-icon
+) {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+/* Recent Activities uses the same selected light shade and accent icon color. */
+html[data-cms-theme] .sa-dashboard-page .sa-panel--activity .sa-activity-icon,
+html[data-cms-theme] .sa-dashboard-page .sa-panel--activity .sa-activity-icon--login,
+html[data-cms-theme] .sa-dashboard-page .sa-panel--activity .sa-activity-icon--logout {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: inset 0 0 0 1px var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .sa-dashboard-page .sa-panel--activity .sa-panel__header .sa-btn {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
 }
 
 /* Keep all scrolling functional while hiding vertical and horizontal scrollbars. */
@@ -1517,5 +1891,151 @@ select.op-form-select:focus,
   border: 1.5px solid rgba(255, 255, 255, 0.85) !important;
   background: rgba(255, 255, 255, 0.18) !important;
   color: #ffffff !important;
+}
+
+/* Roles & Permissions: keep the role list and permission matrix on the active theme. */
+html[data-cms-theme] .sa-roles-permissions-page .sa-table--roles {
+  border-color: var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-table--roles .sa-table-head {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+  border-bottom-color: var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-table--roles .sa-table-row,
+html[data-cms-theme] .sa-roles-permissions-page .sa-table--roles .sa-table-row:nth-child(odd),
+html[data-cms-theme] .sa-roles-permissions-page .sa-table--roles .sa-table-row:nth-child(even) {
+  background: color-mix(in srgb, var(--theme-primary-soft) 30%, #ffffff) !important;
+  border-color: var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-table--roles .sa-table-row:hover {
+  background: color-mix(in srgb, var(--theme-primary-soft) 58%, #ffffff) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-role-logo {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: inset 0 0 0 1px var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-role-main em {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-role-permission-chip {
+  background: color-mix(in srgb, var(--theme-primary-soft) 72%, #ffffff) !important;
+  border: 1px solid var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-role-permission-chip > b,
+html[data-cms-theme] .sa-roles-permissions-page .sa-role-permission-chip > .sa-role-permission-count {
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-role-permission-chip > .sa-role-permission-count {
+  background: color-mix(in srgb, var(--theme-primary-soft) 45%, #ffffff) !important;
+  border-color: var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .sa-roles-permissions-page .sa-role-admin-list > b svg {
+  color: var(--theme-primary-dark) !important;
+}
+
+/* Audit Logs view buttons: use the active theme for both states. */
+html[data-cms-theme] .sa-audit-logs-page .sa-tabs .sa-tab {
+  background: #ffffff !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-audit-logs-page .sa-tabs .sa-tab:hover,
+html[data-cms-theme] .sa-audit-logs-page .sa-tabs .sa-tab:focus-visible {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-audit-logs-page .sa-tabs .sa-tab.active {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary) !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: 0 5px 14px var(--theme-primary-glow) !important;
+}
+
+/* System Settings tabs: use the active theme instead of per-tab accent colors. */
+html[data-cms-theme] .sa-settings-form .sa-tabs .sa-tab,
+html[data-cms-theme] .sa-settings-form .sa-tabs .sa-tab:nth-child(2),
+html[data-cms-theme] .sa-settings-form .sa-tabs .sa-tab:nth-child(3),
+html[data-cms-theme] .sa-settings-form .sa-tabs .sa-tab:nth-child(4) {
+  background: #ffffff !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-settings-form .sa-tabs .sa-tab:hover,
+html[data-cms-theme] .sa-settings-form .sa-tabs .sa-tab:focus-visible {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-settings-form .sa-tabs .sa-tab.active {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary) !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: 0 5px 14px var(--theme-primary-glow) !important;
+}
+
+/* Admin Management field surfaces stay white after all theme styles load. */
+.sa-table--admins,
+.sa-table--admins .sa-table-head,
+.sa-table--admins .sa-table-head > *,
+.sa-table--admins .sa-table-row,
+.sa-table--admins .sa-table-row > *,
+.sa-table--admins .sa-table-cell,
+.sa-table--admins .sa-admin-name-cell,
+.sa-table--admins .sa-admin-name-highlight {
+  background: #ffffff !important;
+}
+
+.content.superadmin-content .sa-table--admins .sa-table-head,
+.content.superadmin-content .sa-table--admins .sa-table-head > :nth-child(1),
+.content.superadmin-content .sa-table--admins .sa-table-head > :nth-child(2),
+.content.superadmin-content .sa-table--admins .sa-table-row > :nth-child(1),
+.content.superadmin-content .sa-table--admins .sa-table-row > :nth-child(2),
+.content.superadmin-content .sa-table--admins .sa-table-cell--sno,
+.content.superadmin-content .sa-table--admins .sa-table-cell--name,
+.content.superadmin-content .sa-table--admins .sa-admin-name-cell,
+.content.superadmin-content .sa-table--admins .sa-admin-name-highlight {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+}
+
+/* Remove the sticky-header shadow and separators that show through the Admin table. */
+.content.superadmin-content .sa-table--admins .sa-table-head {
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+
+.content.superadmin-content .sa-table--admins .sa-table-row,
+.content.superadmin-content .sa-table--admins .sa-table-row > *,
+.content.superadmin-content .sa-table--admins .sa-table-cell {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+
+/* Final Admin Management override: the full table header is always white. */
+html[data-cms-theme] body .content.superadmin-content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head,
+html[data-cms-theme] body .content.superadmin-content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head > * {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
 }
 

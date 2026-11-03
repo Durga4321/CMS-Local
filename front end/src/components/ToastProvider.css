@@ -109,6 +109,25 @@
   color: #0f172a;
 }
 
+/* Apply the selected theme to the shared top notification without tinting its white card. */
+html[data-cms-theme] .app-toast-success {
+  border-color: color-mix(in srgb, var(--theme-primary) 24%, #e2e8f0);
+}
+
+html[data-cms-theme] .app-toast-success::before {
+  background: var(--theme-primary);
+}
+
+html[data-cms-theme] .app-toast-success .app-toast-icon {
+  background: var(--theme-primary);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--theme-primary) 24%, transparent);
+}
+
+html[data-cms-theme] .app-toast-success button:hover {
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary-dark);
+}
+
 @keyframes toast-in {
   from {
     opacity: 0;

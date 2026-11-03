@@ -1178,6 +1178,31 @@
   stroke: #ffffff;
 }
 
+/* Dashboard graph colors follow the active theme. */
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-cartesian-grid line {
+  stroke: var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-cartesian-axis-tick-value {
+  fill: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-bar-rectangle path {
+  fill: var(--theme-primary) !important;
+}
+
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-area-curve {
+  stroke: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-area-area {
+  fill: var(--theme-primary-soft) !important;
+}
+
+html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .db-chart-container .recharts-area-dot {
+  fill: var(--theme-primary-dark) !important;
+}
+
 .layout:has(.sidebar a[href="/dashboard"]) .db-stat-mini-pills {
   border-top-color: #e5edef;
 }

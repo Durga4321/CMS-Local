@@ -26,7 +26,14 @@ const formatShort = (value) => {
 
 const formatCurrency = (value) => `₹${Number(value || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 const formatNumber = (value) => Number(value || 0).toLocaleString("en-IN");
-const chartColors = ["#164e55", "#50b6b2", "#2f7f89", "#8cc9c5", "#f0b35a", "#5476b8"];
+const chartColors = [
+  "var(--theme-primary-dark)",
+  "var(--theme-primary)",
+  "color-mix(in srgb, var(--theme-primary) 78%, var(--theme-primary-dark))",
+  "var(--theme-primary-glow)",
+  "color-mix(in srgb, var(--theme-primary) 55%, #ffffff)",
+  "color-mix(in srgb, var(--theme-primary-dark) 55%, #ffffff)",
+];
 
 const wrapClinicName = (value, maxLineLength = 9) => {
   const lines = [];
@@ -51,7 +58,7 @@ const ClinicNameTick = ({ x = 0, y = 0, payload }) => {
   return (
     <g transform={`translate(${x},${y})`}>
       <title>{label}</title>
-      <text textAnchor="middle" fill="#475569" fontSize={9}>
+      <text textAnchor="middle" fill="var(--theme-primary-dark)" fontSize={9}>
         {lines.map((line, index) => (
           <tspan key={`${line}-${index}`} x="0" dy={index === 0 ? 0 : 11}>
             {line}
@@ -145,25 +152,25 @@ function Charts({ data = [], type = "bar", dataKey = "revenue", nameKey = "name"
             </PieChart>
           ) : type === "line" ? (
             <LineChart data={data} margin={chartMargin}>
-              <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid stroke="var(--theme-primary-glow)" strokeDasharray="3 3" vertical={false} />
               <XAxis {...xAxisProps} />
-              <YAxis axisLine={false} tickLine={false} tickFormatter={formatShort} tick={{ fill: "#64748b", fontSize: 12 }} />
+              <YAxis axisLine={false} tickLine={false} tickFormatter={formatShort} tick={{ fill: "var(--theme-primary-dark)", fontSize: 12 }} />
               <Tooltip formatter={(value) => formatValue(value)} />
-              <Line type="monotone" dataKey={dataKey} stroke="#0f766e" strokeWidth={3} dot={{ r: 4 }} />
-              {secondaryKey ? <Line type="monotone" dataKey={secondaryKey} stroke="#2563eb" strokeWidth={3} dot={{ r: 4 }} /> : null}
-              {tertiaryKey ? <Line type="monotone" dataKey={tertiaryKey} stroke="#b45309" strokeWidth={3} dot={{ r: 4 }} /> : null}
+              <Line type="monotone" dataKey={dataKey} stroke="var(--theme-primary-dark)" strokeWidth={3} dot={{ r: 4, fill: "var(--theme-primary)" }} />
+              {secondaryKey ? <Line type="monotone" dataKey={secondaryKey} stroke="var(--theme-primary)" strokeWidth={3} dot={{ r: 4 }} /> : null}
+              {tertiaryKey ? <Line type="monotone" dataKey={tertiaryKey} stroke="var(--theme-primary-glow)" strokeWidth={3} dot={{ r: 4 }} /> : null}
             </LineChart>
           ) : (
             <BarChart data={data} margin={chartMargin} barCategoryGap="10%" barGap={4}>
-              <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid stroke="var(--theme-primary-glow)" strokeDasharray="3 3" vertical={false} />
               <XAxis {...xAxisProps} />
-              <YAxis axisLine={false} tickLine={false} tickFormatter={formatShort} tick={{ fill: "#64748b", fontSize: 12 }} />
+              <YAxis axisLine={false} tickLine={false} tickFormatter={formatShort} tick={{ fill: "var(--theme-primary-dark)", fontSize: 12 }} />
               <Tooltip formatter={(value) => formatValue(value)} />
-              <Bar dataKey={dataKey} fill="#0f766e" radius={[8, 8, 0, 0]}>
-                <LabelList dataKey={dataKey} position="top" formatter={formatValue} fill="#334155" fontSize={11} fontWeight={700} />
+              <Bar dataKey={dataKey} fill="var(--theme-primary)" radius={[8, 8, 0, 0]}>
+                <LabelList dataKey={dataKey} position="top" formatter={formatValue} fill="var(--theme-primary-dark)" fontSize={11} fontWeight={700} />
               </Bar>
-              {secondaryKey ? <Bar dataKey={secondaryKey} fill="#2563eb" radius={[8, 8, 0, 0]} /> : null}
-              {tertiaryKey ? <Bar dataKey={tertiaryKey} fill="#b45309" radius={[8, 8, 0, 0]} /> : null}
+              {secondaryKey ? <Bar dataKey={secondaryKey} fill="var(--theme-primary-dark)" radius={[8, 8, 0, 0]} /> : null}
+              {tertiaryKey ? <Bar dataKey={tertiaryKey} fill="var(--theme-primary-glow)" radius={[8, 8, 0, 0]} /> : null}
             </BarChart>
           )}
         </ResponsiveContainer>
