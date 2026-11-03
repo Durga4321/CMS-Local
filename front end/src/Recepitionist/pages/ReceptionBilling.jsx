@@ -3503,7 +3503,7 @@ function ReceptionBilling() {
               <div class="panel">
                 <h2>Billing Details</h2>
                 <div class="info-grid">
-                  <div class="info"><span>Consultant</span><strong>${escapeHtml(doctorName)}</strong></div>
+                  <div class="info"><span>Doctor</span><strong>${escapeHtml(doctorName)}</strong></div>
                   <div class="info"><span>Department</span><strong>${escapeHtml(department)}</strong></div>
                   <div class="info"><span>Visit Type</span><strong>${escapeHtml(visitType)}</strong></div>
                   <div class="info"><span>Status</span><strong>${escapeHtml(status)}</strong></div>

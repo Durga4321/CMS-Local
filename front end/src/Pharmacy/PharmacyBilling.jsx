@@ -532,7 +532,22 @@ export default function PharmacyBilling() {
 
   const printBill = (invoice) => run(async () => {
     const bill = await view(invoice);
-    const branding = getClinicInvoiceBranding({ clinicId: profile.hospitalId, clinicName: profile.hospitalName });
+    const billAppointment = appointments.find(
+      (item) => String(field(item, "appointmentId", "id")) === String(field(bill, "appointmentId"))
+    );
+    const clinicId =
+      field(bill, "clinicId", "hospitalId") ||
+      field(billAppointment, "clinicId", "hospitalId") ||
+      profile.hospitalId;
+    const clinicName =
+      field(bill, "clinicName", "hospitalName") ||
+      field(billAppointment, "clinicName", "hospitalName") ||
+      profile.hospitalName;
+    const branding = getClinicInvoiceBranding({ clinicId, clinicName });
+    const clinicAddress =
+      field(bill, "clinicAddress", "hospitalAddress") ||
+      field(billAppointment, "clinicAddress", "hospitalAddress") ||
+      branding.clinicAddress;
     const lines = billLines(bill);
     const frame = document.createElement("iframe");
     frame.title = "Pharmacy invoice print";
@@ -561,6 +576,7 @@ export default function PharmacyBilling() {
       header{display:flex;align-items:center;gap:16px;padding-bottom:20px;border-bottom:3px solid #0f766e}
       header img{width:64px;height:64px;object-fit:contain}h1{margin:0 0 4px;font-size:24px;line-height:1.25}
       .subtitle{margin:0;color:#64748b;font-size:13px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;padding:20px 0}
+      .clinic-address{margin:4px 0 0;color:#475569;font-size:12px}
       .meta p{margin:0;overflow-wrap:anywhere}.label{display:block;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
       table{width:100%;border-collapse:collapse;table-layout:fixed;margin:8px 0 20px}thead{display:table-header-group}
       th,td{border:1px solid #dbe4ed;padding:11px 12px;vertical-align:top;overflow-wrap:anywhere}
@@ -570,7 +586,7 @@ export default function PharmacyBilling() {
       tr{break-inside:avoid}.total{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-left:auto;width:45%;padding:14px 16px;border:1px solid #cce5e2;border-radius:6px;background:#f0fdfa;font-weight:bold}
       .total strong{font-size:20px;white-space:nowrap}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
     </style></head><body>
-      <header>${branding.logoUrl ? `<img src="${escapeHtml(branding.logoUrl)}" alt="Clinic logo">` : ""}<div><h1>${escapeHtml(branding.headerTitle)}</h1><p class="subtitle">Pharmacy Invoice</p></div></header>
+      <header>${branding.logoUrl ? `<img src="${escapeHtml(branding.logoUrl)}" alt="Clinic logo">` : ""}<div><h1>${escapeHtml(branding.headerTitle)}</h1><p class="subtitle">Pharmacy Invoice</p>${clinicAddress ? `<p class="clinic-address">${escapeHtml(clinicAddress)}</p>` : ""}</div></header>
       <div class="meta"><p><span class="label">Invoice number</span><strong>${escapeHtml(invoiceOf(bill))}</strong></p><p><span class="label">Patient</span><strong>${escapeHtml(field(bill, "patientName") || field(appointment, "patientName"))}</strong></p><p><span class="label">Payment status</span>${escapeHtml(statusOf(bill))}</p><p><span class="label">Payment mode</span>${escapeHtml(field(bill, "paymentMethod", "paymentMode"))}</p></div>
       <table><thead><tr><th>No.</th><th>Medicine</th><th>Quantity</th><th>Unit price</th><th>Amount</th></tr></thead><tbody>${lines.map((row, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(lineName(row))}</td><td>${escapeHtml(field(row, "quantity", "dispensedQuantity", "prescribedQuantity"))}</td><td>${escapeHtml(money(field(row, "unitPrice", "sellingPrice", "price")))}</td><td>${escapeHtml(money(field(row, "totalAmount", "amount", "lineTotal")))}</td></tr>`).join("")}</tbody></table>
       <div class="total"><span>Total amount</span><strong>${escapeHtml(money(amountOf(bill)))}</strong></div>

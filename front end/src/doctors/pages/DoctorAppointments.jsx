@@ -327,17 +327,6 @@ function DoctorAppointments() {
                       <Eye size={15} />
                     </button>
 
-                    {/* Consultation Notes */}
-                    <button
-                      className="da-act-btn da-act-btn--chart"
-                      type="button"
-                      title="Clinical Notes"
-                      onClick={() => openNotes(patient)}
-                      aria-label="Open Clinical Notes"
-                    >
-                      <FileText size={15} />
-                    </button>
-
                     {/* Start Consultation */}
                     <button
                       className="da-act-btn da-act-btn--laser da-act-btn--primary"
@@ -521,4 +510,3 @@ function DoctorAppointments() {
 }
 
 export default DoctorAppointments;
-

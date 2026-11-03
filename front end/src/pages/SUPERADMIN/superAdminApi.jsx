@@ -1069,33 +1069,20 @@ const getNotificationAudienceCode = (target = "") =>
   normalizeNotificationTarget(target).toLowerCase().includes("admin") ? "admins" : "users";
 
 const buildNotificationPayload = (notification = {}) => {
-  const targetUsers = normalizeNotificationTarget(
-    pick(
-      notification,
-      ["targetUsers", "audience", "target", "recipient", "targetAudience", "userType", "role"],
-      "Active Admins"
-    )
-  );
-  const audienceCode = getNotificationAudienceCode(targetUsers);
-  const targetRoles = audienceCode === "admins" ? "Admin,ClinicAdmin,Clinic Admin" : "User";
+  const rawIds = notification.targetUsers;
+  const parts = Array.isArray(rawIds) ? rawIds : String(rawIds ?? "").split(",");
+  const ids = [...new Set(parts.map((part) => Number(String(part).trim())))]
+    .filter((id) => Number.isSafeInteger(id) && id > 0);
+
+  if (ids.length === 0 || ids.length !== parts.length && parts.some((part) => !Number.isSafeInteger(Number(String(part).trim())) || Number(String(part).trim()) <= 0)) {
+    throw new Error("Select active admins with valid numeric user IDs.");
+  }
 
   return {
     title: String(pick(notification, ["title", "subject"], "")).trim(),
     message: String(pick(notification, ["message", "body", "description"], "")).trim(),
-    targetUsers,
-    targetRoles,
-    roles: targetRoles,
-    recipientRoles: targetRoles,
-    audience: audienceCode,
-    target: audienceCode,
-    recipient: audienceCode,
-    targetAudience: audienceCode,
-    targetRole: audienceCode,
-    targetType: audienceCode,
-    recipientType: audienceCode,
-    sendTo: audienceCode,
-    userType: audienceCode,
-    role: audienceCode,
+    targetUsers: ids.join(","),
+    targetRoles: "Admin,ClinicAdmin,Clinic Admin",
   };
 };
 
@@ -2494,20 +2481,21 @@ export const fetchNotifications = async () => {
 };
 
 export const fetchNotificationTargetOptions = async () => {
-  const [adminsResult] = await Promise.allSettled([superAdminRequest(SUPER_ADMIN_API.admins)]);
-  const adminRows =
-    adminsResult.status === "fulfilled" ? asArray(adminsResult.value).filter(isActiveRecord) : [];
+  // Use the actual User ID (not a separate Admin entity ID) when available.
+  const adminRows = asArray(await superAdminRequest(SUPER_ADMIN_API.admins));
+  const activeAdmins = adminRows.filter((admin) =>
+    isActiveRecord(admin) && !isDeletedRecord(admin)
+  );
+  const userIds = [...new Set(activeAdmins.map((admin) =>
+    Number(pick(admin, ["userId", "UserId", "adminUserId", "AdminUserId", "id", "Id"], 0))
+  ))].filter((id) => Number.isSafeInteger(id) && id > 0);
 
-  const counts = {
-    admins: adminRows.length,
-  };
-
-  const options = [
-    { value: "Active Admins", label: "Active Admins", count: counts.admins },
-  ];
-
-  const activeOptions = options.filter((option) => option.count > 0);
-  return activeOptions.length ? activeOptions : options;
+  return [{
+    value: "Active Admins",
+    label: "Active Admins",
+    count: activeAdmins.length,
+    userIds,
+  }];
 };
 
 export const createNotification = async (notification) => {

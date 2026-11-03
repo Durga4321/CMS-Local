@@ -511,11 +511,15 @@
   display: flex;
   align-items: center;
   justify-content: center !important;
-  gap: 10px;
-  min-width: 130px;
+  gap: 6px !important;
+  min-width: 90px;
   width: 100% !important;
   margin: 0 auto !important;
   overflow: visible;
+}
+
+.da-actions > .da-act-btn {
+  margin: 0 !important;
 }
 
 /* ── 7. Medical Instrumental Action Buttons (Realistic Models) ── */
