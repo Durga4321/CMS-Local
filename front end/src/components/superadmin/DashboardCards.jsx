@@ -18,9 +18,9 @@ function DashboardCards({ cards = [] }) {
           <div className={`sa-stat-icon sa-stat-icon--${tone || "teal"}`}>
             {Icon ? <Icon size={18} /> : null}
           </div>
-          <div>
-            <h2>{value}</h2>
+          <div className="sa-stat-copy">
             <p>{label}</p>
+            <h2>{value}</h2>
           </div>
         </button>
       ))}

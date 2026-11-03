@@ -226,8 +226,8 @@
 }
 
 .sa-dashboard-page .sa-stat-card {
-  min-height: 96px;
-  padding: 16px;
+  min-height: 112px;
+  padding: 24px;
   border-radius: 12px;
   border: 1px solid rgba(15, 23, 42, 0.06);
   box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
@@ -235,19 +235,64 @@
 }
 
 .sa-dashboard-page .sa-stat-icon {
-  width: 48px;
-  height: 48px;
-  flex-basis: 48px;
-  border-radius: 14px;
+  width: 64px;
+  height: 64px;
+  flex-basis: 64px;
+  border-radius: 16px;
 }
 /* Dashboard-only color treatment; shared Super Admin pages remain unchanged. */
 .sa-dashboard-page .sa-page-header {
-  padding: 16px 18px;
-  border: 1px solid rgba(14, 165, 233, 0.16);
-  border-left: 5px solid #0ea5e9;
-  border-radius: 12px;
-  background: linear-gradient(100deg, #f0f9ff 0%, #ecfdf5 55%, #ffffff 100%);
-  box-shadow: 0 12px 28px rgba(14, 116, 144, 0.08);
+  margin-bottom: 8px;
+  padding: 4px 0 8px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.sa-dashboard-page .sa-page-header {
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-start;
+}
+
+.sa-dashboard-page .sa-page-header__leading {
+  display: grid;
+  flex: 0 0 42px;
+  place-items: center;
+}
+
+.sa-dashboard-page .sa-dashboard-greeting-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.sa-dashboard-page .sa-dashboard-greeting-icon--morning {
+  color: #d97706;
+  background: #fef3c7;
+}
+
+.sa-dashboard-page .sa-dashboard-greeting-icon--afternoon {
+  color: #ea580c;
+  background: #ffedd5;
+}
+
+.sa-dashboard-page .sa-dashboard-greeting-icon--evening {
+  color: #4338ca;
+  background: #e0e7ff;
+}
+
+.sa-dashboard-page .sa-page-header__copy h1 {
+  font-size: 18px !important;
+}
+
+.sa-dashboard-page .sa-page-header__copy p {
+  margin-top: 3px;
+  font-size: 11px;
 }
 
 .sa-dashboard-page .sa-stat-card {
@@ -257,12 +302,7 @@
 }
 
 .sa-dashboard-page .sa-stat-card::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0;
-  height: 4px;
-  background: currentColor;
-  opacity: 0.72;
+  display: none;
 }
 
 .sa-dashboard-page .sa-stat-card--teal {
@@ -288,6 +328,25 @@
 
 .sa-dashboard-page .sa-stat-card h2 {
   color: #0f172a;
+}
+
+.sa-dashboard-page .sa-stat-copy {
+  min-width: 0;
+}
+
+.sa-dashboard-page .sa-stat-copy p {
+  overflow: hidden;
+  margin: 0 0 8px;
+  color: #64748b;
+  font-size: 16px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sa-dashboard-page .sa-stat-copy h2 {
+  margin: 0;
+  font-size: 28px;
 }
 
 .sa-dashboard-page .sa-stat-card:not(:disabled):hover {
@@ -4651,9 +4710,9 @@
 }
 
 .sa-dashboard-page .sa-page-header {
-  border-color: #e2e8f0;
-  border-left-color: #0f9d9d;
-  background: #ffffff;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .sa-dashboard-page .sa-stat-card--teal,
@@ -5282,29 +5341,43 @@
 }
 
 .sa-dashboard-page .sa-card-grid {
-  width: 100%;
-  max-width: 864px;
-  grid-template-columns: repeat(3, minmax(0, 280px));
-  justify-content: center;
+  width: calc(100% + 48px);
+  max-width: none;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  justify-content: stretch;
   align-self: center;
-  gap: 12px;
+  margin-left: -24px;
+  margin-right: -24px;
+  gap: 10px;
 }
 
 .sa-dashboard-page .sa-stat-card {
   box-sizing: border-box;
   min-height: 88px;
-  padding: 12px 14px;
+  padding: 10px 12px;
 }
 
 .sa-dashboard-page .sa-stat-icon {
-  width: 44px;
-  height: 44px;
-  flex-basis: 44px;
+  width: 40px;
+  height: 40px;
+  flex-basis: 40px;
+}
+
+.sa-dashboard-page .sa-stat-copy p {
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.sa-dashboard-page .sa-stat-copy h2 {
+  font-size: 22px;
 }
 
 @media (max-width: 1024px) {
   .sa-dashboard-page .sa-card-grid {
+    width: 100%;
     grid-template-columns: repeat(2, minmax(0, 280px));
+    margin-left: 0;
+    margin-right: 0;
   }
 }
 
@@ -5540,8 +5613,9 @@
   position: relative;
   height: 108px !important;
   min-height: 108px;
-  align-items: flex-start;
-  padding: 14px 16px 38px;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 38px;
   border: 0;
   border-radius: 12px;
   background: linear-gradient(to bottom, #ffffff 0, #ffffff calc(100% - 18px), #e0f2f1 calc(100% - 18px), #e0f2f1 100%);
@@ -5573,18 +5647,23 @@
 }
 
 .sa-dashboard-page .sa-card-grid .sa-stat-icon {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 36px;
-  height: 36px;
-  flex-basis: 36px;
+  position: static;
+  order: 0;
+  width: 32px;
+  height: 32px;
+  flex-basis: 32px;
   border-radius: 9px;
   background: #164e55;
   color: #ffffff;
 }
 
 .sa-dashboard-page .sa-card-grid .sa-stat-card::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: block;
   height: 4px;
   background: #50b6b2;
   opacity: 1;
@@ -5593,4 +5672,190 @@
 .sa-dashboard-page .sa-card-grid .sa-stat-card:not(:disabled):hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.sa-dashboard-page .sa-card-grid .sa-stat-card {
+  height: 80px !important;
+  min-height: 80px;
+  padding: 8px 10px 28px;
+}
+
+.sa-dashboard-page .sa-card-grid .sa-stat-card p {
+  font-size: 11px;
+}
+
+.sa-dashboard-page .sa-card-grid .sa-stat-card h2 {
+  font-size: 20px;
+}
+
+.sa-dashboard-page .sa-card-grid {
+  column-gap: 4px;
+  row-gap: 4px;
+}
+
+/* Keep the dashboard content cards compact without changing their contents. */
+.sa-dashboard-page .sa-grid {
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.sa-dashboard-page .sa-panel {
+  padding: 10px;
+}
+
+.sa-dashboard-page .sa-panel--highlighted,
+.sa-dashboard-page .sa-panel--activity {
+  min-height: 0;
+}
+
+/* Let Recent Activities end with its content instead of leaving an empty footer area. */
+.sa-dashboard-page .sa-panel--activity {
+  height: fit-content !important;
+  align-self: start;
+  padding-bottom: 4px !important;
+}
+
+.sa-dashboard-page .sa-panel--activity > .sa-activity-list {
+  height: auto !important;
+  max-height: 140px;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Match the Recent Activities card height to Charts & Statistics. */
+.sa-dashboard-page .sa-panel--activity {
+  height: 100% !important;
+  align-self: stretch;
+}
+
+.sa-dashboard-page .sa-panel--activity > .sa-activity-list {
+  flex: 1 1 auto;
+  max-height: none;
+  overflow-y: auto;
+}
+
+/* Keep the dashboard greeting anchored at the upper-left of the page. */
+.sa-dashboard-page .sa-page-header {
+  align-self: flex-start;
+  width: fit-content;
+  margin-left: 0 !important;
+  justify-content: flex-start;
+}
+
+.sa-dashboard-page .sa-panel--highlighted {
+  height: auto !important;
+  min-height: 320px;
+  overflow: visible;
+}
+
+.sa-dashboard-page .sa-panel__header {
+  margin-bottom: 8px;
+}
+
+.sa-dashboard-page .sa-chart-plot {
+  min-height: 220px;
+  height: 260px;
+}
+
+.sa-dashboard-page .sa-activity-list {
+  height: 140px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.sa-dashboard-page .sa-panel--activity {
+  padding: 4px !important;
+}
+
+.sa-dashboard-page .sa-panel--activity .sa-panel__header {
+  gap: 8px;
+  margin: 0 0 2px !important;
+  padding: 0;
+}
+
+.sa-dashboard-page .sa-panel--activity .sa-panel__header h3 {
+  font-size: 16px;
+}
+
+.sa-dashboard-page .sa-panel--activity .sa-panel__header p {
+  margin-top: 1px;
+  font-size: 10px;
+}
+
+.sa-dashboard-page .sa-panel--activity .sa-panel__header .sa-btn {
+  min-height: 26px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.sa-dashboard-page .sa-panel--activity .sa-activity-item {
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 6px;
+  padding: 6px 8px;
+}
+
+.sa-dashboard-page .sa-panel--activity .sa-activity-icon {
+  width: 28px;
+  height: 28px;
+  flex-basis: 28px;
+}
+
+.sa-dashboard-page .sa-panel--activity .sa-activity-item b {
+  font-size: 12px;
+}
+
+.sa-dashboard-page .sa-panel--activity .sa-activity-item p {
+  margin-top: 1px;
+  font-size: 11px;
+}
+
+.sa-dashboard-page .sa-panel--activity .sa-activity-item span {
+  font-size: 10px;
+}
+
+/* Fit the dashboard into the available viewport without page-level scrolling. */
+.content.sa-dashboard-content {
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+.sa-dashboard-page {
+  height: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.sa-dashboard-page .sa-page-header {
+  min-height: 0;
+  margin: 0 0 4px !important;
+  padding: 0 !important;
+}
+
+.sa-dashboard-page .sa-dashboard-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: -20px;
+}
+
+.sa-dashboard-page .sa-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 4px;
+}
+
+.sa-dashboard-page .sa-panel--highlighted,
+.sa-dashboard-page .sa-panel--activity {
+  min-height: 0;
+}
+
+@media (max-width: 720px) {
+  .content.sa-dashboard-content {
+    overflow-y: auto !important;
+  }
+
+  .sa-dashboard-page {
+    height: auto;
+    overflow: visible;
+  }
 }
