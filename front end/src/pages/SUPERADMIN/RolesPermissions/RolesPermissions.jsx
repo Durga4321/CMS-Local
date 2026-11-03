@@ -17,6 +17,7 @@ const ADMIN_MODULES = [
   "Doctors",
   "Receptionists",
   "Nurses",
+  "Pharmacists",
   "Lab Technicians",
   "Lab Files",
   "Patients",
