@@ -8,7 +8,8 @@ export const API_BASE_URL = (
 ).trim().replace(/\/+$/, "");
 
 export const API_ASSET_BASE_URL = (
-  process.env.REACT_APP_API_ASSET_BASE_URL || DEFAULT_API_ASSET_BASE_URL
+  process.env.REACT_APP_API_ASSET_BASE_URL ||
+  (process.env.NODE_ENV === "development" ? "" : API_BASE_URL || DEFAULT_API_ASSET_BASE_URL)
 ).trim().replace(/\/+$/, "");
 
 export const apiUrl = (path) => {

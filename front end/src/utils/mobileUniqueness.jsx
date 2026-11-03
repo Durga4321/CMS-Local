@@ -137,7 +137,13 @@ export const findDuplicateMobileNumber = async (
   return null;
 };
 
-export const validateUniqueMobileNumber = async (mobileNumber, options) =>
-  (await findDuplicateMobileNumber(mobileNumber, options))
+export const validateUniqueMobileNumber = async (mobileNumber, options = {}) => {
+  // Editing unrelated fields must not treat an existing linked login as a new duplicate.
+  const original = normalizeMobileNumber(options.originalMobileNumber);
+  if (options.current?.id && original && normalizeMobileNumber(mobileNumber) === original) {
+    return "";
+  }
+  return (await findDuplicateMobileNumber(mobileNumber, options))
     ? MOBILE_DUPLICATE_MESSAGE
     : "";
+};

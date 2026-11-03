@@ -2,7 +2,8 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { API_ASSET_BASE_URL } from "../config/api";
+import { API_ASSET_BASE_URL, apiUrl } from "../config/api";
+import { getApiHeaders } from "./branchApi";
 
 
 const shouldUseDirectImage = (imageUrl) => {
@@ -96,7 +97,10 @@ function AuthImage({
   className,
   style,
   fallback,
+  authenticatedFallback = false,
 }) {
+  const [retrySrc, setRetrySrc] = useState("");
+  const retry = retrySrc === resolveApiImageUrl(src);
   const [failed, setFailed] =
     useState(false);
   const [resolvedSrc, setResolvedSrc] =
@@ -120,7 +124,17 @@ function AuthImage({
 
     // Use image URLs directly. Browser image loading avoids the CORS preflight/fetch
     // failures that appear when static assets are requested with auth headers.
-    setResolvedSrc(imageSrc);
+    if (retry && authenticatedFallback && !shouldUseDirectImage(imageSrc)) {
+      const imageOrigin = new URL(imageSrc, window.location.origin).origin;
+      const trustedOrigins = [new URL(apiUrl(""), window.location.origin).origin, new URL(API_ASSET_BASE_URL, window.location.origin).origin];
+      fetch(imageSrc, { headers: trustedOrigins.includes(imageOrigin) ? getApiHeaders() : {} })
+        .then(response => {
+          if (!response.ok || !response.headers.get("content-type")?.startsWith("image/")) throw new Error("Image unavailable");
+          return response.blob();
+        })
+        .then(blob => { if (active) { objectUrl = URL.createObjectURL(blob); setResolvedSrc(objectUrl); } })
+        .catch(() => { if (active) setFailed(true); });
+    } else setResolvedSrc(imageSrc);
 
     return () => {
       active = false;
@@ -128,7 +142,7 @@ function AuthImage({
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [imageSrc]);
+  }, [imageSrc, retry, authenticatedFallback]);
 
   // =====================================
   // FALLBACK
@@ -145,12 +159,8 @@ function AuthImage({
       className={className}
       style={style}
       onError={() => {
-        console.log(
-          "Image failed:",
-          resolvedSrc
-        );
-
-        setFailed(true);
+        if (authenticatedFallback && !retry && !shouldUseDirectImage(imageSrc)) setRetrySrc(imageSrc);
+        else setFailed(true);
       }}
     />
   );

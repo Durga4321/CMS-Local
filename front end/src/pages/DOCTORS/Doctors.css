@@ -1128,3 +1128,73 @@ button.doctor-edit-save:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+.doctor-specialty-tabs { display:flex; overflow-x:auto; border-bottom:1px solid #e3e5e8; margin:4px 0 22px; flex-shrink:0; }
+.doctor-specialty-tabs button { flex:1 0 auto; padding:17px 24px; border:0; border-bottom:2px solid transparent; background:transparent; color:#737783; cursor:pointer; }
+.doctor-specialty-tabs button.is-selected { color:#30616b; border-bottom-color:#4c9faa; }
+.doctors-card-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px; }
+.doctor-directory-card { position:relative; min-width:0; background:#f5f5f7; border-radius:16px; padding:16px 13px 13px; color:#2c3032; }
+.doctor-directory-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.doctor-directory-heading h3 { margin:2px 0 10px; font-size:19px; line-height:1.35; }
+.doctor-directory-status { display:inline-block; background:#4a9eaa; color:white; font-size:11px; padding:4px 9px; border-radius:4px; }
+.doctor-directory-status.is-inactive { color:#d45468; background:#ffe2e7; }
+.doctor-directory-portrait { height:210px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.doctor-directory-portrait > span { font-size:68px; font-weight:700; color:#5d9fa7; }
+.doctor-directory-info { position:relative; background:white; border-radius:10px; padding:15px 13px 12px; text-align:center; }
+.doctor-directory-info h4 { margin:0 0 10px; color:#305e68; font-size:15px; }
+.doctor-directory-info p { margin:6px 0; color:#486b74; font-size:12px; line-height:1.5; }
+.doctor-directory-footer { display:flex; gap:8px; border-top:1px solid #e9eaed; margin-top:12px; padding-top:12px; }
+.doctor-directory-footer a { background:#f4f5f7; color:#67757c; padding:8px; border-radius:5px; text-decoration:none; }
+.doctor-directory-footer button { flex:1; border:0; border-radius:5px; background:#def1f1; color:#305e68; cursor:pointer; font-size:12px; }
+.doctor-directory-menu { position:relative; }
+.doctor-directory-menu summary { list-style:none; cursor:pointer; padding:3px; color:#7c8389; }
+.doctor-directory-menu > div { position:absolute; right:0; top:26px; z-index:5; background:white; box-shadow:0 5px 24px #263a4826; padding:6px; border-radius:8px; width:145px; }
+.doctor-directory-menu button { display:block; width:100%; text-align:left; border:0; background:white; padding:9px; cursor:pointer; }
+.doctor-directory-menu button:disabled { opacity:.45; cursor:not-allowed; }
+@media(max-width:1250px) { .doctors-card-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:950px) { .doctors-card-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:580px) { .doctors-card-grid { grid-template-columns:1fr; } .doctors-page { padding:20px 14px; } }
+
+.doctors-page .doctors-card-grid { align-items:start; grid-auto-rows:auto; margin-top:0 !important; }
+.doctors-page .doctor-directory-card { align-self:start; height:auto; max-width:360px; width:100%; box-sizing:border-box; }
+.doctors-page .doctor-directory-portrait { flex:none; height:210px; }
+.doctors-page .doctor-directory-footer button { min-height:36px; padding:8px; }
+
+.doctors-page .doctor-directory-info h4 { margin:0 0 8px; font-size:15px; font-weight:600; color:#305e68; }
+.doctors-page .doctor-directory-info .doctor-directory-schedule { margin:0 0 12px; font-size:11px; line-height:1.6; color:#305e68; }
+
+/* Keep controls in normal flow so the specialty row cannot overlap them. */
+.doctors-page { height:auto; min-height:calc(100vh - 82px); }
+.doctors-page > * { flex-shrink:0; }
+.doctor-directory-controls { background:#fff; border-radius:20px; padding:18px 18px 0; margin-bottom:22px; }
+.doctors-page .doctors-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:12px; height:auto; min-height:40px; margin:0 0 16px; position:relative; z-index:3; }
+.doctors-page .doctors-search-bar { flex:1 1 240px; width:auto; min-width:0; height:38px; box-sizing:border-box; box-shadow:none; }
+.doctors-page .doctors-toolbar > select { flex:0 0 135px; width:135px; min-width:0; height:34px; border:0; border-radius:24px; background:#def1f1; color:#305e68; font-size:12px; box-shadow:none; padding:0 14px; order:2; }
+.doctors-page .doctor-add-button { order:3; height:34px; border-radius:24px; background:#4a9eaa; box-shadow:none; padding:0 20px; font-size:12px; }
+.doctor-extra-filters { position:relative; order:1; }
+.doctor-extra-filters summary { list-style:none; display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; color:#305e68; background:#def1f1; cursor:pointer; }
+.doctor-extra-filters summary::-webkit-details-marker { display:none; }
+.doctor-extra-filters > div { position:absolute; top:40px; right:0; background:#fff; padding:16px; border:1px solid #e4e9ed; border-radius:12px; box-shadow:0 8px 24px #21344018; min-width:180px; }
+.doctor-extra-filters label { display:grid; gap:8px; font-size:12px; color:#486b74; }
+.doctors-page .doctor-specialty-tabs { display:flex; position:relative; z-index:1; margin:0; padding:0; min-height:48px; flex-shrink:0; border-bottom:1px solid #e3e5e8; }
+.doctors-page .doctor-specialty-tabs button { position:static; flex:1 0 auto; min-height:48px; border-radius:0; padding:14px 24px; font-size:12px; line-height:20px; box-sizing:border-box; }
+@media(max-width:640px) { .doctor-directory-controls { padding:14px 12px 0; } .doctors-page .doctors-search-bar { flex-basis:100%; } .doctors-page .doctor-add-button { flex:1; padding:0 12px; } }
+
+/* Fill the portrait frame without stretching or modifying the uploaded background. */
+.doctors-page .doctor-directory-portrait {
+  width:100%;
+  height:250px;
+  margin-top:10px;
+  overflow:hidden;
+  border-radius:0;
+}
+.doctors-page .doctor-directory-portrait .doctor-directory-photo {
+  display:block;
+  width:100%;
+  height:100%;
+  max-width:none;
+  max-height:none;
+  object-fit:cover;
+  object-position:center 20%;
+  border-radius:0;
+}
