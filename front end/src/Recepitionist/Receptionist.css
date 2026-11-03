@@ -843,61 +843,6 @@
   display: none !important;
 }
 
-/* Vertical Capillary Blood Stream drawing downwards from falling drop */
-.rc-blood-capillary-stream {
-  position: absolute;
-  left: 6px;
-  top: -6px;
-  bottom: 8px;
-  width: 2.5px;
-  background: linear-gradient(180deg, #e11d48 0%, rgba(244, 63, 94, 0.5) 60%, rgba(244, 63, 94, 0.1) 100%);
-  border-radius: 999px;
-  box-shadow: 0 0 6px rgba(225, 29, 72, 0.35);
-  pointer-events: none;
-  transform-origin: top;
-  animation: capillaryStreamDraw 0.4s ease-out forwards, bloodCapillaryPulse 2s infinite ease-in-out 0.4s;
-}
-
-@keyframes capillaryStreamDraw {
-  0% {
-    transform: scaleY(0);
-    opacity: 0;
-  }
-  100% {
-    transform: scaleY(1);
-    opacity: 1;
-  }
-}
-
-.rc-blood-capillary-drop-1 {
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #e11d48;
-  left: -1.25px;
-  box-shadow: 0 0 6px #f43f5e;
-  animation: bloodCapillaryPulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.rc-blood-capillary-drop-2 {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #be123c;
-  left: -0.75px;
-  box-shadow: 0 0 5px #e11d48;
-  animation: bloodCapillaryPulse 2s infinite 1s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes bloodCapillaryPulse {
-  0% { top: 0; opacity: 0; transform: scale(0.5); }
-  20% { opacity: 1; transform: scale(1.2); }
-  80% { opacity: 1; transform: scale(1); }
-  100% { top: 96%; opacity: 0; transform: scale(0.6); }
-}
-
 /* Blood Drop Card Container (Child Item) — Capsule Pill Matching Screenshot */
 .rc-blood-drop-item {
   position: relative;

@@ -240,12 +240,6 @@ function ReceptionSidebar({
 
                 {!collapsed && appointmentsOpen ? (
                   <div className="rc-nav-children rc-blood-drops-flow">
-                    {/* Capillary blood stream line */}
-                    <div className="rc-blood-capillary-stream" aria-hidden="true">
-                      <span className="rc-blood-capillary-drop-1" />
-                      <span className="rc-blood-capillary-drop-2" />
-                    </div>
-
                     {item.children.map((child, idx) => {
                       const ChildIcon = child.icon;
                       const childToneClass = `rc-tone--${child.tone || "indigo"}`;
@@ -318,6 +312,5 @@ function ReceptionSidebar({
 }
 
 export default ReceptionSidebar;
-
 
 
