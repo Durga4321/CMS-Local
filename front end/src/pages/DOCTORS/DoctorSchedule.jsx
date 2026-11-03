@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./DoctorSchedule.css";
+import { useLocation } from "react-router-dom";
 import { apiUrl } from "../../config/api";
 import { useToast } from "../../components/ToastProvider";
 import {
@@ -139,6 +140,7 @@ const fieldOf = (item, camel, pascal) => item?.[camel] ?? item?.[pascal];
 
 function DoctorSchedule({ selfMode = false }) {
   const toast = useToast();
+  const location = useLocation();
   const loggedDoctor = getLoggedInDoctor();
   const doctorRoleProfile = getRoleProfile("doctor");
   const permissionProfile = selfMode
@@ -212,8 +214,8 @@ function DoctorSchedule({ selfMode = false }) {
           const list = buildBranchOptions(raw).map((b) => ({ id: String(b.value ?? b.id ?? b.branchId), name: b.label ?? b.name ?? b.branchName })).filter((b) => b.id);
           if (!active) return;
           setBranches(list);
-          setBranchId("");
-          setDoctorId("");
+          setBranchId(String(location.state?.branchId || ""));
+          setDoctorId(String(location.state?.doctorId || ""));
         }
       } catch (e) {
         if (active) setError(e.message);
@@ -221,7 +223,7 @@ function DoctorSchedule({ selfMode = false }) {
     };
     load();
     return () => { active = false; };
-  }, [selfMode]);
+  }, [selfMode, location.state?.branchId, location.state?.doctorId]);
 
   useEffect(() => {
     if (selfMode) return;

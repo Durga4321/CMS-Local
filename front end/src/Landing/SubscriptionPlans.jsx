@@ -107,11 +107,9 @@ export default function SubscriptionPlans() {
                       <span className="landing-plan-duration">{plan.name}</span>
                       <span>{durationMonths} {durationMonths === 1 ? "month" : "months"}</span>
                       <strong>{formatIndianCurrency(plan.price)}</strong>
-                      <span style={{ display: "block", textAlign: "left", margin: "12px 0" }}>
-                        <span style={{ display: "block" }}>{plan.maxBranches == null ? "Branch allowance not specified" : "Up to " + plan.maxBranches + " branches"}</span>
-                        <span style={{ display: "block" }}>{plan.includesLab ? "Lab included" : "Without Lab"} / {plan.includesPharmacy ? "Pharmacy included" : "Without Pharmacy"}</span>
+                      {plan.benefits.length > 0 && <span style={{ display: "block", textAlign: "left", margin: "12px 0" }}>
                         {plan.benefits.map(benefit => <span key={benefit} style={{ display: "block" }}>{benefit}</span>)}
-                      </span>
+                      </span>}
                       <span className="landing-plan-duration-cta">Choose this plan <ArrowRight size={15} /></span>
                     </button>
                   )))}

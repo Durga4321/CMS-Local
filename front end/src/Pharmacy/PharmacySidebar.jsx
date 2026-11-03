@@ -9,8 +9,8 @@ const navigation = [
   { to: "/pharmacy/dashboard", label: "Dashboard", icon: LayoutDashboard, tone: "blue", end: true },
   { to: "/pharmacy/medicines", label: "Medicines", icon: Package, tone: "teal" },
   { to: "/pharmacy/stock", label: "Stock", icon: Boxes, tone: "purple" },
-  { to: "/pharmacy/billing", label: "Billing", icon: ReceiptText, tone: "orange" },
   { to: "/pharmacy/prescriptions", label: "Prescriptions", icon: ClipboardList, tone: "cyan" },
+  { to: "/pharmacy/billing", label: "Billing", icon: ReceiptText, tone: "orange" },
 ];
 
 function PharmacySidebar({ onNavigate }) {

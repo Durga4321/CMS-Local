@@ -376,3 +376,12 @@
     font-size: 24px;
   }
 }
+
+.patient-tabs { display:flex; flex-wrap:wrap; }
+.patient-clinical-fields { display:grid; gap:12px; }
+.patient-clinical-fields dt { font-size:12px; color:#64748b; }
+.patient-clinical-fields dd { margin:4px 0 0; font-size:14px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.patient-info-row span { overflow-wrap:anywhere; min-width:0; }
+.patient-info-row svg { flex-shrink:0; }
+.patient-details-grid { grid-template-columns:minmax(240px,.8fr) minmax(0,1.2fr); }
+@media(max-width:1080px) { .patient-details-grid { grid-template-columns:1fr; } }
