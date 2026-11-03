@@ -73,6 +73,12 @@ export default function Pharmacists() {
   const [viewingPharmacist, setViewingPharmacist] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState("");
 
+  useEffect(() => {
+    if (!createdPharmacist) return undefined;
+    const timeoutId = window.setTimeout(() => setCreatedPharmacist(null), 3500);
+    return () => window.clearTimeout(timeoutId);
+  }, [createdPharmacist]);
+
   const loadPharmacists = useCallback(async () => {
     setLoadingPharmacists(true);
     setPharmacistsError("");
