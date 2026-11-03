@@ -5,7 +5,6 @@ import Header from "../../../components/superadmin/Header";
 import DashboardCards from "../../../components/superadmin/DashboardCards";
 import Charts from "../../../components/superadmin/Charts";
 import { fetchDashboardData, getDashboardMetric } from "../superAdminApi";
-import { readLandingSubscriptionRequests } from "../../../utils/subscriptionFlow";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("en-IN", {
@@ -26,6 +25,18 @@ const getActivityIcon = (tone) => {
   if (tone === "logout") return LogOut;
   if (tone === "login") return LogIn;
   return Activity;
+};
+
+const getIndianGreeting = () => {
+  const hour = Number(new Intl.DateTimeFormat("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date()));
+
+  if (hour < 12) return { label: "Morning", logo: "🌅", tone: "morning" };
+  if (hour < 17) return { label: "Afternoon", logo: "🌞", tone: "afternoon" };
+  return { label: "Evening", logo: "🌙", tone: "evening" };
 };
 
 const dashboardChartViews = [
@@ -113,7 +124,6 @@ function Dashboard() {
 
   const cards = useMemo(() => {
     const metrics = { ...dashboard, ...summary };
-    const landingRequests = readLandingSubscriptionRequests();
 
     return [
       {
@@ -137,25 +147,25 @@ function Dashboard() {
         tone: "amber",
         onClick: () => navigate("/superadmin/reports"),
       },
+      {
+        label: "Active Subscriptions",
+        value: getDashboardMetric(metrics, ["activeSubscriptions", "activeSubscriptionCount", "totalActiveSubscriptions"]),
+        icon: ShieldCheck,
+        tone: "teal",
+        onClick: () => navigate("/superadmin/subscriptions"),
+      },
+      {
+        label: "Expired Subscriptions",
+        value: getDashboardMetric(metrics, ["expiredSubscriptions", "expiredSubscriptionCount", "totalExpiredSubscriptions"]),
+        icon: Activity,
+        tone: "blue",
+        onClick: () => navigate("/superadmin/subscriptions"),
+      },
     ];
   }, [dashboard, navigate, summary]);
 
-  const chartMetrics = useMemo(() => [
-    ...cards,
-    {
-      label: "Active Subscriptions",
-      value: getDashboardMetric(summary, ["activeSubscriptions", "activeSubscriptionCount", "totalActiveSubscriptions"]),
-      icon: ShieldCheck,
-      tone: "teal",
-    },
-    {
-      label: "Expired Subscriptions",
-      value: getDashboardMetric(summary, ["expiredSubscriptions", "expiredSubscriptionCount", "totalExpiredSubscriptions"]),
-      icon: Activity,
-      tone: "blue",
-    },
-  ], [cards, summary]);
   const activeChartView = dashboardChartViews.find((view) => view.key === selectedChart) || dashboardChartViews[0];
+  const greeting = getIndianGreeting();
 
   if (loading) {
     return <div className="sa-state">Loading Super Admin dashboard...</div>;
@@ -164,8 +174,13 @@ function Dashboard() {
   return (
     <div className="sa-dashboard-page" ref={pageRef}>
       <Header
-        title="Super Admin Dashboard"
+        title={`Good ${greeting.label} Super Admin !`}
         subtitle="Platform customers, subscriptions, and Super Admin activity."
+        leading={(
+          <span className={`sa-dashboard-greeting-icon sa-dashboard-greeting-icon--${greeting.tone}`}>
+            {greeting.logo}
+          </span>
+        )}
       />
 
       {error ? <div className="sa-state sa-state--error">{error}</div> : null}
@@ -199,7 +214,6 @@ function Dashboard() {
               dataKey={activeChartView.key === "revenueTrend" ? "revenue" : "value"}
               type={activeChartView.type}
               valueFormat={activeChartView.valueFormat}
-              metrics={chartMetrics}
             />
           </div>
 

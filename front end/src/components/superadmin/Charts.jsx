@@ -114,8 +114,30 @@ function Charts({ data = [], type = "bar", dataKey = "revenue", nameKey = "name"
           {type === "pie" ? (
             <PieChart>
               <Tooltip formatter={(value) => formatValue(value)} />
-              <Legend verticalAlign="bottom" height={40} />
-              <Pie data={data} dataKey={dataKey} nameKey={nameKey} cx="50%" cy="46%" outerRadius="72%" paddingAngle={2}>
+              <Legend
+                layout="vertical"
+                align="right"
+                verticalAlign="middle"
+                width={150}
+                wrapperStyle={{
+                  top: "35%",
+                  color: "#334155",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  lineHeight: "22px",
+                  textAlign: "center",
+                  transform: "translateY(-50%)",
+                }}
+              />
+              <Pie
+                data={data}
+                dataKey={dataKey}
+                nameKey={nameKey}
+                cx="38%"
+                cy="35%"
+                outerRadius="38%"
+                paddingAngle={2}
+              >
                 {data.map((entry, index) => (
                   <Cell key={`${entry[nameKey] || "segment"}-${index}`} fill={chartColors[index % chartColors.length]} />
                 ))}
