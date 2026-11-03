@@ -386,6 +386,33 @@
   margin-bottom: 12px;
 }
 
+.sa-dashboard-chart-picker {
+  flex: 0 0 auto;
+}
+
+.sa-dashboard-chart-picker select {
+  min-height: 38px;
+  max-width: 240px;
+  padding: 0 32px 0 12px;
+  border: 1px solid #dbe5e7;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #334155;
+  font: inherit;
+  font-size: 12px;
+}
+
+.sa-dashboard-chart-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
 .sa-panel h3 {
   margin: 0;
   font-size: 16px;
@@ -4965,8 +4992,125 @@
 }
 
 .content.superadmin-content:has(.sa-subscriptions-page) .sa-subscription-kpi svg {
-  background: #e2f2f1;
-  color: #438e94;
+  background: #164e55 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(22, 78, 85, 0.16);
+}
+
+.sa-subscriptions-page .sa-subscription-kpis {
+  grid-template-columns: repeat(3, minmax(0, 300px));
+  justify-content: center;
+  gap: 18px;
+}
+
+.sa-subscriptions-page .sa-subscription-kpi {
+  position: relative;
+  box-sizing: border-box;
+  height: 116px;
+  min-height: 116px;
+  padding: 14px 16px 38px;
+  overflow: hidden;
+}
+
+.sa-subscriptions-page .sa-subscription-kpi::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 28px;
+  background: #e0f2f1;
+  border-bottom: 4px solid #50b6b2;
+  pointer-events: none;
+}
+
+.sa-subscriptions-page .sa-subscription-kpi > div {
+  position: relative;
+  z-index: 1;
+}
+
+.sa-subscriptions-page .sa-subscription-kpi svg {
+  position: relative;
+  z-index: 1;
+  flex-basis: 44px;
+  width: 44px;
+  height: 44px;
+  padding: 11px;
+  box-sizing: border-box;
+  background: #164e55;
+  color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(22, 78, 85, 0.16);
+}
+
+@media (max-width: 900px) {
+  .sa-subscriptions-page .sa-subscription-kpis {
+    grid-template-columns: repeat(2, minmax(0, 300px));
+  }
+}
+
+@media (max-width: 520px) {
+  .sa-subscriptions-page .sa-subscription-kpis {
+    grid-template-columns: minmax(0, 300px);
+  }
+}
+
+.content.superadmin-content:has(> .sa-page-header + .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) > .sa-subscription-kpis {
+  grid-template-columns: repeat(4, minmax(0, 260px));
+  justify-content: center;
+  gap: 16px;
+}
+
+.content.superadmin-content:has(> .sa-page-header + .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) > .sa-subscription-kpis > .sa-subscription-kpi {
+  position: relative;
+  box-sizing: border-box;
+  height: 108px;
+  min-height: 108px;
+  padding: 12px 14px 38px;
+  overflow: hidden;
+}
+
+.content.superadmin-content:has(> .sa-page-header + .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) > .sa-subscription-kpis > .sa-subscription-kpi::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 30px;
+  background: #e0f2f1;
+  border-bottom: 4px solid #50b6b2;
+  pointer-events: none;
+}
+
+.content.superadmin-content:has(> .sa-page-header + .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) > .sa-subscription-kpis > .sa-subscription-kpi > div {
+  position: relative;
+  z-index: 1;
+}
+
+.content.superadmin-content:has(> .sa-page-header + .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) > .sa-subscription-kpis > .sa-subscription-kpi > svg {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 11px;
+  box-sizing: border-box;
+  background: #164e55 !important;
+  color: #ffffff !important;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(22, 78, 85, 0.16);
+}
+
+@media (max-width: 1200px) {
+  .content.superadmin-content:has(> .sa-page-header + .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) > .sa-subscription-kpis {
+    grid-template-columns: repeat(2, minmax(0, 260px));
+  }
+}
+
+@media (max-width: 620px) {
+  .content.superadmin-content:has(> .sa-page-header + .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) > .sa-subscription-kpis {
+    grid-template-columns: minmax(0, 300px);
+  }
 }
 
 .layout:has(.sidebar a[href="/superadmin/dashboard"]) .nav-label {
