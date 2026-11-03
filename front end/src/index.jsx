@@ -4,6 +4,9 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { createApiReadCoordinator } from "./utils/apiReadCoordinator.mjs";
+import { applySavedTheme } from "./theme/theme";
+
+applySavedTheme();
 // Register service worker for PWA in production builds
 if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {

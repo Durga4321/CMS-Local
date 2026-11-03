@@ -76,6 +76,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import "./Topbar.css";
 import NotificationPopup from "../components/NotificationPopup";
+import ThemePicker from "../components/ThemePicker";
 import UserProfileMenu from "../profile/UserProfileMenu";
 import { apiUrl } from "../config/api";
 import {
@@ -243,6 +244,7 @@ function Topbar({ onMenu }) {
       {/* RIGHT */}
 
       <div className="topbar-right">
+        <ThemePicker />
         <NotificationPopup isSuperAdmin={isSuperAdmin} activityCount={activityCount} />
 
         <UserProfileMenu roleType="admin" />

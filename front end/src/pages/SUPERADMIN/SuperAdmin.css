@@ -5859,3 +5859,801 @@
     overflow: visible;
   }
 }
+
+/* Keep Admin Management in the page flow instead of creating an internal table scrollbar. */
+.content.superadmin-content .sa-table--admins {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.content.superadmin-content .sa-table--admins .sa-table-head,
+.content.superadmin-content .sa-table--admins .sa-table-row {
+  min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
+.content.superadmin-content .sa-table--admins .sa-table-cell,
+.content.superadmin-content .sa-table--admins .sa-table-head > span {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Keep Admin Management headers and row content aligned to the same column edges. */
+.content.superadmin-content .sa-table--admins .sa-table-head,
+.content.superadmin-content .sa-table--admins .sa-table-row {
+  align-items: center;
+}
+
+.content.superadmin-content .sa-table--admins .sa-table-head > :nth-child(3),
+.content.superadmin-content .sa-table--admins .sa-table-row > :nth-child(3),
+.content.superadmin-content .sa-table--admins .sa-table-head > :nth-child(4),
+.content.superadmin-content .sa-table--admins .sa-table-row > :nth-child(4),
+.content.superadmin-content .sa-table--admins .sa-table-head > :nth-child(5),
+.content.superadmin-content .sa-table--admins .sa-table-row > :nth-child(5) {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.content.superadmin-content .sa-table--admins .sa-table-head > :nth-child(6),
+.content.superadmin-content .sa-table--admins .sa-table-row > :nth-child(6),
+.content.superadmin-content .sa-table--admins .sa-table-head > :nth-child(7),
+.content.superadmin-content .sa-table--admins .sa-table-row > :nth-child(7) {
+  justify-content: center;
+  text-align: center;
+}
+
+/* Keep row content compact so the Actions column stays inside the table. */
+.content.superadmin-content .sa-table--admins .sa-table-row {
+  font-size: 11px;
+}
+
+.content.superadmin-content .sa-table--admins .sa-table-row .sa-admin-name-highlight b,
+.content.superadmin-content .sa-table--admins .sa-table-row .sa-admin-email,
+.content.superadmin-content .sa-table--admins .sa-table-row .sa-admin-clinic-cell,
+.content.superadmin-content .sa-table--admins .sa-table-row .sa-admin-icon-text {
+  font-size: 11px;
+}
+
+.content.superadmin-content .sa-table--admins .sa-table-cell--actions {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.content.superadmin-content .sa-table--admins .sa-table-cell--actions .actions-group {
+  gap: 2px !important;
+  justify-content: center !important;
+}
+
+.content.superadmin-content .sa-table--admins .sa-table-cell--actions .action-btn {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
+  padding: 0 !important;
+}
+
+.content.superadmin-content .sa-table--admins .sa-table-cell--actions .action-btn svg {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+/* Compact only the Subscriptions & Renewals KPI cards. */
+.sa-subscriptions-page .sa-subscription-kpis {
+  grid-template-columns: repeat(3, minmax(0, 280px));
+  gap: 14px;
+}
+
+.sa-subscriptions-page .sa-subscription-kpi {
+  height: 100px;
+  min-height: 100px;
+  padding: 12px 14px 34px;
+}
+
+.sa-subscriptions-page .sa-subscription-kpi svg {
+  flex-basis: 40px;
+  width: 40px;
+  height: 40px;
+  padding: 10px;
+}
+
+.sa-subscriptions-page .sa-subscription-kpi b {
+  font-size: 19px;
+}
+
+/* Center the Appointments per day and Action columns in Plan Type Benefits. */
+.sa-subscriptions-page .sa-subscription-panel table {
+  table-layout: fixed;
+}
+
+.sa-subscriptions-page .sa-subscription-panel table th:nth-child(2),
+.sa-subscriptions-page .sa-subscription-panel table td:nth-child(2),
+.sa-subscriptions-page .sa-subscription-panel table th:nth-child(3),
+.sa-subscriptions-page .sa-subscription-panel table td:nth-child(3) {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.sa-subscriptions-page .sa-subscription-panel table th:nth-child(2),
+.sa-subscriptions-page .sa-subscription-panel table td:nth-child(2) {
+  width: 40%;
+}
+
+.sa-subscriptions-page .sa-subscription-panel table th:nth-child(3),
+.sa-subscriptions-page .sa-subscription-panel table td:nth-child(3) {
+  width: 25%;
+}
+
+.sa-subscriptions-page .sa-subscription-panel table td:nth-child(2) form {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.sa-subscriptions-page .sa-subscription-panel table td:nth-child(2) input {
+  margin-inline: auto;
+}
+
+/* Match the Admin Management status filter height to the search container. */
+.content.superadmin-content .sa-admin-search-filter .sa-search-box,
+.content.superadmin-content .sa-admin-search-filter select {
+  height: 46px !important;
+  min-height: 46px !important;
+  align-self: center;
+  box-sizing: border-box;
+}
+
+/* Align compact subscription KPIs with the full-width Plan Type Benefits panel. */
+.sa-subscriptions-page .sa-subscription-kpis {
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-content: stretch;
+  gap: 14px;
+}
+
+.sa-subscriptions-page .sa-subscription-kpi {
+  height: 92px;
+  min-height: 92px;
+  padding: 10px 14px 30px;
+}
+
+.sa-subscriptions-page .sa-subscription-kpi::after {
+  height: 22px;
+  border-bottom-width: 4px;
+}
+
+/* Apply the reference KPI treatment only to Audit Logs summary cards. */
+.sa-audit-logs-page .sa-audit-summary-card {
+  position: relative;
+  justify-content: flex-start;
+  min-height: 78px;
+  padding: 8px 12px 26px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.sa-audit-logs-page .sa-audit-summary-card::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 18px;
+  background: #e0f2f1;
+  border-bottom: 4px solid #50b6b2;
+  pointer-events: none;
+}
+
+.sa-audit-logs-page .sa-audit-summary-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.sa-audit-logs-page .sa-audit-summary-icon {
+  width: 38px;
+  height: 38px;
+  flex-basis: 38px;
+  border-radius: 10px;
+  transform: translateY(-4px);
+  z-index: 2;
+}
+
+.sa-audit-logs-page .sa-audit-summary-card > span:last-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: end;
+  column-gap: 8px;
+  row-gap: 2px;
+}
+
+.sa-audit-logs-page .sa-audit-summary-card b {
+  grid-column: 1 / -1;
+  font-size: 12px;
+}
+
+.sa-audit-logs-page .sa-audit-summary-card strong {
+  grid-column: 1;
+  font-size: 23px;
+}
+
+.sa-audit-logs-page .sa-audit-summary-card small {
+  grid-column: 2;
+  align-self: end;
+  font-size: 11px;
+  transform: translateY(-3px);
+}
+
+/* Compact the Assign Permissions selector into the same row as its label. */
+.sa-permission-card > .sa-form-grid {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.sa-permission-card > .sa-form-grid .sa-form-field {
+  display: grid;
+  grid-template-columns: max-content minmax(220px, 360px);
+  align-items: center;
+  gap: 12px;
+}
+
+.sa-permission-card > .sa-form-grid .sa-form-field label {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.sa-permission-card > .sa-form-grid .sa-form-field select {
+  width: 100%;
+  min-height: 38px;
+}
+
+/* Compact only the Subscription Reports KPI cards. */
+.content.superadmin-content:has(> .sa-page-header + .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) > .sa-subscription-kpis {
+  grid-template-columns: repeat(4, minmax(0, 220px));
+  gap: 12px;
+}
+
+.content.superadmin-content:has(> .sa-page-header + .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) > .sa-subscription-kpis > .sa-subscription-kpi {
+  height: 88px;
+  min-height: 88px;
+  padding: 10px 12px 30px;
+}
+
+.content.superadmin-content:has(> .sa-page-header + .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) > .sa-subscription-kpis > .sa-subscription-kpi::after {
+  height: 22px;
+}
+
+/* Reduce the Subscription Reports search and status controls. */
+.content.superadmin-content:has(> .sa-page-header + .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) .sa-subscription-table-section > .sa-search-filter {
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.content.superadmin-content:has(> .sa-page-header + .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) .sa-subscription-table-section > .sa-search-filter .sa-search-box,
+.content.superadmin-content:has(> .sa-page-header + .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) .sa-subscription-table-section > .sa-search-filter select {
+  height: 40px;
+  min-height: 40px;
+}
+
+.content.superadmin-content:has(> .sa-page-header + .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) .sa-subscription-table-section > .sa-search-filter select {
+  flex-basis: 180px;
+  width: 180px;
+}
+
+/* Keep Configuration Notes inside the System Settings form grid. */
+.content.superadmin-content:has(.sa-settings-form) .sa-settings-form {
+  display: block !important;
+  height: auto !important;
+  min-height: max-content !important;
+  max-height: none !important;
+  flex: 0 0 auto !important;
+  align-self: stretch;
+  overflow: visible !important;
+  box-sizing: border-box;
+}
+
+.content.superadmin-content:has(.sa-settings-form) .sa-settings-form .sa-form-grid {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  align-items: start;
+}
+
+.content.superadmin-content:has(.sa-settings-form) .sa-settings-form .sa-form-field-full {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+}
+
+.content.superadmin-content:has(.sa-settings-form) .sa-settings-form .sa-form-field-full textarea {
+  display: block;
+  width: 100%;
+  margin: 0;
+}
+
+@media (max-width: 620px) {
+  .sa-permission-card > .sa-form-grid .sa-form-field {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+/* Keep the Admin Management table header fixed and opaque while rows scroll. */
+.content.superadmin-content .sa-table--admins .sa-table-head {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 100 !important;
+  background-color: #f8fafc !important;
+  background-image: none !important;
+  opacity: 1 !important;
+  border-bottom: 1px solid #dbe3ed !important;
+  box-shadow: 0 8px 0 #ffffff, 0 9px 0 #dbe3ed;
+  isolation: isolate;
+}
+
+.content.superadmin-content .sa-table--admins {
+  position: relative;
+  isolation: isolate;
+}
+
+.content.superadmin-content .sa-table--admins .sa-table-row {
+  position: relative;
+  z-index: 0;
+}
+
+/* Keep the Audit Logs search container compact without affecting other screens. */
+.sa-audit-logs-page > .sa-search-filter {
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  gap: 12px;
+  border-radius: 14px;
+}
+
+.sa-audit-logs-page > .sa-search-filter .sa-search-box,
+.sa-audit-logs-page > .sa-search-filter select {
+  height: 40px;
+  min-height: 40px;
+}
+
+.sa-audit-logs-page > .sa-search-filter .sa-search-box {
+  padding: 0 14px;
+}
+
+.sa-audit-logs-page > .sa-search-filter select {
+  min-width: 140px;
+  padding: 0 12px;
+}
+
+/* Audit Logs search and table surfaces follow the active theme. */
+html[data-cms-theme] .sa-audit-logs-page > .sa-search-filter {
+  background: #ffffff !important;
+  border-color: var(--theme-primary-glow) !important;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--theme-primary) 10%, transparent) !important;
+}
+
+html[data-cms-theme] .sa-audit-logs-page > .sa-search-filter .sa-search-box,
+html[data-cms-theme] .sa-audit-logs-page > .sa-search-filter select {
+  background: #ffffff !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-audit-logs-page .sa-table--audit {
+  border-color: var(--theme-primary-glow) !important;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--theme-primary) 9%, transparent) !important;
+}
+
+html[data-cms-theme] .sa-audit-logs-page .sa-table--audit .sa-table-head {
+  background: var(--theme-primary-soft) !important;
+  border-bottom-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-audit-logs-page .sa-table--audit .sa-table-row,
+html[data-cms-theme] .sa-audit-logs-page .sa-table--audit .sa-table-row:nth-child(odd),
+html[data-cms-theme] .sa-audit-logs-page .sa-table--audit .sa-table-row:nth-child(even) {
+  background: color-mix(in srgb, var(--theme-primary-soft) 32%, #ffffff) !important;
+  border-color: var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .sa-audit-logs-page .sa-table--audit .sa-table-row:hover {
+  background: color-mix(in srgb, var(--theme-primary-soft) 62%, #ffffff) !important;
+}
+
+html[data-cms-theme] .sa-audit-logs-page .sa-audit-pill,
+html[data-cms-theme] .sa-audit-logs-page .sa-audit-login,
+html[data-cms-theme] .sa-audit-logs-page .sa-audit-role {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+/* Keep KPI logo surfaces aligned with the selected theme's light card shade. */
+html[data-cms-theme] .content.superadmin-content .sa-subscription-kpi > svg,
+html[data-cms-theme] .content.superadmin-content .sa-audit-summary-icon,
+html[data-cms-theme] .content.superadmin-content .sa-stat-icon,
+html[data-cms-theme] .content.superadmin-content .db-kpi-icon-box {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+/* Audit Logs filter fields and page scrollbar use the selected theme. */
+html[data-cms-theme] .sa-audit-logs-page .sa-audit-scope-filter {
+  border-color: var(--theme-primary-glow) !important;
+  background: color-mix(in srgb, var(--theme-primary-soft) 28%, #ffffff) !important;
+}
+
+html[data-cms-theme] .sa-audit-logs-page .sa-audit-scope-filter label > span {
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-audit-logs-page .sa-audit-scope-filter input,
+html[data-cms-theme] .sa-audit-logs-page .sa-audit-scope-filter select {
+  background: #ffffff !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-audit-logs-page .sa-audit-scope-filter input:focus,
+html[data-cms-theme] .sa-audit-logs-page .sa-audit-scope-filter select:focus {
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 0 0 3px var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .content.superadmin-content,
+html[data-cms-theme] .content.superadmin-content * {
+  scrollbar-color: var(--theme-primary) #ffffff !important;
+}
+
+html[data-cms-theme] .content.superadmin-content::-webkit-scrollbar {
+  width: 12px !important;
+  height: 12px !important;
+  display: block !important;
+}
+
+html[data-cms-theme] .content.superadmin-content::-webkit-scrollbar-track {
+  background: #ffffff !important;
+}
+
+html[data-cms-theme] .content.superadmin-content::-webkit-scrollbar-thumb {
+  background: var(--theme-primary) !important;
+  border: 3px solid #ffffff !important;
+  border-radius: 999px !important;
+}
+
+html[data-cms-theme] .content.superadmin-content::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-primary-dark) !important;
+}
+
+/* Admin Management S.No. and Name columns follow the active theme. */
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head > :nth-child(1),
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head > :nth-child(2) {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+  border-bottom-color: var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head {
+  background: #ffffff !important;
+}
+
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-row > :nth-child(1),
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-row > :nth-child(2) {
+  background: color-mix(in srgb, var(--theme-primary-soft) 34%, #ffffff) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-admin-avatar,
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-admin-name-highlight {
+  background: #ffffff !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-admin-avatar {
+  background: var(--theme-primary-soft) !important;
+  border: 3px solid #ffffff !important;
+  box-shadow: 0 0 0 1px var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-admin-name-highlight {
+  background: var(--theme-primary-soft) !important;
+}
+
+/* Keep the Admin Management header and avatar shells white; theme only the inner accents. */
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head,
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head > * {
+  background: #ffffff !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-admin-avatar {
+  background: #ffffff !important;
+  border: 3px solid #ffffff !important;
+  box-shadow: 0 0 0 1px var(--theme-primary) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+/* Revert Admin Management table surfaces to the white reference treatment. */
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins,
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head,
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head > *,
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-row,
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-row > *,
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-admin-avatar,
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-admin-name-highlight {
+  background: #ffffff !important;
+}
+
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head > *,
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-row > *,
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-admin-name-highlight b {
+  color: #334155 !important;
+}
+
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins,
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head,
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-row,
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-admin-name-highlight {
+  border-color: #e2e8f0 !important;
+}
+
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-admin-avatar {
+  border-color: #ffffff !important;
+  box-shadow: 0 0 0 1px #e2e8f0 !important;
+}
+
+/* Admin Management table: use a fully white surface regardless of theme state. */
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins,
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head,
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head > *,
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-row,
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-row > *,
+.content.superadmin-content:has(.sa-table--admins) .sa-admin-avatar,
+.content.superadmin-content:has(.sa-table--admins) .sa-admin-name-highlight {
+  background: #ffffff !important;
+}
+
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins,
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head,
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-row,
+.content.superadmin-content:has(.sa-table--admins) .sa-admin-name-highlight {
+  border-color: #e2e8f0 !important;
+}
+
+/* Force the Admin Management table fields to the white reference background. */
+.sa-table--admins,
+.sa-table--admins .sa-table-head,
+.sa-table--admins .sa-table-head > *,
+.sa-table--admins .sa-table-row,
+.sa-table--admins .sa-table-row > *,
+.sa-table--admins .sa-table-cell,
+.sa-table--admins .sa-admin-name-highlight {
+  background: #ffffff !important;
+}
+
+/* Remove the visible separator lines around and between Admin Management rows. */
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins,
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head,
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-row,
+.content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-cell {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-admin-name-highlight b {
+  color: var(--theme-primary-dark) !important;
+}
+
+/* Saved Plans table follows the selected theme. */
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-section {
+  border-color: var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-section .sa-table--subscription-plans {
+  border-color: var(--theme-primary-glow) !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--theme-primary) 9%, transparent) !important;
+}
+
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-section .sa-table--subscription-plans .sa-table-head {
+  background: var(--theme-primary-soft) !important;
+  border-bottom-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-section .sa-table--subscription-plans .sa-table-head > * {
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-section .sa-table--subscription-plans .sa-table-row,
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-section .sa-table--subscription-plans .sa-table-row:nth-child(odd),
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-section .sa-table--subscription-plans .sa-table-row:nth-child(even) {
+  background: #ffffff !important;
+  border-bottom-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-section .sa-table--subscription-plans .sa-table-row:hover {
+  background: color-mix(in srgb, var(--theme-primary-soft) 42%, #ffffff) !important;
+}
+
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-scroll--plans::-webkit-scrollbar-track {
+  background: #ffffff !important;
+}
+
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-scroll--plans::-webkit-scrollbar-thumb {
+  background: var(--theme-primary) !important;
+  border-color: #ffffff !important;
+}
+
+/* Keep the subscription and report tables aligned with the selected theme.
+   These selectors are limited to the requested screens only. */
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-panel > .sa-table,
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-section .sa-table,
+html[data-cms-theme] .content.superadmin-content:has(> .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) .sa-subscription-table-section .sa-table {
+  border-color: var(--theme-primary-glow) !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--theme-primary) 9%, transparent) !important;
+}
+
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-panel > .sa-table thead,
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-panel > .sa-table thead tr,
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-panel > .sa-table th,
+html[data-cms-theme] .content.superadmin-content:has(> .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) .sa-subscription-table-section .sa-table .sa-table-head {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+  border-color: var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-panel > .sa-table td,
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-panel > .sa-table tbody tr,
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-section .sa-table .sa-table-row,
+html[data-cms-theme] .content.superadmin-content:has(> .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) .sa-subscription-table-section .sa-table .sa-table-row {
+  background: #ffffff !important;
+  color: var(--theme-primary-dark) !important;
+  border-color: var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-panel > .sa-table tbody tr:hover,
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-section .sa-table .sa-table-row:hover,
+html[data-cms-theme] .content.superadmin-content:has(> .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) .sa-subscription-table-section .sa-table .sa-table-row:hover {
+  background: color-mix(in srgb, var(--theme-primary-soft) 42%, #ffffff) !important;
+}
+
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-panel > .sa-table input,
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-section .sa-table .sa-table-cell,
+html[data-cms-theme] .content.superadmin-content:has(> .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) .sa-subscription-table-section .sa-table .sa-table-cell {
+  border-color: var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-panel > .sa-table input:focus {
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 0 0 3px var(--theme-primary-glow) !important;
+}
+
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-scroll::-webkit-scrollbar-track,
+html[data-cms-theme] .content.superadmin-content:has(> .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) .sa-subscription-table-section > div::-webkit-scrollbar-track {
+  background: #ffffff !important;
+}
+
+html[data-cms-theme] .sa-subscriptions-page .sa-subscription-table-scroll::-webkit-scrollbar-thumb,
+html[data-cms-theme] .content.superadmin-content:has(> .sa-subscription-kpis):not(:has(.sa-subscriptions-page)) .sa-subscription-table-section > div::-webkit-scrollbar-thumb {
+  background: var(--theme-primary) !important;
+  border: 2px solid #ffffff !important;
+  border-radius: 999px;
+}
+
+/* Admin Management header must remain completely white in every theme. */
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head,
+html[data-cms-theme] .content.superadmin-content:has(.sa-table--admins) .sa-table--admins .sa-table-head > * {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+}
+
+/* Roles & Permissions text stays black; theme colors remain limited to surfaces and controls. */
+html[data-cms-theme] .sa-roles-permissions-page :is(h1, h2, h3, h4, p, label, span, b, em, th, td) {
+  color: #000000 !important;
+}
+
+/* Notifications follow the selected theme without changing notification data. */
+html[data-cms-theme] .sa-notifications-page .sa-panel {
+  border-color: var(--theme-primary-glow) !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--theme-primary) 9%, transparent) !important;
+}
+
+html[data-cms-theme] .sa-notifications-page .sa-notification-tab,
+html[data-cms-theme] .sa-notifications-page .sa-notification-tab--all,
+html[data-cms-theme] .sa-notifications-page .sa-notification-tab--unread,
+html[data-cms-theme] .sa-notifications-page .sa-notification-tab--read,
+html[data-cms-theme] .sa-notifications-page .sa-notification-tab--sent {
+  border-color: var(--theme-primary-glow) !important;
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-notifications-page .sa-notification-tab.active,
+html[data-cms-theme] .sa-notifications-page .sa-notification-tab:hover,
+html[data-cms-theme] .sa-notifications-page .sa-notification-tab:focus-visible {
+  border-color: var(--theme-primary) !important;
+  background: color-mix(in srgb, var(--theme-primary-soft) 70%, #ffffff) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-notifications-page .sa-notification-tab span {
+  background: #ffffff !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-notifications-page .sa-notification-item,
+html[data-cms-theme] .sa-notifications-page .sa-notification-item:first-child,
+html[data-cms-theme] .sa-notifications-page .sa-notification-item--appointment-0,
+html[data-cms-theme] .sa-notifications-page .sa-notification-item--appointment-1,
+html[data-cms-theme] .sa-notifications-page .sa-notification-item--appointment-2,
+html[data-cms-theme] .sa-notifications-page .sa-notification-item--appointment-3,
+html[data-cms-theme] .sa-notifications-page .sa-notification-item--payment,
+html[data-cms-theme] .sa-notifications-page .sa-notification-item--cancelled,
+html[data-cms-theme] .sa-notifications-page .sa-notification-item--system,
+html[data-cms-theme] .sa-notifications-page .sa-notification-item--sent {
+  border-color: var(--theme-primary-glow) !important;
+  background: color-mix(in srgb, var(--theme-primary-soft) 24%, #ffffff) !important;
+}
+
+html[data-cms-theme] .sa-notifications-page .sa-notification-item:hover,
+html[data-cms-theme] .sa-notifications-page .sa-notification-item:focus-visible {
+  border-color: var(--theme-primary) !important;
+  background: color-mix(in srgb, var(--theme-primary-soft) 48%, #ffffff) !important;
+}
+
+html[data-cms-theme] .sa-notifications-page .sa-notification-icon,
+html[data-cms-theme] .sa-notifications-page .sa-notification-icon--1,
+html[data-cms-theme] .sa-notifications-page .sa-notification-icon--2,
+html[data-cms-theme] .sa-notifications-page .sa-notification-icon--3,
+html[data-cms-theme] .sa-notifications-page .sa-notification-icon--appointment-0,
+html[data-cms-theme] .sa-notifications-page .sa-notification-icon--appointment-1,
+html[data-cms-theme] .sa-notifications-page .sa-notification-icon--appointment-2,
+html[data-cms-theme] .sa-notifications-page .sa-notification-icon--appointment-3,
+html[data-cms-theme] .sa-notifications-page .sa-notification-icon--payment,
+html[data-cms-theme] .sa-notifications-page .sa-notification-icon--cancelled,
+html[data-cms-theme] .sa-notifications-page .sa-notification-icon--system,
+html[data-cms-theme] .sa-notifications-page .sa-notification-icon--default,
+html[data-cms-theme] .sa-notifications-page .sa-notification-icon--sent,
+html[data-cms-theme] .sa-notifications-page .sa-notification-icon--read {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-notifications-page .sa-notification-actions .sa-badge.is-active,
+html[data-cms-theme] .sa-notifications-page .sa-notification-actions .sa-badge.is-muted {
+  border-color: var(--theme-primary-glow) !important;
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-notifications-page .sa-notification-date {
+  color: var(--theme-primary-dark) !important;
+}
+
+html[data-cms-theme] .sa-notifications-page .sa-delete-icon {
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+  background: #ffffff !important;
+}
+
+html[data-cms-theme] .sa-notifications-page .sa-delete-icon:hover,
+html[data-cms-theme] .sa-notifications-page .sa-delete-icon:focus-visible {
+  border-color: var(--theme-primary) !important;
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+}
