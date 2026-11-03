@@ -28,6 +28,10 @@ export const SUPER_ADMIN_API = {
   reportsSummary: "SuperAdminReports/summary",
   reportsClinicRevenue: "SuperAdminReports/clinic-revenue",
   reportsClinicRevenueByHospital: "SuperAdminReports/clinic-revenue",
+  reportsSubscriptionStatus: "SuperAdminReports/subscription-status",
+  reportsBranchCount: "SuperAdminReports/branch-count",
+  reportsAdminCount: "SuperAdminReports/admin-count",
+  reportsPlanDistribution: "SuperAdminReports/plan-distribution",
   dashboardRevenueReport: "Dashboard/reports/revenue",
   reportsRevenueTrend: "SuperAdminReports/revenue-trend",
   reportsTopClinics: "SuperAdminReports/top-clinics",
@@ -156,6 +160,49 @@ const toNumber = (value) => {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
 };
+
+const normalizeDashboardReportRows = (response, nameKeys, valueKeys, fallbackValueKeys = []) => {
+  let rows = asArray(response);
+  if (!rows.length) {
+    const source = asObject(response);
+    if (pick(source, nameKeys, null) !== null || pick(source, valueKeys, null) !== null) {
+      rows = [source];
+    } else {
+      rows = Object.entries(source)
+        .filter(([, value]) => value !== null && value !== "" && Number.isFinite(Number(value)))
+        .map(([name, value]) => ({ name, value }));
+    }
+  }
+
+  return rows
+    .map((row, index) => {
+      const rawName = pick(row, nameKeys, `Item ${index + 1}`);
+      const name = rawName && typeof rawName === "object"
+        ? pick(rawName, ["name", "Name", "clinicName", "ClinicName", "planName", "PlanName"], `Item ${index + 1}`)
+        : rawName;
+      const directValue = pick(row, valueKeys, null);
+      const fallbackValue = fallbackValueKeys.reduce(
+        (total, key) => total + toNumber(row?.[key]),
+        0
+      );
+
+      return {
+        ...row,
+        name: String(name || `Item ${index + 1}`),
+        value: directValue === null ? fallbackValue : toNumber(directValue),
+      };
+    })
+    .filter((row) => row.name.trim());
+};
+
+const normalizeDashboardRevenueTrend = (response) =>
+  normalizeDashboardReportRows(
+    response,
+    ["month", "Month", "monthName", "MonthName", "period", "Period", "date", "Date", "name", "Name", "label", "Label"],
+    ["subscriptionRevenue", "SubscriptionRevenue", "totalSubscriptionRevenue", "TotalSubscriptionRevenue", "revenue", "Revenue", "totalRevenue", "TotalRevenue", "amount", "Amount", "totalAmount", "TotalAmount"]
+  )
+    .map((row) => ({ ...row, revenue: row.value, users: 0, invoices: 0 }))
+    .filter((row) => !/^item\s+\d+$/i.test(String(row.name)));
 
 const DIAGNOSTIC_REVENUE_KEYS = [
   "diagnosticRevenue",
@@ -3396,6 +3443,10 @@ export const fetchDashboardData = async () => {
     reportsSummary,
     clinicRevenue,
     revenueTrend,
+    subscriptionStatus,
+    branchCount,
+    adminCountReport,
+    planDistribution,
     topClinics,
     userActivity,
     auditLogs,
@@ -3413,6 +3464,10 @@ export const fetchDashboardData = async () => {
     superAdminRequest(SUPER_ADMIN_API.reportsSummary),
     superAdminRequest(SUPER_ADMIN_API.reportsClinicRevenue),
     superAdminRequest(SUPER_ADMIN_API.reportsRevenueTrend),
+    superAdminRequest(SUPER_ADMIN_API.reportsSubscriptionStatus),
+    superAdminRequest(SUPER_ADMIN_API.reportsBranchCount),
+    superAdminRequest(SUPER_ADMIN_API.reportsAdminCount),
+    superAdminRequest(SUPER_ADMIN_API.reportsPlanDistribution),
     superAdminRequest(SUPER_ADMIN_API.reportsTopClinics),
     superAdminRequest(SUPER_ADMIN_API.reportsUserActivity),
     superAdminRequest(SUPER_ADMIN_API.auditLogs),
@@ -3430,6 +3485,35 @@ export const fetchDashboardData = async () => {
   const clinicRevenueRows = clinicRevenue.status === "fulfilled" ? asArray(clinicRevenue.value) : [];
   const topClinicRows = topClinics.status === "fulfilled" ? asArray(topClinics.value) : [];
   const revenueData = revenueTrend.status === "fulfilled" ? revenueTrend.value : [];
+  const clinicRevenueChartData = normalizeDashboardReportRows(
+    clinicRevenue.status === "fulfilled" ? clinicRevenue.value : [],
+    ["clinicName", "ClinicName", "hospitalName", "HospitalName", "clinic", "Clinic", "name", "Name", "label", "Label"],
+    ["subscriptionRevenue", "SubscriptionRevenue", "totalSubscriptionRevenue", "TotalSubscriptionRevenue", "cmsSubscriptionRevenue", "CmsSubscriptionRevenue", "paidAmount", "PaidAmount", "totalAmount", "TotalAmount", "amount", "Amount", "revenue", "Revenue", "totalRevenue", "TotalRevenue"],
+    ["cmsRevenue", "CmsRevenue", "renewalRevenue", "RenewalRevenue", "upgradeRevenue", "UpgradeRevenue", "cmsSubscriptionAmount", "renewalAmount", "upgradeAmount"]
+  );
+  const subscriptionStatusChartData = normalizeDashboardReportRows(
+    subscriptionStatus.status === "fulfilled" ? subscriptionStatus.value : [],
+    ["status", "Status", "subscriptionStatus", "SubscriptionStatus", "name", "Name", "label", "Label", "type", "Type"],
+    ["count", "Count", "subscriptionCount", "SubscriptionCount", "totalCount", "TotalCount", "value", "Value", "total", "Total"]
+  );
+  const revenueTrendChartData = normalizeDashboardRevenueTrend(
+    revenueTrend.status === "fulfilled" ? revenueTrend.value : []
+  );
+  const branchCountChartData = normalizeDashboardReportRows(
+    branchCount.status === "fulfilled" ? branchCount.value : [],
+    ["clinicName", "ClinicName", "hospitalName", "HospitalName", "clinic", "Clinic", "name", "Name", "label", "Label"],
+    ["branchCount", "BranchCount", "totalBranches", "TotalBranches", "count", "Count", "value", "Value"]
+  );
+  const adminCountChartData = normalizeDashboardReportRows(
+    adminCountReport.status === "fulfilled" ? adminCountReport.value : [],
+    ["clinicName", "ClinicName", "hospitalName", "HospitalName", "clinic", "Clinic", "name", "Name", "label", "Label"],
+    ["adminCount", "AdminCount", "totalAdmins", "TotalAdmins", "count", "Count", "value", "Value"]
+  );
+  const planDistributionChartData = normalizeDashboardReportRows(
+    planDistribution.status === "fulfilled" ? planDistribution.value : [],
+    ["planType", "PlanType", "planName", "PlanName", "name", "Name", "label", "Label"],
+    ["clinicCount", "ClinicCount", "subscriptionCount", "SubscriptionCount", "count", "Count", "value", "Value", "total", "Total"]
+  );
   const reportActivityRows =
     userActivity.status === "fulfilled"
       ? asArray(userActivity.value).filter(shouldIncludeDashboardActivity).map(normalizeActivity)
@@ -3491,6 +3575,24 @@ export const fetchDashboardData = async () => {
     }
   );
   const dashboardTotalRevenue = dashboardClinicTotals.revenue || billingTotals.revenue;
+  const platformSubscriptionRevenue = toNumber(pick(summaryData, [
+    "subscriptionRevenue",
+    "totalSubscriptionRevenue",
+    "subscriptionValue",
+    "totalRevenue",
+    "revenue",
+    "revenueSummary",
+  ], 0));
+  const activeSubscriptions = toNumber(pick(summaryData, [
+    "activeSubscriptions",
+    "activeSubscriptionCount",
+    "totalActiveSubscriptions",
+  ], 0));
+  const expiredSubscriptions = toNumber(pick(summaryData, [
+    "expiredSubscriptions",
+    "expiredSubscriptionCount",
+    "totalExpiredSubscriptions",
+  ], 0));
   const actualClinicCount = clinicRows.length;
   const actualUserCount = userRows.length;
   const activeUserCount = userRows.filter((u) => u.active === true || u.isActive === true || u.status === "Active").length;
@@ -3502,9 +3604,12 @@ export const fetchDashboardData = async () => {
     totalClinics: actualClinicCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalClinics", "clinics", "clinicCount"]),
     clinics: actualClinicCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalClinics", "clinics", "clinicCount"]),
     clinicCount: actualClinicCount || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalClinics", "clinics", "clinicCount"]),
-    totalRevenue: dashboardTotalRevenue || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalRevenue", "revenue", "revenueSummary"]),
-    revenue: dashboardTotalRevenue || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalRevenue", "revenue", "revenueSummary"]),
-    revenueSummary: dashboardTotalRevenue || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalRevenue", "revenue", "revenueSummary"]),
+    totalRevenue: platformSubscriptionRevenue || dashboardTotalRevenue || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalRevenue", "revenue", "revenueSummary"]),
+    revenue: platformSubscriptionRevenue || dashboardTotalRevenue || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalRevenue", "revenue", "revenueSummary"]),
+    revenueSummary: platformSubscriptionRevenue || dashboardTotalRevenue || getDashboardMetric({ ...dashboardData, ...summaryData }, ["totalRevenue", "revenue", "revenueSummary"]),
+    subscriptionRevenue: platformSubscriptionRevenue,
+    activeSubscriptions,
+    expiredSubscriptions,
     opRevenue: dashboardClinicTotals.opRevenue || billingTotals.opRevenue,
     diagnosticRevenue: dashboardClinicTotals.diagnosticRevenue || billingTotals.diagnosticRevenue,
     pharmacyRevenue: dashboardClinicTotals.pharmacyRevenue || billingTotals.pharmacyRevenue,
@@ -3530,10 +3635,38 @@ export const fetchDashboardData = async () => {
         }))
       : buildMonthlyRevenueRows(asArray(revenueData));
   const totalUsers = nextSummary.totalUsers;
+  const dashboardChartData = {
+    clinicRevenue: clinicRevenueChartData.length
+      ? clinicRevenueChartData
+      : dashboardClinicRevenueRows.map((row) => ({
+          ...row,
+          name: row.name || row.clinicName || "Clinic",
+          value: toNumber(row.revenue),
+        })),
+    subscriptionStatus: subscriptionStatusChartData,
+    revenueTrend: revenueTrendChartData.length
+      ? revenueTrendChartData.map((row) => ({ ...row, value: row.revenue }))
+      : dashboardRevenueData.map((row) => ({ ...row, value: toNumber(row.revenue) })),
+    branchCount: branchCountChartData,
+    adminCount: adminCountChartData,
+    planDistribution: planDistributionChartData,
+  };
+  const statisticsErrors = [
+    [clinicRevenue, "Clinic revenue"],
+    [revenueTrend, "Revenue trend"],
+    [subscriptionStatus, "Subscription status"],
+    [branchCount, "Branch count"],
+    [adminCountReport, "Admin count"],
+    [planDistribution, "Plan distribution"],
+  ]
+    .filter(([result]) => result.status === "rejected")
+    .map(([result, label]) => `${label}: ${result.reason?.message || "Unable to load report data."}`);
 
   return {
     dashboard: dashboardData,
     summary: nextSummary,
+    chartData: dashboardChartData,
+    statisticsErrors,
     revenueData: dashboardRevenueData.map((point) => ({
       ...point,
       users: toNumber(point.users) || totalUsers,

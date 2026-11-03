@@ -28,6 +28,15 @@ const getActivityIcon = (tone) => {
   return Activity;
 };
 
+const dashboardChartViews = [
+  { key: "revenueTrend", label: "Monthly Subscription Revenue", type: "line", valueFormat: "currency" },
+  { key: "clinicRevenue", label: "Subscription Revenue by Clinic", type: "bar", valueFormat: "currency" },
+  { key: "subscriptionStatus", label: "Subscription Status", type: "pie", valueFormat: "number" },
+  { key: "branchCount", label: "Branches by Clinic", type: "bar", valueFormat: "number" },
+  { key: "adminCount", label: "Admins by Clinic", type: "bar", valueFormat: "number" },
+  { key: "planDistribution", label: "Plan Distribution", type: "pie", valueFormat: "number" },
+];
+
 function ActivityItem({ activity }) {
   const tone = getActivityTone(activity);
   const Icon = getActivityIcon(tone);
@@ -54,6 +63,9 @@ function Dashboard() {
   const [dashboard, setDashboard] = useState({});
   const [summary, setSummary] = useState({});
   const [revenueData, setRevenueData] = useState([]);
+  const [chartData, setChartData] = useState({});
+  const [statisticsErrors, setStatisticsErrors] = useState([]);
+  const [selectedChart, setSelectedChart] = useState("revenueTrend");
   const [activities, setActivities] = useState([]);
 
   useEffect(() => {
@@ -70,6 +82,8 @@ function Dashboard() {
         setDashboard(data.dashboard);
         setSummary(data.summary);
         setRevenueData(data.revenueData);
+        setChartData(data.chartData || {});
+        setStatisticsErrors(data.statisticsErrors || []);
         setActivities(data.activities);
         setError(data.error);
       } catch (requestError) {
@@ -126,6 +140,23 @@ function Dashboard() {
     ];
   }, [dashboard, navigate, summary]);
 
+  const chartMetrics = useMemo(() => [
+    ...cards,
+    {
+      label: "Active Subscriptions",
+      value: getDashboardMetric(summary, ["activeSubscriptions", "activeSubscriptionCount", "totalActiveSubscriptions"]),
+      icon: ShieldCheck,
+      tone: "teal",
+    },
+    {
+      label: "Expired Subscriptions",
+      value: getDashboardMetric(summary, ["expiredSubscriptions", "expiredSubscriptionCount", "totalExpiredSubscriptions"]),
+      icon: Activity,
+      tone: "blue",
+    },
+  ], [cards, summary]);
+  const activeChartView = dashboardChartViews.find((view) => view.key === selectedChart) || dashboardChartViews[0];
+
   if (loading) {
     return <div className="sa-state">Loading Super Admin dashboard...</div>;
   }
@@ -149,9 +180,27 @@ function Dashboard() {
                 <h3>Charts & Statistics</h3>
                 <p>Subscription revenue trend and platform statistics.</p>
               </div>
+              <label className="sa-dashboard-chart-picker">
+                <select value={selectedChart} onChange={(event) => setSelectedChart(event.target.value)} aria-label="Select dashboard chart">
+                  {dashboardChartViews.map((view) => (
+                    <option key={view.key} value={view.key}>{view.label}</option>
+                  ))}
+                </select>
+              </label>
             </div>
 
-            <Charts data={revenueData} dataKey="revenue" metrics={cards} />
+            {statisticsErrors.length ? (
+              <div className="sa-dashboard-chart-error" role="alert">
+                Some dashboard statistics could not be loaded: {statisticsErrors.join(" ")}
+              </div>
+            ) : null}
+            <Charts
+              data={chartData[activeChartView.key] || (activeChartView.key === "revenueTrend" ? revenueData : [])}
+              dataKey={activeChartView.key === "revenueTrend" ? "revenue" : "value"}
+              type={activeChartView.type}
+              valueFormat={activeChartView.valueFormat}
+              metrics={chartMetrics}
+            />
           </div>
 
           <div className="sa-panel sa-panel--activity">

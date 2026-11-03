@@ -4,9 +4,13 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
+  Legend,
   Line,
   LineChart,
   LabelList,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -21,6 +25,8 @@ const formatShort = (value) => {
 };
 
 const formatCurrency = (value) => `₹${Number(value || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+const formatNumber = (value) => Number(value || 0).toLocaleString("en-IN");
+const chartColors = ["#164e55", "#50b6b2", "#2f7f89", "#8cc9c5", "#f0b35a", "#5476b8"];
 
 const wrapClinicName = (value, maxLineLength = 9) => {
   const lines = [];
@@ -56,8 +62,9 @@ const ClinicNameTick = ({ x = 0, y = 0, payload }) => {
   );
 };
 
-function Charts({ data = [], type = "bar", dataKey = "revenue", secondaryKey, tertiaryKey, metrics = [] }) {
+function Charts({ data = [], type = "bar", dataKey = "revenue", nameKey = "name", valueFormat = "currency", secondaryKey, tertiaryKey, metrics = [] }) {
   const hasData = Array.isArray(data) && data.length > 0;
+  const formatValue = valueFormat === "currency" ? formatCurrency : formatNumber;
   const chartMargin = { top: 30, right: 24, left: 0, bottom: 68 };
   const xAxisProps = {
     dataKey: "name",
@@ -104,12 +111,22 @@ function Charts({ data = [], type = "bar", dataKey = "revenue", secondaryKey, te
 
       <div className="sa-chart-plot">
         <ResponsiveContainer width="100%" height="100%">
-          {type === "line" ? (
+          {type === "pie" ? (
+            <PieChart>
+              <Tooltip formatter={(value) => formatValue(value)} />
+              <Legend verticalAlign="bottom" height={40} />
+              <Pie data={data} dataKey={dataKey} nameKey={nameKey} cx="50%" cy="46%" outerRadius="72%" paddingAngle={2}>
+                {data.map((entry, index) => (
+                  <Cell key={`${entry[nameKey] || "segment"}-${index}`} fill={chartColors[index % chartColors.length]} />
+                ))}
+              </Pie>
+            </PieChart>
+          ) : type === "line" ? (
             <LineChart data={data} margin={chartMargin}>
               <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
               <XAxis {...xAxisProps} />
               <YAxis axisLine={false} tickLine={false} tickFormatter={formatShort} tick={{ fill: "#64748b", fontSize: 12 }} />
-              <Tooltip />
+              <Tooltip formatter={(value) => formatValue(value)} />
               <Line type="monotone" dataKey={dataKey} stroke="#0f766e" strokeWidth={3} dot={{ r: 4 }} />
               {secondaryKey ? <Line type="monotone" dataKey={secondaryKey} stroke="#2563eb" strokeWidth={3} dot={{ r: 4 }} /> : null}
               {tertiaryKey ? <Line type="monotone" dataKey={tertiaryKey} stroke="#b45309" strokeWidth={3} dot={{ r: 4 }} /> : null}
@@ -119,9 +136,9 @@ function Charts({ data = [], type = "bar", dataKey = "revenue", secondaryKey, te
               <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
               <XAxis {...xAxisProps} />
               <YAxis axisLine={false} tickLine={false} tickFormatter={formatShort} tick={{ fill: "#64748b", fontSize: 12 }} />
-              <Tooltip formatter={(value) => formatCurrency(value)} />
+              <Tooltip formatter={(value) => formatValue(value)} />
               <Bar dataKey={dataKey} fill="#0f766e" radius={[8, 8, 0, 0]}>
-                <LabelList dataKey={dataKey} position="top" formatter={formatCurrency} fill="#334155" fontSize={11} fontWeight={700} />
+                <LabelList dataKey={dataKey} position="top" formatter={formatValue} fill="#334155" fontSize={11} fontWeight={700} />
               </Bar>
               {secondaryKey ? <Bar dataKey={secondaryKey} fill="#2563eb" radius={[8, 8, 0, 0]} /> : null}
               {tertiaryKey ? <Bar dataKey={tertiaryKey} fill="#b45309" radius={[8, 8, 0, 0]} /> : null}
@@ -134,4 +151,3 @@ function Charts({ data = [], type = "bar", dataKey = "revenue", secondaryKey, te
 }
 
 export default Charts;
-
