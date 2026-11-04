@@ -1,3 +1,5 @@
+import { billValue, loadPatientBills } from "../../utils/patientBills";
+import { getBillingType } from "../../utils/billingRevenue";
 import React, {
   useCallback,
   useEffect,
@@ -7,6 +9,7 @@ import React, {
 import {
   Calendar,
   ClipboardList,
+  Receipt,
   FileText,
   Activity,
   Droplet,
@@ -445,12 +448,18 @@ function PatientDetails() {
           return rows.map(row => ({ ...row, visitDate: visit.date }));
         })).then(rows => rows.flat()),
       ]);
+      const billing = await loadPatientBills({ patient, history, request: async path => {
+        const response = await fetch(apiUrl(path), { headers: getApiHeaders(), cache: "no-store" });
+        if (!response.ok) throw new Error("Unable to load bills.");
+        return response.json();
+      } });
       setPatientData({
         patient, history,
+        bills: billing.bills,
         prescriptions: results[0].status === "fulfilled" ? results[0].value : [],
         medicalHistory: results[1].status === "fulfilled" ? results[1].value : [],
         reports: results.slice(2).flatMap(result => result.status === "fulfilled" ? result.value : []),
-        panelErrors: { prescriptions: results[0].status === "rejected", medical: results[1].status === "rejected", reports: results.slice(2).some(result => result.status === "rejected") },
+        panelErrors: { bills: billing.incomplete, prescriptions: results[0].status === "rejected", medical: results[1].status === "rejected", reports: results.slice(2).some(result => result.status === "rejected") },
       });
 
     } catch (error) {
@@ -716,7 +725,7 @@ function PatientDetails() {
 
             </button>
 
-            {[['reports', 'Reports', FileText], ['medical', 'Medical History', Activity]].map(([key, label, Icon]) => (
+            {[['reports', 'Reports', FileText], ['medical', 'Medical History', Activity], ['bills', 'Bills', Receipt]].map(([key, label, Icon]) => (
               <button type="button" key={key} className={`patient-tab ${activeTab === key ? 'patient-tab-active' : ''}`} onClick={() => setActiveTab(key)}><Icon size={20} />{label}</button>
             ))}
 
@@ -739,6 +748,24 @@ function PatientDetails() {
               {report.reportUrl || report.documentUrl || report.fileUrl || report.filePath ? <ReportDownload report={report} /> : null}
             </article>)}
             {!patientData.reports?.length && !patientData.panelErrors?.reports ? <div className="patient-empty-state">No reports found.</div> : null}
+          </div> : null}
+          {activeTab === "bills" ? <div className="patient-prescription-list">
+            <p className="patient-prescription-note">OP, lab and pharmacy bills ? {(patientData.bills || []).length} invoices</p>
+            {(patientData.bills || []).map((bill, index) => {
+              const type = getBillingType({ ...bill, billingType: billValue(bill, 'billingType', 'BillingType', 'invoiceType', 'InvoiceType') || bill.__billType });
+              const label = type === 'pharmacy' ? 'Pharmacy' : type === 'diagnostic' ? 'Lab' : 'OP';
+              const invoice = billValue(bill, 'invoiceNo', 'InvoiceNo', 'invoiceNumber', 'InvoiceNumber', 'billNumber', 'BillNumber', 'billingId', 'BillingId', 'billId', 'BillId', 'id', 'Id');
+              const amount = billValue(bill, 'totalAmount', 'TotalAmount', 'grandTotal', 'GrandTotal', 'netAmount', 'NetAmount', 'amount', 'Amount');
+              return <article className="patient-prescription-card" key={index}>
+                <div className="patient-prescription-top"><b>{label} ? {invoice || 'Invoice'}</b><span>{billValue(bill, 'paymentStatus', 'PaymentStatus', 'status', 'Status') || 'Unknown'}</span></div>
+                <dl className="patient-clinical-fields">
+                  <div><dt>Bill date</dt><dd>{getDisplayDate(billValue(bill, 'createdAt', 'CreatedAt', 'billDate', 'BillDate', 'invoiceDate', 'InvoiceDate'))}</dd></div>
+                  <div><dt>Total amount</dt><dd>{amount !== '' && Number.isFinite(Number(amount)) ? Number(amount).toLocaleString('en-IN', {style:'currency',currency:'INR'}) : 'Not available'}</dd></div>
+                  <div><dt>Payment mode</dt><dd>{billValue(bill, 'paymentMethod', 'PaymentMethod', 'paymentMode', 'PaymentMode') || 'Not recorded'}</dd></div>
+                </dl>
+              </article>;
+            })}
+            {!patientData.bills?.length && !patientData.panelErrors?.bills ? <div className="patient-empty-state">No bills found for this patient.</div> : null}
           </div> : null}
           {/* VISITS */}
 

@@ -587,9 +587,10 @@ export default function PharmacyBilling() {
       .total strong{font-size:20px;white-space:nowrap}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
     </style></head><body>
       <header>${branding.logoUrl ? `<img src="${escapeHtml(branding.logoUrl)}" alt="Clinic logo">` : ""}<div><h1>${escapeHtml(branding.headerTitle)}</h1><p class="subtitle">Pharmacy Invoice</p>${clinicAddress ? `<p class="clinic-address">${escapeHtml(clinicAddress)}</p>` : ""}</div></header>
-      <div class="meta"><p><span class="label">Invoice number</span><strong>${escapeHtml(invoiceOf(bill))}</strong></p><p><span class="label">Patient</span><strong>${escapeHtml(field(bill, "patientName") || field(appointment, "patientName"))}</strong></p><p><span class="label">Payment status</span>${escapeHtml(statusOf(bill))}</p><p><span class="label">Payment mode</span>${escapeHtml(field(bill, "paymentMethod", "paymentMode"))}</p></div>
+      <div class="meta"><p><span class="label">Invoice number</span><strong>${escapeHtml(invoiceOf(bill))}</strong></p><p><span class="label">Patient</span><strong>${escapeHtml(field(bill, "patientName") || field(appointment, "patientName"))}</strong></p><p><span class="label">Payment mode</span>${escapeHtml(field(bill, "paymentMethod", "paymentMode"))}</p></div>
       <table><thead><tr><th>No.</th><th>Medicine</th><th>Quantity</th><th>Unit price</th><th>Amount</th></tr></thead><tbody>${lines.map((row, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(lineName(row))}</td><td>${escapeHtml(field(row, "quantity", "dispensedQuantity", "prescribedQuantity"))}</td><td>${escapeHtml(money(field(row, "unitPrice", "sellingPrice", "price")))}</td><td>${escapeHtml(money(field(row, "totalAmount", "amount", "lineTotal")))}</td></tr>`).join("")}</tbody></table>
       <div class="total"><span>Total amount</span><strong>${escapeHtml(money(amountOf(bill)))}</strong></div>
+      <p style="margin-top:20px;break-inside:avoid"><strong>Payment status: ${escapeHtml(statusOf(bill))}</strong></p>
     </body></html>`;
     document.body.appendChild(frame);
   });

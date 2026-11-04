@@ -525,14 +525,14 @@ function Admins() {
     {
       key: "serial",
       label: "S.No.",
-      width: "50px",
+      width: "44px",
       align: "center",
       render: (_admin, index) => index + 1,
     },
     {
       key: "name",
       label: "Name",
-      width: "minmax(230px, 1.1fr)",
+      width: "minmax(0, 1fr)",
       render: (admin) => (
         <span className="sa-admin-name-cell">
           <span className={`sa-admin-avatar sa-admin-avatar--${getInitials(admin.name || admin.email).charCodeAt(0) % 4}`}>
@@ -547,7 +547,7 @@ function Admins() {
     {
       key: "email",
       label: "Email",
-      width: "minmax(220px, 1.25fr)",
+      width: "minmax(0, 1.35fr)",
       render: (admin) => (
         <span title={admin.email || ""} className="sa-table-text-overflow sa-admin-email">
           {admin.email || "-"}
@@ -557,7 +557,7 @@ function Admins() {
     {
       key: "assignedClinic",
       label: "Assigned Clinic",
-      width: "minmax(160px, 0.95fr)",
+      width: "minmax(0, 0.9fr)",
       render: (admin) => {
         const clinicId = getAdminClinicId(admin, clinics);
         const clinicName = getAdminClinicName(admin, clinics);
@@ -574,7 +574,7 @@ function Admins() {
     {
       key: "phone",
       label: "Mobile Number",
-      width: "minmax(105px, 0.85fr)",
+      width: "128px",
       render: (admin) => (
         <span className="sa-admin-icon-text sa-admin-icon-text--phone">
           <Phone size={15} />
@@ -585,7 +585,7 @@ function Admins() {
     {
       key: "status",
       label: "Status",
-      width: "76px",
+      width: "88px",
       align: "center",
       render: (admin) => (
         <span className={`sa-badge ${admin.status === "Active" ? "is-active" : "is-danger"}`}>
@@ -596,7 +596,7 @@ function Admins() {
     {
       key: "actions",
       label: "Actions",
-      width: "120px",
+      width: "104px",
       align: "center",
       cellClassName: "sa-table-cell--actions",
       render: (admin) => {

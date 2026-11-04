@@ -8,10 +8,10 @@ function DashboardCards({ cards = [] }) {
 
   return (
     <div className="sa-card-grid">
-      {cards.map(({ label, value, icon: Icon, tone, onClick }) => (
+      {cards.map(({ label, value, icon: Icon, tone, onClick, className = "" }) => (
         <button
           type="button"
-          className={`sa-stat-card sa-stat-card--${tone || "teal"}`}
+          className={`sa-stat-card sa-stat-card--${tone || "teal"}${className ? ` ${className}` : ""}`}
           key={label}
           onClick={onClick}
           disabled={!onClick}

@@ -2515,7 +2515,6 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
       <div><b>Bill Date</b><span>${escapeHtml(billDate)}</span></div>
       <div><b>Appointment</b><span>${escapeHtml(paymentDetails.appointmentId)}</span></div>
       <div><b>Payment Mode</b><span>${escapeHtml(paymentDetails.paymentMode)}</span></div>
-      <div class="status"><b>Status</b><span>PAID</span></div>
     </div>
   </div>
   <div class="title">CONSULTATION FEE INVOICE (UPI)</div>
@@ -2561,6 +2560,7 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
       <div class="total-row total"><span>Total Amount Payable</span><span class="num">&#8377; ${escapeHtml(amount.toFixed(2))}</span></div>
     </div>
   </div>
+  <div class="status" style="margin:16px 0;break-inside:avoid"><b>Status</b><span>PAID</span></div>
   <div class="bottom">
     <div class="notes">
       <p>• Consultation charges only. Additional tests or medicines, if any, are billed separately.</p>

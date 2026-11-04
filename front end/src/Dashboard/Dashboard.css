@@ -1300,3 +1300,57 @@ html[data-cms-theme] body .content .db-admin-overview .admin-detail-section { bo
 html[data-cms-theme] body .content .db-admin-overview :is(.admin-section-heading,.admin-section-footer strong,.admin-chart-summary strong,.admin-refresh) { color: var(--theme-primary-dark) !important; }
 html[data-cms-theme] .db-admin-overview .recharts-area-curve { stroke: var(--theme-primary) !important; }
 html[data-cms-theme] .db-admin-overview .recharts-area-area { fill: var(--theme-primary-soft) !important; }
+
+/* Revenue gets extra room for the full six-digit amount, without abbreviations. */
+html body .content .db-admin-overview .sa-card-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(170px, 1.45fr);
+}
+html body .content .db-admin-overview .sa-card-grid .admin-revenue-card {
+  container-type: inline-size;
+  gap: 6px;
+}
+html body .content .db-admin-overview .admin-revenue-card .sa-stat-icon {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+}
+html body .content .db-admin-overview .admin-revenue-card .sa-stat-copy {
+  flex: 1;
+  min-width: 0;
+}
+html body .content .db-admin-overview .admin-revenue-card h2 {
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  word-break: normal;
+  font-size: clamp(12px, 11cqi, 22px) !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+@media (max-width: 1200px) {
+  html body .content .db-dashboard.db-admin-overview {
+    grid-template-rows: auto 176px minmax(0, 1fr);
+  }
+  html body .content .db-admin-overview .sa-card-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    height: 100%;
+  }
+}
+@media (max-width: 700px) {
+  html body .content .db-dashboard.db-admin-overview {
+    grid-template-rows: auto 230px minmax(0, 1fr);
+  }
+  html body .content .db-admin-overview .sa-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  html body .content .db-dashboard.db-admin-overview {
+    grid-template-rows: auto 310px minmax(0, 1fr);
+  }
+  html body .content .db-admin-overview .sa-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+  }
+}
