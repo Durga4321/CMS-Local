@@ -1,3 +1,5 @@
+import DashboardCards from "../../components/superadmin/DashboardCards";
+import { DashboardGreeting, useDashboardLayout, DashboardPager } from "../../components/superadmin/DashboardCards";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -217,6 +219,7 @@ function ReceptionDashboard({
   getScope = getReceptionistScope,
   scopeRecords = scopeReceptionistRecords,
 }) {
+  const layout = useDashboardLayout();
   const navigate = useNavigate();
   const receptionistScope = useMemo(() => getScope(), [getScope]);
   const [appointments, setAppointments] = useState([]);
@@ -279,7 +282,7 @@ function ReceptionDashboard({
   const latest = appointments;
 
   return (
-    <section className="rc-page rc-dashboard-page">
+    <section className="rc-page rc-dashboard-page role-single-screen" ref={layout.ref}>
       {/* 3D Hospital Theme Animated Background Overlays */}
       <div className="db-3d-bg-overlay" />
       <div className="db-3d-floating-particle p1" />
@@ -290,7 +293,7 @@ function ReceptionDashboard({
           <path
             d="M0 60 L300 60 L310 40 L320 80 L330 20 L345 100 L355 60 L370 60 L400 60 L700 60 L710 35 L720 85 L730 15 L745 105 L755 60 L770 60 L1200 60"
             fill="none"
-            stroke="rgba(99, 102, 241, 0.25)"
+            stroke="color-mix(in srgb, var(--theme-primary) 25%, transparent)"
             strokeWidth="2.5"
             strokeDasharray="1200"
             strokeDashoffset="1200"
@@ -301,14 +304,7 @@ function ReceptionDashboard({
 
       {/* PAGE HEADER */}
       <div className="rc-dash-header">
-        <div>
-          <h1 className="rc-dash-title">
-            {title} <span className="rc-wave-hand">👋</span>
-          </h1>
-          <p className="rc-dash-subtitle">
-            View today's schedule, waiting queue, and front desk actions.
-          </p>
-        </div>
+        <DashboardGreeting role="Receptionist" />
         {!hideActions && (
           <div className="rc-dash-head-actions">
             <button
@@ -334,76 +330,11 @@ function ReceptionDashboard({
       </div>
 
       {/* TOP 3 RADIANT KPI STAT CARDS */}
-      <div className="rc-dash-kpi-grid">
-        {/* 1. TODAY'S APPOINTMENTS */}
-        <div
-          className="rc-dash-kpi-card card-blue-theme"
-          onClick={() => navigate("/reception/appointments")}
-          role="button"
-          tabIndex={0}
-          title="View today's appointments"
-        >
-          <div className="db-kpi-content-wrap">
-            <div className="db-kpi-header">
-              <div className="db-kpi-icon-box box-blue">
-                <CalendarCheck size={18} />
-              </div>
-              <span className="db-kpi-title">Today's Appointments</span>
-              <span className="rc-stat-period-pill">Today</span>
-            </div>
-            <div className="db-kpi-num">{stats.today}</div>
-            <div className="db-kpi-trend trend-neutral">
-              <span>● Scheduled Today</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 2. WAITING PATIENTS */}
-        <div
-          className="rc-dash-kpi-card card-orange-theme"
-          onClick={() => navigate("/reception/appointments")}
-          role="button"
-          tabIndex={0}
-          title="View waiting patients"
-        >
-          <div className="db-kpi-content-wrap">
-            <div className="db-kpi-header">
-              <div className="db-kpi-icon-box box-orange">
-                <Clock size={18} />
-              </div>
-              <span className="db-kpi-title">Waiting Patients</span>
-              <span className="rc-stat-period-pill">Today</span>
-            </div>
-            <div className="db-kpi-num">{stats.waiting}</div>
-            <div className="db-kpi-trend trend-down">
-              <span>● In Waiting Room</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 3. COMPLETED APPOINTMENTS */}
-        <div
-          className="rc-dash-kpi-card card-green-theme"
-          onClick={() => navigate("/reception/appointments")}
-          role="button"
-          tabIndex={0}
-          title="View completed appointments"
-        >
-          <div className="db-kpi-content-wrap">
-            <div className="db-kpi-header">
-              <div className="db-kpi-icon-box box-green">
-                <CheckCircle size={18} />
-              </div>
-              <span className="db-kpi-title">Completed Appointments</span>
-              <span className="rc-stat-period-pill">Today</span>
-            </div>
-            <div className="db-kpi-num">{stats.completed}</div>
-            <div className="db-kpi-trend trend-up">
-              <span>✓ Consulted Today</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="reception-overview-metrics"><DashboardCards cards={[
+        { label: "Today's Appointments", value: stats.today, icon: CalendarCheck },
+        { label: "Waiting Patients", value: stats.waiting, icon: Clock },
+        { label: "Completed Appointments", value: stats.completed, icon: CheckCircle },
+      ].map(card => ({ ...card, tone: "teal", onClick: () => navigate("/reception/appointments") }))} /></div>
 
       {/* QUICK BILLING ACTIONS */}
       {!hideCards && (
@@ -477,6 +408,7 @@ function ReceptionDashboard({
       )}
 
       {/* APPOINTMENT LIST TABLE CARD */}
+      <DashboardPager layout={layout} total={latest.length} />
       <div className="rc-dash-table-card">
         <div className="rc-dash-table-head">
           <div className="rc-dash-table-head-left">
@@ -527,7 +459,7 @@ function ReceptionDashboard({
 
           <div className="rc-dash-table-body">
             {latest.length ? (
-              latest.map((item, index) => {
+              layout.rows(latest).map((item, index) => {
                 const patientName = getAppointmentPatientName(item);
                 const doctorName = getAppointmentDoctorName(item);
                 const timeStr = getAppointmentTime(item);

@@ -1279,11 +1279,11 @@ function ReceptionAppointments({ hideActions = false, apiRequest = requestJson, 
         <svg viewBox="0 0 1400 100" preserveAspectRatio="none" className="appointments-ecg-svg">
           <defs>
             <linearGradient id="apptEcgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.2" />
-              <stop offset="30%" stopColor="#0284c7" stopOpacity="0.75" />
-              <stop offset="50%" stopColor="#10b981" stopOpacity="0.95" />
-              <stop offset="70%" stopColor="#0284c7" stopOpacity="0.75" />
-              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.2" />
+              <stop offset="0%" stopColor="var(--theme-primary)" stopOpacity="0.2" />
+              <stop offset="30%" stopColor="var(--theme-primary)" stopOpacity="0.75" />
+              <stop offset="50%" stopColor="var(--theme-primary)" stopOpacity="0.95" />
+              <stop offset="70%" stopColor="var(--theme-primary)" stopOpacity="0.75" />
+              <stop offset="100%" stopColor="var(--theme-primary)" stopOpacity="0.2" />
             </linearGradient>
             <filter id="apptEcgGlow" x="-20%" y="-20%" width="140%" height="140%">
               <feGaussianBlur stdDeviation="2.5" result="blur" />

@@ -26,18 +26,18 @@ const formatDate = (value) => {
 };
 
 const CUSTOM_CATEGORY_PALETTE = [
-  { key: "teal", main: "#0d9488", color: "#0f766e", bg: "#f0fdfa", border: "#99f6e4", hoverBg: "#ccfbf1", badgeBg: "#ccfbf1", tagClass: "tone-emerald" },
-  { key: "purple", main: "#7c3aed", color: "#6d28d9", bg: "#faf5ff", border: "#e9d5ff", hoverBg: "#f3e8ff", badgeBg: "#f3e8ff", tagClass: "tone-purple" },
-  { key: "sky", main: "#0284c7", color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd", hoverBg: "#e0f2fe", badgeBg: "#e0f2fe", tagClass: "tone-cyan" },
+  { key: "teal", main: "var(--theme-primary-dark)", color: "var(--theme-primary-dark)", bg: "var(--theme-primary-soft)", border: "var(--theme-primary-glow)", hoverBg: "var(--theme-primary-soft)", badgeBg: "var(--theme-primary-soft)", tagClass: "tone-emerald" },
+  { key: "purple", main: "var(--theme-primary)", color: "var(--theme-primary)", bg: "var(--theme-primary-soft)", border: "var(--theme-primary-soft)", hoverBg: "var(--theme-primary-soft)", badgeBg: "var(--theme-primary-soft)", tagClass: "tone-purple" },
+  { key: "sky", main: "var(--theme-primary)", color: "var(--theme-primary-dark)", bg: "var(--theme-primary-soft)", border: "var(--theme-primary-soft)", hoverBg: "var(--theme-primary-soft)", badgeBg: "var(--theme-primary-soft)", tagClass: "tone-cyan" },
   { key: "rose", main: "#e11d48", color: "#be123c", bg: "#fff1f2", border: "#fecdd3", hoverBg: "#ffe4e6", badgeBg: "#ffe4e6", tagClass: "tone-rose" },
   { key: "amber", main: "#d97706", color: "#b45309", bg: "#fffbeb", border: "#fde68a", hoverBg: "#fef3c7", badgeBg: "#fef3c7", tagClass: "tone-amber" },
-  { key: "emerald", main: "#059669", color: "#047857", bg: "#ecfdf5", border: "#a7f3d0", hoverBg: "#d1fae5", badgeBg: "#d1fae5", tagClass: "tone-emerald" },
-  { key: "indigo", main: "#4f46e5", color: "#3730a3", bg: "#eef2ff", border: "#c7d2fe", hoverBg: "#e0e7ff", badgeBg: "#e0e7ff", tagClass: "tone-indigo" },
+  { key: "emerald", main: "var(--theme-primary-dark)", color: "var(--theme-primary-dark)", bg: "#ecfdf5", border: "#a7f3d0", hoverBg: "#d1fae5", badgeBg: "#d1fae5", tagClass: "tone-emerald" },
+  { key: "indigo", main: "var(--theme-primary)", color: "var(--theme-primary)", bg: "var(--theme-primary-soft)", border: "var(--theme-primary-soft)", hoverBg: "var(--theme-primary-soft)", badgeBg: "var(--theme-primary-soft)", tagClass: "tone-indigo" },
   { key: "orange", main: "#ea580c", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa", hoverBg: "#ffedd5", badgeBg: "#ffedd5", tagClass: "tone-amber" },
-  { key: "cyan", main: "#0891b2", color: "#0e7490", bg: "#ecfeff", border: "#a5f3fc", hoverBg: "#cffafe", badgeBg: "#cffafe", tagClass: "tone-cyan" },
-  { key: "fuchsia", main: "#c026d3", color: "#a21caf", bg: "#fdf4ff", border: "#f5d0fe", hoverBg: "#fae8ff", badgeBg: "#fae8ff", tagClass: "tone-purple" },
+  { key: "cyan", main: "var(--theme-primary-dark)", color: "var(--theme-primary-dark)", bg: "var(--theme-primary-soft)", border: "var(--theme-primary-glow)", hoverBg: "var(--theme-primary-soft)", badgeBg: "var(--theme-primary-soft)", tagClass: "tone-cyan" },
+  { key: "fuchsia", main: "var(--theme-primary)", color: "var(--theme-primary)", bg: "var(--theme-primary-soft)", border: "var(--theme-primary-soft)", hoverBg: "var(--theme-primary-soft)", badgeBg: "var(--theme-primary-soft)", tagClass: "tone-purple" },
   { key: "lime", main: "#65a30d", color: "#4d7c0f", bg: "#f7fee7", border: "#d9f99d", hoverBg: "#ecfccb", badgeBg: "#ecfccb", tagClass: "tone-emerald" },
-  { key: "blue", main: "#2563eb", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", hoverBg: "#dbeafe", badgeBg: "#dbeafe", tagClass: "tone-cyan" },
+  { key: "blue", main: "var(--theme-primary)", color: "var(--theme-primary)", bg: "var(--theme-primary-soft)", border: "var(--theme-primary-soft)", hoverBg: "var(--theme-primary-soft)", badgeBg: "var(--theme-primary-soft)", tagClass: "tone-cyan" },
 ];
 
 export const getCategoryTheme = (category = "", fallbackTestName = "") => {
@@ -64,13 +64,13 @@ export const getCategoryTheme = (category = "", fallbackTestName = "") => {
     return {
       key: "cardiology",
       label: "Cardiology Diagnostics",
-      main: "#7c3aed",
-      leftBorder: "#7c3aed",
-      color: "#6d28d9",
-      bg: "#faf5ff",
-      border: "#e9d5ff",
-      hoverBg: "#f3e8ff",
-      badgeBg: "#f3e8ff",
+      main: "var(--theme-primary)",
+      leftBorder: "var(--theme-primary)",
+      color: "var(--theme-primary)",
+      bg: "var(--theme-primary-soft)",
+      border: "var(--theme-primary-soft)",
+      hoverBg: "var(--theme-primary-soft)",
+      badgeBg: "var(--theme-primary-soft)",
       tagClass: "tone-purple",
     };
   }
@@ -78,13 +78,13 @@ export const getCategoryTheme = (category = "", fallbackTestName = "") => {
     return {
       key: "biochemistry",
       label: "Biochemistry",
-      main: "#0d9488",
-      leftBorder: "#0d9488",
-      color: "#0f766e",
-      bg: "#f0fdfa",
-      border: "#99f6e4",
-      hoverBg: "#ccfbf1",
-      badgeBg: "#ccfbf1",
+      main: "var(--theme-primary-dark)",
+      leftBorder: "var(--theme-primary-dark)",
+      color: "var(--theme-primary-dark)",
+      bg: "var(--theme-primary-soft)",
+      border: "var(--theme-primary-glow)",
+      hoverBg: "var(--theme-primary-soft)",
+      badgeBg: "var(--theme-primary-soft)",
       tagClass: "tone-emerald",
     };
   }
@@ -106,13 +106,13 @@ export const getCategoryTheme = (category = "", fallbackTestName = "") => {
     return {
       key: "radiology",
       label: "Radiology",
-      main: "#0284c7",
-      leftBorder: "#0284c7",
-      color: "#0369a1",
-      bg: "#f0f9ff",
-      border: "#bae6fd",
-      hoverBg: "#e0f2fe",
-      badgeBg: "#e0f2fe",
+      main: "var(--theme-primary)",
+      leftBorder: "var(--theme-primary)",
+      color: "var(--theme-primary-dark)",
+      bg: "var(--theme-primary-soft)",
+      border: "var(--theme-primary-soft)",
+      hoverBg: "var(--theme-primary-soft)",
+      badgeBg: "var(--theme-primary-soft)",
       tagClass: "tone-cyan",
     };
   }
@@ -134,13 +134,13 @@ export const getCategoryTheme = (category = "", fallbackTestName = "") => {
     return {
       key: "pathology",
       label: "Pathology",
-      main: "#4f46e5",
-      leftBorder: "#4f46e5",
-      color: "#3730a3",
-      bg: "#eef2ff",
-      border: "#c7d2fe",
-      hoverBg: "#e0e7ff",
-      badgeBg: "#e0e7ff",
+      main: "var(--theme-primary)",
+      leftBorder: "var(--theme-primary)",
+      color: "var(--theme-primary)",
+      bg: "var(--theme-primary-soft)",
+      border: "var(--theme-primary-soft)",
+      hoverBg: "var(--theme-primary-soft)",
+      badgeBg: "var(--theme-primary-soft)",
       tagClass: "tone-indigo",
     };
   }
@@ -148,9 +148,9 @@ export const getCategoryTheme = (category = "", fallbackTestName = "") => {
     return {
       key: "microbiology",
       label: "Microbiology",
-      main: "#059669",
-      leftBorder: "#059669",
-      color: "#047857",
+      main: "var(--theme-primary-dark)",
+      leftBorder: "var(--theme-primary-dark)",
+      color: "var(--theme-primary-dark)",
       bg: "#ecfdf5",
       border: "#a7f3d0",
       hoverBg: "#d1fae5",
@@ -176,13 +176,13 @@ export const getCategoryTheme = (category = "", fallbackTestName = "") => {
     return {
       key: "immunology",
       label: "Immunology",
-      main: "#c026d3",
-      leftBorder: "#c026d3",
-      color: "#a21caf",
-      bg: "#fdf4ff",
-      border: "#f5d0fe",
-      hoverBg: "#fae8ff",
-      badgeBg: "#fae8ff",
+      main: "var(--theme-primary)",
+      leftBorder: "var(--theme-primary)",
+      color: "var(--theme-primary)",
+      bg: "var(--theme-primary-soft)",
+      border: "var(--theme-primary-soft)",
+      hoverBg: "var(--theme-primary-soft)",
+      badgeBg: "var(--theme-primary-soft)",
       tagClass: "tone-purple",
     };
   }
@@ -190,13 +190,13 @@ export const getCategoryTheme = (category = "", fallbackTestName = "") => {
     return {
       key: "neurology",
       label: "Neurology",
-      main: "#2563eb",
-      leftBorder: "#2563eb",
-      color: "#1d4ed8",
-      bg: "#eff6ff",
-      border: "#bfdbfe",
-      hoverBg: "#dbeafe",
-      badgeBg: "#dbeafe",
+      main: "var(--theme-primary)",
+      leftBorder: "var(--theme-primary)",
+      color: "var(--theme-primary)",
+      bg: "var(--theme-primary-soft)",
+      border: "var(--theme-primary-soft)",
+      hoverBg: "var(--theme-primary-soft)",
+      badgeBg: "var(--theme-primary-soft)",
       tagClass: "tone-cyan",
     };
   }
@@ -204,13 +204,13 @@ export const getCategoryTheme = (category = "", fallbackTestName = "") => {
     return {
       key: "urology",
       label: "Urology",
-      main: "#0891b2",
-      leftBorder: "#0891b2",
-      color: "#0e7490",
-      bg: "#ecfeff",
-      border: "#a5f3fc",
-      hoverBg: "#cffafe",
-      badgeBg: "#cffafe",
+      main: "var(--theme-primary-dark)",
+      leftBorder: "var(--theme-primary-dark)",
+      color: "var(--theme-primary-dark)",
+      bg: "var(--theme-primary-soft)",
+      border: "var(--theme-primary-glow)",
+      hoverBg: "var(--theme-primary-soft)",
+      badgeBg: "var(--theme-primary-soft)",
       tagClass: "tone-cyan",
     };
   }
@@ -992,7 +992,7 @@ function LabDataPage({ type }) {
                             boxShadow: `0 0 0 2px ${catTheme.border}`,
                           }}
                         />
-                        <strong className="lab-test-title-text" style={{ color: "#0f172a" }}>
+                        <strong className="lab-test-title-text" style={{ color: "var(--theme-primary-dark)" }}>
                           {displayValue}
                         </strong>
                       </div>

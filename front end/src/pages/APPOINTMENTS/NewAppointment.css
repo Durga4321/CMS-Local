@@ -4,10 +4,10 @@
 
 .new-appointment-back-btn {
   height: 38px;
-  border: 1.5px solid #5eead4;
+  border: 1.5px solid var(--theme-primary);
   border-radius: 999px;
-  background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
-  color: #0f766e;
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  color: var(--theme-primary-dark);
   padding: 0 16px;
   font-size: 13.5px;
   font-weight: 700;
@@ -15,21 +15,21 @@
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(13, 148, 136, 0.12);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-primary-dark) 12%, transparent);
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .new-appointment-back-btn:hover {
-  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
-  border-color: #0d9488;
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary-dark);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.28);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary-dark) 28%, transparent);
   transform: translateX(-2px);
 }
 
 .new-appointment-title {
   margin: 14px 0 0;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 32px;
 }
 
@@ -117,15 +117,15 @@
 }
 
 .new-appointment-save-btn {
-  border: 1px solid #059669;
+  border: 1px solid var(--theme-primary-dark);
   color: #ffffff;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.28);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--theme-primary) 28%, transparent);
 }
 
 .new-appointment-save-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  border-color: #047857;
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary-dark);
   transform: translateY(-1.5px);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-primary) 40%, transparent);
 }

@@ -155,7 +155,7 @@
     min-width: min(280px, 86vw);
     z-index: 300;
     transform: translateX(0);
-    box-shadow: 12px 0 30px rgba(15, 23, 42, 0.2);
+    box-shadow: 12px 0 30px color-mix(in srgb, var(--theme-primary-dark) 20%, transparent);
     transition: transform 0.25s ease;
   }
 
@@ -172,7 +172,7 @@
     inset: 0;
     z-index: 250;
     border: 0;
-    background: rgba(15, 23, 42, 0.38);
+    background: color-mix(in srgb, var(--theme-primary-dark) 38%, transparent);
     opacity: 1;
     transition: opacity 0.25s ease;
   }

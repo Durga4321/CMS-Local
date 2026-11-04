@@ -1,7 +1,7 @@
 .add-patient-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.4);
+  background: color-mix(in srgb, var(--theme-primary-dark) 40%, transparent);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -17,14 +17,14 @@
   border: 1px solid #e2e8f0;
   background: #ffffff;
   padding: 24px;
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
+  box-shadow: 0 20px 50px color-mix(in srgb, var(--theme-primary-dark) 15%, transparent);
   max-height: 90vh;
   overflow-y: auto;
 }
 
 .add-patient-modal h2 {
   margin: 0;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 20px;
   font-weight: 800;
 }
@@ -70,7 +70,7 @@
   box-sizing: border-box;
   outline: none;
   font-size: 13px;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   background: #ffffff;
   transition: border-color 0.16s ease, background 0.16s ease;
 }
@@ -83,9 +83,9 @@
 .add-patient-field input:focus,
 .add-patient-field select:focus,
 .add-patient-field textarea:focus {
-  border-color: #0f766e;
-  background: #f0fdfa;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+  border-color: var(--theme-primary-dark);
+  background: var(--theme-primary-soft);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary-dark) 10%, transparent);
 }
 
 .add-patient-field input.is-invalid,
@@ -163,18 +163,18 @@
 }
 
 .add-patient-submit {
-  border: 1px solid #059669;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 1px solid var(--theme-primary-dark);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
   color: #ffffff;
-  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.28);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--theme-primary) 28%, transparent);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .add-patient-submit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  border-color: #047857;
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary-dark);
   transform: translateY(-1.5px);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-primary) 40%, transparent);
 }
 
 .add-patient-submit:disabled {

@@ -62,16 +62,16 @@
 .admin-subscription-page .sa-state { margin: 0; }
 .admin-subscription-page .sa-form-card > .sa-state { margin-bottom: 16px; }
 .admin-subscription-page .sa-subscription-actions .sa-btn-primary {
-  border-color: #367f82;
-  background: linear-gradient(135deg, #4b9da3 0%, #367f82 100%);
+  border-color: var(--theme-primary-dark);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
   color: #ffffff;
-  box-shadow: 0 3px 10px rgba(54, 127, 130, 0.22);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--theme-primary-dark) 22%, transparent);
 }
 .admin-subscription-page .sa-subscription-actions .sa-btn-primary:hover:not(:disabled) {
-  border-color: #2f7073;
-  background: linear-gradient(135deg, #438d92 0%, #2f7073 100%);
+  border-color: var(--theme-primary-dark);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
   color: #ffffff;
-  box-shadow: 0 6px 16px rgba(54, 127, 130, 0.3);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-primary-dark) 30%, transparent);
 }
 @media (max-width: 900px) {
   .admin-subscription-page { padding: 20px 16px; }
@@ -95,7 +95,7 @@
   top: 0;
   z-index: 1;
   background: #f8fafc;
-  color: #367f82;
+  color: var(--theme-primary-dark);
 }
 .admin-subscription-page .sa-subscription-table-section .sa-table-row {
   color: #33464c;

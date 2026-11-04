@@ -18,7 +18,7 @@
   top: 0;
   overflow: hidden;
   transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 2px 0 16px rgba(15, 23, 42, 0.04) !important;
+  box-shadow: 2px 0 16px color-mix(in srgb, var(--theme-primary-dark) 4%, transparent) !important;
   z-index: 100;
   position: relative;
 }
@@ -38,8 +38,8 @@
   padding: 12px 14px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.75) !important;
-  border: 1px solid rgba(203, 226, 248, 0.8) !important;
-  box-shadow: 0 4px 14px rgba(186, 215, 243, 0.2) !important;
+  border: 1px solid color-mix(in srgb, var(--theme-primary-soft) 80%, transparent) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary-glow) 20%, transparent) !important;
   flex-shrink: 0;
   position: relative;
   z-index: 1;
@@ -50,26 +50,26 @@
 .dr-brand:hover {
   transform: translateY(-1px);
   background: #ffffff !important;
-  box-shadow: 0 6px 18px rgba(186, 215, 243, 0.3) !important;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--theme-primary-glow) 30%, transparent) !important;
 }
 
 .dr-brand .dr-clinic-logo {
   background: #ffffff !important;
   border: 1.5px solid #ffffff !important;
-  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.16) !important;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--theme-primary) 16%, transparent) !important;
 }
 
 .dr-brand-icon {
   width: 42px;
   height: 42px;
-  background: linear-gradient(135deg, #0f9d9d 0%, #0d7f7f 100%);
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
   color: #fff;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(15, 157, 157, 0.25);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 25%, transparent);
 }
 
 .dr-clinic-logo {
@@ -78,11 +78,11 @@
   flex: 0 0 44px;
   flex-direction: column;
   gap: 1px;
-  border: 1px solid #e4ecf7;
+  border: 1px solid var(--theme-primary-soft);
   border-radius: 12px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-  color: #10b981;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+  background: linear-gradient(180deg, #ffffff 0%, var(--theme-primary-soft) 100%);
+  color: var(--theme-primary);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent);
 }
 
 .dr-clinic-logo svg {
@@ -98,7 +98,7 @@
 
 .dr-clinic-logo small {
   max-width: 38px;
-  color: #1d65c1;
+  color: var(--theme-primary);
   font-size: 6.5px;
   font-weight: 900;
   line-height: 1;
@@ -108,12 +108,12 @@
 }
 
 .dr-clinic-logo--emerald {
-  color: #10b981;
+  color: var(--theme-primary);
 }
 
 .dr-clinic-logo--dental {
-  color: #1d7ff2;
-  border-color: #dbeafe;
+  color: var(--theme-primary);
+  border-color: var(--theme-primary-soft);
 }
 
 .dr-clinic-logo--dental small {
@@ -124,7 +124,7 @@
   margin: 0;
   font-size: 14px;
   font-weight: 800;
-  color: #071120;
+  color: var(--theme-primary-dark);
   line-height: 1.2;
   letter-spacing: -0.2px;
 }
@@ -132,7 +132,7 @@
 .dr-brand-sub {
   margin: 0 0 2px;
   font-size: 9.5px;
-  color: #0369a1;
+  color: var(--theme-primary-dark);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.6px;
@@ -141,7 +141,7 @@
 .dr-brand-branch {
   margin: 2px 0 0;
   font-size: 11px;
-  color: #0284c7;
+  color: var(--theme-primary);
   font-weight: 700;
   line-height: 1.2;
   white-space: nowrap;
@@ -195,7 +195,7 @@
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   border: none !important;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-primary-dark) 4%, transparent);
 }
 
 .dr-nav-icon {
@@ -207,7 +207,7 @@
   background: rgba(255, 255, 255, 0.65) !important;
   border-color: rgba(255, 255, 255, 0.8) !important;
   transform: translateX(3px);
-  box-shadow: 0 2px 8px rgba(186, 215, 243, 0.35);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-glow) 35%, transparent);
 }
 
 .dr-nav-link:hover .dr-nav-icon-bezel {
@@ -215,9 +215,9 @@
 }
 
 .dr-nav-link.active {
-  background: #4b9da3 !important;
-  border: 1px solid #4b9da3 !important;
-  box-shadow: 0 4px 14px rgba(54, 127, 130, 0.18) !important;
+  background: var(--theme-primary) !important;
+  border: 1px solid var(--theme-primary) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary-dark) 18%, transparent) !important;
   transform: translateX(2px);
 }
 
@@ -239,9 +239,9 @@
   text-transform: uppercase;
   transition: all 0.2s ease;
   flex-shrink: 0;
-  background: #e2f2f1 !important;
-  border: 1px solid #b9d8d6 !important;
-  color: #367f82 !important;
+  background: var(--theme-primary-soft) !important;
+  border: 1px solid var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
 }
 
 .dr-nav-link.active .dr-nav-label {
@@ -274,47 +274,47 @@
 
 /* 1. CYAN (Dashboard) */
 .dr-nav-link--cyan .dr-nav-icon-bezel {
-  background: #e0f2fe !important;
-  color: #0284c7 !important;
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary) !important;
 }
 .dr-nav-link--cyan .dr-nav-label {
-  color: #0369a1 !important;
+  color: var(--theme-primary-dark) !important;
   font-weight: 700;
 }
 .dr-nav-link--cyan .dr-nav-tag {
-  background: #e0f2fe;
-  color: #0284c7;
-  border: 1px solid #bae6fd;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary);
+  border: 1px solid var(--theme-primary-soft);
 }
 
 /* 2. ROYAL BLUE (Consultation) */
 .dr-nav-link--blue .dr-nav-icon-bezel {
-  background: #dbeafe !important;
-  color: #2563eb !important;
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary) !important;
 }
 .dr-nav-link--blue .dr-nav-label {
-  color: #1d4ed8 !important;
+  color: var(--theme-primary) !important;
   font-weight: 700;
 }
 .dr-nav-link--blue .dr-nav-tag {
-  background: #dbeafe;
-  color: #2563eb;
-  border: 1px solid #bfdbfe;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary);
+  border: 1px solid var(--theme-primary-soft);
 }
 
 /* 3. PURPLE (Prescription) */
 .dr-nav-link--purple .dr-nav-icon-bezel {
-  background: #f3e8ff !important;
-  color: #9333ea !important;
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary) !important;
 }
 .dr-nav-link--purple .dr-nav-label {
-  color: #7e22ce !important;
+  color: var(--theme-primary) !important;
   font-weight: 700;
 }
 .dr-nav-link--purple .dr-nav-tag {
-  background: #f3e8ff;
-  color: #9333ea;
-  border: 1px solid #e9d5ff;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary);
+  border: 1px solid var(--theme-primary-soft);
 }
 
 /* 4. AMBER (Appointments) */
@@ -335,15 +335,15 @@
 /* 5. EMERALD (My Schedule) */
 .dr-nav-link--emerald .dr-nav-icon-bezel {
   background: #d1fae5 !important;
-  color: #059669 !important;
+  color: var(--theme-primary-dark) !important;
 }
 .dr-nav-link--emerald .dr-nav-label {
-  color: #047857 !important;
+  color: var(--theme-primary-dark) !important;
   font-weight: 700;
 }
 .dr-nav-link--emerald .dr-nav-tag {
   background: #d1fae5;
-  color: #059669;
+  color: var(--theme-primary-dark);
   border: 1px solid #a7f3d0;
 }
 
@@ -372,9 +372,9 @@
   margin: 12px;
   padding: 12px 14px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
-  border: 1.5px solid #bae6fd;
-  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.07);
+  background: linear-gradient(135deg, #ffffff 0%, var(--theme-primary-soft) 100%);
+  border: 1.5px solid var(--theme-primary-soft);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--theme-primary) 7%, transparent);
   flex-shrink: 0;
   position: relative;
   z-index: 1;
@@ -383,15 +383,15 @@
 
 .dr-sidebar-profile:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.12);
-  border-color: #7dd3fc;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-primary) 12%, transparent);
+  border-color: var(--theme-primary-glow);
 }
 
 .dr-sidebar-avatar {
   width: 40px;
   height: 40px;
   margin-top: 2px;
-  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
   color: #ffffff;
   border-radius: 12px;
   font-size: 14px;
@@ -400,7 +400,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 30%, transparent);
 }
 
 .dr-sidebar-profile-info {
@@ -415,7 +415,7 @@
   margin: 0;
   font-size: 13px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -434,7 +434,7 @@
 .dr-sidebar-profile-branch {
   margin: 0;
   font-size: 10px;
-  color: #0f766e;
+  color: var(--theme-primary-dark);
   font-weight: 800;
   white-space: nowrap;
   overflow: hidden;
@@ -483,7 +483,7 @@
 .dr-sidebar-bottom {
   padding: 10px 12px 14px;
   margin-top: auto;
-  border-top: 1px solid rgba(203, 226, 248, 0.8);
+  border-top: 1px solid color-mix(in srgb, var(--theme-primary-soft) 80%, transparent);
 }
 
 .dr-collapse-btn {
@@ -494,7 +494,7 @@
   padding: 10px 14px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(203, 226, 248, 0.7);
+  border: 1px solid color-mix(in srgb, var(--theme-primary-soft) 70%, transparent);
   color: #475569;
   font-size: 12.5px;
   font-weight: 700;
@@ -504,9 +504,9 @@
 
 .dr-collapse-btn:hover {
   background: #ffffff;
-  border-color: #bfdbfe;
-  color: #0f172a;
-  box-shadow: 0 2px 8px rgba(186, 215, 243, 0.4);
+  border-color: var(--theme-primary-soft);
+  color: var(--theme-primary-dark);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-glow) 40%, transparent);
 }
 
 .dr-nav-link .dr-nav-icon-bezel {
@@ -525,7 +525,7 @@
   background: transparent !important;
   border: none !important;
   border-radius: 0 !important;
-  color: #367f82 !important;
+  color: var(--theme-primary-dark) !important;
 }
 
 .dr-nav-link.active .dr-nav-tag {

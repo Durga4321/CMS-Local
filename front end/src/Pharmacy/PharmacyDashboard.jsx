@@ -1,3 +1,4 @@
+import { DashboardGreeting, useDashboardLayout } from "../components/superadmin/DashboardCards";
 ﻿import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, Boxes, ClipboardList, Package, ReceiptText, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -14,6 +15,7 @@ const modules = [
 const initialMetrics = { medicines: null, stock: null, prescriptions: null, bills: null };
 
 function PharmacyDashboard() {
+  const layout = useDashboardLayout();
   const [metrics, setMetrics] = useState(initialMetrics);
   const [errors, setErrors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,9 +58,9 @@ function PharmacyDashboard() {
   }, [loadCounts]);
 
   return (
-    <section className="pharmacy-dashboard pharmacy-count-dashboard">
+    <section className="pharmacy-dashboard pharmacy-count-dashboard role-single-screen" ref={layout.ref}>
       <header className="pharmacy-dashboard-heading">
-        <h2>Welcome to Pharmacy Dashboard</h2>
+        <DashboardGreeting role="Pharmacist" />
         <button type="button" className="pharmacy-dashboard-refresh" onClick={loadCounts} disabled={loading}><RefreshCw size={17} />{loading ? "Refreshing..." : "Refresh counts"}</button>
       </header>
       {errors.length > 0 && <div className="pharmacy-import-message is-error" role="alert">{errors.map((error) => <p key={error}>{error}</p>)}</div>}

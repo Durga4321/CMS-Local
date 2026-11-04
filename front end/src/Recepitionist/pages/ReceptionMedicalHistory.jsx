@@ -507,7 +507,7 @@ function ReceptionMedicalHistory({
       {/* Filter and Search Bar */}
       <div className="med-search-bar-wrap">
         <div className="med-search-bar">
-          <Search size={16} color="#0f766e" />
+          <Search size={16} color="var(--theme-primary-dark)" />
           <input
             type="text"
             placeholder="Search by patient name, PID, allergies, chronic condition, or medication..."
@@ -554,9 +554,9 @@ function ReceptionMedicalHistory({
             </colgroup>
             <thead>
               <tr>
-                <th scope="col">S.No.</th><th scope="col">Patient</th><th scope="col">Allergies</th>
+                <th data-column-kind="center" scope="col">S.No.</th><th scope="col">Patient</th><th scope="col">Allergies</th>
                 <th scope="col">Chronic Diseases</th><th scope="col">Medications</th><th scope="col">Surgeries</th>
-                <th scope="col">Actions</th>
+                <th data-column-kind="center" scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>

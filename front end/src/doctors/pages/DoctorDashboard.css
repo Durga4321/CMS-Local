@@ -27,7 +27,7 @@
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   border: 1px solid rgba(226, 232, 240, 0.85);
   border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.035), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--theme-primary-dark) 3.5%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   position: relative;
   overflow: hidden;
 }
@@ -39,7 +39,7 @@
   left: 0;
   width: 5px;
   height: 100%;
-  background: linear-gradient(180deg, #06b6d4 0%, #0284c7 100%);
+  background: linear-gradient(180deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
   border-top-left-radius: 20px;
   border-bottom-left-radius: 20px;
 }
@@ -78,7 +78,7 @@
   margin: 2px 0;
   font-size: 22px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   letter-spacing: -0.4px;
 }
 
@@ -149,7 +149,7 @@
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--theme-primary-dark) 4%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.25s ease;
@@ -157,12 +157,12 @@
 
 .dd-stat-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--theme-primary-dark) 8%, transparent);
 }
 
-.dd-stat-card--blue:hover   { border-color: #93c5fd; }
+.dd-stat-card--blue:hover   { border-color: var(--theme-primary-glow); }
 .dd-stat-card--amber:hover  { border-color: #fcd34d; }
-.dd-stat-card--violet:hover { border-color: #c4b5fd; }
+.dd-stat-card--violet:hover { border-color: var(--theme-primary-glow); }
 .dd-stat-card--green:hover  { border-color: #6ee7b7; }
 
 /* Top section: Icon bezel & Badge */
@@ -190,9 +190,9 @@
 }
 
 .dd-stat-icon-bezel--blue {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border: 1.5px solid #bfdbfe;
-  color: #2563eb;
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  border: 1.5px solid var(--theme-primary-soft);
+  color: var(--theme-primary);
 }
 .dd-stat-icon-bezel--amber {
   background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
@@ -200,9 +200,9 @@
   color: #d97706;
 }
 .dd-stat-icon-bezel--violet {
-  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
-  border: 1.5px solid #ddd6fe;
-  color: #7c3aed;
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  border: 1.5px solid var(--theme-primary-soft);
+  color: var(--theme-primary);
 }
 .dd-stat-icon-bezel--green {
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
@@ -247,7 +247,7 @@
   margin: 0;
   font-size: 28px;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   line-height: 1;
   letter-spacing: -0.6px;
 }
@@ -259,9 +259,9 @@
   border-radius: 6px;
 }
 
-.dd-stat-trend--blue   { background: #eff6ff; color: #1d4ed8; }
+.dd-stat-trend--blue   { background: var(--theme-primary-soft); color: var(--theme-primary); }
 .dd-stat-trend--amber  { background: #fffbeb; color: #92400e; }
-.dd-stat-trend--violet { background: #f5f3ff; color: #6d28d9; }
+.dd-stat-trend--violet { background: var(--theme-primary-soft); color: var(--theme-primary); }
 .dd-stat-trend--green  { background: #f0fdf4; color: #15803d; }
 
 .dd-stat-sub {
@@ -280,7 +280,7 @@
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(226, 232, 240, 0.85);
   border-radius: 22px;
-  box-shadow: 0 10px 32px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  box-shadow: 0 10px 32px color-mix(in srgb, var(--theme-primary-dark) 4%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   overflow: hidden;
 }
 
@@ -305,7 +305,7 @@
   margin: 0;
   font-size: 17px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   letter-spacing: -0.3px;
 }
 
@@ -314,9 +314,9 @@
   font-weight: 800;
   padding: 3px 9px;
   border-radius: 999px;
-  background: #ecfeff;
-  border: 1px solid #a5f3fc;
-  color: #0891b2;
+  background: var(--theme-primary-soft);
+  border: 1px solid var(--theme-primary-glow);
+  color: var(--theme-primary-dark);
 }
 
 .dd-queue-tools {
@@ -338,17 +338,17 @@
   padding: 0 14px;
   color: #64748b;
   transition: all 0.2s ease;
-  box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.04);
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--theme-primary-dark) 4%, transparent);
 }
 
 .dd-search:focus-within {
-  border-color: #0284c7;
+  border-color: var(--theme-primary);
   background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15), inset 0 1px 2px rgba(15, 23, 42, 0.03);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 15%, transparent), inset 0 1px 2px color-mix(in srgb, var(--theme-primary-dark) 3%, transparent);
 }
 
 .dd-search-optic {
-  color: #0284c7;
+  color: var(--theme-primary);
   flex-shrink: 0;
 }
 
@@ -358,7 +358,7 @@
   border: 0;
   outline: 0;
   background: transparent;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 13px;
   font-weight: 500;
 }
@@ -383,7 +383,7 @@
 
 .dd-search-clear:hover {
   background: #e2e8f0;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 /* Medical Instrument Calibrator Refresh Button */
@@ -391,24 +391,24 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1.5px solid #38bdf8;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1.5px solid var(--theme-primary);
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
   border-radius: 12px;
   padding: 8px 16px;
   font-size: 13px;
   font-weight: 700;
-  color: #0284c7;
+  color: var(--theme-primary);
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-primary) 15%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
 }
 
 .dd-refresh-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
   color: #ffffff;
-  border-color: #0284c7;
-  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  border-color: var(--theme-primary);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 35%, transparent);
   transform: translateY(-1px);
 }
 
@@ -449,8 +449,8 @@
   gap: 8px;
   padding: 6px 14px;
   border-radius: 999px;
-  background: #f0fdfa;
-  border: 1.5px solid #99f6e4;
+  background: var(--theme-primary-soft);
+  border: 1.5px solid var(--theme-primary-glow);
   font-size: 12.5px;
   font-weight: 600;
   color: #475569;
@@ -462,18 +462,18 @@
 }
 
 .dd-filter-capsule:hover {
-  border-color: #5eead4;
-  background: #ccfbf1;
+  border-color: var(--theme-primary);
+  background: var(--theme-primary-soft);
   transform: translateY(-1px);
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .dd-filter-capsule--amber { background: #fffbeb; border-color: #fde68a; }
-.dd-filter-capsule--blue { background: #eff6ff; border-color: #bfdbfe; }
+.dd-filter-capsule--blue { background: var(--theme-primary-soft); border-color: var(--theme-primary-soft); }
 .dd-filter-capsule--green { background: #ecfdf5; border-color: #a7f3d0; }
 
 .dd-filter-capsule--amber:hover { background: #fef3c7; border-color: #fbbf24; }
-.dd-filter-capsule--blue:hover { background: #dbeafe; border-color: #93c5fd; }
+.dd-filter-capsule--blue:hover { background: var(--theme-primary-soft); border-color: var(--theme-primary-glow); }
 .dd-filter-capsule--green:hover { background: #d1fae5; border-color: #6ee7b7; }
 
 .dd-filter-dot {
@@ -483,10 +483,10 @@
   flex-shrink: 0;
 }
 
-.dd-filter-dot--all    { background: #0f9d9d; }
+.dd-filter-dot--all    { background: var(--theme-primary-dark); }
 .dd-filter-dot--amber  { background: #f59e0b; }
-.dd-filter-dot--blue   { background: #3b82f6; }
-.dd-filter-dot--green  { background: #10b981; }
+.dd-filter-dot--blue   { background: var(--theme-primary); }
+.dd-filter-dot--green  { background: var(--theme-primary); }
 
 .dd-filter-count {
   font-size: 11px;
@@ -500,10 +500,10 @@
 
 /* Active State for Filter Capsules */
 .dd-filter-capsule.is-active {
-  background: linear-gradient(135deg, #0f9d9d 0%, #0d7f7f 100%);
-  border-color: #0f9d9d;
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary-dark);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(15, 157, 157, 0.28);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 28%, transparent);
 }
 
 .dd-filter-capsule.is-active .dd-filter-count {
@@ -518,15 +518,15 @@
 }
 
 .dd-filter-capsule--blue.is-active {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  border-color: #2563eb;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
+  border-color: var(--theme-primary);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 35%, transparent);
 }
 
 .dd-filter-capsule--green.is-active {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-color: #10b981;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 35%, transparent);
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -563,7 +563,7 @@
 
 .dd-row {
   font-size: 13.5px;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   border-bottom: 1px solid rgba(241, 245, 249, 0.9);
   background: rgba(255, 255, 255, 0.45);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -574,8 +574,8 @@
 }
 
 .dd-row:hover {
-  background: rgba(240, 253, 250, 0.75);
-  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.07);
+  background: color-mix(in srgb, var(--theme-primary-soft) 75%, transparent);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--theme-primary) 7%, transparent);
 }
 
 .dd-sno-head {
@@ -598,18 +598,18 @@
   display: inline-block;
   padding: 4px 10px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  border: 1px solid var(--theme-primary-soft);
+  color: var(--theme-primary);
   font-weight: 800;
   font-size: 12.5px;
   font-family: monospace;
-  box-shadow: 0 1px 3px rgba(29, 78, 216, 0.08);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--theme-primary) 8%, transparent);
 }
 
 .dd-name {
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   letter-spacing: -0.15px;
 }
 
@@ -728,48 +728,48 @@
 
 /* Button 1: Diagnostic Scope (Ophthalmoscope) */
 .dd-act-btn--scope {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border: 1.5px solid #7dd3fc;
-  color: #0284c7;
-  box-shadow: 0 2px 6px rgba(14, 165, 233, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  border: 1.5px solid var(--theme-primary-glow);
+  color: var(--theme-primary);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-primary) 16%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .dd-act-btn--scope:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
   color: #ffffff;
-  border-color: #0284c7;
-  box-shadow: 0 5px 14px rgba(14, 165, 233, 0.42);
+  border-color: var(--theme-primary);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--theme-primary) 42%, transparent);
   transform: translateY(-2px);
 }
 
 /* Button 2: Digital Chart / Clinical Sensor Probe */
 .dd-act-btn--chart {
-  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-  border: 1.5px solid #d8b4fe;
-  color: #7e22ce;
-  box-shadow: 0 2px 6px rgba(147, 51, 234, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  border: 1.5px solid var(--theme-primary-glow);
+  color: var(--theme-primary);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-primary) 16%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .dd-act-btn--chart:hover:not(:disabled) {
-  background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
   color: #ffffff;
-  border-color: #9333ea;
-  box-shadow: 0 5px 14px rgba(147, 51, 234, 0.42);
+  border-color: var(--theme-primary);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--theme-primary) 42%, transparent);
   transform: translateY(-2px);
 }
 
 /* Button 3: Surgical Ultrasound / Laser Activator Trigger */
 .dd-act-btn--trigger {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
   border: 1.5px solid #34d399;
   color: #ffffff;
-  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--theme-primary) 38%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .dd-act-btn--trigger:hover:not(:disabled) {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  border-color: #10b981;
-  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.55);
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--theme-primary) 55%, transparent);
   transform: translateY(-2px) scale(1.06);
 }
 
@@ -789,7 +789,7 @@
   margin: 0 0 6px;
   font-size: 16px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .dd-empty-telemetry p {
@@ -800,9 +800,9 @@
 }
 
 .dd-empty-reset-btn {
-  border: 1.5px solid #0284c7;
+  border: 1.5px solid var(--theme-primary);
   background: #ffffff;
-  color: #0284c7;
+  color: var(--theme-primary);
   border-radius: 999px;
   padding: 7px 18px;
   font-size: 12.5px;
@@ -812,9 +812,9 @@
 }
 
 .dd-empty-reset-btn:hover {
-  background: #0284c7;
+  background: var(--theme-primary);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary) 25%, transparent);
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -879,7 +879,7 @@
   inset: 0;
   /* This must sit above the fixed doctor top bar as well as the page content. */
   z-index: 5000;
-  background: rgba(15, 23, 42, 0.45);
+  background: color-mix(in srgb, var(--theme-primary-dark) 45%, transparent);
   backdrop-filter: blur(8px);
   display: grid;
   place-items: center;
@@ -895,7 +895,7 @@
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 20px;
-  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.22);
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--theme-primary-dark) 22%, transparent);
   padding: 22px;
   position: relative;
 }
@@ -914,7 +914,7 @@
   margin: 0 0 4px;
   font-size: 18px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .dd-notes-head p {
@@ -959,22 +959,22 @@
   padding: 0;
   max-height: calc(100dvh - 40px);
   overflow-y: auto;
-  border: 1px solid #bfdbfe;
+  border: 1px solid var(--theme-primary-soft);
   border-radius: 24px;
   background: #ffffff;
-  box-shadow: 0 28px 74px rgba(15, 23, 42, 0.3);
+  box-shadow: 0 28px 74px color-mix(in srgb, var(--theme-primary-dark) 30%, transparent);
 }
 
 .dd-patient-modal .dd-notes-head {
   align-items: center;
   margin: 0;
   padding: 22px 24px 18px;
-  border-bottom: 1px solid #dbeafe;
-  background: linear-gradient(135deg, #eff6ff, #ecfdf5 72%, #ffffff);
+  border-bottom: 1px solid var(--theme-primary-soft);
+  background: linear-gradient(135deg, var(--theme-primary-soft), #ecfdf5 72%, #ffffff);
 }
 
 .dd-patient-modal .dd-notes-head h3 {
-  color: #123c8b;
+  color: var(--theme-primary-dark);
   font-size: 22px;
 }
 
@@ -1014,14 +1014,14 @@
   gap: 6px;
   min-width: 0;
   padding: 14px 16px;
-  border: 1px solid #bae6fd;
+  border: 1px solid var(--theme-primary-soft);
   border-radius: 16px;
-  background: linear-gradient(135deg, #f0f9ff, #ffffff);
+  background: linear-gradient(135deg, var(--theme-primary-soft), #ffffff);
 }
 
 .dd-patient-modal .dd-notes-grid > div:nth-child(2) {
-  border-color: #ddd6fe;
-  background: linear-gradient(135deg, #f5f3ff, #ffffff);
+  border-color: var(--theme-primary-soft);
+  background: linear-gradient(135deg, var(--theme-primary-soft), #ffffff);
 }
 
 .dd-patient-modal .dd-notes-grid > div:nth-child(3) {
@@ -1050,7 +1050,7 @@
 
 .dd-patient-modal .dd-notes-grid strong {
   overflow-wrap: anywhere;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 16px;
   line-height: 1.35;
 }
@@ -1067,19 +1067,19 @@
 .dd-patient-modal .dd-modal-actions .dd-refresh-btn {
   min-height: 42px;
   padding: 0 16px;
-  border: 1px solid #93c5fd;
+  border: 1px solid var(--theme-primary-glow);
   border-radius: 12px;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary);
   font-weight: 800;
   cursor: pointer;
 }
 
 .dd-patient-modal .dd-modal-actions .dd-refresh-btn:last-child {
-  border-color: #0f9d9d;
-  background: linear-gradient(135deg, #0f9d9d, #0284c7);
+  border-color: var(--theme-primary-dark);
+  background: linear-gradient(135deg, var(--theme-primary-dark), var(--theme-primary));
   color: #ffffff;
-  box-shadow: 0 7px 15px rgba(2, 132, 199, 0.2);
+  box-shadow: 0 7px 15px color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
 
 @media (max-width: 1100px) {
@@ -1106,9 +1106,9 @@
 }
 
 .dd-stat-card .dd-stat-icon-bezel {
-  background: #e0f2f1 !important;
-  border-color: #b9d8d6 !important;
-  color: #367f82 !important;
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
   box-shadow: none !important;
 }
 
@@ -1137,19 +1137,19 @@
     to bottom,
     #ffffff 0,
     #ffffff calc(100% - 28px),
-    #e0f2f1 calc(100% - 28px),
-    #e0f2f1 calc(100% - 4px),
-    #50b6b2 calc(100% - 4px),
-    #50b6b2 100%
+    var(--theme-primary-soft) calc(100% - 28px),
+    var(--theme-primary-soft) calc(100% - 4px),
+    var(--theme-primary) calc(100% - 4px),
+    var(--theme-primary) 100%
   );
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--theme-primary-dark) 8%, transparent);
 }
 
 .dd-stats .dd-stat-icon-bezel {
-  background: #164e55 !important;
-  border-color: #164e55 !important;
+  background: var(--theme-primary-dark) !important;
+  border-color: var(--theme-primary-dark) !important;
   color: #ffffff !important;
-  box-shadow: 0 3px 8px rgba(22, 78, 85, 0.16) !important;
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--theme-primary-dark) 16%, transparent) !important;
 }
 
 .dd-row .dd-status {
@@ -1166,8 +1166,8 @@
 
 .dd-row .dd-act-btn,
 .dd-row .dd-act-btn:hover:not(:disabled) {
-  background: #e0f2f1 !important;
-  border-color: #b9d8d6 !important;
-  color: #367f82 !important;
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
   box-shadow: none !important;
 }

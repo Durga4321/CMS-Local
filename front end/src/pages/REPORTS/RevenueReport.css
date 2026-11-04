@@ -19,7 +19,7 @@
 .report-header h2 {
   margin: 8px 0;
   font-size: 42px;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   line-height: 1.1;
 }
 
@@ -47,9 +47,9 @@
 }
 
 .revenue-report-page .report-back:hover {
-  color: #0f766e;
-  border-color: #99d9d2;
-  background: #f0fdfa;
+  color: var(--theme-primary-dark);
+  border-color: var(--theme-primary-glow);
+  background: var(--theme-primary-soft);
 }
 
 /* EXPORT */
@@ -102,7 +102,7 @@
   align-items: end;
 
   box-shadow:
-    0 4px 20px rgba(15, 23, 42, 0.04);
+    0 4px 20px color-mix(in srgb, var(--theme-primary-dark) 4%, transparent);
 }
 
 .filter-card div {
@@ -134,8 +134,8 @@
 
 .filter-card input:focus,
 .filter-card select:focus {
-  border-color: #159a8c;
-  box-shadow: 0 0 0 3px rgba(21, 154, 140, 0.1);
+  border-color: var(--theme-primary-dark);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary-dark) 10%, transparent);
 }
 
 /* APPLY */
@@ -145,7 +145,7 @@
   min-height: 48px;
   border: none;
   border-radius: 12px;
-  background: #159a8c;
+  background: var(--theme-primary-dark);
   color: white;
   font-size: 14px;
   font-weight: 600;
@@ -157,7 +157,7 @@
 }
 
 .revenue-report-page .report-apply:hover {
-  background: #0f766e;
+  background: var(--theme-primary-dark);
 }
 
 /* CHART */
@@ -172,12 +172,12 @@
   border-radius: 20px;
 
   box-shadow:
-    0 4px 20px rgba(15, 23, 42, 0.04);
+    0 4px 20px color-mix(in srgb, var(--theme-primary-dark) 4%, transparent);
 }
 
 .chart-card h3 {
   margin: 0 0 20px;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 22px;
 }
 
@@ -191,7 +191,7 @@
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .revenue-report-page .thead {
@@ -215,7 +215,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.4);
   text-align: center;
   align-items: center;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 15px;
   background: rgba(255, 255, 255, 0.2);
   transition: all 0.2s ease;
@@ -223,7 +223,7 @@
 
 .revenue-report-page .row:hover {
   background: rgba(255, 255, 255, 0.65);
-  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.1);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 10%, transparent);
 }
 
 .revenue-report-page .row:last-child {

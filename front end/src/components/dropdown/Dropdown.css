@@ -6,7 +6,7 @@
 :root {
   --hc-dropdown-bg: #ffffff;
   --hc-dropdown-border: rgba(254, 205, 211, 0.85);
-  --hc-dropdown-shadow: 0 20px 50px rgba(225, 29, 72, 0.12), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --hc-dropdown-shadow: 0 20px 50px rgba(225, 29, 72, 0.12), 0 8px 24px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent);
   
   --hc-item-bg: linear-gradient(90deg, #fff0f3 0%, #ffe4e6 100%);
   --hc-item-border: #ffccd5;
@@ -19,7 +19,7 @@
   --hc-blood-deep: #991b1b;
   --hc-blood-glow: rgba(225, 29, 72, 0.4);
   
-  --hc-text-heading: #0f172a;
+  --hc-text-heading: var(--theme-primary-dark);
   --hc-text-sub: #64748b;
   --hc-text-danger: #dc2626;
   
@@ -174,8 +174,8 @@
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  background: linear-gradient(135deg, #e6f7f5 0%, #f0fdfa 100%);
-  border: 1px solid rgba(20, 184, 166, 0.25);
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 25%, transparent);
   border-radius: 14px;
   margin-bottom: 8px;
   transition: transform 0.22s ease, background 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
@@ -190,9 +190,9 @@
 }
 
 .hc-profile-header:hover {
-  background: linear-gradient(135deg, #d8f3ee 0%, #e6fcf8 100%);
-  border-color: rgba(20, 184, 166, 0.5);
-  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.16);
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  border-color: color-mix(in srgb, var(--theme-primary) 50%, transparent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 16%, transparent);
   transform: translateY(-1px);
 }
 
@@ -201,7 +201,7 @@
 }
 
 .hc-profile-header:focus-visible {
-  outline: 2px solid #0d9488;
+  outline: 2px solid var(--theme-primary-dark);
   outline-offset: 2px;
 }
 
@@ -216,7 +216,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,7 +224,7 @@
   font-weight: 750;
   font-size: 14px;
   letter-spacing: 0.3px;
-  box-shadow: 0 3px 10px rgba(15, 118, 110, 0.22);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--theme-primary-dark) 22%, transparent);
 }
 
 .hc-profile-info {
@@ -343,7 +343,7 @@
 }
 
 .hc-dropdown-item--hero .hc-dropdown-item-title {
-  color: #0f172a !important;
+  color: var(--theme-primary-dark) !important;
   font-weight: 750;
 }
 
@@ -398,7 +398,7 @@
 .hc-hero-avatar-text {
   font-weight: 800;
   font-size: 14px;
-  color: #2563eb;
+  color: var(--theme-primary);
   letter-spacing: 0.5px;
 }
 
@@ -658,7 +658,7 @@
 .hc-branch-select-input {
   background: #ffffff;
   border: 1px solid #cbd5e1;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   border-radius: 8px;
   padding: 3px 8px;
   font-size: 11.5px;
@@ -668,7 +668,7 @@
 }
 
 .hc-branch-pill-name {
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-weight: 750;
   font-size: 11.5px;
 }
@@ -696,9 +696,9 @@
   height: 48px;
   padding: 4px 8px 4px 5px;
   border-radius: var(--hc-radius-pill);
-  background: rgba(219, 234, 254, 0.75);
-  border: 2px solid rgba(147, 197, 253, 0.75);
-  box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.28);
+  background: color-mix(in srgb, var(--theme-primary-soft) 75%, transparent);
+  border: 2px solid color-mix(in srgb, var(--theme-primary-glow) 75%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary-glow) 28%, transparent);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -710,15 +710,15 @@
 }
 
 .user-profile-chip:hover {
-  background: rgba(219, 234, 254, 0.95);
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.45);
+  background: color-mix(in srgb, var(--theme-primary-soft) 95%, transparent);
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-primary-glow) 45%, transparent);
 }
 
 .user-profile-chip.is-open {
   background: #ffffff;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-primary) 25%, transparent);
   position: relative;
   z-index: 99995;
 }
@@ -740,7 +740,7 @@
   display: block !important;
   font-size: 13px !important;
   font-weight: 750 !important;
-  color: #0f172a !important;
+  color: var(--theme-primary-dark) !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -787,7 +787,7 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--theme-primary);
   display: grid;
   place-items: center;
   color: #ffffff;
@@ -819,13 +819,13 @@
 }
 
 .user-profile-chip:hover .user-profile-dropdown-arrow {
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .user-profile-chip.is-open .user-profile-dropdown-arrow,
 .user-profile-dropdown-arrow.is-open {
   transform: rotate(180deg);
-  color: #0284c7;
+  color: var(--theme-primary);
 }
 
 /* Syringe pill button in topbar */

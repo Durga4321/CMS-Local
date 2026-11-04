@@ -3644,7 +3644,7 @@ function ReceptionBilling() {
           <path
             d="M0,11 L150,11 L160,11 L170,2 L180,20 L190,5 L200,15 L210,11 L380,11 L390,11 L400,2 L410,20 L420,4 L430,16 L440,11 L620,11 L630,11 L640,3 L650,19 L660,6 L670,14 L680,11 L860,11 L870,11 L880,2 L890,20 L900,5 L910,15 L920,11 L1100,11 L1110,11 L1120,3 L1130,19 L1140,6 L1150,15 L1160,11 L1200,11"
             fill="none"
-            stroke="rgba(14, 165, 233, 0.45)"
+            stroke="color-mix(in srgb, var(--theme-primary) 45%, transparent)"
             strokeWidth="2"
           />
         </svg>

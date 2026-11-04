@@ -10,7 +10,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: radial-gradient(circle at 30% 70%, #032f30 0%, #020617 60%, #010312 100%);
+  background: radial-gradient(circle at 30% 70%, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 60%, var(--theme-primary-dark) 100%);
   color: #f8fafc;
   font-family: 'Inter', sans-serif;
   box-sizing: border-box;
@@ -54,7 +54,7 @@
 .orbit-ring {
   position: absolute;
   border-radius: 50%;
-  border: 1.5px dashed rgba(45, 212, 191, 0.14);
+  border: 1.5px dashed color-mix(in srgb, var(--theme-primary) 14%, transparent);
 }
 
 /* Inner ring  —  clockwise, 22 s */
@@ -68,7 +68,7 @@
 .orbit-ring--outer {
   width: 580px;
   height: 580px;
-  border-color: rgba(99, 102, 241, 0.12);
+  border-color: color-mix(in srgb, var(--theme-primary) 12%, transparent);
   animation: spinCCW 30s linear infinite;
 }
 
@@ -99,7 +99,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(15, 23, 42, 0.75);
+  background: color-mix(in srgb, var(--theme-primary-dark) 75%, transparent);
   backdrop-filter: blur(6px);
   border: 1.5px solid var(--icon-border, rgba(45, 212, 191, 0.3));
   color: var(--icon-color, #2dd4bf);
@@ -166,13 +166,13 @@
   width: 100%;
   max-width: 420px;
   padding: 36px 34px;
-  background: rgba(15, 23, 42, 0.72);
+  background: color-mix(in srgb, var(--theme-primary-dark) 72%, transparent);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   backdrop-filter: blur(20px);
   box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.55),
-    0 0 80px rgba(20, 184, 166, 0.06);
+    0 0 80px color-mix(in srgb, var(--theme-primary) 6%, transparent);
   box-sizing: border-box;
 }
 
@@ -213,7 +213,7 @@
 .input-group input {
   width: 100%;
   height: 46px;
-  background: rgba(15, 23, 42, 0.6);
+  background: color-mix(in srgb, var(--theme-primary-dark) 60%, transparent);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 10px;
   padding: 0 16px;
@@ -225,9 +225,9 @@
 }
 
 .input-group input:focus {
-  border-color: #14b8a6;
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
-  background: rgba(15, 23, 42, 0.85);
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 15%, transparent);
+  background: color-mix(in srgb, var(--theme-primary-dark) 85%, transparent);
 }
 
 .input-group input.input-error {
@@ -291,20 +291,20 @@
   height: 48px;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
   color: #fff;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
-  box-shadow: 0 4px 16px rgba(20, 184, 166, 0.3);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--theme-primary) 30%, transparent);
   margin-top: 6px;
 }
 
 .login-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 22px rgba(20, 184, 166, 0.4);
-  background: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%);
+  box-shadow: 0 6px 22px color-mix(in srgb, var(--theme-primary) 40%, transparent);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
 }
 
 .login-btn:disabled {
@@ -329,7 +329,7 @@
 
 .register-link,
 .admin-link {
-  color: #2dd4bf;
+  color: var(--theme-primary);
   text-decoration: none;
   font-weight: 700;
   transition: color 0.15s;
@@ -337,7 +337,7 @@
 
 .register-link:hover,
 .admin-link:hover {
-  color: #14b8a6;
+  color: var(--theme-primary);
 }
 
 .admin-link-p {

@@ -10,8 +10,8 @@
   padding: 24px 32px 48px;
   box-sizing: border-box;
   background:
-    radial-gradient(circle at 88% 8%, rgba(45, 212, 191, 0.18), transparent 33%),
-    radial-gradient(circle at 8% 12%, rgba(96, 165, 250, 0.14), transparent 34%),
+    radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--theme-primary) 18%, transparent), transparent 33%),
+    radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--theme-primary) 14%, transparent), transparent 34%),
     transparent !important;
   overflow-x: hidden;
   display: flex;
@@ -29,7 +29,7 @@
   width: 62px;
   height: 62px;
   animation-duration: 9s;
-  color: #0284c7;
+  color: var(--theme-primary);
 }
 
 .sched-part-2 {
@@ -38,7 +38,7 @@
   width: 60px;
   height: 60px;
   animation-duration: 12s;
-  color: #6366f1;
+  color: var(--theme-primary);
 }
 
 .sched-part-3 {
@@ -47,7 +47,7 @@
   width: 58px;
   height: 58px;
   animation-duration: 10s;
-  color: #0d9488;
+  color: var(--theme-primary-dark);
 }
 
 .sched-part-4 {
@@ -79,7 +79,7 @@
   margin: 0;
   font-size: 28px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   line-height: 1.1;
   letter-spacing: -0.02em;
 }
@@ -112,27 +112,27 @@
   display: block;
   height: 5px;
   margin: -26px -28px 22px;
-  background: linear-gradient(90deg, #0ea5e9, #06b6d4, #14b8a6);
+  background: linear-gradient(90deg, var(--theme-primary), var(--theme-primary), var(--theme-primary));
 }
 
 .schedule-page .card:nth-child(2)::before {
-  background: linear-gradient(90deg, #8b5cf6, #a855f7, #ec4899);
+  background: linear-gradient(90deg, var(--theme-primary), var(--theme-primary), #ec4899);
 }
 
 .schedule-page .card:first-child h3 {
-  color: #0369a1;
+  color: var(--theme-primary-dark);
 }
 
 .schedule-page .card:nth-child(2) h3 {
-  color: #7e22ce;
+  color: var(--theme-primary);
 }
 
 .schedule-page .card:first-child .input {
-  background: linear-gradient(135deg, #effbff, #f0f9ff);
+  background: linear-gradient(135deg, var(--theme-primary-soft), var(--theme-primary-soft));
 }
 
 .schedule-page .card:nth-child(2) .holiday-form input {
-  background: linear-gradient(135deg, #fdf4ff, #f5f3ff);
+  background: linear-gradient(135deg, var(--theme-primary-soft), var(--theme-primary-soft));
 }
 
 /* CARD */
@@ -144,7 +144,7 @@
   background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   padding: 26px 28px;
   display: flex;
   flex-direction: column;
@@ -154,7 +154,7 @@
   margin: 0 0 16px;
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   letter-spacing: -0.01em;
 }
 
@@ -175,7 +175,7 @@
   border-radius: 10px;
   border: 1px solid #d8e2ee;
   background: rgba(241, 245, 249, 0.85);
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 14px;
   outline: none;
   transition: all 0.2s ease;
@@ -183,9 +183,9 @@
 }
 
 .input:focus {
-  border-color: #06b6d4;
+  border-color: var(--theme-primary);
   background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.18);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 18%, transparent);
 }
 
 .input:disabled {
@@ -209,7 +209,7 @@
 /* BUTTON */
 .btn.save {
   margin-top: 24px;
-  background: linear-gradient(135deg, #0f9d9d 0%, #0d7f7f 100%);
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
   color: #ffffff;
   height: 46px;
   border-radius: 12px;
@@ -222,13 +222,13 @@
   cursor: pointer;
   font-size: 15px;
   font-weight: 600;
-  box-shadow: 0 4px 14px rgba(15, 157, 157, 0.25);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary-dark) 25%, transparent);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn.save:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(15, 157, 157, 0.35);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--theme-primary-dark) 35%, transparent);
 }
 
 .btn.save:disabled {
@@ -252,11 +252,11 @@
   font-size: 13px;
   font-weight: 600;
   color: #64748b;
-  background: linear-gradient(135deg, #f3e8ff, #fce7f3);
+  background: linear-gradient(135deg, var(--theme-primary-soft), #fce7f3);
   padding: 4px 12px;
   border-radius: 999px;
-  border: 1px solid #e9d5ff;
-  color: #7e22ce;
+  border: 1px solid var(--theme-primary-soft);
+  color: var(--theme-primary);
 }
 
 /* HOLIDAY ITEM */
@@ -274,14 +274,14 @@
 
 .holiday-item:hover {
   background: #ffffff;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent);
   transform: translateY(-1px);
 }
 
 .holiday-name {
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   margin: 0;
 }
 
@@ -318,7 +318,7 @@
   border-radius: 10px;
   border: 1px solid #d8e2ee;
   background: rgba(241, 245, 249, 0.85);
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 13.5px;
   outline: none;
   box-sizing: border-box;
@@ -326,9 +326,9 @@
 }
 
 .holiday-form input:focus {
-  border-color: #a855f7;
+  border-color: var(--theme-primary);
   background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.16);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 16%, transparent);
 }
 
 .holiday-form input:disabled {
@@ -339,7 +339,7 @@
 
 .holiday-form button,
 .holiday-ok-button {
-  background: linear-gradient(135deg, #0f9d9d 0%, #0d7f7f 100%);
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
   color: #ffffff;
   border: none;
   border-radius: 10px;
@@ -352,14 +352,14 @@
   justify-content: center;
   font-weight: 700;
   font-size: 14px;
-  box-shadow: 0 4px 12px rgba(15, 157, 157, 0.2);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 20%, transparent);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .holiday-form button:hover:not(:disabled),
 .holiday-ok-button:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(15, 157, 157, 0.3);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-primary-dark) 30%, transparent);
 }
 
 .holiday-form button:disabled,

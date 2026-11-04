@@ -485,11 +485,11 @@ function PharmacyPendingPrescriptions() {
 
               <th>Appointment</th>
 
-              <th>Date</th>
+              <th data-column-kind="center">Date</th>
 
-              <th>Status</th>
+              <th data-column-kind="center">Status</th>
 
-              <th>Action</th>
+              <th data-column-kind="center">Action</th>
 
             </tr>
 
@@ -615,10 +615,10 @@ function PharmacyPendingPrescriptions() {
 
                   <th>Dosage</th>
 
-                  <th>Prescribed quantity</th>
+                  <th data-column-kind="number">Prescribed quantity</th>
 
                   <th>Available stock</th>
-                  <th>Dispensing quantity</th>
+                  <th data-column-kind="number">Dispensing quantity</th>
 
                 </tr>
 

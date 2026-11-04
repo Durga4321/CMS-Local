@@ -45,7 +45,7 @@ function NurseLayout() {
     "Nurse Dashboard";
 
   return (
-    <div className={`rc-shell ${sidebarOpen ? "rc-sidebar-open" : ""} ${collapsed ? "rc-sidebar-collapsed" : ""}`}>
+    <div className={`rc-shell nurse-module ${sidebarOpen ? "rc-sidebar-open" : ""} ${collapsed ? "rc-sidebar-collapsed" : ""}`}>
       {sidebarOpen && <div className="rc-overlay" onClick={() => setSidebarOpen(false)} />}
       <NurseSidebar
         onClose={() => setSidebarOpen(false)}

@@ -8,7 +8,7 @@
   width: 100vw;
   height: 100vh;
   z-index: 100000;
-  background: rgba(15, 23, 42, 0.45);
+  background: color-mix(in srgb, var(--theme-primary-dark) 45%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
@@ -36,7 +36,7 @@
   padding: 28px 24px;
   box-sizing: border-box;
   text-align: center;
-  box-shadow: 0 24px 50px -12px rgba(15, 23, 42, 0.25),
+  box-shadow: 0 24px 50px -12px color-mix(in srgb, var(--theme-primary-dark) 25%, transparent),
               0 0 0 1.5px rgba(225, 29, 72, 0.15);
   border: 1px solid rgba(226, 232, 240, 0.8);
   animation: hcModalCardPop 0.26s cubic-bezier(0.16, 1, 0.3, 1);
@@ -100,7 +100,7 @@
   margin: 0 0 8px;
   font-size: 20px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   letter-spacing: -0.3px;
 }
 

@@ -12,7 +12,7 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   position: relative;
   z-index: 1;
 }
@@ -25,8 +25,8 @@
   z-index: 0;
   overflow: hidden;
   background-image:
-    radial-gradient(circle at 88% 12%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 10% 45%, rgba(6, 182, 212, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--theme-primary) 8%, transparent) 0%, transparent 40%),
+    radial-gradient(circle at 10% 45%, color-mix(in srgb, var(--theme-primary) 8%, transparent) 0%, transparent 45%),
     radial-gradient(circle at 50% 85%, rgba(245, 158, 11, 0.05) 0%, transparent 50%),
     linear-gradient(to right, rgba(148, 163, 184, 0.07) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
@@ -52,13 +52,13 @@
 }
 
 .ds-ecg-line-pulse {
-  stroke: #10b981;
+  stroke: var(--theme-primary);
   stroke-width: 2.2;
   fill: none;
   stroke-dasharray: 240 960;
   stroke-dashoffset: 1200;
   animation: dsEcgSweep 4s linear infinite;
-  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.85));
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--theme-primary) 85%, transparent));
 }
 
 @keyframes dsEcgSweep {
@@ -94,13 +94,13 @@
 }
 
 .ds-telemetry-cross {
-  color: #10b981;
+  color: var(--theme-primary);
   font-weight: 900;
   font-size: 13px;
 }
 
 .ds-telemetry-wave-icon {
-  color: #06b6d4;
+  color: var(--theme-primary);
   animation: dsPulseSoft 1.8s infinite;
 }
 
@@ -108,8 +108,8 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 6px #10b981;
+  background: var(--theme-primary);
+  box-shadow: 0 0 6px var(--theme-primary);
   animation: dsBeadBlink 1.4s infinite;
 }
 
@@ -120,7 +120,7 @@
 
 @keyframes dsPulseSoft {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); color: #047857; }
+  50% { transform: scale(1.15); color: var(--theme-primary-dark); }
 }
 
 /* Ambient Watermarks */
@@ -136,7 +136,7 @@
   top: 15px;
   left: 25px;
   font-size: 160px;
-  color: rgba(16, 185, 129, 0.025);
+  color: color-mix(in srgb, var(--theme-primary) 2.5%, transparent);
 }
 
 .ds-watermark-cross--br {
@@ -144,7 +144,7 @@
   right: 35px;
   font-size: 120px;
   letter-spacing: 0.1em;
-  color: rgba(15, 157, 157, 0.03);
+  color: color-mix(in srgb, var(--theme-primary-dark) 3%, transparent);
 }
 
 /* ── 2. Roster Console Header ── */
@@ -156,11 +156,11 @@
   padding: 22px 28px;
   border-radius: 20px;
   box-shadow:
-    0 10px 30px rgba(15, 23, 42, 0.04),
+    0 10px 30px color-mix(in srgb, var(--theme-primary-dark) 4%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
     inset 0 -1px 0 rgba(226, 232, 240, 0.6);
   border: 1px solid rgba(186, 201, 215, 0.8);
-  border-top: 3.5px solid #10b981;
+  border-top: 3.5px solid var(--theme-primary);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   position: relative;
@@ -191,14 +191,14 @@
 }
 
 .ds-head-icon {
-  color: #10b981;
+  color: var(--theme-primary);
 }
 
 .ds-head h2 {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   letter-spacing: -0.01em;
 }
 
@@ -254,7 +254,7 @@
   border: 1px solid rgba(226, 232, 240, 0.85);
   border-radius: 20px;
   box-shadow:
-    0 12px 36px rgba(15, 23, 42, 0.05),
+    0 12px 36px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
   padding: 24px;
   display: flex;
@@ -269,13 +269,13 @@
 .ds-card:hover {
   background: rgba(255, 255, 255, 0.88);
   box-shadow:
-    0 16px 40px rgba(15, 23, 42, 0.07),
+    0 16px 40px color-mix(in srgb, var(--theme-primary-dark) 7%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 /* Surgical Card Top Color Accents */
 .ds-card--recurring {
-  border-top: 3.5px solid #10b981;
+  border-top: 3.5px solid var(--theme-primary);
 }
 
 .ds-card--override {
@@ -283,12 +283,12 @@
 }
 
 .ds-preview-card {
-  border-top: 3.5px solid #06b6d4;
+  border-top: 3.5px solid var(--theme-primary);
   height: 100%;
 }
 
 .ds-overrides-card {
-  border-top: 3.5px solid #0f766e;
+  border-top: 3.5px solid var(--theme-primary-dark);
   padding: 0;
   overflow: hidden;
   position: relative;
@@ -307,7 +307,7 @@
   margin: 0;
   font-size: 17px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .ds-card-header-icon {
@@ -317,12 +317,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent);
 }
 
 .ds-icon--emerald {
   background: #ecfdf5;
-  color: #059669;
+  color: var(--theme-primary-dark);
   border: 1px solid #a7f3d0;
 }
 
@@ -333,15 +333,15 @@
 }
 
 .ds-icon--cyan {
-  background: #ecfeff;
-  color: #0891b2;
-  border: 1px solid #a5f3fc;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary-dark);
+  border: 1px solid var(--theme-primary-glow);
 }
 
 .ds-icon--teal {
-  background: #f0fdfa;
-  color: #0f766e;
-  border: 1px solid #99f6e4;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary-dark);
+  border: 1px solid var(--theme-primary-glow);
 }
 
 .ds-card-badge {
@@ -389,14 +389,14 @@
   border: 1px solid #cbd5e1;
   border-radius: 11px;
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font: inherit;
   font-size: 14px;
   font-weight: 500;
   padding: 10px 14px;
   outline: none;
   box-shadow:
-    0 1px 3px rgba(15, 23, 42, 0.03),
+    0 1px 3px color-mix(in srgb, var(--theme-primary-dark) 3%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -428,7 +428,7 @@
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -437,8 +437,8 @@
 }
 
 .ds-date-trigger:hover:not(:disabled) {
-  background: rgba(15, 23, 42, 0.06);
-  color: #059669;
+  background: color-mix(in srgb, var(--theme-primary-dark) 6%, transparent);
+  color: var(--theme-primary-dark);
 }
 
 .ds-card--override .ds-date-trigger:hover:not(:disabled) {
@@ -466,9 +466,9 @@
 .ds-card input:focus,
 .ds-card select:focus,
 .ds-card textarea:focus {
-  border-color: #10b981;
+  border-color: var(--theme-primary);
   background-color: #ffffff;
-  box-shadow: 0 0 0 3.5px rgba(16, 185, 129, 0.16);
+  box-shadow: 0 0 0 3.5px color-mix(in srgb, var(--theme-primary) 16%, transparent);
 }
 
 .ds-card--override input:focus,
@@ -510,7 +510,7 @@
   justify-content: center;
   gap: 3px;
   padding: 4px 2px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--theme-primary-dark) 4%, transparent);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
 }
@@ -531,11 +531,11 @@
 }
 
 .ds-day-btn.active {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-color: #047857;
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary-dark);
   color: #ffffff;
   box-shadow:
-    0 4px 12px rgba(16, 185, 129, 0.35),
+    0 4px 12px color-mix(in srgb, var(--theme-primary) 35%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
@@ -590,8 +590,8 @@
 }
 
 .ds-bead--cyan {
-  background: #06b6d4;
-  box-shadow: 0 0 8px #06b6d4;
+  background: var(--theme-primary);
+  box-shadow: 0 0 8px var(--theme-primary);
   animation: dsPulseSoft 1.6s infinite;
 }
 
@@ -601,9 +601,9 @@
 .ds-primary.ds-instrument--autoclave {
   width: 100%;
   min-height: 44px;
-  border: 1px solid #059669;
+  border: 1px solid var(--theme-primary-dark);
   border-radius: 12px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
   color: #ffffff;
   cursor: pointer;
   padding: 10px 18px;
@@ -613,7 +613,7 @@
   gap: 8px;
   font-size: 13.5px;
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 35%, transparent);
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   margin-top: auto;
 }
@@ -621,9 +621,9 @@
 .ds-card--recurring .ds-primary:hover:not(:disabled),
 .ds-card:nth-of-type(1) .ds-primary:hover:not(:disabled),
 .ds-primary.ds-instrument--autoclave:hover:not(:disabled) {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
+  background: linear-gradient(135deg, #34d399 0%, var(--theme-primary) 50%, var(--theme-primary-dark) 100%);
   transform: translateY(-1.5px);
-  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.48);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--theme-primary) 48%, transparent);
 }
 
 /* Card 2: Apply One-Day Schedule Exception Button */
@@ -690,9 +690,9 @@
 .ds-secondary.ds-instrument--scanner {
   width: 100%;
   min-height: 42px;
-  border: 1px solid #0284c7;
+  border: 1px solid var(--theme-primary);
   border-radius: 12px;
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
   color: #ffffff;
   cursor: pointer;
   padding: 10px 18px;
@@ -702,18 +702,18 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.28);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--theme-primary) 28%, transparent);
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   margin-top: 4px;
 }
 
 .ds-preview-card .ds-secondary:hover:not(:disabled),
 .ds-secondary.ds-instrument--scanner:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
-  border-color: #0369a1;
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary-dark);
   color: #ffffff;
   transform: translateY(-1.5px);
-  box-shadow: 0 5px 16px rgba(2, 132, 199, 0.4);
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--theme-primary) 40%, transparent);
 }
 
 .ds-card--recurring .ds-primary,
@@ -724,9 +724,9 @@
 .ds-primary.ds-instrument--scalpel,
 .ds-preview-card .ds-secondary,
 .ds-secondary.ds-instrument--scanner {
-  background: linear-gradient(135deg, #4b9da3 0%, #367f82 100%);
-  border-color: #367f82;
-  box-shadow: 0 4px 14px rgba(54, 127, 130, 0.22);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary-dark);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary-dark) 22%, transparent);
 }
 
 .ds-card--recurring .ds-primary:hover:not(:disabled),
@@ -737,9 +737,9 @@
 .ds-primary.ds-instrument--scalpel:hover:not(:disabled),
 .ds-preview-card .ds-secondary:hover:not(:disabled),
 .ds-secondary.ds-instrument--scanner:hover:not(:disabled) {
-  background: linear-gradient(135deg, #5aaeb2 0%, #4b9da3 50%, #367f82 100%);
-  border-color: #367f82;
-  box-shadow: 0 6px 18px rgba(54, 127, 130, 0.3);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary) 50%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary-dark);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--theme-primary-dark) 30%, transparent);
 }
 
 .ds-head-badge,
@@ -753,13 +753,13 @@
 .ds-head-icon,
 .ds-card--recurring .ds-card-header-icon,
 .ds-card--override .ds-card-header-icon {
-  color: #367f82;
+  color: var(--theme-primary-dark);
 }
 
 .ds-card--recurring .ds-card-header-icon,
 .ds-card--override .ds-card-header-icon {
-  background: #e0f2f1;
-  border-color: #b9d8d6;
+  background: var(--theme-primary-soft);
+  border-color: var(--theme-primary-glow);
   box-shadow: none;
 }
 
@@ -793,13 +793,13 @@
   border-radius: 10px;
   padding: 10px 14px;
   background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.03);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--theme-primary-dark) 3%, transparent);
   transition: all 0.2s ease;
 }
 
 .ds-slot:hover {
   background: #ffffff;
-  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent);
 }
 
 .ds-slot-info {
@@ -829,7 +829,7 @@
 }
 
 .ds-slot.available {
-  border-left-color: #10b981;
+  border-left-color: var(--theme-primary);
 }
 
 .ds-slot.available .ds-slot-status {
@@ -909,7 +909,7 @@
 .ds-overrides-card td {
   border-bottom: 1px solid rgba(226, 232, 240, 0.65);
   background: rgba(255, 255, 255, 0.35);
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   transition: all 0.2s ease;
 }
 
@@ -945,9 +945,9 @@
 }
 
 .ds-type--branchshift {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border: 1px solid #bfdbfe;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary);
+  border: 1px solid var(--theme-primary-soft);
 }
 
 .ds-cell-reason {
@@ -976,23 +976,23 @@
   cursor: pointer;
   border: 1px solid #cbd5e1;
   background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-  color: #0f766e;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  color: var(--theme-primary-dark);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--theme-primary-dark) 4%, transparent);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ds-action-btn--edit {
-  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-  border-color: #ddd6fe;
-  color: #7c3aed;
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  border-color: var(--theme-primary-soft);
+  color: var(--theme-primary);
 }
 
 .ds-action-btn--edit:hover {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-  border-color: #6d28d9;
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
+  border-color: var(--theme-primary);
   color: #ffffff;
   transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(124, 58, 237, 0.28);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--theme-primary) 28%, transparent);
 }
 
 .ds-action-btn--delete,

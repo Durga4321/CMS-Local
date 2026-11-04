@@ -1,3 +1,5 @@
+import DashboardCards from "../components/superadmin/DashboardCards";
+import { DashboardGreeting, useDashboardLayout, DashboardPager } from "../components/superadmin/DashboardCards";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle,
@@ -142,6 +144,7 @@ const mergePatientOrders = (orders = []) => {
 };
 
 function LabDashboard() {
+  const layout = useDashboardLayout();
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState({});
   const [computedCards, setComputedCards] = useState({});
@@ -164,7 +167,7 @@ function LabDashboard() {
         const orderRows = parseList(ordersResult).map(enrichLabRow);
         setDashboard(source);
         setComputedCards(computeCardsFromOrders(orderRows));
-        setRecentOrders(mergePatientOrders((orderRows.length ? orderRows : parseList(source.recentOrders).map(enrichLabRow))).slice(0, 10));
+        setRecentOrders(mergePatientOrders((orderRows.length ? orderRows : parseList(source.recentOrders).map(enrichLabRow))));
       } catch (loadError) {
         if (!active) return;
         setDashboard({});
@@ -269,7 +272,8 @@ function LabDashboard() {
   const selectedTests = useMemo(() => selectedOrder?.__testRows || [], [selectedOrder]);
 
   return (
-    <section className="rc-page lab-page rc-dashboard-page">
+    <section className="rc-page lab-page rc-dashboard-page role-single-screen" ref={layout.ref}>
+      <DashboardGreeting role="Lab Technician" />
       {/* 3D Lab Theme Animated Background Overlays */}
       <div className="db-3d-bg-overlay" />
       <div className="db-3d-floating-particle p1" />
@@ -280,7 +284,7 @@ function LabDashboard() {
           <path
             d="M0 60 L300 60 L310 40 L320 80 L330 20 L345 100 L355 60 L370 60 L400 60 L700 60 L710 35 L720 85 L730 15 L745 105 L755 60 L770 60 L1200 60"
             fill="none"
-            stroke="rgba(14, 165, 233, 0.22)"
+            stroke="color-mix(in srgb, var(--theme-primary) 22%, transparent)"
             strokeWidth="2.5"
             strokeDasharray="1200"
             strokeDashoffset="1200"
@@ -293,33 +297,7 @@ function LabDashboard() {
       {loading ? <div className="rc-card">Loading lab dashboard...</div> : null}
 
       {/* RADIANT MULTI-COLORED KPI STAT CARDS */}
-      <div className="rc-dash-kpi-grid lab-dashboard-grid">
-        {cards.map(({ label, value, icon: Icon, theme, boxClass, period, trendText, trendClass, to }) => (
-          <div
-            className={`rc-dash-kpi-card ${theme}`}
-            key={label}
-            role="button"
-            tabIndex={0}
-            onClick={() => navigate(to)}
-            onKeyDown={(event) => event.key === "Enter" && navigate(to)}
-            title={`Open ${label}`}
-          >
-            <div className="db-kpi-content-wrap">
-              <div className="db-kpi-header">
-                <div className={`db-kpi-icon-box ${boxClass}`}>
-                  <Icon size={18} />
-                </div>
-                <span className="db-kpi-title">{label}</span>
-                <span className="rc-stat-period-pill">{period}</span>
-              </div>
-              <div className="db-kpi-num">{value}</div>
-              <div className={`db-kpi-trend ${trendClass}`}>
-                <span>{trendText}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <div className="lab-overview-metrics"><DashboardCards cards={cards.map(({ label, value, icon, to }) => ({ label, value, icon, tone: "teal", onClick: () => navigate(to) }))} /></div>
 
       {/* QUICK LAB ACTION TILES */}
       <div className="rc-dash-action-grid lab-dash-action-grid">
@@ -385,6 +363,7 @@ function LabDashboard() {
       </div>
 
       {/* RECENT LAB ORDERS TABLE CARD WITH CAPSULE HEADINGS */}
+      <DashboardPager layout={layout} total={recentOrders.length} />
       <div className="rc-card rc-dash-table-card lab-dash-table-card">
         <div className="rc-dash-table-head">
           <div className="rc-dash-table-head-left">
@@ -398,7 +377,7 @@ function LabDashboard() {
                   {recentOrders.length} {recentOrders.length === 1 ? "Order" : "Orders"}
                 </span>
                 <span className="rc-dash-date-pill">
-                  Latest 10 entries
+                  Page {layout.page + 1} of {Math.max(1, Math.ceil(recentOrders.length / layout.pageSize))}
                 </span>
               </div>
             </div>
@@ -432,7 +411,7 @@ function LabDashboard() {
             </span>
           </div>
           {recentOrders.length ? (
-            recentOrders.map((order, index) => {
+            layout.rows(recentOrders).map((order, index) => {
               const pName = orderPatient(order);
               const pInitials = pName
                 .split(" ")

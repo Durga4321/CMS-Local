@@ -789,13 +789,13 @@ function DoctorSchedule({ selfMode = false }) {
           <table>
             <thead>
               <tr>
-                <th>Date</th>
+                <th data-column-kind="center">Date</th>
                 <th>Type</th>
                 <th>Branch</th>
                 <th>From Branch</th>
-                <th>Time</th>
+                <th data-column-kind="center">Time</th>
                 <th>Reason</th>
-                <th>Actions</th>
+                <th data-column-kind="center">Actions</th>
               </tr>
             </thead>
             <tbody>

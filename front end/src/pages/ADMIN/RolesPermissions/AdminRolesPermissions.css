@@ -11,8 +11,8 @@
   padding: 24px 32px 20px;
   box-sizing: border-box;
   background:
-    radial-gradient(circle at 88% 8%, rgba(45, 212, 191, 0.18), transparent 33%),
-    radial-gradient(circle at 8% 12%, rgba(96, 165, 250, 0.14), transparent 34%),
+    radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--theme-primary) 18%, transparent), transparent 33%),
+    radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--theme-primary) 14%, transparent), transparent 34%),
     transparent !important;
   overflow: visible;
   display: flex;
@@ -39,7 +39,7 @@
   width: 62px;
   height: 62px;
   animation-duration: 9s;
-  color: #0284c7;
+  color: var(--theme-primary);
 }
 
 .roles-part-2 {
@@ -48,7 +48,7 @@
   width: 60px;
   height: 60px;
   animation-duration: 12s;
-  color: #6366f1;
+  color: var(--theme-primary);
 }
 
 .roles-part-3 {
@@ -57,7 +57,7 @@
   width: 58px;
   height: 58px;
   animation-duration: 10s;
-  color: #0d9488;
+  color: var(--theme-primary-dark);
 }
 
 .roles-part-4 {
@@ -92,7 +92,7 @@
   margin: 0;
   font-size: 28px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   line-height: 1.1;
   letter-spacing: -0.02em;
 }
@@ -144,7 +144,7 @@
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   display: flex;
   flex-direction: column;
 }
@@ -181,13 +181,13 @@
 }
 
 .admin-roles-search:focus-within {
-  border-color: #06b6d4;
+  border-color: var(--theme-primary);
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.2);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
 
 .admin-roles-search svg {
-  color: #0891b2;
+  color: var(--theme-primary-dark);
   flex-shrink: 0;
 }
 
@@ -196,7 +196,7 @@
   border: none;
   outline: none;
   background: transparent;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 0.94rem;
   font-weight: 600;
   height: 100%;
@@ -217,7 +217,7 @@
   -webkit-backdrop-filter: blur(14px);
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   padding: 0 16px;
   box-sizing: border-box;
   outline: none;
@@ -227,9 +227,9 @@
 }
 
 .admin-roles-select:focus {
-  border-color: #06b6d4;
+  border-color: var(--theme-primary);
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
 
 /* Main Roles Table inside Card */
@@ -342,13 +342,13 @@
   gap: 6px;
   padding: 4px 14px;
   border-radius: 10px;
-  background: rgba(6, 182, 212, 0.18);
-  border: 1px solid rgba(6, 182, 212, 0.35);
-  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.12);
+  background: color-mix(in srgb, var(--theme-primary) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 35%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary) 12%, transparent);
 }
 
 .admin-roles-name-highlight b {
-  color: #0891b2;
+  color: var(--theme-primary-dark);
   font-weight: 900;
   font-size: 0.92rem;
   letter-spacing: -0.01em;
@@ -359,9 +359,9 @@
   align-items: center;
   padding: 3px 10px;
   border-radius: 8px;
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  color: #4f46e5;
+  background: color-mix(in srgb, var(--theme-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 25%, transparent);
+  color: var(--theme-primary);
   font-size: 0.84rem;
   font-weight: 700;
 }
@@ -379,15 +379,15 @@
 }
 
 .admin-roles-module-list .admin-roles-module-pill:nth-child(4n + 2) {
-  background: rgba(16, 185, 129, 0.14);
-  border-color: rgba(16, 185, 129, 0.34);
-  color: #047857;
+  background: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+  border-color: color-mix(in srgb, var(--theme-primary) 34%, transparent);
+  color: var(--theme-primary-dark);
 }
 
 .admin-roles-module-list .admin-roles-module-pill:nth-child(4n + 3) {
-  background: rgba(139, 92, 246, 0.13);
-  border-color: rgba(139, 92, 246, 0.3);
-  color: #6d28d9;
+  background: color-mix(in srgb, var(--theme-primary) 13%, transparent);
+  border-color: color-mix(in srgb, var(--theme-primary) 30%, transparent);
+  color: var(--theme-primary);
 }
 
 .admin-roles-module-list .admin-roles-module-pill:nth-child(4n) {
@@ -413,25 +413,25 @@
   font-size: 0.88rem;
   font-weight: 800;
   border: 2px solid #ffffff;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--theme-primary-dark) 8%, transparent);
   color: #ffffff;
   flex-shrink: 0;
 }
 
 .admin-roles-avatar--0 {
-  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
 }
 
 .admin-roles-avatar--1 {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
 }
 
 .admin-roles-avatar--2 {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
 }
 
 .admin-roles-avatar--3 {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
 }
 
 .admin-roles-page .sa-role-admin-list {
@@ -442,13 +442,13 @@
 
 .admin-roles-page .sa-role-admin-list b {
   font-size: 14px;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-weight: 700;
 }
 
 .admin-roles-email {
   font-size: 12.5px;
-  color: #0284c7;
+  color: var(--theme-primary);
   font-weight: 800;
 }
 
@@ -489,10 +489,10 @@
   box-sizing: border-box;
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 20px;
-  background: linear-gradient(135deg, rgba(240, 253, 250, 0.78), rgba(239, 246, 255, 0.78) 55%, rgba(250, 245, 255, 0.72));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-primary-soft) 78%, transparent), color-mix(in srgb, var(--theme-primary-soft) 78%, transparent) 55%, color-mix(in srgb, var(--theme-primary-soft) 72%, transparent));
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   padding: 24px 28px;
 }
 
@@ -500,7 +500,7 @@
   margin: 0 0 6px;
   font-size: 20px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   letter-spacing: -0.01em;
 }
 
@@ -521,7 +521,7 @@
 }
 
 .admin-roles-page .sa-permission-head {
-  background: linear-gradient(90deg, rgba(224, 242, 254, 0.8), rgba(209, 250, 229, 0.72), rgba(243, 232, 255, 0.76));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--theme-primary-soft) 80%, transparent), rgba(209, 250, 229, 0.72), color-mix(in srgb, var(--theme-primary-soft) 76%, transparent));
   border-bottom: 1px solid rgba(255, 255, 255, 0.6);
   color: #1e293b;
   font-size: 0.78rem;
@@ -543,17 +543,17 @@
   gap: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.4);
   background: rgba(255, 255, 255, 0.2);
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   transition: all 0.2s ease;
 }
 
 .admin-roles-page .sa-permission-row:hover {
-  background: linear-gradient(90deg, rgba(224, 242, 254, 0.54), rgba(236, 253, 245, 0.54), rgba(250, 245, 255, 0.54));
-  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.1);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--theme-primary-soft) 54%, transparent), rgba(236, 253, 245, 0.54), color-mix(in srgb, var(--theme-primary-soft) 54%, transparent));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 10%, transparent);
 }
 
 .admin-roles-page .sa-permission-row--doctor {
-  background: linear-gradient(90deg, rgba(224, 242, 254, 0.56), rgba(255, 255, 255, 0.35));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--theme-primary-soft) 56%, transparent), rgba(255, 255, 255, 0.35));
 }
 
 .admin-roles-page .sa-permission-row--receptionist {
@@ -565,13 +565,13 @@
 }
 
 .admin-roles-page .sa-permission-row--labtechnician {
-  background: linear-gradient(90deg, rgba(243, 232, 255, 0.56), rgba(255, 255, 255, 0.35));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--theme-primary-soft) 56%, transparent), rgba(255, 255, 255, 0.35));
 }
 
-.admin-roles-page .sa-permission-row--doctor input { accent-color: #0284c7; }
+.admin-roles-page .sa-permission-row--doctor input { accent-color: var(--theme-primary); }
 .admin-roles-page .sa-permission-row--receptionist input { accent-color: #ea580c; }
-.admin-roles-page .sa-permission-row--nurse input { accent-color: #059669; }
-.admin-roles-page .sa-permission-row--labtechnician input { accent-color: #7c3aed; }
+.admin-roles-page .sa-permission-row--nurse input { accent-color: var(--theme-primary-dark); }
+.admin-roles-page .sa-permission-row--labtechnician input { accent-color: var(--theme-primary); }
 
 .admin-roles-page .sa-permission-row > span:first-child small {
   font-weight: 700;
@@ -600,7 +600,7 @@
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.14);
+  box-shadow: 0 24px 48px -12px color-mix(in srgb, var(--theme-primary-dark) 14%, transparent);
   padding: 24px 28px;
   margin-bottom: 24px;
 }
@@ -616,7 +616,7 @@
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .admin-roles-page .sa-form-grid {
@@ -644,7 +644,7 @@
   border: 1px solid #d8e2ee;
   background: rgba(241, 245, 249, 0.85);
   font-size: 14px;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   padding: 0 14px;
   box-sizing: border-box;
   outline: none;
@@ -654,17 +654,17 @@
 
 .admin-roles-page .sa-form-field select:focus,
 .admin-roles-page .sa-form-field input:focus {
-  border-color: #3b82f6;
+  border-color: var(--theme-primary);
   background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 15%, transparent);
 }
 
 /* Buttons */
 .admin-roles-page .sa-btn {
-  border: 1.5px solid #bae6fd;
+  border: 1.5px solid var(--theme-primary-soft);
   border-radius: 10px;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  color: #0284c7;
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  color: var(--theme-primary);
   font-size: 14px;
   font-weight: 700;
   height: 40px;
@@ -674,28 +674,28 @@
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  box-shadow: 0 2px 5px rgba(2, 132, 199, 0.1);
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--theme-primary) 10%, transparent);
   transition: all 0.2s ease;
 }
 
 .admin-roles-page .sa-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  border-color: #0284c7;
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary);
   color: #ffffff;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary) 30%, transparent);
 }
 
 .admin-roles-page .sa-btn-primary {
-  background: linear-gradient(135deg, #0f9d9d 0%, #0d7f7f 100%);
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
   border: none;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(15, 157, 157, 0.25);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 25%, transparent);
 }
 
 .admin-roles-page .sa-btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0d8c8c 0%, #0b6f6f 100%);
-  box-shadow: 0 6px 16px rgba(15, 157, 157, 0.35);
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-primary-dark) 35%, transparent);
 }
 
 .admin-roles-page .sa-btn:disabled {
@@ -715,7 +715,7 @@
 
 .admin-roles-page .sa-icon-btn:hover {
   background: #f1f5f9;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 /* Responsive */
@@ -764,7 +764,7 @@
 }
 
 .admin-roles-permission-item b {
-  color: #1e3a8a;
+  color: var(--theme-primary-dark);
   font-size: 12.5px;
   font-weight: 850;
   line-height: 1.25;
@@ -784,9 +784,9 @@
   min-height: 20px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(14, 165, 233, 0.12);
-  border: 1px solid rgba(14, 165, 233, 0.22);
-  color: #0369a1;
+  background: color-mix(in srgb, var(--theme-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 22%, transparent);
+  color: var(--theme-primary-dark);
   font-size: 11px;
   font-style: normal;
   font-weight: 800;
@@ -976,7 +976,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(15, 23, 42, 0.28);
+  background: color-mix(in srgb, var(--theme-primary-dark) 28%, transparent);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
@@ -987,7 +987,7 @@
   margin: 0 !important;
   overflow: auto;
   overscroll-behavior: contain;
-  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  box-shadow: 0 28px 80px color-mix(in srgb, var(--theme-primary-dark) 24%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .admin-roles-centered-modal .sa-permission-matrix {
@@ -1234,10 +1234,10 @@
   max-width: 100%;
   margin: 2px 0 10px;
   padding: 6px 10px;
-  border: 1px solid #cfe7ff;
+  border: 1px solid var(--theme-primary-soft);
   border-radius: 10px;
-  background: #f8fbff;
-  color: #0f172a;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary-dark);
 }
 
 .admin-roles-staff-summary span {
@@ -1257,9 +1257,9 @@
 .admin-roles-staff-summary em {
   padding: 3px 9px;
   border-radius: 999px;
-  background: #dff7ff;
-  border: 1px solid #8fe3f7;
-  color: #0787ad;
+  background: var(--theme-primary-soft);
+  border: 1px solid var(--theme-primary-glow);
+  color: var(--theme-primary-dark);
   font-size: 12px;
   font-style: normal;
   font-weight: 800;
@@ -1526,19 +1526,19 @@
   background: #ffffff;
   border-color: #d5e0e2;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent);
 }
 
 .admin-roles-page .admin-roles-search:focus-within {
-  border-color: #4b9da3;
-  box-shadow: 0 0 0 3px rgba(75, 157, 163, 0.16);
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 16%, transparent);
 }
 
 .admin-roles-page .admin-roles-table-card .sa-table {
   background: #ffffff;
   border: 1px solid #dfe8ea;
   border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent);
 }
 
 .admin-roles-page .admin-roles-table-card .sa-table-head {
@@ -1554,23 +1554,23 @@
 }
 
 .admin-roles-page .admin-roles-name-highlight {
-  background: #e2f2f1;
-  border-color: #b9d8d6;
-  box-shadow: 0 2px 8px rgba(54, 127, 130, 0.12);
+  background: var(--theme-primary-soft);
+  border-color: var(--theme-primary-glow);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 12%, transparent);
 }
 
 .admin-roles-page .admin-roles-name-highlight b,
 .admin-roles-page .admin-roles-module-list .admin-roles-module-pill {
-  color: #367f82;
+  color: var(--theme-primary-dark);
 }
 
 .admin-roles-page .admin-roles-module-list .admin-roles-module-pill {
-  background: #e2f2f1;
-  border-color: #b9d8d6;
+  background: var(--theme-primary-soft);
+  border-color: var(--theme-primary-glow);
 }
 
 .admin-roles-page .admin-roles-staff-cell .admin-roles-avatar {
-  background: #4b9da3;
+  background: var(--theme-primary);
   color: #ffffff;
 }
 
@@ -1668,12 +1668,12 @@
 }
 
 .admin-roles-centered-modal .sa-permission-row:nth-child(even) {
-  background: rgba(240, 249, 255, 0.5) !important;
+  background: color-mix(in srgb, var(--theme-primary-soft) 50%, transparent) !important;
 }
 
 .admin-roles-centered-modal .sa-permission-row > span {
   font-size: 14px !important;
-  color: #0f172a !important;
+  color: var(--theme-primary-dark) !important;
   font-weight: 500 !important;
 }
 
@@ -1827,7 +1827,7 @@
   border-radius: 10px !important;
   font-size: 14px !important;
   font-weight: 850 !important;
-  box-shadow: 0 12px 24px rgba(15, 118, 110, 0.22) !important;
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--theme-primary-dark) 22%, transparent) !important;
 }
 
 .admin-roles-centered-modal .sa-permission-head input,
@@ -1925,9 +1925,9 @@
 .admin-roles-page .sa-permission-row--receptionist,
 .admin-roles-page .sa-permission-row--nurse,
 .admin-roles-page .sa-permission-row--labtechnician {
-  background: #f4faff !important;
+  background: var(--theme-primary-soft) !important;
 }
 
 .admin-roles-page .sa-permission-row:hover {
-  background: #eaf5fb !important;
+  background: var(--theme-primary-soft) !important;
 }

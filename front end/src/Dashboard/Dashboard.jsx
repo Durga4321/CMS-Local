@@ -2,17 +2,12 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useRef,
+  useLayoutEffect,
 } from "react";
 
 import "./Dashboard.css";
-import icon3dCalendar from "../assets/3d_calendar_icon.jpg";
-import icon3dMoney from "../assets/3d_money_icon.jpg";
-import icon3dStethoscope from "../assets/3d_medical_stethoscope.jpg";
-import icon3dHeartNurse from "../assets/3d_heart_nurse_icon.jpg";
-import icon3dPatientAvatar from "../assets/3d_patient_avatar_icon.jpg";
-import icon3dFlask from "../assets/3d_medical_flask.jpg";
-import icon3dShield from "../assets/3d_medical_shield.jpg";
-import hospitalDomeImg from "../assets/hospital_dome_building.png";
+import DashboardCards from "../components/superadmin/DashboardCards";
 
 import {
   Bar,
@@ -26,6 +21,10 @@ import {
 } from "recharts";
 
 import {
+  Pill,
+  Sun,
+  Moon,
+  RefreshCw,
   ChevronDown,
   Stethoscope,
   Users,
@@ -151,6 +150,8 @@ const pickValue = (record = {}, keys = [], fallback = "") => {
 };
 
 const parseList = (data) => {
+  if (data?.data && !Array.isArray(data.data)) return parseList(data.data);
+  for (const key of ["rows", "results", "records", "doctors", "patients", "pharmacists", "users"]) { if (Array.isArray(data?.[key])) return data[key]; }
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.data)) return data.data;
   if (Array.isArray(data?.items)) return data.items;
@@ -364,27 +365,25 @@ function Dashboard() {
   const hasClinic = Boolean(storedClinicId && storedClinicName);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [clinicCardFlipped, setClinicCardFlipped] = useState(false);
+  const pageRef = useRef(null);
+  const [clock, setClock] = useState(() => new Date());
+  const [moduleCounts, setModuleCounts] = useState({});
+  const [dashboardError, setDashboardError] = useState("");
+  useEffect(() => { const timer = window.setInterval(() => setClock(new Date()), 30000); return () => window.clearInterval(timer); }, []);
+  useLayoutEffect(() => {
+    const page = pageRef.current;
+    if (!page) return;
+    const fit = () => page.style.setProperty("--admin-dashboard-height", Math.max(200, window.innerHeight - page.getBoundingClientRect().top - 12) + "px");
+    fit(); const observer = new ResizeObserver(fit);
+    if (page.parentElement) observer.observe(page.parentElement);
+    window.addEventListener("resize", fit);
+    return () => { observer.disconnect(); window.removeEventListener("resize", fit); };
+  });
   const [timeFilter, setTimeFilter] = useState("month");
 
   const openAddDoctor = () => {
     navigate("/doctors/add");
   };
-
-  useEffect(() => {
-    if (loading || location.hash !== "#recent-activity") {
-      return undefined;
-    }
-
-    const frameId = window.requestAnimationFrame(() => {
-      document.getElementById("recent-activity")?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    });
-
-    return () => window.cancelAnimationFrame(frameId);
-  }, [loading, location.hash]);
 
   const getDashboardMetricValue = (keys = [], fallback = 0) => {
     const value = pickValue(dashboardData, keys, fallback);
@@ -396,220 +395,53 @@ function Dashboard() {
   };
 
   const fetchDashboard = useCallback(async () => {
-    try {
-      const token = getAdminToken();
-      const headers = {
-        "ngrok-skip-browser-warning": "true",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      };
-
-      const urlParams = new URLSearchParams();
-      if (storedHospitalId) {
-        urlParams.set("hospitalId", String(storedHospitalId));
-        urlParams.set("clinicId", String(storedHospitalId));
-      }
-      const dashboardUrl = urlParams.toString() ? `${API}?${urlParams.toString()}` : API;
-
-      const response = await fetchWithTimeout(dashboardUrl, { headers });
-
-      if (!response.ok) {
-        throw new Error("Unable to load dashboard");
-      }
-
-      const data = await response.json();
-      let merged = { ...data };
-      setDashboardData(merged);
-      setLoading(false);
-
-      const receptionistCount = pickValue(
-        merged,
-        [
-          "totalReceptionists",
-          "receptionistCount",
-          "receptionists",
-          "receptionistTotal",
-          "receptionist_count",
-        ],
-        null
-      );
-      const nurseCount = pickValue(
-        merged,
-        [
-          "totalNurses",
-          "nurseCount",
-          "nurses",
-          "nurseTotal",
-          "nurse_count",
-        ],
-        null
-      );
-      const labTechnicianCount = pickValue(
-        merged,
-        [
-          "totalLabTechnicians",
-          "labTechnicianCount",
-          "labTechnicians",
-          "labtechnicians",
-          "labTechCount",
-          "labTechs",
-          "lab_count",
-        ],
-        null
-      );
-
-      Promise.allSettled([
-        fetchWithTimeout(`${API}/ClincData`, { headers }, 2500),
-        fetchWithTimeout(APPOINTMENT_API, { headers }, 2500),
-        fetchWithTimeout(REVENUE_API, { headers }, 2500),
-        receptionistCount === null || receptionistCount === 0
-          ? fetchWithTimeout(RECEPTIONIST_API, { headers }, 2500)
-          : Promise.resolve(null),
-        nurseCount === null || nurseCount === 0
-          ? fetchWithTimeout(
-              storedHospitalId
-                ? `${STAFF_API}?role=Nurse&hospitalId=${encodeURIComponent(storedHospitalId)}`
-                : `${STAFF_API}?role=Nurse`,
-              { headers },
-              2500
-            )
-          : Promise.resolve(null),
-        labTechnicianCount === null || labTechnicianCount === 0
-          ? fetchWithTimeout(
-              storedHospitalId
-                ? `${STAFF_API}?role=LabTechnician&hospitalId=${encodeURIComponent(storedHospitalId)}`
-                : `${STAFF_API}?role=LabTechnician`,
-              { headers },
-              2500
-            )
-          : Promise.resolve(null),
-      ]).then(async ([clinicResult, appointmentResult, revenueResult, receptionistResult, nurseResult, labTechnicianResult]) => {
-        let nextMerged = { ...data };
-        let hasDashboardRevenue = false;
-
-        if (clinicResult.status === "fulfilled" && clinicResult.value?.ok) {
-          const clinicData = await clinicResult.value.json().catch(() => ({}));
-          nextMerged = {
-            ...nextMerged,
-            clinic: {
-              ...(nextMerged.clinic || {}),
-              ...clinicData,
-            },
-            clinicName: nextMerged.clinicName || clinicData?.clinicName || nextMerged.clinic?.clinicName,
-          };
-        }
-
-        if (appointmentResult.status === "fulfilled" && appointmentResult.value?.ok) {
-          const appointmentData = await appointmentResult.value.json().catch(() => []);
-          nextMerged = {
-            ...nextMerged,
-            todayAppointments: countTodayAppointments(appointmentData),
-            recentAppointmentsList: parseList(appointmentData).slice(0, 4),
-          };
-        }
-
-        if (revenueResult.status === "fulfilled" && revenueResult.value?.ok) {
-          const revenueData = await revenueResult.value.json().catch(() => ({}));
-          const parsedRevenue = parseRevenueDashboard(revenueData);
-          hasDashboardRevenue = parsedRevenue.totalRevenue > 0 || parsedRevenue.revenueTrend.length > 0;
-          nextMerged = {
-            ...nextMerged,
-            totalRevenue: parsedRevenue.totalRevenue || nextMerged.totalRevenue || 0,
-            revenueTrend: parsedRevenue.revenueTrend.length
-              ? parsedRevenue.revenueTrend
-              : nextMerged.revenueTrend,
-          };
-        }
-
-        const storedHospitalId = getStoredHospitalId();
-        const revenueReportParams = new URLSearchParams();
-        if (storedHospitalId) {
-          revenueReportParams.set("hospitalId", String(storedHospitalId));
-          revenueReportParams.set("clinicId", String(storedHospitalId));
-        }
-        const revenueReportUrl = revenueReportParams.toString()
-          ? `${REVENUE_REPORT_API}?${revenueReportParams.toString()}`
-          : REVENUE_REPORT_API;
-        const revenueReportResponse = await fetchWithTimeout(revenueReportUrl, { headers }, 2500).catch(() => null);
-        const revenueReportData = revenueReportResponse?.ok ? await revenueReportResponse.json().catch(() => []) : [];
-        const revenueReportRows = parseRevenueReportRows(revenueReportData);
-        const billingRows = await fetchRevenueBillingRows({ apiUrl, headers });
-        const scopedBillingRows = billingRows.filter((row) =>
-          passesRevenueFilters(row, { clinicId: storedHospitalId || "" })
-        );
-        const billingTotals = getRevenueTotals(scopedBillingRows);
-        const dashboardRevenueMissing = !hasDashboardRevenue && toNumericAmount(nextMerged.totalRevenue) <= 0;
-        if (dashboardRevenueMissing && revenueReportRows.length) {
-          const reportTotals = getRevenueTotals(revenueReportRows);
-          const reportTrend = groupRevenueByMonth(revenueReportRows);
-          const useBillingTotals = scopedBillingRows.length && billingTotals.revenue > reportTotals.revenue;
-          nextMerged = {
-            ...nextMerged,
-            totalRevenue: useBillingTotals ? billingTotals.revenue : reportTotals.revenue,
-            opRevenue: useBillingTotals ? billingTotals.opRevenue : reportTotals.opRevenue,
-            diagnosticRevenue: useBillingTotals ? billingTotals.diagnosticRevenue : reportTotals.diagnosticRevenue,
-            pharmacyRevenue: useBillingTotals ? billingTotals.pharmacyRevenue : reportTotals.pharmacyRevenue,
-            revenueTrend: (useBillingTotals ? groupRevenueByMonth(scopedBillingRows) : reportTrend).map((row) => ({
-              ...row,
-              name: row.month,
-            })),
-          };
-        } else if (dashboardRevenueMissing) {
-          if (scopedBillingRows.length) {
-            nextMerged = {
-              ...nextMerged,
-              totalRevenue: billingTotals.revenue,
-              opRevenue: billingTotals.opRevenue,
-              diagnosticRevenue: billingTotals.diagnosticRevenue,
-              pharmacyRevenue: billingTotals.pharmacyRevenue,
-              revenueTrend: groupRevenueByMonth(scopedBillingRows).map((row) => ({
-                ...row,
-                name: row.month,
-              })),
-            };
-          }
-        }
-
-        if (receptionistResult.status === "fulfilled" && receptionistResult.value?.ok) {
-          const receptionistData = await receptionistResult.value.json().catch(() => []);
-          const receptionists =
-            Array.isArray(receptionistData)
-              ? receptionistData
-              : receptionistData?.data || receptionistData?.rows || [];
-          nextMerged = {
-            ...nextMerged,
-            receptionistCount: receptionists.length,
-          };
-        }
-
-        if (nurseResult.status === "fulfilled" && nurseResult.value?.ok) {
-          const nurseData = await nurseResult.value.json().catch(() => []);
-          const nurseRows = parseList(nurseData);
-          const nurses = nurseRows.filter(isNurseRecord);
-          nextMerged = {
-            ...nextMerged,
-            nurseCount: nurses.length || nurseRows.length,
-          };
-        }
-
-        if (labTechnicianResult.status === "fulfilled" && labTechnicianResult.value?.ok) {
-          const labTechnicianData = await labTechnicianResult.value.json().catch(() => []);
-          const labTechnicianRows = parseList(labTechnicianData);
-          const labTechnicians = labTechnicianRows.filter(isLabTechnicianRecord);
-          nextMerged = {
-            ...nextMerged,
-            labTechnicianCount: labTechnicians.length || labTechnicianRows.length,
-          };
-        }
-
-        setDashboardData(nextMerged);
-      });
-
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
+    setLoading(true);
+    setDashboardError("");
+    const token = getAdminToken();
+    const headers = { "ngrok-skip-browser-warning": "true", ...(token ? { Authorization: "Bearer " + token } : {}) };
+    const scopedUrl = (path) => {
+      const url = apiUrl(path);
+      return storedHospitalId ? url + (url.includes("?") ? "&" : "?") + "hospitalId=" + encodeURIComponent(storedHospitalId) : url;
+    };
+    const read = async (path) => {
+      const response = await fetchWithTimeout(scopedUrl(path), { headers, cache: "no-store" }, 10000);
+      if (!response.ok) throw new Error(path + " (HTTP " + response.status + ")");
+      return response.json();
+    };
+    const scopedRows = (payload) => parseList(payload).filter(row => {
+      const clinicId = row.hospitalId ?? row.HospitalId ?? row.clinicId ?? row.ClinicId;
+      return !clinicId || !storedHospitalId || String(clinicId) === String(storedHospitalId);
+    });
+    const modules = [
+      ["Doctors", "Doctor"], ["Patients", "Patient"], ["Nurses", "Staff?role=Nurse"],
+      ["Receptionists", "Receptionist"], ["Lab Technicians", "Staff/lab-technicians"], ["Pharmacists", "pharmacists"],
+    ];
+    const results = await Promise.allSettled([
+      read("Dashboard"), ...modules.map(([,path]) => read(path)),
+      read("Appointment"), read("Dashboard/ClincData"), read("Dashboard/revenue"),
+    ]);
+    let next = results[0].status === "fulfilled" ? (results[0].value?.data ?? results[0].value) : {};
+    const counts = {};
+    const failed = [];
+    modules.forEach(([label], index) => {
+      const result = results[index + 1];
+      if (result.status !== "fulfilled") { counts[label] = null; failed.push(label); return; }
+      let rows = scopedRows(result.value);
+      if (label === "Nurses") rows = rows.filter(isNurseRecord);
+      counts[label] = rows.length;
+    });
+    const appointments = results[7];
+    if (appointments.status === "fulfilled") {
+      const rows = scopedRows(appointments.value);
+      next = { ...next, recentAppointmentsList: rows, todayAppointments: countTodayAppointments(rows) };
     }
-  }, []);
+    if (results[8].status === "fulfilled") next.clinic = { ...(next.clinic || {}), ...(results[8].value?.data ?? results[8].value) };
+    if (results[9].status === "fulfilled") next = { ...next, ...parseRevenueDashboard(results[9].value) };
+    setModuleCounts(counts);
+    setDashboardData(next);
+    if (failed.length) setDashboardError("Unable to load: " + failed.join(", ") + ". Use Refresh to retry.");
+    setLoading(false);
+  }, [storedHospitalId]);
 
   useEffect(() => {
     fetchDashboard();
@@ -769,474 +601,37 @@ function Dashboard() {
     );
   }
 
+  const hour = clock.getHours();
+  const greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
+  const GreetingIcon = hour >= 17 ? Moon : Sun;
+  const cards = [
+    { label: "Doctors", value: getDashboardMetricValue(["totalDoctors", "doctorCount"]), icon: Stethoscope, path: "/doctors" },
+    { label: "Patients", value: totalPatients, icon: Users, path: "/patients" },
+    { label: "Nurses", value: nurseCount, icon: UserCog, path: "/nurses" },
+    { label: "Receptionists", value: receptionistCount, icon: UserRoundCheck, path: "/receptionists" },
+    { label: "Lab Technicians", value: labTechnicianCount, icon: FlaskConical, path: "/lab-technicians" },
+    { label: "Pharmacists", value: 0, icon: Pill, path: "/pharmacists" },
+  ].map(card => ({ ...card, value: loading ? "..." : moduleCounts[card.label] == null ? "Unavailable" : formatNumber(moduleCounts[card.label]), tone: "teal", onClick: () => navigate(card.path) }));
   return (
-    <div className="db-dashboard">
-      {/* 3D Hospital Theme Animated Background Overlays */}
-      <div className="db-3d-bg-overlay" />
-      <div className="db-3d-floating-particle p1" />
-      <div className="db-3d-floating-particle p2" />
-      <div className="db-3d-floating-particle p3" />
-      <div className="db-3d-ecg-wave">
-        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="db-ecg-svg">
-          <path
-            d="M0 60 L300 60 L310 40 L320 80 L330 20 L345 100 L355 60 L370 60 L400 60 L700 60 L710 35 L720 85 L730 15 L745 105 L755 60 L770 60 L1200 60"
-            fill="none"
-            stroke="rgba(99, 102, 241, 0.25)"
-            strokeWidth="2.5"
-            strokeDasharray="1200"
-            strokeDashoffset="1200"
-            className="ecg-path"
-          />
-        </svg>
+    <div className="db-dashboard db-admin-overview" ref={pageRef}>
+      <header className="admin-overview-heading"><span className="admin-greeting-icon"><GreetingIcon size={27}/></span><div><h1>{greeting}, {adminName}!</h1><p>Here's what's happening at your clinic today.</p></div><button type="button" className="admin-refresh" onClick={fetchDashboard} disabled={loading}><RefreshCw size={16}/><span>Refresh</span></button></header>
+      <div className="admin-metrics-section"><DashboardCards cards={cards}/>{dashboardError && <p className="admin-count-error" role="status">{dashboardError}</p>}</div>
+      <div className="admin-overview-columns">
+        <section className="admin-detail-section"><div className="admin-section-heading"><h2>Clinic Information</h2><Building2 size={19}/></div>
+          <dl className="admin-clinic-details">{[["Clinic Name",clinicInfo.name],["Contact Number",clinicInfo.contactNumber],["Email",clinicInfo.email],["Address",clinicInfo.address]].map(([label,value]) => <div key={label}><dt>{label}</dt><dd>{loading ? "Loading..." : value}</dd></div>)}</dl>
+          <div className="admin-section-footer"><span>Clinic Status</span><strong className="admin-status-tag">{clinicInfo.status}</strong></div>
+        </section>
+        <section className="admin-detail-section" id="recent-activity"><div className="admin-section-heading"><h2>Recent Appointments</h2><button type="button" onClick={() => navigate("/appointments")}>View All <ArrowRight size={13}/></button></div>
+          <div className="admin-appointment-list">{loading ? <p className="admin-empty">Loading appointments...</p> : displayRecentAppointments.length ? displayRecentAppointments.map((apt,index) => <article className="admin-appointment" key={index}><span className="admin-appointment-icon"><UserPlus size={18}/></span><div><strong>{apt.name}</strong><p>{apt.subtitle}</p><small>{apt.date}{" | "}{apt.time}</small></div><span className="admin-status-tag">{apt.status}</span></article>) : <p className="admin-empty">No recent appointments.</p>}</div>
+          <div className="admin-section-footer admin-appointment-totals">{[["Today",todayAppointmentCount],["This Week",weekAppointmentCount],["This Month",monthAppointmentCount]].map(([label,value]) => <div key={label}><span>{label}</span><strong>{formatNumber(value)}</strong></div>)}</div>
+        </section>
+        <section className="admin-detail-section admin-clinic-statistics"><div className="admin-section-heading"><h2>Clinic Status</h2><select aria-label="Statistics period" value={timeFilter} onChange={e => setTimeFilter(e.target.value)}><option value="month">This Month</option><option value="quarter">This Quarter</option><option value="year">This Year</option></select></div>
+          <div className="admin-chart-summary"><span>Appointments</span><strong>{formatNumber(selectedPeriodAppointmentCount)}</strong></div>
+          <div className="admin-overview-chart"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={dashboardData?.growthChart?.length ? chartPoints : []} margin={{top:12,right:8,left:-25,bottom:0}}><CartesianGrid stroke="#dce8e9" strokeDasharray="3 3" vertical={false}/><XAxis dataKey="name" tick={{fontSize:10}} tickLine={false} axisLine={false}/><YAxis tick={{fontSize:10}} tickLine={false} axisLine={false}/><Tooltip/><Area type="monotone" dataKey="value" name="Appointments" stroke="var(--theme-primary-dark)" fill="var(--theme-primary-soft)" strokeWidth={2}/></ComposedChart></ResponsiveContainer></div>
+          <div className="admin-section-footer admin-stat-totals"><div><span>Patients</span><strong>{formatNumber(totalPatients)}</strong></div><div><span>Revenue</span><strong>{formatCurrency(totalRevenue)}</strong></div></div>
+        </section>
       </div>
-
-      {/* PAGE HEADER */}
-      <div className="db-header">
-        <div>
-          <h1 className="db-title">Admin Dashboard</h1>
-          {/* <p className="db-subtitle">Welcome back, Ravi! Here's what's happening at the clinic today.</p>
-           */}
-           <p className="db-subtitle">
-  Welcome back, {adminName}! Here's what's happening at the clinic today.
-</p>
-        </div>
-      </div>
-
-      {/* TOP SECTION: CLINIC INFO (LEFT) + 6 KPI CARDS (RIGHT 2x3 GRID) */}
-      <div className="db-top-main-grid">
-        {/* LEFT: CLINIC INFORMATION CARD */}
-        <div
-          className={`db-clinic-card ${clinicCardFlipped ? "is-flipped" : ""}`}
-          onClick={() => setClinicCardFlipped((prev) => !prev)}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") setClinicCardFlipped((prev) => !prev);
-          }}
-          aria-label="Flip clinic details card"
-        >
-          <div className="db-clinic-card-inner">
-            {/* FRONT FACE */}
-            <div className="db-clinic-front">
-              <div className="db-clinic-badge-header">
-                <div className="db-clinic-header-left">
-                  <div className="db-clinic-badge-icon">
-                    <Info size={16} />
-                  </div>
-                  <span>CLINIC INFORMATION</span>
-                </div>
-              </div>
-
-              <div className="db-clinic-body">
-                <div className="db-clinic-left-info">
-                  <div className="db-info-row">
-                    <div className="db-info-label">
-                      <Building2 size={15} />
-                      <span>Clinic Name</span>
-                    </div>
-                    <div className="db-info-val">
-                      {loading ? <Skeleton width={110} height={18} /> : clinicInfo.name}
-                    </div>
-                  </div>
-
-                  <div className="db-info-row">
-                    <div className="db-info-label">
-                      <Phone size={15} />
-                      <span>Contact Number</span>
-                    </div>
-                    <div className="db-info-val">
-                      {loading ? <Skeleton width={100} height={18} /> : clinicInfo.contactNumber}
-                    </div>
-                  </div>
-
-                  <div className="db-info-row">
-                    <div className="db-info-label">
-                      <Mail size={15} />
-                      <span>Email</span>
-                    </div>
-                    <div className="db-info-val db-info-email">
-                      {loading ? <Skeleton width={140} height={18} /> : clinicInfo.email}
-                    </div>
-                  </div>
-
-                  <div className="db-info-row">
-                    <div className="db-info-label">
-                      <Plus size={15} />
-                      <span>Status</span>
-                    </div>
-                    <div className="db-info-val">
-                      <span className={`db-status-pill ${clinicInfo.status.toLowerCase()}`}>
-                        {loading ? <Skeleton width={60} height={18} /> : clinicInfo.status}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="db-clinic-footer">
-                <Info size={13} />
-                <span>Tap or press Enter to view full address.</span>
-              </div>
-            </div>
-
-            {/* BACK FACE (FULL ADDRESS) */}
-            <div className="db-clinic-back">
-              <div className="db-clinic-badge-header">
-                <div className="db-clinic-header-left">
-                  <div className="db-clinic-badge-icon">
-                    <Info size={16} />
-                  </div>
-                  <span>FULL ADDRESS</span>
-                </div>
-              </div>
-              <div className="db-clinic-address-text">
-                {loading ? <Skeleton width="100%" height={24} /> : clinicInfo.address}
-              </div>
-              <div className="db-clinic-footer">
-                Tap or press Enter to flip back.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT: 6 KPI CARDS (2 ROWS x 3 COLS GRID) */}
-        <div className="db-6-kpi-grid">
-          {/* 1. TODAY'S APPOINTMENTS */}
-          <div
-            className="db-kpi-card card-purple-theme"
-            onClick={() => navigate("/appointments")}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="db-kpi-content-wrap">
-              <div className="db-kpi-header">
-                <div className="db-kpi-icon-box box-purple">
-                  <CalendarCheck size={18} />
-                </div>
-                <span className="db-kpi-title">Today's Appointments</span>
-              </div>
-              <div className="db-kpi-num">
-                {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.todayAppointments ?? 0)}
-              </div>
-
-            </div>
-          </div>
-
-          {/* 2. TOTAL REVENUE */}
-          <div
-            className="db-kpi-card card-red-theme"
-            onClick={() => navigate("/RevenueReport/daily")}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="db-kpi-content-wrap">
-              <div className="db-kpi-header">
-                <div className="db-kpi-icon-box box-red">
-                  <IndianRupee size={18} />
-                </div>
-                <span className="db-kpi-title">Total Revenue</span>
-              </div>
-              <div className="db-kpi-num">
-                {loading ? <Skeleton width={80} height={32} /> : formatCurrency(totalRevenue)}
-              </div>
-
-            </div>
-          </div>
-
-          {/* 3. TOTAL DOCTORS */}
-          <div
-            className="db-kpi-card card-green-theme"
-            onClick={() => navigate("/doctors")}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="db-kpi-content-wrap">
-              <div className="db-kpi-header">
-                <div className="db-kpi-icon-box box-green">
-                  <Stethoscope size={18} />
-                </div>
-                <span className="db-kpi-title">Total Doctors</span>
-              </div>
-              <div className="db-kpi-num">
-                {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.totalDoctors ?? 0)}
-              </div>
-
-            </div>
-          </div>
-
-          {/* 4. TOTAL NURSES */}
-          <div
-            className="db-kpi-card card-orange-theme"
-            onClick={() => navigate("/nurses")}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="db-kpi-content-wrap">
-              <div className="db-kpi-header">
-                <div className="db-kpi-icon-box box-orange">
-                  <UserCog size={18} />
-                </div>
-                <span className="db-kpi-title">Total Nurses</span>
-              </div>
-              <div className="db-kpi-num">
-                {loading ? <Skeleton width={50} height={32} /> : formatNumber(nurseCount)}
-              </div>
-
-            </div>
-          </div>
-
-          {/* 5. TOTAL PATIENTS */}
-          <div
-            className="db-kpi-card card-pink-theme"
-            onClick={() => navigate("/patients")}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="db-kpi-content-wrap">
-              <div className="db-kpi-header">
-                <div className="db-kpi-icon-box box-pink">
-                  <UserRoundCheck size={18} />
-                </div>
-                <span className="db-kpi-title">Total Patients</span>
-              </div>
-              <div className="db-kpi-num">
-                {loading ? <Skeleton width={50} height={32} /> : formatNumber(dashboardData?.totalPatients ?? 0)}
-              </div>
-
-            </div>
-          </div>
-
-          {/* 6. TOTAL LAB TECHNICIANS */}
-          <div
-            className="db-kpi-card card-blue-theme"
-            onClick={() => navigate("/lab-technicians")}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="db-kpi-content-wrap">
-              <div className="db-kpi-header">
-                <div className="db-kpi-icon-box box-blue">
-                  <FlaskConical size={18} />
-                </div>
-                <span className="db-kpi-title">Total Lab Technicians</span>
-              </div>
-              <div className="db-kpi-num">
-                {loading ? <Skeleton width={50} height={32} /> : formatNumber(labTechnicianCount)}
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* MIDDLE SECTION: RECENT APPOINTMENTS (LEFT) & CLINIC STATISTICS (RIGHT) */}
-      <div className="db-middle-grid">
-        {/* RECENT APPOINTMENTS PANEL */}
-        <div className="db-panel" id="recent-activity">
-          <div className="db-panel-head">
-            <div className="db-panel-title">
-              <div className="db-panel-icon db-icon-purple-sm">
-                <Calendar size={18} />
-              </div>
-              <h3>Recent Appointments</h3>
-            </div>
-            <button
-              type="button"
-              className="db-view-all-btn"
-              style={{ flexShrink: 0, marginLeft: "auto", whiteSpace: "nowrap" }}
-              onClick={() => navigate("/appointments")}
-            >
-              <span style={{ whiteSpace: "nowrap" }}>View All</span>
-              <ArrowRight size={13} />
-            </button>
-          </div>
-
-          <div className="db-appointments-list">
-            {displayRecentAppointments.map((apt, index) => (
-              <div className="db-apt-item" key={index}>
-                <div className="db-apt-avatar">
-                  <UserPlus size={18} />
-                </div>
-                <div className="db-apt-details">
-                  <h4>{apt.name}</h4>
-                  <p>{apt.subtitle}</p>
-                </div>
-                <div className="db-apt-time-col">
-                  <span className="db-apt-time">{apt.time}</span>
-                  <span className="db-apt-date">{apt.date}</span>
-                </div>
-                <div className="db-apt-status-col">
-                  <span className="db-apt-badge confirmed">{apt.status}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* 3 SUMMARY PILL CARDS AT BOTTOM OF RECENT APPOINTMENTS */}
-          <div className="db-apt-summary-row">
-            <div className="db-apt-sum-card sum-purple">
-              <div className="db-sum-icon">
-                <Users size={16} />
-              </div>
-              <div>
-                <div className="db-sum-val"><b>{formatNumber(todayAppointmentCount)}</b> Today</div>
-              </div>
-            </div>
-
-            <div className="db-apt-sum-card sum-blue">
-              <div className="db-sum-icon">
-                <CalendarCheck size={16} />
-              </div>
-              <div>
-                <div className="db-sum-val"><b>{formatNumber(weekAppointmentCount)}</b> This Week</div>
-              </div>
-            </div>
-
-            <div className="db-apt-sum-card sum-orange">
-              <div className="db-sum-icon">
-                <TrendingUp size={16} />
-              </div>
-              <div>
-                <div className="db-sum-val"><b>{formatNumber(monthAppointmentCount)}</b> This Month</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* CLINIC STATISTICS PANEL */}
-        <div className="db-panel">
-          <div className="db-panel-head">
-            <div className="db-panel-title">
-              <div className="db-panel-icon db-icon-green-sm">
-                <TrendingUp size={18} />
-              </div>
-              <h3>Clinic Statistics</h3>
-            </div>
-            <div className="db-filter-select-wrapper">
-              <select
-                className="db-filter-select"
-                value={timeFilter}
-                onChange={(e) => setTimeFilter(e.target.value)}
-              >
-                <option value="month">This Month</option>
-                <option value="quarter">This Quarter</option>
-                <option value="year">This Year</option>
-              </select>
-              <span className="db-select-arrow-wrapper" aria-hidden="true" title="Filter duration">
-                <ChevronDown size={14} className="db-select-arrow-icon" />
-              </span>
-            </div>
-          </div>
-
-          <div className="db-stats-metrics-bar">
-            <div className="db-metric-item">
-              <span className="db-metric-sub">Appointments</span>
-              <div className="db-metric-val-row">
-                <span className="db-metric-val">{formatNumber(selectedPeriodAppointmentCount)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="db-chart-container">
-            <ResponsiveContainer width="100%" height={140}>
-              <ComposedChart
-                data={chartPoints}
-                layout="horizontal"
-                margin={{ top: 10, right: 16, left: -20, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
-                  </linearGradient>
-                  <linearGradient id="clinicBarFill" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#047857" />
-                    <stop offset="100%" stopColor="#10b981" />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  stroke="#94a3b8"
-                  strokeWidth={1.25}
-                  strokeDasharray="4 3"
-                  vertical={false}
-                  horizontal
-                />
-                <XAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11 }} />
-                <YAxis type="number" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11 }} />
-                <Tooltip
-                  contentStyle={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 12 }}
-                />
-                {chartPoints.length === 1 ? (
-                  <Bar
-                    dataKey="value"
-                    name="Appointments"
-                    fill="url(#clinicBarFill)"
-                    barSize={30}
-                    radius={[8, 8, 0, 0]}
-                  />
-                ) : null}
-                {chartPoints.length > 1 ? (
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#047857"
-                    strokeWidth={4.5}
-                    fillOpacity={1}
-                    fill="url(#colorGreen)"
-                    dot={{ r: 6, fill: "#047857", strokeWidth: 2.5, stroke: "#ffffff" }}
-                  />
-                ) : null}
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* 4 MINI METRIC PILL BOXES AT BOTTOM OF CLINIC STATISTICS */}
-          <div className="db-stat-mini-pills">
-            <div className="db-mini-pill">
-              <div className="db-mini-icon pill-blue">
-                <UserPlus size={14} />
-              </div>
-              <div className="db-mini-text">
-                <span>Patients</span>
-                <b>{formatNumber(totalPatients)}</b>
-              </div>
-            </div>
-
-            <div className="db-mini-pill">
-              <div className="db-mini-icon pill-purple">
-                <Stethoscope size={14} />
-              </div>
-              <div className="db-mini-text">
-                <span>Consultations</span>
-                <b>{formatNumber(consultationCount)}</b>
-              </div>
-            </div>
-
-            <div className="db-mini-pill">
-              <div className="db-mini-icon pill-green">
-                <IndianRupee size={14} />
-              </div>
-              <div className="db-mini-text">
-                <span>Revenue</span>
-                <b>{formatCurrency(totalRevenue)}</b>
-              </div>
-            </div>
-
-            <div className="db-mini-pill">
-              <div className="db-mini-icon pill-orange">
-                <TrendingUp size={14} />
-              </div>
-              <div className="db-mini-text">
-                <span>Growth</span>
-                <b>{formatNumber(growthValue)}</b>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
     </div>
   );
 }
-
 export default Dashboard;

@@ -1193,7 +1193,7 @@ function ScheduleSettingsPage() {
                           cursor:
                             "pointer",
                           color:
-                            "#0f9d9d",
+                            "var(--theme-primary-dark)",
                         }}
                         onClick={() =>
                           editHoliday(

@@ -1,16 +1,16 @@
 :root {
   --app-gradient-bg: 
-    radial-gradient(ellipse 70% 55% at 88% 10%, rgba(186, 230, 253, 0.75) 0%, rgba(209, 250, 229, 0.55) 35%, transparent 72%),
-    radial-gradient(ellipse 55% 45% at 8% 15%, rgba(191, 219, 254, 0.65) 0%, rgba(224, 242, 254, 0.3) 40%, transparent 70%),
-    radial-gradient(circle at 82% 88%, rgba(224, 242, 254, 0.45) 0%, rgba(209, 250, 229, 0.25) 45%, transparent 70%),
-    linear-gradient(140deg, #e1f0fe 0%, #edf6fd 26%, #f1f8fd 56%, #ecf8f5 100%);
-  --app-bg: #edf6fd;
+    radial-gradient(ellipse 70% 55% at 88% 10%, color-mix(in srgb, var(--theme-primary-soft) 75%, transparent) 0%, rgba(209, 250, 229, 0.55) 35%, transparent 72%),
+    radial-gradient(ellipse 55% 45% at 8% 15%, color-mix(in srgb, var(--theme-primary-soft) 65%, transparent) 0%, color-mix(in srgb, var(--theme-primary-soft) 30%, transparent) 40%, transparent 70%),
+    radial-gradient(circle at 82% 88%, color-mix(in srgb, var(--theme-primary-soft) 45%, transparent) 0%, rgba(209, 250, 229, 0.25) 45%, transparent 70%),
+    linear-gradient(140deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 26%, var(--theme-primary-soft) 56%, var(--theme-primary-soft) 100%);
+  --app-bg: var(--theme-primary-soft);
   --app-surface: #ffffff;
   --app-border: #e5e7eb;
-  --app-text: #071120;
+  --app-text: var(--theme-primary-dark);
   --app-muted: #40516a;
-  --app-accent: #0f9d9d;
-  --app-accent-soft: #dff3f3;
+  --app-accent: var(--theme-primary-dark);
+  --app-accent-soft: var(--theme-primary-soft);
   --app-heading-size: 24px;
   --app-title-size: 16px;
   --app-body-size: 14px;
@@ -448,7 +448,7 @@ body {
   background-attachment: fixed !important;
   font-family: "Inter", "Segoe UI", Arial, sans-serif;
   font-size: 14px;
-  color: #071120;
+  color: var(--theme-primary-dark);
   caret-color: transparent;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -469,7 +469,7 @@ body {
   border: 1px solid #dbe3ed;
   border-radius: 10px;
   background: #ffffff;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1482,8 +1482,8 @@ select.op-form-select:focus,
 .pd-notification-sort select:hover,
 .pd-notification-sort select:focus {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230284c7' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
-  border-color: #0284c7 !important;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 15%, transparent) !important;
 }
 
 /* Prevent double syringe on select elements that have custom adjacent syringe overlays */
@@ -2039,3 +2039,9 @@ html[data-cms-theme] body .content.superadmin-content.superadmin-content:has(.sa
   background-image: none !important;
 }
 
+
+/* Shared module accents use the saved palette on every authenticated page. */
+html[data-cms-theme] :is(.content,.dr-layout-content,.rc-content,.lab-main,.nurse-content,.pharmacy-main,.pp-main) :is(.branches-primary-button,.patients-add-button,.doctors-add-button,.receptionists-add-button,.nurses-add-button,.lab-tech-add-button,.sa-btn-primary,.admin-users-btn-primary,.pharmacy-primary-button) { background: var(--theme-primary) !important; border-color: var(--theme-primary) !important; color: #fff !important; }
+html[data-cms-theme] :is(.content,.dr-layout-content,.rc-content,.lab-main,.nurse-content,.pharmacy-main,.pp-main) :is(.db-kpi-icon-box,.rc-dash-kpi-icon,.dd-stat-icon-bezel,.nd-stat-icon-box,.pharmacy-count-icon,.pd-summary-card-icon) { background: var(--theme-primary-soft) !important; color: var(--theme-primary-dark) !important; border-color: var(--theme-primary-glow) !important; }
+html[data-cms-theme] :is(.content,.dr-layout-content,.rc-content,.lab-main,.nurse-content,.pharmacy-main,.pp-main) :is(.sa-stat-card,.dd-stat-card,.nd-stat-card,.pharmacy-count-card,.rc-dash-kpi-card) { border-color: var(--theme-primary-glow) !important; }
+html[data-cms-theme] :is(.content,.dr-layout-content,.rc-content,.lab-main,.nurse-content,.pharmacy-main,.pp-main) :is(.dd-stat-value,.nd-stat-count,.pharmacy-count-value,.db-kpi-num) { color: var(--theme-primary-dark) !important; }

@@ -1,7 +1,7 @@
 .appointment-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: color-mix(in srgb, var(--theme-primary-dark) 45%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -23,7 +23,7 @@
   background: #ffffff;
   border-radius: 16px;
   padding: 16px 20px 18px;
-  box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.22);
+  box-shadow: 0 20px 50px -10px color-mix(in srgb, var(--theme-primary-dark) 22%, transparent);
   animation: modalShow 0.25s ease;
 }
 
@@ -76,7 +76,7 @@
   margin: 0;
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .appointment-modal-header button {
@@ -95,7 +95,7 @@
 
 .appointment-modal-header button:hover {
   background: #e2e8f0;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .appointment-modal-details {
@@ -150,7 +150,7 @@
 
 .appointment-modal-detail-item p {
   margin: 0;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.35;

@@ -12,7 +12,7 @@
   margin: 0 auto !important;
   font-size: 14px;
   font-weight: 800;
-  color: #1e3a8a;
+  color: var(--theme-primary-dark);
   padding: 10px 16px;
   border-bottom: 1px solid #e2e8f0;
   letter-spacing: 0.05em;
@@ -54,9 +54,9 @@
   margin: 0;
   outline: none;
   box-shadow:
-    0 2px 5px rgba(15, 23, 42, 0.06),
+    0 2px 5px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    inset 0 -1px 2px rgba(15, 23, 42, 0.03);
+    inset 0 -1px 2px color-mix(in srgb, var(--theme-primary-dark) 3%, transparent);
   transition:
     transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
     background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
@@ -66,7 +66,7 @@
 }
 
 .action-btn:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--theme-primary);
   outline-offset: 2px;
 }
 
@@ -82,8 +82,8 @@
 .action-btn.is-effecting {
   transform: translateY(2px) scale(0.94);
   box-shadow:
-    inset 0 2px 4px rgba(15, 23, 42, 0.14),
-    0 1px 2px rgba(15, 23, 42, 0.05);
+    inset 0 2px 4px color-mix(in srgb, var(--theme-primary-dark) 14%, transparent),
+    0 1px 2px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent);
 }
 
 /* ==========================================================================
@@ -95,13 +95,13 @@
 }
 
 .led-blue {
-  background: #0284c7;
-  box-shadow: 0 0 4px #0284c7;
+  background: var(--theme-primary);
+  box-shadow: 0 0 4px var(--theme-primary);
 }
 
 .led-purple {
-  background: #6366f1;
-  box-shadow: 0 0 4px #6366f1;
+  background: var(--theme-primary);
+  box-shadow: 0 0 4px var(--theme-primary);
 }
 
 .led-green {
@@ -168,22 +168,22 @@
    ========================================================================== */
 .action-btn.view-instrument-btn,
 .action-btn.view-btn {
-  border-color: #bae6fd;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  color: #0284c7;
-  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.12);
+  border-color: var(--theme-primary-soft);
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  color: var(--theme-primary);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-primary) 12%, transparent);
 }
 
 .action-btn.view-instrument-btn:hover,
 .action-btn.view-btn:hover {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  border-color: #0284c7;
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 35%, transparent);
 }
 
 .action-btn.view-instrument-btn.effect-eye .instrument-ripple {
-  background: radial-gradient(circle, rgba(2, 132, 199, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--theme-primary) 40%, transparent) 0%, transparent 70%);
 }
 
 .action-btn.view-instrument-btn.effect-eye .icon-eye,
@@ -200,7 +200,7 @@
   }
   45% {
     transform: scale(1.32) rotate(4deg);
-    filter: drop-shadow(0 0 6px #0284c7);
+    filter: drop-shadow(0 0 6px var(--theme-primary));
   }
   70% {
     transform: scale(0.95) rotate(-2deg);
@@ -218,23 +218,23 @@
    ========================================================================== */
 .action-btn.edit-instrument-btn,
 .action-btn.edit-btn {
-  border-color: #ddd6fe;
-  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-  color: #7c3aed;
-  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.12);
+  border-color: var(--theme-primary-soft);
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  color: var(--theme-primary);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-primary) 12%, transparent);
 }
 
 .action-btn.edit-instrument-btn:hover,
 .action-btn.edit-btn:hover {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-  border-color: #7c3aed;
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
+  border-color: var(--theme-primary);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 35%, transparent);
 }
 
 .action-btn.edit-instrument-btn.effect-syringe .instrument-ripple,
 .action-btn.edit-instrument-btn.effect-edit .instrument-ripple {
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.35) 0%, transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--theme-primary) 35%, transparent) 0%, transparent 70%);
 }
 
 .action-btn.edit-instrument-btn.effect-syringe .icon-syringe,
@@ -252,7 +252,7 @@
   }
   25% {
     transform: scale(1.18) rotate(-28deg) translateY(-2px);
-    filter: drop-shadow(0 0 5px #6366f1);
+    filter: drop-shadow(0 0 5px var(--theme-primary));
   }
   50% {
     transform: scale(0.88) rotate(-28deg) translateY(5px);

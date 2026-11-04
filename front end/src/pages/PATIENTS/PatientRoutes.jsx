@@ -8,11 +8,12 @@ import {
 } from "lucide-react";
 import { useToast } from "../../components/ToastProvider";
 import PatientDashboard from "./PatientDashboard";
-import { apiUrl, assetUrl, patientApiUrl, PATIENT_API } from "../../config/api";
+import { apiUrl, assetUrl, patientApiUrl, PATIENT_API, BILLING_API_PATHS } from "../../config/api";
 import { validateMobile, validateName, validateStrongPassword } from "../../utils/validation";
 import { formatIndianCurrency, formatTitleCase } from "../../utils/format";
 import {
   PATIENT_PORTAL_OP_BILLS_KEY,
+  RECEPTION_RECENT_SERVICE_BILLS_KEY,
   readPatientPortalBills,
   storePatientPortalBill,
 } from "../../utils/billingRevenue";
@@ -155,11 +156,11 @@ const getBillRecordKey = (bill) => {
     'patientId', 'patient.id', 'invoice.patientId', 'invoice.patient.id',
     'patientCode', 'patient.code', 'patient.patientCode',
   ]);
-  const parts = [billId, billNumber, appointmentId, patientId]
-    .map((value) => String(value || "").trim())
-    .filter(Boolean);
+  const kind = normalizePortalBillingType(readFirst(bill,["invoiceType","InvoiceType","billingType","BillingType","serviceType","type"]));
+  const identity = billId || billNumber;
+  if (identity) return [kind,String(identity)].join("|");
+  if (appointmentId) return [kind,"appointment",appointmentId,patientId].join("|");
 
-  if (parts.length) return parts.join("|");
   const stableKeys = Object.keys(bill).sort();
   return JSON.stringify(stableKeys.reduce((acc, key) => {
     acc[key] = bill[key];
@@ -176,17 +177,18 @@ const getBillDateValue = (bill) => {
 
 const selectBestBillRecord = (existing, incoming) => {
   if (!existing) return incoming;
-  const existingDate = getBillDateValue(existing);
-  const incomingDate = getBillDateValue(incoming);
-  if (incomingDate > existingDate) return incoming;
-  if (incomingDate < existingDate) return existing;
-
-  const existingStatus = String(readFirst(existing, ['paymentStatus', 'PaymentStatus', 'status', 'Status', 'billStatus', 'state']) || '').toLowerCase();
-  const incomingStatus = String(readFirst(incoming, ['paymentStatus', 'PaymentStatus', 'status', 'Status', 'billStatus', 'state']) || '').toLowerCase();
-  if (incomingStatus === 'paid' && existingStatus !== 'paid') return incoming;
-  if (existingStatus === 'paid' && incomingStatus !== 'paid') return existing;
-
-  return incoming;
+  const existingDate = getBillDateValue(existing), incomingDate = getBillDateValue(incoming);
+  const status = row => String(readFirst(row,['paymentStatus','PaymentStatus','status','Status']) || '').toLowerCase();
+  const preferExisting = existingDate > incomingDate || (existingDate === incomingDate && status(existing) === 'paid' && status(incoming) !== 'paid');
+  const preferred = preferExisting ? existing : incoming;
+  const other = preferExisting ? incoming : existing;
+  const merged = {...other,...preferred};
+  // Summary responses must not erase line items returned by another backend source.
+  for (const key of Object.keys(other)) {
+    const value = preferred[key];
+    if (value == null || value === '' || (Array.isArray(value) && !value.length)) merged[key] = other[key];
+  }
+  return merged;
 };
 
 const parseApiList = (value) => {
@@ -282,7 +284,9 @@ const fetchPatientPortalBillingRows = async ({ headers = {}, cache = "no-store",
   const response = await fetch(patientApiUrl(path), { headers, cache }).catch(() => null);
   if (!response?.ok) return [];
   const data = await response.json().catch(() => []);
-  return (parsePatientBillRows(data) || []).map((bill) => ({
+  return (parsePatientBillRows(data) || []).map((sourceBill) => {
+    const bill = {...sourceBill, billingType: sourceBill.billingType || sourceBill.BillingType || type};
+    return ({
     ...bill,
     id: bill.id ?? bill.Id ?? bill.billId ?? bill.BillId ?? bill.billingId ?? bill.BillingId,
     patientId: bill.patientId ?? bill.PatientId ?? bill.patient?.id ?? bill.Patient?.Id,
@@ -296,19 +300,40 @@ const fetchPatientPortalBillingRows = async ({ headers = {}, cache = "no-store",
     medicines: bill.medicines ?? bill.Medicines ?? bill.lineItems ?? bill.LineItems ?? [],
     billingType: bill.billingType || bill.BillingType || type || "",
     BillingType: bill.BillingType || bill.billingType || type || "",
-    invoiceType: bill.invoiceType || bill.InvoiceType || type || "",
-    InvoiceType: bill.InvoiceType || bill.invoiceType || type || "",
+    invoiceType: bill.invoiceType || bill.InvoiceType || normalizePortalBillingType(bill.billingType || bill.BillingType || type),
+    InvoiceType: bill.InvoiceType || bill.invoiceType || normalizePortalBillingType(bill.billingType || bill.BillingType || type),
     __sourcePath: path,
-  }));
+  }); });
 };
 
+const fetchPatientBillingPageRows = async ({ headers = {}, cache = "no-store" } = {}) => {
+  const patientId = localStorage.getItem("patientId") || sessionStorage.getItem("patientId");
+  if (!patientId) return [];
+  const results = await Promise.allSettled(BILLING_API_PATHS.map(async (path) => {
+    const response = await fetch(apiUrl(withQueryParams(path,{patientId})),{headers,cache});
+    if (!response.ok) throw new Error("Billing source unavailable: " + response.status);
+    const rows = parsePatientBillRows(await response.json()) || [];
+    return rows.filter(bill => String(readFirst(bill,["patientId","PatientId","patient.id","patient.Id"])) === String(patientId)).map(bill => ({
+      ...bill,
+      id: readFirst(bill,["id","Id","billId","BillId","billingId","BillingId"]),
+      patientId,
+      appointmentId: readFirst(bill,["appointmentId","AppointmentId","appointment.id"]),
+      invoiceNo: readFirst(bill,["invoiceNo","InvoiceNo","invoiceNumber","InvoiceNumber","billNumber","BillNumber"]),
+      billingType: bill.billingType || bill.BillingType || path.split("/").pop(),
+      invoiceType: bill.invoiceType || bill.InvoiceType || path.split("/").pop(),
+      createdAt: bill.createdAt || bill.CreatedAt || bill.billDate || bill.BillDate,
+      totalAmount: bill.netAmount ?? bill.NetAmount ?? bill.totalAmount ?? bill.TotalAmount,
+      __sourcePath:path,
+    }));
+  }));
+  return results.flatMap(result => result.status === "fulfilled" ? result.value : []);
+};
 const fetchAllPatientPortalBillingRows = async ({ headers = {}, cache = "no-store" } = {}) => {
-  const results = await Promise.all(
-    PATIENT_PORTAL_BILLING_TYPES.map((billingType) =>
-      fetchPatientPortalBillingRows({ headers, cache, billingType }).catch(() => [])
-    )
-  );
-  return dedupeBillsByInvoice(results.flat());
+  const groups = await Promise.all([
+    ...["", ...PATIENT_PORTAL_BILLING_TYPES].map(billingType => fetchPatientPortalBillingRows({headers,cache,billingType}).catch(() => [])),
+    fetchPatientBillingPageRows({headers,cache}).catch(() => []),
+  ]);
+  return dedupeBillsByInvoice(groups.flat());
 };
 
 const dedupeBillsByInvoice = (bills = []) => {
@@ -415,49 +440,19 @@ const getPatientNameValues = (patient = {}, visits = []) => {
 };
 
 const billBelongsToPatient = (bill, patient = {}, visits = []) => {
-  const patientIds = getPatientIdentityValues(patient, visits);
-  const patientNames = getPatientNameValues(patient, visits);
-  const billIds = [
-    readFirst(bill, [
-      "patientId",
-      "PatientId",
-      "patientID",
-      "patient.id",
-      "patient.Id",
-      "patient.patientId",
-      "patient.PatientId",
-      "invoice.patientId",
-      "invoice.PatientId",
-      "bill.patientId",
-      "bill.PatientId",
-      "patientCode",
-      "PatientCode",
-      "patient.patientCode",
-      "patient.PatientCode",
-    ]),
-    readFirst(bill, ["appointmentId", "AppointmentId", "appointment.id", "appointment.Id", "appointmentNumber", "AppointmentNumber", "appointmentNo", "AppointmentNo"]),
-  ].map((value) => normalizeComparable(value)).filter(Boolean);
-  if (billIds.some((value) => patientIds.has(value))) return true;
+  const patientIds = new Set([
+    patient.id, patient.Id, patient.patientId, patient.PatientId, patient.patientCode,
+    localStorage.getItem("patientId"), localStorage.getItem("PatientId"), localStorage.getItem("patientCode"),
+    ...visits.map(visit => readFirst(visit,["patientId","PatientId","patient.id","patient.PatientId"])),
+  ].map(normalizeComparable).filter(Boolean));
+  const owner = normalizeComparable(readFirst(bill,["patientId","PatientId","patientID","patient.id","patient.Id","patient.patientId","patient.PatientId","invoice.patientId","invoice.PatientId","bill.patientId","bill.PatientId","patientCode","PatientCode"]));
+  // A mismatching owner must never be accepted because a numeric appointment ID happens to match.
+  if (owner) return patientIds.has(owner);
+  const appointment = normalizeComparable(readFirst(bill,["appointmentId","AppointmentId","appointment.id","appointment.Id","appointmentNumber","AppointmentNumber","appointmentNo","AppointmentNo"]));
+  if (appointment && getAppointmentIdentityValues(visits).has(appointment)) return true;
   if (patientIds.size) return false;
-
-  const billFirstName = readFirst(bill, ["patient.firstName", "patient.FirstName", "firstName", "FirstName"]);
-  const billLastName = readFirst(bill, ["patient.lastName", "patient.LastName", "lastName", "LastName"]);
-  const billNames = [
-    readFirst(bill, [
-      "patientName",
-      "PatientName",
-      "patient.name",
-      "patient.Name",
-      "patient.fullName",
-      "patient.FullName",
-      "customerName",
-      "CustomerName",
-      "name",
-      "Name",
-    ]),
-    billFirstName || billLastName ? `${billFirstName} ${billLastName}` : "",
-  ].map((value) => normalizeComparable(value)).filter(Boolean);
-  return billNames.some((value) => patientNames.has(value));
+  const name = normalizeComparable(readFirst(bill,["patientName","PatientName","patient.name","patient.Name","patient.fullName","patient.FullName","customerName"]));
+  return Boolean(name && getPatientNameValues(patient,visits).has(name));
 };
 
 const getAppointmentIdentityValues = (visits = []) =>
@@ -5023,7 +5018,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   useEffect(() => {
     const refreshBills = () => setPortalRefreshTick((value) => value + 1);
     const refreshStoredBills = (event) => {
-      if (event.key === PATIENT_PORTAL_OP_BILLS_KEY) refreshBills();
+      if ([PATIENT_PORTAL_OP_BILLS_KEY, RECEPTION_RECENT_SERVICE_BILLS_KEY].includes(event.key)) refreshBills();
     };
     window.addEventListener("patientPortalBillsUpdated", refreshBills);
     window.addEventListener("storage", refreshStoredBills);
@@ -5083,19 +5078,22 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
     };
   }, [patient, visits]);
   const formatAmount = (value) =>
-    new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(value || 0));
+    new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value || 0));
 
-  const formatDate = (record) =>
-    readFirst(record, ['invoiceDate', 'billDate', 'date', 'createdAt', 'createdOn', 'updatedAt']) || 'Unknown date';
+  const formatDate = (record) => {
+    const raw = readFirst(record,['invoiceDate','InvoiceDate','billDate','BillDate','date','createdAt','CreatedAt','createdOn','updatedAt']);
+    const date = raw ? new Date(raw) : null;
+    return date && !Number.isNaN(date.getTime()) ? date.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Unknown date';
+  };
 
   const invoiceNumber = (record) =>
     readFirst(record, ['invoiceNo', 'invoiceNumber', 'billNo', 'billNumber', 'referenceNumber', 'transactionId', 'id']) || 'Invoice';
 
   const billTypeLabel = (record) => {
-    const rawType = String(readFirst(record, ['invoiceType', 'billingType', 'type', 'serviceType', 'category']) || '').toLowerCase();
+    const rawType = String(readFirst(record, ['invoiceType', 'InvoiceType', 'billingType', 'BillingType', 'type', 'serviceType', 'ServiceType', 'category']) || '').toLowerCase();
     if (rawType.includes('pharmacy') || rawType.includes('medicine')) return 'Pharmacy';
     if (rawType.includes('diagnostic') || rawType.includes('diagnosis') || rawType.includes('lab') || rawType.includes('test')) return 'Diagnostic';
-    if (getConsultationFee(record) > 0 || rawType.includes('consult')) return 'OP Bill';
+    if (/^(op|op bill|op billing|outpatient|consultation)$/.test(rawType) || getConsultationFee(record) > 0 || rawType.includes('consult')) return 'OP Bill';
     const hasLab = Number(readFirst(record, ['labCharge', 'labCharges', 'laboratoryCharges']) || 0) > 0;
     const hasMedicine = Number(readFirst(record, ['medicineCharge', 'medicineCharges', 'medicationCharges']) || 0) > 0;
     if (hasLab && !hasMedicine) return 'Diagnostic';
@@ -5169,101 +5167,65 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   const paymentStatus = (record) =>
     String(readFirst(record, ['paymentStatus', 'PaymentStatus', 'status', 'Status', 'billStatus']) || 'Pending').toLowerCase();
 
-  const totalAmount = (record) => Number(readFirst(record, ['total', 'totalAmount', 'amount', 'invoiceAmount', 'grandTotal', 'payableAmount', 'paymentAmount', 'paidAmount', 'netAmount', 'dueAmount', 'totals.total']) || 0);
+  const totalAmount = (record) => Number(readFirst(record, ['totals.total', 'netAmount', 'NetAmount', 'TotalAmount', 'totalAmount', 'total', 'amount', 'invoiceAmount', 'grandTotal', 'payableAmount', 'paymentAmount', 'paidAmount', 'netAmount', 'dueAmount', 'totals.total']) || 0);
   const dueAmount = (record) => Number(readFirst(record, ['dueAmount', 'balance', 'outstandingAmount']) || 0);
 
-  const serviceItemArrays = (record) => [
-    record.lineItems,
-    record.LineItems,
-    record.rows,
-    record.Rows,
-    record.serviceItems,
-    record.ServiceItems,
-    record.billItems,
-    record.BillItems,
-    record.billingItems,
-    record.BillingItems,
-    record.billingDetails,
-    record.BillingDetails,
-    record.items,
-    record.Items,
-    record.diagnosticTests,
-    record.DiagnosticTests,
-    record.labTests,
-    record.LabTests,
-    record.tests,
-    record.Tests,
-    record.medicines,
-    record.Medicines,
-    record.medications,
-    record.Medications,
-  ].find((items) => Array.isArray(items) && items.length) || [];
-
+  // Preserve zeroes and currency precision when reading saved invoice values.
+  const readInvoiceAmount = (record, keys, fallback = 0) => {
+    for (const key of keys) {
+      const value = getNestedValue(record, key);
+      if (value === undefined || value === null || value === "") continue;
+      const number = Number(typeof value === "string" ? value.replace(/[^0-9.-]/g, "") : value);
+      if (Number.isFinite(number)) return number;
+    }
+    return fallback;
+  };
+  const itemLabel = (row) => readFirst(row, ['medicineName','MedicineName','testName','TestName','productName','ProductName','test.name','Test.Name','medicine.name','Medicine.Name','item','Item','label','Label','name','Name','serviceName','ServiceName']) || 'Service item';
+  const serviceItemArrays = (record, seen = new Set()) => {
+    if (!record || typeof record !== "object" || seen.has(record)) return [];
+    seen.add(record);
+    const arrays = ['lineItems','LineItems','rows','Rows','serviceItems','ServiceItems','billItems','BillItems','billingItems','BillingItems','billingDetails','BillingDetails','items','Items','diagnosticTests','DiagnosticTests','labTests','LabTests','tests','Tests','medicines','Medicines','medications','Medications','dispensedMedicines','DispensedMedicines']
+      .map(key => record[key]).filter(value => Array.isArray(value) && value.length);
+    for (const key of ['data','result','bill','invoice','details']) {
+      const nested = serviceItemArrays(record[key] || record[key[0].toUpperCase() + key.slice(1)], seen);
+      if (nested.length) arrays.push(nested);
+    }
+    const score = rows => rows.reduce((sum,row) => sum + (/^(service item|lab charges|diagnostic charges|medicine charges|pharmacy charges)$/i.test(String(itemLabel(row))) ? 0 : 100) + (readInvoiceAmount(row,['amount','Amount','unitPrice','UnitPrice','price','Price','totalAmount','TotalAmount']) > 0 ? 1 : 0),0);
+    return arrays.sort((a,b) => score(b)-score(a))[0] || [];
+  };
   const getLineItems = (record) => {
-    const serviceItems = serviceItemArrays(record);
-    if (Array.isArray(serviceItems) && serviceItems.length) {
-      return serviceItems.map((row) => ({
-        label: readFirst(row, ['item', 'Item', 'label', 'Label', 'testName', 'TestName', 'test', 'Test', 'name', 'Name', 'serviceName', 'ServiceName', 'medicineName', 'MedicineName', 'productName', 'ProductName', 'diagnosis', 'Diagnosis']) || 'Service item',
-        diagnosis: readFirst(row, ['diagnosis', 'Diagnosis', 'category', 'Category', 'department', 'Department']) || '',
-        quantity: Number(readFirst(row, ['quantity', 'Quantity', 'dispensedQuantity', 'DispensedQuantity', 'prescribedQuantity', 'PrescribedQuantity', 'qty', 'Qty']) || 1) || 1,
-        amount: Number(readFirst(row, ['amount', 'Amount', 'total', 'Total', 'totalAmount', 'TotalAmount', 'netAmount', 'NetAmount', 'lineTotal', 'LineTotal']) || 0) || ((Number(readFirst(row, ['unitPrice', 'UnitPrice', 'price', 'Price', 'rate', 'Rate']) || 0) || 0) * (Number(readFirst(row, ['quantity', 'Quantity', 'qty', 'Qty']) || 1) || 1)),
-      }));
-    }
-    if (record.charges && typeof record.charges === 'object') {
-      return Object.entries(record.charges).map(([label, amount]) => ({ label, amount }));
-    }
-    return [
-      { label: 'Consultation charges', amount: readFirst(record, ['consultationCharges', 'consultationCharge']) },
-      { label: 'Lab charges', amount: readFirst(record, ['labCharge', 'labCharges', 'laboratoryCharges']) },
-      { label: 'Medicine charges', amount: readFirst(record, ['medicineCharge', 'medicineCharges', 'medicationCharges']) },
-      { label: 'Other charges', amount: readFirst(record, ['otherCharges', 'miscCharges', 'serviceCharges']) },
-    ].filter((item) => item.amount != null && item.amount !== '');
-  };
-
-  const getGstAmount = (record) => Number(readFirst(record, ['gst', 'tax', 'gstAmount', 'taxAmount', 'taxAmountTotal']) || 0);
-
-  const getCgstAmount = (record) => {
-    const explicit = Number(readFirst(record, ['cgst', 'cgstAmount', 'centralGst', 'centralTax']) || 0);
-    return explicit || getGstAmount(record) / 2;
-  };
-
-  const getSgstAmount = (record) => {
-    const explicit = Number(readFirst(record, ['sgst', 'sgstAmount', 'stateGst', 'stateTax']) || 0);
-    return explicit || getGstAmount(record) / 2;
-  };
-
-  const getInvoiceSubTotal = (record) => {
-    const explicit = Number(readFirst(record, ['subTotal', 'subtotal', 'taxableAmount', 'amountBeforeTax', 'netTotal']) || 0);
-    if (explicit) return explicit;
-    return getLineItems(record).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  };
-
-  const getInvoiceRows = (record) => {
-    const items = getLineItems(record);
-    const subTotal = getInvoiceSubTotal(record);
-    const cgst = getCgstAmount(record);
-    const sgst = getSgstAmount(record);
-    if (!items.length) {
-      return [{
-        label: 'Invoice amount',
-        amount: subTotal || totalAmount(record),
-        cgst,
-        sgst,
-        netAmount: totalAmount(record),
-      }];
-    }
-
-    return items.map((item) => {
-      const amount = Number(item.amount || 0);
-      const ratio = subTotal > 0 ? amount / subTotal : 0;
-      const itemCgst = Math.round((cgst * ratio) * 100) / 100;
-      const itemSgst = Math.round((sgst * ratio) * 100) / 100;
+    const items = serviceItemArrays(record);
+    if (items.length) return items.map(row => {
+      const quantity = readInvoiceAmount(row,['quantity','Quantity','dispensedQuantity','DispensedQuantity','qty','Qty'],1);
+      const unitPrice = readInvoiceAmount(row,['unitPrice','UnitPrice','price','Price','rate','Rate']);
       return {
-        ...item,
-        cgst: itemCgst,
-        sgst: itemSgst,
-        netAmount: Math.round((amount + itemCgst + itemSgst) * 100) / 100,
+        label: itemLabel(row), diagnosis: readFirst(row,['diagnosis','Diagnosis','category','Category']) || '', quantity, unitPrice,
+        amount: readInvoiceAmount(row,['taxableAmount','TaxableAmount','baseAmount','amount','Amount','lineTotal','LineTotal','totalAmount','TotalAmount'],unitPrice * quantity),
+        cgst: readInvoiceAmount(row,['cgstAmount','CGSTAmount','cgst','CGST'],null),
+        sgst: readInvoiceAmount(row,['sgstAmount','SGSTAmount','sgst','SGST'],null),
+        netAmount: readInvoiceAmount(row,['netAmount','NetAmount','grossAmount','GrossAmount'],null),
       };
+    });
+    return [
+      {label:'Consultation charges',amount:readInvoiceAmount(record,['consultationCharge','ConsultationCharge','consultationCharges'])},
+      {label:'Lab charges',amount:readInvoiceAmount(record,['labCharge','LabCharge','labCharges'])},
+      {label:'Medicine charges',amount:readInvoiceAmount(record,['medicineCharge','MedicineCharge','medicineCharges'])},
+      {label:'Other charges',amount:readInvoiceAmount(record,['otherCharges','OtherCharges'])},
+    ].filter(item => item.amount > 0).map(item => ({...item,quantity:1,cgst:null,sgst:null,netAmount:null}));
+  };
+  const getGstAmount = record => readInvoiceAmount(record,['totals.gst','gstAmount','GSTAmount','gst','taxAmount']);
+  const getCgstAmount = record => readInvoiceAmount(record,['totals.cgst','cgstAmount','CGSTAmount','cgst','CGST'],getGstAmount(record)/2);
+  const getSgstAmount = record => readInvoiceAmount(record,['totals.sgst','sgstAmount','SGSTAmount','sgst','SGST'],getGstAmount(record)/2);
+  const getInvoiceSubTotal = record => readInvoiceAmount(record,['totals.subtotal','subtotal','subTotal','Subtotal','taxableAmount'],getLineItems(record).reduce((sum,row)=>sum+row.amount,0));
+  const getInvoiceRows = record => {
+    const items = getLineItems(record);
+    const subtotal = items.reduce((sum,row)=>sum+row.amount,0);
+    const round = value => Math.round(value*100)/100;
+    return items.map(item => {
+      const share = subtotal > 0 ? item.amount/subtotal : 0;
+      const cgst = item.cgst ?? round(getCgstAmount(record)*share);
+      const sgst = item.sgst ?? round(getSgstAmount(record)*share);
+      return {...item,cgst,sgst,netAmount:item.netAmount ?? round(item.amount+cgst+sgst)};
     });
   };
 
@@ -5330,38 +5292,47 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   const getInvoiceId = (record) =>
     readFirst(record, ['invoiceId', 'billId', 'billingId', 'id', '_id', 'referenceId']);
 
-  const getBillDetailUrl = (billId) =>
-    patientApiUrl(PATIENT_API.billDetails, { id: billId });
+  const getBillDetailUrl = (billId, record = {}) =>
+    withQueryParams(patientApiUrl(PATIENT_API.billDetails, { id: billId }), { billingType: normalizePortalBillingType(billTypeLabel(record)) });
 
-  const normalizeBillDetailResponse = (data) => {
-    if (!data) return {};
-    if (Array.isArray(data)) return data[0] || {};
-    if (Array.isArray(data.data)) return data.data[0] || {};
-    if (data.data && typeof data.data === 'object') return data.data;
-    if (data.result && typeof data.result === 'object' && !Array.isArray(data.result)) return data.result;
-    if (data.bill && typeof data.bill === 'object') return data.bill;
-    if (data.invoice && typeof data.invoice === 'object') return data.invoice;
-    return typeof data === 'object' ? data : {};
+  const normalizeBillDetailResponse = (data, depth = 0) => {
+    if (!data || typeof data !== "object" || depth > 6) return {};
+    if (Array.isArray(data)) return normalizeBillDetailResponse(data[0],depth+1);
+    for (const key of ['data','result','bill','invoice']) if (data[key] && typeof data[key] === "object") return {...data,...normalizeBillDetailResponse(data[key],depth+1)};
+    return data;
   };
-
+  const mergeInvoiceDetails = (record, details) => {
+    const merged = {...record,...details};
+    const detailRows = serviceItemArrays(details);
+    const namedDetails = detailRows.length && detailRows.some(row => !/^(service item|lab charges|diagnostic charges|medicine charges|pharmacy charges)$/i.test(String(itemLabel(row))));
+    merged.lineItems = namedDetails ? detailRows : serviceItemArrays(record);
+    if (!details.totals && record.totals && !namedDetails) merged.totals = record.totals;
+    return merged;
+  };
   const fetchPatientBillDetails = async (record) => {
     const invoiceId = getInvoiceId(record);
     if (!invoiceId) return record;
+    let merged = record;
+    const patientId = authenticatedPatientId;
+    const paths = [getBillDetailUrl(invoiceId,record), withQueryParams(apiUrl("Billing/" + encodeURIComponent(invoiceId)),{patientId,billingType:normalizePortalBillingType(billTypeLabel(record))})];
+    for (const path of paths) {
+      const response = await fetch(path,{headers:getApiHeaders(),cache:'no-store'}).catch(()=>null);
+      // A denied Billing request never retries using a staff/admin session.
+      if (!response?.ok) continue;
+      const contentType = (response.headers.get('content-type') || '').toLowerCase();
+      if (contentType.includes('pdf') || contentType.includes('octet-stream')) continue;
+      const details = normalizeBillDetailResponse(await response.json().catch(()=>null));
+      if (!Object.keys(details).length) continue;
+      const owner = normalizeComparable(readFirst(details,['patientId','PatientId','patient.id','patient.Id']));
+      if (owner && owner !== patientId) continue;
+      const returnedId = readFirst(details,['id','Id','billId','BillId','billingId','BillingId']);
+      if (returnedId && String(returnedId) !== String(invoiceId)) continue;
+      const kind = readFirst(details,['invoiceType','InvoiceType','billingType','BillingType']);
+      if (kind && normalizePortalBillingType(kind) !== normalizePortalBillingType(billTypeLabel(record))) continue;
+      merged = mergeInvoiceDetails(merged,details);
 
-    const response = await fetch(getBillDetailUrl(invoiceId, record), {
-      headers: getApiHeaders(),
-      cache: "no-store",
-    }).catch(() => null);
-    if (!response?.ok) return record;
-
-    const contentType = (response.headers.get('content-type') || '').toLowerCase();
-    if (contentType.includes('pdf') || contentType.includes('octet-stream') || contentType.includes('binary')) {
-      return record;
     }
-
-    const data = await response.json().catch(() => null);
-    const details = normalizeBillDetailResponse(data);
-    return { ...record, ...details };
+    return merged;
   };
 
   const getInvoiceSourceUrl = async (record) => {
@@ -5394,10 +5365,12 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
     const invoiceNumberValue = invoiceNumber(record);
-    const patientName = readFirst(record, ['patientName', 'patient.name', 'name', 'customerName']) || 'Patient';
+    const patientName = readFirst(record, ['patientName', 'PatientName', 'patient.name', 'name', 'customerName']) || readFirst(patient || {}, ['name','fullName','patientName']) || 'Patient';
     const doctorName = readFirst(record, ['doctorName', 'doctor.name', 'provider.name', 'physician']) || 'Doctor';
     const appointmentNumber = readFirst(record, ['appointmentNumber', 'appointmentNo', 'appointmentId', 'appointment.id']) || '-';
-    const billDate = formatDate(record);
+    const rawBillDate = formatDate(record);
+    const parsedBillDate = new Date(rawBillDate);
+    const billDate = Number.isNaN(parsedBillDate.getTime()) ? rawBillDate : parsedBillDate.toLocaleString('en-IN', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
     const total = formatAmount(totalAmount(record));
     const due = formatAmount(dueAmount(record));
     const paymentModeValue = displayPaymentMode(record);
@@ -5426,6 +5399,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
               <strong>${escapeHtml(item.label)}</strong>
               ${item.diagnosis ? `<small>${escapeHtml(item.diagnosis)}</small>` : ''}
             </td>
+            <td style="text-align:center;">${escapeHtml(item.quantity ?? 1)}</td>
             <td style="text-align:right;">${formatAmount(item.amount)}</td>
             <td style="text-align:right;">${formatAmount(item.cgst)}</td>
             <td style="text-align:right;">${formatAmount(item.sgst)}</td>
@@ -5434,7 +5408,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
         `).join('')
       : `
           <tr>
-            <td>Description</td>
+            <td>Itemized details unavailable</td><td>?</td>
             <td style="text-align:right;">${total}</td>
             <td style="text-align:right;">${formatAmount(0)}</td>
             <td style="text-align:right;">${formatAmount(0)}</td>
@@ -5523,11 +5497,12 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
             </div>
             <div class="section">
               <h2>Line Items</h2>
+              ${!serviceItemArrays(record).length ? '<p>Individual item names and prices were not supplied with this saved bill.</p>' : ''}
               <table>
                 <thead>
-                  <tr><th>Description</th><th>Amount</th><th>CGST</th><th>SGST</th><th>Net Amount</th></tr>
+                  <tr><th>Description</th><th>Qty</th><th>Amount</th><th>CGST</th><th>SGST</th><th>Net Amount</th></tr>
                 </thead>
-                <tbody>${lineRows}</tbody>
+                <tbody>${lineRows}</tbody><tfoot><tr><td colspan="2"><b>Sub Total</b></td><td>${formatAmount(getInvoiceSubTotal(record))}</td><td>${formatAmount(getCgstAmount(record))}</td><td>${formatAmount(getSgstAmount(record))}</td><td>${formatAmount(getInvoiceRows(record).reduce((sum,row)=>sum+row.netAmount,0))}</td></tr><tr><td colspan="5">Discount</td><td>${formatAmount(readInvoiceAmount(record,['totals.discountAmount','discountAmount','DiscountAmount','discount']))}</td></tr></tfoot>
               </table>
             </div>
             <div class="summary">
@@ -5546,7 +5521,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   };
 
   const viewInvoice = async (record, directUrl = '') => {
-    const detailedRecord = directUrl ? record : await fetchPatientBillDetails(record);
+    const detailedRecord = await fetchPatientBillDetails(record);
     const preview = document.createElement('dialog');
     preview.setAttribute('aria-label', 'Invoice preview');
     preview.style.cssText = 'width:min(1100px,calc(100vw - 32px));height:min(900px,calc(100vh - 32px));max-width:none;max-height:none;padding:0;border:0;border-radius:12px;overflow:hidden;box-shadow:0 24px 80px rgba(15,23,42,.35)';
@@ -5579,19 +5554,19 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
   };
 
   const printInvoice = async (record) => {
-    const detailedRecord = await fetchPatientBillDetails(record);
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       setDownloadError('Please allow popups to view the invoice print preview.');
       return;
     }
+    const detailedRecord = await fetchPatientBillDetails(record);
     printWindow.document.write(getPrintableInvoiceHtml(detailedRecord, { autoPrint: true }));
     printWindow.document.close();
   };
 
   const downloadInvoice = async (record, directUrl = '', filename = '') => {
     void filename;
-    const detailedRecord = directUrl ? record : await fetchPatientBillDetails(record);
+    const detailedRecord = await fetchPatientBillDetails(record);
     setDownloadStatus('Invoice is being prepared for PDF download.');
     setDownloadError('');
     const frame = document.createElement('iframe');
@@ -5754,7 +5729,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
       key: 'op',
       title: 'OP Bills',
       bills: billRecords
-        .filter((bill) => billTypeLabel(bill) === 'OP Bill' && isCurrentPatientOpBill(bill))
+        .filter((bill) => billTypeLabel(bill) === 'OP Bill')
         .sort((a, b) => billDateValue(b) - billDateValue(a)),
     },
     {
@@ -5784,7 +5759,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
           <div className="pd-section-header">
             <div>
               <h2>{section.title}</h2>
-              <p>{section.bills.length ? `${section.bills.length} invoice(s) generated by reception.` : 'No invoice generated yet.'}</p>
+              <p>{section.bills.length ? `${section.bills.length} invoice(s).` : loadingBills ? 'Checking saved invoices...' : 'No invoice found for this category.'}</p>
             </div>
           </div>
           {section.bills.length ? (
@@ -5839,7 +5814,7 @@ export function PatientBillsPage({ bills = [], patient = null, visits = [] }) {
             </div>
           ) : (
             <div className="pd-selected-notification">
-              <p>No {section.title.toLowerCase()} found.</p>
+              <p>{loadingBills ? "Loading invoices..." : `No ${section.title.toLowerCase()} found.`}</p>
             </div>
           )}
         </section>

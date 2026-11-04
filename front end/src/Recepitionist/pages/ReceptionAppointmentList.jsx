@@ -422,7 +422,7 @@ function ReceptionAppointmentList({
             <span>{bookingType === "Online" ? "Digital Patient Portal & App Bookings" : "In-Clinic Reception & Desk Bookings"}</span>
           </div>
           <h2>
-            {bookingType === "Online" ? <CalendarCheck2 size={26} color="#0284c7" /> : <Stethoscope size={26} color="#d97706" />}
+            {bookingType === "Online" ? <CalendarCheck2 size={26} color="var(--theme-primary)" /> : <Stethoscope size={26} color="#d97706" />}
             {title}
           </h2>
           <p>{subtitle}</p>
@@ -604,7 +604,7 @@ function ReceptionAppointmentList({
               <table className="rc-table-data">
                 <thead>
                   <tr>
-                    <th className="booking-token-head">Token</th>
+                    <th data-column-kind="center" className="booking-token-head">Token</th>
                     <th>Patient</th>
                     <th>Doctor & Specialty</th>
                     <th>Schedule</th>
@@ -612,7 +612,7 @@ function ReceptionAppointmentList({
                     <th>Phone</th>
                     <th className="booking-payment-head">Payment</th>
                     <th className="booking-type-head">Booking Type</th>
-                    <th className="booking-status-head">Status</th>
+                    <th data-column-kind="center" className="booking-status-head">Status</th>
                     <th className="booking-vitals-head">Vitals</th>
                   </tr>
                 </thead>
@@ -650,17 +650,17 @@ function ReceptionAppointmentList({
                           </div>
                         </td>
                         <td>
-                          <strong style={{ color: "#0f172a", fontSize: "13px" }}>
+                          <strong style={{ color: "var(--theme-primary-dark)", fontSize: "13px" }}>
                             {getAppointmentValue(item, ["doctorName", "doctor.name", "doctor.fullName", "DoctorName"], "-")}
                           </strong>
-                          <div style={{ fontSize: "11px", color: "#0f766e", fontWeight: "600", marginTop: "2px" }}>
+                          <div style={{ fontSize: "11px", color: "var(--theme-primary-dark)", fontWeight: "600", marginTop: "2px" }}>
                             {getSpecializationDisplayName(getAppointmentValue(item, ["doctorSpecialization", "doctor.specialization", "doctorSpeciality", "DoctorSpecialization", "specialization"], "")) || "-"}
                           </div>
                         </td>
                         <td>
                           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                             <span style={{ fontSize: "12.5px", fontWeight: "700", color: "#1e293b", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                              <Calendar size={12} color="#0284c7" />
+                              <Calendar size={12} color="var(--theme-primary)" />
                               {formatDateMMDDYYYY(getAppointmentValue(item, ["date", "appointmentDate", "AppointmentDate", "scheduledDate", "slotDate", "SlotDate", "bookingDate", "BookingDate"], ""))}
                             </span>
                             <span style={{ fontSize: "11.5px", color: "#64748b", display: "inline-flex", alignItems: "center", gap: "4px" }}>

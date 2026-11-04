@@ -636,7 +636,7 @@ function Branches() {
           <path
             d="M0 60 L300 60 L310 40 L320 80 L330 20 L345 100 L355 60 L370 60 L400 60 L700 60 L710 35 L720 85 L730 15 L745 105 L755 60 L770 60 L1200 60"
             fill="none"
-            stroke="rgba(99, 102, 241, 0.22)"
+            stroke="color-mix(in srgb, var(--theme-primary) 22%, transparent)"
             strokeWidth="2.5"
             strokeDasharray="1200"
             strokeDashoffset="1200"

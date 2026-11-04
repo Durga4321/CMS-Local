@@ -51,7 +51,7 @@
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.02em;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8);
 }
 
@@ -85,7 +85,7 @@
 .branches-primary-button {
   height: 44px;
   border: none;
-  background: #4b9da3;
+  background: var(--theme-primary);
   color: #ffffff;
   display: inline-flex;
   align-items: center;
@@ -93,34 +93,34 @@
   gap: 8px;
   padding: 0 22px;
   font-size: 14px;
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--theme-primary) 35%, transparent);
 }
 
 .branches-primary-button:hover:not(:disabled) {
-  background: #367f85;
+  background: var(--theme-primary-dark);
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.45);
+  box-shadow: 0 10px 25px color-mix(in srgb, var(--theme-primary) 45%, transparent);
 }
 
 .branches-icon-button {
   width: 44px;
   height: 44px;
-  border: 1.5px solid #7dd3fc;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  color: #0284c7;
+  border: 1.5px solid var(--theme-primary-glow);
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  color: var(--theme-primary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(12px);
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.12);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary) 12%, transparent);
 }
 
 .branches-icon-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  border-color: #0284c7;
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary);
   color: #ffffff;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.32);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-primary) 32%, transparent);
 }
 
 /* CLINIC BAND CARD (MATCHING DASHBOARD CLINIC CARD) */
@@ -128,7 +128,7 @@
   position: relative;
   z-index: 2;
   min-height: 46px;
-  border: 2px solid #9dcac7;
+  border: 2px solid var(--theme-primary);
   border-radius: 20px;
   background: #ffffff;
   backdrop-filter: blur(16px);
@@ -138,12 +138,12 @@
   padding: 12px 18px;
   margin-bottom: 18px;
   box-sizing: border-box;
-  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--theme-primary) 16%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   transition: all 0.3s ease;
 }
 
 .branches-clinic-band:hover {
-  box-shadow: 0 14px 36px rgba(37, 99, 235, 0.22), inset 0 1px 0 rgba(255, 255, 255, 1);
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--theme-primary) 22%, transparent), inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
 .branches-clinic-logo {
@@ -156,7 +156,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
 
 .branches-clinic-logo img {
@@ -166,7 +166,7 @@
 }
 
 .branches-clinic-band span {
-  color: #1d4ed8;
+  color: var(--theme-primary);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -174,7 +174,7 @@
 }
 
 .branches-clinic-band b {
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 15px;
   font-weight: 800;
 }
@@ -199,14 +199,14 @@
   padding: 0 18px;
   color: #64748b;
   box-sizing: border-box;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--theme-primary-dark) 4%, transparent);
   transition: all 0.2s ease;
 }
 
 .branches-search:focus-within {
-  border-color: #6366f1;
+  border-color: var(--theme-primary);
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
 
 .branches-search input {
@@ -214,7 +214,7 @@
   border: none;
   outline: none;
   background: transparent;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 14px;
   font-weight: 600;
 }
@@ -260,12 +260,12 @@
   border-radius: 20px;
   overflow-x: auto;
   overflow-y: hidden;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   transition: all 0.25s ease;
 }
 
 .branches-table:hover {
-  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--theme-primary-dark) 8%, transparent), inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
 .branches-thead,
@@ -303,12 +303,12 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.4);
   transition: all 0.2s ease;
   background: rgba(255, 255, 255, 0.2);
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .branches-row:hover {
   background: rgba(255, 255, 255, 0.65);
-  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.1);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 10%, transparent);
 }
 
 .branches-row:last-child {
@@ -325,7 +325,7 @@
   align-items: center !important;
   justify-content: center !important;
   font-weight: 800 !important;
-  color: #0f172a !important;
+  color: var(--theme-primary-dark) !important;
   font-size: 14px !important;
   width: 100% !important;
   margin: 0 auto !important;
@@ -374,7 +374,7 @@
 
 .branches-contact-cell b {
   display: block !important;
-  color: #0f172a !important;
+  color: var(--theme-primary-dark) !important;
   font-size: 13.5px !important;
   font-weight: 700 !important;
   line-height: 1.3 !important;
@@ -448,19 +448,19 @@
   height: 40px;
   flex: 0 0 40px;
   border-radius: 12px;
-  background: #e0f2fe;
-  color: #0284c7;
-  border: 1px solid #bae6fd;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary);
+  border: 1px solid var(--theme-primary-soft);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.15);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary) 15%, transparent);
 }
 
 .branches-name-cell b,
 .branches-cell b {
   display: block;
-  color: #0f172a !important;
+  color: var(--theme-primary-dark) !important;
   font-size: 14px;
   font-weight: 700;
   line-height: 1.35;
@@ -632,7 +632,7 @@
   position: fixed;
   inset: 0;
   z-index: 3500;
-  background: rgba(15, 23, 42, 0.65);
+  background: color-mix(in srgb, var(--theme-primary-dark) 65%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   display: flex;
@@ -662,10 +662,10 @@
   border: 1.5px solid rgba(226, 232, 240, 0.95);
   border-radius: 22px;
   box-shadow:
-    0 24px 60px -10px rgba(15, 23, 42, 0.35),
+    0 24px 60px -10px color-mix(in srgb, var(--theme-primary-dark) 35%, transparent),
     0 0 0 1px rgba(255, 255, 255, 0.85);
   overflow: hidden;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   animation: branchPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -687,7 +687,7 @@
   justify-content: space-between;
   gap: 14px;
   padding: 14px 22px;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(79, 70, 229, 0.05) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 8%, transparent) 0%, color-mix(in srgb, var(--theme-primary) 5%, transparent) 100%);
   border-bottom: 1.5px solid rgba(226, 232, 240, 0.85);
 }
 
@@ -701,24 +701,24 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.32);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary) 32%, transparent);
 }
 
 .branches-modal-title h3 {
   margin: 0;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 1.2rem;
   font-weight: 800;
 }
 
 .branches-modal-title p {
   margin: 2px 0 0;
-  color: #2563eb;
+  color: var(--theme-primary);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -772,7 +772,7 @@
 }
 
 .branches-view-grid strong {
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 0.9rem;
   overflow-wrap: anywhere;
 }
@@ -837,7 +837,7 @@
   border: 1.5px solid #cbd5e1;
   border-radius: 10px;
   background: #ffffff;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   padding: 0 12px;
   font-size: 0.88rem;
   font-weight: 550;
@@ -856,8 +856,8 @@
 .branches-field input:focus,
 .branches-field select:focus,
 .branches-field textarea:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22);
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 22%, transparent);
 }
 
 .branches-field input.is-invalid,
@@ -913,7 +913,7 @@
 
 .branches-save-button {
   border: none;
-  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
   color: #ffffff;
   height: 40px;
   padding: 0 22px;
@@ -925,12 +925,12 @@
   align-items: center;
   gap: 8px;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 35%, transparent);
 }
 
 .branches-save-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%);
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--theme-primary) 45%, transparent);
   transform: translateY(-1px);
 }
 
