@@ -1,3 +1,4 @@
+import { billValue, parsePatientBills } from "../utils/patientBills";
 import React, {
   useEffect,
   useState,
@@ -162,6 +163,33 @@ const parseList = (data) => {
   if (Array.isArray(data?.staff)) return data.staff;
   if (Array.isArray(data?.Staff)) return data.Staff;
   return [];
+};
+
+// Use the same OP/lab/pharmacy invoice sources as the Revenue Report.
+const loadDashboardRevenue = async (read, clinicId) => {
+  const sources = ["Billing/op", "Billing/lab", "Billing/pharmacy"];
+  const groups = await Promise.all(sources.map(async path => {
+    const invoices = new Map();
+    for (let page = 1; ; page++) {
+      const payload = await read(path + "?pageSize=10000&limit=10000&includeAll=true&all=true&page=" + page + "&pageNumber=" + page);
+      const rows = parsePatientBills(payload);
+      if (!rows) throw new Error("Unexpected revenue billing response");
+      rows.forEach((bill, index) => {
+        const owner = billValue(bill, "hospitalId", "HospitalId", "clinicId", "ClinicId", "hospital.id", "clinic.id");
+        if (owner !== "" && clinicId && String(owner) !== String(clinicId)) return;
+        const identity = billValue(bill, "billingId", "BillingId", "billId", "BillId", "id", "Id", "invoiceNo", "InvoiceNo", "invoiceNumber", "InvoiceNumber", "billNumber", "BillNumber");
+        const key = identity !== "" ? String(identity) : page + ":" + index;
+        const rawAmount = billValue(bill, "totalAmount", "TotalAmount", "grandTotal", "GrandTotal", "netAmount", "NetAmount", "payableAmount", "PayableAmount", "paymentAmount", "PaymentAmount", "paidAmount", "PaidAmount", "amount", "Amount", "total", "Total", "revenue", "Revenue");
+        const amount = typeof rawAmount === "number" ? rawAmount : Number(String(rawAmount).replace(/[,?\s]/g, ""));
+        if (rawAmount === "" || !Number.isFinite(amount)) throw new Error("A bill has no valid revenue amount");
+        invoices.set(key, amount);
+      });
+      const totalPages = Number(payload.totalPages || payload.pagination?.totalPages || payload.data?.totalPages || payload.meta?.totalPages || 1);
+      if (!rows.length || page >= totalPages) break;
+    }
+    return [...invoices.values()].reduce((sum, amount) => sum + amount, 0);
+  }));
+  return Math.round(groups.reduce((sum, amount) => sum + amount, 0) * 100) / 100;
 };
 
 const parseRevenueDashboard = (data = {}) => {
@@ -419,6 +447,7 @@ function Dashboard() {
     const results = await Promise.allSettled([
       read("Dashboard"), ...modules.map(([,path]) => read(path)),
       read("Appointment"), read("Dashboard/ClincData"), read("Dashboard/revenue"),
+      storedHospitalId ? loadDashboardRevenue(read, storedHospitalId) : Promise.reject(new Error("Clinic is not selected")),
     ]);
     let next = results[0].status === "fulfilled" ? (results[0].value?.data ?? results[0].value) : {};
     const counts = {};
@@ -437,6 +466,10 @@ function Dashboard() {
     }
     if (results[8].status === "fulfilled") next.clinic = { ...(next.clinic || {}), ...(results[8].value?.data ?? results[8].value) };
     if (results[9].status === "fulfilled") next = { ...next, ...parseRevenueDashboard(results[9].value) };
+    const revenue = results[10];
+    next.revenueAvailable = revenue.status === "fulfilled";
+    next.totalRevenue = next.revenueAvailable ? revenue.value : null;
+    if (!next.revenueAvailable) failed.push("Revenue (OP, lab and pharmacy bills)");
     setModuleCounts(counts);
     setDashboardData(next);
     if (failed.length) setDashboardError("Unable to load: " + failed.join(", ") + ". Use Refresh to retry.");
@@ -449,7 +482,8 @@ function Dashboard() {
 
   /* ================= CHART & RECORD COMPUTATION ================= */
 
-  const totalRevenue = dashboardData?.totalRevenue || 0;
+  const totalRevenue = dashboardData?.totalRevenue ?? 0;
+  const revenueDisplay = loading ? "..." : dashboardData?.revenueAvailable ? formatCurrency(totalRevenue) : "Unavailable";
 
   const chartPoints = dashboardData?.growthChart?.length
     ? dashboardData.growthChart.map((item) => ({
@@ -611,7 +645,8 @@ function Dashboard() {
     { label: "Receptionists", value: receptionistCount, icon: UserRoundCheck, path: "/receptionists" },
     { label: "Lab Technicians", value: labTechnicianCount, icon: FlaskConical, path: "/lab-technicians" },
     { label: "Pharmacists", value: 0, icon: Pill, path: "/pharmacists" },
-  ].map(card => ({ ...card, value: loading ? "..." : moduleCounts[card.label] == null ? "Unavailable" : formatNumber(moduleCounts[card.label]), tone: "teal", onClick: () => navigate(card.path) }));
+    { label: "Revenue", icon: IndianRupee, path: "/RevenueReport/daily", className: "admin-revenue-card" },
+  ].map(card => ({ ...card, value: loading ? "..." : card.label === "Revenue" ? revenueDisplay : moduleCounts[card.label] == null ? "Unavailable" : formatNumber(moduleCounts[card.label]), tone: "teal", onClick: () => navigate(card.path) }));
   return (
     <div className="db-dashboard db-admin-overview" ref={pageRef}>
       <header className="admin-overview-heading"><span className="admin-greeting-icon"><GreetingIcon size={27}/></span><div><h1>{greeting}, {adminName}!</h1><p>Here's what's happening at your clinic today.</p></div><button type="button" className="admin-refresh" onClick={fetchDashboard} disabled={loading}><RefreshCw size={16}/><span>Refresh</span></button></header>
@@ -628,7 +663,7 @@ function Dashboard() {
         <section className="admin-detail-section admin-clinic-statistics"><div className="admin-section-heading"><h2>Clinic Status</h2><select aria-label="Statistics period" value={timeFilter} onChange={e => setTimeFilter(e.target.value)}><option value="month">This Month</option><option value="quarter">This Quarter</option><option value="year">This Year</option></select></div>
           <div className="admin-chart-summary"><span>Appointments</span><strong>{formatNumber(selectedPeriodAppointmentCount)}</strong></div>
           <div className="admin-overview-chart"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={dashboardData?.growthChart?.length ? chartPoints : []} margin={{top:12,right:8,left:-25,bottom:0}}><CartesianGrid stroke="#dce8e9" strokeDasharray="3 3" vertical={false}/><XAxis dataKey="name" tick={{fontSize:10}} tickLine={false} axisLine={false}/><YAxis tick={{fontSize:10}} tickLine={false} axisLine={false}/><Tooltip/><Area type="monotone" dataKey="value" name="Appointments" stroke="var(--theme-primary-dark)" fill="var(--theme-primary-soft)" strokeWidth={2}/></ComposedChart></ResponsiveContainer></div>
-          <div className="admin-section-footer admin-stat-totals"><div><span>Patients</span><strong>{formatNumber(totalPatients)}</strong></div><div><span>Revenue</span><strong>{formatCurrency(totalRevenue)}</strong></div></div>
+          <div className="admin-section-footer admin-stat-totals"><div><span>Patients</span><strong>{formatNumber(totalPatients)}</strong></div><div><span>Revenue</span><strong>{revenueDisplay}</strong></div></div>
         </section>
       </div>
     </div>

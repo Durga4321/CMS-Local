@@ -5860,16 +5860,21 @@
   }
 }
 
-/* Keep Admin Management in the page flow instead of creating an internal table scrollbar. */
+/* Keep all Admin Management columns inside the table; scroll on narrow screens. */
 .content.superadmin-content .sa-table--admins {
   max-height: none !important;
-  overflow: visible !important;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
 }
 
 .content.superadmin-content .sa-table--admins .sa-table-head,
 .content.superadmin-content .sa-table--admins .sa-table-row {
-  min-width: 0 !important;
-  width: 100% !important;
+  min-width: 940px !important;
+  width: max(100%, 940px) !important;
+  column-gap: 10px !important;
+  padding: 12px !important;
   box-sizing: border-box;
 }
 
@@ -6656,4 +6661,35 @@ html[data-cms-theme] .sa-notifications-page .sa-delete-icon:focus-visible {
   border-color: var(--theme-primary) !important;
   background: var(--theme-primary-soft) !important;
   color: var(--theme-primary-dark) !important;
+}
+
+/* Allow long admin details to wrap without widening the shared header/row grid. */
+.content.superadmin-content .sa-table--admins .sa-admin-name-highlight {
+  max-width: 100%;
+  padding: 4px 8px;
+  box-sizing: border-box;
+}
+.content.superadmin-content .sa-table--admins .sa-admin-name-highlight b,
+.content.superadmin-content .sa-table--admins .sa-admin-email,
+.content.superadmin-content .sa-table--admins .sa-admin-clinic-cell > span:last-child {
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.content.superadmin-content .sa-table--admins .sa-admin-clinic-cell {
+  max-width: 100%;
+}
+.content.superadmin-content .sa-table--admins .sa-table-cell--actions {
+  overflow: visible;
+}
+.content.superadmin-content .sa-table--admins .sa-table-cell--actions .actions-group {
+  flex-wrap: nowrap;
+  gap: 4px !important;
+}
+.content.superadmin-content .sa-table--admins .sa-table-cell--actions .action-btn {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  flex-shrink: 0;
 }
