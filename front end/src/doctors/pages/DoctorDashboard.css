@@ -284,6 +284,10 @@
   overflow: hidden;
 }
 
+html body .dd-page.role-single-screen > .dd-queue-card {
+  margin-top: 6px !important;
+}
+
 .dd-queue-header {
   display: flex;
   align-items: center;
@@ -777,7 +781,7 @@
    7. EMPTY TELEMETRY STATE
    ──────────────────────────────────────────────────────────── */
 .dd-empty-telemetry {
-  padding: 46px 24px;
+  padding: 2px 24px !important;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -786,26 +790,30 @@
 }
 
 .dd-empty-telemetry h4 {
-  margin: 0 0 6px;
-  font-size: 16px;
+  margin: 0 0 2px;
+  font-size: 14px;
   font-weight: 800;
   color: var(--theme-primary-dark);
 }
 
 .dd-empty-telemetry p {
-  margin: 0 0 18px;
-  font-size: 13px;
+  margin: 0 0 4px;
+  font-size: 12px;
   color: #64748b;
   max-width: 440px;
 }
 
 .dd-empty-reset-btn {
+  width: fit-content !important;
+  height: 28px !important;
+  min-height: 28px !important;
   border: 1.5px solid var(--theme-primary);
   background: #ffffff;
   color: var(--theme-primary);
   border-radius: 999px;
-  padding: 7px 18px;
-  font-size: 12.5px;
+  padding: 2px 10px !important;
+  font-size: 10.5px;
+  line-height: 1 !important;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;

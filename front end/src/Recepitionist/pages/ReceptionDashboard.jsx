@@ -9,6 +9,7 @@ import {
   Clock,
   ClipboardList,
   UserPlus,
+  Users,
   Stethoscope,
   Calendar,
   Activity,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import { formatToday, parseList, requestJson as defaultRequestJson } from "../receptionApi";
 import { getReceptionistScope, scopeReceptionistRecords } from "../receptionScope";
+import { isDeletedPatient, patientBelongsToReceptionistPatientList } from "./ReceptionPatients";
 
 const normalizeKey = (key) => String(key || "").toLowerCase();
 
@@ -223,7 +225,25 @@ function ReceptionDashboard({
   const navigate = useNavigate();
   const receptionistScope = useMemo(() => getScope(), [getScope]);
   const [appointments, setAppointments] = useState([]);
+  const [totalPatients, setTotalPatients] = useState(null);
   const [stats, setStats] = useState({ today: 0, waiting: 0, completed: 0 });
+
+  useEffect(() => {
+    let active = true;
+    apiRequest("Patient")
+      .then((data) => {
+        const patients = parseList(data)
+          .filter((patient) => !isDeletedPatient(patient))
+          .filter((patient) => scopeRecords !== scopeReceptionistRecords
+            ? scopeRecords([patient], receptionistScope).length > 0
+            : patientBelongsToReceptionistPatientList(patient, new Set(), new Set(), receptionistScope));
+        if (active) setTotalPatients(patients.length);
+      })
+      .catch(() => {
+        if (active) setTotalPatients(null);
+      });
+    return () => { active = false; };
+  }, [apiRequest, receptionistScope, scopeRecords]);
 
   useEffect(() => {
     const buildDashboardState = (appointmentSources) => {
@@ -329,12 +349,14 @@ function ReceptionDashboard({
         )}
       </div>
 
-      {/* TOP 3 RADIANT KPI STAT CARDS */}
+      {/* TOP 5 RADIANT KPI STAT CARDS */}
       <div className="reception-overview-metrics"><DashboardCards cards={[
+        { label: "Total Patients", value: totalPatients ?? "—", icon: Users, onClick: () => navigate("/reception/patients") },
         { label: "Today's Appointments", value: stats.today, icon: CalendarCheck },
         { label: "Waiting Patients", value: stats.waiting, icon: Clock },
+        { label: "In Consultation", value: appointments.filter((item) => getAppointmentStatus(item) === "In Progress").length, icon: Stethoscope },
         { label: "Completed Appointments", value: stats.completed, icon: CheckCircle },
-      ].map(card => ({ ...card, tone: "teal", onClick: () => navigate("/reception/appointments") }))} /></div>
+      ].map(card => ({ ...card, tone: "teal", onClick: card.onClick || (() => navigate("/reception/appointments")) }))} /></div>
 
       {/* QUICK BILLING ACTIONS */}
       {!hideCards && (
@@ -408,7 +430,6 @@ function ReceptionDashboard({
       )}
 
       {/* APPOINTMENT LIST TABLE CARD */}
-      <DashboardPager layout={layout} total={latest.length} />
       <div className="rc-dash-table-card">
         <div className="rc-dash-table-head">
           <div className="rc-dash-table-head-left">
@@ -526,6 +547,7 @@ function ReceptionDashboard({
             )}
           </div>
         </div>
+        <DashboardPager layout={layout} total={latest.length} />
       </div>
     </section>
   );

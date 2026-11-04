@@ -1587,6 +1587,20 @@ aside.rc-sidebar.lab-sidebar {
   gap: 10px !important;
 }
 
+/* Patient initials match the light profile badges in the appointment table. */
+html body :is(.lab-screen-patients, .lab-screen-samples, .lab-screen-reports) .lab-patient-avatar {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+html body .lab-screen-patients .lab-table-head > span:has(.rc-th-tests) {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
 .lab-patient-avatar {
   width: 32px !important;
   height: 32px !important;

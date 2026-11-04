@@ -569,7 +569,7 @@ function Dashboard() {
         name: apt.patientName || apt.patient?.name || apt.name || "Unknown Patient",
         subtitle: apt.chiefComplaints || apt.complaint || apt.reason || "General Checkup",
         time: apt.time || apt.slotTime || apt.appointmentTime || "--",
-        date: getAppointmentDateValue(apt) || "--",
+        date: getLocalDateKey(getAppointmentDateValue(apt)) || "--",
         status: apt.status || apt.appointmentStatus || "Scheduled",
       }))
     : [];
