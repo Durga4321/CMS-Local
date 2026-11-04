@@ -1,7 +1,7 @@
 ﻿.admin-clinic-setup-page {
   min-height: calc(100vh - 96px);
   padding: 28px 32px 44px;
-  background: linear-gradient(135deg, #eef6ff 0%, #f8fbff 48%, #ecfdf5 100%);
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 48%, #ecfdf5 100%);
 }
 
 .admin-clinic-setup-header {
@@ -14,7 +14,7 @@
 
 .admin-clinic-setup-header h1 {
   margin: 0 0 6px;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 34px;
   font-weight: 850;
   letter-spacing: 0;

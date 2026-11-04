@@ -264,12 +264,12 @@ function UserProfilePage({ roleType = "admin" }) {
             <path
               d="M0,12 L45,12 L52,12 L58,3 L64,19 L70,5 L76,14 L82,12 L138,12 L144,3 L150,19 L156,6 L162,14 L168,12 L200,12"
               fill="none"
-              stroke="rgba(13, 148, 136, 0.45)"
+              stroke="color-mix(in srgb, var(--theme-primary-dark) 45%, transparent)"
               strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-            <circle cx="82" cy="12" r="2.5" fill="#0d9488" className="profile-ecg-runner" />
+            <circle cx="82" cy="12" r="2.5" fill="var(--theme-primary-dark)" className="profile-ecg-runner" />
           </svg>
         </div>
       </div>

@@ -193,12 +193,12 @@ function NurseSidebar({
               <path
                 d="M0,10 L45,10 L52,10 L58,3 L64,17 L70,5 L76,13 L82,10 L135,10 L141,2 L147,18 L153,6 L159,12 L165,10 L200,10"
                 fill="none"
-                stroke="rgba(14, 165, 233, 0.45)"
+                stroke="color-mix(in srgb, var(--theme-primary) 45%, transparent)"
                 strokeWidth="1.6"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              <circle cx="82" cy="10" r="2.2" fill="#0ea5e9" className="rc-ecg-runner" />
+              <circle cx="82" cy="10" r="2.2" fill="var(--theme-primary)" className="rc-ecg-runner" />
             </svg>
           </div>
         </>

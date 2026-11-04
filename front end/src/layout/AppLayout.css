@@ -34,7 +34,7 @@
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
   scrollbar-width: thin !important;
-  scrollbar-color: #0f9d9d #e7f3f6 !important;
+  scrollbar-color: var(--theme-primary-dark) var(--theme-primary-soft) !important;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
@@ -47,19 +47,19 @@
 
 .content::-webkit-scrollbar-track {
   display: block !important;
-  background: #e7f3f6 !important;
+  background: var(--theme-primary-soft) !important;
   border-radius: 999px;
 }
 
 .content::-webkit-scrollbar-thumb {
   display: block !important;
-  background: linear-gradient(#38bdf8, #0f9d9d) !important;
-  border: 2px solid #e7f3f6 !important;
+  background: linear-gradient(var(--theme-primary), var(--theme-primary-dark)) !important;
+  border: 2px solid var(--theme-primary-soft) !important;
   border-radius: 999px;
 }
 
 .content::-webkit-scrollbar-thumb:hover {
-  background: #0d7f7f !important;
+  background: var(--theme-primary-dark) !important;
 }
 
 .main.superadmin-main {

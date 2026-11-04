@@ -19,7 +19,7 @@
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -29,8 +29,8 @@
 }
 
 .date-picker-trigger:hover:not(:disabled) {
-  background: rgba(15, 23, 42, 0.06);
-  color: #0f9d9d;
+  background: color-mix(in srgb, var(--theme-primary-dark) 6%, transparent);
+  color: var(--theme-primary-dark);
 }
 
 .date-picker-trigger:disabled {

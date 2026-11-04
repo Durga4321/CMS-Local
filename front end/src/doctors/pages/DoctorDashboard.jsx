@@ -1,3 +1,4 @@
+import { DashboardGreeting, useDashboardLayout, DashboardPager } from "../../components/superadmin/DashboardCards";
 ﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import {
@@ -179,6 +180,7 @@ const isAbortLikeError = (error) => {
 };
 
 function DoctorDashboard() {
+  const layout = useDashboardLayout();
   const navigate = useNavigate();
   const permissionDoctor = getLoggedInDoctor();
   useRolePermissionsSync({ ...permissionDoctor, role: "Doctor" });
@@ -442,7 +444,7 @@ function DoctorDashboard() {
   }
 
   return (
-    <div className="dd-page">
+    <div className="dd-page role-single-screen" ref={layout.ref}>
       {error ? (
         <div className="dd-alert">
           <span>{error}</span>
@@ -453,22 +455,7 @@ function DoctorDashboard() {
       ) : null}
 
       {/* Medical Telemetry Banner */}
-      <div className="dd-header-banner">
-        <div className="dd-header-copy">
-          <div className="dd-header-badge">
-            <Activity size={14} className="dd-pulse-icon" />
-            <span>CLINICAL TRIAGE CONSOLE</span>
-          </div>
-          <h2 className="dd-header-title">Doctor Dashboard</h2>
-          <p className="dd-header-subtitle">Real-time patient triage, consultation queue, and diagnostic telemetry</p>
-        </div>
-        <div className="dd-header-telemetry">
-          <div className="dd-telemetry-pill">
-            <span className="dd-telemetry-led" />
-            <span>LIVE SYSTEM SYNC</span>
-          </div>
-        </div>
-      </div>
+      <DashboardGreeting role="Doctor" />
 
       {/* Medical Instrument Telemetry Cards */}
       <div className="dd-stats">
@@ -493,6 +480,7 @@ function DoctorDashboard() {
       </div>
 
       {/* Main Queue Console Card */}
+      <DashboardPager layout={layout} total={filteredPatients.length} />
       <div className="dd-queue-card">
         <div className="dd-queue-header">
           <div className="dd-queue-title-wrap">
@@ -583,7 +571,7 @@ function DoctorDashboard() {
           </div>
 
           {filteredPatients.length > 0 ? (
-            filteredPatients.map((patient, index) => (
+            layout.rows(filteredPatients).map((patient, index) => (
               <div
                 className="dd-row"
                 key={patient.appointmentId || patient.tokenNumber}
@@ -659,7 +647,7 @@ function DoctorDashboard() {
 
         <div className="dd-queue-footer">
           <span>
-            Showing {filteredPatients.length} of {dashboard?.totalAppointments ?? 0} patients
+            Showing {layout.rows(filteredPatients).length} of {dashboard?.totalAppointments ?? 0} patients
           </span>
         </div>
       </div>

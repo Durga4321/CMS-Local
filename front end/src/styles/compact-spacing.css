@@ -701,7 +701,7 @@
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
   border-radius: 16px !important;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 4%, transparent) !important;
   overflow-x: auto !important;
 }
 
@@ -722,7 +722,7 @@
 ) {
   background: #f8fafc !important;
   border-bottom: 1px solid #e2e8f0 !important;
-  color: #1e3a8a !important;
+  color: var(--theme-primary-dark) !important;
   font-size: 13.5px !important;
   font-weight: 700 !important;
   min-height: 48px !important;
@@ -1259,15 +1259,15 @@
    ========================================================================== */
 @keyframes medicalVitalPulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7), 0 0 5px #10b981;
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--theme-primary) 70%, transparent), 0 0 5px var(--theme-primary);
     transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0), 0 0 8px #10b981;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-primary) 0%, transparent), 0 0 8px var(--theme-primary);
     transform: scale(1.15);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 0 5px #10b981;
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--theme-primary) 0%, transparent), 0 0 5px var(--theme-primary);
     transform: scale(1);
   }
 }
@@ -1300,7 +1300,7 @@
   position: fixed !important;
   inset: 0 !important;
   z-index: 3500 !important;
-  background: rgba(15, 23, 42, 0.65) !important;
+  background: color-mix(in srgb, var(--theme-primary-dark) 65%, transparent) !important;
   backdrop-filter: blur(10px) !important;
   -webkit-backdrop-filter: blur(10px) !important;
   display: flex !important;
@@ -1329,7 +1329,7 @@
   border: 1.5px solid rgba(226, 232, 240, 0.95) !important;
   border-radius: 22px !important;
   box-shadow:
-    0 24px 60px -10px rgba(15, 23, 42, 0.35),
+    0 24px 60px -10px color-mix(in srgb, var(--theme-primary-dark) 35%, transparent),
     0 0 0 1px rgba(255, 255, 255, 0.85) !important;
   overflow: hidden !important;
   box-sizing: border-box !important;
@@ -1348,7 +1348,7 @@
   border: 1.5px solid rgba(226, 232, 240, 0.95) !important;
   border-radius: 16px !important;
   box-shadow:
-    0 20px 50px -10px rgba(15, 23, 42, 0.25),
+    0 20px 50px -10px color-mix(in srgb, var(--theme-primary-dark) 25%, transparent),
     0 0 0 1px rgba(255, 255, 255, 0.85) !important;
   overflow: hidden !important;
   box-sizing: border-box !important;
@@ -2111,4 +2111,160 @@
 .receptionists-page .receptionists-actions .instrument-icon {
   width: 17px !important;
   height: 17px !important;
+}
+
+/* Shared single-screen dashboard density for all clinical roles. */
+:is(.content,.dr-layout-content,.rc-content,.lab-main,.nurse-content,.pharmacy-main,.pp-main):has(.role-single-screen) { min-height: 0 !important; overflow: hidden !important; scrollbar-gutter: auto; padding: 10px !important; }
+:is(.main,.dr-layout-main,.rc-main,.nurse-main,.pharmacy-main,.lab-main,.pp-main):has(.role-single-screen) { min-height: 0 !important; }
+html body .role-single-screen { display: flex !important; flex-direction: column !important; gap: 8px !important; width: 100%; height: var(--role-dashboard-height) !important; min-height: 0 !important; max-height: var(--role-dashboard-height) !important; padding: 0 !important; overflow: hidden !important; }
+html body .role-single-screen > * { min-width: 0; flex-shrink: 0; margin-top: 0 !important; margin-bottom: 0 !important; }
+html body .role-single-screen > :is(.db-3d-bg-overlay,.db-3d-floating-particle,.db-3d-ecg-wave) { display: none !important; }
+html body .role-single-screen :is(.dd-header-banner,.nd-hero-banner,.rc-dash-header,.pd-header,.pharmacy-dashboard-heading) { min-height: 0 !important; padding: 8px 4px !important; gap: 10px !important; background: transparent !important; box-shadow: none !important; border: 0 !important; border-radius: 0 !important; }
+html body .role-single-screen :is(.dd-header-title,.nd-hero-title,.rc-dash-title,.pd-greeting-title,.pharmacy-dashboard-heading h2) { font-size: 21px !important; margin: 0 !important; line-height: 1.25; }
+html body .role-single-screen :is(.dd-header-subtitle,.nd-hero-subtitle,.rc-dash-subtitle,.pd-greeting-subtitle) { font-size: 11px !important; margin: 4px 0 0 !important; }
+html body .role-single-screen :is(.dd-header-badge,.nd-hero-pill-row,.dd-stat-badge,.dd-stat-trend,.nd-stat-pill,.nd-stat-hint,.rc-stat-period-pill,.db-kpi-trend) { display: none !important; }
+html body .role-single-screen :is(.dd-stats,.nd-stat-grid,.rc-dash-kpi-grid,.pharmacy-count-grid) { display: grid !important; grid-template-columns: repeat(auto-fit,minmax(0,1fr)) !important; gap: 8px !important; margin: 0 !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; border: 0 !important; height: 82px !important; }
+html body .role-single-screen :is(.dd-stat-card,.nd-stat-card,.rc-dash-kpi-card,.pharmacy-count-card) { position: relative; height: 82px !important; min-height: 0 !important; padding: 10px 10px 18px !important; border: 0 !important; border-radius: 9px !important; background: #fff !important; box-shadow: 0 2px 8px #0f172a08 !important; transform: none !important; overflow: hidden; }
+html body .role-single-screen :is(.dd-stat-card,.nd-stat-card,.rc-dash-kpi-card,.pharmacy-count-card)::before { display: none !important; }
+html body .role-single-screen :is(.dd-stat-card,.nd-stat-card,.rc-dash-kpi-card,.pharmacy-count-card)::after { content: ''; position: absolute; inset: auto 0 0; height: 12px; background: var(--theme-primary-soft); border-bottom: 4px solid var(--theme-primary); }
+html body .role-single-screen :is(.dd-stat-top,.nd-stat-head,.db-kpi-header,.pharmacy-count-card-top) { position: static !important; margin: 0 !important; padding: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; }
+html body .role-single-screen :is(.dd-stat-icon-bezel,.nd-stat-icon-box,.db-kpi-icon-box,.pharmacy-count-icon) { position: absolute !important; top: 15px; left: 10px; display: grid !important; place-items: center; width: 32px !important; height: 32px !important; min-width: 32px !important; border-radius: 8px !important; color: #fff !important; background: var(--theme-primary-dark) !important; box-shadow: none !important; }
+html body .role-single-screen :is(.dd-stat-body,.nd-stat-body,.db-kpi-content-wrap) { padding: 0 0 0 42px !important; margin: 0 !important; background: transparent !important; box-shadow: none !important; }
+html body .role-single-screen :is(.dd-stat-label,.nd-stat-label,.db-kpi-title,.pharmacy-count-title) { font-size: 11px !important; line-height: 1.2 !important; margin: 0 0 4px !important; color: #64748b !important; font-weight: 500 !important; }
+html body .role-single-screen :is(.dd-stat-value,.nd-stat-count,.db-kpi-num,.pharmacy-count-value) { font-size: 23px !important; line-height: 1.1 !important; color: var(--theme-primary-dark) !important; margin: 0 !important; }
+html body .role-single-screen :is(.dd-stat-sub,.pharmacy-count-description,.pharmacy-count-link,.pharmacy-count-arrow) { display: none !important; }
+html body .role-single-screen .pharmacy-count-title, html body .role-single-screen .pharmacy-count-value { margin-left: 42px !important; }
+html body .role-single-screen :is(.nd-action-grid,.rc-dash-action-grid) { display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; gap: 8px !important; padding: 0 !important; }
+html body .role-single-screen :is(.nd-action-card,.rc-dash-action-tile) { min-height: 52px !important; height: 52px !important; padding: 8px 10px !important; border-radius: 8px !important; background: #fff !important; border: 1px solid var(--theme-primary-glow) !important; box-shadow: none !important; gap: 8px !important; }
+html body .role-single-screen :is(.nd-action-text p,.rc-dash-action-desc,.rc-dash-action-tag,.nd-action-section-title) { display: none !important; }
+html body .role-single-screen :is(.nd-action-icon-box,.rc-dash-action-icon-wrap) { width: 28px !important; height: 28px !important; min-width: 28px !important; border-radius: 7px !important; background: var(--theme-primary-soft) !important; color: var(--theme-primary-dark) !important; }
+html body .role-single-screen :is(.nd-action-text h3,.rc-dash-action-title) { font-size: 12px !important; }
+html body .role-single-screen :is(.dd-queue-card,.nd-table-card,.rc-dash-table-card) { flex: 1 1 0 !important; min-height: 0 !important; height: auto !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 10px !important; margin: 0 !important; background: #fff !important; border: 1px solid #e2e8f0 !important; border-top: 3px solid var(--theme-primary) !important; border-radius: 12px !important; box-shadow: none !important; }
+html body .role-single-screen :is(.dd-queue-header,.nd-table-header,.rc-dash-table-head) { padding: 0 0 8px !important; min-height: 0 !important; gap: 6px !important; margin: 0 !important; flex-shrink: 0; background: transparent !important; border: 0 !important; box-shadow: none !important; }
+html body .role-single-screen :is(.dd-queue-title,.nd-table-title-wrap h3,.rc-dash-table-head h3) { font-size: 15px !important; margin: 0 !important; }
+html body .role-single-screen :is(.dd-table,.rc-dash-table-container,.rc-dash-table-body) { min-height: 0 !important; height: auto !important; max-height: none !important; overflow: visible !important; flex: 1; }
+html body .role-single-screen :is(.dd-thead,.rc-dash-table-header) { min-height: 32px !important; height: auto !important; padding-top: 5px !important; padding-bottom: 5px !important; }
+html body .role-single-screen :is(.dd-row,.rc-dash-table-row) { min-height: 44px !important; height: auto !important; padding-top: 5px !important; padding-bottom: 5px !important; }
+html body .role-single-screen :is(.dd-queue-filters,.dd-queue-footer) { padding: 5px 0 !important; gap: 6px !important; margin: 0 !important; flex-shrink: 0; }
+html body .role-single-screen :is(.dd-filter-capsule,.dd-refresh-btn,.dd-search,.nd-btn-manage,.rc-dash-manage-btn) { min-height: 29px !important; height: 29px !important; font-size: 11px !important; }
+html body .role-single-screen .nd-clinical-table :is(th,td) { padding: 7px !important; font-size: 11px !important; }
+html body .role-single-screen .nd-patient-avatar, html body .role-single-screen .rc-dash-patient-avatar { width: 27px !important; height: 27px !important; }
+html body .role-single-screen .role-dashboard-pager { display: flex; justify-content: flex-end; align-items: center; gap: 8px; height: 25px; font-size: 10px; }
+html body .role-single-screen .role-dashboard-pager > span:first-child { margin-right: auto; color: #64748b; }
+html body .role-single-screen .role-dashboard-pager button { min-height: 24px !important; height: 24px !important; padding: 2px 8px !important; border: 1px solid var(--theme-primary-glow); border-radius: 5px; color: var(--theme-primary-dark); background: #fff; font-size: 10px; cursor: pointer; }
+html body .role-single-screen .role-dashboard-pager button:disabled { opacity: .45; cursor: default; }
+/* Patient overview retains token, appointment and payment details in compact cards. */
+html body .pd-reference-dashboard.role-single-screen .pd-overview-grid { display: grid !important; grid-template-columns: repeat(4,minmax(0,1fr)) !important; gap: 8px !important; flex-shrink: 0; height: 160px !important; padding: 0 !important; }
+html body .pd-reference-dashboard.role-single-screen .pd-overview-grid > .pd-card { min-height: 0 !important; height: 160px !important; padding: 9px !important; gap: 5px !important; border-radius: 9px !important; border: 1px solid #e2e8f0 !important; border-bottom: 4px solid var(--theme-primary) !important; background: #fff !important; box-shadow: none !important; }
+html body .pd-reference-dashboard.role-single-screen :is(.pd-token-panel-header h2,.pd-section-header h2) { font-size: 13px !important; margin: 0 !important; }
+html body .pd-reference-dashboard.role-single-screen :is(.pd-current-token-group,.pd-appointment-summary) { gap: 7px !important; margin: 0 !important; }
+html body .pd-reference-dashboard.role-single-screen :is(.pd-token-icon,.pd-summary-card-icon) { width: 26px !important; height: 26px !important; flex: 0 0 26px !important; border-radius: 6px !important; }
+html body .pd-reference-dashboard.role-single-screen .pd-current-token { font-size: 23px !important; }
+html body .pd-reference-dashboard.role-single-screen :is(.pd-token-notice,.pd-token-stat,.pd-appointment-doctor,.pd-summary-card-copy p,.pd-appointment-summary p) { font-size: 9px !important; margin: 0 !important; padding: 3px !important; line-height: 1.25 !important; }
+html body .pd-reference-dashboard.role-single-screen :is(.pd-summary-card-copy strong,.pd-appointment-summary strong) { font-size: 12px !important; }
+html body .pd-reference-dashboard.role-single-screen .pd-card-footer-button { height: 25px !important; min-height: 25px !important; font-size: 10px !important; }
+html body .pd-reference-dashboard.role-single-screen .pd-dashboard-row { display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; gap: 8px !important; flex: 1; min-height: 0; padding: 0 !important; }
+html body .pd-reference-dashboard.role-single-screen .pd-dashboard-row > .pd-card { min-height: 0 !important; height: auto !important; padding: 10px !important; overflow: hidden; border-radius: 12px !important; border-top: 3px solid var(--theme-primary); box-shadow: none !important; }
+html body .pd-reference-dashboard.role-single-screen .pd-section-header { padding: 0 !important; margin: 0 0 8px !important; background: transparent !important; box-shadow: none !important; }
+html body .pd-reference-dashboard.role-single-screen .pd-notification-list { height: auto !important; max-height: none !important; overflow: visible !important; gap: 5px; }
+html body .pd-reference-dashboard.role-single-screen .pd-notification-item { padding: 6px !important; min-height: 0 !important; font-size: 10px !important; }
+html body .pd-reference-dashboard.role-single-screen .pd-quick-action-list button { min-height: 32px !important; padding: 6px !important; font-size: 10px !important; }
+html body .pd-reference-dashboard.role-single-screen .pd-queue-track { display: flex; flex-wrap: wrap; padding: 8px 0 !important; margin: 0 !important; overflow: visible !important; gap: 6px !important; }
+html body .pd-reference-dashboard.role-single-screen .pd-queue-step { min-width: 30px !important; font-size: 10px !important; }
+@media(max-width: 800px) { html body .role-single-screen :is(.dd-stat-label,.nd-stat-label,.db-kpi-title,.pharmacy-count-title) { font-size: 9px !important; } html body .role-single-screen :is(.dd-stats,.nd-stat-grid,.rc-dash-kpi-grid,.pharmacy-count-grid) { gap: 4px !important; } html body .role-single-screen :is(.dd-stat-icon-bezel,.nd-stat-icon-box,.db-kpi-icon-box,.pharmacy-count-icon) { width: 24px !important; min-width: 24px !important; left: 5px; } html body .role-single-screen :is(.dd-stat-body,.nd-stat-body,.db-kpi-content-wrap) { padding-left: 25px !important; } }
+
+/* Compact greetings replace the legacy role banners. */
+html body .role-single-screen .role-dashboard-greeting { display: flex !important; align-items: center; gap: 12px; min-width: 0; min-height: 54px; padding: 5px 3px !important; margin: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; }
+html body .role-single-screen .role-greeting-icon { display: grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px; border-radius: 50%; background: var(--theme-primary-soft); color: var(--theme-primary-dark); }
+html body .role-single-screen .role-dashboard-greeting h1 { display: block !important; margin: 0 !important; font-size: clamp(18px, 1.65vw, 24px) !important; line-height: 1.2; font-weight: 800; color: #0f172a; }
+html body .role-single-screen .role-dashboard-greeting p { margin: 5px 0 0 !important; font-size: 11px !important; line-height: 1.3; color: #64748b; }
+html body .role-single-screen :is(.rc-dash-header,.pharmacy-dashboard-heading,.pd-header) { align-items: center !important; padding: 0 !important; gap: 10px !important; margin: 0 !important; }
+html body .role-single-screen .pd-header > .role-dashboard-greeting { flex: 1; }
+
+/* Consistent compact spacing throughout the Nurse workspace. */
+html body :is(.nurse-module,.reception-module) .rc-content { padding: 10px !important; }
+html body :is(.nurse-module,.reception-module) .rc-content .rc-page:not(.role-single-screen) { display: flex; flex-direction: column; width: 100%; max-width: none; padding: 0 !important; gap: 10px !important; }
+html body :is(.nurse-module,.reception-module) .rc-page:not(.role-single-screen) > :is(.booking-hero,.booking-metrics-grid,.booking-card,.med-history-hero,.med-metrics-grid,.med-search-bar-wrap,.med-history-card,.rc-dash-header,.rc-patient-kpi-grid,.rc-patients-table-card,.rc-patients-toolbar) { margin: 0 !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-hero,.med-history-hero,.rc-patients-page .rc-dash-header,.rc-appointments-page .rc-dash-header) { padding: 12px 14px !important; min-height: 0 !important; gap: 10px !important; border-radius: 12px !important; box-shadow: none !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-hero,.med-history-hero) h2 { margin: 5px 0 !important; font-size: 23px !important; line-height: 1.25; gap: 8px !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-hero,.med-history-hero) p { margin: 0 !important; font-size: 12px !important; line-height: 1.4; }
+html body :is(.nurse-module,.reception-module) :is(.booking-badge,.med-history-badge) { padding: 3px 8px !important; font-size: 10px !important; margin: 0 !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-head-actions,.med-head-actions,.rc-dash-head-actions) { gap: 8px !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-btn,.med-btn,.rc-head-action-btn) { min-height: 34px !important; height: 34px !important; padding: 0 10px !important; font-size: 12px !important; border-radius: 7px !important; gap: 6px !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-metrics-grid,.med-metrics-grid,.rc-patient-kpi-grid) { display: grid !important; grid-template-columns: repeat(4,minmax(0,1fr)) !important; width: 100% !important; max-width: none !important; padding: 0 !important; gap: 8px !important; margin: 0 !important; }
+html body :is(.nurse-module,.reception-module) .rc-patients-page .rc-patient-kpi-grid { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-metric-card,.med-metric-card,.rc-patient-kpi-card) { display: flex !important; align-items: center !important; justify-content: flex-start !important; width: 100% !important; min-width: 0 !important; height: 82px !important; min-height: 82px !important; padding: 10px 12px 17px !important; gap: 10px !important; margin: 0 !important; border-radius: 9px !important; box-shadow: 0 2px 6px #0f172a08 !important; background: linear-gradient(to bottom,#fff 0,#fff calc(100% - 12px),var(--theme-primary-soft) calc(100% - 12px),var(--theme-primary-soft) calc(100% - 4px),var(--theme-primary) calc(100% - 4px),var(--theme-primary) 100%) !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-metric-card,.med-metric-card,.rc-patient-kpi-card)::before, html body :is(.nurse-module,.reception-module) :is(.booking-metric-card,.med-metric-card,.rc-patient-kpi-card)::after { display: none !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-metric-icon,.med-metric-icon,.rc-pkpi-icon-box) { position: static !important; width: 32px !important; height: 32px !important; min-width: 32px !important; flex: 0 0 32px !important; border-radius: 8px !important; box-shadow: none !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-metric-info,.med-metric-info,.rc-pkpi-content) { padding: 0 !important; margin: 0 !important; gap: 3px !important; min-width: 0; }
+html body :is(.nurse-module,.reception-module) :is(.booking-metric-info,.med-metric-info) strong, html body :is(.nurse-module,.reception-module) .rc-pkpi-val { font-size: 23px !important; line-height: 1.1 !important; margin: 0 !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-metric-info,.med-metric-info) span, html body :is(.nurse-module,.reception-module) .rc-pkpi-label { font-size: 11px !important; line-height: 1.25 !important; }
+html body :is(.nurse-module,.reception-module) .rc-pkpi-badge { display: none !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-card,.med-history-card) { display: block !important; width: 100% !important; max-width: none !important; min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 12px !important; border-radius: 12px !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-card-head,.med-card-header) { padding: 0 0 10px !important; margin: 0 !important; gap: 8px !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-card-title,.med-card-title) { gap: 8px !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-card-title,.med-card-title) h3 { font-size: 17px !important; margin: 0 !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-card-title,.med-card-title) p { font-size: 11px !important; margin: 3px 0 0 !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-card-icon,.med-card-icon) { width: 32px !important; min-width: 32px !important; height: 32px !important; border-radius: 8px !important; }
+html body :is(.nurse-module,.reception-module) .booking-filter-grid { gap: 8px !important; padding: 10px 0 !important; margin: 0 !important; }
+html body :is(.nurse-module,.reception-module) .booking-filter-field { gap: 4px !important; }
+html body :is(.nurse-module,.reception-module) .booking-filter-label { font-size: 11px !important; }
+html body :is(.nurse-module,.reception-module) :is(.booking-filter-field input,.booking-filter-field select,.med-search-bar,.rc-patients-page .rc-search) { min-height: 36px !important; height: 36px !important; font-size: 12px !important; }
+html body :is(.nurse-module,.reception-module) .booking-tabs { padding: 3px !important; gap: 4px !important; }
+html body :is(.nurse-module,.reception-module) .booking-tab-btn { min-height: 30px !important; padding: 4px 8px !important; font-size: 11px !important; }
+html body :is(.nurse-module,.reception-module) :is(.rc-table-data,.med-history-table) :is(th,td) { padding: 9px 10px !important; font-size: 12px !important; }
+@media(max-width: 900px) { html body :is(.nurse-module,.reception-module) :is(.booking-metrics-grid,.med-metrics-grid,.rc-patient-kpi-grid) { grid-template-columns: repeat(2,minmax(0,1fr)) !important; } html body :is(.nurse-module,.reception-module) :is(.booking-hero,.med-history-hero) { flex-wrap: wrap; } }
+@media(max-width: 480px) { html body :is(.nurse-module,.reception-module) :is(.booking-metric-card,.med-metric-card,.rc-patient-kpi-card) { padding-left: 8px !important; gap: 6px !important; } html body :is(.nurse-module,.reception-module) .rc-patients-page .rc-patient-kpi-grid { grid-template-columns: minmax(0,1fr) !important; } }
+
+/* Shared table rhythm: header and body always use identical horizontal spacing. */
+@media screen {
+  html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) :is(.sa-table-head,.sa-table-row,.branches-thead,.branches-row,.receptionists-thead,.receptionists-row,.admin-users-table-head,.admin-users-row,.admin-pharmacists-thead,.admin-pharmacists-row,.lab-files-head,.lab-files-row,.rc-table-head,.rc-table-row,.rc-patient-table-header,.rc-patient-table-row,.rc-latest-bills-table-head,.rc-latest-bill-row) { box-sizing: border-box !important; padding-left: 12px !important; padding-right: 12px !important; column-gap: 10px !important; align-items: center !important; }
+  html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) :is(.sa-table-head,.sa-table-row,.branches-thead,.branches-row,.receptionists-thead,.receptionists-row,.admin-users-table-head,.admin-users-row,.admin-pharmacists-thead,.admin-pharmacists-row,.lab-files-head,.lab-files-row,.rc-table-head,.rc-table-row,.rc-patient-table-header,.rc-patient-table-row,.rc-latest-bills-table-head,.rc-latest-bill-row) > * { min-width: 0 !important; box-sizing: border-box; overflow-wrap: anywhere; }
+  html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) :is(.sa-align-left,.col-left.text-left) { text-align: left !important; justify-content: flex-start !important; }
+  html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) :is(.sa-align-center,.col-center.text-center) { text-align: center !important; justify-content: center !important; }
+  html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) :is(.sa-align-right,.col-right.text-right) { text-align: right !important; justify-content: flex-end !important; font-variant-numeric: tabular-nums; }
+  html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table { border-collapse: collapse; border-spacing: 0; max-width: none; }
+  html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table :is(th,td) { box-sizing: border-box; vertical-align: middle !important; padding: 9px 12px !important; line-height: 1.35; }
+  html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table :is(th,td):not([class]) { text-align: left; }
+  html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table :is(td,th) :is(input:not([type="checkbox"]):not([type="radio"]),select) { max-width: 100%; min-width: 0; box-sizing: border-box; }
+  html body :is(.phb-table-scroll,.pharmacy-table-scroll,.pharmacy-catalogue-scroll,.rc-table-wrap,.med-history-table-scroll,.admin-pharmacists-table-scroll) { max-width: 100%; overflow-x: auto; }
+  html body :is(.sa-table-cell--actions,.rc-row-actions,.receptionists-actions,.nurses-actions,.admin-pharmacists-actions) { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px !important; }
+  html body .lab-page:not(.role-single-screen) :is(.lab-table-head,.lab-table-row) { padding-left: 12px !important; padding-right: 12px !important; column-gap: 10px !important; box-sizing: border-box; }
+  html body .lab-screen-tests .lab-table-head { border-left: 4px solid transparent !important; }
+}
+
+/* Native tables align each body column with its typed header. */
+@media screen {
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(1)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(1):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(1)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(1):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(2)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(2):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(2)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(2):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(3)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(3):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(3)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(3):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(4)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(4):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(4)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(4):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(5)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(5):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(5)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(5):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(6)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(6):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(6)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(6):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(7)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(7):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(7)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(7):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(8)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(8):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(8)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(8):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(9)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(9):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(9)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(9):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(10)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(10):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(10)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(10):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(11)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(11):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(11)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(11):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(12)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(12):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(12)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(12):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(13)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(13):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(13)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(13):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(14)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(14):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(14)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(14):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(15)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(15):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(15)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(15):not([colspan]) { text-align: center !important; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="number"]:nth-child(16)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(16):not([colspan]) { text-align: right !important; font-variant-numeric: tabular-nums; }
+html body :is(.content,.rc-content,.dr-layout-content,.lab-main,.pharmacy-main,.pp-main) table:has(> thead > tr > th[data-column-kind="center"]:nth-child(16)) > :is(thead,tbody,tfoot) > tr > :is(th,td):nth-child(16):not([colspan]) { text-align: center !important; }
 }

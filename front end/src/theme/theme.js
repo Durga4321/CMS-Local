@@ -1,4 +1,5 @@
 export const THEME_STORAGE_KEY = "cms-theme-color";
+const CUSTOM_THEME_STORAGE_KEY = "cms-custom-theme";
 
 export const THEME_OPTIONS = [
   { id: "current", name: "Current Teal", color: "#0f9d9d", dark: "#0f5a61", soft: "#dff3f3", glow: "#b8e8e5" },
@@ -36,18 +37,33 @@ export const applyTheme = (theme) => {
     "--app-gradient-bg",
     `radial-gradient(ellipse 70% 55% at 88% 10%, ${option.glow} 0%, transparent 72%), radial-gradient(ellipse 55% 45% at 8% 15%, ${option.soft} 0%, transparent 70%), linear-gradient(140deg, ${option.soft} 0%, #f8fafc 54%, ${option.soft} 100%)`
   );
-  localStorage.setItem(THEME_STORAGE_KEY, option.id);
+  try {
+    if (option.id === "custom") localStorage.setItem(CUSTOM_THEME_STORAGE_KEY, JSON.stringify(option));
+    localStorage.setItem(THEME_STORAGE_KEY, option.id);
+  } catch { /* The palette can still apply when browser storage is unavailable. */ }
   window.dispatchEvent(new CustomEvent("cms-theme-change", { detail: option }));
   return option;
 };
 
 export const getSavedTheme = () => {
   try {
-    return getThemeOption(localStorage.getItem(THEME_STORAGE_KEY));
+    const id = localStorage.getItem(THEME_STORAGE_KEY);
+    if (id === "custom") {
+      const custom = JSON.parse(localStorage.getItem(CUSTOM_THEME_STORAGE_KEY) || "null");
+      if (custom?.id === "custom" && [custom.color, custom.dark, custom.soft, custom.glow].every(value => /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(value || ""))) return custom;
+    }
+    return getThemeOption(id);
   } catch {
     return THEME_OPTIONS[0];
   }
 };
 
 export const applySavedTheme = () => applyTheme(getSavedTheme());
+
+// Changes made in another open application tab use the same saved palette.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key === THEME_STORAGE_KEY || event.key === CUSTOM_THEME_STORAGE_KEY) applySavedTheme();
+  });
+}
 

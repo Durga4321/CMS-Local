@@ -881,11 +881,11 @@ function ReceptionPatients({
         <svg viewBox="0 0 1400 120" preserveAspectRatio="none" className="patients-heartrate-svg">
           <defs>
             <linearGradient id="heartrateGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.3" />
-              <stop offset="25%" stopColor="#0284c7" stopOpacity="0.85" />
-              <stop offset="50%" stopColor="#10b981" stopOpacity="1" />
-              <stop offset="75%" stopColor="#0284c7" stopOpacity="0.85" />
-              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.3" />
+              <stop offset="0%" stopColor="var(--theme-primary)" stopOpacity="0.3" />
+              <stop offset="25%" stopColor="var(--theme-primary)" stopOpacity="0.85" />
+              <stop offset="50%" stopColor="var(--theme-primary)" stopOpacity="1" />
+              <stop offset="75%" stopColor="var(--theme-primary)" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="var(--theme-primary)" stopOpacity="0.3" />
             </linearGradient>
             <filter id="ecgGlow" x="-20%" y="-20%" width="140%" height="140%">
               <feGaussianBlur stdDeviation="2.5" result="blur" />

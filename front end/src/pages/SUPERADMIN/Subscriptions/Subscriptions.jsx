@@ -357,7 +357,7 @@ function Subscriptions() {
         <h3>Plan Type Benefits</h3>
         <p>Set one daily appointment limit for each plan type. Saving updates all its billing cycles and lab/pharmacy options in the backend.</p>
         <table className="sa-table" style={{ width: "100%" }}>
-          <thead><tr><th scope="col">Plan type</th><th scope="col">Appointments per day</th><th scope="col">Action</th></tr></thead>
+          <thead><tr><th scope="col">Plan type</th><th scope="col">Appointments per day</th><th data-column-kind="center" scope="col">Action</th></tr></thead>
           <tbody>{SUBSCRIPTION_PLAN_TYPES.map(type => {
             const matching = plans.filter(plan => plan.planType === type);
             const limits = [...new Set(matching.map(plan => plan.dailyAppointmentLimit))];

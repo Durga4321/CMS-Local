@@ -1,3 +1,4 @@
+import { DashboardGreeting, useDashboardLayout, DashboardPager } from "../components/superadmin/DashboardCards";
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -117,6 +118,7 @@ const dedupeAppointments = (rows = []) => {
 };
 
 function NurseDashboard() {
+  const layout = useDashboardLayout();
   const navigate = useNavigate();
   const nurseScope = useMemo(() => getNurseScope(), []);
   const [appointments, setAppointments] = useState([]);
@@ -178,30 +180,9 @@ function NurseDashboard() {
   }, [appointments]);
 
   return (
-    <div className="nurse-dashboard-page">
+    <div className="nurse-dashboard-page role-single-screen" ref={layout.ref}>
       {/* Hero Care Station Banner */}
-      <div className="nd-hero-banner">
-        <div className="nd-hero-left">
-          <div className="nd-hero-pill-row">
-            <span className="nd-station-badge">
-              <Activity size={12} /> Clinical Station
-            </span>
-            <span className="nd-live-pulse-badge">
-              <span className="nd-live-dot" /> Live Patient Queue
-            </span>
-          </div>
-          <h2 className="nd-hero-title">Nurse Dashboard</h2>
-          <p className="nd-hero-subtitle">
-            Real-time patient vitals triage, assigned appointments queue, and clinical care actions.
-          </p>
-        </div>
-        <div className="nd-hero-right">
-          <div className="nd-hero-date-badge">
-            <Calendar size={14} />
-            <span>{formatToday()}</span>
-          </div>
-        </div>
-      </div>
+      <DashboardGreeting role="Nurse" />
 
       {error ? <div className="rc-error">{error}</div> : null}
       {loading ? <div className="rc-card">Loading nurse dashboard telemetry...</div> : null}
@@ -340,6 +321,7 @@ function NurseDashboard() {
       </div>
 
       {/* Clinical Table Card */}
+      <DashboardPager layout={layout} total={appointments.length} />
       <div className="nd-table-card">
         <div className="nd-table-header">
           <div className="nd-table-title-wrap">
@@ -365,7 +347,7 @@ function NurseDashboard() {
             <table className="nd-clinical-table">
               <thead>
                 <tr className="nd-table-row-head">
-                  <th style={{ width: "60px" }}>S.No.</th>
+                  <th data-column-kind="center" style={{ width: "60px" }}>S.No.</th>
                   <th>Patient Name</th>
                   <th>Assigned Doctor</th>
                   <th>Scheduled Time</th>
@@ -373,7 +355,7 @@ function NurseDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {appointments.map((item, index) => {
+                {layout.rows(appointments).map((item, index) => {
                   const patientName = getAppointmentPatientName(item);
                   const doctorName = getAppointmentDoctorName(item);
                   const time = getAppointmentTime(item);
@@ -393,7 +375,7 @@ function NurseDashboard() {
                       </td>
                       <td>
                         <span className="nd-doctor-badge">
-                          <Stethoscope size={14} color="#0284c7" /> Dr. {doctorName.replace(/^Dr\.?\s*/i, "")}
+                          <Stethoscope size={14} color="var(--theme-primary)" /> Dr. {doctorName.replace(/^Dr\.?\s*/i, "")}
                         </span>
                       </td>
                       <td>

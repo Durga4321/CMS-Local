@@ -1,4 +1,11 @@
 import React from "react";
+
+const getColumnAlignment = (column) => {
+  if (["left", "center", "right"].includes(column.align)) return column.align;
+  if (/^(actions?|status|sno|index|serial)$/i.test(column.key) || /^(actions?|status|s\.?\s?no\.?)$/i.test(String(column.label || "").trim())) return "center";
+  if (/(amount|revenue|price|salary|balance|fee|quantity|subtotal|totalAmount)$/i.test(column.key)) return "right";
+  return "left";
+};
 function DataTable({
   columns = [],
   rows = [],
@@ -48,8 +55,8 @@ function DataTable({
             String(column.label || "").toLowerCase() === "clinic name";
 
           const isCentered =
-            column.align === "center" || isActionCol || isStatusCol || isSnoCol;
-          const isRight = column.align === "right";
+            getColumnAlignment(column) === "center";
+          const isRight = getColumnAlignment(column) === "right";
 
           const headClasses = [
             isActionCol ? "sa-actions-header" : "",
@@ -107,8 +114,8 @@ function DataTable({
                 String(column.label || "").toLowerCase() === "clinic name";
 
               const isCentered =
-                column.align === "center" || isActionCol || isStatusCol || isSnoCol;
-              const isRight = column.align === "right";
+                getColumnAlignment(column) === "center";
+              const isRight = getColumnAlignment(column) === "right";
 
               const cellClasses = [
                 "sa-table-cell",
@@ -124,7 +131,7 @@ function DataTable({
 
               return (
                 <div className={cellClasses} key={column.key}>
-                  {column.render ? column.render(row, rowIndexOffset + index) : row[column.key] || "-"}
+                  {column.render ? column.render(row, rowIndexOffset + index) : row[column.key] ?? "-"}
                 </div>
               );
             })}

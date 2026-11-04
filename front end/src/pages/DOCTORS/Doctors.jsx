@@ -1516,6 +1516,7 @@ function Doctors() {
               .slice(0, 2)
               .toUpperCase() || "D";
           const isActive = getDoctorIsActive(doc);
+          const isAvailable = isActive && doc.directoryAvailable === true;
           const isStatusUpdating = toggleLoadingId === doc.id;
           const isDeleting = deleteLoadingId === doc.id;
           const doctorKey = doc.id ?? `${doc.name}-${doc.email}`;
@@ -1533,7 +1534,7 @@ function Doctors() {
                   </div>
                 </details>
               </div>
-              <span className={`doctor-directory-status ${isActive ? "" : "is-inactive"}`}>{!isActive ? "Inactive" : doc.directoryAvailable === true ? "Available today" : doc.directoryAvailable === false ? "Unavailable today" : "Availability not loaded"}</span>
+              <span className={`doctor-directory-status ${isAvailable ? "is-available" : "is-inactive"}`} title={!isActive ? "Doctor is inactive" : doc.directoryAvailable == null ? "Availability could not be confirmed" : isAvailable ? "Appointment slots are available today" : "No appointment slots available today"}>{isAvailable ? "Available" : "Unavailable"}</span>
               <div className="doctor-directory-portrait">
                 <AuthImage src={getImageUrl(doc)} authenticatedFallback alt={doc.name || "Doctor"} fallback={<span>{initials}</span>} className="doctor-directory-photo" />
               </div>

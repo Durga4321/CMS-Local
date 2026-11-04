@@ -43,7 +43,7 @@
 }
 
 .lab-technician-view-grid strong {
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 0.9rem;
   overflow-wrap: anywhere;
 }
@@ -61,7 +61,7 @@
   width: 62px;
   height: 62px;
   animation-duration: 9s;
-  color: #0284c7;
+  color: var(--theme-primary);
 }
 
 .lab-part-2 {
@@ -70,7 +70,7 @@
   width: 60px;
   height: 60px;
   animation-duration: 12s;
-  color: #7c3aed;
+  color: var(--theme-primary);
 }
 
 .lab-part-3 {
@@ -79,7 +79,7 @@
   width: 58px;
   height: 58px;
   animation-duration: 10s;
-  color: #059669;
+  color: var(--theme-primary-dark);
 }
 
 .lab-part-4 {
@@ -113,7 +113,7 @@
   -webkit-backdrop-filter: blur(18px);
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .lab-tech-card-grid {
@@ -129,7 +129,7 @@
   border: 1px solid #dfe8ee;
   border-radius: 8px;
   background: #fff;
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.07);
+  box-shadow: 0 16px 32px color-mix(in srgb, var(--theme-primary-dark) 7%, transparent);
   overflow: hidden;
 }
 
@@ -147,11 +147,11 @@
   display: grid;
   place-items: center;
   margin-bottom: 12px;
-  border: 1px solid #cceff0;
+  border: 1px solid var(--theme-primary-soft);
   border-radius: 50%;
-  outline: 12px solid #eefafa;
-  background: #eaf7f7;
-  color: #159a9d;
+  outline: 12px solid var(--theme-primary-soft);
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary-dark);
   font-size: 56px;
   font-weight: 900;
 }
@@ -159,7 +159,7 @@
 .lab-tech-card-head h3,
 .lab-tech-card-head p {
   margin: 0;
-  color: #00979a;
+  color: var(--theme-primary-dark);
   font-size: 16px;
   font-weight: 900;
 }
@@ -262,7 +262,7 @@
   background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .lab-tech-table-card .receptionists-thead,
@@ -382,7 +382,7 @@
   border: 1px solid #dbe3ed;
   border-radius: 10px;
   background: #ffffff;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -412,7 +412,7 @@
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   display: flex;
   flex-direction: column;
 }
@@ -434,12 +434,12 @@
   background: #ffffff;
   border: 1px solid #d5e0e2;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent);
 }
 
 .lab-technicians-page .lab-tech-table-card .receptionists-search:focus-within {
-  border-color: #4b9da3;
-  box-shadow: 0 0 0 3px rgba(75, 157, 163, 0.16);
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 16%, transparent);
 }
 
 .lab-tech-table-card .receptionists-toolbar {
@@ -468,20 +468,20 @@
   gap: 6px;
   padding: 4px 14px;
   border-radius: 10px;
-  background: rgba(6, 182, 212, 0.18);
-  border: 1px solid rgba(6, 182, 212, 0.35);
-  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.12);
+  background: color-mix(in srgb, var(--theme-primary) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 35%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary) 12%, transparent);
 }
 
 .lab-tech-name-highlight b {
-  color: #0891b2 !important;
+  color: var(--theme-primary-dark) !important;
   font-weight: 900;
   font-size: 0.92rem;
   letter-spacing: -0.01em;
 }
 
 .lab-technicians-page .receptionists-email {
-  color: #0284c7 !important;
+  color: var(--theme-primary) !important;
   font-weight: 800 !important;
 }
 
@@ -543,7 +543,7 @@
 }
 
 .password-toggle-button:hover {
-  color: #0f766e;
+  color: var(--theme-primary-dark);
 }
 
 .password-toggle-button:disabled {
@@ -556,5 +556,5 @@
   background: #ffffff;
   border: 1px solid #dfe8ea;
   border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent);
 }

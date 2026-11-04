@@ -628,12 +628,12 @@ function DoctorWiseReport() {
             >
               <defs>
                 <linearGradient id="docRevenueGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0d9488" stopOpacity={0.92} />
-                  <stop offset="100%" stopColor="#14b8a6" stopOpacity={0.68} />
+                  <stop offset="0%" stopColor="var(--theme-primary-dark)" stopOpacity={0.92} />
+                  <stop offset="100%" stopColor="var(--theme-primary)" stopOpacity={0.68} />
                 </linearGradient>
                 <linearGradient id="docConsultGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0284c7" stopOpacity={0.92} />
-                  <stop offset="100%" stopColor="#38bdf8" stopOpacity={0.68} />
+                  <stop offset="0%" stopColor="var(--theme-primary)" stopOpacity={0.92} />
+                  <stop offset="100%" stopColor="var(--theme-primary)" stopOpacity={0.68} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />

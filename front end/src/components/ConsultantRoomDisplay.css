@@ -13,7 +13,7 @@
 
 .cr-toolbar h2 {
   margin: 0;
-  color: #071427;
+  color: var(--theme-primary-dark);
   font-size: 24px;
   font-weight: 800;
 }
@@ -27,7 +27,7 @@
 .cr-toolbar button {
   border: 1px solid #c8d8ea;
   background: #ffffff;
-  color: #174b83;
+  color: var(--theme-primary-dark);
   border-radius: 8px;
   min-height: 42px;
   padding: 0 16px;
@@ -39,9 +39,9 @@
 }
 
 .cr-board {
-  background: #f6f9ff;
-  border: 1px solid #a9c8e8;
-  box-shadow: 0 16px 36px rgba(15, 51, 92, 0.16);
+  background: var(--theme-primary-soft);
+  border: 1px solid var(--theme-primary-glow);
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--theme-primary-dark) 16%, transparent);
   overflow: hidden;
   min-height: 620px;
   display: flex;
@@ -51,8 +51,8 @@
 .cr-board-head {
   display: grid;
   grid-template-columns: 1.25fr 1fr;
-  background: linear-gradient(180deg, #0a8be7 0%, #0766bf 100%);
-  color: #dcecff;
+  background: linear-gradient(180deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
+  color: var(--theme-primary-soft);
   text-transform: uppercase;
   font-size: clamp(26px, 3vw, 40px);
   font-weight: 900;
@@ -72,12 +72,12 @@
   display: grid;
   grid-template-columns: 1.25fr 1fr;
   min-height: 118px;
-  background: #f7fbff;
-  border-bottom: 1px solid #d5e4f4;
+  background: var(--theme-primary-soft);
+  border-bottom: 1px solid var(--theme-primary-soft);
 }
 
 .cr-row:nth-child(even) {
-  background: #e7f3ff;
+  background: var(--theme-primary-soft);
 }
 
 .cr-consultant {
@@ -86,7 +86,7 @@
 
 .cr-consultant p {
   margin: 0;
-  color: #085994;
+  color: var(--theme-primary-dark);
   font-size: clamp(22px, 2.2vw, 34px);
   font-weight: 900;
   letter-spacing: 0;
@@ -95,7 +95,7 @@
 }
 
 .cr-consultant span {
-  color: #008e7f;
+  color: var(--theme-primary-dark);
   text-transform: none;
   white-space: nowrap;
 }
@@ -106,7 +106,7 @@
 }
 
 .cr-consultant span.is-in {
-  color: #008e7f;
+  color: var(--theme-primary-dark);
 }
 
 .cr-consultant span.is-out {
@@ -116,7 +116,7 @@
 .cr-consultant strong {
   display: block;
   margin-top: 10px;
-  color: #0b4f92;
+  color: var(--theme-primary-dark);
   font-size: clamp(22px, 2vw, 32px);
   font-weight: 900;
 }
@@ -126,7 +126,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  color: #0b4f92;
+  color: var(--theme-primary-dark);
   font-size: clamp(18px, 1.7vw, 27px);
   font-weight: 900;
   text-align: center;
@@ -144,8 +144,8 @@
 .cr-footer {
   margin-top: auto;
   min-height: 78px;
-  background: linear-gradient(180deg, #068de7 0%, #0470c5 100%);
-  color: #dcecff;
+  background: linear-gradient(180deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
+  color: var(--theme-primary-soft);
   display: flex;
   align-items: center;
   justify-content: center;

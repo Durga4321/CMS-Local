@@ -27,7 +27,7 @@ const modules = [
     title: "Front Desk & Reception",
     badge: "Patient Flow",
     text: "Streamline patient check-ins, multi-doctor queue tracking, appointment scheduling, and rapid branch triage.",
-    color: "#0f172a",
+    color: "var(--theme-primary-dark)",
   },
   {
     icon: Stethoscope,
@@ -62,7 +62,7 @@ const modules = [
     title: "Security & Governance",
     badge: "Role Matrix",
     text: "Multi-branch clinic administration, granular role-based permissions, automated audit logs, and compliance oversight.",
-    color: "#0f172a",
+    color: "var(--theme-primary-dark)",
   },
 ];
 

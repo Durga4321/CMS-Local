@@ -66,11 +66,11 @@
   margin: 0;
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .pd-start-btn {
-  background: #2563eb;
+  background: var(--theme-primary);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -80,7 +80,7 @@
   cursor: pointer;
   transition: background 0.15s;
 }
-.pd-start-btn:hover { background: #1d4ed8; }
+.pd-start-btn:hover { background: var(--theme-primary); }
 
 /* ── Patient info row ── */
 .pd-info-row {
@@ -103,8 +103,8 @@
 .pd-avatar {
   width: 72px;
   height: 72px;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary);
   border-radius: 14px;
   font-size: 22px;
   font-weight: 800;
@@ -125,7 +125,7 @@
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .pd-type-badge {
@@ -187,11 +187,11 @@
   margin-bottom: -2px;
   transition: color 0.15s, border-color 0.15s;
 }
-.pd-tab:hover { color: #2563eb; }
+.pd-tab:hover { color: var(--theme-primary); }
 .pd-tab--active {
-  color: #2563eb;
+  color: var(--theme-primary);
   font-weight: 700;
-  border-bottom-color: #2563eb;
+  border-bottom-color: var(--theme-primary);
 }
 
 /* ── Overview grid ── */
@@ -221,7 +221,7 @@
   margin: 0;
   font-size: 15px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 /* ── Bottom two-column grid ── */
@@ -242,7 +242,7 @@
   margin: 0 0 14px;
   font-size: 15px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 /* Previous visits */
@@ -255,9 +255,9 @@
 }
 .pd-visit-row:last-of-type { border-bottom: none; }
 
-.pd-visit-date   { font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 2px; }
+.pd-visit-date   { font-size: 14px; font-weight: 700; color: var(--theme-primary-dark); margin: 0 0 2px; }
 .pd-visit-doctor { font-size: 12px; color: #64748b; margin: 0 0 2px; }
-.pd-visit-complaints { font-size: 12px; color: #2563eb; font-weight: 600; margin: 0 0 2px; }
+.pd-visit-complaints { font-size: 12px; color: var(--theme-primary); font-weight: 600; margin: 0 0 2px; }
 .pd-visit-meds   { font-size: 12px; color: #64748b; margin: 0; }
 
 .pd-visit-status {
@@ -280,7 +280,7 @@
 .pd-view-link {
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: var(--theme-primary);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -290,7 +290,7 @@
 .pd-view-all-link {
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: var(--theme-primary);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -348,7 +348,7 @@
 .pd-prescription-head h4 {
   margin: 0 0 6px;
   font-size: 15px;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .pd-prescription-head p {
@@ -358,7 +358,7 @@
 }
 
 .pd-prescription-head span {
-  color: #2563eb;
+  color: var(--theme-primary);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
@@ -389,7 +389,7 @@
   border-bottom: 1px solid #f8fafc;
   color: #334155;
 }
-.pd-rx-dosage { color: #2563eb; font-weight: 600; }
+.pd-rx-dosage { color: var(--theme-primary); font-weight: 600; }
 
 /* Placeholder */
 .pd-tab-placeholder {
@@ -424,7 +424,7 @@
 }
 
 .pd-doc-card strong {
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 14px;
   margin-bottom: 4px;
 }
@@ -435,7 +435,7 @@
 }
 
 .pd-doc-card a {
-  color: #2563eb;
+  color: var(--theme-primary);
   font-size: 13px;
   font-weight: 700;
   text-decoration: none;
@@ -449,10 +449,10 @@
 }
 
 .pd-doc-action {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: var(--theme-primary-soft);
+  border: 1px solid var(--theme-primary-soft);
   border-radius: 8px;
-  color: #1d4ed8;
+  color: var(--theme-primary);
   font-size: 13px;
   font-weight: 700;
   padding: 8px 12px;
@@ -461,7 +461,7 @@
 }
 
 .pd-doc-action:hover {
-  background: #dbeafe;
+  background: var(--theme-primary-soft);
 }
 
 .pd-doc-muted {

@@ -10,7 +10,7 @@
   align-items: center;
   justify-content: center;
   overflow-y: auto;
-  background: radial-gradient(circle at 30% 70%, #032f30 0%, #020617 60%, #010312 100%);
+  background: radial-gradient(circle at 30% 70%, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 60%, var(--theme-primary-dark) 100%);
   color: #f8fafc;
   font-family: 'Inter', sans-serif;
   box-sizing: border-box;
@@ -60,13 +60,13 @@
   width: 100%;
   max-width: 480px;
   padding: 32px 30px;
-  background: rgba(15, 23, 42, 0.72);
+  background: color-mix(in srgb, var(--theme-primary-dark) 72%, transparent);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   backdrop-filter: blur(20px);
   box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.55),
-    0 0 60px rgba(20, 184, 166, 0.05);
+    0 0 60px color-mix(in srgb, var(--theme-primary) 5%, transparent);
   box-sizing: border-box;
 }
 
@@ -118,8 +118,8 @@
 }
 
 .stepper-dot.active {
-  background: #2dd4bf;
-  box-shadow: 0 0 8px rgba(45, 212, 191, 0.5);
+  background: var(--theme-primary);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--theme-primary) 50%, transparent);
 }
 
 /* ── Step animation ── */
@@ -152,7 +152,7 @@
 .input-group select,
 .input-group textarea {
   width: 100%;
-  background: rgba(15, 23, 42, 0.6);
+  background: color-mix(in srgb, var(--theme-primary-dark) 60%, transparent);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 10px;
   padding: 0 16px;
@@ -176,13 +176,13 @@
 .input-group input:focus,
 .input-group select:focus,
 .input-group textarea:focus {
-  border-color: #14b8a6;
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
-  background: rgba(15, 23, 42, 0.85);
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 15%, transparent);
+  background: color-mix(in srgb, var(--theme-primary-dark) 85%, transparent);
 }
 
 .input-group select option {
-  background: #0f172a;
+  background: var(--theme-primary-dark);
   color: #fff;
 }
 
@@ -257,28 +257,28 @@
 }
 
 .next-btn {
-  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
   border: none;
   color: #fff;
-  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.2);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
 
 .next-btn:hover {
-  box-shadow: 0 6px 20px rgba(20, 184, 166, 0.35);
-  background: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--theme-primary) 35%, transparent);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
 }
 
 .register-submit-btn {
-  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
   border: none;
   color: #fff;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 20%, transparent);
   flex-grow: 1;
 }
 
 .register-submit-btn:hover {
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
-  background: linear-gradient(135deg, #34d399 0%, #065f46 100%);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--theme-primary) 35%, transparent);
+  background: linear-gradient(135deg, #34d399 0%, var(--theme-primary-dark) 100%);
 }
 
 .register-submit-btn:disabled {
@@ -299,14 +299,14 @@
 }
 
 .login-link {
-  color: #2dd4bf;
+  color: var(--theme-primary);
   text-decoration: none;
   font-weight: 700;
   transition: color 0.15s;
 }
 
 .login-link:hover {
-  color: #14b8a6;
+  color: var(--theme-primary);
 }
 
 /* ── Responsive ── */

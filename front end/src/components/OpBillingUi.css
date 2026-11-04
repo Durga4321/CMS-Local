@@ -30,7 +30,7 @@
   margin: 0 0 2px;
   font-size: 18px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .op-billing-title-group p {
@@ -53,7 +53,7 @@
 .op-banner-patient strong,
 .op-banner-doctor strong {
   font-size: 14px;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   display: block;
 }
 
@@ -74,7 +74,7 @@
 .op-form-field label {
   font-size: 13px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .op-billing-container select.op-form-select,
@@ -92,7 +92,7 @@
   background: #ffffff !important;
   font-size: 13.5px !important;
   font-weight: 600 !important;
-  color: #0f172a !important;
+  color: var(--theme-primary-dark) !important;
   outline: none;
   box-sizing: border-box !important;
   display: block !important;
@@ -111,8 +111,8 @@ select.op-form-select {
 
 .op-form-select:focus,
 .op-form-input:focus {
-  border-color: #0f9d9d !important;
-  box-shadow: 0 0 0 3px rgba(15, 157, 157, 0.12) !important;
+  border-color: var(--theme-primary-dark) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary-dark) 12%, transparent) !important;
 }
 
 
@@ -135,7 +135,7 @@ select.op-form-select {
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -144,8 +144,8 @@ select.op-form-select {
 }
 
 .op-date-trigger:hover {
-  background: rgba(15, 157, 157, 0.08);
-  color: #0f9d9d;
+  background: color-mix(in srgb, var(--theme-primary-dark) 8%, transparent);
+  color: var(--theme-primary-dark);
 }
 
 .op-native-date {
@@ -195,7 +195,7 @@ select.op-form-select {
 }
 
 .op-pill-tab.active {
-  background: #0f9d9d;
+  background: var(--theme-primary-dark);
   color: #ffffff;
 }
 
@@ -293,7 +293,7 @@ select.op-form-select {
 .op-breakdown-title {
   font-size: 14px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .op-table-header-row {
@@ -333,7 +333,7 @@ select.op-form-select {
   border-radius: 8px;
   font-size: 14.5px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 /* Bottom 3-Button Action Row */
@@ -359,45 +359,45 @@ select.op-form-select {
 }
 
 .op-action-btn.btn-preview {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border-color: #7dd3fc;
-  color: #0284c7;
-  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.12);
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  border-color: var(--theme-primary-glow);
+  color: var(--theme-primary);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-primary) 12%, transparent);
 }
 
 .op-action-btn.btn-preview:hover {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  border-color: #0284c7;
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary) 25%, transparent);
 }
 
 .op-action-btn.btn-print {
-  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-  border-color: #c084fc;
-  color: #7c3aed;
-  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.12);
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  border-color: var(--theme-primary-glow);
+  color: var(--theme-primary);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-primary) 12%, transparent);
 }
 
 .op-action-btn.btn-print:hover {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-  border-color: #6d28d9;
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
+  border-color: var(--theme-primary);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary) 25%, transparent);
 }
 
 .op-action-btn.btn-submit {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-color: #059669;
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary-dark);
   color: #ffffff;
   font-weight: 800;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary) 25%, transparent);
 }
 
 .op-action-btn.btn-submit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  border-color: #047857;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary-dark);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 35%, transparent);
 }
 
 .op-action-btn.btn-submit.is-paid {

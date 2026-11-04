@@ -1407,7 +1407,7 @@ function Prescription() {
                 <table className="rx-slip-table">
                   <thead>
                     <tr>
-                      <th>#</th>
+                      <th data-column-kind="center">#</th>
                       <th>Medicine</th>
                       <th>Route</th>
                       <th>Dose</th>

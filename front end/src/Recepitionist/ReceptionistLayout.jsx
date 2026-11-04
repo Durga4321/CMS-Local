@@ -46,7 +46,7 @@ function ReceptionistLayout() {
     "Reception Dashboard";
 
   return (
-    <div className={`rc-shell ${sidebarOpen ? "rc-sidebar-open" : ""} ${collapsed ? "rc-sidebar-collapsed" : ""}`}>
+    <div className={`rc-shell reception-module ${sidebarOpen ? "rc-sidebar-open" : ""} ${collapsed ? "rc-sidebar-collapsed" : ""}`}>
       {sidebarOpen && <div className="rc-overlay" onClick={() => setSidebarOpen(false)} />}
       <ReceptionSidebar
         onClose={() => setSidebarOpen(false)}

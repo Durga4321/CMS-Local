@@ -27,7 +27,7 @@
   width: 62px;
   height: 62px;
   animation-duration: 9s;
-  color: #0284c7;
+  color: var(--theme-primary);
 }
 
 .appt-part-2 {
@@ -36,7 +36,7 @@
   width: 60px;
   height: 60px;
   animation-duration: 12s;
-  color: #6366f1;
+  color: var(--theme-primary);
 }
 
 .appt-part-3 {
@@ -45,7 +45,7 @@
   width: 58px;
   height: 58px;
   animation-duration: 10s;
-  color: #0d9488;
+  color: var(--theme-primary-dark);
 }
 
 .appt-part-4 {
@@ -80,7 +80,7 @@
   margin: 0;
   font-size: 28px;
   line-height: 1.1;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -93,10 +93,10 @@
 }
 
 .appointments-new-btn {
-  border: 1px solid #059669;
+  border: 1px solid var(--theme-primary-dark);
   border-radius: 12px;
   padding: 14px 22px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
   color: #ffffff;
   display: inline-flex;
   align-items: center;
@@ -104,15 +104,15 @@
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 30%, transparent);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .appointments-new-btn:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  border-color: #047857;
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary-dark);
   transform: translateY(-1.5px);
-  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--theme-primary) 45%, transparent);
 }
 
 /* Table Card */
@@ -124,7 +124,7 @@
   background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   overflow: hidden;
 }
 
@@ -171,7 +171,7 @@
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   font-size: 14px;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   padding: 0 14px;
   box-sizing: border-box;
   outline: none;
@@ -181,9 +181,9 @@
 
 .appointments-filter-group input:focus,
 .appointments-filter-group select:focus {
-  border-color: #3b82f6;
+  border-color: var(--theme-primary);
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 15%, transparent);
 }
 
 .appointments-search-bar {
@@ -203,9 +203,9 @@
 }
 
 .appointments-search-bar:focus-within {
-  border-color: #3b82f6;
+  border-color: var(--theme-primary);
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 15%, transparent);
 }
 
 .appointments-search-bar input {
@@ -271,7 +271,7 @@
   background: #ffffff;
   border: 1px solid #dfe8ea;
   border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent);
 }
 
 .appointments-thead,
@@ -422,13 +422,13 @@
 .appointments-row {
   border-bottom: 1px solid rgba(255, 255, 255, 0.4);
   background: rgba(255, 255, 255, 0.2);
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   transition: all 0.2s ease;
 }
 
 .appointments-row:hover {
   background: rgba(255, 255, 255, 0.65);
-  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.1);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 10%, transparent);
 }
 
 .appointments-row:last-of-type {
@@ -438,7 +438,7 @@
 .appointments-row span,
 .appointments-row b {
   font-size: 13px;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
 }
 
 .appointments-row b {
@@ -457,8 +457,8 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #e2f2f1;
-  color: #367f82;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary-dark);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -566,11 +566,11 @@
 }
 
 .appointments-view-btn {
-  border: 1px solid #b9d8d6;
-  background: #e2f2f1;
+  border: 1px solid var(--theme-primary-glow);
+  background: var(--theme-primary-soft);
   padding: 6px 14px;
   border-radius: 8px;
-  color: #367f82;
+  color: var(--theme-primary-dark);
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -578,30 +578,30 @@
   font-weight: 700;
   cursor: pointer;
   width: fit-content;
-  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.12);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-primary-dark) 12%, transparent);
   transition: all 0.2s ease;
 }
 
 .appointments-view-btn:hover {
-  background: #4b9da3;
-  border-color: #82b8b5;
+  background: var(--theme-primary);
+  border-color: var(--theme-primary);
   color: #ffffff;
   transform: translateY(-1.5px);
-  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.2);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 20%, transparent);
 }
 
 .appointments-page .appointments-actions .action-btn.view-instrument-btn {
-  background: #e2f2f1 !important;
-  border-color: #b9d8d6 !important;
-  color: #367f82 !important;
-  box-shadow: 0 2px 6px rgba(54, 127, 130, 0.12) !important;
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-primary-dark) 12%, transparent) !important;
 }
 
 .appointments-page .appointments-actions .action-btn.view-instrument-btn:hover {
-  background: #4b9da3 !important;
-  border-color: #82b8b5 !important;
+  background: var(--theme-primary) !important;
+  border-color: var(--theme-primary) !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(54, 127, 130, 0.2) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 20%, transparent) !important;
 }
 
 .appointments-empty {

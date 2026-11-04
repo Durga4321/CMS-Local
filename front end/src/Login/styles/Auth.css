@@ -85,10 +85,10 @@ body.auth-page-no-scroll {
   position: absolute;
   inset: 0;
   background: linear-gradient(-45deg,
-      rgba(15, 23, 42, 0.62),
-      rgba(19, 78, 74, 0.58),
-      rgba(14, 165, 164, 0.5),
-      rgba(34, 211, 238, 0.42));
+      color-mix(in srgb, var(--theme-primary-dark) 62%, transparent),
+      color-mix(in srgb, var(--theme-primary-dark) 58%, transparent),
+      color-mix(in srgb, var(--theme-primary-dark) 50%, transparent),
+      color-mix(in srgb, var(--theme-primary) 42%, transparent));
   background-size: 400% 400%;
   animation: gradientBG 18s ease infinite;
   z-index: 1;
@@ -109,7 +109,7 @@ body.auth-page-no-scroll {
 .auth-container::before {
   width: 520px;
   height: 420px;
-  background: rgba(34, 211, 238, 0.35);
+  background: color-mix(in srgb, var(--theme-primary) 35%, transparent);
   top: -150px;
   left: -120px;
 }
@@ -117,7 +117,7 @@ body.auth-page-no-scroll {
 .auth-container::after {
   width: 440px;
   height: 340px;
-  background: rgba(14, 165, 164, 0.35);
+  background: color-mix(in srgb, var(--theme-primary-dark) 35%, transparent);
   bottom: -120px;
   right: -80px;
   animation-delay: -7s;
@@ -150,7 +150,7 @@ body.auth-page-no-scroll {
   justify-content: center;
   border: 0;
   border-radius: 50%;
-  background: rgba(15, 118, 110, 0.08);
+  background: color-mix(in srgb, var(--theme-primary-dark) 8%, transparent);
   color: var(--text-muted);
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -186,14 +186,14 @@ body.auth-page-no-scroll {
   justify-content: center;
   border: 0;
   border-radius: 50%;
-  background: rgba(15, 118, 110, 0.08);
+  background: color-mix(in srgb, var(--theme-primary-dark) 8%, transparent);
   color: var(--text-muted);
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .auth-login-close:hover {
-  background: rgba(15, 118, 110, 0.16);
+  background: color-mix(in srgb, var(--theme-primary-dark) 16%, transparent);
   color: var(--primary-deep);
 }
 
@@ -212,13 +212,13 @@ body.auth-page-no-scroll {
   justify-content: center;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
   color: #fff;
-  box-shadow: 0 10px 25px -8px rgba(14, 165, 164, 0.6);
+  box-shadow: 0 10px 25px -8px color-mix(in srgb, var(--theme-primary-dark) 60%, transparent);
   animation: pulseGlow 3s ease-in-out infinite;
 }
 
 .auth-card h2 {
   margin: 0 0 0.25rem 0;
-  color: rgba(15, 23, 42, 0.55);
+  color: color-mix(in srgb, var(--theme-primary-dark) 55%, transparent);
   font-size: 1.38rem;
   font-weight: 700;
   text-align: center;
@@ -328,7 +328,7 @@ body.auth-page-no-scroll {
 
 /* Slightly stronger card tint for register page to match first image */
 .auth-card--wide {
-  background: linear-gradient(180deg, rgba(248, 253, 255, 0.92), rgba(236, 251, 250, 0.9));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--theme-primary-soft) 92%, transparent), color-mix(in srgb, var(--theme-primary-soft) 90%, transparent));
   border: 1px solid rgba(255,255,255,0.45);
 }
 
@@ -341,7 +341,7 @@ body.auth-page-no-scroll {
   padding: 28px 26px; /* comfortable interior spacing */
   margin: 0; /* container centers vertically and horizontally */
   border-radius: 16px;
-  box-shadow: 0 28px 64px -24px rgba(3, 105, 100, 0.48), inset 0 1px 0 rgba(255,255,255,0.45);
+  box-shadow: 0 28px 64px -24px color-mix(in srgb, var(--theme-primary-dark) 48%, transparent), inset 0 1px 0 rgba(255,255,255,0.45);
   border: 1px solid rgba(255,255,255,0.45);
   background-clip: padding-box;
   display: flex;
@@ -409,7 +409,7 @@ body.auth-page-no-scroll {
 
 .auth-card--register p.subtitle {
   margin-bottom: 1.05rem;
-  color: rgba(15,23,42,0.45);
+  color: color-mix(in srgb, var(--theme-primary-dark) 45%, transparent);
 }
 
 /* Compact register card to match Login card proportions (image 2) */
@@ -425,7 +425,7 @@ body.auth-page-no-scroll {
   justify-content: center;
   align-items: stretch;
   box-sizing: border-box;
-  box-shadow: 0 14px 34px -16px rgba(3,105,100,0.36), inset 0 1px 0 rgba(255,255,255,0.45);
+  box-shadow: 0 14px 34px -16px color-mix(in srgb, var(--theme-primary-dark) 36%, transparent), inset 0 1px 0 rgba(255,255,255,0.45);
   border: 1px solid rgba(255,255,255,0.5);
 }
 
@@ -438,7 +438,7 @@ body.auth-page-no-scroll {
 .auth-card--compact-register p.subtitle {
   margin: 0 0 10px 0;
   font-size: 0.76rem;
-  color: rgba(15,23,42,0.55);
+  color: color-mix(in srgb, var(--theme-primary-dark) 55%, transparent);
   text-align: center;
 }
 
@@ -550,7 +550,7 @@ body.auth-page-no-scroll {
   min-width: 120px;
   padding: 0.95rem 1rem;
   border-radius: 12px;
-  border: 1px solid rgba(14, 165, 164, 0.25);
+  border: 1px solid color-mix(in srgb, var(--theme-primary-dark) 25%, transparent);
   background: rgba(255, 255, 255, 0.92);
   color: var(--primary);
   font-weight: 600;
@@ -559,7 +559,7 @@ body.auth-page-no-scroll {
 }
 
 .auth-card--wide .form-actions-row .back-button:hover {
-  background: rgba(14, 165, 164, 0.08);
+  background: color-mix(in srgb, var(--theme-primary-dark) 8%, transparent);
 }
 
 .auth-card--wide .form-actions-row .submit-btn--block {
@@ -603,7 +603,7 @@ body.auth-page-no-scroll {
   font-weight: 700;
   text-decoration: none;
   text-align: center;
-  box-shadow: 0 10px 25px -8px rgba(14,165,164,0.55);
+  box-shadow: 0 10px 25px -8px color-mix(in srgb, var(--theme-primary-dark) 55%, transparent);
   transition: transform 0.18s ease, box-shadow 0.2s ease, opacity 0.18s ease;
 }
 
@@ -660,7 +660,7 @@ body.auth-page-no-scroll {
   padding: 1.45rem 1.3rem 1.1rem; /* tighter padding */
   border-radius: 14px; /* subtle rounding */
   margin: 0 auto;
-  box-shadow: 0 14px 28px -12px rgba(3, 105, 100, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: 0 14px 28px -12px color-mix(in srgb, var(--theme-primary-dark) 32%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-sizing: border-box;
 }
@@ -741,7 +741,7 @@ body.auth-page-no-scroll {
 /* 2026 auth refresh: bright clinic background with centered modern card. */
 .auth-container {
   padding: 24px;
-  background: #eef8fb;
+  background: var(--theme-primary-soft);
 }
 
 .auth-bg {
@@ -753,7 +753,7 @@ body.auth-page-no-scroll {
 
 .auth-veil {
   background:
-    linear-gradient(90deg, rgba(239, 250, 252, 0.42) 0%, rgba(255, 255, 255, 0.08) 42%, rgba(5, 117, 125, 0.32) 100%),
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-primary-soft) 42%, transparent) 0%, rgba(255, 255, 255, 0.08) 42%, color-mix(in srgb, var(--theme-primary-dark) 32%, transparent) 100%),
     radial-gradient(circle at 22% 45%, rgba(255, 255, 255, 0.38), transparent 28%);
   animation: none;
 }
@@ -778,7 +778,7 @@ body.auth-page-no-scroll {
   line-height: 1.18;
   text-align: center;
   white-space: pre-line;
-  filter: drop-shadow(0 8px 24px rgba(15, 23, 42, 0.12));
+  filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--theme-primary-dark) 12%, transparent));
 }
 
 .auth-card,
@@ -791,7 +791,7 @@ body.auth-page-no-scroll {
   border-radius: 18px;
   border: 1px solid rgba(226, 232, 240, 0.92);
   background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 24px 68px rgba(15, 23, 42, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  box-shadow: 0 24px 68px color-mix(in srgb, var(--theme-primary-dark) 16%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(14px) saturate(145%);
   -webkit-backdrop-filter: blur(14px) saturate(145%);
 }
@@ -801,14 +801,14 @@ body.auth-page-no-scroll {
   height: 56px;
   margin-bottom: 14px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #0f9f8f 0%, #20d1cf 100%);
-  box-shadow: 0 14px 28px rgba(15, 159, 143, 0.28);
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary) 100%);
+  box-shadow: 0 14px 28px color-mix(in srgb, var(--theme-primary-dark) 28%, transparent);
 }
 
 .auth-card h2,
 .auth-card--login-compact h2,
 .auth-card--compact-register h2 {
-  color: #0f766e;
+  color: var(--theme-primary-dark);
   -webkit-text-fill-color: initial;
   background: none;
   font-size: 29px;
@@ -830,7 +830,7 @@ body.auth-page-no-scroll {
 }
 
 .form-group label {
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 12px;
   font-weight: 850;
 }
@@ -846,19 +846,19 @@ body.auth-page-no-scroll {
 .auth-card--compact-register .form-group textarea {
   height: 48px;
   min-height: 48px;
-  border: 1.5px solid #cfe4e7;
+  border: 1.5px solid var(--theme-primary-glow);
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.96);
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 14px;
-  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--theme-primary-dark) 2%, transparent);
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-  border-color: #0f9f8f;
-  box-shadow: 0 0 0 3px rgba(15, 159, 143, 0.14);
+  border-color: var(--theme-primary-dark);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary-dark) 14%, transparent);
 }
 
 .password-wrapper input,
@@ -900,11 +900,11 @@ body.auth-page-no-scroll {
 .auth-card--login-compact .submit-btn--block {
   min-height: 48px;
   border-radius: 9px;
-  background: linear-gradient(90deg, #0f9f8f 0%, #18c9c5 100%);
+  background: linear-gradient(90deg, var(--theme-primary-dark) 0%, var(--theme-primary) 100%);
   font-size: 14px;
   font-weight: 850;
   letter-spacing: 0;
-  box-shadow: 0 14px 28px rgba(15, 159, 143, 0.24);
+  box-shadow: 0 14px 28px color-mix(in srgb, var(--theme-primary-dark) 24%, transparent);
 }
 
 .auth-register-row {
@@ -920,10 +920,10 @@ body.auth-page-no-scroll {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid #18b8b5;
+  border: 1.5px solid var(--theme-primary);
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.84);
-  color: #0f9f8f;
+  color: var(--theme-primary-dark);
   box-shadow: none;
   font-size: 13px;
   font-weight: 850;
@@ -931,7 +931,7 @@ body.auth-page-no-scroll {
 
 .create-account-btn:hover {
   transform: none;
-  background: #ecfeff;
+  background: var(--theme-primary-soft);
 }
 
 .auth-footer {
@@ -953,7 +953,7 @@ body.auth-page-no-scroll {
 }
 
 .auth-footer a {
-  color: #0f766e;
+  color: var(--theme-primary-dark);
   text-decoration: none;
   font-weight: 800;
 }
@@ -983,7 +983,7 @@ body.auth-page-no-scroll {
   margin: 0 auto;
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid rgba(226, 232, 240, 0.92);
-  box-shadow: 0 24px 68px rgba(15, 23, 42, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  box-shadow: 0 24px 68px color-mix(in srgb, var(--theme-primary-dark) 16%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.82);
   box-sizing: border-box;
 }
 
@@ -1076,21 +1076,21 @@ body.auth-page-no-scroll {
   min-height: 3.1rem;
   padding: 0.85rem 1rem;
   border-radius: var(--radius-md);
-  border: 1.5px solid rgba(14, 165, 164, 0.32);
+  border: 1.5px solid color-mix(in srgb, var(--theme-primary-dark) 32%, transparent);
   background: rgba(255, 255, 255, 0.82);
   color: var(--primary);
   font-family: inherit;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 10px 24px -14px rgba(14, 165, 164, 0.5);
+  box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--theme-primary-dark) 50%, transparent);
   transition: transform 0.2s ease, box-shadow 0.25s ease, background 0.25s ease;
 }
 
 .form-actions-row .back-button:hover {
   transform: translateY(-2px);
-  background: rgba(14, 165, 164, 0.1);
-  box-shadow: 0 14px 28px -16px rgba(14, 165, 164, 0.6);
+  background: color-mix(in srgb, var(--theme-primary-dark) 10%, transparent);
+  box-shadow: 0 14px 28px -16px color-mix(in srgb, var(--theme-primary-dark) 60%, transparent);
 }
 
 .form-actions-row .back-button:disabled {
@@ -1136,13 +1136,13 @@ body.auth-page-no-scroll {
   border-radius: 18px;
   border: 1px solid rgba(226, 232, 240, 0.92);
   background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 24px 68px rgba(15, 23, 42, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  box-shadow: 0 24px 68px color-mix(in srgb, var(--theme-primary-dark) 16%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
 
 .auth-card h2,
 .auth-card--login-compact h2,
 .auth-card--compact-register h2 {
-  color: #0f766e;
+  color: var(--theme-primary-dark);
   -webkit-text-fill-color: initial;
   background: none;
   font-size: 29px;
@@ -1186,7 +1186,7 @@ body.auth-page-no-scroll {
   height: 100svh;
   width: 100%;
   padding: clamp(14px, 2.2vh, 24px);
-  background: #eef8fb;
+  background: var(--theme-primary-soft);
   overflow: hidden;
 }
 
@@ -1199,7 +1199,7 @@ body.auth-page-no-scroll {
 
 .auth-veil {
   background:
-    linear-gradient(90deg, rgba(242, 251, 253, 0.26) 0%, rgba(255, 255, 255, 0.08) 44%, rgba(10, 115, 125, 0.18) 100%),
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-primary-soft) 26%, transparent) 0%, rgba(255, 255, 255, 0.08) 44%, color-mix(in srgb, var(--theme-primary-dark) 18%, transparent) 100%),
     linear-gradient(0deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12));
 }
 

@@ -39,7 +39,7 @@
   width: 62px;
   height: 62px;
   animation-duration: 9s;
-  color: #0284c7;
+  color: var(--theme-primary);
 }
 
 .user-part-2 {
@@ -48,7 +48,7 @@
   width: 60px;
   height: 60px;
   animation-duration: 12s;
-  color: #6366f1;
+  color: var(--theme-primary);
 }
 
 .user-part-3 {
@@ -57,7 +57,7 @@
   width: 58px;
   height: 58px;
   animation-duration: 10s;
-  color: #0d9488;
+  color: var(--theme-primary-dark);
 }
 
 .user-part-4 {
@@ -91,7 +91,7 @@
 
 .admin-users-header h2 {
   margin: 0;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 28px;
   font-weight: 700;
   line-height: 1.1;
@@ -118,7 +118,7 @@
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 20px;
   overflow: visible;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   display: flex;
   flex-direction: column;
 }
@@ -154,13 +154,13 @@
 }
 
 .admin-users-search:focus-within {
-  border-color: #06b6d4;
+  border-color: var(--theme-primary);
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.2);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
 
 .admin-users-search svg {
-  color: #0891b2;
+  color: var(--theme-primary-dark);
   flex-shrink: 0;
 }
 
@@ -169,7 +169,7 @@
   border: none;
   outline: none;
   background: transparent;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 0.94rem;
   font-weight: 600;
   height: 100%;
@@ -189,7 +189,7 @@
   -webkit-backdrop-filter: blur(14px);
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   padding: 0 16px;
   box-sizing: border-box;
   outline: none;
@@ -199,9 +199,9 @@
 }
 
 .admin-users-toolbar select:focus {
-  border-color: #06b6d4;
+  border-color: var(--theme-primary);
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
 
 /* Button */
@@ -215,31 +215,31 @@
   padding: 0 16px;
   height: 40px;
   font-size: 14px;
-  background: linear-gradient(135deg, #0f766e 0%, #0d5f58 100%);
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
   color: #fff;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 25%, transparent);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .admin-users-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(15, 118, 110, 0.35);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-primary-dark) 35%, transparent);
 }
 
 .admin-users-btn.is-light {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  color: #0284c7;
-  border: 1.5px solid #bae6fd;
-  box-shadow: 0 2px 5px rgba(2, 132, 199, 0.1);
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-soft) 100%);
+  color: var(--theme-primary);
+  border: 1.5px solid var(--theme-primary-soft);
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--theme-primary) 10%, transparent);
 }
 
 .admin-users-btn.is-light:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  border-color: #0284c7;
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+  border-color: var(--theme-primary);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary) 30%, transparent);
 }
 
 .admin-users-btn:disabled {
@@ -362,7 +362,7 @@
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
-  color: #0284c7 !important;
+  color: var(--theme-primary) !important;
   font-weight: 750 !important;
   font-size: 0.90rem !important;
   width: 100% !important;
@@ -388,7 +388,7 @@
 
 .admin-users-clinic-cell b {
   min-width: 0;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 13px;
   font-weight: 700;
   overflow: hidden;
@@ -403,7 +403,7 @@
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 13.5px;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -456,7 +456,7 @@
 .admin-users-row {
   border-bottom: 1px solid rgba(255, 255, 255, 0.4);
   background: rgba(255, 255, 255, 0.2);
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   min-height: 60px;
   font-size: 0.92rem;
   transition: all 0.2s ease;
@@ -464,7 +464,7 @@
 
 .admin-users-row:hover {
   background: rgba(255, 255, 255, 0.65);
-  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.1);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 10%, transparent);
 }
 
 .admin-users-row:last-of-type {
@@ -482,7 +482,7 @@
 
 .admin-users-name-cell b {
   min-width: 0;
-  color: #0f172a;
+  color: var(--theme-primary-dark);
   font-size: 13px;
   font-weight: 700;
   overflow: hidden;
@@ -497,15 +497,15 @@
   gap: 6px;
   padding: 4px 12px;
   border-radius: 10px;
-  background: rgba(6, 182, 212, 0.18);
-  border: 1px solid rgba(6, 182, 212, 0.35);
-  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.12);
+  background: color-mix(in srgb, var(--theme-primary) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 35%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary) 12%, transparent);
   min-width: 0;
   max-width: 100%;
 }
 
 .admin-users-name-highlight b {
-  color: #0891b2 !important;
+  color: var(--theme-primary-dark) !important;
   font-weight: 900;
   font-size: 0.90rem;
   letter-spacing: -0.01em;
@@ -525,36 +525,36 @@
   font-size: 0.88rem;
   font-weight: 800;
   border: 2px solid #ffffff;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--theme-primary-dark) 8%, transparent);
   color: #ffffff;
   flex-shrink: 0;
 }
 
 .admin-users-avatar--0 {
-  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
 }
 
 .admin-users-avatar--1 {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
 }
 
 .admin-users-avatar--2 {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
 }
 
 .admin-users-avatar--3 {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary) 100%);
 }
 
 .admin-users-clinic-logo {
   width: 28px;
   height: 28px;
   flex: 0 0 28px;
-  border: 1px solid #e4ecf7;
+  border: 1px solid var(--theme-primary-soft);
   border-radius: 9px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
-  color: #10b981;
+  background: linear-gradient(180deg, #ffffff 0%, var(--theme-primary-soft) 100%);
+  box-shadow: 0 8px 16px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent);
+  color: var(--theme-primary);
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -575,7 +575,7 @@
 
 .admin-users-clinic-logo small {
   max-width: 23px;
-  color: #1d65c1;
+  color: var(--theme-primary);
   font-size: 5px;
   font-weight: 900;
   line-height: 1;
@@ -585,12 +585,12 @@
 }
 
 .admin-users-clinic-logo--emerald {
-  color: #10b981;
+  color: var(--theme-primary);
 }
 
 .admin-users-clinic-logo--dental {
-  color: #1d7ff2;
-  border-color: #dbeafe;
+  color: var(--theme-primary);
+  border-color: var(--theme-primary-soft);
 }
 
 .admin-users-clinic-logo--dental small {
@@ -602,7 +602,7 @@
 }
 
 .admin-users-clinic-logo--sky {
-  color: #0ea5e9;
+  color: var(--theme-primary);
 }
 
 .admin-users-clinic-logo--amber {
@@ -610,7 +610,7 @@
 }
 
 .admin-users-clinic-tooth-svg {
-  color: #1d7ff2;
+  color: var(--theme-primary);
 }
 
 .admin-users-role {
@@ -627,8 +627,8 @@
 }
 
 .admin-users-role--doctor {
-  background: #eaf2ff;
-  color: #2563eb;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary);
 }
 
 .admin-users-role--receptionist {
@@ -637,13 +637,13 @@
 }
 
 .admin-users-role--patient {
-  background: #f3edff;
-  color: #8b5cf6;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary);
 }
 
 .admin-users-role--nurse {
   background: #ecfdf5;
-  color: #059669;
+  color: var(--theme-primary-dark);
 }
 
 .admin-users-role--default {
@@ -722,16 +722,16 @@
 .admin-users-search {
   background: #ffffff;
   border-color: #d5e0e2;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 6%, transparent);
 }
 
 .admin-users-search:focus-within {
-  border-color: #4b9da3;
-  box-shadow: 0 0 0 3px rgba(75, 157, 163, 0.16);
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 16%, transparent);
 }
 
 .admin-users-search svg {
-  color: #4b9da3;
+  color: var(--theme-primary);
 }
 
 .admin-users-toolbar select {
@@ -743,7 +743,7 @@
   background: #ffffff;
   border: 1px solid #dfe8ea;
   border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent);
 }
 
 .admin-users-table-head {
@@ -753,7 +753,7 @@
 }
 
 .admin-users-email-head {
-  color: #1d4f91;
+  color: var(--theme-primary-dark);
 }
 
 .admin-users-row {
@@ -763,7 +763,7 @@
 }
 
 .admin-users-row:hover {
-  background: #f8fbfc;
+  background: var(--theme-primary-soft);
 }
 
 .admin-users-sno,
@@ -773,68 +773,68 @@
 }
 
 .admin-users-email {
-  color: #367f82 !important;
+  color: var(--theme-primary-dark) !important;
 }
 
 .admin-users-name-highlight {
-  background: #d9f1f3 !important;
-  border-color: #a5dfe3 !important;
-  box-shadow: 0 2px 8px rgba(54, 127, 130, 0.12);
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 12%, transparent);
 }
 
 .admin-users-name-highlight b {
-  color: #18848c !important;
+  color: var(--theme-primary-dark) !important;
 }
 
 .admin-users-avatar--0 {
-  background: #e2f2f1 !important;
-  color: #367f82 !important;
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
 }
 
 .admin-users-avatar--1 {
-  background: #e2f2f1 !important;
-  color: #367f82 !important;
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
 }
 
 .admin-users-avatar--2 {
-  background: #e2f2f1 !important;
-  color: #367f82 !important;
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
 }
 
 .admin-users-avatar--3 {
-  background: #e2f2f1 !important;
-  color: #367f82 !important;
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
 }
 
 .admin-users-role--doctor {
-  background: #e2f2f1 !important;
+  background: var(--theme-primary-soft) !important;
 }
 
 .admin-users-role--receptionist {
-  background: #e2f2f1 !important;
+  background: var(--theme-primary-soft) !important;
 }
 
 .admin-users-role--patient {
-  background: #e2f2f1 !important;
+  background: var(--theme-primary-soft) !important;
 }
 
 .admin-users-role--nurse {
-  background: #e2f2f1 !important;
+  background: var(--theme-primary-soft) !important;
 }
 
 .admin-users-role--default {
-  background: #e2f2f1 !important;
+  background: var(--theme-primary-soft) !important;
 }
 
 .admin-users-page .admin-users-header > .admin-users-btn {
-  background: linear-gradient(135deg, #0c776d 0%, #09665f 100%);
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(12, 119, 109, 0.25);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 25%, transparent);
 }
 
 .admin-users-page .admin-users-header > .admin-users-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0a6b63 0%, #08564f 100%);
-  box-shadow: 0 6px 16px rgba(12, 119, 109, 0.3);
+  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-primary-dark) 30%, transparent);
 }
 
 .admin-users-status.is-offline {

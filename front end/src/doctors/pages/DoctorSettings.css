@@ -49,7 +49,7 @@
   background: #fff;
   border: 1px solid #d8e0ea;
   border-radius: 14px;
-  box-shadow: 0 2px 7px rgba(12, 23, 38, 0.08);
+  box-shadow: 0 2px 7px color-mix(in srgb, var(--theme-primary-dark) 8%, transparent);
 }
 
 .doctor-settings-profile {
@@ -66,8 +66,8 @@
   border-radius: 16px;
   display: grid;
   place-items: center;
-  background: #dff3f3;
-  color: #0f9d9d;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary-dark);
   font-size: 22px;
   font-weight: 900;
 }
@@ -99,7 +99,7 @@
 }
 
 .doctor-settings-meta svg {
-  color: #0f9d9d;
+  color: var(--theme-primary-dark);
 }
 
 .doctor-settings-card {
@@ -115,7 +115,7 @@
 }
 
 .doctor-settings-section-head svg {
-  color: #0f9d9d;
+  color: var(--theme-primary-dark);
   margin-top: 1px;
 }
 
@@ -164,8 +164,8 @@
 .doctor-settings-card input:focus,
 .doctor-settings-card select:focus,
 .doctor-settings-card textarea:focus {
-  border-color: #0f9d9d;
-  box-shadow: 0 0 0 3px rgba(15, 157, 157, 0.12);
+  border-color: var(--theme-primary-dark);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary-dark) 12%, transparent);
 }
 
 .doctor-settings-card input[readonly] {
@@ -193,12 +193,12 @@
 .doctor-settings-toggles input {
   width: 16px;
   height: 16px;
-  accent-color: #0f9d9d;
+  accent-color: var(--theme-primary-dark);
 }
 
 .doctor-settings-message {
   margin: 0;
-  color: #0f6f6f;
+  color: var(--theme-primary-dark);
   font-size: 13px;
   font-weight: 700;
 }
@@ -223,15 +223,15 @@
 }
 
 .doctor-settings-save {
-  border: 1px solid #0f9d9d;
-  background: #0f9d9d;
+  border: 1px solid var(--theme-primary-dark);
+  background: var(--theme-primary-dark);
   color: #fff;
 }
 
 .doctor-settings-reset {
   border: 1px solid #d9e1ec;
   background: #fff;
-  color: #071120;
+  color: var(--theme-primary-dark);
 }
 
 @media (max-width: 900px) {
