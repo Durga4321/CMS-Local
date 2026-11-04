@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { getNurseAppointments } from "./nurseApi";
+import { nursePatientsRequestJson } from "./NursePatients";
 import { getNurseScope, scopeNurseRecords } from "./nurseScope";
 import "./Nurse.css";
 
@@ -124,6 +125,30 @@ function NurseDashboard() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [totalPatients, setTotalPatients] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    const loadTotalPatients = async () => {
+      try {
+        const patients = await nursePatientsRequestJson("Nurse/patients");
+        if (active) setTotalPatients(patients.length);
+      } catch {
+        if (active) setTotalPatients(null);
+      }
+    };
+    const refresh = () => {
+      if (document.visibilityState === "visible") loadTotalPatients();
+    };
+    loadTotalPatients();
+    window.addEventListener("focus", loadTotalPatients);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", loadTotalPatients);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -189,6 +214,23 @@ function NurseDashboard() {
 
       {/* Vector Medical Instrument Stat Cards (No 3D Images) */}
       <div className="nd-stat-grid">
+        <article className="nd-stat-card nd-card--cyan">
+          <div className="nd-stat-card-glow" />
+          <div className="nd-stat-head">
+            <div className="nd-stat-icon-box cyan">
+              <Users size={24} />
+            </div>
+            <span className="nd-stat-pill">Patients</span>
+          </div>
+          <div className="nd-stat-body">
+            <span className="nd-stat-label">Total Patients</span>
+            <div className="nd-stat-count">
+              <strong>{totalPatients ?? "—"}</strong>
+              <span className="nd-stat-hint">Branch Patients</span>
+            </div>
+          </div>
+        </article>
+
         {/* Card 1: Today's Appointments */}
         <article className="nd-stat-card nd-card--cyan">
           <div className="nd-stat-card-glow" />
@@ -321,7 +363,6 @@ function NurseDashboard() {
       </div>
 
       {/* Clinical Table Card */}
-      <DashboardPager layout={layout} total={appointments.length} />
       <div className="nd-table-card">
         <div className="nd-table-header">
           <div className="nd-table-title-wrap">
@@ -407,6 +448,7 @@ function NurseDashboard() {
           </div>
         )}
       </div>
+      <DashboardPager layout={layout} total={appointments.length} />
     </div>
   );
 }

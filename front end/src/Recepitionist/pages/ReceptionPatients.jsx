@@ -227,7 +227,7 @@ const hasRememberedOfflinePatientScope = (patient = {}, scope = {}) => {
   });
 };
 
-const patientBelongsToReceptionistPatientList = (
+export const patientBelongsToReceptionistPatientList = (
   patient = {},
   branchPatientIds = new Set(),
   branchPatientPhones = new Set(),
@@ -392,7 +392,7 @@ const calculateAgeFromDateOfBirth = (dateOfBirth) => {
   return age >= 0 && age <= 100 ? String(age) : "";
 };
 
-const isDeletedPatient = (patient = {}) => {
+export const isDeletedPatient = (patient = {}) => {
   const deletedValue =
     patient.isDeleted ??
     patient.deleted ??

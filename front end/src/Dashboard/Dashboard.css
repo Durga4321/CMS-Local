@@ -1260,12 +1260,12 @@ html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .db-chart-contai
 .db-admin-overview .admin-section-footer { margin-top: auto; padding-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 6px; border-top: 1px solid #e5eeef; font-size: 11px; flex-shrink: 0; }
 .db-admin-overview .admin-status-tag { display: inline-block; border: 1px solid #cfe8e6; background: #eef8f6; color: #176e6b; border-radius: 5px; padding: 4px 6px; font-size: 9px; overflow-wrap: anywhere; }
 .db-admin-overview .admin-appointment-list { display: grid; grid-auto-rows: minmax(0, 1fr); gap: 8px; flex: 1; min-height: 0; margin-bottom: 12px; }
-.db-admin-overview .admin-appointment { display: flex; gap: 8px; align-items: center; min-height: 0; padding: 8px; border: 1px solid #e2eaed; border-radius: 9px; }
-.db-admin-overview .admin-appointment > div { min-width: 0; flex: 1; }
+.db-admin-overview .admin-appointment { display: flex; gap: 8px; align-items: center; min-height: 0; padding: 6px; border: 1px solid #e2eaed; border-radius: 9px; }
+.db-admin-overview .admin-appointment > div { display: flex; flex-direction: column; justify-content: center; min-width: 0; flex: 1; line-height: 1.2; }
 .db-admin-overview .admin-appointment-icon { display: grid; place-items: center; width: 30px; height: 30px; flex-shrink: 0; background: var(--theme-primary-soft); border-radius: 8px; color: var(--theme-primary-dark); }
-.db-admin-overview .admin-appointment strong { display: block; font-size: 12px; overflow-wrap: anywhere; }
-.db-admin-overview .admin-appointment p { margin: 3px 0; font-size: 10px; color: #718096; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
-.db-admin-overview .admin-appointment small { color: #718096; font-size: 9px; }
+.db-admin-overview .admin-appointment strong { display: block; font-size: 11px; line-height: 1.15; overflow-wrap: anywhere; }
+.db-admin-overview .admin-appointment p { margin: 2px 0; font-size: 9px; line-height: 1.1; color: #718096; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+.db-admin-overview .admin-appointment small { display: block; min-width: 0; color: #718096; font-size: 8px; line-height: 1.1; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 .db-admin-overview .admin-appointment-totals > div, .db-admin-overview .admin-stat-totals > div { display: flex; flex-direction: column; gap: 5px; text-align: center; flex: 1; }
 .db-admin-overview .admin-section-footer strong { color: var(--theme-primary-dark); }
 .db-admin-overview .admin-chart-summary { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #64748b; }

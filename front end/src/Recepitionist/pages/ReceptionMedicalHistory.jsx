@@ -502,6 +502,20 @@ function ReceptionMedicalHistory({
             <span>Surgical History</span>
           </div>
         </div>
+        {basePath === "/nurse" && (
+          <div className="med-metric-card medications">
+            <div className="med-metric-icon">
+              <Pill size={22} />
+            </div>
+            <div className="med-metric-info">
+              <strong>{histories.filter((record) => {
+                const medications = String(record.currentMedications || "").trim().toLowerCase();
+                return medications && !["no", "none", "nil", "n/a", "na", "-", "no medications"].includes(medications);
+              }).length}</strong>
+              <span>Medication Records</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Filter and Search Bar */}

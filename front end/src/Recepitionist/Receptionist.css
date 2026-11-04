@@ -8380,15 +8380,15 @@
 }
 
 /* Reception metrics reuse Admin cards with explicit layout boundaries. */
-html body .reception-module .role-single-screen .reception-overview-metrics { height: 92px !important; min-height: 92px !important; flex: 0 0 92px !important; padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; }
-html body .reception-module .role-single-screen .reception-overview-metrics .sa-card-grid { display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; grid-template-rows: 92px !important; height: 92px !important; gap: 8px !important; padding: 0 !important; margin: 0 !important; border: 0 !important; box-shadow: none !important; background: transparent !important; }
-html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-card { position: relative !important; display: flex !important; align-items: center !important; gap: 8px !important; width: 100%; height: 92px !important; min-height: 0 !important; padding: 8px 8px 18px !important; margin: 0 !important; overflow: hidden; background: #fff !important; border: 1px solid var(--theme-primary-glow) !important; border-radius: 9px !important; box-shadow: none !important; transform: none !important; text-align: left; }
+html body .reception-module .role-single-screen .reception-overview-metrics { height: 80px !important; min-height: 80px !important; flex: 0 0 80px !important; padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; }
+html body .reception-module .role-single-screen .reception-overview-metrics .sa-card-grid { display: grid !important; grid-template-columns: repeat(5,minmax(0,1fr)) !important; grid-template-rows: 80px !important; height: 80px !important; gap: 16px !important; padding: 0 !important; margin: 0 !important; border: 0 !important; box-shadow: none !important; background: transparent !important; }
+html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-card { position: relative !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; gap: 10px !important; width: 100%; height: 80px !important; min-height: 0 !important; padding: 8px 16px 24px !important; margin: 0 !important; overflow: hidden; background: #fff !important; border: 0 !important; border-radius: 12px !important; box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent) !important; transform: none !important; text-align: left; }
 html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-card::before { display: none !important; }
-html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-card::after { content: ''; position: absolute; inset: auto 0 0; height: 9px !important; background: var(--theme-primary-soft) !important; border-bottom: 4px solid var(--theme-primary) !important; }
-html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-icon { position: static !important; display: grid; place-items: center; width: 28px !important; min-width: 28px !important; height: 30px !important; flex: 0 0 28px; padding: 0 !important; border-radius: 7px; background: var(--theme-primary-soft) !important; color: var(--theme-primary-dark) !important; box-shadow: none !important; }
+html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-card::after { content: ''; position: absolute; inset: auto 0 0; height: 14px !important; background: var(--theme-primary-soft) !important; border-bottom: 4px solid var(--theme-primary) !important; }
+html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-icon { position: static !important; display: grid; place-items: center; width: 32px !important; min-width: 32px !important; height: 32px !important; flex: 0 0 32px; padding: 0 !important; border-radius: 9px; background: var(--theme-primary-soft) !important; color: var(--theme-primary-dark) !important; box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 8%, transparent) !important; }
 html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-copy { min-width: 0; padding: 0 !important; margin: 0 !important; background: transparent !important; box-shadow: none !important; }
-html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-copy p { font-size: 11px !important; line-height: 1.2 !important; margin: 0 0 4px !important; white-space: normal !important; color: #64748b !important; }
-html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-copy h2 { margin: 0 !important; font-size: 23px !important; line-height: 1 !important; color: var(--theme-primary-dark) !important; }
+html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-copy p { font-size: 11px !important; line-height: 1.2 !important; margin: 0 0 2px !important; white-space: normal !important; font-weight: 500 !important; color: #64748b !important; }
+html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-copy h2 { margin: 0 !important; font-size: 20px !important; line-height: 1.1 !important; color: var(--theme-primary-dark) !important; }
 
 html body .reception-module .role-single-screen .rc-dash-head-actions { display: flex; flex-wrap: wrap; gap: 8px !important; }
 html body .reception-module .role-single-screen .rc-head-action-btn { min-height: 34px !important; height: 34px !important; padding: 0 10px !important; font-size: 12px !important; }
@@ -8413,3 +8413,226 @@ html body .reception-module .rc-page:not(.role-single-screen) :is(.rc-latest-bil
 html body .reception-module :is(.rc-billing-card-head,.rc-latest-bills-header-telemetry) { padding: 0 0 10px !important; margin: 0 !important; gap: 8px !important; }
 html body .reception-module .rc-page:not(.role-single-screen) :is(.rc-form-grid,.rc-billing-form-grid,.rc-booking-form) { gap: 10px !important; }
 @media(max-width: 650px) { html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-icon { display: none !important; } html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-copy p { font-size: 10px !important; } }
+
+/* Keep both Patients Directory border accents in the selected teal theme. */
+html body .reception-module .rc-patients-page .rc-dash-table-card.rc-patients-card::before,
+html body .reception-module .rc-patients-page .rc-dash-table-container::before {
+  background: var(--theme-primary) !important;
+}
+
+/* Reception patient rows follow the clean appointment table treatment. */
+html body .reception-module .rc-patients-page .rc-patient-table-header {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+html body .reception-module .rc-patients-page .rc-patient-table-header .rc-th-capsule {
+  color: var(--theme-primary-dark) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+}
+
+html body .reception-module .rc-patients-page .rc-patient-table-row {
+  background: #ffffff !important;
+  border-bottom: 1px solid #edf2f7 !important;
+  box-shadow: none !important;
+}
+
+html body .reception-module .rc-patients-page .rc-patient-table-row:hover {
+  background: #f8fafc !important;
+}
+
+html body .reception-module .rc-patients-page .rc-patient-table-row :is(.rc-dash-sno-badge, .rc-patient-pid-badge, .rc-patient-phone-cell, .rc-patient-age-badge) {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: var(--theme-primary-dark) !important;
+  border-radius: 0 !important;
+}
+
+html body .reception-module .rc-patients-page .rc-patient-table-row .rc-dash-patient-avatar {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  flex: 0 0 38px;
+  border-radius: 50% !important;
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary-dark) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+html body .reception-module .rc-patients-page .rc-patient-table-row .rc-dash-patient-name {
+  color: var(--theme-primary-dark) !important;
+  font-weight: 600 !important;
+}
+
+html body .reception-module .rc-appointments-page .rc-booking-form::before {
+  background: var(--theme-primary) !important;
+}
+
+/* Booking summaries fill the row with three equally sized cards. */
+html body .reception-module .rc-appointments-page .rc-appt-kpi-grid {
+  width: 100% !important;
+  max-width: none !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+/* Patient and booking summary cards share the Super Admin light surfaces. */
+html body .reception-module :is(.rc-patients-page, .rc-appointments-page) .rc-patient-kpi-grid {
+  gap: 16px !important;
+}
+
+html body .reception-module :is(.rc-patients-page, .rc-appointments-page) .rc-patient-kpi-card {
+  box-sizing: border-box;
+  height: 80px !important;
+  min-height: 80px !important;
+  padding: 8px 16px 24px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(to bottom, #ffffff 0, #ffffff calc(100% - 18px), var(--theme-primary-soft) calc(100% - 18px), var(--theme-primary-soft) calc(100% - 4px), var(--theme-primary) calc(100% - 4px), var(--theme-primary) 100%) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent) !important;
+}
+
+html body .reception-module :is(.rc-patients-page, .rc-appointments-page) .rc-patient-kpi-card .rc-pkpi-icon-box {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  flex: 0 0 32px;
+  border-radius: 9px !important;
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 8%, transparent) !important;
+}
+
+html body .reception-module :is(.rc-patients-page, .rc-appointments-page) .rc-pkpi-label {
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+}
+
+html body .reception-module :is(.rc-patients-page, .rc-appointments-page) .rc-pkpi-val {
+  color: var(--theme-primary-dark) !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+}
+
+html body .reception-module :is(.rc-patients-page, .rc-appointments-page) .rc-pkpi-badge {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+/* Keep the reception overview calm and give the appointment list priority. */
+html body .reception-module .rc-dashboard-page.role-single-screen {
+  gap: 8px !important;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-action-grid {
+  gap: 0 !important;
+  flex-shrink: 0;
+  padding: 6px !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-action-tile {
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 6px 12px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-action-tile::before,
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-action-tile::after {
+  display: none !important;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-action-tile:hover,
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-action-tile:focus-visible {
+  background: var(--theme-primary-soft) !important;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-action-chevron {
+  width: 24px !important;
+  height: 24px !important;
+  margin-left: auto;
+  background: transparent !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: none !important;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-table-card {
+  padding: 10px !important;
+  border-radius: 14px !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 4%, transparent) !important;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-table-container {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-table-container::before {
+  display: none !important;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-empty {
+  background: #ffffff !important;
+  box-sizing: border-box;
+  flex: 1 1 auto !important;
+  gap: 4px !important;
+  padding: 6px 12px !important;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-table-body {
+  overflow: visible !important;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-table-head {
+  height: 40px !important;
+  min-height: 40px !important;
+  padding-bottom: 4px !important;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-empty p {
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+  flex-shrink: 0;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-empty > svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .rc-dash-empty-btn {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  min-height: 32px !important;
+  padding: 6px 18px !important;
+  line-height: 1.2;
+  margin: 0 !important;
+}
+
+html body .reception-module .rc-dashboard-page.role-single-screen .role-dashboard-pager {
+  flex: 0 0 auto;
+  height: auto;
+  min-height: 24px;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #e2e8f0;
+}

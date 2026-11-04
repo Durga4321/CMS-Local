@@ -363,7 +363,6 @@ function LabDashboard() {
       </div>
 
       {/* RECENT LAB ORDERS TABLE CARD WITH CAPSULE HEADINGS */}
-      <DashboardPager layout={layout} total={recentOrders.length} />
       <div className="rc-card rc-dash-table-card lab-dash-table-card">
         <div className="rc-dash-table-head">
           <div className="rc-dash-table-head-left">
@@ -466,6 +465,8 @@ function LabDashboard() {
           )}
         </div>
       </div>
+
+      <DashboardPager layout={layout} total={recentOrders.length} />
 
       {selectedOrder ? (
         <div className="lab-modal-backdrop" role="presentation" onClick={() => setSelectedOrder(null)}>

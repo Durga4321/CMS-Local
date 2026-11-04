@@ -480,7 +480,6 @@ function DoctorDashboard() {
       </div>
 
       {/* Main Queue Console Card */}
-      <DashboardPager layout={layout} total={filteredPatients.length} />
       <div className="dd-queue-card">
         <div className="dd-queue-header">
           <div className="dd-queue-title-wrap">
@@ -652,6 +651,8 @@ function DoctorDashboard() {
         </div>
       </div>
 
+      <DashboardPager layout={layout} total={filteredPatients.length} />
+
       {notes ? (
         <div className="dd-notes-backdrop" onClick={() => setNotes(null)}>
           <div className="dd-notes-modal" onClick={(event) => event.stopPropagation()}>
@@ -738,4 +739,3 @@ function DoctorDashboard() {
 }
 
 export default DoctorDashboard;
-

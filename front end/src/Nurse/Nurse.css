@@ -2,6 +2,204 @@
    NURSE MODULE - UNIQUE MEDICAL DESIGNS & VECTOR INSTRUMENT THEMES
    ============================================================ */
 
+/* Nurse patient summary cards follow the Super Admin light card treatment. */
+html body .nurse-module .rc-patients-page.rc-patients-page .rc-patient-kpi-grid {
+  width: 100% !important;
+  max-width: none !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+html body .nurse-module .rc-patients-page.rc-patients-page .rc-patient-kpi-card {
+  box-sizing: border-box;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: 80px !important;
+  min-height: 80px !important;
+  padding: 8px 16px 24px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(to bottom, #ffffff 0, #ffffff calc(100% - 18px), var(--theme-primary-soft) calc(100% - 18px), var(--theme-primary-soft) calc(100% - 4px), var(--theme-primary) calc(100% - 4px), var(--theme-primary) 100%) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent) !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-patient-kpi-card .rc-pkpi-icon-box {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  flex: 0 0 32px;
+  border-radius: 9px !important;
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 8%, transparent) !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-pkpi-label {
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-pkpi-val {
+  color: var(--theme-primary-dark) !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-pkpi-badge {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+@media (max-width: 640px) {
+  html body .nurse-module .rc-patients-page.rc-patients-page .rc-patient-kpi-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Nurse medical history summaries match the dashboard card surfaces. */
+html body .nurse-module .med-history-page .med-metrics-grid {
+  width: 100% !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+html body .nurse-module .med-history-page .med-metric-card {
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 80px !important;
+  min-height: 80px !important;
+  padding: 8px 16px 24px !important;
+  gap: 10px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(to bottom, #ffffff 0, #ffffff calc(100% - 18px), var(--theme-primary-soft) calc(100% - 18px), var(--theme-primary-soft) calc(100% - 4px), var(--theme-primary) calc(100% - 4px), var(--theme-primary) 100%) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent) !important;
+}
+
+html body .nurse-module .med-history-page .med-metric-icon {
+  width: 32px !important;
+  height: 32px !important;
+  flex: 0 0 32px;
+  border-radius: 9px !important;
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 8%, transparent) !important;
+}
+
+html body .nurse-module .med-history-page .med-metric-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+html body .nurse-module .med-history-page .med-metric-info span {
+  order: 0;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  color: #64748b !important;
+}
+
+html body .nurse-module .med-history-page .med-metric-info strong {
+  order: 1;
+  font-size: 20px !important;
+  line-height: 1.1 !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+@media (max-width: 900px) {
+  html body .nurse-module .med-history-page .med-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  html body .nurse-module .med-history-page .med-metrics-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Online and offline nurse booking summaries share dashboard styling. */
+html body .nurse-module :is(.nurse-online-bookings, .nurse-offline-bookings) .booking-metrics-grid {
+  width: 100% !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+html body .nurse-module :is(.nurse-online-bookings, .nurse-offline-bookings) .booking-metric-card {
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 80px !important;
+  min-height: 80px !important;
+  padding: 8px 16px 24px !important;
+  gap: 10px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(to bottom, #ffffff 0, #ffffff calc(100% - 18px), var(--theme-primary-soft) calc(100% - 18px), var(--theme-primary-soft) calc(100% - 4px), var(--theme-primary) calc(100% - 4px), var(--theme-primary) 100%) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent) !important;
+}
+
+html body .nurse-module :is(.nurse-online-bookings, .nurse-offline-bookings) .booking-metric-icon {
+  width: 32px !important;
+  height: 32px !important;
+  flex: 0 0 32px;
+  border-radius: 9px !important;
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 8%, transparent) !important;
+}
+
+html body .nurse-module :is(.nurse-online-bookings, .nurse-offline-bookings) .booking-metric-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+html body .nurse-module :is(.nurse-online-bookings, .nurse-offline-bookings) .booking-metric-info span {
+  order: 0;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  color: #64748b !important;
+}
+
+html body .nurse-module :is(.nurse-online-bookings, .nurse-offline-bookings) .booking-metric-info strong {
+  order: 1;
+  font-size: 20px !important;
+  line-height: 1.1 !important;
+  color: var(--theme-primary-dark) !important;
+}
+
+@media (max-width: 900px) {
+  html body .nurse-module :is(.nurse-online-bookings, .nurse-offline-bookings) .booking-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  html body .nurse-module :is(.nurse-online-bookings, .nurse-offline-bookings) .booking-metrics-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
 /* Page Container with Clean Medical Ambient Gradients (No 3D BG) */
 .nurse-dashboard-page {
   position: relative;
@@ -730,6 +928,19 @@
   place-items: center;
 }
 
+.nurse-dashboard-page .nd-empty-state {
+  gap: 8px;
+}
+
+.nurse-dashboard-page .nd-empty-state p {
+  margin: 0;
+}
+
+.nurse-dashboard-page .nd-empty-icon {
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary-dark);
+}
+
 /* ============================================================
    NURSE SIDEBAR OVERRIDES
    ============================================================ */
@@ -940,61 +1151,6 @@
   gap: 8px;
 }
 
-/* Vertical Capillary Blood Stream drawing downwards from falling drop */
-.rc-blood-capillary-stream {
-  position: absolute;
-  left: 6px;
-  top: -6px;
-  bottom: 8px;
-  width: 2.5px;
-  background: linear-gradient(180deg, #e11d48 0%, rgba(244, 63, 94, 0.5) 60%, rgba(244, 63, 94, 0.1) 100%);
-  border-radius: 999px;
-  box-shadow: 0 0 6px rgba(225, 29, 72, 0.35);
-  pointer-events: none;
-  transform-origin: top;
-  animation: capillaryStreamDraw 0.4s ease-out forwards, bloodCapillaryPulse 2s infinite ease-in-out 0.4s;
-}
-
-@keyframes capillaryStreamDraw {
-  0% {
-    transform: scaleY(0);
-    opacity: 0;
-  }
-  100% {
-    transform: scaleY(1);
-    opacity: 1;
-  }
-}
-
-.rc-blood-capillary-drop-1 {
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #e11d48;
-  left: -1.25px;
-  box-shadow: 0 0 6px #f43f5e;
-  animation: bloodCapillaryPulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.rc-blood-capillary-drop-2 {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #be123c;
-  left: -0.75px;
-  box-shadow: 0 0 5px #e11d48;
-  animation: bloodCapillaryPulse 2s infinite 1s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes bloodCapillaryPulse {
-  0% { top: 0; opacity: 0; transform: scale(0.5); }
-  20% { opacity: 1; transform: scale(1.2); }
-  80% { opacity: 1; transform: scale(1); }
-  100% { top: 96%; opacity: 0; transform: scale(0.6); }
-}
-
 /* Blood Drop Card Container (Child Item) — Capsule Pill Matching Screenshot */
 .rc-blood-drop-item {
   position: relative;
@@ -1194,6 +1350,20 @@
 .rc-blood-drop-item.active {
   box-shadow: 0 4px 12px rgba(225, 29, 72, 0.2) !important;
   transform: translateX(2px) !important;
+}
+
+.nurse-module .rc-sidebar .rc-nav-child.rc-blood-drop-item.active,
+.nurse-module .rc-sidebar .rc-nav-child.rc-blood-drop-item.active:hover {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--theme-primary-dark) 10%, transparent) !important;
+  transform: none !important;
+}
+
+.nurse-module .rc-sidebar .rc-nav-child.rc-blood-drop-item.active .rc-blood-drop-text {
+  color: var(--theme-primary-dark) !important;
+  text-shadow: none !important;
 }
 
 .rc-blood-drop-badge {
@@ -3280,32 +3450,129 @@
   color: #245b63 !important;
 }
 
+html body .nurse-module .rc-patients-page .rc-dash-table-card.rc-patients-card,
+html body .nurse-module .rc-patients-page .rc-dash-table-container {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-dash-table-card.rc-patients-card::before,
+html body .nurse-module .rc-patients-page .rc-dash-table-container::before {
+  background: #d7e7e9 !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-patient-table-header {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: none !important;
+  color: #334155 !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-patient-table-header .rc-th-capsule,
+html body .nurse-module .rc-patients-page .rc-patient-table-header .rc-th-capsule:hover {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--theme-primary-dark) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-patient-table-row,
+html body .nurse-module .rc-patients-page .rc-patient-table-row:nth-child(even) {
+  background: #ffffff !important;
+  border-bottom-color: #edf2f7 !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-patient-table-row:hover {
+  background: #f8fbfc !important;
+  box-shadow: none !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-patient-table-row :is(
+  .rc-dash-sno-badge,
+  .rc-patient-pid-badge,
+  .rc-patient-phone-cell,
+  .rc-patient-age-badge
+) {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: none !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-patient-table-row .rc-dash-patient-avatar {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  flex: 0 0 38px;
+  border-radius: 50% !important;
+  background: var(--theme-primary-soft) !important;
+  border: 0 !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-patient-table-row .rc-dash-patient-name {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--theme-primary-dark) !important;
+  font-weight: 600 !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-patient-table-row .rc-patient-phone-icon {
+  color: var(--theme-primary-dark) !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-patient-phone-cell:hover {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+html body .nurse-module .rc-patients-page .actions-group .action-btn.medical-instrument-btn,
+html body .nurse-module .rc-patients-page .actions-group .action-btn.medical-instrument-btn:hover:not(:disabled) {
+  background: #eaf4f4 !important;
+  border-color: #cbdfe1 !important;
+  color: #245b63 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
+}
+
 .rc-shell:has(.rc-staff-med-badge[title="Clinical Nursing Station"]) .rc-patients-page .rc-patient-kpi-grid {
-  grid-template-columns: repeat(3, 280px) !important;
-  justify-content: center !important;
-  gap: 14px !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  justify-content: stretch !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  gap: 16px !important;
 }
 
 .rc-shell:has(.rc-staff-med-badge[title="Clinical Nursing Station"]) .rc-patients-page .rc-patient-kpi-card {
-  width: 280px !important;
-  max-width: 280px !important;
+  width: 100% !important;
+  max-width: none !important;
 }
 
 @media (max-width: 1024px) {
   .rc-shell:has(.rc-staff-med-badge[title="Clinical Nursing Station"]) .rc-patients-page .rc-patient-kpi-grid {
-    grid-template-columns: repeat(2, 280px) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
 @media (max-width: 640px) {
   .rc-shell:has(.rc-staff-med-badge[title="Clinical Nursing Station"]) .rc-patients-page .rc-patient-kpi-grid {
-    grid-template-columns: 280px !important;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 
-.nurse-dashboard-page .nd-stat-grid {
+html body .nurse-dashboard-page.role-single-screen .nd-stat-grid {
   width: 94% !important;
-  grid-template-columns: repeat(4, minmax(0, 210px)) !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   justify-content: space-between !important;
   margin-left: auto !important;
   margin-right: auto !important;
@@ -3313,7 +3580,8 @@
 
 .nurse-dashboard-page .nd-stat-card {
   box-sizing: border-box !important;
-  width: 210px !important;
+  width: 100% !important;
+  min-width: 0 !important;
   height: 174px !important;
   min-height: 174px !important;
   padding: 16px 16px 34px !important;
@@ -3572,3 +3840,66 @@
   }
 }
 
+/* Nurse summary cards follow the Super Admin dashboard card treatment. */
+html body .nurse-dashboard-page.role-single-screen .nd-stat-grid {
+  width: 100% !important;
+  gap: 16px !important;
+  height: 80px !important;
+}
+
+html body .nurse-dashboard-page.role-single-screen .nd-stat-card {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  height: 80px !important;
+  min-height: 80px !important;
+  padding: 8px 12px 24px !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent) !important;
+}
+
+html body .nurse-dashboard-page.role-single-screen .nd-stat-card-glow {
+  display: none !important;
+}
+
+html body .nurse-dashboard-page.role-single-screen .nd-stat-card::after {
+  height: 14px !important;
+  background: var(--theme-primary-soft) !important;
+  border-bottom: 4px solid var(--theme-primary) !important;
+}
+
+html body .nurse-dashboard-page.role-single-screen .nd-stat-icon-box {
+  position: static !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  border-radius: 9px !important;
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-primary-glow) !important;
+  color: var(--theme-primary-dark) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 8%, transparent) !important;
+  transform: none !important;
+}
+
+html body .nurse-dashboard-page.role-single-screen .nd-stat-body {
+  min-width: 0 !important;
+  padding: 0 !important;
+}
+
+html body .nurse-dashboard-page.role-single-screen .nd-stat-label {
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  margin: 0 0 2px !important;
+}
+
+html body .nurse-dashboard-page.role-single-screen .nd-stat-count strong {
+  color: var(--theme-primary-dark) !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+}
