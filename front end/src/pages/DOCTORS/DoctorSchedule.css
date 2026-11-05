@@ -279,7 +279,7 @@
 }
 
 .ds-card--override {
-  border-top: 3.5px solid #f59e0b;
+  border-top: 3.5px solid var(--theme-primary);
 }
 
 .ds-preview-card {

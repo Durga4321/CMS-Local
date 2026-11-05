@@ -1043,6 +1043,8 @@ const getAppointmentPatientGender = (appointment = {}) => {
 
 const getAppointmentTokenNumber = (appointment = {}) =>
   firstValue(
+    appointment?.appointmentTokenNumber,
+    appointment?.AppointmentTokenNumber,
     appointment?.tokenNo,
     appointment?.TokenNo,
     appointment?.tokenNumber,
@@ -1676,6 +1678,8 @@ function ReceptionBilling() {
   const [serviceSearch, setServiceSearch] = useState("");
   const [appointmentListView, setAppointmentListView] = useState("today");
   const [appointmentDateFilter, setAppointmentDateFilter] = useState("");
+  const [billDateFilter, setBillDateFilter] = useState("");
+  const [billPatientSearch, setBillPatientSearch] = useState("");
   const [form, setForm] = useState({
     appointmentId: "",
     paymentMode: "UPI",
@@ -2099,23 +2103,31 @@ function ReceptionBilling() {
   const serviceDisplayTotals = getBillingTotals(serviceDisplayRows, form.discount);
   const visibleRecentServiceBills = useMemo(
     () => {
+      const patientQuery = billPatientSearch.trim().toLowerCase();
+      const dateFilteredBills = scopeReceptionistRecords(recentServiceBills, receptionistScope)
+        .filter((bill) => !billDateFilter || normalizeDateKey(
+          bill.createdAt || bill.CreatedAt || bill.invoiceDate || bill.billDate
+        ) === billDateFilter)
+        .filter((bill) => !patientQuery || String(
+          bill.patientName || bill.PatientName || bill.patient?.name || bill.Patient?.Name || "Walk-in Patient"
+        ).toLowerCase().includes(patientQuery));
       if (billingMode === "consultation") {
         // Show only OP bills that really exist in the backend Billings table.
         // Paid appointments are no longer manufactured into fake OP invoices.
-        return scopeReceptionistRecords(recentServiceBills, receptionistScope)
+        return dateFilteredBills
           .filter((bill) =>
             billBelongsToMode(bill, "consultation") &&
             hasBackendBillingId(bill)
           )
           .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-          .slice(0, 30);
+          .slice(0, billDateFilter || patientQuery ? undefined : 30);
       }
 
-      return scopeReceptionistRecords(recentServiceBills, receptionistScope).filter(
+      return dateFilteredBills.filter(
         (bill) => billBelongsToMode(bill, billingMode)
       );
     },
-    [billingMode, recentServiceBills, receptionistScope]
+    [billingMode, recentServiceBills, receptionistScope, billDateFilter, billPatientSearch]
   );
   const getValidServiceRows = () =>
     activeServiceRows
@@ -2972,7 +2984,7 @@ function ReceptionBilling() {
       patientAge: bill.patientAge || bill.PatientAge || bill.age || bill.Age || bill.patient?.age,
       patientGender: bill.patientGender || bill.PatientGender || bill.gender || bill.Gender || bill.patient?.gender,
       appointmentId: bill.appointmentId || bill.AppointmentId,
-      tokenNumber: bill.tokenNo || bill.TokenNo || bill.tokenNumber || bill.TokenNumber || bill.opNo || bill.OpNo,
+      tokenNumber: getAppointmentTokenNumber(bill),
       createdAt: bill.createdAt || bill.invoiceDate || bill.billDate,
       doctorName: bill.doctorName || bill.DoctorName || bill.doctor?.name,
       paymentMode: bill.paymentMode || bill.PaymentMode,
@@ -3151,6 +3163,8 @@ function ReceptionBilling() {
     const paymentMode = activeInvoice.paymentMode || form.paymentMode || "-";
     const appointmentId = activeInvoice.appointmentId || form.appointmentId || "-";
     const tokenNumber =
+      activeInvoice.appointmentTokenNumber ||
+      activeInvoice.AppointmentTokenNumber ||
       activeInvoice.tokenNo ||
       activeInvoice.TokenNo ||
       activeInvoice.tokenNumber ||
@@ -3811,6 +3825,22 @@ function ReceptionBilling() {
                 {visibleRecentServiceBills.length} records
               </span>
             </div>
+          </div>
+          <div className="rc-bill-date-filter">
+            <label htmlFor="saved-bill-patient-search">Patient Name</label>
+            <input
+              id="saved-bill-patient-search"
+              className="rc-bill-patient-search"
+              type="search"
+              placeholder="Search by patient name..."
+              value={billPatientSearch}
+              onChange={(event) => setBillPatientSearch(event.target.value)}
+            />
+            <label htmlFor="saved-bill-date">Bill Date</label>
+            <DatePickerField id="saved-bill-date" value={billDateFilter} onChange={setBillDateFilter} />
+            <button type="button" className="rc-btn ghost" onClick={() => setBillDateFilter("")} disabled={!billDateFilter}>
+              Clear Date
+            </button>
           </div>
           {visibleRecentServiceBills.length ? (
             <div className="rc-latest-bills-list">

@@ -44,6 +44,11 @@ const getHistoryId = (record) =>
 
 const getPatientId = (record) => record?.patientId || record?.patient?.id || "";
 
+const hasRecordedCondition = (value) => {
+  const text = String(value ?? "").trim().toLowerCase();
+  return Boolean(text) && !["na", "n/a", "no", "none", "nil", "-", "not applicable", "no medications"].includes(text);
+};
+
 const getAppointmentId = (appointment) =>
   appointment?.appointmentId ?? appointment?.id ?? appointment?.appointment?.id ?? "";
 
@@ -100,10 +105,11 @@ function ReceptionMedicalHistory({
 
   const metrics = useMemo(() => {
     const total = histories.length;
-    const withAllergies = histories.filter((h) => Boolean(String(h.allergies || "").trim())).length;
-    const withChronic = histories.filter((h) => Boolean(String(h.chronicDiseases || "").trim())).length;
-    const withSurgeries = histories.filter((h) => Boolean(String(h.surgeries || "").trim())).length;
-    return { total, withAllergies, withChronic, withSurgeries };
+    const withAllergies = histories.filter((h) => hasRecordedCondition(h.allergies)).length;
+    const withChronic = histories.filter((h) => hasRecordedCondition(h.chronicDiseases)).length;
+    const withSurgeries = histories.filter((h) => hasRecordedCondition(h.surgeries)).length;
+    const withMedications = histories.filter((h) => hasRecordedCondition(h.currentMedications)).length;
+    return { total, withAllergies, withChronic, withSurgeries, withMedications };
   }, [histories]);
 
   const filteredRows = useMemo(() => {
@@ -508,10 +514,7 @@ function ReceptionMedicalHistory({
               <Pill size={22} />
             </div>
             <div className="med-metric-info">
-              <strong>{histories.filter((record) => {
-                const medications = String(record.currentMedications || "").trim().toLowerCase();
-                return medications && !["no", "none", "nil", "n/a", "na", "-", "no medications"].includes(medications);
-              }).length}</strong>
+              <strong>{metrics.withMedications}</strong>
               <span>Medication Records</span>
             </div>
           </div>

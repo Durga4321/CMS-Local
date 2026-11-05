@@ -8379,6 +8379,48 @@
   }
 }
 
+/* Hide decorative telemetry banners on the reception pages only. */
+.reception-module .rc-patients-page .patients-heartrate-telemetry-badge,
+.reception-module .rc-billing-page .billing-heartrate-telemetry-badge {
+  display: none !important;
+}
+
+.reception-module .rc-bill-date-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.reception-module .rc-bill-date-filter > label {
+  font-weight: 600;
+  color: var(--theme-primary-dark);
+}
+
+.reception-module .rc-bill-date-filter .date-picker-field {
+  width: 200px;
+  max-width: 100%;
+}
+
+.reception-module .rc-bill-date-filter .rc-bill-patient-search {
+  box-sizing: border-box;
+  width: 260px;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--theme-primary-dark);
+  font: inherit;
+}
+
+.reception-module .rc-bill-date-filter .rc-bill-patient-search:focus-visible {
+  outline: 2px solid var(--theme-primary);
+  outline-offset: 2px;
+}
+
 /* Reception metrics reuse Admin cards with explicit layout boundaries. */
 html body .reception-module .role-single-screen .reception-overview-metrics { height: 80px !important; min-height: 80px !important; flex: 0 0 80px !important; padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; }
 html body .reception-module .role-single-screen .reception-overview-metrics .sa-card-grid { display: grid !important; grid-template-columns: repeat(5,minmax(0,1fr)) !important; grid-template-rows: 80px !important; height: 80px !important; gap: 16px !important; padding: 0 !important; margin: 0 !important; border: 0 !important; box-shadow: none !important; background: transparent !important; }

@@ -16,6 +16,7 @@ import {
   Sparkles,
   Timer,
   X,
+  XCircle,
 } from "lucide-react";
 import "./DoctorDashboard.css";
 import { apiUrl } from "../../config/api";
@@ -373,6 +374,16 @@ function DoctorDashboard() {
       color: "green",
       badge: "DISCHARGED",
       trend: "Consulted",
+    },
+    {
+      id: "cancelled",
+      label: "Cancelled Appointments Today",
+      value: countByStatus(dashboard?.todayQueue || [], ["cancelled", "canceled"]),
+      sub: "Cancelled today",
+      icon: XCircle,
+      color: "blue",
+      badge: "CANCELLED",
+      trend: "Daily Cancellations",
     },
   ];
 
