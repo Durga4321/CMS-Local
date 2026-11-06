@@ -32,9 +32,11 @@ const getCurrentRole = () => {
   if (roleKey.includes("reception")) return "receptionist";
   if (roleKey.includes("nurse")) return "nurse";
   if (roleKey.includes("lab")) return "labtechnician";
+  if (roleKey.includes("pharmac")) return "pharmacist";
   if (roleKey.includes("patient") || roleKey.includes("user")) return "patient";
 
   const path = String(window.location?.pathname || "").toLowerCase();
+  if (path.startsWith("/pharmacy")) return "pharmacist";
   const isAdminPath =
     path &&
     !path.startsWith("/superadmin") &&

@@ -71,6 +71,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Menu,
   Search,
+  ChevronRight,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -121,6 +122,15 @@ function Topbar({ onMenu }) {
     .replace(/[\s_-]+/g, "");
   const isSuperAdmin = location.pathname.startsWith("/superadmin") || sessionRole === "superadmin";
   const searchItems = isSuperAdmin ? superAdminModuleSearchItems : adminModuleSearchItems;
+  const areaLabel = isSuperAdmin ? "Super Admin" : "Admin";
+  const currentPage = searchItems
+    .filter(({ path }) => location.pathname === path || location.pathname.startsWith(`${path}/`))
+    .sort((a, b) => b.path.length - a.path.length)[0];
+  const fallbackTitle = location.pathname.split("/").filter(Boolean).pop()
+    ?.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  const pageTitle = currentPage?.label === "Dashboard"
+    ? `${areaLabel} Dashboard`
+    : currentPage?.label || fallbackTitle || `${areaLabel} Dashboard`;
   const placeholder = isSuperAdmin
     ? "Search dashboard, clinics, admins, reports..."
     : "Search patients, doctors, appointments...";
@@ -195,6 +205,13 @@ function Topbar({ onMenu }) {
         >
           <Menu size={20} />
         </button>
+
+        <div className="topbar-title-wrap">
+          <h1>{pageTitle}</h1>
+          <div className="topbar-crumbs">
+            <span>Home</span><ChevronRight size={13} /><span>{areaLabel}</span>
+          </div>
+        </div>
 
         <form
           className="topbar-search-box"

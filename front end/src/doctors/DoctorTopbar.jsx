@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Menu, Search } from "lucide-react";
+import { ChevronRight, Menu, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import NotificationPopup from "../components/NotificationPopup";
 import UserProfileMenu from "../profile/UserProfileMenu";
@@ -48,7 +48,12 @@ function DoctorTopbar({ title, sidebarOpen, onMenuToggle, search = "", onSearch 
         >
           <Menu size={20} />
         </button>
-        <h1 className="dr-topbar-title">{title}</h1>
+        <div className="dr-topbar-title-wrap">
+          <h1 className="dr-topbar-title">{title}</h1>
+          <div className="topbar-crumbs">
+            <span>Home</span><ChevronRight size={13} /><span>Doctor</span>
+          </div>
+        </div>
       </div>
 
       <form className="dr-topbar-search" onSubmit={submitSearch} onBlur={() => window.setTimeout(() => setShowResults(false), 120)}>
