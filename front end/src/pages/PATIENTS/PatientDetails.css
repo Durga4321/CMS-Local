@@ -33,7 +33,7 @@
 .patient-details-title {
   margin: 0;
   color: var(--theme-primary-dark);
-  font-size: 28px;
+  font-size: 22px;
   line-height: 1.1;
   font-weight: 800;
 }
@@ -41,7 +41,7 @@
 .patient-details-subtitle {
   margin: 6px 0 0;
   color: #64748b;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -373,7 +373,7 @@
   }
 
   .patient-details-title {
-    font-size: 24px;
+    font-size: 22px;
   }
 }
 
@@ -385,3 +385,9 @@
 .patient-info-row svg { flex-shrink:0; }
 .patient-details-grid { grid-template-columns:minmax(240px,.8fr) minmax(0,1.2fr); }
 @media(max-width:1080px) { .patient-details-grid { grid-template-columns:1fr; } }
+
+/* Compact page title without a separate header container. */
+@media screen {
+  html body .patient-details-title[data-page-title] { font-size: 22px !important; line-height: 1.2 !important; margin: 0 0 6px !important; white-space: normal; overflow-wrap: anywhere; }
+  html body .patient-details-subtitle[data-page-subtitle] { font-size: 12px !important; line-height: 1.35 !important; margin: 0 0 8px !important; overflow-wrap: anywhere; }
+}

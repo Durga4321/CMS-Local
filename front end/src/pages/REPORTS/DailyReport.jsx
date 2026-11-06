@@ -451,7 +451,7 @@ function DailyReport() {
       </div>
 
       {/* HEADER WITH SURGICAL INSTRUMENTS */}
-      <div className="header">
+      <div className="header" data-page-header>
         <div className="rep-header-title-group">
           {/* ALL REPORTS NAVIGATION BUTTON */}
           <button

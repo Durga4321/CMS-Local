@@ -235,7 +235,7 @@ function AdminClinicSetup() {
 
   return (
     <div className="admin-clinic-setup-page">
-      <div className="admin-clinic-setup-header">
+      <div className="admin-clinic-setup-header" data-page-header>
         <div>
           <h1>Create Clinic</h1>
           <p>Fill clinic profile details once. After saving, this clinic data is used across dashboard, branches, reports, billing, and staff modules.</p>

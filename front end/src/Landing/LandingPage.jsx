@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   Activity,
   ArrowRight,
-  Bell,
   Building2,
   CalendarCheck,
   CheckCircle2,
@@ -14,70 +13,40 @@ import {
   Layers,
   ReceiptText,
   ShieldCheck,
-  Sparkles,
   Stethoscope,
   UsersRound,
 } from "lucide-react";
 import cleanVideo from "../assests/clean_video.mp4";
 import "./LandingPage.css";
 
+// Public overview content only; clinic records remain inside authenticated portals.
 const modules = [
-  {
-    icon: UsersRound,
-    title: "Front Desk & Reception",
-    badge: "Patient Flow",
-    text: "Streamline patient check-ins, multi-doctor queue tracking, appointment scheduling, and rapid branch triage.",
-    color: "var(--theme-primary-dark)",
-  },
-  {
-    icon: Stethoscope,
-    title: "Doctor Clinical Suite",
-    badge: "EMR & Rx",
-    text: "Integrated consultation notes, electronic prescriptions, vitals telemetry, and full longitudinal patient history.",
-    color: "#1e293b",
-  },
-  {
-    icon: HeartPulse,
-    title: "Nursing & Patient Care",
-    badge: "Care Handoff",
-    text: "Today's ward and OP queue, vitals charting, triage tracking, and synchronized medical handoff records.",
-    color: "#be123c",
-  },
-  {
-    icon: FlaskConical,
-    title: "Diagnostics & Pathology",
-    badge: "Lab Workflows",
-    text: "Test catalog management, technician worklists, sample tracking, automated file uploads, and digital report generation.",
-    color: "#334155",
-  },
-  {
-    icon: ReceiptText,
-    title: "Pharmacy & Billing",
-    badge: "Invoicing",
-    text: "Medicine dispensing, automated GST-ready itemized billing, multi-department receipt separation, and revenue audits.",
-    color: "#b45309",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Security & Governance",
-    badge: "Role Matrix",
-    text: "Multi-branch clinic administration, granular role-based permissions, automated audit logs, and compliance oversight.",
-    color: "var(--theme-primary-dark)",
-  },
+  { icon: ShieldCheck, title: "Super Admin", badge: "Platform", text: "Manage clinic administrators, subscription plans, access permissions, and platform reports." },
+  { icon: Building2, title: "Clinic Administration", badge: "Admin", text: "Manage branches, staff, patients, appointments, subscriptions, audit logs, and revenue reports." },
+  { icon: UsersRound, title: "Reception", badge: "Front Desk", text: "Register patients, book appointments, manage the queue, and generate OP, lab, and pharmacy bills." },
+  { icon: Stethoscope, title: "Doctor", badge: "Consultation", text: "Review appointments and patient history, record consultations, prescribe medicines, and request tests." },
+  { icon: HeartPulse, title: "Nursing", badge: "Patient Care", text: "Review assigned patients, record vitals, and maintain care and medical-history information." },
+  { icon: FlaskConical, title: "Laboratory", badge: "Diagnostics", text: "Manage ordered tests and sample collection, enter report details, attach available imaging files, and save or print reports." },
+  { icon: ReceiptText, title: "Pharmacy", badge: "Medicines & Bills", text: "Manage the medicine catalogue and stock, review prescriptions, confirm dispensing quantities, and create pharmacy invoices." },
+  { icon: ClipboardList, title: "Patient Portal", badge: "Patient Access", text: "Register or sign in to book appointments and view available prescriptions, reports, medical history, and bills." },
 ];
 
-const telemetryStats = [
-  { value: "100%", label: "Real-time Sync", desc: "Across all clinic branches" },
-  { value: "6+", label: "Unified Modules", desc: "Zero data fragmentation" },
-  { value: "< 2 min", label: "Front Desk Triage", desc: "Accelerated patient intake" },
-  { value: "99.99%", label: "System Availability", desc: "High availability uptime" },
+const overviewAreas = [
+  { value: "Book", label: "Start the visit", desc: "Patient registration and booking" },
+  { value: "Consult", label: "Record the care", desc: "Vitals, history and prescriptions" },
+  { value: "Treat", label: "Continue treatment", desc: "Lab reports and pharmacy dispensing" },
+  { value: "Review", label: "Review the visit", desc: "Invoices and patient documents" },
 ];
 
 const flow = [
-  { step: "01", title: "Register Patient", desc: "Fast digital intake & instant medical record creation." },
-  { step: "02", title: "Queue & Appointment", desc: "Intelligent branch routing with live token monitoring." },
-  { step: "03", title: "Doctor Consultation", desc: "Clinical diagnosis, vitals review & digital prescription." },
-  { step: "04", title: "Diagnostics & Billing", desc: "Synchronized lab test orders, pharmacy & GST receipts." },
+  { step: "01", title: "Register the patient", desc: "Create a patient record through reception or patient registration." },
+  { step: "02", title: "Book an appointment", desc: "Choose the branch, doctor, and available appointment slot." },
+  { step: "03", title: "Record vitals", desc: "Nursing staff record patient observations for the consultation." },
+  { step: "04", title: "Complete consultation", desc: "The doctor reviews history, records findings, and prescribes treatment." },
+  { step: "05", title: "Process ordered tests", desc: "When tests are requested, lab staff collect samples and prepare the test reports." },
+  { step: "06", title: "Dispense medicines", desc: "Pharmacy staff review prescribed medicines and confirm the quantities dispensed." },
+  { step: "07", title: "Manage bills and payments", desc: "Create the applicable OP, lab, and pharmacy invoices and record payments." },
+  { step: "08", title: "Access visit records", desc: "Authorised staff and patients access the records available to their account." },
 ];
 
 function LandingPage() {
@@ -114,14 +83,14 @@ function LandingPage() {
             </span>
             <span className="landing-brand-text">
               <strong>CMS</strong>
-              <small>Clinical Intelligence System</small>
+              <small>Clinic Management System</small>
             </span>
           </Link>
 
           <div className="landing-nav-center">
             <div className="landing-live-status">
               <span className="landing-status-dot" />
-              <span>Live Clinical Network</span>
+              <span>Application Overview</span>
             </div>
           </div>
 
@@ -136,13 +105,13 @@ function LandingPage() {
         {/* HERO CONTENT */}
         <div className="landing-hero-content">
           <h1 className="landing-hero-title">
-            Connected Care, <br />
-            <span className="landing-gradient-text">Unified Intelligence.</span>
+            One Clinic Workspace, <br />
+            <span className="landing-gradient-text">From Booking to Billing.</span>
           </h1>
 
           <p className="landing-hero-copy">
-            Seamlessly orchestrate front desk registration, physician consultations, nursing triage,
-            pathology lab diagnostics, and itemized pharmacy billing in one pristine, branch-aware workspace.
+            See how clinic administration, reception, doctors, nurses, laboratory staff,
+            pharmacists, and patients use CMS throughout a patient visit.
           </p>
 
           <div className="landing-hero-actions">
@@ -152,13 +121,13 @@ function LandingPage() {
             </Link>
             <a href="#modules-section" className="landing-cta landing-cta-ghost">
               <Layers size={17} />
-              <span>Explore Features</span>
+              <span>Explore the Modules</span>
             </a>
           </div>
 
-          {/* TELEMETRY METRICS IN HERO */}
+          {/* STATIC WORKFLOW OVERVIEW */}
           <div className="landing-telemetry-row">
-            {telemetryStats.map((item) => (
+            {overviewAreas.map((item) => (
               <div className="landing-telemetry-item" key={item.label}>
                 <div className="landing-telemetry-val">{item.value}</div>
                 <div className="landing-telemetry-lbl">{item.label}</div>
@@ -192,16 +161,16 @@ function LandingPage() {
         <div className="landing-section-head">
           <div className="landing-section-badge">
             <Activity size={15} />
-            <span>MODULAR ARCHITECTURE</span>
+            <span>APPLICATION MODULES</span>
           </div>
-          <h2>Engineered for Modern Clinical Precision</h2>
+          <h2>A Workspace for Each Role</h2>
           <p className="landing-section-subhead">
-            Every module is synchronized in real-time, eliminating operational bottlenecks and ensuring zero data loss across departments.
+            Follow the work handled by each role. Available screens and actions depend on the account permissions and clinic setup.
           </p>
         </div>
 
         <div className="landing-module-grid">
-          {modules.map(({ icon: Icon, title, badge, text, color }) => (
+          {modules.map(({ icon: Icon, title, badge, text }) => (
             <article className="landing-module-card" key={title}>
               <div className="landing-card-top">
                 <span className="landing-card-icon">
@@ -211,35 +180,31 @@ function LandingPage() {
               </div>
               <h3>{title}</h3>
               <p>{text}</p>
-              <div className="landing-card-hover-indicator">
-                <span>View capabilities</span>
-                <ChevronRight size={14} />
-              </div>
             </article>
           ))}
         </div>
       </section>
 
-      {/* LIVE CLINICAL OPERATIONS INSIGHT BANNER */}
+      {/* ADMINISTRATION AND RECORDS OVERVIEW */}
       <section className="landing-insight">
         <div className="landing-insight-content">
           <div className="landing-insight-badge">
             <Building2 size={16} />
-            <span>MULTI-BRANCH GOVERNANCE</span>
+            <span>CLINIC MANAGEMENT</span>
           </div>
-          <h2>Live Branch Operations & Financial Reconciliation</h2>
+          <h2>Keep Clinic Operations in View</h2>
           <p>
-            Consolidate patient traffic, doctor availability, diagnostics order queues, and segregated
-            pharmacy revenue streams across all facility locations from an authoritative single source of truth.
+            Administrators manage clinic branches and staff, review patient appointments,
+            and use billing and revenue reports to follow clinic activity.
           </p>
           <div className="landing-insight-stats">
             <div className="insight-stat">
               <CheckCircle2 size={18} className="insight-check" />
-              <span>Multi-tier Role Permissions (Doctor, Nurse, Receptionist, Lab, SuperAdmin)</span>
+              <span>Role-based access for clinic teams and patients</span>
             </div>
             <div className="insight-stat">
               <CheckCircle2 size={18} className="insight-check" />
-              <span>End-to-end Automated Audit Logging with IP and Action Tracing</span>
+              <span>Audit logs for recorded account and application activity</span>
             </div>
           </div>
         </div>
@@ -249,28 +214,28 @@ function LandingPage() {
             <CalendarCheck size={22} />
             <div>
               <strong>Appointment Calendars</strong>
-              <small>Slot booking, doctor quotas & walk-ins</small>
+              <small>Doctor schedules, available slots and visit queues</small>
             </div>
           </div>
           <div className="landing-insight-pill">
             <ClipboardList size={22} />
             <div>
-              <strong>Complete Longitudinal EMR</strong>
-              <small>Historical diagnoses, vitals & allergies</small>
+              <strong>Patient History</strong>
+              <small>Available visits, vitals and medical records</small>
             </div>
           </div>
           <div className="landing-insight-pill">
             <ReceiptText size={22} />
             <div>
-              <strong>Smart Invoicing Engine</strong>
-              <small>OP consultation, tests & GST billing</small>
+              <strong>OP, Lab & Pharmacy Bills</strong>
+              <small>Saved invoices, payment status and revenue reports</small>
             </div>
           </div>
           <div className="landing-insight-pill">
-            <Bell size={22} />
+            <ClipboardList size={22} />
             <div>
-              <strong>Cross-Department Alerts</strong>
-              <small>Instant notifications for tests & orders</small>
+              <strong>Patient Documents</strong>
+              <small>Available prescriptions, reports and visit records</small>
             </div>
           </div>
         </div>
@@ -286,7 +251,7 @@ function LandingPage() {
             <strong>CMS Clinic Management System</strong>
           </div>
           <div className="landing-footer-meta">
-            <span>High Definition Clinical Workspace • Protected by 256-Bit SSL</span>
+            <span>Appointments | Consultations | Lab | Pharmacy | Billing</span>
           </div>
           <div className="landing-footer-links">
             <Link to="/login">Staff Portal</Link>

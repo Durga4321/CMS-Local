@@ -11,6 +11,8 @@
 
 # production
 /build
+/.cms-theme.json
+/.cms-theme.json.tmp
 
 # misc
 .DS_Store

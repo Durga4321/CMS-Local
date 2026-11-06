@@ -1307,7 +1307,7 @@ function ReceptionAppointments({ hideActions = false, apiRequest = requestJson, 
       </div>
 
       {/* PAGE HEADER */}
-      <div className="rc-dash-header">
+      <div className="rc-dash-header" data-page-header>
         <div>
           <h1 className="rc-dash-title">
             Appointment Booking

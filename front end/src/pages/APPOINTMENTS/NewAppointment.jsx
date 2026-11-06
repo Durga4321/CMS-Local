@@ -109,8 +109,8 @@ function NewAppointment() {
 
   return (
     <div className="new-appointment-page">
-      <h2 className="new-appointment-title">New Appointment</h2>
-      <p className="new-appointment-subtitle">Create a new appointment</p>
+      <h2 className="new-appointment-title" data-page-title>New Appointment</h2>
+      <p className="new-appointment-subtitle" data-page-subtitle>Create a new appointment</p>
 
       <form className="new-appointment-form-card" onSubmit={handleSubmit} noValidate>
         <div className="new-appointment-grid">

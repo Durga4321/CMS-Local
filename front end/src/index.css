@@ -2045,3 +2045,39 @@ html[data-cms-theme] :is(.content,.dr-layout-content,.rc-content,.lab-main,.nurs
 html[data-cms-theme] :is(.content,.dr-layout-content,.rc-content,.lab-main,.nurse-content,.pharmacy-main,.pp-main) :is(.db-kpi-icon-box,.rc-dash-kpi-icon,.dd-stat-icon-bezel,.nd-stat-icon-box,.pharmacy-count-icon,.pd-summary-card-icon) { background: var(--theme-primary-soft) !important; color: var(--theme-primary-dark) !important; border-color: var(--theme-primary-glow) !important; }
 html[data-cms-theme] :is(.content,.dr-layout-content,.rc-content,.lab-main,.nurse-content,.pharmacy-main,.pp-main) :is(.sa-stat-card,.dd-stat-card,.nd-stat-card,.pharmacy-count-card,.rc-dash-kpi-card) { border-color: var(--theme-primary-glow) !important; }
 html[data-cms-theme] :is(.content,.dr-layout-content,.rc-content,.lab-main,.nurse-content,.pharmacy-main,.pp-main) :is(.dd-stat-value,.nd-stat-count,.pharmacy-count-value,.db-kpi-num) { color: var(--theme-primary-dark) !important; }
+
+/* One palette source for page, section, card and dialog headings across modules.
+   Screen-only rules preserve the colours in clinical report and invoice prints. */
+@media screen {
+  html[data-cms-theme] body #root :is(
+    h1, h2, h3, h4, h5, h6,
+    [role="heading"],
+    [class$="-title"], [class*="-title "],
+    [class$="__title"], [class*="__title "]
+  ) {
+    color: var(--theme-primary-dark) !important;
+    -webkit-text-fill-color: currentColor !important;
+  }
+
+  html[data-cms-theme] body #root :is(
+    [class*="subtitle"], [class*="sub-title"],
+    [class*="subheading"], [class*="sub-heading"],
+    .sa-page-header__copy > p,
+    .admin-overview-heading > div > p,
+    [class$="-header"] > p,
+    [class$="-head"] > p
+  ) {
+    color: var(--theme-primary-dark) !important;
+    -webkit-text-fill-color: currentColor !important;
+  }
+
+  /* Nested emphasis must not retain a hard-coded colour from a module. */
+  html[data-cms-theme] body #root :is(
+    h1, h2, h3, h4, h5, h6, [role="heading"],
+    [class*="subtitle"], [class*="sub-title"],
+    [class*="subheading"], [class*="sub-heading"]
+  ) > :is(span, strong, b, em, small) {
+    color: inherit !important;
+    -webkit-text-fill-color: currentColor !important;
+  }
+}

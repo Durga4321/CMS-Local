@@ -718,7 +718,7 @@ function PatientDetails() {
   return (
     <div className="pd-page">
       <div className="pd-toprow">
-        <h2 className="pd-page-title">Patient Details</h2>
+        <h2 className="pd-page-title" data-page-title>Patient Details</h2>
         <button className="pd-start-btn" type="button" onClick={startConsultation}>
           Start Consultation
         </button>

@@ -1378,7 +1378,7 @@ function PatientRoutes() {
 function PatientPageShell({ title, subtitle, action, children }) {
   return (
     <div className="patient-dashboard">
-      <div className="pd-header">
+      <div className="pd-header" data-page-header>
         <div className="pd-header-copy">
           <h1 className="pd-greeting-title">{title}</h1>
           <p className="pd-greeting-subtitle">{subtitle}</p>

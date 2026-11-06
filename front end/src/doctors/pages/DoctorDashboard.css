@@ -1179,3 +1179,10 @@ html body .dd-page.role-single-screen > .dd-queue-card {
   color: var(--theme-primary-dark) !important;
   box-shadow: none !important;
 }
+
+/* Wrapped dashboard content uses natural height on smaller screens. */
+@media screen and (max-width: 900px) {
+  html body .dd-page.role-single-screen { height: auto !important; max-height: none !important; overflow: visible !important; }
+  html body .dd-page.role-single-screen .dd-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; height: auto !important; }
+  html body .dd-page.role-single-screen .dd-queue-card { flex: 0 0 auto !important; overflow-x: auto !important; }
+}

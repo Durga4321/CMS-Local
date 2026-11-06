@@ -556,11 +556,20 @@ function AdminUserManagement() {
         <BadgeCheck size={26} />
       </div>
 
-      <div className="admin-users-header">
+      <div className="admin-users-header" data-page-header>
         <div>
           <h2>User Management</h2>
           <p>{loading ? "Loading users..." : `${filteredUsers.length} Users Found`}</p>
         </div>
+        <label className="admin-heading-search admin-users-search">
+            <Search size={18} />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search users by name, email, clinic, branch, or type..."
+            />
+          </label>
+
         <button className="admin-users-btn" type="button" onClick={loadUsers} disabled={loading}>
           <RefreshCw size={16} /> Refresh
         </button>
@@ -571,14 +580,7 @@ function AdminUserManagement() {
 
       <div className="admin-users-table-card">
         <div className="admin-users-toolbar">
-          <label className="admin-users-search">
-            <Search size={18} />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search users by name, email, clinic, branch, or type..."
-            />
-          </label>
+          
           <select value={status} onChange={(event) => setStatus(event.target.value)}>
             <option value="All">All Status</option>
             <option value="Active">Active</option>

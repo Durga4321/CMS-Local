@@ -102,7 +102,7 @@
 //           <X size={22} strokeWidth={2} />
 //         </button>
 
-//         <div className="add-doctor-header">
+//         <div className="add-doctor-header" data-page-header>
 //           <h2>Add Doctor</h2>
 //           <p>Enter doctor details below. All fields marked are required.</p>
 //         </div>
@@ -1007,7 +1007,7 @@ const validateBranchSelection = (values = form) => {
           <X size={28} strokeWidth={2.5} />
         </button>
 
-        <div className="add-doctor-header">
+        <div className="add-doctor-header" data-page-header>
           <h2>Add Doctor</h2>
           <p>Enter doctor details below.</p>
         </div>

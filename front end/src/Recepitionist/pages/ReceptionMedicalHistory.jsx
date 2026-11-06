@@ -415,7 +415,7 @@ function ReceptionMedicalHistory({
       <div className="med-history-bg-overlay" aria-hidden="true" />
 
       {/* Hero Header with Medical History Theme */}
-      <div className="med-history-hero">
+      <div className="med-history-hero" data-page-header>
         <div>
           <div className="med-history-badge">
             <HeartPulse size={13} />

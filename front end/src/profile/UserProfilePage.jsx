@@ -243,7 +243,7 @@ function UserProfilePage({ roleType = "admin" }) {
           </span>
         </div>
 
-        <div className="profile-hero-info">
+        <div className="profile-hero-info" data-page-header>
           <div className="profile-hero-top-tag">
             <span className="profile-med-cross-tag">
               <ShieldCheck size={12} /> Hospital Staff Profile

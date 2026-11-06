@@ -518,7 +518,7 @@ function Appointments() {
 
       {/* HEADER */}
 
-      <div className="appointments-header">
+      <div className="appointments-header" data-page-header>
 
         <div>
 
@@ -535,27 +535,7 @@ function Appointments() {
           </p>
 
         </div>
-      </div>
-
-      {/* ERROR */}
-
-      {error ? (
-        <div className="appointments-empty">
-          {error}
-        </div>
-      ) : null}
-
-      {/* TABLE CARD */}
-
-      <div className="appointments-table-card">
-
-        {/* FILTERS */}
-
-        <div className="appointments-filters">
-
-          {/* SEARCH */}
-
-          <div className="appointments-filter-group appointments-search-group">
+        <div className="admin-heading-search appointments-filter-group appointments-search-group">
 
             <label>Search</label>
 
@@ -577,6 +557,28 @@ function Appointments() {
             </div>
 
           </div>
+
+      </div>
+
+      {/* ERROR */}
+
+      {error ? (
+        <div className="appointments-empty">
+          {error}
+        </div>
+      ) : null}
+
+      {/* TABLE CARD */}
+
+      <div className="appointments-table-card">
+
+        {/* FILTERS */}
+
+        <div className="appointments-filters">
+
+          {/* SEARCH */}
+
+          
 
           {/* DATE */}
 

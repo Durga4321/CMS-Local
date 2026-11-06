@@ -546,11 +546,11 @@ function PatientDetails() {
 
       {/* TITLE */}
 
-      <h2 className="patient-details-title">
+      <h2 className="patient-details-title" data-page-title>
         {patient.name}
       </h2>
 
-      <p className="patient-details-subtitle">
+      <p className="patient-details-subtitle" data-page-subtitle>
 
         Patient ID:
         {" "}

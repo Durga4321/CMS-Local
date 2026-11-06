@@ -182,3 +182,7 @@
     pointer-events: none;
   }
 }
+
+@media screen and (max-width: 900px) {
+  html body .dr-layout-content:has(.role-single-screen) { overflow-y: auto !important; }
+}

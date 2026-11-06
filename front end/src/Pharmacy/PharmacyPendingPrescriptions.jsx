@@ -1,3 +1,4 @@
+import "./PharmacyMedicines.css";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { CheckCircle, ClipboardList, Eye, RefreshCw, Search, X } from "lucide-react";
@@ -5,7 +6,7 @@ import { CheckCircle, ClipboardList, Eye, RefreshCw, Search, X } from "lucide-re
 import { API_ENDPOINTS, apiUrl } from "../config/api";
 
 import { getPharmacistToken } from "./pharmacySession";
-import { pharmacyRequest } from "./pharmacyApi";
+import { pharmacyRequest, invalidatePharmacyReads } from "./pharmacyApi";
 
 
 
@@ -142,51 +143,7 @@ function PharmacyPendingPrescriptions() {
 
     try {
 
-      const response = await fetch(apiUrl(API_ENDPOINTS.pharmacy.pendingPrescriptions), {
-
-        method: "GET",
-
-        headers: {
-
-          Authorization: `Bearer ${token}`,
-
-          Accept: "application/json",
-
-          "ngrok-skip-browser-warning": "true",
-
-        },
-
-        cache: "no-store",
-
-      });
-
-      const text = await response.text();
-
-      let payload = null;
-
-      if (text) {
-
-        try {
-
-          payload = JSON.parse(text);
-
-        } catch {
-
-          payload = text;
-
-        }
-
-      }
-
-
-
-      if (!response.ok) {
-
-        throw new Error(getResponseMessage(payload, `Unable to load pending prescriptions (HTTP ${response.status}).`));
-
-      }
-
-
+      const payload = await pharmacyRequest(API_ENDPOINTS.pharmacy.pendingPrescriptions, { cacheMs: 15000 });
 
       const items = parsePrescriptionList(payload);
 
@@ -397,11 +354,24 @@ function PharmacyPendingPrescriptions() {
 
 
 
+  const [pageSelection, setPageSelection] = useState({ key: '', page: 0 });
+  const pageFilter = search;
+  const pageCount = Math.max(1, Math.ceil(filteredPrescriptions.length / 10));
+  const currentPage = pageSelection.key === pageFilter ? Math.min(pageSelection.page, pageCount - 1) : 0;
+  const pageRows = filteredPrescriptions.slice(currentPage * 10, (currentPage + 1) * 10);
+  const changePage = (page) => setPageSelection({ key: pageFilter, page });
+
   return (
 
     <section className="pharmacy-prescriptions-page">
+      <nav className="pharmacy-pagination" aria-label="Table pages">
+ <span>{filteredPrescriptions.length ? currentPage * 10 + 1 : 0}?{Math.min((currentPage + 1) * 10, filteredPrescriptions.length)} of {filteredPrescriptions.length}</span>
+ <button type="button" disabled={currentPage === 0} onClick={() => changePage(currentPage - 1)}>Previous</button>
+ {Array.from({ length: Math.min(10, pageCount) }, (_, index) => Math.min(Math.max(0, currentPage - 4), Math.max(0, pageCount - 10)) + index).map(page => <button type="button" key={page} aria-current={page === currentPage ? 'page' : undefined} onClick={() => changePage(page)}>{page + 1}</button>)}
+ <button type="button" disabled={currentPage + 1 >= pageCount} onClick={() => changePage(currentPage + 1)}>Next</button>
+ </nav>
 
-      <header className="pharmacy-catalogue-header">
+      <header className="pharmacy-catalogue-header" data-page-header>
 
         <div className="pharmacy-prescriptions-heading">
 
@@ -423,7 +393,7 @@ function PharmacyPendingPrescriptions() {
 
           className="pharmacy-catalogue-refresh"
 
-          onClick={loadPrescriptions}
+          onClick={() => { invalidatePharmacyReads(); loadPrescriptions(); }}
 
           disabled={isLoading}
 
@@ -509,7 +479,7 @@ function PharmacyPendingPrescriptions() {
 
               <tr><td colSpan="7">{search ? "No prescriptions match your search." : "There are no pending prescriptions."}</td></tr>
 
-            ) : filteredPrescriptions.map((prescription, index) => {
+            ) : pageRows.map((prescription, index) => {
 
               const id = getPrescriptionValue(prescription, "id", "Id", "prescriptionId", "PrescriptionId");
 
@@ -571,7 +541,7 @@ function PharmacyPendingPrescriptions() {
 
         <section className="pharmacy-prescription-details" aria-label="Prescription details">
 
-          <header className="pharmacy-catalogue-header">
+          <header className="pharmacy-catalogue-header" data-page-header>
 
             <div>
 

@@ -782,7 +782,7 @@ function AdminSettings() {
 
   return (
     <div className="admin-settings-page">
-      <div className="admin-settings-header">
+      <div className="admin-settings-header" data-page-header>
         <div className="admin-settings-header-left">
           <div className="admin-settings-header-badge">
             <Receipt size={15} />

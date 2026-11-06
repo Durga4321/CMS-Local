@@ -909,7 +909,7 @@ function ReceptionPatients({
       </div>
 
       {/* PAGE HEADER */}
-      <div className="rc-dash-header">
+      <div className="rc-dash-header" data-page-header>
         <div>
           <h1 className="rc-dash-title">
             Patients <span className="rc-wave-hand">👥</span>

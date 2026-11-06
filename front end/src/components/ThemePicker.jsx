@@ -1,23 +1,30 @@
 import React, { useEffect, useState } from "react";
 import { Check, Palette, Pipette, X } from "lucide-react";
-import { applyTheme, getSavedTheme, THEME_OPTIONS } from "../theme/theme";
+import { saveTheme, getSavedTheme, THEME_OPTIONS } from "../theme/theme";
 import "./ThemePicker.css";
 
 function ThemePicker() {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(getSavedTheme());
   const [customOpen, setCustomOpen] = useState(false);
+  const [syncError, setSyncError] = useState(false);
   const [customColor, setCustomColor] = useState(getSavedTheme().color);
 
   useEffect(() => {
     const handleThemeChange = (event) => setSelected(event.detail || getSavedTheme());
     window.addEventListener("cms-theme-change", handleThemeChange);
-    return () => window.removeEventListener("cms-theme-change", handleThemeChange);
+    const handleError = () => setSyncError(true);
+    window.addEventListener('cms-theme-sync-error', handleError);
+    return () => {
+      window.removeEventListener("cms-theme-change", handleThemeChange);
+      window.removeEventListener('cms-theme-sync-error', handleError);
+    };
   }, []);
 
   const chooseTheme = (theme) => {
     setCustomOpen(false);
-    setSelected(applyTheme(theme));
+    setSyncError(false);
+    setSelected(saveTheme(theme));
   };
 
   const chooseCustomTheme = () => {
@@ -32,7 +39,8 @@ function ThemePicker() {
       soft: `${color}1a`,
       glow: `${color}45`,
     };
-    setSelected(applyTheme(customTheme));
+    setSyncError(false);
+    setSelected(saveTheme(customTheme));
   };
 
   return (
@@ -59,6 +67,7 @@ function ThemePicker() {
             </button>
           </div>
 
+          {syncError ? <p role="alert">Theme applied here, but could not be shared. Check the server and select it again.</p> : null}
           <div className="theme-picker-grid">
             {THEME_OPTIONS.map((theme) => (
               <button

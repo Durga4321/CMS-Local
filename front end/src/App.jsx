@@ -46,6 +46,7 @@ const AdminRolesPermissions = lazy(() => import("./pages/ADMIN/RolesPermissions/
 const AdminUserManagement = lazy(() => import("./pages/ADMIN/UserManagement/AdminUserManagement"));
 const AdminPharmacists = lazy(() => import("./pages/PHARMACISTS/Pharmacists"));
 const AdminSettings = lazy(() => import("./pages/ADMIN/Settings/AdminSettings"));
+const AdminPaymentSettings = lazy(() => import("./pages/ADMIN/PaymentSettings/AdminPaymentSettings"));
 const AdminSubscription = lazy(() => import("./pages/ADMIN/Subscription/AdminSubscription"));
 const AdminAuditLogs = lazy(() => import("./pages/ADMIN/AuditLogs/AdminAuditLogs"));
 const AdminClinicSetup = lazy(() => import("./pages/ADMIN/ClinicSetup/AdminClinicSetup"));
@@ -157,6 +158,8 @@ function App() {
           <Route path="users" element={<PermissionRoute roleType="admin" module="User Management"><AdminUserManagement /></PermissionRoute>} />
           <Route path="pharmacists" element={<PermissionRoute roleType="admin" module="User Management"><AdminPharmacists /></PermissionRoute>} />
           <Route path="settings" element={<PermissionRoute roleType="admin" module="Settings"><AdminSettings /></PermissionRoute>} />
+          <Route path="payment-settings" element={<PermissionRoute roleType="admin" module="Settings"><AdminPaymentSettings /></PermissionRoute>} />
+          <Route path="payment-settings/:method" element={<PermissionRoute roleType="admin" module="Settings"><AdminPaymentSettings /></PermissionRoute>} />
           <Route path="subscription" element={<AdminSubscription />} />
           <Route path="audit-logs" element={<AdminAuditLogs />} />
 

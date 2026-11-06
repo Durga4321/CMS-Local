@@ -2,7 +2,7 @@ import { DashboardGreeting, useDashboardLayout } from "../components/superadmin/
 ﻿import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, Boxes, ClipboardList, Package, ReceiptText, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
-import { API_ENDPOINTS, collection, pharmacyRequest } from "./pharmacyApi";
+import { API_ENDPOINTS, collection, pharmacyRequest, invalidatePharmacyReads } from "./pharmacyApi";
 import { normalizeMedicine } from "./medicineColumns";
 import "./PharmacyDashboard.css";
 
@@ -29,28 +29,26 @@ function PharmacyDashboard() {
       { path: API_ENDPOINTS.pharmacy.pendingPrescriptions, keys: ["prescriptions"], name: "Pending prescriptions" },
       { path: API_ENDPOINTS.billing.pharmacy, keys: ["bills", "billings"], name: "Pharmacy bills" },
     ];
-    const results = await Promise.allSettled(sources.map(async (source) => {
-      const payload = await pharmacyRequest(source.path);
-      const rows = collection(payload, source.keys);
-      if (!rows) throw new Error("Unexpected response format.");
-      return rows;
+    await Promise.allSettled(sources.map(async (source, index) => {
+      try {
+        const payload = await pharmacyRequest(source.path, { cacheMs: 15000 });
+        const rows = collection(payload, source.keys);
+        if (!rows) throw new Error("Unexpected response format.");
+        if (requestVersion !== version.current) return;
+        const values = index === 0 ? {
+          medicines: rows.length,
+          stock: rows.reduce((sum, row) => {
+            const quantity = Number(normalizeMedicine(row).Quantity ?? 0);
+            return sum + (Number.isFinite(quantity) && quantity > 0 ? quantity : 0);
+          }, 0),
+        } : index === 1 ? { prescriptions: rows.length } : { bills: rows.length };
+        setMetrics((previous) => ({ ...previous, ...values }));
+      } catch (error) {
+        if (requestVersion === version.current) setErrors((previous) => [...previous, source.name + ": " + error.message]);
+      }
     }));
     if (requestVersion !== version.current) return;
-    const next = { ...initialMetrics };
-    const failures = [];
-    results.forEach((result, index) => {
-      if (result.status === "rejected") { failures.push(`${sources[index].name}: ${result.reason.message}`); return; }
-      const rows = result.value;
-      if (index === 0) {
-        next.medicines = rows.length;
-        next.stock = rows.reduce((sum, row) => {
-          const quantity = Number(normalizeMedicine(row).Quantity ?? 0);
-          return sum + (Number.isFinite(quantity) && quantity > 0 ? quantity : 0);
-        }, 0);
-      } else if (index === 1) next.prescriptions = rows.length;
-      else next.bills = rows.length;
-    });
-    setMetrics(next); setErrors(failures); setUpdatedAt(new Date()); setLoading(false);
+    setUpdatedAt(new Date()); setLoading(false);
   }, []);
   useEffect(() => {
     loadCounts();
@@ -59,9 +57,9 @@ function PharmacyDashboard() {
 
   return (
     <section className="pharmacy-dashboard pharmacy-count-dashboard role-single-screen" ref={layout.ref}>
-      <header className="pharmacy-dashboard-heading">
+      <header className="pharmacy-dashboard-heading" data-page-header>
         <DashboardGreeting role="Pharmacist" />
-        <button type="button" className="pharmacy-dashboard-refresh" onClick={loadCounts} disabled={loading}><RefreshCw size={17} />{loading ? "Refreshing..." : "Refresh counts"}</button>
+        <button type="button" className="pharmacy-dashboard-refresh" onClick={() => { invalidatePharmacyReads(); loadCounts(); }} disabled={loading}><RefreshCw size={17} />{loading ? "Refreshing..." : "Refresh counts"}</button>
       </header>
       {errors.length > 0 && <div className="pharmacy-import-message is-error" role="alert">{errors.map((error) => <p key={error}>{error}</p>)}</div>}
       <div className="pharmacy-count-grid" aria-busy={loading}>
@@ -69,7 +67,7 @@ function PharmacyDashboard() {
           <Link className={`pharmacy-count-card pharmacy-count-card--${tone}`} to={to} key={key} aria-label={`Open ${title}`}>
             <div className="pharmacy-count-card-top"><span className="pharmacy-count-icon"><Icon size={23} /></span><span className="pharmacy-count-arrow"><ArrowRight size={19} /></span></div>
             <span className="pharmacy-count-title">{title}</span>
-            <strong className="pharmacy-count-value">{loading ? "..." : metrics[key] === null ? "Unavailable" : metrics[key].toLocaleString("en-IN")}</strong>
+            <strong className="pharmacy-count-value">{metrics[key] === null ? (loading ? "..." : "Unavailable") : metrics[key].toLocaleString("en-IN")}</strong>
             <span className="pharmacy-count-description">{description}</span>
             <span className="pharmacy-count-link">View {title.toLowerCase()} <ArrowRight size={15} /></span>
           </Link>

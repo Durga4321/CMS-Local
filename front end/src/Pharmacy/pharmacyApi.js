@@ -137,7 +137,7 @@ const getErrorMessage = (payload, status) => {
 };
  
 // Main API request helper.
-export async function pharmacyRequest(
+async function requestBackend(
   path,
   {
     method = "GET",
@@ -182,11 +182,16 @@ export async function pharmacyRequest(
       ...(body !== undefined && body !== null
         ? { body: JSON.stringify(body) }
         : {}),
-      ...(signal ? { signal } : {})
+      signal: signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(15000)])
+        : AbortSignal.timeout(15000)
     });
   } catch (error) {
     if (error?.name === "AbortError") {
       throw error;
+    }
+    if (error?.name === "TimeoutError") {
+      throw new PharmacyApiError("The backend took too long to respond. Please retry.", 0);
     }
  
     throw new PharmacyApiError(
@@ -216,6 +221,40 @@ export async function pharmacyRequest(
   }
  
   return payload;
+}
+
+// Only explicitly opted-in list reads are cached, in memory for this session.
+const listReads = new Map();
+let cacheGeneration = 0;
+export function invalidatePharmacyReads() {
+  cacheGeneration += 1;
+  listReads.clear();
+}
+
+export function pharmacyRequest(path, options = {}) {
+  const method = String(options.method || "GET").toUpperCase();
+  if (method !== "GET") {
+    invalidatePharmacyReads();
+    return requestBackend(path, options).finally(invalidatePharmacyReads);
+  }
+  if (!options.cacheMs || options.signal) return requestBackend(path, options);
+  const key = JSON.stringify([getPharmacistToken(), localStorage.getItem("branchId"),
+    localStorage.getItem("hospitalId"), apiUrl(replacePathParams(path, options.params))]);
+  const cached = listReads.get(key);
+  if (cached && (cached.pending || Date.now() < cached.expires)) return cached.promise;
+  const generation = cacheGeneration;
+  const entry = { pending: true, expires: 0 };
+  entry.promise = requestBackend(path, options).then((payload) => {
+    entry.pending = false;
+    entry.expires = Date.now() + options.cacheMs;
+    if (generation !== cacheGeneration && listReads.get(key) === entry) listReads.delete(key);
+    return payload;
+  }, (error) => {
+    if (listReads.get(key) === entry) listReads.delete(key);
+    throw error;
+  });
+  listReads.set(key, entry);
+  return entry.promise;
 }
  
 // OTC sales remain separate from prescription dispensing.

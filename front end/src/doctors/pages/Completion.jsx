@@ -42,8 +42,8 @@ function Completion() {
         </div>
 
         {/* ── Title ── */}
-        <h2 className="comp-title">Consultation Completed Successfully!</h2>
-        <p className="comp-subtitle">{message}</p>
+        <h2 className="comp-title" data-page-title>Consultation Completed Successfully!</h2>
+        <p className="comp-subtitle" data-page-subtitle>{message}</p>
 
         {/* ── Checklist items ── */}
         <div className="comp-list">

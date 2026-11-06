@@ -780,7 +780,7 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
 
   return (
     <div className="patient-dashboard pd-reference-dashboard role-single-screen" ref={layout.ref}>
-      <div className="pd-header">
+      <div className="pd-header" data-page-header>
         <DashboardGreeting role="Patient" />
         <div className="pd-header-actions">
           <button type="button" className="pd-header-btn pd-header-btn--primary" onClick={handleBookAppointment}><Calendar size={16} />Book appointment</button>
@@ -850,7 +850,7 @@ function PatientDashboard({ patient, visits = EMPTY_ARRAY, prescriptions = EMPTY
   /* Previous dashboard markup is intentionally retained below for reference while the UI above is active.
   return (
     <div className="patient-dashboard">
-      <div className="pd-header">
+      <div className="pd-header" data-page-header>
         <div className="pd-header-copy">
           <h1 className="pd-greeting-title">Patient Dashboard</h1>
           <p className="pd-greeting-subtitle">Keep track of appointments, care history, prescriptions, and billing in one place.</p>

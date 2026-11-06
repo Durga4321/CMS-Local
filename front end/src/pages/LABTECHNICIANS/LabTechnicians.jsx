@@ -320,11 +320,13 @@ function LabTechnicians() {
       <div className="lab-equipment-particle lab-part-2" title="Chemical Reagent Flask"><FlaskConical size={26} /></div>
       <div className="lab-equipment-particle lab-part-3" title="Diagnostic Test Tubes"><TestTube2 size={26} /></div>
       <div className="lab-equipment-particle lab-part-4" title="Genetic & Pathology Testing"><Dna size={26} /></div>
-      <div className="receptionists-header">
+      <div className="receptionists-header" data-page-header>
         <div>
           <h2>Lab Technicians</h2>
           <p>{loading ? "Loading lab technicians..." : `${filteredTechnicians.length} lab technicians registered for ${clinicName}`}</p>
         </div>
+        <label className="admin-heading-search receptionists-search"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search lab technicians..." /></label>
+
         <div className="receptionists-header-actions">
           <button type="button" className="receptionists-icon-button" onClick={loadTechnicians} disabled={loading} title="Refresh lab technicians"><RefreshCw size={16} /></button>
           <button type="button" className="receptionists-primary-button" onClick={() => openModal()} disabled={!canCreate}><Plus size={16} /> Add Lab Technician</button>
@@ -332,9 +334,7 @@ function LabTechnicians() {
       </div>
 
       <div className="lab-tech-table-card">
-        <div className="receptionists-toolbar">
-          <label className="receptionists-search"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search lab technicians..." /></label>
-        </div>
+        
         <div className="receptionists-table">
           <div className="receptionists-thead">
             <span>S.No.</span>

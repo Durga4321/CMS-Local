@@ -362,11 +362,22 @@ export default function Pharmacists() {
 
   return (
     <main className="admin-pharmacists-page">
-      <header className="admin-pharmacists-header">
+      <header className="admin-pharmacists-header" data-page-header>
         <div>
           <h1>Pharmacists</h1>
           <p>{loadingPharmacists ? "Loading pharmacists..." : `${filteredPharmacists.length} pharmacists listed`}</p>
         </div>
+        <div className="admin-heading-search admin-pharmacists-search">
+          <Search size={18} />
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search pharmacists..."
+            aria-label="Search pharmacists"
+          />
+        </div>
+
         <div className="admin-pharmacists-header-actions">
           <button type="button" className="admin-pharmacists-refresh" onClick={loadPharmacists} disabled={loadingPharmacists} title="Refresh pharmacists" aria-label="Refresh pharmacists">
             <RefreshCw size={17} />
@@ -387,16 +398,7 @@ export default function Pharmacists() {
       ) : null}
 
       <section className="admin-pharmacists-list-card">
-        <div className="admin-pharmacists-search">
-          <Search size={18} />
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search pharmacists..."
-            aria-label="Search pharmacists"
-          />
-        </div>
+        
         <div className="admin-pharmacists-table-scroll">
           <div className="admin-pharmacists-table">
             <div className="admin-pharmacists-thead">

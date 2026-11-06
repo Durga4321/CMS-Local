@@ -330,11 +330,14 @@ function LabFiles() {
 
   return (
     <div className="receptionists-page lab-files-page">
-      <div className="receptionists-header">
+      <div className="lab-files-controls">
+      <div className="receptionists-header" data-page-header>
         <div>
           <h2>Lab Files</h2>
           <p>{loading ? "Loading lab files..." : `${filteredRows.length} lab file records available for lab module`}</p>
         </div>
+        <label className="admin-heading-search receptionists-search"><Search size={17} /><input aria-label="Search lab files" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search lab file data..." /></label>
+
         <div className="receptionists-header-actions">
           <button type="button" className="receptionists-icon-button" onClick={loadRows} disabled={loading} title="Refresh lab files"><RefreshCw size={16} /></button>
           <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: "none" }} onChange={handleImport} />
@@ -344,8 +347,7 @@ function LabFiles() {
         </div>
       </div>
 
-      <div className="receptionists-toolbar">
-        <label className="receptionists-search"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search lab file data..." /></label>
+      
       </div>
 
       <div className="lab-files-table">

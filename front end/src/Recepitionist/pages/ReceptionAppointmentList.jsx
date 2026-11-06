@@ -415,7 +415,7 @@ function ReceptionAppointmentList({
       <div className="booking-bg-overlay" aria-hidden="true" />
 
       {/* Hero Header with Booking Theme */}
-      <div className="booking-hero">
+      <div className="booking-hero" data-page-header>
         <div>
           <div className={`booking-badge ${bookingType === "Online" ? "booking-badge--online" : "booking-badge--offline"}`}>
             {bookingType === "Online" ? <Globe size={13} /> : <Building2 size={13} />}

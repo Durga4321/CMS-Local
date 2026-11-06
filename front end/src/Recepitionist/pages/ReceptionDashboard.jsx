@@ -323,7 +323,7 @@ function ReceptionDashboard({
       </div>
 
       {/* PAGE HEADER */}
-      <div className="rc-dash-header">
+      <div className="rc-dash-header" data-page-header>
         <DashboardGreeting role="Receptionist" />
         {!hideActions && (
           <div className="rc-dash-head-actions">

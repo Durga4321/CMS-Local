@@ -510,7 +510,7 @@ function RolesPermissions() {
 
   return (
     <div className="sa-roles-permissions-page">
-      <div className="sa-page-header">
+      <div className="sa-page-header" data-page-header>
         <div>
           <h1>Roles & Permissions</h1>
           <p>Create roles and assign View, Create, Edit, and Delete permissions.</p>

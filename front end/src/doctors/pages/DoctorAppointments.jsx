@@ -245,7 +245,7 @@ function DoctorAppointments() {
       )}
 
       {/* Clinical Triage Header Card */}
-      <div className="da-header-card">
+      <div className="da-header-card" data-page-header>
         <div className="da-header-title-group">
           <div className="da-header-badge">
             <Activity size={16} className="da-header-pulse-icon" />
