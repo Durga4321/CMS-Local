@@ -8380,6 +8380,15 @@
 }
 
 /* Hide decorative telemetry banners on the reception pages only. */
+.reception-module .rc-patients-page .patients-heartrate-wave {
+  margin-bottom: 0 !important;
+  gap: 0 !important;
+}
+
+.reception-module .rc-patients-page .patients-heartrate-svg {
+  height: 32px;
+}
+
 .reception-module .rc-patients-page .patients-heartrate-telemetry-badge,
 .reception-module .rc-billing-page .billing-heartrate-telemetry-badge {
   display: none !important;

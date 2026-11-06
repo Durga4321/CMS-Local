@@ -47,6 +47,18 @@ export function normalizeMedicine(record) {
   return normalized;
 }
 
+// The details endpoint may return only master fields; keep this selected
+// catalogue row's batch/stock values when those fields are not returned.
+export function mergeMedicineDetails(catalogueRow, details) {
+  const merged = normalizeMedicine(catalogueRow);
+  for (const [key, value] of Object.entries(normalizeMedicine(details))) {
+    if (value !== undefined && value !== null && !(typeof value === "string" && value.trim() === "")) {
+      merged[key] = value;
+    }
+  }
+  return merged;
+}
+
 export function normalizeHeaderRow(row) {
   const seen = new Set();
   return row.map((header) => {

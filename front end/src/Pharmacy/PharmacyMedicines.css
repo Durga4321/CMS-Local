@@ -40,6 +40,160 @@
 .pharmacy-medicines-page .pharmacy-catalogue-table td { padding: 16px; font-size: 13px; }
 .pharmacy-medicines-page .pharmacy-catalogue-table td[colspan] { height: 110px; text-align: left; color: #64748b; font-weight: 600; }
 .medicine-table-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: #64748b; font-size: 12px; }
+.medicine-row-actions { display: flex; gap: 8px; white-space: nowrap; }
+.pharmacy-medicines-page .pharmacy-pagination {
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 0;
+  margin: 0;
+}
+.pharmacy-medicines-page .pharmacy-pagination > span {
+  margin-right: auto;
+  color: #64748b;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.pharmacy-medicines-page .pharmacy-pagination button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #dbe4ea;
+  border-radius: 7px;
+  background: #ffffff;
+  color: var(--theme-primary-dark);
+  font-size: 12px;
+  font-weight: 500;
+}
+.pharmacy-medicines-page .pharmacy-pagination button[aria-current="page"] {
+  background: var(--theme-primary-dark);
+  border-color: var(--theme-primary-dark);
+  color: #ffffff;
+  font-weight: 700;
+}
+.pharmacy-medicines-page .pharmacy-pagination button:hover:not(:disabled):not([aria-current="page"]) {
+  background: var(--theme-primary-soft);
+  border-color: var(--theme-primary-glow);
+}
+.pharmacy-medicines-page .pharmacy-pagination button:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  opacity: 1;
+}
+.pharmacy-medicines-page .pharmacy-pagination button:focus-visible {
+  outline: 2px solid var(--theme-primary);
+  outline-offset: 2px;
+}
+.pharmacy-medicines-page form.medicine-row-actions {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid #dce8eb;
+  border-radius: 12px;
+  background: #ffffff;
+}
+.pharmacy-medicines-page form.medicine-row-actions > label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--theme-primary-dark);
+  font-size: 13px;
+  font-weight: 600;
+}
+.pharmacy-medicines-page form.medicine-row-actions input {
+  box-sizing: border-box;
+  width: 180px;
+  max-width: 100%;
+  height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+}
+.pharmacy-medicines-page form.medicine-row-actions .medicine-action {
+  min-height: 40px;
+  border: 1px solid var(--theme-primary-dark);
+  background: #ffffff;
+  color: var(--theme-primary-dark);
+  opacity: 1;
+  transform: none;
+}
+.pharmacy-medicines-page form.medicine-row-actions .medicine-action[type="submit"] {
+  background: var(--theme-primary-dark);
+  color: #ffffff;
+}
+.pharmacy-medicines-page form.medicine-row-actions .medicine-action:disabled {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #64748b;
+  box-shadow: none;
+}
+.pharmacy-medicines-page form.medicine-row-actions :is(input, button):focus-visible {
+  outline: 2px solid var(--theme-primary);
+  outline-offset: 2px;
+}
+.medicine-row-actions .medicine-action,
+.medicine-details-panel .medicine-action { background: var(--theme-primary-soft); border-color: var(--theme-primary-glow); color: var(--theme-primary-dark); }
+.pharmacy-medicines-page .medicine-add-form { scroll-margin-top: 110px; }
+.pharmacy-medicines-page .medicine-details-panel {
+  padding: 24px;
+  border: 1px solid #dfe7ef;
+  border-top: 4px solid var(--theme-primary);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 4px 18px #0f172a08;
+}
+.pharmacy-medicines-page .medicine-details-panel > header {
+  align-items: center;
+  margin: 0 0 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.pharmacy-medicines-page .medicine-details-panel > header h3 { margin: 0; }
+.pharmacy-medicines-page .medicine-details-panel .medicine-form-grid {
+  margin: 0;
+  gap: 12px;
+  align-items: stretch;
+}
+.pharmacy-medicines-page .medicine-details-panel .medicine-form-grid > div {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid #e5edef;
+  border-radius: 10px;
+  background: #f8fbfc;
+}
+.pharmacy-medicines-page .medicine-details-panel dt {
+  margin: 0 0 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.pharmacy-medicines-page .medicine-details-panel dd {
+  margin: 0;
+  color: var(--theme-primary-dark);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.pharmacy-medicines-page .medicine-details-panel > footer {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+@media (max-width: 620px) {
+  .pharmacy-medicines-page .medicine-details-panel { padding: 16px; }
+}
 .medicine-add-form { border: 1px solid #dfe7ef; padding: 24px; border-radius: 14px; background: #fff; box-shadow: 0 6px 22px #94a3b815; }
 .medicine-add-form header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; gap: 12px; }
 .medicine-add-form h3 { margin: 0 0 6px; font-size: 19px; color: var(--theme-primary-dark); }
