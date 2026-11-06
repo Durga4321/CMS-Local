@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Menu, Search } from "lucide-react";
+import { ChevronRight, Menu, Search } from "lucide-react";
 import UserProfileMenu from "../profile/UserProfileMenu";
+import NotificationPopup from "../components/NotificationPopup";
 import { isPharmacistSession } from "./pharmacySession";
 import PharmacySidebar from "./PharmacySidebar";
 import "./Pharmacy.css";
@@ -45,13 +46,16 @@ function PharmacyLayout() {
           </button>
           <div className="pharmacy-topbar-title">
             <h1>{title}</h1>
-            <span>Pharmacy workspace</span>
+            <div className="topbar-crumbs">
+              <span>Home</span><ChevronRight size={13} /><span>Pharmacy</span>
+            </div>
           </div>
           <form className="pharmacy-topbar-search" role="search" onSubmit={(event) => { event.preventDefault(); if (results[0]) navigate(results[0][0]); setSearchOpen(false); }} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setSearchOpen(false); }}>
             <Search size={18} aria-hidden="true" />
             <input aria-label="Search pharmacy pages" placeholder="Search medicines, stock, billing..." value={query} onFocus={() => setSearchOpen(true)} onChange={(event) => { setQuery(event.target.value); setSearchOpen(true); }} />
             {searchOpen && <div className="pharmacy-search-results">{results.length ? results.map(([path, label]) => <button type="button" key={path} onClick={() => { navigate(path); setSearchOpen(false); }}>{label}</button>) : <span>No matching pages</span>}</div>}
           </form>
+          <NotificationPopup />
           <UserProfileMenu roleType="pharmacist" />
         </header>
         <main className="pharmacy-content"><Outlet /></main>

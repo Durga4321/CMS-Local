@@ -9,6 +9,9 @@ const PAGE_TITLES = {
   "/doctor/consultation": "Consultation",
   "/doctor/prescription": "Prescription",
   "/doctor/appointments": "Appointments",
+  "/doctor/schedule": "My Schedule",
+  "/doctor/settings": "Settings",
+  "/doctor/profile": "Profile",
 };
 
 function DoctorLayout() {

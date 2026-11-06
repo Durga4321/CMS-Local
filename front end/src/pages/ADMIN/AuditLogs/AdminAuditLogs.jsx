@@ -204,7 +204,6 @@ function AdminAuditLogs() {
       <Header
         title="Audit Logs"
         search={<SearchFilter value={search} onChange={setSearch} placeholder="Search user, action, IP, timestamp..." filters={actionFilters} selectedFilter={systemAction} onFilterChange={setSystemAction} />}
-        subtitle="Clinic audit records, login activity, IP address, and timestamps. Super Admin activity is excluded."
         action={<button type="button" className="sa-btn" onClick={loadLogs} disabled={loading}><RefreshCw size={16} />Refresh</button>}
       />
 
