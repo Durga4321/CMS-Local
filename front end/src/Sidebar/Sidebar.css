@@ -376,3 +376,30 @@
   }
 }
 
+
+/* Compact admin navigation while retaining the collapsed sidebar sizing. */
+.sidebar.sidebar--admin:not(.collapsed) .nav {
+  gap: 2px;
+  padding: 2px 0;
+  justify-content: flex-start;
+}
+.sidebar.sidebar--admin:not(.collapsed) .nav-item {
+  min-height: 40px;
+  padding: 4px 8px;
+  gap: 10px;
+  margin: 0;
+  flex: 0 0 auto;
+  border-radius: 10px;
+}
+.sidebar.sidebar--admin:not(.collapsed) .nav-icon-box {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+}
+.sidebar.sidebar--admin:not(.collapsed) .nav-label {
+  line-height: 1.3;
+}
+.sidebar.sidebar--admin:not(.collapsed) .sidebar-header {
+  padding-bottom: 12px;
+  margin-bottom: 6px;
+}

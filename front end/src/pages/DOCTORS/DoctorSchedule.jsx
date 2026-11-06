@@ -424,7 +424,7 @@ function DoctorSchedule({ selfMode = false }) {
       </div>
 
       {/* ── Roster Console Header ── */}
-      <header className="ds-head">
+      <header className="ds-head" data-page-header>
         <div className="ds-head-content">
           <div className="ds-head-badge">
             <CalendarClock size={16} className="ds-head-icon" />

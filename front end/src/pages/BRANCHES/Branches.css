@@ -47,9 +47,9 @@
 
 .branches-header h2 {
   margin: 0 0 4px 0;
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 800;
-  line-height: 1.15;
+  line-height: 1.2;
   letter-spacing: -0.02em;
   color: var(--theme-primary-dark);
   text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8);
@@ -58,8 +58,8 @@
 .branches-header p {
   margin: 0;
   color: #475569;
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.35;
   font-weight: 500;
 }
 
@@ -983,4 +983,47 @@
   .branches-save-button {
     width: 100%;
   }
+}
+
+
+/* Compact page heading; the JSX marker excludes modals and navigation. */
+@media screen {
+html body :is(.content, .dr-layout-content, .rc-content, .lab-main, .nurse-content, .pharmacy-content, .pp-content) .branches-header[data-page-header] {
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 0 6px !important;
+  padding: 0 !important;
+  gap: 6px 10px !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+}
+html body :is(.content, .dr-layout-content, .rc-content, .lab-main, .nurse-content, .pharmacy-content, .pp-content) .branches-header[data-page-header] > * { min-width: 0; max-width: 100%; }
+html body :is(.content, .dr-layout-content, .rc-content, .lab-main, .nurse-content, .pharmacy-content, .pp-content) .branches-header[data-page-header] :is(h1, h2) { font-size: 22px !important; line-height: 1.2 !important; margin: 0 !important; letter-spacing: 0 !important; white-space: normal !important; overflow-wrap: anywhere; }
+html body :is(.content, .dr-layout-content, .rc-content, .lab-main, .nurse-content, .pharmacy-content, .pp-content) .branches-header[data-page-header] p { font-size: 12px !important; line-height: 1.35 !important; margin: 3px 0 0 !important; white-space: normal !important; overflow-wrap: anywhere; }
+html body :is(.content, .dr-layout-content, .rc-content, .lab-main, .nurse-content, .pharmacy-content, .pp-content) .branches-header[data-page-header] [class*="actions"] { min-width: 0; max-width: 100%; height: auto !important; flex-wrap: wrap !important; gap: 6px !important; }
+html body :is(.content, .dr-layout-content, .rc-content, .lab-main, .nurse-content, .pharmacy-content, .pp-content) .branches-header[data-page-header] button { max-width: 100%; min-height: 34px !important; height: auto !important; padding: 7px 10px !important; font-size: 12px !important; line-height: 1.3; white-space: normal; }
+}
+
+@media screen {
+  html body .content .branches-page { padding: 0 !important; min-width: 0; height: auto; }
+}
+
+
+/* Search shares the heading row and wraps on small screens. */
+@media screen {
+  html body .content .branches-clinic-band:has(> .admin-heading-search) { display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px 12px !important; height: auto !important; flex-shrink: 0 !important; }
+  html body .content .branches-clinic-band:has(> .admin-heading-search) > :first-child { flex-shrink: 0; }
+  html body .content .branches-clinic-band:has(> .admin-heading-search) > .admin-heading-search { position: relative !important; inset: auto !important; transform: none !important; flex: 1 1 260px !important; width: auto !important; min-width: 180px !important; max-width: 520px !important; margin: 0 !important; padding: 0 10px !important; height: 34px !important; min-height: 34px !important; box-sizing: border-box; }
+  html body .content .branches-clinic-band:has(> .admin-heading-search) > .admin-heading-search input { min-width: 0 !important; width: 100%; font-size: 12px !important; }
+  html body .content .branches-clinic-band:has(> .admin-heading-search) > .admin-heading-search > svg { flex-shrink: 0; }
+  html body .content .branches-clinic-band:has(> .admin-heading-search) > [class*="header-actions"] { margin-left: auto; flex-shrink: 0; }
+}
+@media screen and (max-width: 640px) {
+  html body .content .branches-clinic-band:has(> .admin-heading-search) > .admin-heading-search { flex-basis: 100% !important; min-width: 0 !important; max-width: none !important; order: 3; }
+}
+
+@media screen { html body .content .branches-clinic-band:has(> .admin-heading-search) { padding: 8px 12px !important; margin-bottom: 10px !important; } html body .content .branches-clinic-band:has(> .admin-heading-search) > .admin-heading-search { margin-left: auto !important; background: #fff; border: 1px solid #d5e0e2; border-radius: 8px; } }
+
+@media screen {
+  html body .content .branches-clinic-band > b { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 }

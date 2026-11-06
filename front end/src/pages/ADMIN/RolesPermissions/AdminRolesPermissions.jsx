@@ -947,11 +947,20 @@ function AdminRolesPermissions() {
         <UserCheck size={26} />
       </div>
 
-      <div className="sa-page-header">
+      <div className="sa-page-header" data-page-header>
         <div>
           <h1>Roles & Permissions</h1>
           <p>Create roles for doctors, receptionists, nurses, lab technicians, and pharmacists, then assign View, Create, Edit, and Delete permissions.</p>
         </div>
+        <label className="admin-heading-search admin-roles-search">
+            <Search size={18} />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search staff, role, or module..."
+            />
+          </label>
+
         <div className="sa-page-actions">
           <button className="sa-btn" type="button" onClick={loadData} disabled={loading}>
             <RefreshCw size={16} /> Refresh
@@ -1084,14 +1093,7 @@ function AdminRolesPermissions() {
 
       <div className="admin-roles-table-card">
         <div className="admin-roles-toolbar">
-          <label className="admin-roles-search">
-            <Search size={18} />
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search staff, role, or module..."
-            />
-          </label>
+          
           <select
             className="admin-roles-select"
             value={roleFilter}

@@ -449,11 +449,20 @@ function Nurses() {
 
   return (
     <div className="nurses-page">
-      <div className="nurses-header">
+      <div className="nurses-header" data-page-header>
         <div>
           <h2>Nurses</h2>
           <p>{loading ? "Loading nurses..." : `${filteredNurses.length} nurses registered for ${clinicName}`}</p>
         </div>
+        <label className="admin-heading-search nurses-search">
+            <Search size={18} />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search nurses..."
+            />
+          </label>
+
         <div className="nurses-header-actions">
           <button type="button" className="nurses-icon-button" onClick={loadNurses} disabled={loading} title="Refresh nurses">
             <RefreshCw size={16} />
@@ -467,16 +476,7 @@ function Nurses() {
       {message ? <div className="nurses-success">{message}</div> : null}
 
       <div className="nurses-table-card">
-        <div className="nurses-toolbar">
-          <label className="nurses-search">
-            <Search size={18} />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search nurses..."
-            />
-          </label>
-        </div>
+        
 
         <div className="nurses-table">
           <div className="nurses-thead">

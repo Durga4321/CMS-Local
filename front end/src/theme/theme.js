@@ -60,6 +60,52 @@ export const getSavedTheme = () => {
 
 export const applySavedTheme = () => applyTheme(getSavedTheme());
 
+const themeFetch = typeof window !== 'undefined' ? window.fetch.bind(window) : null;
+let pendingSaves = 0;
+let editVersion = 0;
+let saveQueue = Promise.resolve();
+
+// Only explicit selections publish; applying a received palette never writes back.
+export const saveTheme = (theme) => {
+  const option = applyTheme(theme);
+  pendingSaves += 1;
+  editVersion += 1;
+  saveQueue = saveQueue.catch(() => {}).then(async () => {
+    try {
+      const response = await themeFetch('/__cms/theme', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(option), signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) throw new Error('Unable to share theme');
+    } catch {
+      window.dispatchEvent(new CustomEvent('cms-theme-sync-error'));
+    } finally { pendingSaves -= 1; }
+  });
+  return option;
+};
+
+export const startThemeSync = () => {
+  let stopped = false;
+  let timer;
+  const refresh = async () => {
+    const version = editVersion;
+    try {
+      if (pendingSaves) return;
+      const response = await themeFetch('/__cms/theme', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+      if (!response.ok) return;
+      const theme = await response.json();
+      if (!stopped && !pendingSaves && version === editVersion && theme &&
+        [theme.color, theme.dark, theme.soft, theme.glow].every(value => /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(value || ''))) {
+        const saved = getSavedTheme();
+        if (['id', 'color', 'dark', 'soft', 'glow'].some(key => saved[key] !== theme[key])) applyTheme(theme);
+      }
+    } catch { /* Keep the cached palette when the shared server is unavailable. */ }
+    finally { if (!stopped) timer = window.setTimeout(refresh, 1500); }
+  };
+  refresh();
+  return () => { stopped = true; window.clearTimeout(timer); };
+};
+
 // Changes made in another open application tab use the same saved palette.
 if (typeof window !== "undefined") {
   window.addEventListener("storage", (event) => {

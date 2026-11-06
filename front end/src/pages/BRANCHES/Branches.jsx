@@ -645,7 +645,7 @@ function Branches() {
         </svg>
       </div>
 
-      <div className="branches-header">
+      <div className="branches-header" data-page-header>
         <div>
           <h2>Branches</h2>
           <p>
@@ -687,10 +687,8 @@ function Branches() {
         </span>
         <span>Clinic Name</span>
         <b>{clinicName}</b>
-      </div>
-
-      <div className="branches-toolbar">
-        <div className="branches-search">
+      
+        <div className="admin-heading-search branches-search">
           <Search size={16} />
           <input
             value={searchText}
@@ -698,7 +696,9 @@ function Branches() {
             placeholder="Search branch, city, email, phone..."
           />
         </div>
-      </div>
+</div>
+
+      
 
       {success ? <div className="branches-success">{success}</div> : null}
       {error ? <div className="branches-error">{error}</div> : null}

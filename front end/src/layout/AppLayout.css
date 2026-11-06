@@ -114,3 +114,7 @@
     margin-left: 84px;
   }
 }
+
+@media screen and (max-width: 900px) {
+  html body .content:has(.role-single-screen) { overflow-y: auto !important; }
+}

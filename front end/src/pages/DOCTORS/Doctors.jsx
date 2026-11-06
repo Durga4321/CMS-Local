@@ -1414,7 +1414,7 @@ function Doctors() {
 
   return (
     <div className="doctors-page">
-      <div className="doctors-page-header">
+      <div className="doctors-page-header" data-page-header>
         <div>
           <h2>Doctors</h2>
           <p>
@@ -1423,26 +1423,18 @@ function Doctors() {
               : `Total Doctors: ${filteredDoctors.length}`}
           </p>
         </div>
-      </div>
-
-      {/* <div className="doctors-clinic-card">
-        <div>
-          <span>Clinic</span>
-          <strong>{clinicName}</strong>
-        </div>
-        <p>{doctors.length} Doctors Registered</p>
-      </div> */}
-
-      <div className="doctor-directory-controls">
-      <div className="doctors-toolbar">
-        <div className="doctors-search-bar">
+        <div className="admin-heading-search doctors-search-bar">
           <Search size={16} />
           <input
+            aria-label="Search doctors"
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
             placeholder="Search by name, specialty, email..."
           />
         </div>
+
+      <div className="doctors-toolbar">
+        
 
         <select
           value={statusFilter}
@@ -1468,6 +1460,18 @@ function Doctors() {
         </details>
         <button type="button" className="doctors-btn doctors-btn-primary doctor-add-button" onClick={openAddDoctor} disabled={!canCreate}><Plus size={15} /> Add New Doctor</button>
       </div>
+      </div>
+
+      {/* <div className="doctors-clinic-card">
+        <div>
+          <span>Clinic</span>
+          <strong>{clinicName}</strong>
+        </div>
+        <p>{doctors.length} Doctors Registered</p>
+      </div> */}
+
+      <div className="doctor-directory-controls">
+      
 
       <div className="doctor-specialty-tabs" aria-label="Doctor specialties">
         {["", ...specializationOptions].map((specialty) => (

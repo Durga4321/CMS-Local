@@ -649,7 +649,7 @@ function Dashboard() {
   ].map(card => ({ ...card, value: loading ? "..." : card.label === "Revenue" ? revenueDisplay : moduleCounts[card.label] == null ? "Unavailable" : formatNumber(moduleCounts[card.label]), tone: "teal", onClick: () => navigate(card.path) }));
   return (
     <div className="db-dashboard db-admin-overview" ref={pageRef}>
-      <header className="admin-overview-heading"><span className="admin-greeting-icon"><GreetingIcon size={27}/></span><div><h1>{greeting}, {adminName}!</h1><p>Here's what's happening at your clinic today.</p></div><button type="button" className="admin-refresh" onClick={fetchDashboard} disabled={loading}><RefreshCw size={16}/><span>Refresh</span></button></header>
+      <header className="admin-overview-heading" data-page-header><span className="admin-greeting-icon"><GreetingIcon size={27}/></span><div><h1>{greeting}, {adminName}!</h1><p>Here's what's happening at your clinic today.</p></div><button type="button" className="admin-refresh" onClick={fetchDashboard} disabled={loading}><RefreshCw size={16}/><span>Refresh</span></button></header>
       <div className="admin-metrics-section"><DashboardCards cards={cards}/>{dashboardError && <p className="admin-count-error" role="status">{dashboardError}</p>}</div>
       <div className="admin-overview-columns">
         <section className="admin-detail-section"><div className="admin-section-heading"><h2>Clinic Information</h2><Building2 size={19}/></div>

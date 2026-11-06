@@ -179,19 +179,14 @@ function Patients() {
         <ShieldCheck size={26} />
       </div>
 
-      <div className="patients-header">
+      <div className="patients-header" data-page-header>
         <div>
           <h2 className="patients-title">Patients</h2>
           <p className="patients-subtitle">
             {loading ? "Loading..." : `${filteredPatients.length} patients in records`}
           </p>
         </div>
-      </div>
-
-      {error ? <div className="patients-empty">{error}</div> : null}
-
-      <div className="patients-table">
-        <div className="patients-search-wrap">
+        <div className="admin-heading-search patients-search-wrap">
           <div className="patients-search-bar">
             <Search size={20} />
             <input
@@ -214,6 +209,13 @@ function Patients() {
             ))}
           </select>
         </div>
+
+      </div>
+
+      {error ? <div className="patients-empty">{error}</div> : null}
+
+      <div className="patients-table">
+        
 
         <div className="patients-table-scroll" tabIndex="0">
           <div className="patients-thead">

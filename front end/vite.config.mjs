@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
+import sharedTheme from "./scripts/shared-theme.cjs";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -7,7 +8,11 @@ export default defineConfig(({ mode }) => {
     env.REACT_APP_API_PROXY_TARGET || env.REACT_APP_API_BASE_URL || "https://countable-ligament-shorty.ngrok-free.dev";
 
   return {
-    plugins: [react()],
+    plugins: [react(), {
+      name: "cms-shared-theme",
+      configureServer(server) { server.middlewares.use(sharedTheme(process.cwd())); },
+      configurePreviewServer(server) { server.middlewares.use(sharedTheme(process.cwd())); },
+    }],
     define: {
       "process.env": {
         NODE_ENV: mode === "production" ? "production" : "development",

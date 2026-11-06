@@ -109,7 +109,7 @@ function DoctorSettings() {
 
   return (
     <section className="doctor-settings-page">
-      <div className="doctor-settings-header">
+      <div className="doctor-settings-header" data-page-header>
         <div>
           <h2>Settings</h2>
           <p>Manage consultation preferences, schedule defaults, and doctor alerts.</p>

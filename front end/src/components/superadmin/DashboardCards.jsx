@@ -67,5 +67,5 @@ export function DashboardGreeting({ role, name }) {
   const Icon = hour < 12 ? Sunrise : hour < 17 ? Sun : Moon;
   const key = ({ Doctor: "doctor", Nurse: "nurse", Receptionist: "receptionist", Patient: "patient", Pharmacist: "pharmacist", "Lab Technician": "lab" })[role];
   const displayName = name || (key && (sessionStorage.getItem(key + "Name") || localStorage.getItem(key + "Name"))) || role;
-  return <div className="role-dashboard-greeting"><span className="role-greeting-icon" aria-hidden="true"><Icon size={25}/></span><div><h1>{greeting}, {displayName}!</h1><p>Here's your overview for today.</p></div></div>;
+  return <div className="role-dashboard-greeting" data-page-header><span className="role-greeting-icon" aria-hidden="true"><Icon size={25}/></span><div><h1>{greeting}, {displayName}!</h1><p>Here's your overview for today.</p></div></div>;
 }

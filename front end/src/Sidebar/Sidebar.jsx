@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Activity,
   ReceiptIndianRupee,
+  CreditCard,
   Pill,
 } from "lucide-react";
 
@@ -45,6 +46,7 @@ const items = [
   { to: "/users", label: "User Management", icon: Users, tone: "teal" },
   { to: "/pharmacists", label: "Pharmacists", icon: Pill, tone: "cyan", alwaysVisible: true },
   { to: "/settings", label: "Settings", icon: Settings2, tone: "blue" },
+  { to: "/payment-settings", label: "Payment Settings", module: "Settings", icon: CreditCard, tone: "teal" },
   { to: "/subscription", label: "Subscription", icon: ReceiptIndianRupee, tone: "green", alwaysVisible: true },
   { to: "/audit-logs", label: "Audit Logs", icon: ListChecks, tone: "emerald", alwaysVisible: true },
   { to: "/reports", label: "Reports", icon: FileBarChart2, tone: "violet" },
@@ -150,7 +152,7 @@ function Sidebar({ collapsed = false }) {
 
   return (
     <>
-      <div className={`sidebar ${collapsed ? "collapsed" : ""}`}>
+      <div className={`sidebar ${!isSuperAdmin && !isPatient ? "sidebar--admin" : ""} ${collapsed ? "collapsed" : ""}`}>
 
       {/* BRAND LOGO HEADER (NO CROSS SYMBOL) */}
       <div className="sidebar-header" title={brandName}>

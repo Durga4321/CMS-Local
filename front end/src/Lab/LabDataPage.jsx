@@ -810,7 +810,7 @@ function LabDataPage({ type }) {
   return (
     <section className={`rc-page lab-page lab-screen-${type}`}>
       <LabToast toast={toast} onClose={() => setToast(null)} />
-      <div className="rc-page-head lab-page-head">
+      <div className="rc-page-head lab-page-head" data-page-header>
         <div>
           <div className="lab-head-tag-row">
             {type === "tests" ? (

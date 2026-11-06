@@ -56,7 +56,7 @@ function Reports() {
 
   return (
     <div className="reports-page">
-      <div className="reports-header-wrap">
+      <div className="reports-header-wrap" data-page-header>
         <div className="rep-main-badge">
           <Activity size={13} className="rep-main-badge-pulse" />
           <span>CLINICAL INTELLIGENCE & AUDIT HUB</span>

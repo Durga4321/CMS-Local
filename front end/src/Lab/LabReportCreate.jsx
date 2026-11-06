@@ -892,7 +892,7 @@ function LabReportCreate() {
       <LabToast toast={toast} onClose={() => setToast(null)} />
 
       {/* Screen Header Banner */}
-      <div className="rc-page-head lab-page-head">
+      <div className="rc-page-head lab-page-head" data-page-header>
         <div>
           <div className="lab-head-tag-row">
             <span

@@ -4,6 +4,7 @@ const API_PROXY_TARGET =
   process.env.REACT_APP_API_PROXY_TARGET || process.env.REACT_APP_API_BASE_URL || 'https://countable-ligament-shorty.ngrok-free.dev';
 
 module.exports = function(app) {
+  app.use(require('../scripts/shared-theme.cjs')(process.cwd()));
   app.use(
     createProxyMiddleware({
       target: API_PROXY_TARGET,

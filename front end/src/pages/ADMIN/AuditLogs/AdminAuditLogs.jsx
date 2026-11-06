@@ -203,6 +203,7 @@ function AdminAuditLogs() {
     <div className="sa-audit-logs-page">
       <Header
         title="Audit Logs"
+        search={<SearchFilter value={search} onChange={setSearch} placeholder="Search user, action, IP, timestamp..." filters={actionFilters} selectedFilter={systemAction} onFilterChange={setSystemAction} />}
         subtitle="Clinic audit records, login activity, IP address, and timestamps. Super Admin activity is excluded."
         action={<button type="button" className="sa-btn" onClick={loadLogs} disabled={loading}><RefreshCw size={16} />Refresh</button>}
       />
@@ -224,7 +225,6 @@ function AdminAuditLogs() {
         ))}
       </div>
 
-      <SearchFilter value={search} onChange={setSearch} placeholder="Search by user name, action, IP address, or timestamp..." filters={actionFilters} selectedFilter={systemAction} onFilterChange={setSystemAction} />
 
       <div className="sa-audit-scope-filter">
         <label><span>Start Date</span><DatePickerField value={startDate} onChange={setStartDate} /></label>

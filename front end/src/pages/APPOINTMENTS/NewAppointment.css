@@ -30,7 +30,7 @@
 .new-appointment-title {
   margin: 14px 0 0;
   color: var(--theme-primary-dark);
-  font-size: 32px;
+  font-size: 22px;
 }
 
 .new-appointment-subtitle {
@@ -128,4 +128,10 @@
   border-color: var(--theme-primary-dark);
   transform: translateY(-1.5px);
   box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-primary) 40%, transparent);
+}
+
+/* Compact page title without a separate header container. */
+@media screen {
+  html body .new-appointment-title[data-page-title] { font-size: 22px !important; line-height: 1.2 !important; margin: 0 0 6px !important; white-space: normal; overflow-wrap: anywhere; }
+  html body .new-appointment-subtitle[data-page-subtitle] { font-size: 12px !important; line-height: 1.35 !important; margin: 0 0 8px !important; overflow-wrap: anywhere; }
 }

@@ -730,7 +730,7 @@ function Receptionists() {
       <div className="receptionists-reception-particle particle-rec-4" title="Appointment Timings">
         <Clock size={24} />
       </div>
-      <div className="receptionists-header">
+      <div className="receptionists-header" data-page-header>
         <div>
           <h2>Receptionists</h2>
           <p>
@@ -739,6 +739,15 @@ function Receptionists() {
               : `${filteredReceptionists.length} receptionist records`}
           </p>
         </div>
+        <div className="admin-heading-search receptionists-search">
+          <Search size={16} />
+          <input
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+            placeholder="Search name, email, phone..."
+          />
+        </div>
+
 
         <div className="receptionists-header-actions">
           <button
@@ -764,16 +773,7 @@ function Receptionists() {
         </div>
       </div>
 
-      <div className="receptionists-toolbar">
-        <div className="receptionists-search">
-          <Search size={16} />
-          <input
-            value={searchText}
-            onChange={(event) => setSearchText(event.target.value)}
-            placeholder="Search name, email, phone..."
-          />
-        </div>
-      </div>
+      
 
       {success ? (
         <div className="receptionists-success" role="status">

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Download, FileSpreadsheet, Plus, RefreshCw, Search, Upload, X } from "lucide-react";
 import { API_ENDPOINTS, apiUrl } from "../config/api";
 import { useToast } from "../components/ToastProvider";
+import { pharmacyRequest, invalidatePharmacyReads } from "./pharmacyApi";
 import { getPharmacistToken } from "./pharmacySession";
 
 import "./PharmacyMedicines.css";
@@ -70,28 +71,7 @@ function PharmacyMedicineImport({ stockOnly = false }) {
     setIsLoadingMedicines(true);
     setMedicinesError("");
     try {
-      const response = await fetch(apiUrl(API_ENDPOINTS.pharmacy.medicines), {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "ngrok-skip-browser-warning": "true",
-        },
-        cache: "no-store",
-      });
-      const text = await response.text();
-      let payload = null;
-      if (text) {
-        try {
-          payload = JSON.parse(text);
-        } catch {
-          payload = text;
-        }
-      }
-
-      if (!response.ok) {
-        throw new Error(getResponseMessage(payload, `Unable to load medicines (HTTP ${response.status}).`));
-      }
-
+      const payload = await pharmacyRequest(API_ENDPOINTS.pharmacy.medicines, { cacheMs: 15000 });
       const items = parseMedicineList(payload);
       if (!items) {
         throw new Error("The medicine catalogue response was not in the expected list format.");
@@ -116,6 +96,13 @@ function PharmacyMedicineImport({ stockOnly = false }) {
       Object.values(medicine).some((value) => value != null && String(value).toLowerCase().includes(term))
     );
   }, [medicines, search]);
+
+  const [pageSelection, setPageSelection] = useState({ key: '', page: 0 });
+  const pageFilter = search;
+  const pageCount = Math.max(1, Math.ceil(filteredMedicines.length / 10));
+  const currentPage = pageSelection.key === pageFilter ? Math.min(pageSelection.page, pageCount - 1) : 0;
+  const pageRows = filteredMedicines.slice(currentPage * 10, (currentPage + 1) * 10);
+  const changePage = (page) => setPageSelection({ key: pageFilter, page });
 
   const displayColumns = useMemo(() => {
     const known = new Set(medicineColumns.map(([key]) => key));
@@ -148,6 +135,7 @@ function PharmacyMedicineImport({ stockOnly = false }) {
     if (!response.ok) throw new Error(getResponseMessage(payload, `Medicine import failed (HTTP ${response.status}).`));
     setResultMessage(getResponseMessage(payload, successMessage));
     toast.success(successMessage);
+    invalidatePharmacyReads();
     await loadMedicines();
   };
 
@@ -211,10 +199,10 @@ function PharmacyMedicineImport({ stockOnly = false }) {
 
   return (
     <section className="pharmacy-import-page pharmacy-medicines-page">
-      <header className="medicine-page-heading">
+      <header className="medicine-page-heading" data-page-header>
         <div><h2>{stockOnly ? "Medicine Stock" : "Medicines"}</h2><p>{isLoadingMedicines ? "Loading medicine records..." : `${medicines.length} medicine records available in the catalogue`}</p></div>
         <div className="medicine-toolbar">
-          <button type="button" className="medicine-action medicine-action-refresh" onClick={loadMedicines} disabled={isLoadingMedicines || isUploading} aria-label="Refresh medicines" title="Refresh medicines"><RefreshCw size={19} /></button>
+          <button type="button" className="medicine-action medicine-action-refresh" onClick={() => { invalidatePharmacyReads(); loadMedicines(); }} disabled={isLoadingMedicines || isUploading} aria-label="Refresh medicines" title="Refresh medicines"><RefreshCw size={19} /></button>
           {!stockOnly && <><input ref={fileInput} className="medicine-file-input" type="file" accept=".xlsx,.xls" onChange={handleFileChange} disabled={isUploading} aria-label="Choose medicine workbook" /><button type="button" className="medicine-action medicine-action-import" onClick={() => fileInput.current?.click()} disabled={isUploading}><Upload size={18} />Import File</button></>}
           <button type="button" className="medicine-action medicine-action-export" disabled={isExporting || isLoadingMedicines || !filteredMedicines.length} onClick={exportMedicines}><Download size={18} />{isExporting ? "Exporting..." : "Export File"}</button>
         </div>
@@ -268,7 +256,7 @@ function PharmacyMedicineImport({ stockOnly = false }) {
                 <tr><td colSpan={tableColumns.length}>Unable to display the catalogue. See the error above.</td></tr>
               ) : filteredMedicines.length === 0 ? (
                 <tr><td colSpan={tableColumns.length}>{search ? "No medicines match your search." : "No medicines found in the catalogue."}</td></tr>
-              ) : filteredMedicines.map((medicine, index) => (
+              ) : pageRows.map((medicine, index) => (
                 <tr key={index}>
                   {tableColumns.map(([key]) => (
                     <td key={key}>{getMedicineValue(medicine, key)}</td>
@@ -279,6 +267,12 @@ function PharmacyMedicineImport({ stockOnly = false }) {
           </table>
         </div>
       </section>
+      <nav className="pharmacy-pagination" aria-label="Table pages">
+ <span>{filteredMedicines.length ? currentPage * 10 + 1 : 0}?{Math.min((currentPage + 1) * 10, filteredMedicines.length)} of {filteredMedicines.length}</span>
+ <button type="button" disabled={currentPage === 0} onClick={() => changePage(currentPage - 1)}>Previous</button>
+ {Array.from({ length: Math.min(10, pageCount) }, (_, index) => Math.min(Math.max(0, currentPage - 4), Math.max(0, pageCount - 10)) + index).map(page => <button type="button" key={page} aria-current={page === currentPage ? 'page' : undefined} onClick={() => changePage(page)}>{page + 1}</button>)}
+ <button type="button" disabled={currentPage + 1 >= pageCount} onClick={() => changePage(currentPage + 1)}>Next</button>
+ </nav>
       <div className="medicine-table-footer"><span>{filteredMedicines.length} of {medicines.length} medicines</span>{!stockOnly && <button type="button" className="medicine-action medicine-action-add" disabled={isUploading} onClick={() => setShowAdd((value) => !value)} aria-expanded={showAdd} aria-controls="medicine-add-form"><Plus size={18} />Add Medicine</button>}</div>
       {!stockOnly && showAdd && <form id="medicine-add-form" className="medicine-add-form" onSubmit={addMedicine}>
         <header><div><h3>Add Medicine</h3><p>Enter medicine and stock details. Fields marked * are required.</p></div><button type="button" className="medicine-dismiss" disabled={isUploading} aria-label="Close add medicine" onClick={() => setShowAdd(false)}><X size={20} /></button></header>

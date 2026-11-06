@@ -727,3 +727,11 @@
 
 .pharmacy-billing-input { display: block; width: 100%; margin: 8px 0 18px; padding: 12px; border: 1px solid #dbe4ef; border-radius: 8px; background: white; color: #17243b; }
 .pharmacy-prescription-actions { flex-wrap: wrap; gap: 12px; }
+
+@media screen and (max-width: 900px) {
+  html body .pharmacy-main:has(.role-single-screen) { overflow-y: auto !important; }
+}
+
+.pharmacy-pagination { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; padding: 12px 0; }
+.pharmacy-pagination button { padding: 7px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; color: #14532d; cursor: pointer; }
+.pharmacy-pagination button:disabled { opacity: .45; cursor: default; }

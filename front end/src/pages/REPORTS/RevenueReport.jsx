@@ -528,7 +528,7 @@ function RevenueReport() {
       </div>
 
       {/* HEADER WITH SURGICAL INSTRUMENTS */}
-      <div className="report-header">
+      <div className="report-header" data-page-header>
         <div className="rep-header-title-group">
           {/* ALL REPORTS NAVIGATION BUTTON */}
           <button

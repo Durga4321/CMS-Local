@@ -3681,7 +3681,7 @@ function ReceptionBilling() {
         </div>
       )}
 
-      <div className="rc-page-head rc-billing-header-compact">
+      <div className="rc-page-head rc-billing-header-compact" data-page-header>
         <div>
           <h2>Medical Billing & Cashier Ledger</h2>
           <p>Instrument-calibrated OP invoices, diagnostic telemetry billing, and clinical pharmacy dispensary records.</p>

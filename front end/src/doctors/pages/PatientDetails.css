@@ -64,7 +64,7 @@
   flex: 1;
   text-align: center;
   margin: 0;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--theme-primary-dark);
 }
@@ -501,4 +501,9 @@
   .pd-bottom-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Compact page title without a separate header container. */
+@media screen {
+  html body .pd-page-title[data-page-title] { font-size: 22px !important; line-height: 1.2 !important; margin: 0 0 6px !important; white-space: normal; overflow-wrap: anywhere; }
 }
