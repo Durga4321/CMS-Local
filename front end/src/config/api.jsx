@@ -177,6 +177,8 @@ export const API_ENDPOINTS = {
   pharmacy: {
     medicinesImport: "pharmacy/medicines/import",
     medicines: "pharmacy/medicines",
+    medicineById: "pharmacy/medicines/{id}",
+    medicineActivate: "pharmacy/medicines/{id}/activate",
     pendingPrescriptions: "pharmacy/prescriptions/pending",
     prescriptionById: "pharmacy/prescriptions/{id}",
     dispensePrescription: "pharmacy/prescriptions/{id}/dispense",
