@@ -341,27 +341,28 @@ const AdminLogin = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(body),
+          signal: AbortSignal.timeout(15000),
         });
 
         data = await readJson(response);
 
-        if (response.ok) {
+        if (response.ok || response.status >= 500) {
           break;
         }
       }
 
       if (!response.ok) {
-        setErrors({
-          api:
-            data.message ||
-            data.error ||
-            'Invalid email or password. Please use the password set for this admin account.',
-        });
-        toast.error(
-          data.message ||
-            data.error ||
-            'Invalid email or password. Please use the password set for this admin account.'
-        );
+        const message = [502, 503, 504].includes(response.status)
+          ? 'Unable to reach server. Please try again.'
+          : response.status >= 500
+            ? 'Something went wrong on the server. Please try again.'
+            : data.message || data.error || (
+              response.status === 401
+                ? 'Invalid email or password. Please use the password set for this admin account.'
+                : 'Unable to sign in. Please try again.'
+            );
+        setErrors({ api: message });
+        toast.error(message);
         return;
       }
 
