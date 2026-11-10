@@ -833,7 +833,7 @@ function Consultation() {
             .section-block { min-height: 82px; white-space: pre-wrap; font-size: 14px; line-height: 1.45; }
             .footer { display: flex; justify-content: space-between; gap: 28px; padding-top: 18px; }
             .signature { text-align: right; min-width: 220px; padding-top: 10px; }
-            @media print { .sheet { padding: 0; } }
+            @media print { .sheet { padding: 0; min-height: 0; } }
           </style>
         </head>
         <body>

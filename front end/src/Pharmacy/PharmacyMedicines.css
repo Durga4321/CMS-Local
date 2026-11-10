@@ -35,9 +35,66 @@
 .pharmacy-medicines-page .pharmacy-catalogue-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 5px; }
 .pharmacy-medicines-page .pharmacy-catalogue-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border: 2px solid #f1f5f9; border-radius: 5px; }
 .pharmacy-medicines-page .pharmacy-catalogue-scroll::-webkit-scrollbar-thumb:hover { background: #64748b; }
-.pharmacy-medicines-page .pharmacy-catalogue-table { min-width: 1800px; }
-.pharmacy-medicines-page .pharmacy-catalogue-table th { padding: 17px 16px; background: var(--theme-primary-soft); text-transform: uppercase; color: #334155; font-size: 12px; font-weight: 750; letter-spacing: .02em; border-bottom: 1px solid #dfe7ef; }
-.pharmacy-medicines-page .pharmacy-catalogue-table td { padding: 16px; font-size: 13px; }
+.pharmacy-medicines-page .pharmacy-catalogue-horizontal-scroll { display: none; }
+.pharmacy-medicines-page .pharmacy-catalogue-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+.pharmacy-medicines-page .pharmacy-catalogue-table th:nth-child(1) { width: 21%; }
+.pharmacy-medicines-page .pharmacy-catalogue-table th:nth-child(2),
+.pharmacy-medicines-page .pharmacy-catalogue-table th:nth-child(3) { width: 14%; }
+.pharmacy-medicines-page .pharmacy-catalogue-table th:nth-child(4) { width: 12%; }
+.pharmacy-medicines-page .pharmacy-catalogue-table th:nth-child(5),
+.pharmacy-medicines-page .pharmacy-catalogue-table th:nth-child(6) { width: 9%; }
+.pharmacy-medicines-page .pharmacy-catalogue-table th:last-child { width: 21%; }
+.pharmacy-stock-page .pharmacy-catalogue-table th:nth-child(1) { width: 25%; }
+.pharmacy-stock-page .pharmacy-catalogue-table th:nth-child(2),
+.pharmacy-stock-page .pharmacy-catalogue-table th:nth-child(3) { width: 16%; }
+.pharmacy-stock-page .pharmacy-catalogue-table th:nth-child(4) { width: 13%; }
+.pharmacy-stock-page .pharmacy-catalogue-table th:nth-child(5),
+.pharmacy-stock-page .pharmacy-catalogue-table th:nth-child(6),
+.pharmacy-stock-page .pharmacy-catalogue-table th:last-child { width: 10%; }
+.pharmacy-stock-page .pharmacy-catalogue-table th:last-child,
+.pharmacy-stock-page .pharmacy-catalogue-table td:last-child { text-align: center; }
+.pharmacy-stock-page .pharmacy-catalogue-table .medicine-row-actions { justify-content: center; }
+.pharmacy-medicines-page .pharmacy-catalogue-table :is(th, td) {
+  box-sizing: border-box;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.pharmacy-medicines-page .pharmacy-catalogue-table th {
+  white-space: nowrap;
+  vertical-align: middle;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+.pharmacy-medicines-page .pharmacy-catalogue-table th:nth-child(5),
+.pharmacy-medicines-page .pharmacy-catalogue-table th:nth-child(6) {
+  white-space: nowrap;
+}
+.pharmacy-medicines-page .pharmacy-catalogue-table .medicine-row-actions { flex-wrap: wrap; gap: 5px; }
+.pharmacy-medicines-page .pharmacy-catalogue-table .medicine-action { min-height: 32px; padding: 0 9px; font-size: 12px; }
+.medicine-details-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #0f172a66;
+}
+.pharmacy-medicines-page .medicine-details-backdrop .medicine-details-panel {
+  box-sizing: border-box;
+  width: min(100%, 960px);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  margin: 0;
+}
+.pharmacy-medicines-page .pharmacy-catalogue-table th { padding: 12px 8px; background: var(--theme-primary-soft); text-transform: uppercase; color: #334155; font-size: 12px; font-weight: 750; letter-spacing: .02em; border-bottom: 1px solid #dfe7ef; }
+.pharmacy-medicines-page .pharmacy-catalogue-table td { padding: 12px 8px; font-size: 13px; }
 .pharmacy-medicines-page .pharmacy-catalogue-table td[colspan] { height: 110px; text-align: left; color: #64748b; font-weight: 600; }
 .medicine-table-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: #64748b; font-size: 12px; }
 .medicine-row-actions { display: flex; gap: 8px; white-space: nowrap; }

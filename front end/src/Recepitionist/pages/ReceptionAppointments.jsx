@@ -550,7 +550,7 @@ const printConsultationReceipt = ({
       <head>
         <title>OP Consultation Receipt - ${escapeReceiptHtml(receiptNo)}</title>
         <style>
-          @page { size: A5 landscape; margin: 10mm; }
+          @page { size: A4 portrait; margin: 10mm; }
           body { margin: 0; color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
           .bill { border: 1px solid #111; padding: 12px 14px; min-height: 128mm; box-sizing: border-box; }
           .top { display: grid; grid-template-columns: 1.35fr 1fr; border-bottom: 1px solid #111; }
@@ -573,7 +573,12 @@ const printConsultationReceipt = ({
           .barcode-text { font-size: 13px; margin-top: 2px; letter-spacing: 1px; }
           .sign { text-align: right; font-weight: 800; padding-top: 34px; }
           .stamp { border: 2px solid #111; border-radius: 999px; display: inline-flex; min-width: 54px; min-height: 38px; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; margin-left: 10px; }
-          @media print { button { display: none; } body { print-color-adjust: exact; } }
+          @media print {
+            button { display: none; }
+            body { print-color-adjust: exact; }
+            .bill { break-inside: avoid; page-break-inside: avoid; }
+            .top, .section, .amounts, .validity, .footer { break-inside: avoid; page-break-inside: avoid; }
+          }
         </style>
       </head>
       <body>

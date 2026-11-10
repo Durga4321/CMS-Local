@@ -78,9 +78,31 @@ function PharmacyMedicineImport({ stockOnly = false }) {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const panel = showAdd ? medicineFormRef.current : medicineDetails ? medicineDetailsRef.current : null;
+    const panel = showAdd ? medicineFormRef.current : null;
     if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [showAdd, medicineDetails, editingId]);
+
+  useEffect(() => {
+    if (!medicineDetails) return undefined;
+    const previousFocus = document.activeElement;
+    const panel = medicineDetailsRef.current;
+    panel?.focus();
+    const handleKey = (event) => {
+      if (event.key === "Escape") setMedicineDetails(null);
+      if (event.key === "Tab" && panel) {
+        const buttons = Array.from(panel.querySelectorAll('button:not(:disabled)'));
+        const first = buttons[0];
+        const last = buttons[buttons.length - 1];
+        if (event.shiftKey && (document.activeElement === first || document.activeElement === panel)) {
+          event.preventDefault(); last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault(); first?.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => { document.removeEventListener("keydown", handleKey); previousFocus?.focus(); };
+  }, [medicineDetails]);
 
   const loadMedicines = useCallback(async () => {
     const token = getPharmacistToken();
@@ -133,8 +155,9 @@ function PharmacyMedicineImport({ stockOnly = false }) {
     const extra = [...new Set(medicines.flatMap(Object.keys))].filter((key) => !known.has(key));
     return [...medicineColumns, ...extra.map((key) => [key, key.replace(/([a-z])([A-Z])/g, "$1 $2")])];
   }, [medicines]);
-  const tableColumns = displayColumns.filter(([key]) => key.toLowerCase() !== "id");
-  const columnCount = tableColumns.length + (stockOnly ? 0 : 1);
+  const summaryColumns = ["Name", "GenericName", "BrandName", "DosageForm", "Strength", "Quantity"];
+  const tableColumns = summaryColumns.map((name) => medicineColumns.find(([key]) => key === name));
+  const columnCount = tableColumns.length + 1;
 
   const openMedicine = async (medicine, edit = false) => {
     const id = medicineId(medicine);
@@ -264,7 +287,7 @@ function PharmacyMedicineImport({ stockOnly = false }) {
   };
 
   return (
-    <section className="pharmacy-import-page pharmacy-medicines-page">
+    <section className={`pharmacy-import-page pharmacy-medicines-page${stockOnly ? " pharmacy-stock-page" : ""}`}>
       <header className="medicine-page-heading" data-page-header>
         <div><h2>{stockOnly ? "Medicine Stock" : "Medicines"}</h2><p>{isLoadingMedicines ? "Loading medicine records..." : `${medicines.length} medicine records available in the catalogue`}</p></div>
         <div className="medicine-toolbar">
@@ -318,7 +341,7 @@ function PharmacyMedicineImport({ stockOnly = false }) {
             <thead>
               <tr>
                 {tableColumns.map(([key, label]) => <th key={key}>{label}</th>)}
-                {!stockOnly && <th>Actions</th>}
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -333,11 +356,11 @@ function PharmacyMedicineImport({ stockOnly = false }) {
                   {tableColumns.map(([key]) => (
                     <td key={key}>{getMedicineValue(medicine, key)}</td>
                   ))}
-                  {!stockOnly && <td><div className="medicine-row-actions">
+                  <td><div className="medicine-row-actions">
                     <button type="button" className="medicine-action" disabled={isManaging || isUploading || medicineId(medicine) === ""} onClick={() => openMedicine(medicine)}>View</button>
-                    <button type="button" className="medicine-action" disabled={isManaging || isUploading || medicineInactive(medicine) || medicineId(medicine) === ""} onClick={() => openMedicine(medicine, true)}>Edit</button>
-                    <button type="button" className="medicine-action" disabled={isManaging || isUploading || medicineId(medicine) === ""} onClick={() => changeMedicineStatus(medicine)}>{medicineInactive(medicine) ? "Activate" : "Delete"}</button>
-                  </div></td>}
+                    {!stockOnly && <><button type="button" className="medicine-action" disabled={isManaging || isUploading || medicineInactive(medicine) || medicineId(medicine) === ""} onClick={() => openMedicine(medicine, true)}>Edit</button>
+                    <button type="button" className="medicine-action" disabled={isManaging || isUploading || medicineId(medicine) === ""} onClick={() => changeMedicineStatus(medicine)}>{medicineInactive(medicine) ? "Activate" : "Delete"}</button></>}
+                  </div></td>
                 </tr>
               ))}
             </tbody>
@@ -351,11 +374,11 @@ function PharmacyMedicineImport({ stockOnly = false }) {
  <button type="button" disabled={currentPage + 1 >= pageCount} onClick={() => changePage(currentPage + 1)}>Next</button>
  </nav>
       <div className="medicine-table-footer"><span>{filteredMedicines.length} of {medicines.length} medicines</span>{!stockOnly && <button type="button" className="medicine-action medicine-action-add" disabled={isUploading || isManaging} onClick={() => { setEditingId(null); setDraft({}); setShowAdd((value) => !value); }} aria-expanded={showAdd} aria-controls="medicine-add-form"><Plus size={18} />Add Medicine</button>}</div>
-      {!stockOnly && medicineDetails && <section ref={medicineDetailsRef} className="medicine-add-form medicine-details-panel" aria-label="Medicine details">
+      {medicineDetails && <div className="medicine-details-backdrop"><section ref={medicineDetailsRef} tabIndex={-1} role="dialog" aria-modal="true" className="medicine-add-form medicine-details-panel" aria-label="Medicine details">
         <header><h3>Medicine Details</h3><button type="button" className="medicine-dismiss" aria-label="Close medicine details" onClick={() => setMedicineDetails(null)}><X size={20} /></button></header>
         <dl className="medicine-form-grid">{Object.entries(medicineDetails).map(([key, value]) => <div key={key}><dt>{medicineColumns.find(([name]) => name === key)?.[1] || key}</dt><dd>{getMedicineValue({ value }, "value")}</dd></div>)}</dl>
-        <footer><button type="button" className="medicine-action" disabled={isManaging || isUploading} onClick={() => changeMedicineStatus(medicineDetails)}>{medicineInactive(medicineDetails) ? "Activate" : "Delete"}</button></footer>
-      </section>}
+        {!stockOnly && <footer><button type="button" className="medicine-action" disabled={isManaging || isUploading} onClick={() => changeMedicineStatus(medicineDetails)}>{medicineInactive(medicineDetails) ? "Activate" : "Delete"}</button></footer>}
+      </section></div>}
       {!stockOnly && showAdd && <form ref={medicineFormRef} id="medicine-add-form" className="medicine-add-form" onSubmit={addMedicine}>
         <header><div><h3>{editingId === null ? "Add Medicine" : "Edit Medicine"}</h3><p>Enter medicine and stock details. Fields marked * are required.</p></div><button type="button" className="medicine-dismiss" disabled={isUploading} aria-label="Close add medicine" onClick={() => setShowAdd(false)}><X size={20} /></button></header>
         <fieldset disabled={isUploading}><div className="medicine-form-grid">{medicineColumns.map(([key, label]) => <label key={key}>{label}{["Name", "Quantity"].includes(key) ? " *" : ""}<input name={key} required={["Name", "Quantity"].includes(key)} type={key.endsWith("Date") ? "date" : numericFields.includes(key) ? "number" : "text"} min={numericFields.includes(key) ? 0 : undefined} max={key === "GST" ? 100 : undefined} step={numericFields.includes(key) ? quantityFields.includes(key) ? 1 : "0.01" : undefined} value={draft[key] ?? ""} onChange={(event) => setDraft((previous) => ({ ...previous, [key]: event.target.value }))} /></label>)}</div></fieldset>
