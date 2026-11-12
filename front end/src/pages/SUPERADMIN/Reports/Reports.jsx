@@ -145,9 +145,9 @@ export default function Reports() {
       <div className="sa-subscription-kpi is-amber"><Users size={20} /><div><b>{adminCount}</b><span>Customer admins</span></div></div>
     </div>
     <section className="sa-subscription-table-section">
-      <SearchFilter value={search} onChange={setSearch} placeholder="Search subscriptions..." filters={["All", ...new Set(subscriptions.map((row) => row.status).filter(Boolean))]} selectedFilter={status} onFilterChange={setStatus} />
+      <SearchFilter className="sa-report-search-filter" value={search} onChange={setSearch} placeholder="Search subscriptions..." filters={["All", ...new Set(subscriptions.map((row) => row.status).filter(Boolean))]} selectedFilter={status} onFilterChange={setStatus} />
       {error && <div className="sa-state sa-state--error" role="alert">{error}</div>}
-      <div style={{ overflowX: "auto" }}><div style={{ minWidth: fields.reduce((sum, field) => sum + parseInt(field.width, 10) + 8, 40) }}><DataTable columns={fields} rows={rows} loading={loading} emptyMessage="No subscription report records found." preserveColumnFractions /></div></div>
+      <div style={{ overflowX: "auto" }}><div style={{ minWidth: fields.reduce((sum, field) => sum + parseInt(field.width, 10) + 12, 40), "--report-columns": fields.map(field => field.width).join(" ") }}><DataTable className="sa-subscription-report-table" columns={fields} rows={rows} loading={loading} emptyMessage="No subscription report records found." preserveColumnFractions /></div></div>
     </section>
   </>;
 }

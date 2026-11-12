@@ -356,12 +356,12 @@ function Subscriptions() {
       <section className="sa-subscription-panel">
         <h3>Plan Type Benefits</h3>
         <p>Set one daily appointment limit for each plan type. Saving updates all its billing cycles and lab/pharmacy options in the backend.</p>
-        <table className="sa-table" style={{ width: "100%" }}>
-          <thead><tr><th scope="col">Plan type</th><th scope="col">Appointments per day</th><th data-column-kind="center" scope="col">Action</th></tr></thead>
+        <table className="sa-table sa-plan-benefits-table" style={{ width: "100%" }}>
+          <thead><tr><th scope="col">Plan type</th><th scope="col">Billing Cycle</th><th scope="col">Appointments per day</th><th data-column-kind="center" scope="col">Action</th></tr></thead>
           <tbody>{SUBSCRIPTION_PLAN_TYPES.map(type => {
             const matching = plans.filter(plan => plan.planType === type);
             const limits = [...new Set(matching.map(plan => plan.dailyAppointmentLimit))];
-            return <tr key={type}><td>{type}</td><td><form id={"limit-" + type} onSubmit={event => saveTypeLimit(event, type)}><input aria-label={type + " daily appointment limit"} type="number" required min="1" step="1" value={typeLimits[type] ?? ""} disabled={loading || Boolean(savingType) || savingPlan} onChange={event => setTypeLimits(current => ({ ...current, [type]: event.target.value }))} />{limits.length > 1 ? <small> Existing options have different limits. Save to apply one limit.</small> : null}</form></td><td><button type="submit" form={"limit-" + type} className="sa-btn sa-btn-primary" disabled={loading || Boolean(savingType) || savingPlan || !matching.length}>{savingType === type ? "Saving..." : "Save limit"}</button></td></tr>;
+            return <tr key={type}><td>{type}</td><td>{[...new Set(matching.map(plan => plan.billingCycle).filter(Boolean))].join(", ") || "—"}</td><td><form id={"limit-" + type} onSubmit={event => saveTypeLimit(event, type)}><input aria-label={type + " daily appointment limit"} type="number" required min="1" step="1" value={typeLimits[type] ?? ""} disabled={loading || Boolean(savingType) || savingPlan} onChange={event => setTypeLimits(current => ({ ...current, [type]: event.target.value }))} />{limits.length > 1 ? <small> Existing options have different limits. Save to apply one limit.</small> : null}</form></td><td><button type="submit" form={"limit-" + type} className="sa-btn sa-btn-primary" disabled={loading || Boolean(savingType) || savingPlan || !matching.length}>{savingType === type ? "Saving..." : "Save limit"}</button></td></tr>;
           })}</tbody>
         </table>
       </section>

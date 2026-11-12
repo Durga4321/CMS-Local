@@ -8379,10 +8379,42 @@
   }
 }
 
-/* Hide decorative telemetry banners on the reception pages only. */
-.reception-module .rc-patients-page .patients-heartrate-wave {
+/* Hide decorative ECG telemetry across reception and nurse views. */
+.reception-module .rc-sidebar .rc-sidebar-ecg-wave {
+  display: none !important;
+}
+
+html body :is(.nurse-module, .reception-module) .rc-patients-page .patients-heartrate-wave,
+html body :is(.nurse-module, .reception-module) .rc-patients-page .patients-heartrate-svg,
+html body :is(.nurse-module, .reception-module) .rc-patients-page .patients-heartrate-path {
+  display: none !important;
+}
+
+html body :is(.nurse-module, .reception-module) :is(
+  .rc-sidebar-ecg-wave,
+  .db-3d-ecg-wave,
+  .appointments-heartrate-wave,
+  .billing-heartrate-wave
+) {
+  display: none !important;
+}
+
+.reception-module .rc-patients-page {
+  row-gap: 4px !important;
+  padding-bottom: 8px !important;
+}
+
+.reception-module .rc-patients-page .rc-patient-kpi-grid {
   margin-bottom: 0 !important;
-  gap: 0 !important;
+}
+
+.reception-module .rc-patients-page .rc-dash-table-card.rc-patients-card {
+  padding: 10px 16px !important;
+  margin-bottom: 0 !important;
+}
+
+.reception-module .rc-patients-page .rc-dash-table-head {
+  margin-bottom: 4px !important;
 }
 
 .reception-module .rc-patients-page .patients-heartrate-svg {
@@ -8399,7 +8431,16 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  margin: 0 0 16px;
+  margin: 0 0 6px;
+}
+
+html body .reception-module .rc-billing-page .rc-latest-bills {
+  gap: 8px !important;
+}
+
+html body .reception-module .rc-billing-page .rc-latest-bills-head {
+  padding-bottom: 10px !important;
+  margin-bottom: 8px !important;
 }
 
 .reception-module .rc-bill-date-filter > label {
@@ -8432,13 +8473,14 @@
 
 /* Reception metrics reuse Admin cards with explicit layout boundaries. */
 html body .reception-module .role-single-screen .reception-overview-metrics { height: 80px !important; min-height: 80px !important; flex: 0 0 80px !important; padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; }
-html body .reception-module .role-single-screen .reception-overview-metrics .sa-card-grid { display: grid !important; grid-template-columns: repeat(5,minmax(0,1fr)) !important; grid-template-rows: 80px !important; height: 80px !important; gap: 16px !important; padding: 0 !important; margin: 0 !important; border: 0 !important; box-shadow: none !important; background: transparent !important; }
-html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-card { position: relative !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; gap: 10px !important; width: 100%; height: 80px !important; min-height: 0 !important; padding: 8px 16px 24px !important; margin: 0 !important; overflow: hidden; background: #fff !important; border: 0 !important; border-radius: 12px !important; box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent) !important; transform: none !important; text-align: left; }
+html body .reception-module .role-single-screen .reception-overview-metrics .sa-card-grid { display: grid !important; grid-template-columns: minmax(0,1fr) minmax(0,1.3fr) repeat(2,minmax(0,1fr)) minmax(0,1.4fr) !important; grid-template-rows: 80px !important; height: 80px !important; gap: 10px !important; padding: 0 !important; margin: 0 !important; border: 0 !important; box-shadow: none !important; background: transparent !important; }
+html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-card { position: relative !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; gap: 8px !important; width: 100%; height: 80px !important; min-height: 0 !important; padding: 8px 12px 24px !important; margin: 0 !important; overflow: hidden; background: #fff !important; border: 0 !important; border-radius: 12px !important; box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary-dark) 5%, transparent) !important; transform: none !important; text-align: left; }
 html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-card::before { display: none !important; }
 html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-card::after { content: ''; position: absolute; inset: auto 0 0; height: 14px !important; background: var(--theme-primary-soft) !important; border-bottom: 4px solid var(--theme-primary) !important; }
 html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-icon { position: static !important; display: grid; place-items: center; width: 32px !important; min-width: 32px !important; height: 32px !important; flex: 0 0 32px; padding: 0 !important; border-radius: 9px; background: var(--theme-primary-soft) !important; color: var(--theme-primary-dark) !important; box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 8%, transparent) !important; }
 html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-copy { min-width: 0; padding: 0 !important; margin: 0 !important; background: transparent !important; box-shadow: none !important; }
 html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-copy p { font-size: 11px !important; line-height: 1.2 !important; margin: 0 0 2px !important; white-space: normal !important; font-weight: 500 !important; color: #64748b !important; }
+html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-card:last-child .sa-stat-copy p { white-space: nowrap !important; }
 html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-copy h2 { margin: 0 !important; font-size: 20px !important; line-height: 1.1 !important; color: var(--theme-primary-dark) !important; }
 
 html body .reception-module .role-single-screen .rc-dash-head-actions { display: flex; flex-wrap: wrap; gap: 8px !important; }
@@ -8465,10 +8507,71 @@ html body .reception-module :is(.rc-billing-card-head,.rc-latest-bills-header-te
 html body .reception-module .rc-page:not(.role-single-screen) :is(.rc-form-grid,.rc-billing-form-grid,.rc-booking-form) { gap: 10px !important; }
 @media(max-width: 650px) { html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-icon { display: none !important; } html body .reception-module .role-single-screen .reception-overview-metrics .sa-stat-copy p { font-size: 10px !important; } }
 
+html body .reception-module .rc-billing-page .billing-telemetry-kpi-grid.compact-strip {
+  width: 100% !important;
+  max-width: none !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  margin: 0 0 4px !important;
+}
+
+html body .reception-module .rc-billing-page .rc-billing-tabs.compact-tabs {
+  margin-bottom: 4px !important;
+}
+
+html body .reception-module .rc-billing-page .billing-telemetry-kpi-grid.compact-strip .billing-kpi-card {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  height: 96px !important;
+  min-height: 96px !important;
+  padding: 10px 14px 14px !important;
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0,
+    #ffffff calc(100% - 28px),
+    var(--theme-primary-soft) calc(100% - 28px),
+    var(--theme-primary-soft) calc(100% - 4px),
+    var(--theme-primary) calc(100% - 4px),
+    var(--theme-primary) 100%
+  ) !important;
+}
+
+html body .reception-module .rc-billing-page .billing-telemetry-kpi-grid.compact-strip .billing-kpi-icon-wrap {
+  flex: 0 0 36px !important;
+}
+
+html body .reception-module .rc-billing-page .billing-kpi-details {
+  min-width: 0;
+  gap: 4px;
+  transform: translateY(-10px);
+}
+
+html body .reception-module .rc-billing-page .billing-kpi-label {
+  white-space: nowrap;
+}
+
+@media(max-width: 900px) {
+  html body .reception-module .rc-billing-page .billing-telemetry-kpi-grid.compact-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media(max-width: 560px) {
+  html body .reception-module .rc-billing-page .billing-telemetry-kpi-grid.compact-strip {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
 /* Keep both Patients Directory border accents in the selected teal theme. */
 html body .reception-module .rc-patients-page .rc-dash-table-card.rc-patients-card::before,
 html body .reception-module .rc-patients-page .rc-dash-table-container::before {
   background: var(--theme-primary) !important;
+}
+
+html body .reception-module .rc-patients-page .rc-dash-table-head {
+  margin-bottom: 4px !important;
 }
 
 /* Reception patient rows follow the clean appointment table treatment. */
@@ -8503,16 +8606,17 @@ html body .reception-module .rc-patients-page .rc-patient-table-row :is(.rc-dash
 }
 
 html body .reception-module .rc-patients-page .rc-patient-table-row .rc-dash-patient-avatar {
-  width: 38px !important;
-  height: 38px !important;
-  min-width: 38px !important;
-  flex: 0 0 38px;
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  flex: 0 0 22px;
   border-radius: 50% !important;
   background: var(--theme-primary-soft) !important;
   color: var(--theme-primary-dark) !important;
   border: 0 !important;
   box-shadow: none !important;
   font-weight: 700 !important;
+  font-size: 9px !important;
 }
 
 html body .reception-module .rc-patients-page .rc-patient-table-row .rc-dash-patient-name {

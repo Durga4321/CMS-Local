@@ -364,13 +364,6 @@ function PharmacyPendingPrescriptions() {
   return (
 
     <section className="pharmacy-prescriptions-page">
-      <nav className="pharmacy-pagination" aria-label="Table pages">
- <span>{filteredPrescriptions.length ? currentPage * 10 + 1 : 0}?{Math.min((currentPage + 1) * 10, filteredPrescriptions.length)} of {filteredPrescriptions.length}</span>
- <button type="button" disabled={currentPage === 0} onClick={() => changePage(currentPage - 1)}>Previous</button>
- {Array.from({ length: Math.min(10, pageCount) }, (_, index) => Math.min(Math.max(0, currentPage - 4), Math.max(0, pageCount - 10)) + index).map(page => <button type="button" key={page} aria-current={page === currentPage ? 'page' : undefined} onClick={() => changePage(page)}>{page + 1}</button>)}
- <button type="button" disabled={currentPage + 1 >= pageCount} onClick={() => changePage(currentPage + 1)}>Next</button>
- </nav>
-
       <header className="pharmacy-catalogue-header" data-page-header>
 
         <div className="pharmacy-prescriptions-heading">
@@ -439,102 +432,113 @@ function PharmacyPendingPrescriptions() {
 
 
 
-      <div className="pharmacy-catalogue-scroll pharmacy-prescriptions-scroll">
+      <div className="pharmacy-prescriptions-table-section">
+        <div className="pharmacy-catalogue-scroll pharmacy-prescriptions-scroll">
 
-        <table className="pharmacy-catalogue-table pharmacy-prescriptions-table">
+          <table className="pharmacy-catalogue-table pharmacy-prescriptions-table">
 
-          <thead>
+            <thead>
 
-            <tr>
+              <tr>
 
-              <th>Prescription</th>
+                <th>Prescription</th>
 
-              <th>Patient</th>
+                <th>Patient</th>
 
-              <th>Doctor</th>
+                <th>Doctor</th>
 
-              <th>Appointment</th>
+                <th>Appointment</th>
 
-              <th data-column-kind="center">Date</th>
+                <th data-column-kind="center">Date</th>
 
-              <th data-column-kind="center">Status</th>
+                <th data-column-kind="center">Status</th>
 
-              <th data-column-kind="center">Action</th>
+                <th data-column-kind="center">Action</th>
 
-            </tr>
+              </tr>
 
-          </thead>
+            </thead>
 
-          <tbody>
+            <tbody>
 
-            {isLoading ? (
+              {isLoading ? (
 
-              <tr><td colSpan="7">Loading pending prescriptions...</td></tr>
+                <tr><td colSpan="7">Loading pending prescriptions...</td></tr>
 
-            ) : error ? (
+              ) : error ? (
 
-              <tr><td colSpan="7">Unable to display prescriptions. See the error above.</td></tr>
+                <tr><td colSpan="7">Unable to display prescriptions. See the error above.</td></tr>
 
-            ) : filteredPrescriptions.length === 0 ? (
+              ) : filteredPrescriptions.length === 0 ? (
 
-              <tr><td colSpan="7">{search ? "No prescriptions match your search." : "There are no pending prescriptions."}</td></tr>
+                <tr><td colSpan="7">{search ? "No prescriptions match your search." : "There are no pending prescriptions."}</td></tr>
 
-            ) : pageRows.map((prescription, index) => {
+              ) : pageRows.map((prescription, index) => {
 
-              const id = getPrescriptionValue(prescription, "id", "Id", "prescriptionId", "PrescriptionId");
+                const id = getPrescriptionValue(prescription, "id", "Id", "prescriptionId", "PrescriptionId");
 
-              return (
+                return (
 
-                <tr key={id !== "-" ? id : index}>
+                  <tr key={id !== "-" ? id : index}>
 
-                  <td><strong>{id}</strong></td>
+                    <td><strong>{id}</strong></td>
 
-                  <td>
+                    <td>
 
-                    <strong>{getPrescriptionValue(prescription, "patientName", "PatientName", "patient.name", "Patient.Name")}</strong>
+                      <strong>{getPrescriptionValue(prescription, "patientName", "PatientName", "patient.name", "Patient.Name")}</strong>
 
-                    <small>{getPrescriptionValue(prescription, "patientId", "PatientId", "patient.id", "Patient.Id")}</small>
+                      <small>{getPrescriptionValue(prescription, "patientId", "PatientId", "patient.id", "Patient.Id")}</small>
 
-                  </td>
+                    </td>
 
-                  <td>{getPrescriptionValue(prescription, "doctorName", "DoctorName", "doctor.name", "Doctor.Name")}</td>
+                    <td>{getPrescriptionValue(prescription, "doctorName", "DoctorName", "doctor.name", "Doctor.Name")}</td>
 
-                  <td>{getPrescriptionValue(prescription, "appointmentId", "AppointmentId")}</td>
+                    <td>{getPrescriptionValue(prescription, "appointmentId", "AppointmentId")}</td>
 
-                  <td>{getPrescriptionValue(prescription, "prescriptionDate", "PrescriptionDate", "createdAt", "CreatedAt", "date", "Date")}</td>
+                    <td>{getPrescriptionValue(prescription, "prescriptionDate", "PrescriptionDate", "createdAt", "CreatedAt", "date", "Date")}</td>
 
-                  <td><span className="pharmacy-prescription-status">{getPrescriptionValue(prescription, "status", "Status")}</span></td>
+                    <td><span className="pharmacy-prescription-status">{getPrescriptionValue(prescription, "status", "Status")}</span></td>
 
-                  <td>
+                    <td>
 
-                    <button
+                      <button
 
-                      type="button"
+                        type="button"
 
-                      className="pharmacy-prescription-view"
+                        className="pharmacy-prescription-view"
 
-                      onClick={() => viewPrescription(prescription)}
+                        onClick={() => viewPrescription(prescription)}
 
-                      disabled={detailLoading || dispensing || id === "-"}
+                        disabled={detailLoading || dispensing || id === "-"}
 
-                    >
+                      >
 
-                      <Eye size={15} /> View
+                        <Eye size={15} /> View
 
-                    </button>
+                      </button>
 
-                  </td>
+                    </td>
 
-                </tr>
+                  </tr>
 
-              );
+                );
 
-            })}
+              })}
 
-          </tbody>
+            </tbody>
 
-        </table>
+          </table>
 
+        </div>
+
+        <nav className="pharmacy-pagination" aria-label="Table pages">
+          {filteredPrescriptions.length > 0 ? (
+            <span>{currentPage * 10 + 1}-{Math.min((currentPage + 1) * 10, filteredPrescriptions.length)} of {filteredPrescriptions.length}</span>
+          ) : null}
+          <button type="button" disabled={currentPage === 0} onClick={() => changePage(currentPage - 1)}>Previous</button>
+          {Array.from({ length: Math.min(10, pageCount) }, (_, index) => Math.min(Math.max(0, currentPage - 4), Math.max(0, pageCount - 10)) + index).map(page => <button type="button" key={page} aria-current={page === currentPage ? 'page' : undefined} onClick={() => changePage(page)}>{page + 1}</button>)}
+          <button type="button" disabled={currentPage + 1 >= pageCount} onClick={() => changePage(currentPage + 1)}>Next</button>
+        </nav>
       </div>
 
       {selectedPrescription ? (

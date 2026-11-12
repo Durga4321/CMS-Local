@@ -467,6 +467,14 @@
   flex: 0 0 auto;
 }
 
+html body .content .appointments-row .appointments-patient-cell .appointments-avatar {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  flex: 0 0 24px !important;
+  font-size: 10px !important;
+}
+
 .appointments-cell-stack {
   display: flex;
   flex-direction: column;

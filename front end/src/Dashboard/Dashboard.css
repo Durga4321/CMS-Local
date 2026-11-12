@@ -1279,7 +1279,8 @@ html[data-cms-theme] .layout:has(.sidebar a[href="/dashboard"]) .db-chart-contai
 html body .content .db-admin-overview .admin-overview-columns { padding: 0 !important; margin: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; }
 html body .content .db-admin-overview .admin-metrics-section { min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 3px; }
 html body .content .db-admin-overview .sa-card-grid { padding: 0 !important; margin: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; min-height: 0; align-items: stretch; }
-html body .content .db-admin-overview .sa-card-grid .sa-stat-card { height: 100% !important; min-height: 0 !important; width: 100%; padding: 8px 8px 19px !important; margin: 0 !important; transform: none !important; }
+html body .content .db-admin-overview .sa-card-grid .sa-stat-card { height: 100% !important; min-height: 0 !important; width: 100%; padding: 8px 8px 19px !important; margin: 0 !important; transform: none !important; box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-primary-dark) 3%, transparent) !important; }
+html body .content .db-dashboard.db-admin-overview { row-gap: 12px !important; }
 html body .content .db-admin-overview .sa-stat-copy { padding: 0 !important; margin: 0 !important; background: transparent !important; box-shadow: none !important; border: 0 !important; }
 html body .content .db-admin-overview .sa-stat-card h2 { font-size: clamp(12px, 1.5vw, 22px) !important; overflow-wrap: anywhere; line-height: 1.15; }
 html body .content .db-admin-overview .admin-detail-section { min-height: 0; overflow: hidden; padding: 12px !important; }
@@ -1308,6 +1309,9 @@ html body .content .db-admin-overview .sa-card-grid {
 html body .content .db-admin-overview .sa-card-grid .admin-revenue-card {
   container-type: inline-size;
   gap: 6px;
+}
+html body .content .db-admin-overview .sa-card-grid .sa-stat-card:nth-child(-n+3) {
+  justify-content: flex-start !important;
 }
 html body .content .db-admin-overview .admin-revenue-card .sa-stat-icon {
   flex: 0 0 28px;

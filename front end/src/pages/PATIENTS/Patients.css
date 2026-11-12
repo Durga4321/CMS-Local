@@ -327,6 +327,14 @@
   box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 16%, transparent);
 }
 
+html body .patients-page .patients-table .patients-row .patients-info .patients-avatar {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  flex: 0 0 22px !important;
+  font-size: 9px !important;
+}
+
 .patients-name-stack {
   display: flex;
   flex-direction: column;

@@ -152,6 +152,38 @@
   transition: all 0.22s ease;
 }
 
+.sidebar a[href="/superadmin/subscriptions"] .nav-icon-box {
+  position: relative;
+  overflow: visible;
+}
+
+.sidebar a[href="/superadmin/subscriptions"] .nav-icon-box > svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.5;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.sidebar a[href="/superadmin/subscriptions"] .nav-icon-box > svg > path:not(:first-child) {
+  display: none;
+}
+
+.sidebar a[href="/superadmin/subscriptions"] .nav-icon-box::after {
+  content: "\20B9";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: Arial, "Nirmala UI", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  color: inherit;
+  pointer-events: none;
+}
+
 .nav-item:hover .nav-icon-box {
   transform: scale(1.06);
 }

@@ -8,14 +8,14 @@
 .phb-button-light { color: var(--theme-primary); background: var(--theme-primary-soft); border-color: var(--theme-primary-soft); }
 .phb-button-primary { color: #fff; background: linear-gradient(115deg, var(--theme-primary-dark), var(--theme-primary)); box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary-dark) 14.51%, transparent); }
 .pharmacy-billing-page button:disabled { opacity: .5; cursor: not-allowed; }
-.phb-stats { display: grid; grid-template-columns: repeat(3, 280px); justify-content: start; gap: 12px; }
-.phb-stats > div { display: flex; align-items: center; gap: 14px; padding: 18px 20px; border: 1px solid var(--theme-primary-soft); border-radius: 15px; background: linear-gradient(120deg, #fff, var(--theme-primary-soft)); box-shadow: 0 4px 15px #94a3b80d; }
+.phb-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); justify-content: start; gap: 12px; }
+.phb-stats > div { display: flex; align-items: center; gap: 14px; padding: 18px 20px; border: 1px solid #b9d8d6; border-radius: 15px; background: linear-gradient(120deg, #fff, var(--theme-primary-soft)); box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08); }
 .phb-stat-icon { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; color: var(--theme-primary); background: var(--theme-primary-soft); border-radius: 13px; }
 .phb-stat-icon.phb-green { color: var(--theme-primary-dark); background: #d1fae5; }
 .phb-stat-icon.phb-purple { color: var(--theme-primary); background: var(--theme-primary-soft); }
 .phb-stats small { display: block; margin-bottom: 5px; color: #64748b; font-size: 11px; font-weight: 650; }
 .phb-stats strong { font-size: 22px; color: var(--theme-primary-dark); overflow-wrap: anywhere; }
-.phb-composer { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 20px; align-items: start; }
+.phb-composer { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 12px; align-items: start; }
 .phb-panel { min-width: 0; border: 1px solid #dfe7ef; border-radius: 16px; background: #fff; box-shadow: 0 5px 20px #94a3b80b; overflow: hidden; }
 .phb-panel-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid #e5edf5; background: linear-gradient(110deg, var(--theme-primary-soft), var(--theme-primary-soft)); }
 .phb-panel-title > span { display: flex; align-items: center; gap: 10px; color: var(--theme-primary-dark); font-size: 15px; font-weight: 800; }
@@ -86,10 +86,10 @@
 @media (max-width: 1200px) { .phb-composer { grid-template-columns: minmax(0, 1fr); } .phb-summary { max-width: none; } }
 @media (max-width: 620px) { .phb-stats { grid-template-columns: 1fr; gap: 10px; } .phb-page-head h2 { font-size: 22px; } .phb-page-head { align-items: flex-start; } .phb-form { grid-template-columns: 1fr; padding: 16px; } .phb-panel-title { padding: 16px; } .phb-panel-title small { display: none; } .phb-ledger-toolbar { flex-wrap: wrap; padding: 14px; } .phb-ledger-toolbar label { min-width: 180px; } .phb-detail-actions .phb-button { flex: 1 0 150px; } }
 
-.phb-stats > div { width: 280px; max-width: 100%; min-width: 0; box-sizing: border-box; }
+.phb-stats > div { width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; }
 
 @media (max-width: 1000px) {
-  .phb-stats { grid-template-columns: repeat(2, minmax(0, 280px)); justify-content: start; }
+  .phb-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); justify-content: start; }
   .phb-stats > div { width: 100%; }
 }
 
@@ -144,6 +144,12 @@
 .phb-ledger-actions { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .phb-ledger .phb-ledger-actions .phb-button { min-height: 32px !important; height: 32px !important; padding: 6px 9px !important; gap: 5px; border-radius: 7px; font-size: 11px !important; line-height: 18px; }
 .phb-ledger-actions .phb-button svg { width: 14px; height: 14px; }
+.phb-ledger .phb-table th:nth-child(3),
+.phb-ledger .phb-table td:nth-child(3) { text-align: center; }
+.phb-ledger .phb-table th:nth-child(4),
+.phb-ledger .phb-table td:nth-child(4) { text-align: center; }
+.phb-ledger { display: flex; flex-direction: column; }
+.phb-ledger > .pharmacy-pagination { order: 1; }
 
 /* Compact page heading; the JSX marker excludes modals and navigation. */
 @media screen {

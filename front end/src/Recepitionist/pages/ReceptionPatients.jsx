@@ -431,6 +431,8 @@ function ReceptionPatients({
   hideActions = false,
   basePath = "/reception",
   showAddPatient = true,
+  showTelemetryBadge = true,
+  showTelemetryWave = true,
   apiRequest = defaultRequestJson,
   getScope = getReceptionistScope,
   scopeRecords = scopeReceptionistRecords,
@@ -871,41 +873,45 @@ function ReceptionPatients({
       
       {/* Live Glowing Heart Rate Telemetry Wave Across Background */}
       <div className="patients-heartrate-wave">
-        <div className="patients-heartrate-telemetry-badge">
-          <HeartPulse size={16} className="heart-beating-icon" />
-          <span className="telemetry-live-dot" />
-          <span className="telemetry-label">Live Heart Rate Telemetry:</span>
-          <strong className="telemetry-value">74 BPM</strong>
-          <span className="telemetry-status">● Normal Sinus Rhythm</span>
-        </div>
-        <svg viewBox="0 0 1400 120" preserveAspectRatio="none" className="patients-heartrate-svg">
-          <defs>
-            <linearGradient id="heartrateGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="var(--theme-primary)" stopOpacity="0.3" />
-              <stop offset="25%" stopColor="var(--theme-primary)" stopOpacity="0.85" />
-              <stop offset="50%" stopColor="var(--theme-primary)" stopOpacity="1" />
-              <stop offset="75%" stopColor="var(--theme-primary)" stopOpacity="0.85" />
-              <stop offset="100%" stopColor="var(--theme-primary)" stopOpacity="0.3" />
-            </linearGradient>
-            <filter id="ecgGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="2.5" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-          <path
-            d="M0 60 L180 60 L195 40 L210 85 L225 15 L245 105 L260 60 L280 60 L480 60 L495 40 L510 85 L525 15 L545 105 L560 60 L580 60 L780 60 L795 40 L810 85 L825 15 L845 105 L860 60 L880 60 L1080 60 L1095 40 L1110 85 L1125 15 L1145 105 L1160 60 L1180 60 L1400 60"
-            fill="none"
-            stroke="url(#heartrateGradient)"
-            strokeWidth="3.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            filter="url(#ecgGlow)"
-            className="patients-heartrate-path"
-          />
-        </svg>
+        {showTelemetryBadge && (
+          <div className="patients-heartrate-telemetry-badge">
+            <HeartPulse size={16} className="heart-beating-icon" />
+            <span className="telemetry-live-dot" />
+            <span className="telemetry-label">Live Heart Rate Telemetry:</span>
+            <strong className="telemetry-value">74 BPM</strong>
+            <span className="telemetry-status">● Normal Sinus Rhythm</span>
+          </div>
+        )}
+        {showTelemetryWave && (
+          <svg viewBox="0 0 1400 120" preserveAspectRatio="none" className="patients-heartrate-svg">
+            <defs>
+              <linearGradient id="heartrateGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="var(--theme-primary)" stopOpacity="0.3" />
+                <stop offset="25%" stopColor="var(--theme-primary)" stopOpacity="0.85" />
+                <stop offset="50%" stopColor="var(--theme-primary)" stopOpacity="1" />
+                <stop offset="75%" stopColor="var(--theme-primary)" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="var(--theme-primary)" stopOpacity="0.3" />
+              </linearGradient>
+              <filter id="ecgGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="2.5" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            <path
+              d="M0 60 L180 60 L195 40 L210 85 L225 15 L245 105 L260 60 L280 60 L480 60 L495 40 L510 85 L525 15 L545 105 L560 60 L580 60 L780 60 L795 40 L810 85 L825 15 L845 105 L860 60 L880 60 L1080 60 L1095 40 L1110 85 L1125 15 L1145 105 L1160 60 L1180 60 L1400 60"
+              fill="none"
+              stroke="url(#heartrateGradient)"
+              strokeWidth="3.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              filter="url(#ecgGlow)"
+              className="patients-heartrate-path"
+            />
+          </svg>
+        )}
       </div>
 
       {/* PAGE HEADER */}

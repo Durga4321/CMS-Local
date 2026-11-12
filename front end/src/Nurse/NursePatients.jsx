@@ -197,6 +197,8 @@ function NursePatients() {
     <ReceptionPatients
       basePath="/nurse"
       showAddPatient={false}
+      showTelemetryBadge={false}
+      showTelemetryWave={false}
       apiRequest={nursePatientsRequestJson}
       getScope={getNurseScope}
       scopeRecords={scopeNurseRecords}

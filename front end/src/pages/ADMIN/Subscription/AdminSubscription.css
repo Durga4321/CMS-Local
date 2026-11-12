@@ -29,6 +29,7 @@
   border-radius: 16px;
   background: #fff;
 }
+.admin-subscription-page > .sa-page-header + .sa-form-card { margin-top: -18px !important; }
 .admin-subscription-page h3 { margin: 0 0 20px; line-height: 1.4; font-size: 18px; }
 .admin-subscription-page .sa-form-grid {
   display: grid;
@@ -51,9 +52,10 @@
   border-radius: 8px;
 }
 .admin-subscription-page .sa-form-field input[readonly] { background: #f8fafc; text-overflow: ellipsis; }
-.admin-subscription-page .sa-subscription-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+.admin-subscription-page .sa-subscription-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
 .admin-subscription-page form > p { margin: 16px 0 0; line-height: 1.6; font-size: 13px; }
-.admin-subscription-page .sa-subscription-panel-head { margin-bottom: 20px; }
+.admin-subscription-page .sa-subscription-table-section { padding-block: 16px; }
+.admin-subscription-page .sa-subscription-panel-head { margin-bottom: 10px; }
 .admin-subscription-page .sa-subscription-panel-head h3 { margin: 0; }
 .admin-subscription-page .sa-table { width: 100%; min-width: 0; overflow-x: auto; }
 .admin-subscription-page .sa-table-head,
