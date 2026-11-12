@@ -1720,6 +1720,23 @@ html body .nurse-module :is(.nurse-online-bookings, .nurse-offline-bookings) .bo
   margin-bottom: 18px;
 }
 
+.med-history-page .med-card-header {
+  gap: 12px;
+}
+
+.med-history-page .med-card-header .med-search-bar-wrap {
+  flex: 0 1 440px;
+  width: 100%;
+  max-width: 440px;
+  margin: 0;
+}
+
+.med-history-page .med-card-header .med-search-bar {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
+
 .med-card-title {
   display: flex;
   align-items: center;
@@ -2101,6 +2118,18 @@ html body .nurse-module :is(.nurse-online-bookings, .nurse-offline-bookings) .bo
   }
   .med-metrics-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .med-history-page .med-card-header {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .med-history-page .med-card-header .med-search-bar-wrap {
+    flex: 1 1 100%;
+    max-width: none;
   }
 }
 
@@ -3457,6 +3486,14 @@ html body .nurse-module .rc-patients-page .rc-dash-table-container {
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
 }
 
+html body .nurse-module .rc-patients-page .rc-dash-table-card.rc-patients-card {
+  padding-top: 8px !important;
+}
+
+html body .nurse-module .rc-patients-page .rc-dash-table-head {
+  margin-bottom: 8px !important;
+}
+
 html body .nurse-module .rc-patients-page .rc-dash-table-card.rc-patients-card::before,
 html body .nurse-module .rc-patients-page .rc-dash-table-container::before {
   background: #d7e7e9 !important;
@@ -3506,16 +3543,17 @@ html body .nurse-module .rc-patients-page .rc-patient-table-row :is(
 }
 
 html body .nurse-module .rc-patients-page .rc-patient-table-row .rc-dash-patient-avatar {
-  width: 38px !important;
-  height: 38px !important;
-  min-width: 38px !important;
-  flex: 0 0 38px;
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  flex: 0 0 22px;
   border-radius: 50% !important;
   background: var(--theme-primary-soft) !important;
   border: 0 !important;
   color: var(--theme-primary-dark) !important;
   box-shadow: none !important;
   font-weight: 700 !important;
+  font-size: 9px !important;
 }
 
 html body .nurse-module .rc-patients-page .rc-patient-table-row .rc-dash-patient-name {
@@ -3934,4 +3972,134 @@ html body :is(.content, .dr-layout-content, .rc-content, .lab-main, .nurse-conte
   html body .nurse-dashboard-page.role-single-screen { height: auto !important; max-height: none !important; overflow: visible !important; }
   html body .nurse-dashboard-page.role-single-screen .nd-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; height: auto !important; }
   html body .nurse-dashboard-page.role-single-screen .nd-table-card { flex: 0 0 auto !important; overflow-x: auto !important; }
+}
+
+html body .nurse-module .med-history-page .med-history-hero[data-page-header] {
+  min-height: 0 !important;
+  padding: 8px 12px !important;
+  gap: 8px 12px !important;
+  align-items: center !important;
+  overflow: visible !important;
+}
+
+html body .nurse-module .med-history-page .med-history-card {
+  padding: 12px !important;
+}
+
+html body .nurse-module .med-history-page .med-card-header {
+  margin-bottom: 4px !important;
+  padding: 0 !important;
+}
+
+html body .nurse-module .med-history-page .med-card-header .med-search-bar {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 12px !important;
+}
+
+html body .nurse-module .med-history-page .med-history-badge {
+  margin: 0 0 4px !important;
+}
+
+html body .nurse-module .med-history-page .med-history-table th {
+  height: 54px !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+html body .nurse-module .med-history-page .med-head-actions {
+  flex: 0 0 auto;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+}
+
+html body .nurse-module .med-history-page .med-history-hero .med-btn {
+  display: inline-grid !important;
+  grid-template-columns: max-content max-content !important;
+  grid-auto-flow: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 5px !important;
+  gap: 4px !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+html body .nurse-module .med-history-page .med-history-hero .med-btn > span {
+  white-space: nowrap !important;
+}
+
+html body .nurse-module .med-history-page .med-btn-icon-wrap {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+}
+
+@media screen and (max-width: 700px) {
+  html body .nurse-module .med-history-page .med-head-actions {
+    flex-wrap: wrap !important;
+  }
+}
+
+html body .nurse-module .booking-page .booking-hero[data-page-header] {
+  height: auto !important;
+  min-height: 0 !important;
+  align-items: center !important;
+  overflow: visible !important;
+}
+
+html body .nurse-module .booking-page .booking-hero[data-page-header] > div:first-child {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 4px !important;
+  margin-left: 10px !important;
+}
+
+html body .nurse-module .booking-page .booking-hero .booking-badge {
+  align-self: flex-start !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+}
+
+html body .nurse-module .booking-page .booking-hero h2 {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+}
+
+html body .nurse-module .booking-page .booking-hero h2 > svg {
+  flex: 0 0 auto !important;
+}
+
+html body .nurse-module .booking-page .booking-hero p {
+  margin: 0 !important;
+  line-height: 1.35 !important;
+}
+
+html body .nurse-module .booking-page .booking-card {
+  padding-top: 8px !important;
+}
+
+html body .nurse-module .booking-page .booking-card-head {
+  margin-bottom: 4px !important;
+  padding-bottom: 0 !important;
+}
+
+html body .nurse-module .booking-page .booking-filter-grid {
+  padding-top: 4px !important;
+}
+
+html body .nurse-module .booking-page .booking-empty-state {
+  gap: 6px !important;
+}
+
+html body .nurse-module .booking-page .booking-empty-state > :is(h4, p) {
+  margin: 0 !important;
 }

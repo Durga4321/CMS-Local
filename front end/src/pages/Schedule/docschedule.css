@@ -99,7 +99,7 @@
   z-index: 2;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  gap: 14px;
   margin-top: 0;
 }
 

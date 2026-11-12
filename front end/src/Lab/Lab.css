@@ -1624,7 +1624,12 @@ html body .lab-screen-patients .lab-table-head > span:has(.rc-th-tests) {
   text-overflow: ellipsis !important;
 }
 
-.lab-dash-table-card .rc-dash-patient-avatar {
+html body .lab-dash-table-card .rc-dash-patient-avatar {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  flex: 0 0 20px !important;
+  font-size: 9px !important;
   background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%) !important;
 }
 
@@ -1756,11 +1761,20 @@ html body .lab-screen-patients .lab-table-head > span:has(.rc-th-tests) {
   max-width: 1100px !important;
 }
 
+html body .rc-content .lab-report-create-page > .lab-page-head {
+  margin-bottom: 0 !important;
+}
+
 .lab-create-cards-wrap {
   display: flex !important;
   flex-direction: column !important;
-  gap: 20px !important;
-  margin-top: 16px !important;
+  gap: 12px !important;
+  width: calc(100% + 10px) !important;
+  margin: -20px 0 0 -10px !important;
+}
+
+.lab-create-cards-wrap > .lab-create-card {
+  margin-bottom: 0 !important;
 }
 
 .lab-create-card {
@@ -2182,6 +2196,11 @@ html body .lab-screen-patients .lab-table-head > span:has(.rc-th-tests) {
 }
 
 .lab-screen-samples .lab-patient-avatar {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  flex: 0 0 22px !important;
+  font-size: 9px !important;
   background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary-dark) 100%) !important;
 }
 
@@ -2203,6 +2222,7 @@ html body .lab-screen-patients .lab-table-head > span:has(.rc-th-tests) {
 
 /* Lab dashboard uses the same metric component as Admin, without legacy KPI positioning. */
 html body .lab-page.role-single-screen .lab-overview-metrics { height: 92px !important; min-height: 92px !important; flex: 0 0 92px !important; padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; }
+html body .lab-page.role-single-screen .lab-overview-metrics { margin-top: -4px !important; }
 html body .lab-page.role-single-screen .lab-overview-metrics .sa-card-grid { display: grid !important; grid-template-columns: repeat(7,minmax(0,1fr)) !important; grid-template-rows: 92px !important; height: 92px !important; gap: 8px !important; padding: 0 !important; margin: 0 !important; border: 0 !important; box-shadow: none !important; background: transparent !important; }
 html body .lab-page.role-single-screen .lab-overview-metrics .sa-stat-card { position: relative !important; display: flex !important; align-items: center !important; gap: 8px !important; width: 100%; height: 92px !important; min-height: 0 !important; padding: 8px 8px 18px !important; margin: 0 !important; overflow: hidden; background: #fff !important; border: 1px solid var(--theme-primary-glow) !important; border-radius: 9px !important; box-shadow: none !important; transform: none !important; text-align: left; }
 html body .lab-page.role-single-screen .lab-overview-metrics .sa-stat-card::before { display: none !important; }
@@ -2228,6 +2248,15 @@ html body .lab-page.role-single-screen .lab-table .lab-test-names-cell { font-si
 
 /* One control size and reading order for Patients, Samples and Reports. */
 html body :is(.lab-screen-patients,.lab-screen-samples,.lab-screen-reports) .lab-list-controls { display: grid !important; grid-template-columns: minmax(220px,380px) max-content; align-items: end !important; justify-content: start; gap: 12px !important; padding: 0 !important; margin: 0 0 16px !important; }
+html body .lab-screen-patients .lab-list-controls { margin-bottom: 8px !important; }
+html body .lab-screen-tests .lab-list-controls { margin-bottom: 4px !important; }
+html body .lab-screen-tests .lab-data-card { margin-top: 4px !important; }
+html body .lab-screen-samples .lab-page-head[data-page-header] { margin-bottom: 2px !important; }
+html body .lab-screen-samples .lab-list-controls { margin-bottom: 6px !important; }
+html body .lab-screen-samples .lab-data-card { margin-top: 4px !important; }
+html body .lab-screen-reports .lab-page-head[data-page-header] { margin-bottom: 2px !important; }
+html body .lab-screen-reports .lab-list-controls { margin-bottom: 6px !important; }
+html body .lab-screen-reports .lab-data-card { margin-top: 4px !important; }
 html body .lab-screen-samples .lab-list-controls { grid-template-columns: minmax(220px,380px) max-content minmax(220px,300px) !important; }
 html body .lab-screen-reports .lab-list-controls { grid-template-columns: minmax(220px,380px) minmax(220px,300px) !important; }
 html body :is(.lab-screen-patients,.lab-screen-samples,.lab-screen-reports) .lab-list-controls .lab-search { width: 100% !important; min-width: 0 !important; height: 42px !important; min-height: 42px !important; padding: 0 14px !important; margin: 0 !important; align-self: end !important; }
@@ -2235,11 +2264,32 @@ html body :is(.lab-screen-patients,.lab-screen-samples,.lab-screen-reports) .lab
 html body :is(.lab-screen-patients,.lab-screen-samples,.lab-screen-reports) .lab-filter-tabs { height: 42px !important; min-height: 42px !important; padding: 4px !important; margin: 0 !important; align-self: end !important; gap: 4px !important; }
 html body :is(.lab-screen-patients,.lab-screen-samples,.lab-screen-reports) .lab-filter-tabs button { height: 32px !important; min-height: 32px !important; min-width: 68px !important; padding: 0 12px !important; font-size: 13px !important; }
 html body :is(.lab-screen-samples,.lab-screen-reports) .lab-patient-select { display: grid !important; gap: 6px !important; width: 100% !important; min-width: 0 !important; margin: 0 !important; align-self: end !important; }
-html body :is(.lab-screen-samples,.lab-screen-reports) .lab-patient-select > span { font-size: 13px !important; line-height: 16px; }
+html body .lab-screen-samples .lab-patient-select > span { display: none !important; }
+html body .lab-screen-reports .lab-patient-select > span { display: none !important; }
 html body :is(.lab-screen-samples,.lab-screen-reports) .lab-patient-select select { width: 100% !important; height: 42px !important; min-height: 42px !important; padding: 0 34px 0 12px !important; border-radius: 12px !important; font-size: 13px !important; box-sizing: border-box; }
 @media(max-width: 1100px) { html body .lab-screen-samples .lab-list-controls { grid-template-columns: minmax(220px,380px) max-content !important; } html body .lab-screen-samples .lab-patient-select { grid-column: 1 / -1; max-width: 380px; } }
 @media(max-width: 650px) { html body :is(.lab-screen-patients,.lab-screen-samples,.lab-screen-reports) .lab-list-controls { grid-template-columns: minmax(0,1fr) !important; } html body :is(.lab-screen-patients,.lab-screen-samples,.lab-screen-reports) .lab-filter-tabs { width: fit-content; } html body .lab-screen-samples .lab-patient-select { max-width: none; } }
 
+html body .lab-screen-patients .lab-table-row .lab-patient-avatar {
+  width: 22px !important;
+  height: 22px !important;
+  font-size: 9px !important;
+}
+
+html body .lab-screen-patients .lab-table-head > span:nth-child(4) {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+html body .lab-screen-patients .lab-table-row > span:nth-child(4) {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+html body .lab-screen-patients .lab-table-row > span:nth-child(4) .lab-test-pills-wrap {
+  justify-content: center !important;
+  width: 100%;
+}
 
 /* Compact page heading; the JSX marker excludes modals and navigation. */
 @media screen {

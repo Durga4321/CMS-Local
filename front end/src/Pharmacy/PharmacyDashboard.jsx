@@ -1,5 +1,5 @@
 import { DashboardGreeting, useDashboardLayout } from "../components/superadmin/DashboardCards";
-﻿import React, { useCallback, useEffect, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Boxes, ClipboardList, Package, ReceiptText, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { API_ENDPOINTS, collection, pharmacyRequest, invalidatePharmacyReads } from "./pharmacyApi";
@@ -17,6 +17,7 @@ const initialMetrics = { medicines: null, stock: null, prescriptions: null, bill
 function PharmacyDashboard() {
   const layout = useDashboardLayout();
   const [metrics, setMetrics] = useState(initialMetrics);
+  const [medicineStock, setMedicineStock] = useState(null);
   const [errors, setErrors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatedAt, setUpdatedAt] = useState(null);
@@ -35,16 +36,23 @@ function PharmacyDashboard() {
         const rows = collection(payload, source.keys);
         if (!rows) throw new Error("Unexpected response format.");
         if (requestVersion !== version.current) return;
-        const values = index === 0 ? {
-          medicines: rows.length,
-          stock: rows.reduce((sum, row) => {
-            const quantity = Number(normalizeMedicine(row).Quantity ?? 0);
-            return sum + (Number.isFinite(quantity) && quantity > 0 ? quantity : 0);
-          }, 0),
-        } : index === 1 ? { prescriptions: rows.length } : { bills: rows.length };
+        const values = index === 0 ? (() => {
+          const normalizedRows = rows.map((row) => normalizeMedicine(row));
+          setMedicineStock(normalizedRows);
+          return {
+            medicines: normalizedRows.length,
+            stock: normalizedRows.reduce((sum, row) => {
+              const quantity = Number(row.Quantity ?? 0);
+              return sum + (Number.isFinite(quantity) && quantity > 0 ? quantity : 0);
+            }, 0),
+          };
+        })() : index === 1 ? { prescriptions: rows.length } : { bills: rows.length };
         setMetrics((previous) => ({ ...previous, ...values }));
       } catch (error) {
-        if (requestVersion === version.current) setErrors((previous) => [...previous, source.name + ": " + error.message]);
+        if (requestVersion === version.current) {
+          if (index === 0) setMedicineStock([]);
+          setErrors((previous) => [...previous, source.name + ": " + error.message]);
+        }
       }
     }));
     if (requestVersion !== version.current) return;
@@ -54,6 +62,63 @@ function PharmacyDashboard() {
     loadCounts();
     return () => { version.current += 1; };
   }, [loadCounts]);
+  const stockCharts = useMemo(() => {
+    if (!medicineStock) return null;
+    const medicines = medicineStock.map((row, index) => {
+      const quantityValue = Number(row.Quantity);
+      const quantity = Number.isFinite(quantityValue) && quantityValue > 0 ? quantityValue : 0;
+      const thresholdValue = row.ReorderLevel ?? row.MinimumStock;
+      const threshold = thresholdValue === "" || thresholdValue == null ? null : Number(thresholdValue);
+      const status = quantity === 0 ? "Out of stock"
+        : Number.isFinite(threshold) && threshold >= 0 && quantity <= threshold ? "Low stock"
+          : "In stock";
+      return {
+        name: String(row.Name || row.GenericName || `Medicine ${index + 1}`),
+        quantity,
+        threshold: Number.isFinite(threshold) && threshold > 0 ? threshold : null,
+        status,
+      };
+    });
+    const priority = (medicine) => medicine.quantity === 0 ? 0
+      : medicine.threshold === null ? 3
+        : medicine.quantity <= medicine.threshold ? 1 : 2;
+    const prioritizedMedicines = [...medicines]
+      .sort((first, second) => {
+        const priorityDifference = priority(first) - priority(second);
+        if (priorityDifference) return priorityDifference;
+        if (first.threshold !== null && second.threshold !== null) {
+          return first.quantity / first.threshold - second.quantity / second.threshold;
+        }
+        return first.quantity - second.quantity;
+      })
+      .slice(0, 5);
+    const maxTopQuantity = Math.max(0, ...prioritizedMedicines.map((medicine) => medicine.quantity));
+    const topMedicines = prioritizedMedicines.map((medicine) => {
+      const scale = medicine.threshold === null
+        ? maxTopQuantity
+        : Math.max(medicine.quantity, medicine.threshold);
+      return {
+        ...medicine,
+        stockWidth: scale ? medicine.quantity / scale * 100 : 0,
+        thresholdPosition: medicine.threshold === null ? null : medicine.threshold / scale * 100,
+      };
+    });
+    const statusCounts = [
+      { name: "In stock", value: medicines.filter((medicine) => medicine.status === "In stock").length, color: "#0f8b8d" },
+      { name: "Low stock", value: medicines.filter((medicine) => medicine.status === "Low stock").length, color: "#f59e0b" },
+      { name: "Out of stock", value: medicines.filter((medicine) => medicine.status === "Out of stock").length, color: "#ef4444" },
+    ];
+    let piePosition = 0;
+    const stockPieSegments = statusCounts.map((status) => {
+      const start = piePosition;
+      piePosition += medicines.length ? status.value / medicines.length * 100 : 0;
+      return `${status.color} ${start}% ${piePosition}%`;
+    });
+    const stockPieBackground = medicines.length
+      ? `conic-gradient(${stockPieSegments.join(", ")})`
+      : "#e2e8f0";
+    return { topMedicines, statusCounts, medicineCount: medicines.length, stockPieBackground };
+  }, [medicineStock]);
 
   return (
     <section className="pharmacy-dashboard pharmacy-count-dashboard role-single-screen" ref={layout.ref}>
@@ -73,7 +138,67 @@ function PharmacyDashboard() {
           </Link>
         ))}
       </div>
-      <p className="pharmacy-dashboard-updated" role="status">{loading ? "Loading counts from the backend..." : `${errors.length ? "Some counts could not be loaded. " : ""}Last refreshed ${updatedAt?.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) || ""}`}</p>
+      {(loading || errors.length > 0) && (
+        <p className="pharmacy-dashboard-updated" role="status">
+          {loading ? "Loading counts from the backend..." : "Some counts could not be loaded."}
+        </p>
+      )}
+      <section className="pharmacy-inventory-charts" aria-label="Medicine and stock charts">
+        <article className="pharmacy-inventory-chart-card">
+          <h2>Top medicines by stock</h2>
+          {stockCharts?.topMedicines.length ? (
+            <ol className="pharmacy-top-medicines">
+              {stockCharts.topMedicines.map((medicine, index) => (
+                <li
+                  className={`pharmacy-top-medicine${medicine.quantity === 0 ? " is-out-of-stock" : medicine.threshold !== null && medicine.quantity <= medicine.threshold ? " is-low-stock" : ""}`}
+                  key={`${medicine.name}-${index}`}
+                  title={`${medicine.name}: ${medicine.quantity.toLocaleString("en-IN")} in stock${medicine.threshold === null ? "" : `, reorder level ${medicine.threshold.toLocaleString("en-IN")}`}`}
+                >
+                  <div className="pharmacy-top-medicine-heading">
+                    <span>{medicine.name}</span>
+                    <strong>{medicine.threshold === null
+                      ? medicine.quantity.toLocaleString("en-IN")
+                      : `${medicine.quantity.toLocaleString("en-IN")} / ${medicine.threshold.toLocaleString("en-IN")}`}</strong>
+                  </div>
+                  <div
+                    className="pharmacy-top-medicine-track"
+                    role="img"
+                    aria-label={`${medicine.quantity.toLocaleString("en-IN")} in stock${medicine.threshold === null ? "" : `; reorder level ${medicine.threshold.toLocaleString("en-IN")}`}`}
+                  >
+                    <span style={{ width: `${medicine.stockWidth}%` }} />
+                    {medicine.thresholdPosition !== null && (
+                      <span className="pharmacy-top-medicine-threshold" style={{ left: `${medicine.thresholdPosition}%` }} />
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          ) : <p className="pharmacy-chart-empty">{medicineStock === null ? "Loading medicine data..." : "No medicine stock data available."}</p>}
+        </article>
+        <article className="pharmacy-inventory-chart-card">
+          <h2>Stock availability</h2>
+          {stockCharts ? (
+            <div className="pharmacy-stock-overview">
+              <div className="pharmacy-stock-counts">
+                {stockCharts.statusCounts.map((status) => (
+                  <div className="pharmacy-stock-count" key={status.name} style={{ "--stock-status-color": status.color }}>
+                    <span>{status.name}</span>
+                    <strong>{status.value.toLocaleString("en-IN")}</strong>
+                  </div>
+                ))}
+              </div>
+              <div
+                className="pharmacy-stock-pie"
+                role="img"
+                aria-label={stockCharts.statusCounts.map((status) => `${status.value} ${status.name.toLowerCase()}`).join(", ")}
+                style={{ background: stockCharts.stockPieBackground }}
+              >
+                <span>{stockCharts.medicineCount.toLocaleString("en-IN")}</span>
+              </div>
+            </div>
+          ) : <p className="pharmacy-chart-empty">Loading medicine data...</p>}
+        </article>
+      </section>
     </section>
   );
 }

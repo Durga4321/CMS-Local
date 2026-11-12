@@ -105,6 +105,10 @@
   font-weight: 500;
 }
 
+html body .content .admin-users-page .admin-users-header[data-page-header] {
+  margin-bottom: 0 !important;
+}
+
 /* Table Main Card Container */
 .admin-users-table-card {
   position: relative;
@@ -135,6 +139,12 @@
   margin: 0;
   border-radius: 0;
   box-shadow: none;
+}
+
+html body .content .admin-users-page .admin-users-toolbar {
+  margin-top: 0 !important;
+  margin-bottom: 4px !important;
+  padding-left: 0 !important;
 }
 
 .admin-users-search {
@@ -507,7 +517,7 @@
 .admin-users-name-highlight b {
   color: var(--theme-primary-dark) !important;
   font-weight: 900;
-  font-size: 0.90rem;
+  font-size: 0.80rem;
   letter-spacing: -0.01em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -710,6 +720,14 @@
 
 .admin-users-table-card {
   display: contents;
+}
+
+html body .content .admin-users-page .admin-users-row .admin-users-name-cell .admin-users-avatar {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  flex: 0 0 26px !important;
+  font-size: 10px !important;
 }
 
 .admin-users-toolbar {

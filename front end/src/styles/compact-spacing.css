@@ -2562,6 +2562,13 @@ html body :is(.admin-greeting-icon, .role-greeting-icon, .sa-dashboard-greeting-
     font-size: 12px !important;
     border-radius: 8px !important;
   }
+  html body .content:not(.superadmin-content) .sa-audit-logs-page .sa-table-row .sa-audit-avatar {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    flex: 0 0 18px !important;
+    font-size: 8px !important;
+  }
   html body :is(table tbody, .sa-table-row, .branches-row, .receptionists-row, .doctors-row, .patients-row, .appointments-row, .nurses-row, .lab-files-row, .admin-users-row, .admin-pharmacists-row, .rc-table-row, .rc-patient-table-row, .rc-latest-bill-row, .rc-dash-table-row, .lab-table-row, .nd-table-row, .dd-row, .da-row) p {
     margin-top: 2px !important;
     margin-bottom: 0 !important;

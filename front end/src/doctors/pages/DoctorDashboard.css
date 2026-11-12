@@ -1186,3 +1186,10 @@ html body .dd-page.role-single-screen > .dd-queue-card {
   html body .dd-page.role-single-screen .dd-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; height: auto !important; }
   html body .dd-page.role-single-screen .dd-queue-card { flex: 0 0 auto !important; overflow-x: auto !important; }
 }
+
+@media screen and (min-width: 901px) {
+  html body .dd-page.role-single-screen .dd-stats {
+    grid-template-columns: repeat(4, minmax(0, 0.95fr)) minmax(0, 1.3fr) !important;
+    width: 100% !important;
+  }
+}

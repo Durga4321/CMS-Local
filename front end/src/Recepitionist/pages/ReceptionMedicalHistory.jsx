@@ -521,29 +521,6 @@ function ReceptionMedicalHistory({
         )}
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="med-search-bar-wrap">
-        <div className="med-search-bar">
-          <Search size={16} color="var(--theme-primary-dark)" />
-          <input
-            type="text"
-            placeholder="Search by patient name, PID, allergies, chronic condition, or medication..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "grid", placeItems: "center" }}
-              title="Clear search"
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* Medical History Card & Table */}
       <div className="med-history-card">
         <div className="med-card-header">
@@ -554,6 +531,27 @@ function ReceptionMedicalHistory({
             <div>
               <h3>Patient Clinical History</h3>
               <p>{loading ? "Synchronizing records..." : `${filteredRows.length} history records documented`}</p>
+            </div>
+          </div>
+          <div className="med-search-bar-wrap">
+            <div className="med-search-bar">
+              <Search size={16} color="var(--theme-primary-dark)" />
+              <input
+                type="text"
+                placeholder="Search by patient name, PID, allergies, chronic condition, or medication..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "grid", placeItems: "center" }}
+                  title="Clear search"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
           </div>
         </div>

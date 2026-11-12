@@ -146,6 +146,29 @@
   outline: 2px solid var(--theme-primary);
   outline-offset: 2px;
 }
+.pharmacy-prescriptions-page .pharmacy-pagination {
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 0;
+  margin: 0;
+}
+.pharmacy-prescriptions-table-section {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+.pharmacy-prescriptions-page .pharmacy-pagination > span {
+  margin-right: auto;
+  color: #64748b;
+  font-size: 12px;
+  white-space: nowrap;
+}
+html body .pharmacy-content > section.pharmacy-prescriptions-page {
+  padding: 14px !important;
+}
 .pharmacy-medicines-page form.medicine-row-actions {
   align-items: center;
   flex-wrap: wrap;

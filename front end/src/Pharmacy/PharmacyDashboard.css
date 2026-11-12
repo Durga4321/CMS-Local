@@ -21,8 +21,32 @@
 .pharmacy-count-description { font-size: 12px; color: #64748b; line-height: 1.6; flex: 1; }
 .pharmacy-count-link { display: flex; gap: 8px; align-items: center; margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--count-border); color: var(--count-color); font-size: 12px; font-weight: 750; }
 .pharmacy-dashboard-updated { margin: 0; font-size: 12px; color: #64748b; }
+.pharmacy-inventory-charts { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; min-height: 0; align-items: stretch; }
+.pharmacy-inventory-chart-card { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 220px; height: 240px; padding: 14px 16px; border: 1px solid #b9d8d6; border-radius: 14px; background: #fff; box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06); }
+.pharmacy-inventory-chart-card h2 { margin: 0 0 8px; color: var(--theme-primary-dark); font-size: 14px; font-weight: 750; }
+.pharmacy-chart-empty { align-self: center; margin: 0; color: #64748b; font-size: 12px; text-align: center; }
+.pharmacy-top-medicines { display: flex; flex-direction: column; justify-content: space-evenly; gap: 7px; min-height: 0; margin: 0; padding: 0; list-style: none; }
+.pharmacy-top-medicine { display: grid; gap: 5px; min-width: 0; }
+.pharmacy-top-medicine-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; color: #475569; font-size: 11px; }
+.pharmacy-top-medicine-heading > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pharmacy-top-medicine-heading > strong { flex: 0 0 auto; color: var(--theme-primary-dark); font-size: 11px; font-variant-numeric: tabular-nums; }
+.pharmacy-top-medicine-track { position: relative; height: 7px; border-radius: 999px; background: #e8f1f1; }
+.pharmacy-top-medicine-track > span:first-child { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #0f8b8d, #39b6ae); }
+.pharmacy-top-medicine.is-low-stock .pharmacy-top-medicine-track > span:first-child { background: linear-gradient(90deg, #087f82, #19a6a0); }
+.pharmacy-top-medicine.is-out-of-stock .pharmacy-top-medicine-track > span:first-child { background: #ef4444; }
+.pharmacy-top-medicine-threshold { position: absolute; top: -2px; width: 2px; height: 11px; border-radius: 2px; background: #334155; box-shadow: 0 0 0 1px #fff; transform: translateX(-50%); }
+.pharmacy-stock-overview { display: grid; grid-template-columns: minmax(0, 1fr) 128px; align-items: center; gap: 18px; min-width: 0; }
+.pharmacy-stock-counts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.pharmacy-stock-count { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; padding: 7px 10px; border: 1px solid #e2e8f0; border-left: 3px solid var(--stock-status-color); border-radius: 9px; background: #f8fafc; }
+.pharmacy-stock-count span { color: #64748b; font-size: 11px; line-height: 1.25; }
+.pharmacy-stock-count strong { color: var(--stock-status-color); font-size: clamp(18px, 2vw, 24px); line-height: 1; font-variant-numeric: tabular-nums; }
+.pharmacy-stock-pie { display: grid; place-items: center; width: 128px; aspect-ratio: 1; border: 1px solid #e2e8f0; border-radius: 50%; box-shadow: inset 0 0 0 1px #fff; color: var(--theme-primary-dark); font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.pharmacy-stock-pie span { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: #fff; box-shadow: 0 1px 5px rgba(15, 23, 42, .12); }
+html body .role-single-screen > .pharmacy-inventory-charts { flex: 0 0 auto; min-height: 0; }
 @media (max-width: 1200px) { .pharmacy-count-grid { grid-template-columns: repeat(2, minmax(0, 250px)); justify-content: center; } }
 @media (max-width: 620px) { .pharmacy-dashboard-heading { align-items: flex-start; flex-direction: column; } .pharmacy-dashboard-heading h2 { font-size: 22px; } .pharmacy-count-grid { gap: 12px; } .pharmacy-count-card { padding: 18px; border-radius: 16px; } }
+@media (max-width: 700px) { .pharmacy-inventory-charts { grid-template-columns: minmax(0, 1fr); } .pharmacy-inventory-chart-card { height: 230px; } }
+@media (max-width: 420px) { .pharmacy-stock-overview { grid-template-columns: minmax(0, 1fr) 100px; gap: 10px; } .pharmacy-stock-pie { width: 100px; } .pharmacy-stock-count { padding: 6px 7px; } }
 @media (max-width: 400px) { .pharmacy-count-grid { grid-template-columns: minmax(0, 250px); justify-content: center; } }
 @media (prefers-reduced-motion: reduce) { .pharmacy-count-card, .pharmacy-count-arrow, .pharmacy-dashboard-refresh { transition: none; } .pharmacy-count-card:hover, .pharmacy-count-card:hover .pharmacy-count-arrow { transform: none; } }
 

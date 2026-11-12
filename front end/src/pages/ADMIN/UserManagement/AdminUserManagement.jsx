@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   HeartPulse,
   RefreshCw,
@@ -353,8 +353,10 @@ function AdminUserManagement() {
   const [status, setStatus] = useState("All");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const latestLoadRequest = useRef(0);
 
   const loadUsers = useCallback(async () => {
+    const requestId = ++latestLoadRequest.current;
     setLoading(true);
     setError("");
     setSuccess("");
@@ -363,12 +365,14 @@ function AdminUserManagement() {
       let branchId = selectedBranchId;
       if (!branchId) {
         const branchOptions = buildBranchOptions(await fetchBranchesForHospital(getStoredHospitalId()));
+        if (requestId !== latestLoadRequest.current) return;
         setBranches(branchOptions);
         branchId = branchOptions[0]?.id || "";
         setSelectedBranchId(branchId);
       }
 
       if (!branchId) {
+        if (requestId !== latestLoadRequest.current) return;
         setUsers([]);
         setError("Branch not found for this clinic.");
         return;
@@ -401,6 +405,8 @@ function AdminUserManagement() {
         requestJson("Appointment/offline"),
         requestJson("Appointment/online"),
       ]);
+
+      if (requestId !== latestLoadRequest.current) return;
 
       const loginUsers =
         loginsResult.status === "fulfilled"
@@ -473,20 +479,24 @@ function AdminUserManagement() {
         const selectedBranchName = String(selectedBranch?.name || "").trim().toLowerCase();
         const userRole = String(user.role || "").trim().toLowerCase();
         const isPatient = userRole.includes("patient");
+        const assignedBranchIds = Array.from(new Set([userBranchId, ...userBranchIds].filter(Boolean)));
+        const hasAssignedBranch = assignedBranchIds.length > 0 || Boolean(userBranchName);
         const patientId = getPatientRecordId(user.raw || user);
         const patientPhone = getPatientRecordPhone(user.raw || user) || normalizePhone(user.phone);
         const appointmentBranch =
           patientBranchLookup[`id:${patientId}`] || patientBranchLookup[`phone:${patientPhone}`] || null;
         const belongsToBranch =
-          userBranchId === String(branchId) ||
-          userBranchIds.includes(String(branchId)) ||
-          (selectedBranchName && userBranchName === selectedBranchName) ||
-          (isPatient && (branchPatientIds.has(patientId) || branchPatientPhones.has(patientPhone)));
+          (assignedBranchIds.length > 0
+            ? assignedBranchIds.includes(String(branchId))
+            : selectedBranchName && userBranchName === selectedBranchName) ||
+          (!hasAssignedBranch &&
+            isPatient &&
+            (branchPatientIds.has(patientId) || branchPatientPhones.has(patientPhone)));
 
-        if (belongsToBranch && isPatient && appointmentBranch) {
-          user.branchId = user.branchId || appointmentBranch.branchId;
-          user.branchName = user.branchName || appointmentBranch.branchName;
-          user.branchLocation = user.branchLocation || appointmentBranch.branchLocation;
+        if (belongsToBranch) {
+          user.branchId = String(branchId);
+          user.branchName = selectedBranch?.name || appointmentBranch?.branchName || user.branchName;
+          user.branchLocation = appointmentBranch?.branchLocation || user.branchLocation;
         }
 
         return belongsToBranch;
@@ -494,10 +504,11 @@ function AdminUserManagement() {
 
       setUsers(mergeUsers(directoryUsers, loginUsers));
     } catch (loadError) {
+      if (requestId !== latestLoadRequest.current) return;
       setUsers([]);
       setError(loadError.message || "Unable to load user management data.");
     } finally {
-      setLoading(false);
+      if (requestId === latestLoadRequest.current) setLoading(false);
     }
   }, [branches, selectedBranchId]);
 
@@ -586,7 +597,13 @@ function AdminUserManagement() {
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
           </select>
-          <select value={selectedBranchId} onChange={(event) => setSelectedBranchId(event.target.value)}>
+          <select
+            value={selectedBranchId}
+            onChange={(event) => {
+              latestLoadRequest.current += 1;
+              setSelectedBranchId(event.target.value);
+            }}
+          >
             <option value="">Select Branch</option>
             {branches.map((branch) => (
               <option key={branch.id} value={branch.id}>

@@ -1515,8 +1515,12 @@
   display: contents;
 }
 
+html body .content .admin-roles-page > .sa-page-header {
+  margin-bottom: -8px !important;
+}
+
 .admin-roles-page .admin-roles-toolbar {
-  margin: 0 0 12px;
+  margin: -14px 0 4px !important;
   padding: 0;
   border: 0;
   background: transparent;
