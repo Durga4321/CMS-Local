@@ -1528,3 +1528,16 @@ html[data-cms-theme] .auth-card--login .create-account-btn:hover {
     width: min(330px, calc(100vw - 24px));
   }
 }
+
+/* Let the login page scroll when expanded registration exceeds the viewport. */
+.auth-container:has(> .auth-card--login) {
+  align-items: flex-start;
+  overflow-y: auto;
+}
+
+.auth-container > .auth-card--login {
+  max-height: none;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  margin-block: auto;
+}

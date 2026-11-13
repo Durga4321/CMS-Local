@@ -3238,6 +3238,7 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = usePatientToastState();
   const [reportsExpanded, setReportsExpanded] = useState(false);
+  const [visibleVisitCount, setVisibleVisitCount] = useState(5);
   const [patientLabReports, setPatientLabReports] = useState([]);
 
   const patientId = String(
@@ -4204,7 +4205,7 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
         </div>
         {visitRecords.length ? (
           <div className="mh-visit-list">
-            {visitRecords.map((visit, index) => (
+            {visitRecords.slice(0, visibleVisitCount).map((visit, index) => (
               <div className="mh-visit-item" key={visit.id || visit.appointmentId || index}>
                 <div className="mh-visit-summary">
                   <div className="mh-visit-icon">
@@ -4260,9 +4261,9 @@ function PatientMedicalHistoryPage({ patient, visits = [], prescriptions = [] })
             <p>No previous visits found.</p>
           </div>
         )}
-        {visitRecords.length ? (
+        {visitRecords.length > visibleVisitCount ? (
           <div className="mh-panel-footer">
-            <button type="button" className="mh-view-more-btn">View More</button>
+            <button type="button" className="mh-view-more-btn" onClick={() => setVisibleVisitCount((count) => count + 5)}>View More</button>
           </div>
         ) : null}
       </div>

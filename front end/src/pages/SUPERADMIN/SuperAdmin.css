@@ -6056,13 +6056,13 @@ html body .content.superadmin-content .sa-subscriptions-page > .sa-page-header[d
 .sa-dashboard-page .sa-dashboard-shell {
   flex: 1 1 auto;
   min-height: 0;
-  margin-top: -20px;
+  margin-top: -34px;
 }
 
 .sa-dashboard-page .sa-grid {
   flex: 1 1 auto;
   min-height: 0;
-  margin-top: 4px;
+  margin-top: 0 !important;
 }
 
 .sa-dashboard-page .sa-panel--highlighted,

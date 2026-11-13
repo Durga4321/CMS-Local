@@ -9,6 +9,7 @@ import { useToast } from '../components/ToastProvider';
 import { validateGmail } from '../utils/validation';
 import { syncAdminRoleMatrixFromBackend } from '../utils/rolePermissions';
 import ThemePicker from '../components/ThemePicker';
+import AdminRegistration from '../components/payments/AdminRegistration';
 const EyeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
@@ -720,6 +721,8 @@ const AdminLogin = () => {
             {isLoading ? 'Logging in...' : 'Login ->'}
           </button>
         </form>
+
+        <AdminRegistration />
 
         <div className="auth-register-row">
           <p className="auth-register">New patient?</p>

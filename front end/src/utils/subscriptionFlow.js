@@ -1,5 +1,7 @@
 import { API_ENDPOINTS, apiUrl } from "../config/api";
 import { getStoredHospitalId } from "./branchApi.jsx";
+import { createCmsPaymentOrder, verifyCmsPayment, fetchCmsPaymentStatus } from './paymentApi';
+import { runVerifiedCheckout } from './razorpayCheckout.mjs';
 export const CMS_MODULES=["Dashboard","Branches","Doctors","Receptionists","Nurses","Lab Technicians","Lab Files","Patients","Appointments","Schedule Settings","Roles & Permissions","User Management","Reports","Settings"].map((key)=>({key,label:key==="Branches"?"Branches / Clinics":key,monthlyPrice:{Dashboard:0,Branches:400,Doctors:700,Receptionists:450,Nurses:450,"Lab Technicians":500,"Lab Files":350,Patients:650,Appointments:600,"Schedule Settings":300,"Roles & Permissions":300,"User Management":450,Reports:800,Settings:250}[key]||0}));
 export const LAB_MODULE_KEYS=["Lab Technicians","Lab Files"];
 export const NON_LAB_MODULE_KEYS=CMS_MODULES.map((m)=>m.key).filter((key)=>!LAB_MODULE_KEYS.includes(key));
@@ -234,7 +236,7 @@ export const createSubscriptionCheckout=async({name,email,mobileNumber,subscript
   if(!payload.name||!payload.email||!payload.mobileNumber||!Number.isInteger(payload.subscriptionPlanId)||payload.subscriptionPlanId<1||!payload.paymentMethod){
     throw new Error("Enter valid customer details, select a plan, and choose a payment method.");
   }
-  return unwrap(await requestJson(API_ENDPOINTS.subscriptions.checkout,{method:"POST",body:payload,skipAuth:true}));
+  return unwrap(await requestJson(API_ENDPOINTS.subscriptions.checkout,{method:"POST",body:payload}));
 };
 export const getSubscriptionPurchaseId=(purchase)=>{
   const value=purchase?.purchaseId??purchase?.PurchaseId??purchase?.purchaseID??purchase?.PurchaseID??purchase?.subscriptionPurchaseId??purchase?.SubscriptionPurchaseId??purchase?.purchase?.purchaseId??purchase?.purchase?.id??purchase?.Purchase?.PurchaseId??purchase?.Purchase?.Id??purchase?.id??purchase?.Id??purchase?.data?.purchaseId??purchase?.data?.PurchaseId??purchase?.data?.subscriptionPurchaseId??purchase?.data?.id??purchase?.data?.Id;
@@ -244,11 +246,12 @@ export const getDemoCheckoutToken=(purchase)=>{
   const value=purchase?.demoToken??purchase?.DemoToken??purchase?.signedCheckoutToken??purchase?.SignedCheckoutToken??purchase?.signedToken??purchase?.SignedToken??purchase?.checkoutToken??purchase?.CheckoutToken??purchase?.simulationToken??purchase?.SimulationToken??purchase?.paymentSimulationToken??purchase?.PaymentSimulationToken??purchase?.purchase?.demoToken??purchase?.purchase?.DemoToken??purchase?.purchase?.signedCheckoutToken??purchase?.purchase?.SignedCheckoutToken??purchase?.data?.demoToken??purchase?.data?.DemoToken??purchase?.data?.signedCheckoutToken??purchase?.data?.SignedCheckoutToken??purchase?.data?.signedToken??purchase?.data?.SignedToken??purchase?.data?.purchase?.demoToken;
   return value==null||String(value).trim()===""?"":String(value).trim();
 };
-export const initiateSubscriptionPayment=async(purchaseId,paymentMethod,{authenticated=false}={})=>{
+export const initiateSubscriptionPayment=async(purchaseId,paymentMethod,{authenticated=true}={})=>{
   if(!Number.isInteger(Number(purchaseId))||Number(purchaseId)<1)throw new Error("The checkout response did not include a valid purchase ID.");
   const method=String(paymentMethod||"").trim();
   if(!method)throw new Error("Select a payment method.");
-  return unwrap(await requestJson(API_ENDPOINTS.subscriptions.initiatePayment,{method:"POST",body:{purchaseId:Number(purchaseId),paymentMethod:method},skipAuth:!authenticated}));
+  const order = await createCmsPaymentOrder(purchaseId);
+  return unwrap(await runVerifiedCheckout({ response: order, verify: body => verifyCmsPayment({ purchaseId: Number(purchaseId), ...body }) }));
 };
 export const confirmDemoSubscriptionPayment=async(purchaseId,paymentMethod,simulateResult,demoToken)=>{
   if(!Number.isInteger(Number(purchaseId))||Number(purchaseId)<1)throw new Error("The checkout response did not include a valid purchase ID.");
@@ -301,8 +304,7 @@ export const fetchAdminDemoPurchases=async()=>{
 };
 export const fetchSubscriptionPaymentStatus=async(purchaseId)=>{
   if(!Number.isInteger(Number(purchaseId))||Number(purchaseId)<1)throw new Error("A valid purchase ID is required to check payment status.");
-  const path=API_ENDPOINTS.subscriptions.paymentStatus.replace("{purchaseId}",encodeURIComponent(String(purchaseId)));
-  return unwrap(await requestJson(path));
+  return unwrap(await fetchCmsPaymentStatus(purchaseId));
 };
 export const createRenewalCheckout=async({subscriptionPlanId,paymentMethod})=>{
   const planId=Number(subscriptionPlanId);

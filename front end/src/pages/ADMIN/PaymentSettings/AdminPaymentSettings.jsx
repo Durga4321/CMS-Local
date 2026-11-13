@@ -5,6 +5,7 @@ import { getRoleProfile } from '../../../profile/sessionProfile';
 import { canUseModulePermission } from '../../../utils/rolePermissions';
 import './AdminPaymentSettings.css';
 import AdminPaymentHistory from './AdminPaymentHistory';
+import PaymentAdministration from '../../../components/payments/PaymentAdministration';
 
 const options = [
   { id: 'upi', title: 'UPI', description: 'Add a UPI ID and a clinic payment QR code.', Icon: Smartphone },
@@ -75,5 +76,6 @@ export default function AdminPaymentSettings() {
         </fieldset>
       </form>
     </>}
+    {!method && <PaymentAdministration scope="hospital" canEdit={canEdit} />}
   </main>;
 }
