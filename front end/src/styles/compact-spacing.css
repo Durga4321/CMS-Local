@@ -2164,7 +2164,7 @@ html body .pd-reference-dashboard.role-single-screen :is(.pd-token-notice,.pd-to
 html body .pd-reference-dashboard.role-single-screen :is(.pd-summary-card-copy strong,.pd-appointment-summary strong) { font-size: 12px !important; }
 html body .pd-reference-dashboard.role-single-screen .pd-card-footer-button { height: 25px !important; min-height: 25px !important; font-size: 10px !important; }
 html body .pd-reference-dashboard.role-single-screen .pd-dashboard-row { display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; gap: 8px !important; flex: 1; min-height: 0; padding: 0 !important; }
-html body .pd-reference-dashboard.role-single-screen .pd-dashboard-row > .pd-card { min-height: 0 !important; height: auto !important; padding: 10px !important; overflow: hidden; border-radius: 12px !important; border-top: 3px solid var(--theme-primary); box-shadow: none !important; }
+html body .pd-reference-dashboard.role-single-screen .pd-dashboard-row > .pd-card { min-height: 0 !important; height: auto !important; padding: 10px !important; overflow: hidden; border-radius: 12px !important; border-top: 1px solid var(--theme-primary); box-shadow: none !important; }
 html body .pd-reference-dashboard.role-single-screen .pd-section-header { padding: 0 !important; margin: 0 0 8px !important; background: transparent !important; box-shadow: none !important; }
 html body .pd-reference-dashboard.role-single-screen .pd-notification-list { height: auto !important; max-height: none !important; overflow: visible !important; gap: 5px; }
 html body .pd-reference-dashboard.role-single-screen .pd-notification-item { padding: 6px !important; min-height: 0 !important; font-size: 10px !important; }

@@ -15,6 +15,8 @@ import {
 } from "../../components/OpBillingUi";
 import { parseList, requestJson } from "../receptionApi";
 import { unwrapBillingResponse, billingPaymentStatus } from "../../utils/billingPayment.mjs";
+import { createHospitalPaymentOrder, fetchHospitalPaymentOrder, verifyHospitalPayment } from '../../utils/paymentApi';
+import { readCheckoutOrder, runVerifiedCheckout } from '../../utils/razorpayCheckout.mjs';
 import { getReceptionistProfile } from "../receptionSession";
 import { getNurseProfile } from "../../Nurse/nurseSession";
 import { canUseModulePermission, useRolePermissionsSync } from "../../utils/rolePermissions";
@@ -886,9 +888,43 @@ const getBillingPaymentStatus = async (bill) => {
   return requestJson(API_ENDPOINTS.billing.byId.replace("{id}", encodeURIComponent(String(billId))));
 };
 
+const hospitalPaymentAttempts = new Map();
+const hospitalPaymentsInFlight = new Map();
+
 const startBillingPayment = async (bill, paymentMode) => {
   const billId = getBillingPaymentBillId(bill);
   if (!billId) throw new Error("Bill id is not available for payment.");
+
+  if (String(paymentMode || 'Cash').trim().toLowerCase() !== 'cash') {
+    if (hospitalPaymentsInFlight.has(String(billId))) return hospitalPaymentsInFlight.get(String(billId));
+    const payment = (async () => {
+      let attempt = hospitalPaymentAttempts.get(String(billId));
+      if (!attempt) {
+        attempt = { idempotencyKey: crypto.randomUUID() };
+        hospitalPaymentAttempts.set(String(billId), attempt);
+      }
+      if (attempt.localOrderId) {
+        // Recheck an existing order instead of allocating another invoice balance.
+        await fetchHospitalPaymentOrder(attempt.localOrderId);
+        const saved = await getBillingPaymentStatus(bill);
+        if (billingPaymentStatus(saved).toLowerCase() === 'paid') {
+          hospitalPaymentAttempts.delete(String(billId));
+          return saved;
+        }
+      }
+      if (!attempt.order) {
+        attempt.order = await createHospitalPaymentOrder({ billingId: Number(billId), idempotencyKey: attempt.idempotencyKey });
+      }
+      const { localOrderId } = readCheckoutOrder(attempt.order);
+      if (!localOrderId) throw new Error('The payment response is missing its local order ID. Check payment status before retrying.');
+      attempt.localOrderId = localOrderId;
+      const result = await runVerifiedCheckout({ response: attempt.order, verify: body => verifyHospitalPayment({ localOrderId, ...body }) });
+      hospitalPaymentAttempts.delete(String(billId));
+      return result;
+    })();
+    hospitalPaymentsInFlight.set(String(billId), payment);
+    try { return await payment; } finally { hospitalPaymentsInFlight.delete(String(billId)); }
+  }
 
   return requestJson(API_ENDPOINTS.billing.payment.replace("{billId}", encodeURIComponent(String(billId))), {
     method: "PATCH",
@@ -2221,12 +2257,12 @@ function ReceptionBilling() {
   const applyBillPayment = async (bill, paymentMode) => {
     try {
       const paymentResponse = await startBillingPayment(bill, paymentMode);
-      // PATCH records the collected payment without a gateway; GET confirms persisted status.
+      // Cash is recorded directly; online payments require gateway verification.
       const confirmedResponse = await getBillingPaymentStatus(bill);
       const nextBill = mergePaymentResponse(
         mergePaymentResponse(bill, paymentResponse, paymentMode), confirmedResponse, paymentMode
       );
-      if (billingPaymentStatus(confirmedResponse).toLowerCase() !== "paid") {
+      if (!["paid", "partiallypaid", "partially paid"].includes(billingPaymentStatus(confirmedResponse).toLowerCase())) {
         throw new Error("Bill saved, but the API has not confirmed Paid status. Refresh the saved bill before retrying payment.");
       }
       const nextStoredBills = storeRecentServiceBill(nextBill);

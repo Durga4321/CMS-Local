@@ -1,0 +1,23 @@
+.payment-api-panel { margin: 18px 0; padding: 18px; border: 1px solid var(--theme-primary-glow, #cbd5e1); border-radius: 12px; background: #fff; color: #334155; min-width: 0; }
+.payment-api-panel h2, .payment-api-panel h3 { margin: 0 0 12px; }
+.payment-api-panel p { line-height: 1.5; }
+.payment-api-panel details { margin-top: 12px; }
+.payment-api-panel summary { cursor: pointer; font-weight: 700; color: var(--theme-primary-dark, #0f5960); padding: 10px 0; }
+.payment-api-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; margin: 12px 0; }
+.payment-api-panel label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; min-width: 0; }
+.payment-api-panel :is(input:not([type=checkbox]), select, textarea) { box-sizing: border-box; width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; color: #334155; font: inherit; }
+.payment-api-panel textarea { min-height: 70px; }
+.payment-api-panel .payment-api-check { display: flex; flex-direction: row; align-items: center; gap: 8px; margin: 10px 0; }
+.payment-api-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.payment-api-panel button { padding: 8px 12px; min-height: 36px; border: 1px solid var(--theme-primary-glow, #cbd5e1); border-radius: 7px; background: #fff; color: var(--theme-primary-dark, #0f5960); font: inherit; font-weight: 600; cursor: pointer; }
+.payment-api-panel button:disabled { opacity: .55; cursor: not-allowed; }
+.payment-api-panel fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.payment-api-panel [role=alert] { padding: 10px; border: 1px solid #fecaca; border-radius: 7px; color: #991b1b; background: #fff1f2; overflow-wrap: anywhere; }
+.payment-api-panel [role=status] { padding: 8px 0; color: var(--theme-primary-dark, #0f5960); }
+.payment-api-results { overflow: auto; max-height: 380px; margin-top: 12px; }
+.payment-api-results table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+.payment-api-results :is(th, td) { border-bottom: 1px solid #e2e8f0; padding: 9px; vertical-align: top; min-width: 100px; overflow-wrap: anywhere; }
+.payment-api-results dl { margin: 0; }
+.payment-api-results dt { font-weight: 600; }
+.payment-api-results dd { margin: 0 0 6px; }
+.payment-api-muted { font-size: 13px; color: #64748b; }

@@ -21,6 +21,7 @@ import {
 } from "../utils/subscriptionFlow";
 import { formatIndianCurrency } from "../utils/format";
 import "./LandingPage.css";
+import AdminRegistration from '../components/payments/AdminRegistration';
 
 const getPaymentOutcome = (response) => {
   const statuses = [
@@ -77,7 +78,6 @@ const getPaymentOutcome = (response) => {
   ) return "approved";
   if (pendingPayment || normalized.some((value) => ["pending", "initiated", "processing", "in progress"].includes(value))) return "pending";
   if (response?.success === false || response?.Success === false) return "rejected";
-  if (response?.success === true || response?.Success === true) return "approved";
   return "unknown";
 };
 
@@ -293,6 +293,7 @@ export default function SubscriptionCheckoutPage() {
         </div>
       ) : (
         <section className="subscription-form-page">
+          <AdminRegistration />
           <div className="landing-checkout">
             <aside className="landing-checkout-summary">
               <span>Selected subscription</span>
