@@ -1529,15 +1529,21 @@ html[data-cms-theme] .auth-card--login .create-account-btn:hover {
   }
 }
 
-/* Let the login page scroll when expanded registration exceeds the viewport. */
+/* Keep the staff login card visible while the page scrolls. */
 .auth-container:has(> .auth-card--login) {
-  align-items: flex-start;
+  align-items: center;
   overflow-y: auto;
+  overflow-x: hidden;
+  height: 100vh;
+  height: 100dvh;
 }
 
 .auth-container > .auth-card--login {
-  max-height: none;
+  position: sticky;
+  top: 1.5rem;
+  max-height: calc(100vh - 3rem);
+  max-height: calc(100dvh - 3rem);
   flex-shrink: 0;
   box-sizing: border-box;
-  margin-block: auto;
+  margin-block: 1.5rem;
 }

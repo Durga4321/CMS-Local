@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createPaymentApiClient } from './paymentApiClient.mjs';
 import { PAYMENT_API_CONTRACTS } from '../config/paymentApiContracts.mjs';
 
-const setup = (transport = async () => ({ ok: true, text: async () => '{"status":"Pending"}' })) => {
+const setup = (transport = async () => ({ ok: true, text: async () => '{"status":"Pending"}', blob: async () => new Blob(), headers: { get: () => null } })) => {
   const calls = [];
   const scopes = [];
   const client = createPaymentApiClient({

@@ -327,6 +327,23 @@ export const PAYMENT_API_CONTRACTS = {
       "mode"
     ]
   },
+  "GET hospital-settlement-reconciliation/settlements": { "method": "GET", "path": "hospital-settlement-reconciliation/settlements", "auth": "hospital", "query": ["status", "page", "pageSize"] },
+  "GET hospital-settlement-reconciliation/settlements/{settlementRecordId}": { "method": "GET", "path": "hospital-settlement-reconciliation/settlements/{settlementRecordId}", "auth": "hospital", "query": [] },
+  "GET hospital-settlement-reconciliation/settlements/{settlementRecordId}/payments": { "method": "GET", "path": "hospital-settlement-reconciliation/settlements/{settlementRecordId}/payments", "auth": "hospital", "query": [] },
+  "POST hospital-settlement-reconciliation/settlements/{settlementRecordId}/reconcile": { "method": "POST", "path": "hospital-settlement-reconciliation/settlements/{settlementRecordId}/reconcile", "auth": "hospital", "query": [] },
+  "POST hospital-payments/qrs": { "method": "POST", "path": "hospital-payments/qrs", "auth": "hospital", "query": [], "fields": ["billingId", "amount"], "required": ["billingId", "amount"] },
+  "GET hospital-payments/qrs/{id}": { "method": "GET", "path": "hospital-payments/qrs/{id}", "auth": "hospital", "query": [] },
+  "POST hospital-payments/links": { "method": "POST", "path": "hospital-payments/links", "auth": "hospital", "query": [], "fields": ["billingId"], "required": ["billingId"] },
+  "POST hospital-payments/links/{id}/revoke": { "method": "POST", "path": "hospital-payments/links/{id}/revoke", "auth": "hospital", "query": [] },
+  "GET public/hospital-payments/{token}": { "method": "GET", "path": "public/hospital-payments/{token}", "auth": "public", "query": [] },
+  "GET public/hospital-payments/{token}/status": { "method": "GET", "path": "public/hospital-payments/{token}/status", "auth": "public", "query": [] },
+  "GET hospital-payments/reports/export": { "method": "GET", "path": "hospital-payments/reports/export", "auth": "hospital", "query": ["from", "to", "mode", "format"], "responseType": "blob" },
+  "GET hospital-payments/reconciliation/candidates": { "method": "GET", "path": "hospital-payments/reconciliation/candidates", "auth": "hospital", "query": ["type", "from", "to"] },
+  "POST hospital-payments/reconciliation/run": { "method": "POST", "path": "hospital-payments/reconciliation/run", "auth": "hospital", "query": [], "fields": ["paymentType", "localOrderId", "localPaymentId", "razorpayOrderId", "razorpayPaymentId", "qrId"], "required": [] },
+  "POST hospital-payments/reconciliation/batch": { "method": "POST", "path": "hospital-payments/reconciliation/batch", "auth": "hospital", "query": [], "fields": ["items"], "required": ["items"] },
+  "GET hospital-payments/reconciliation/summary": { "method": "GET", "path": "hospital-payments/reconciliation/summary", "auth": "hospital", "query": [] },
+  "GET hospital-payments/reconciliation/history": { "method": "GET", "path": "hospital-payments/reconciliation/history", "auth": "hospital", "query": ["limit"] },
+  "POST hospital-payments/reconciliation/discovered-batch": { "method": "POST", "path": "hospital-payments/reconciliation/discovered-batch", "auth": "hospital", "query": [], "fields": ["limit"], "required": [] },
   "GET platform/payment-onboarding/hospitals": {
     "method": "GET",
     "path": "platform/payment-onboarding/hospitals",

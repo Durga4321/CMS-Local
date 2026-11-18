@@ -21,3 +21,19 @@
 .payment-api-results dt { font-weight: 600; }
 .payment-api-results dd { margin: 0 0 6px; }
 .payment-api-muted { font-size: 13px; color: #64748b; }
+.payment-method-setup { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 22px 0 24px; align-items: stretch; }
+.payment-method-setup-card { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; min-height: 154px; padding: 20px !important; text-align: left; border: 1px solid #dce6eb !important; border-radius: 14px !important; background: #fff !important; transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease; }
+.payment-method-setup-card:hover { border-color: var(--theme-primary, #0ea5a0) !important; transform: translateY(-2px); }
+.payment-method-setup-card:focus-visible { outline: 3px solid var(--theme-primary-glow, #b8eee7); outline-offset: 2px; }
+.payment-method-setup-card strong { color: #0b7f78; font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
+.payment-method-setup-card span { flex: 1; color: #5c6c79; font-size: 13px; font-weight: 400; line-height: 1.5; }
+.payment-method-setup-card small { color: #64748b; font-size: 11px; font-weight: 600; letter-spacing: .02em; }
+.payment-method-setup-card.is-selected { border-color: var(--theme-primary, #0ea5a0) !important; background: var(--theme-primary-soft, #effcfb) !important; box-shadow: 0 0 0 2px var(--theme-primary-glow, #b8eee7); }
+.payment-method-setup-form { padding: 22px; margin: 0 0 18px; border: 1px solid #dce6eb; border-radius: 14px; background: #fff; }
+.payment-method-setup-form h3 { margin: 0 0 8px; color: var(--theme-primary-dark, #0f5960); font-size: 20px; }
+.payment-method-setup-form > p { color: #64748b; }
+.payment-method-setup-form input[type=file] { min-height: 44px; padding: 6px !important; color: #475569; }
+.payment-method-setup-form input[type=file]::file-selector-button { min-height: 30px; margin-right: 10px; padding: 5px 11px; border: 1px solid #d5dfe9; border-radius: 6px; background: #f8fafc; color: #334155; font: inherit; cursor: pointer; }
+.payment-method-setup-form button[type=submit] { margin-top: 8px; padding: 10px 18px; border-radius: 9px; }
+@media (max-width: 900px) { .payment-method-setup { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .payment-method-setup { grid-template-columns: 1fr; } .payment-method-setup-card { min-height: 0; } .payment-method-setup-form { padding: 16px; } }
