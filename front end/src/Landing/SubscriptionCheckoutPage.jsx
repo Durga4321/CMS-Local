@@ -16,6 +16,7 @@ import {
   fetchSubscriptionPaymentStatus,
   fetchSubscriptionPlans,
   getDemoCheckoutToken,
+  hasVerifiedAdminSession,
   getSubscriptionPurchaseId,
   initiateSubscriptionPayment,
 } from "../utils/subscriptionFlow";
@@ -175,6 +176,10 @@ export default function SubscriptionCheckoutPage() {
   const submit = async (event) => {
     event.preventDefault();
     if (submitting) return;
+    if (!hasVerifiedAdminSession()) {
+      setSubmitError("Sign in with a verified Admin account before starting subscription checkout.");
+      return;
+    }
     setSubmitting(true);
     setSubmitError("");
     const request = {
@@ -294,6 +299,11 @@ export default function SubscriptionCheckoutPage() {
       ) : (
         <section className="subscription-form-page">
           <AdminRegistration />
+          {!hasVerifiedAdminSession() ? (
+            <div className="landing-payment-error" role="status">
+              Subscription checkout requires a verified Admin account. <Link to="/login">Sign in as Admin</Link>, then return to this plan.
+            </div>
+          ) : null}
           <div className="landing-checkout">
             <aside className="landing-checkout-summary">
               <span>Selected subscription</span>
@@ -504,7 +514,7 @@ export default function SubscriptionCheckoutPage() {
               <button
                 className="landing-pay-button"
                 type="submit"
-                disabled={!confirmed || submitting || !paymentMethod || !paymentMethods.length}
+                disabled={!hasVerifiedAdminSession() || !confirmed || submitting || !paymentMethod || !paymentMethods.length}
               >
                 {submitting
                   ? "Initiating payment..."

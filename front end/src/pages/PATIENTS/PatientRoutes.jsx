@@ -1887,7 +1887,7 @@ function PatientBookingWizardPage({ patient = null, visits = [], onRefresh }) {
   const [reasonForVisit, setReasonForVisit] = useState("");
   const [bookingState, setBookingState] = useState("idle");
   const [bookingError, setBookingError] = usePatientToastState();
-  const [paymentMode, setPaymentMode] = useState("UPI");
+  const [paymentMode, setPaymentMode] = useState("Cash");
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const bookingRequestRef = useRef(false);
@@ -2591,6 +2591,10 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
 
   const handleConfirmBooking = async () => {
     if (bookingRequestRef.current) return;
+    if (String(paymentMode).trim().toLowerCase() !== "cash") {
+      setBookingError("Online patient appointment payments are not available through the current payment API.");
+      return;
+    }
 
     const visitReasonError = validateMedicalVisitReason(reasonForVisit);
     if (visitReasonError) {
@@ -3062,9 +3066,7 @@ ${print ? '<script>window.onload=()=>window.print()</script>' : ''}
                 <label>
                   <span>Payment Mode</span>
                   <select value={paymentMode} onChange={(event) => setPaymentMode(event.target.value)}>
-                    <option value="UPI">UPI</option>
                     <option value="Cash">Cash</option>
-                    <option value="Card">Card</option>
                   </select>
                 </label>
               </div>

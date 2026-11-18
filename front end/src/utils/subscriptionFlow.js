@@ -22,6 +22,12 @@ const getAuthToken = () => {
   }
   return "";
 };
+export const hasVerifiedAdminSession = () => {
+  const readSessionValue = (key) => sessionStorage.getItem(key) || localStorage.getItem(key) || "";
+  const token = readSessionValue("adminToken");
+  const role = String(readSessionValue("adminRole") || readSessionValue("userRole")).trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+  return Boolean(token) && ["admin", "clinicadmin"].includes(role);
+};
 const requestJson=async(path,options={})=>{const{body,headers,skipAuth=false,...rest}=options;const token=skipAuth?"":getAuthToken();const response=await fetch(apiUrl(path),{cache:"no-store",...rest,headers:{"Content-Type":"application/json","ngrok-skip-browser-warning":"true",...(token?{Authorization:"Bearer "+token}:{}),...headers},body:body!==undefined?JSON.stringify(body):undefined});const text=await response.text();let payload=null;if(text){try{payload=JSON.parse(text)}catch{payload=text}}if(!response.ok){const detail=payload?.message||payload?.title||payload?.error;const error=new Error(detail|| (response.status===403?"Access denied for /api/"+path+" (403). Sign in with the required account role.":"Request to /api/"+path+" failed with status "+response.status));error.status=response.status;error.endpoint=path;error.payload=payload;throw error;}return payload};
 const parseList=(value)=>Array.isArray(value)?value:Array.isArray(value?.data)?value.data:Array.isArray(value?.items)?value.items:Array.isArray(value?.results)?value.results:Array.isArray(value?.records)?value.records:Array.isArray(value?.subscriptions)?value.subscriptions:Array.isArray(value?.subscriptionRequests)?value.subscriptionRequests:Array.isArray(value?.requests)?value.requests:Array.isArray(value?.plans)?value.plans:Array.isArray(value?.methods)?value.methods:Array.isArray(value?.paymentMethods)?value.paymentMethods:Array.isArray(value?.renewals)?value.renewals:Array.isArray(value?.renewalPurchases)?value.renewalPurchases:Array.isArray(value?.pendingPayments)?value.pendingPayments:Array.isArray(value?.pendingPurchases)?value.pendingPurchases:Array.isArray(value?.payments)?value.payments:Array.isArray(value?.purchases)?value.purchases:Array.isArray(value?.history)?value.history:[];
 export const addMonths=(dateValue,months)=>{const date=new Date((dateValue||todayIso())+"T00:00:00");date.setMonth(date.getMonth()+Number(months||1));return date.toISOString().slice(0,10)};
@@ -226,6 +232,7 @@ export const updateAdminSubscriptionPlan=async(id,plan)=>{
   return result&&typeof result==="object"?normalizeSubscriptionPlan(result):normalizeSubscriptionPlan({...payload,id});
 };
 export const createSubscriptionCheckout=async({name,email,mobileNumber,subscriptionPlanId,paymentMethod})=>{
+  if (!hasVerifiedAdminSession()) throw new Error("Sign in with a verified Admin account before starting subscription checkout.");
   const payload={
     name:String(name||"").trim(),
     email:String(email||"").trim(),

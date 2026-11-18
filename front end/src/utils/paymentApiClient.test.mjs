@@ -58,6 +58,33 @@ test('document upload uses the required multipart file field', async () => {
   assert.equal(calls[0][1].headers['Content-Type'], undefined);
 });
 
+test('merchant CRUD and credential reads use the documented operations and account scope', async () => {
+  const operations = [
+    ['POST hospital/payment-settings', 'hospital'],
+    ['DELETE hospital/payment-settings', 'hospital'],
+    ['GET hospital/payment-settings/credentials', 'hospital'],
+    ['POST cms-owner/payment-settings', 'superadmin'],
+    ['DELETE cms-owner/payment-settings', 'superadmin'],
+    ['GET cms-owner/payment-settings/credentials', 'superadmin'],
+  ];
+  for (const [operation, scope] of operations) {
+    const { client, calls, scopes } = setup();
+    const contract = PAYMENT_API_CONTRACTS[operation];
+    const body = contract.fields ? Object.fromEntries(contract.required.map(name => [name, 'valid'])) : undefined;
+    await client(operation, { body });
+    assert.equal(calls[0][1].method, contract.method);
+    assert.deepEqual(scopes, [scope]);
+  }
+});
+
+test('current Swagger request fields are used for payment reports and recovery', async () => {
+  assert.deepEqual(PAYMENT_API_CONTRACTS['GET hospital-payments/reports/export'].query, ['fromUtc', 'toUtc']);
+  assert.deepEqual(PAYMENT_API_CONTRACTS['POST hospital-payments/reconciliation/run'].fields, ['paymentSource', 'gatewayPaymentId', 'orderId', 'qrId']);
+  assert.deepEqual(PAYMENT_API_CONTRACTS['POST hospital-payments/reconciliation/batch'].fields, ['payments']);
+  assert.deepEqual(PAYMENT_API_CONTRACTS['POST hospital-payments/reconciliation/discovered-batch'].query, ['limit', 'minimumAgeMinutes', 'dryRun']);
+  assert.equal(PAYMENT_API_CONTRACTS['GET hospital-payments/recovery/summary'].path, 'hospital-payments/recovery/summary');
+});
+
 test('all documented operations build requests without duplicate routes or webhooks', async () => {
   const identities = new Set();
   for (const [operation, contract] of Object.entries(PAYMENT_API_CONTRACTS)) {

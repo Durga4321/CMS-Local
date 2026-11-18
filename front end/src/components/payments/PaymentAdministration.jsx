@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import * as api from '../../utils/paymentApi';
 import {
   merchantSettingsBody, paymentAmount, paymentDateQuery, paymentRecordList,
-  positiveRecordId, publicPaymentData, unwrapPaymentData, validateSettlementRows,
+  merchantSettingsCreateBody, positiveRecordId, publicPaymentData, unwrapPaymentData, validateSettlementRows,
 } from '../../utils/paymentAdministration.mjs';
 import './PaymentAdministration.css';
 
@@ -45,7 +45,7 @@ function useRequest() {
     } catch (failure) { setError(failure.message || 'Unable to complete the request.'); return { ok: false }; }
     finally { lock.current = false; setBusy(false); }
   };
-  return { busy, error, result, run };
+  return { busy, error, result, run, setError, setResult };
 }
 
 const RequestStatus = ({ request }) => <>
@@ -73,6 +73,23 @@ function MerchantSettings({ cms, canEdit }) {
     if (!saved || typeof saved !== 'object' || Array.isArray(saved)) throw new Error('Merchant settings were not returned in a supported format.');
     setForm({ merchantName: saved.merchantName ?? '', mode: saved.mode === 'Live' ? 'Live' : 'Test', isEnabled: saved.isEnabled === true, credentialReference: saved.credentialReference ?? '', keyId: saved.keyId ?? '', keySecret: '', webhookSecret: '' });
     setLoaded(true);
+    return response;
+  });
+  const loadCredentials = () => request.run(() => cms ? api.fetchCmsMerchantCredentials() : api.fetchHospitalMerchantCredentials());
+  const create = () => request.run(async () => {
+    const body = merchantSettingsCreateBody(form);
+    try {
+      const response = await (cms ? api.createCmsMerchantSettings(body) : api.createHospitalMerchantSettings(body));
+      setLoaded(true);
+      return response;
+    }
+    finally { setForm(current => ({ ...current, keySecret: '', webhookSecret: '' })); }
+  });
+  const remove = () => request.run(async () => {
+    if (!window.confirm('Delete saved merchant settings and credentials?')) throw new Error('Deletion cancelled.');
+    const response = await (cms ? api.deleteCmsMerchantSettings() : api.deleteHospitalMerchantSettings());
+    setLoaded(false);
+    setForm(current => ({ ...current, isEnabled: false, keyId: '', keySecret: '', webhookSecret: '' }));
     return response;
   });
   const notReady = event => { event.preventDefault(); setRequestError('This upload is not connected yet: backend Swagger has no UPI or bank settings upload/read endpoint. Nothing was uploaded or saved.'); };
@@ -111,12 +128,13 @@ function MerchantSettings({ cms, canEdit }) {
     {method === 'card' && <details open className="payment-method-setup-form"><summary>Card gateway credentials</summary>
       <p>Load the saved Razorpay credentials before editing. Leave secret fields empty to retain existing credentials.</p>
       <button type="button" onClick={load} disabled={request.busy}>Load merchant settings</button>
+      <button type="button" onClick={loadCredentials} disabled={request.busy}>Load credential status</button>
     <form onSubmit={event => { event.preventDefault(); request.run(async () => {
       const body = merchantSettingsBody(form);
       try { return await (cms ? api.saveCmsMerchantSettings(body) : api.saveHospitalMerchantSettings(body)); }
       finally { setForm(current => ({ ...current, keySecret: '', webhookSecret: '' })); }
     }); }}>
-      <fieldset disabled={!canEdit || !loaded || request.busy}>
+      <fieldset disabled={!canEdit || request.busy}>
         <div className="payment-api-grid">
           <Field title="Merchant name"><input name="merchantName" value={form.merchantName} onChange={change} maxLength={150} required /></Field>
           <Mode value={form.mode} onChange={event => setForm(current => ({ ...current, mode: event.target.value, keyId: '', keySecret: '', webhookSecret: '' }))} />
@@ -126,9 +144,11 @@ function MerchantSettings({ cms, canEdit }) {
           <Field title="Webhook Secret"><input name="webhookSecret" type="password" value={form.webhookSecret} onChange={change} autoComplete="new-password" /></Field>
         </div>
         <label className="payment-api-check"><input type="checkbox" name="isEnabled" checked={form.isEnabled} onChange={change} />Enable this merchant mode</label>
-        <button type="submit">Save merchant settings</button>
+        <button type="button" disabled={!canEdit || request.busy} onClick={create}>Create merchant settings</button>
+        <button type="submit" disabled={!loaded}>Save merchant settings</button>
       </fieldset>
     </form>
+    <button type="button" disabled={!canEdit || !loaded || request.busy} onClick={remove}>Delete merchant settings</button>
     </details>}
     {requestError && <p role="alert">{requestError}</p>}
     <RequestStatus request={request} />
@@ -357,7 +377,8 @@ function HospitalReconciliation({ canEdit }) {
   return <details><summary>Settlement reconciliation and payment recovery</summary>
     <p>Review reconciliation status and payment evidence. Recovery checks Razorpay before recording any verified payment.</p>
     <div className="payment-api-actions">
-      <button type="button" disabled={request.busy} onClick={() => request.run(api.fetchHospitalReconciliationSummary)}>Load recovery summary</button>
+      <button type="button" disabled={request.busy} onClick={() => request.run(api.fetchHospitalRecoverySummary)}>Load recovery summary</button>
+      <button type="button" disabled={request.busy} onClick={() => request.run(api.fetchHospitalReconciliationSummary)}>Load reconciliation summary</button>
       <button type="button" disabled={request.busy} onClick={() => request.run(() => api.fetchHospitalReconciliationHistory(50))}>Load recent recovery history</button>
       <button type="button" disabled={request.busy} onClick={() => request.run(api.fetchHospitalReconciliationCandidates)}>Load recovery candidates</button>
       <button type="button" disabled={!canEdit || request.busy || !window.confirm} onClick={() => request.run(async () => { if (!window.confirm('Discover eligible payments and attempt gateway-verified recovery?')) throw new Error('Recovery cancelled.'); return api.runHospitalDiscoveredReconciliation(); })}>Run discovered recovery batch</button>
@@ -463,6 +484,13 @@ export default function PaymentAdministration({ scope = 'hospital', canEdit = fa
     <p>{cms ? 'Load and update the saved Razorpay merchant configuration.' : 'Manage merchant payment settings here. Payment history is available on its own tab.'}</p>
     {!canEdit && <p>You have view-only access. Payment changes require the appropriate account permissions.</p>}
     <MerchantSettings cms={cms} canEdit={canEdit} />
-    {initialSection === 'reports' && <SettlementsAndReports cms={cms} canEdit={canEdit} initialOpen />}
+    <Onboarding cms={cms} canEdit={canEdit} />
+    <Refunds cms={cms} canEdit={canEdit} />
+    <SettlementsAndReports cms={cms} canEdit={canEdit} initialOpen={initialSection === 'reports'} />
+    {!cms && <>
+      <HospitalPaymentTools canEdit={canEdit} />
+      <HospitalReconciliation canEdit={canEdit} />
+    </>}
+    <Disputes cms={cms} canEdit={canEdit} />
   </section>;
 }
