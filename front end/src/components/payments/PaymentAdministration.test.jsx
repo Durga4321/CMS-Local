@@ -9,7 +9,8 @@ jest.mock('react-router-dom', () => ({ Link: ({ to, children }) => <a href={to}>
 jest.mock('xlsx', () => ({ read: jest.fn(), utils: { sheet_to_json: jest.fn() } }));
 jest.mock('../../utils/paymentApi', () => Object.fromEntries([
   'registerAdmin', 'verifyAdminRegistrationOtp', 'resendAdminRegistrationOtp',
-  'fetchHospitalMerchantSettings', 'saveHospitalMerchantSettings', 'fetchCmsMerchantSettings', 'saveCmsMerchantSettings',
+  'fetchHospitalMerchantSettings', 'createHospitalMerchantSettings', 'saveHospitalMerchantSettings', 'deleteHospitalMerchantSettings', 'fetchHospitalMerchantCredentials',
+  'fetchCmsMerchantSettings', 'createCmsMerchantSettings', 'saveCmsMerchantSettings', 'deleteCmsMerchantSettings', 'fetchCmsMerchantCredentials',
   'fetchHospitalOnboarding', 'submitHospitalOnboarding', 'fetchCmsOnboarding', 'fetchHospitalOnboardingReviews',
   'fetchAdminOnboarding', 'fetchAdminOnboardingDetails', 'reviewHospitalOnboarding', 'reviewCmsOnboarding',
   'createHospitalRefund', 'createCmsRefund', 'reconcileHospitalRefund', 'reconcileCmsRefund',
@@ -17,9 +18,16 @@ jest.mock('../../utils/paymentApi', () => Object.fromEntries([
   'contestHospitalDispute', 'contestCmsDispute', 'acceptHospitalDispute', 'acceptCmsDispute',
   'fetchHospitalPaymentRevenue', 'fetchCmsPaymentRevenue', 'syncHospitalSettlements', 'syncCmsSettlements',
   'reconcileHospitalSettlements', 'reconcileCmsSettlements',
+  'fetchHospitalRecoverySummary', 'fetchHospitalReconciliationSummary',
 ].map(name => [name, jest.fn()])));
 
-const open = name => { screen.getByText(name, { selector: 'summary' }).closest('details').open = true; };
+const open = name => {
+  if (name === 'Razorpay merchant settings') {
+    fireEvent.click(screen.getByRole('button', { name: /Debit \/ credit cards/ }));
+    return;
+  }
+  screen.getByText(name, { selector: 'summary' }).closest('details').open = true;
+};
 const fill = (name, value) => fireEvent.change(screen.getByLabelText(name), { target: { value } });
 
 beforeEach(() => {
@@ -67,6 +75,34 @@ test('merchant settings omit blank secrets and never persist or display returned
   expect(screen.queryByText('server-secret')).not.toBeInTheDocument();
   expect(screen.queryByText('returned-secret')).not.toBeInTheDocument();
   expect(localStorage.length).toBe(0); expect(sessionStorage.length).toBe(0);
+});
+
+test('merchant settings can create a new configuration and load redacted credential status', async () => {
+  api.createHospitalMerchantSettings.mockResolvedValue({ saved: true, keySecret: 'created-secret' });
+  api.fetchHospitalMerchantCredentials.mockResolvedValue({ keyId: 'rzp_test_public', keySecret: 'credential-secret' });
+  render(<PaymentAdministration canEdit />); open('Razorpay merchant settings');
+  fill('Merchant name', 'New Hospital'); fill('Razorpay Key ID', 'rzp_test_new');
+  fill('Razorpay Key Secret', 'private-key'); fill('Webhook Secret', 'webhook-key');
+  fireEvent.click(screen.getByRole('button', { name: 'Create merchant settings' }));
+  await waitFor(() => expect(api.createHospitalMerchantSettings).toHaveBeenCalledWith({ merchantName: 'New Hospital', mode: 'Test', keyId: 'rzp_test_new', keySecret: 'private-key', webhookSecret: 'webhook-key' }));
+  expect(screen.queryByText('created-secret')).not.toBeInTheDocument();
+  await waitFor(() => expect(screen.getByLabelText('Razorpay Key Secret')).toHaveValue(''));
+  fireEvent.click(screen.getByRole('button', { name: 'Load credential status' }));
+  await waitFor(() => expect(api.fetchHospitalMerchantCredentials).toHaveBeenCalledTimes(1));
+  expect(screen.queryByText('credential-secret')).not.toBeInTheDocument();
+});
+
+test('merchant settings can delete a loaded configuration after explicit confirmation', async () => {
+  api.fetchHospitalMerchantSettings.mockResolvedValue({ merchantName: 'Hospital', mode: 'Test' });
+  api.deleteHospitalMerchantSettings.mockResolvedValue({ deleted: true });
+  const confirm = jest.spyOn(window, 'confirm').mockReturnValue(true);
+  render(<PaymentAdministration canEdit />); open('Razorpay merchant settings');
+  fireEvent.click(screen.getByRole('button', { name: 'Load merchant settings' }));
+  await waitFor(() => expect(screen.getByLabelText('Merchant name')).toHaveValue('Hospital'));
+  fireEvent.click(screen.getByRole('button', { name: 'Delete merchant settings' }));
+  await waitFor(() => expect(api.deleteHospitalMerchantSettings).toHaveBeenCalledTimes(1));
+  expect(confirm).toHaveBeenCalled();
+  confirm.mockRestore();
 });
 
 test('an uncertain hospital refund remains locked and reconciliation uses its separate endpoint', async () => {

@@ -41,6 +41,11 @@ export const paymentDateQuery = ({ from, to, mode } = {}, includeMode = true) =>
   };
 };
 
+export const hospitalPaymentExportQuery = ({ from, to } = {}) => ({
+  ...(from ? { fromUtc: from } : {}),
+  ...(to ? { toUtc: to } : {}),
+});
+
 export const merchantSettingsBody = form => {
   const merchantName = String(form.merchantName || '').trim();
   if (!merchantName || merchantName.length > 150) throw new Error('Enter a merchant name of up to 150 characters.');
@@ -51,6 +56,32 @@ export const merchantSettingsBody = form => {
     if (value) body[key] = value;
   }
   return body;
+};
+
+export const merchantSettingsCreateBody = form => {
+  const { isEnabled, ...body } = merchantSettingsBody(form);
+  for (const key of ['keyId', 'keySecret', 'webhookSecret']) {
+    if (!body[key]) throw new Error(`${key === 'keyId' ? 'Razorpay Key ID' : key === 'keySecret' ? 'Razorpay Key Secret' : 'Webhook Secret'} is required to create merchant settings.`);
+  }
+  return body;
+};
+
+export const hospitalPaymentRecoveryRequest = request => {
+  const source = request?.paymentSource ?? request?.paymentType;
+  const orderId = request?.orderId ?? request?.localOrderId;
+  const qrId = request?.qrId;
+  const toApiId = (value, label) => {
+    if (value == null || value === '') return undefined;
+    const number = Number(value);
+    if (!Number.isSafeInteger(number) || number <= 0) throw new Error(`${label} must be a positive whole number within the supported range.`);
+    return number;
+  };
+  return {
+    ...(source ? { paymentSource: source } : {}),
+    ...(request?.gatewayPaymentId ? { gatewayPaymentId: String(request.gatewayPaymentId).trim() } : {}),
+    ...(orderId ? { orderId: toApiId(orderId, 'Order ID') } : {}),
+    ...(qrId ? { qrId: toApiId(qrId, 'QR ID') } : {}),
+  };
 };
 
 export const validateSettlementRows = (rows, cms) => {

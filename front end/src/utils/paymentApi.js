@@ -1,5 +1,6 @@
 import { apiUrl } from '../config/api';
 import { createPaymentApiClient } from './paymentApiClient.mjs';
+import { hospitalPaymentExportQuery, hospitalPaymentRecoveryRequest } from './paymentAdministration.mjs';
 
 const getToken = (scope) => {
   const path = window.location.pathname.toLowerCase();
@@ -38,9 +39,15 @@ export const reconcileCmsRefund = (refundId) => paymentApi('POST cms/subscriptio
 export const fetchAdminOnboarding = () => paymentApi('GET superadmin/admin-onboarding');
 export const fetchAdminOnboardingDetails = (adminId) => paymentApi('GET superadmin/admin-onboarding/{adminId}', { params: { adminId } });
 export const fetchHospitalMerchantSettings = () => paymentApi('GET hospital/payment-settings');
+export const createHospitalMerchantSettings = body => paymentApi('POST hospital/payment-settings', { body });
 export const saveHospitalMerchantSettings = (body) => paymentApi('PUT hospital/payment-settings', { body });
+export const deleteHospitalMerchantSettings = () => paymentApi('DELETE hospital/payment-settings');
+export const fetchHospitalMerchantCredentials = () => paymentApi('GET hospital/payment-settings/credentials');
 export const fetchCmsMerchantSettings = () => paymentApi('GET cms-owner/payment-settings');
+export const createCmsMerchantSettings = body => paymentApi('POST cms-owner/payment-settings', { body });
 export const saveCmsMerchantSettings = (body) => paymentApi('PUT cms-owner/payment-settings', { body });
+export const deleteCmsMerchantSettings = () => paymentApi('DELETE cms-owner/payment-settings');
+export const fetchCmsMerchantCredentials = () => paymentApi('GET cms-owner/payment-settings/credentials');
 export const fetchHospitalOnboarding = () => paymentApi('GET hospital/payment-onboarding');
 export const submitHospitalOnboarding = () => paymentApi('POST hospital/payment-onboarding/submit');
 export const fetchHospitalOnboardingReviews = () => paymentApi('GET platform/payment-onboarding/hospitals');
@@ -51,7 +58,7 @@ export const reviewCmsOnboarding = (body) => paymentApi('PUT platform/payment-on
 export const createHospitalRefund = (transactionId, body) => paymentApi('POST hospital-payments/transactions/{transactionId}/refunds', { params: { transactionId }, body });
 export const createCmsRefund = (purchaseId, body) => paymentApi('POST cms/subscription-payments/refunds/{purchaseId}', { params: { purchaseId }, body });
 export const fetchHospitalPaymentRevenue = (query = {}) => paymentApi('GET hospital-payments/reports/revenue', { query });
-export const exportHospitalPaymentReport = (query = {}) => paymentApi('GET hospital-payments/reports/export', { query });
+export const exportHospitalPaymentReport = (query = {}) => paymentApi('GET hospital-payments/reports/export', { query: hospitalPaymentExportQuery(query) });
 export const fetchCmsPaymentRevenue = (query = {}) => paymentApi('GET cms/payments/reports/subscriptions', { query });
 export const reconcileHospitalSettlements = (rows) => paymentApi('POST hospital-payments/settlements/reconcile', { body: { rows } });
 export const reconcileCmsSettlements = (rows) => paymentApi('POST cms/payments/reports/settlements/reconcile', { body: { rows } });
@@ -67,11 +74,14 @@ export const revokeHospitalPaymentLink = id => paymentApi('POST hospital-payment
 export const fetchPublicHospitalPayment = token => paymentApi('GET public/hospital-payments/{token}', { params: { token } });
 export const fetchPublicHospitalPaymentStatus = token => paymentApi('GET public/hospital-payments/{token}/status', { params: { token } });
 export const fetchHospitalReconciliationCandidates = (query = {}) => paymentApi('GET hospital-payments/reconciliation/candidates', { query });
-export const runHospitalPaymentReconciliation = body => paymentApi('POST hospital-payments/reconciliation/run', { body });
-export const runHospitalPaymentReconciliationBatch = items => paymentApi('POST hospital-payments/reconciliation/batch', { body: { items } });
-export const fetchHospitalReconciliationSummary = () => paymentApi('GET hospital-payments/reconciliation/summary');
+export const runHospitalPaymentReconciliation = body => paymentApi('POST hospital-payments/reconciliation/run', { body: hospitalPaymentRecoveryRequest(body) });
+export const runHospitalPaymentReconciliationBatch = payments => paymentApi('POST hospital-payments/reconciliation/batch', { body: { payments: payments.map(hospitalPaymentRecoveryRequest) } });
+export const fetchHospitalReconciliationSummary = (minimumAgeMinutes) => paymentApi('GET hospital-payments/reconciliation/summary', { query: minimumAgeMinutes == null ? {} : { minimumAgeMinutes } });
+export const fetchHospitalRecoverySummary = () => paymentApi('GET hospital-payments/recovery/summary');
 export const fetchHospitalReconciliationHistory = (limit = 50) => paymentApi('GET hospital-payments/reconciliation/history', { query: { limit } });
-export const runHospitalDiscoveredReconciliation = (limit) => paymentApi('POST hospital-payments/reconciliation/discovered-batch', { ...(limit ? { body: { limit } } : {}) });
+export const runHospitalDiscoveredReconciliation = (options = {}) => paymentApi('POST hospital-payments/reconciliation/discovered-batch', {
+  query: typeof options === 'number' ? { limit: options } : options,
+});
 export const syncCmsSettlements = (query = {}) => paymentApi('POST cms/payments/reports/settlements/sync', { query });
 export const fetchHospitalDisputes = (query = {}) => paymentApi('GET hospital-payments/disputes', { query });
 export const fetchCmsDisputes = (query = {}) => paymentApi('GET cms/payments/reports/disputes', { query });

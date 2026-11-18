@@ -63,6 +63,13 @@ const readCreatedClinicId = (data = {}) =>
 const readCreatedClinicName = (data = {}, fallback = "Clinic") =>
   data.name || data.clinicName || data.hospitalName || data.ClinicName || data.HospitalName || data.data?.name || data.data?.clinicName || fallback;
 
+const hasAdminSession = () => {
+  const readSessionValue = (key) => sessionStorage.getItem(key) || localStorage.getItem(key) || "";
+  const token = readSessionValue("adminToken");
+  const role = String(readSessionValue("adminRole") || readSessionValue("userRole")).trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+  return Boolean(token) && ["admin", "clinicadmin"].includes(role);
+};
+
 function AdminClinicSetup() {
   const navigate = useNavigate();
   const toast = useToast();
@@ -184,6 +191,12 @@ function AdminClinicSetup() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!hasAdminSession()) {
+      const message = "Sign in with the verified Admin account that completed payment before creating a clinic.";
+      setError(message);
+      toast.error(message);
+      return;
+    }
     if (!validateForm()) {
       const message = "Please fill the highlighted fields.";
       setError(message);
@@ -197,6 +210,8 @@ function AdminClinicSetup() {
 
     try {
       const payload = buildClinicPayload(form);
+      // The backend associates the verified subscription payment with this Admin session.
+      // CreateClinicDto has no payment-reference field, so the server remains authoritative.
       const response = await fetch(apiUrl(API_ENDPOINTS.clinics.list), {
         method: "POST",
         headers: getJsonHeaders(),
