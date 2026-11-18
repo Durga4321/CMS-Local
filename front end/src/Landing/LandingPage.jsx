@@ -10,7 +10,6 @@ import {
   ClipboardList,
   FlaskConical,
   HeartPulse,
-  Layers,
   ReceiptText,
   ShieldCheck,
   Stethoscope,
@@ -21,21 +20,14 @@ import "./LandingPage.css";
 
 // Public overview content only; clinic records remain inside authenticated portals.
 const modules = [
-  { icon: ShieldCheck, title: "Super Admin", badge: "Platform", text: "Manage clinic administrators, subscription plans, access permissions, and platform reports." },
-  { icon: Building2, title: "Clinic Administration", badge: "Admin", text: "Manage branches, staff, patients, appointments, subscriptions, audit logs, and revenue reports." },
+  { icon: ShieldCheck, title: "Super Admin", badge: "Platform", text: "Manage administrators, subscription plans, access permissions, and platform reports." },
+  { icon: Building2, title: "Administration", badge: "Admin", text: "Manage branches, staff, patients, appointments, subscriptions, audit logs, and revenue reports." },
   { icon: UsersRound, title: "Reception", badge: "Front Desk", text: "Register patients, book appointments, manage the queue, and generate OP, lab, and pharmacy bills." },
   { icon: Stethoscope, title: "Doctor", badge: "Consultation", text: "Review appointments and patient history, record consultations, prescribe medicines, and request tests." },
   { icon: HeartPulse, title: "Nursing", badge: "Patient Care", text: "Review assigned patients, record vitals, and maintain care and medical-history information." },
   { icon: FlaskConical, title: "Laboratory", badge: "Diagnostics", text: "Manage ordered tests and sample collection, enter report details, attach available imaging files, and save or print reports." },
   { icon: ReceiptText, title: "Pharmacy", badge: "Medicines & Bills", text: "Manage the medicine catalogue and stock, review prescriptions, confirm dispensing quantities, and create pharmacy invoices." },
   { icon: ClipboardList, title: "Patient Portal", badge: "Patient Access", text: "Register or sign in to book appointments and view available prescriptions, reports, medical history, and bills." },
-];
-
-const overviewAreas = [
-  { value: "Book", label: "Start the visit", desc: "Patient registration and booking" },
-  { value: "Consult", label: "Record the care", desc: "Vitals, history and prescriptions" },
-  { value: "Treat", label: "Continue treatment", desc: "Lab reports and pharmacy dispensing" },
-  { value: "Review", label: "Review the visit", desc: "Invoices and patient documents" },
 ];
 
 const flow = [
@@ -83,57 +75,52 @@ function LandingPage() {
             </span>
             <span className="landing-brand-text">
               <strong>CMS</strong>
-              <small>Clinic Management System</small>
+              <small>Care Management System</small>
             </span>
           </Link>
 
           <div className="landing-nav-center">
-            <div className="landing-live-status">
-              <span className="landing-status-dot" />
-              <span>Application Overview</span>
-            </div>
+            <nav className="landing-primary-links" aria-label="Main navigation">
+              <a href="#top" className="is-active">Home</a><a href="#modules-section">Features</a><a href="#modules-section">Modules</a><a href="#workflow-section">Roles</a><a href="#reports-section">Reports</a><a href="#contact-section">Contact</a>
+            </nav>
           </div>
 
           <div className="landing-nav-actions">
-            <Link to="/login/patient" className="landing-nav-link">
-              Patient Portal
+            <Link to="/register/clinic-owner" className="landing-nav-link">
+              Register
             </Link>
             <div className="landing-staff-actions"><Link to="/login" className="landing-nav-button"><span>Staff Login</span><ChevronRight size={16} /></Link><Link to="/plans" className="landing-nav-subscribe">View Plans & Subscribe</Link></div>
           </div>
         </header>
 
         {/* HERO CONTENT */}
-        <div className="landing-hero-content">
-          <h1 className="landing-hero-title">
-            One Clinic Workspace, <br />
-            <span className="landing-gradient-text">From Booking to Billing.</span>
-          </h1>
-
-          <p className="landing-hero-copy">
-            See how clinic administration, reception, doctors, nurses, laboratory staff,
-            pharmacists, and patients use CMS throughout a patient visit.
-          </p>
-
-          <div className="landing-hero-actions">
-            <Link to="/login" className="landing-cta landing-cta-primary"><span>Access Staff Portal</span><ArrowRight size={18} /></Link>
-            <Link to="/register/patient" className="landing-cta landing-cta-secondary">
-              <span>Register New Patient</span>
-            </Link>
-            <a href="#modules-section" className="landing-cta landing-cta-ghost">
-              <Layers size={17} />
-              <span>Explore the Modules</span>
-            </a>
+        <div className="landing-hero-layout" id="top">
+          <div className="landing-hero-content">
+            <div className="landing-hero-kicker"><span className="landing-status-dot" />CONNECTED CARE OPERATIONS</div>
+            <h1 className="landing-hero-title">
+              One Workspace,<br />
+              <span className="landing-gradient-text">From Booking to Billing.</span>
+            </h1>
+            <p className="landing-hero-copy">
+              Bring administration, reception, doctors, nurses, laboratory staff,
+              pharmacists, and patients together throughout every visit.
+            </p>
+            <div className="landing-hero-actions">
+              <Link to="/login" className="landing-cta landing-cta-primary"><span>Access Staff Portal</span><ArrowRight size={18} /></Link>
+              <Link to="/register/patient" className="landing-cta landing-cta-secondary"><span>Register New Patient</span></Link>
+            </div>
+            <div className="landing-hero-trust"><span>✦ Secure</span><span>⌁ Scalable</span><span>▱ Multi-Branch</span><span>♟ Role-Based Access</span></div>
           </div>
-
-          {/* STATIC WORKFLOW OVERVIEW */}
-          <div className="landing-telemetry-row">
-            {overviewAreas.map((item) => (
-              <div className="landing-telemetry-item" key={item.label}>
-                <div className="landing-telemetry-val">{item.value}</div>
-                <div className="landing-telemetry-lbl">{item.label}</div>
-                <div className="landing-telemetry-sub">{item.desc}</div>
+          <div className="landing-dashboard-scene" aria-label="CMS dashboard preview">
+            <span className="landing-scene-pill landing-scene-pill-one" /><span className="landing-scene-shield">+</span><span className="landing-scene-pill landing-scene-pill-two" />
+            <div className="landing-dashboard-window">
+              <aside><strong><HeartPulse size={17} /> CMS</strong><b>▦ Dashboard</b><span>▧ Patients</span><span>◷ Appointments</span><span>♧ Staff</span><span>▤ Reports</span></aside>
+              <div className="landing-dashboard-main"><header><strong>Good afternoon, Admin 👋</strong><small>All branches⌄</small></header>
+                <div className="landing-dashboard-stats"><div><small>Total Patients</small><strong>2,840</strong></div><div><small>Appointments</small><strong>126</strong></div><div><small>Today's Billing</small><strong>₹46,600</strong></div></div>
+                <div className="landing-dashboard-panels"><div className="landing-chart-card"><strong>Appointments Overview</strong><div className="landing-chart-bars"><i/><i/><i/><i/><i/><i/><i/></div><div className="landing-chart-line"/></div><div className="landing-queue-card"><strong>Today's Queue</strong><span>● New appointments</span><span>● In consultation</span><span>● Reports ready</span></div></div>
               </div>
-            ))}
+            </div>
+            <div className="landing-dashboard-phone"><strong>♡ CMS</strong><b>Today's Queue</b><span>Appointments</span><span>Patient records</span><span>Billing</span></div>
           </div>
         </div>
 
@@ -141,7 +128,7 @@ function LandingPage() {
 
 
       {/* CLINICAL WORKFLOW STEPPER STRIP */}
-      <section className="landing-strip-container" aria-label="Clinical Workflow Steps">
+      <section className="landing-strip-container" id="workflow-section" aria-label="Clinical Workflow Steps">
         <div className="landing-strip">
           {flow.map((item) => (
             <div className="landing-step" key={item.step}>
@@ -165,7 +152,7 @@ function LandingPage() {
           </div>
           <h2>A Workspace for Each Role</h2>
           <p className="landing-section-subhead">
-            Follow the work handled by each role. Available screens and actions depend on the account permissions and clinic setup.
+            Follow the work handled by each role. Available screens and actions depend on account permissions and setup.
           </p>
         </div>
 
@@ -186,21 +173,21 @@ function LandingPage() {
       </section>
 
       {/* ADMINISTRATION AND RECORDS OVERVIEW */}
-      <section className="landing-insight">
+      <section className="landing-insight" id="reports-section">
         <div className="landing-insight-content">
           <div className="landing-insight-badge">
             <Building2 size={16} />
-            <span>CLINIC MANAGEMENT</span>
+            <span>CARE MANAGEMENT</span>
           </div>
-          <h2>Keep Clinic Operations in View</h2>
+          <h2>Keep Operations in View</h2>
           <p>
-            Administrators manage clinic branches and staff, review patient appointments,
-            and use billing and revenue reports to follow clinic activity.
+            Administrators manage branches and staff, review patient appointments,
+            and use billing and revenue reports to follow daily operations.
           </p>
           <div className="landing-insight-stats">
             <div className="insight-stat">
               <CheckCircle2 size={18} className="insight-check" />
-              <span>Role-based access for clinic teams and patients</span>
+              <span>Role-based access for care teams and patients</span>
             </div>
             <div className="insight-stat">
               <CheckCircle2 size={18} className="insight-check" />
@@ -242,13 +229,13 @@ function LandingPage() {
       </section>
 
       {/* REFINED SYSTEM FOOTER */}
-      <footer className="landing-footer">
+      <footer className="landing-footer" id="contact-section">
         <div className="landing-footer-inner">
           <div className="landing-footer-brand">
             <span className="landing-brand-mark-small">
               <HeartPulse size={18} />
             </span>
-            <strong>CMS Clinic Management System</strong>
+            <strong>CMS Care Management System</strong>
           </div>
           <div className="landing-footer-meta">
             <span>Appointments | Consultations | Lab | Pharmacy | Billing</span>

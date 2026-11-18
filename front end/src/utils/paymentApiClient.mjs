@@ -46,6 +46,18 @@ export const createPaymentApiClient = ({ url, getToken, fetchImpl = globalThis.f
   const response = await fetchImpl(`${url(path)}${search.size ? `?${search}` : ''}`, {
     method: contract.method, headers, body: requestBody, signal, cache: 'no-store',
   });
+  if (contract.responseType === 'blob') {
+    if (!response.ok) {
+      const payload = await response.text();
+      let parsed = payload;
+      try { parsed = JSON.parse(payload); } catch { /* retain server text */ }
+      const error = new Error(parsed?.message || parsed?.title || parsed?.error || `Request failed (${response.status}).`);
+      error.status = response.status;
+      error.payload = parsed;
+      throw error;
+    }
+    return { blob: await response.blob(), contentDisposition: response.headers.get('content-disposition') || '' };
+  }
   const text = await response.text();
   let payload = null;
   if (text) {

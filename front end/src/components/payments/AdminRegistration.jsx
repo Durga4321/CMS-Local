@@ -4,7 +4,7 @@ import { registerAdmin, verifyAdminRegistrationOtp, resendAdminRegistrationOtp }
 import { unwrapPaymentData } from '../../utils/paymentAdministration.mjs';
 import './PaymentAdministration.css';
 
-export default function AdminRegistration() {
+export default function AdminRegistration({ standalone = false }) {
   const [stage, setStage] = useState('register');
   const [form, setForm] = useState({ name: '', email: '', mobileNumber: '', password: '', otp: '' });
   const [busy, setBusy] = useState(false);
@@ -41,9 +41,7 @@ export default function AdminRegistration() {
       }
     });
   };
-  return <section className="payment-api-panel" aria-label="Admin registration">
-    <details>
-      <summary>Clinic owner registration</summary>
+  const registrationForm = <>
       <p>Create and verify an Admin account before purchasing a subscription.</p>
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
@@ -70,6 +68,8 @@ export default function AdminRegistration() {
           </div>
         </fieldset>
       </form>}
-    </details>
+  </>;
+  return <section className="payment-api-panel" aria-label="Admin registration">
+    {standalone ? registrationForm : <details><summary>Clinic owner registration</summary>{registrationForm}</details>}
   </section>;
 }

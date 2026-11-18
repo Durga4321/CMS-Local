@@ -60,7 +60,11 @@ const Mode = ({ value, onChange, all = false }) => <Field title="Payment mode"><
 function MerchantSettings({ cms, canEdit }) {
   const request = useRequest();
   const [loaded, setLoaded] = useState(false);
+  const [method, setMethod] = useState('upi');
+  const [upiQr, setUpiQr] = useState(null);
+  const [bankProof, setBankProof] = useState(null);
   const [form, setForm] = useState({ merchantName: '', mode: 'Test', isEnabled: false, credentialReference: '', keyId: '', keySecret: '', webhookSecret: '' });
+  const [requestError, setRequestError] = useState('');
   const change = event => setForm(current => ({ ...current, [event.target.name]: event.target.type === 'checkbox' ? event.target.checked : event.target.value }));
   const load = () => request.run(async () => {
     const response = await (cms ? api.fetchCmsMerchantSettings() : api.fetchHospitalMerchantSettings());
@@ -71,9 +75,42 @@ function MerchantSettings({ cms, canEdit }) {
     setLoaded(true);
     return response;
   });
-  return <details><summary>Razorpay merchant settings</summary>
-    <p>Load the saved merchant settings before editing. Leave secret fields empty to retain existing credentials. Enabling payments is subject to backend credential and KYC validation.</p>
-    <button type="button" onClick={load} disabled={request.busy}>Load merchant settings</button>
+  const notReady = event => { event.preventDefault(); setRequestError('This upload is not connected yet: backend Swagger has no UPI or bank settings upload/read endpoint. Nothing was uploaded or saved.'); };
+  const methods = [
+    { id: 'upi', title: 'UPI', description: '' },
+    { id: 'bank', title: 'Bank transfer / Net banking', description: '' },
+    { id: 'card', title: 'Debit / credit cards', description: '' },
+  ];
+  return <>
+    <div className="payment-method-setup" aria-label="Merchant payment methods">
+      {methods.map(item => <button key={item.id} type="button" className={`payment-method-setup-card${method === item.id ? ' is-selected' : ''}`} aria-pressed={method === item.id} onClick={() => { setMethod(item.id); request.setError(''); request.setResult(null); }}>
+        <strong>{item.title}</strong><span>{item.description}</span><small>{item.id === 'card' ? 'Gateway configuration' : 'Merchant details upload'}</small>
+      </button>)}
+    </div>
+    {method === 'upi' && <section className="payment-method-setup-form" aria-labelledby="upi-merchant-title">
+      <h3 id="upi-merchant-title">UPI merchant setup</h3><p>Add the UPI payment details shown to patients during billing.</p>
+      <form onSubmit={notReady}><div className="payment-api-grid">
+        <Field title="Merchant / account name"><input required maxLength={150} /></Field>
+        <Field title="UPI ID"><input required placeholder="merchant@bank" /></Field>
+        <Field title="UPI QR code image (PNG or JPG)"><input type="file" accept="image/png,image/jpeg" onChange={event => setUpiQr(event.target.files?.[0] ?? null)} /></Field>
+      </div><p>{upiQr ? `Selected: ${upiQr.name}` : 'Choose a merchant QR image if you use a static QR.'}</p>
+      <button type="submit" disabled={!canEdit || request.busy}>Upload UPI details</button></form>
+    </section>}
+    {method === 'bank' && <section className="payment-method-setup-form" aria-labelledby="bank-merchant-title">
+      <h3 id="bank-merchant-title">Merchant bank setup</h3><p>These are the hospital beneficiary details intended for bank transfer and net banking instructions.</p>
+      <form onSubmit={notReady}><div className="payment-api-grid">
+        <Field title="Account holder name"><input required maxLength={150} /></Field>
+        <Field title="Bank name"><input required maxLength={150} /></Field>
+        <Field title="Account number"><input required inputMode="numeric" autoComplete="off" /></Field>
+        <Field title="IFSC code"><input required maxLength={11} autoCapitalize="characters" /></Field>
+        <Field title="Branch (optional)"><input maxLength={150} /></Field>
+        <Field title="Bank proof (cancelled cheque or passbook, PDF/JPG/PNG)"><input type="file" accept="application/pdf,image/png,image/jpeg" onChange={event => setBankProof(event.target.files?.[0] ?? null)} /></Field>
+      </div><p>{bankProof ? `Selected: ${bankProof.name}` : 'Upload supporting bank proof.'}</p>
+      <button type="submit" disabled={!canEdit || request.busy}>Upload bank details</button></form>
+    </section>}
+    {method === 'card' && <details open className="payment-method-setup-form"><summary>Card gateway credentials</summary>
+      <p>Load the saved Razorpay credentials before editing. Leave secret fields empty to retain existing credentials.</p>
+      <button type="button" onClick={load} disabled={request.busy}>Load merchant settings</button>
     <form onSubmit={event => { event.preventDefault(); request.run(async () => {
       const body = merchantSettingsBody(form);
       try { return await (cms ? api.saveCmsMerchantSettings(body) : api.saveHospitalMerchantSettings(body)); }
@@ -92,8 +129,10 @@ function MerchantSettings({ cms, canEdit }) {
         <button type="submit">Save merchant settings</button>
       </fieldset>
     </form>
+    </details>}
+    {requestError && <p role="alert">{requestError}</p>}
     <RequestStatus request={request} />
-  </details>;
+  </>;
 }
 
 function Onboarding({ cms, canEdit }) {
@@ -202,7 +241,7 @@ function Refunds({ cms, canEdit }) {
   </details>;
 }
 
-function SettlementsAndReports({ cms, canEdit }) {
+function SettlementsAndReports({ cms, canEdit, initialOpen = false }) {
   const request = useRequest();
   const [filters, setFilters] = useState({ from: '', to: '', mode: 'Test' });
   const [rows, setRows] = useState([]);
@@ -231,17 +270,28 @@ function SettlementsAndReports({ cms, canEdit }) {
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'settlement-import-template.csv'; anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  return <details><summary>Payment reports and settlements</summary>
+  return <details open={initialOpen}><summary>{initialOpen ? 'All payment transactions' : 'Payment reports and settlements'}</summary>
+    {initialOpen && <p>Transaction rows come from the hospital payment report. Use the CSV export to download the full report. If the API returns totals only, a transaction-list endpoint is needed to show every payment here.</p>}
     <div className="payment-api-grid">
       <Field title="From date"><input type="date" value={filters.from} onChange={event => setFilters(current => ({ ...current, from: event.target.value }))} /></Field>
       <Field title="To date"><input type="date" value={filters.to} onChange={event => setFilters(current => ({ ...current, to: event.target.value }))} /></Field>
       <Mode all value={filters.mode} onChange={event => setFilters(current => ({ ...current, mode: event.target.value }))} />
     </div>
     <div className="payment-api-actions">
-      <button type="button" disabled={request.busy} onClick={() => request.run(() => cms ? api.fetchCmsPaymentRevenue(paymentDateQuery(filters)) : api.fetchHospitalPaymentRevenue(paymentDateQuery(filters)))}>Load payment revenue report</button>
-      <button type="button" disabled={!canEdit || request.busy || (cms && filters.mode === 'All')} onClick={() => request.run(() => cms ? api.syncCmsSettlements(paymentDateQuery(filters)) : api.syncHospitalSettlements(paymentDateQuery(filters, false)))}>Sync settlement payouts</button>
+      <button type="button" disabled={request.busy} onClick={() => request.run(() => cms ? api.fetchCmsPaymentRevenue(paymentDateQuery(filters)) : api.fetchHospitalPaymentRevenue(paymentDateQuery(filters)))}>{initialOpen ? 'Load all payment transactions' : 'Load payment revenue report'}</button>
+      {!cms && <button type="button" disabled={request.busy} onClick={() => request.run(async () => {
+        const result = await api.exportHospitalPaymentReport({ ...paymentDateQuery(filters), format: 'csv' });
+        const url = URL.createObjectURL(result.blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = 'hospital-payment-report.csv';
+        anchor.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return { message: 'Hospital payment report downloaded.' };
+      })}>Export hospital payment report (CSV)</button>}
+      {!initialOpen && <button type="button" disabled={!canEdit || request.busy || (cms && filters.mode === 'All')} onClick={() => request.run(() => cms ? api.syncCmsSettlements(paymentDateQuery(filters)) : api.syncHospitalSettlements(paymentDateQuery(filters, false)))}>Sync settlement payouts</button>}
     </div>
-    <p className="payment-api-muted">Hospital payout sync uses the saved merchant mode. CMS payout sync requires Test or Live. Report dates include the full selected days.</p>
+    {!initialOpen && <><p className="payment-api-muted">Hospital payout sync uses the saved merchant mode. CMS payout sync requires Test or Live. Report dates include the full selected days.</p>
     <button type="button" onClick={template}>Download settlement import template</button>
     <form onSubmit={event => { event.preventDefault(); request.run(async () => {
       if (!confirmed) throw new Error('Confirm the settlement rows before importing.');
@@ -258,6 +308,78 @@ function SettlementsAndReports({ cms, canEdit }) {
       <label className="payment-api-check"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} required />Confirm these settlement rows for reconciliation</label>
       <button type="submit" disabled={!rows.length || imported}>Import and reconcile settlements</button>
     </fieldset></form>
+    </>}
+    <RequestStatus request={request} />
+  </details>;
+}
+
+function HospitalPaymentTools({ canEdit }) {
+  const request = useRequest();
+  const [recordId, setRecordId] = useState('');
+  const [billingId, setBillingId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [token, setToken] = useState('');
+  const [confirmed, setConfirmed] = useState(false);
+  const amountValue = () => paymentAmount(amount);
+  const billingRecordId = () => Number(positiveRecordId(billingId, 'Billing ID'));
+  return <details><summary>QR codes, payment links, and public status</summary>
+    <p>Create a bill specific QR request using the entered amount, or a payment link from the saved bill. Payment links can be revoked; public tokens only retrieve payment details and status.</p>
+    <div className="payment-api-grid">
+      <RecordId title="Billing ID" value={billingId} onChange={event => { setBillingId(event.target.value); setConfirmed(false); }} />
+      <Field title="QR amount (₹)"><input type="number" min="0.01" step="0.01" value={amount} onChange={event => { setAmount(event.target.value); setConfirmed(false); }} required /></Field>
+    </div>
+    <label className="payment-api-check"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />Confirm bill and amount before creating a payment request</label>
+    <div className="payment-api-actions">
+      <button type="button" disabled={!canEdit || request.busy} onClick={() => request.run(async () => { if (!confirmed) throw new Error('Confirm the bill and amount first.'); return api.createHospitalQr({ billingId: billingRecordId(), amount: amountValue() }); })}>Create Razorpay QR</button>
+      <button type="button" disabled={!canEdit || request.busy} onClick={() => request.run(async () => { if (!confirmed) throw new Error('Confirm the bill and amount first.'); return api.createHospitalPaymentLink({ billingId: billingRecordId() }); })}>Create payment link</button>
+    </div>
+    <div className="payment-api-grid"><RecordId title="QR ID or payment link ID" value={recordId} onChange={event => setRecordId(event.target.value)} /></div>
+    <div className="payment-api-actions">
+      <button type="button" disabled={request.busy} onClick={() => request.run(() => api.fetchHospitalQr(positiveRecordId(recordId, 'QR ID')))}>Get QR status</button>
+      <button type="button" disabled={!canEdit || request.busy || !window.confirm} onClick={() => request.run(async () => { if (!window.confirm('Revoke this payment link?')) throw new Error('Revocation cancelled.'); return api.revokeHospitalPaymentLink(positiveRecordId(recordId, 'Payment link ID')); })}>Revoke payment link</button>
+    </div>
+    <div className="payment-api-grid"><Field title="Public payment token"><input value={token} onChange={event => setToken(event.target.value)} required /></Field></div>
+    <div className="payment-api-actions">
+      <button type="button" disabled={request.busy || !token.trim()} onClick={() => request.run(() => api.fetchPublicHospitalPayment(token.trim()))}>View public payment</button>
+      <button type="button" disabled={request.busy || !token.trim()} onClick={() => request.run(() => api.fetchPublicHospitalPaymentStatus(token.trim()))}>Check public payment status</button>
+    </div>
+    <RequestStatus request={request} />
+  </details>;
+}
+
+function HospitalReconciliation({ canEdit }) {
+  const request = useRequest();
+  const [settlementId, setSettlementId] = useState('');
+  const [paymentId, setPaymentId] = useState('');
+  const [paymentType, setPaymentType] = useState('Order');
+  const [token, setToken] = useState('');
+  const [confirmed, setConfirmed] = useState(false);
+  return <details><summary>Settlement reconciliation and payment recovery</summary>
+    <p>Review reconciliation status and payment evidence. Recovery checks Razorpay before recording any verified payment.</p>
+    <div className="payment-api-actions">
+      <button type="button" disabled={request.busy} onClick={() => request.run(api.fetchHospitalReconciliationSummary)}>Load recovery summary</button>
+      <button type="button" disabled={request.busy} onClick={() => request.run(() => api.fetchHospitalReconciliationHistory(50))}>Load recent recovery history</button>
+      <button type="button" disabled={request.busy} onClick={() => request.run(api.fetchHospitalReconciliationCandidates)}>Load recovery candidates</button>
+      <button type="button" disabled={!canEdit || request.busy || !window.confirm} onClick={() => request.run(async () => { if (!window.confirm('Discover eligible payments and attempt gateway-verified recovery?')) throw new Error('Recovery cancelled.'); return api.runHospitalDiscoveredReconciliation(); })}>Run discovered recovery batch</button>
+    </div>
+    <div className="payment-api-grid">
+      <Field title="Settlement status (optional)"><select value={token} onChange={event => setToken(event.target.value)}><option value="">All statuses</option><option>Pending</option><option>Matched</option><option>ReviewRequired</option></select></Field>
+    </div>
+    <button type="button" disabled={request.busy} onClick={() => request.run(() => api.fetchHospitalReconciliationSettlements(token ? { status: token } : {}))}>List settlements</button>
+    <div className="payment-api-grid"><RecordId title="Settlement ID" value={settlementId} onChange={event => { setSettlementId(event.target.value); setConfirmed(false); }} /></div>
+    <div className="payment-api-actions">
+      <button type="button" disabled={request.busy} onClick={() => request.run(() => api.fetchHospitalReconciliationSettlement(positiveRecordId(settlementId, 'Settlement ID')))}>View settlement details</button>
+      <button type="button" disabled={request.busy} onClick={() => request.run(() => api.fetchHospitalSettlementPayments(positiveRecordId(settlementId, 'Settlement ID')))}>View settlement payments</button>
+    </div>
+    <label className="payment-api-check"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />I reviewed this settlement and want to request gateway reconciliation</label>
+    <button type="button" disabled={!canEdit || request.busy || !confirmed} onClick={() => request.run(async () => { const response = await api.reconcileHospitalSettlement(positiveRecordId(settlementId, 'Settlement ID')); setConfirmed(false); return response; })}>Reconcile this settlement</button>
+    <form onSubmit={event => { event.preventDefault(); request.run(() => api.runHospitalPaymentReconciliation({ paymentType, ...(paymentType === 'Order' ? { localOrderId: positiveRecordId(paymentId, 'Local order ID') } : { qrId: positiveRecordId(paymentId, 'QR ID') }) })); }}>
+      <div className="payment-api-grid"><Field title="Recovery record type"><select value={paymentType} onChange={event => setPaymentType(event.target.value)}><option>Order</option><option>QR</option></select></Field><RecordId title={paymentType === 'Order' ? 'Local order ID' : 'QR ID'} value={paymentId} onChange={event => setPaymentId(event.target.value)} /></div>
+      <button type="submit" disabled={!canEdit || request.busy}>Recover one payment after gateway verification</button>
+    </form>
+    <form onSubmit={event => { event.preventDefault(); request.run(() => api.runHospitalPaymentReconciliationBatch([{ paymentType, ...(paymentType === 'Order' ? { localOrderId: positiveRecordId(paymentId, 'Local order ID') } : { qrId: positiveRecordId(paymentId, 'QR ID') }) }])); }}>
+      <button type="submit" disabled={!canEdit || request.busy}>Run batch recovery for this record</button>
+    </form>
     <RequestStatus request={request} />
   </details>;
 }
@@ -334,16 +456,13 @@ function Disputes({ cms, canEdit }) {
   </details>;
 }
 
-export default function PaymentAdministration({ scope = 'hospital', canEdit = false }) {
+export default function PaymentAdministration({ scope = 'hospital', canEdit = false, initialSection }) {
   const cms = scope === 'cms';
   return <section className="payment-api-panel" aria-label={cms ? 'CMS payment administration' : 'Hospital payment administration'}>
-    <h2>{cms ? 'CMS Razorpay administration' : 'Hospital Razorpay administration'}</h2>
-    <p>Settings and actions submitted in this section are saved to your {cms ? 'CMS merchant' : 'hospital'} account.</p>
+    <h2>{cms ? 'CMS payment settings' : 'Payment methods and merchant details'}</h2>
+    <p>{cms ? 'Load and update the saved Razorpay merchant configuration.' : 'Manage merchant payment settings here. Payment history is available on its own tab.'}</p>
     {!canEdit && <p>You have view-only access. Payment changes require the appropriate account permissions.</p>}
     <MerchantSettings cms={cms} canEdit={canEdit} />
-    <Onboarding cms={cms} canEdit={canEdit} />
-    <Refunds cms={cms} canEdit={canEdit} />
-    <SettlementsAndReports cms={cms} canEdit={canEdit} />
-    <Disputes cms={cms} canEdit={canEdit} />
+    {initialSection === 'reports' && <SettlementsAndReports cms={cms} canEdit={canEdit} initialOpen />}
   </section>;
 }
